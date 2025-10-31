@@ -3,61 +3,147 @@
         xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="700"
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/icon.ico"
-        Title="ChapterTool - Modern Edition"
-        Width="1000" Height="600">
+        Title="{Binding WindowTitle}"
+        Width="1200" Height="700"
+        MinWidth="800" MinHeight="600">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
     <DockPanel>
-        <!-- Status Bar -->
-        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="8,4">
-            <TextBlock Text="{Binding StatusMessage}" />
-        </Border>
+        <!-- Menu Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open..." Command="{Binding LoadFileCommand}" HotKey="Ctrl+O">
+                    <MenuItem.Icon>
+                        <PathIcon Data="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z" />
+                    </MenuItem.Icon>
+                </MenuItem>
+                <Separator/>
+                <MenuItem Header="E_xit" HotKey="Alt+F4">
+                    <MenuItem.Icon>
+                        <PathIcon Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Refresh" Command="{Binding ApplyExpressionCommand}" HotKey="F5" />
+                <MenuItem Header="Show _Log" Command="{Binding ShowLogCommand}" HotKey="Ctrl+L" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Command="{Binding ShowAboutCommand}" />
+            </MenuItem>
+        </Menu>
 
-        <!-- Toolbar -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
-            <Button Command="{Binding LoadFileCommand}" Margin="0,0,8,0">
-                Load File
-            </Button>
-            <Button Command="{Binding ExportChaptersCommand}">
-                Export Chapters
-            </Button>
-        </StackPanel>
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" BorderBrush="#CCCCCC" BorderThickness="0,1,0,0" Padding="8,4">
+            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" />
+        </Border>
 
         <!-- Main Content -->
         <Grid Margin="8">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- File Path Display -->
-            <Border Grid.Row="0" BorderBrush="#CCCCCC" BorderThickness="1" Padding="8" Margin="0,0,0,8">
-                <TextBlock Text="{Binding FilePath, FallbackValue='No file loaded'}" 
-                           TextWrapping="Wrap"/>
+            <Border Grid.Row="0" BorderBrush="#CCCCCC" BorderThickness="1" Padding="8" Margin="0,0,0,8"
+                    Background="#FAFAFA">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Left" Text="File: " FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding FilePath, FallbackValue='No file loaded'}" 
+                               TextWrapping="Wrap" VerticalAlignment="Center"
+                               Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+                </DockPanel>
+            </Border>
+
+            <!-- Toolbar -->
+            <Border Grid.Row="1" BorderBrush="#CCCCCC" BorderThickness="1" Padding="8" Margin="0,0,0,8"
+                    Background="White">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left side controls -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <Button Command="{Binding LoadFileCommand}" Padding="12,6" MinWidth="100">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="M19,20H4C2.89,20 2,19.1 2,18V6C2,4.89 2.89,4 4,4H10L12,6H19A2,2 0 0,1 21,8H21L4,8V18L6.14,10H23.21L20.93,18.5C20.7,19.37 19.92,20 19,20Z" 
+                                          Width="16" Height="16"/>
+                                <TextBlock Text="Load File" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <ComboBox ItemsSource="{Binding ExportFormats}" 
+                                  SelectedIndex="{Binding SelectedExportFormat}"
+                                  MinWidth="150" VerticalAlignment="Center"/>
+
+                        <Button Command="{Binding ExportChaptersCommand}" Padding="12,6" MinWidth="100">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Data="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" 
+                                          Width="16" Height="16"/>
+                                <TextBlock Text="Export" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <CheckBox Content="Auto-generate names" 
+                                  IsChecked="{Binding AutoGenName}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Right side controls -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Expression:" VerticalAlignment="Center"/>
+                        <TextBox Text="{Binding ExpressionText}" 
+                                 MinWidth="120" VerticalAlignment="Center"
+                                 Watermark="x"/>
+                        <Button Command="{Binding ApplyExpressionCommand}" Padding="8,6">
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <PathIcon Data="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5L6.5,12L7.91,10.59L11,13.67L16.59,8.09L18,9.5L11,16.5Z" 
+                                          Width="14" Height="14"/>
+                                <TextBlock Text="Apply" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Chapters DataGrid -->
-            <DataGrid Grid.Row="1" 
-                      ItemsSource="{Binding Chapters}"
-                      IsReadOnly="True"
-                      GridLinesVisibility="All"
-                      BorderThickness="1"
-                      BorderBrush="#CCCCCC">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="No." Binding="{Binding Number}" Width="60"/>
-                    <DataGridTextColumn Header="Time" Binding="{Binding TimeString}" Width="120"/>
-                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
-                    <DataGridTextColumn Header="Frame" Binding="{Binding FramesInfo}" Width="100"/>
-                </DataGrid.Columns>
-            </DataGrid>
+            <Border Grid.Row="2" BorderBrush="#CCCCCC" BorderThickness="1">
+                <DataGrid ItemsSource="{Binding Chapters}"
+                          IsReadOnly="True"
+                          GridLinesVisibility="All"
+                          CanUserResizeColumns="True"
+                          CanUserSortColumns="True"
+                          AutoGenerateColumns="False"
+                          Background="White"
+                          >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="No." Binding="{Binding Number}" Width="70" />
+                        <DataGridTextColumn Header="Time" Binding="{Binding TimeString}" Width="130" />
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Frame" Binding="{Binding FramesInfo}" Width="100" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Chapter Count Info -->
+            <Border Grid.Row="3" Padding="4" Margin="0,8,0,0">
+                <TextBlock HorizontalAlignment="Right">
+                    <Run Text="Total Chapters: "/>
+                    <Run Text="{Binding Chapters.Count}" FontWeight="Bold"/>
+                </TextBlock>
+            </Border>
         </Grid>
     </DockPanel>
-
 </Window>

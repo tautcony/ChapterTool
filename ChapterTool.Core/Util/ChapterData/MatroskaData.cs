@@ -27,7 +27,7 @@ namespace ChapterTool.Util.ChapterData
     using System.Xml;
     using Microsoft.Win32;
 
-    internal class MatroskaData
+    public class MatroskaData
     {
         private readonly XmlDocument _result = new XmlDocument();
 
