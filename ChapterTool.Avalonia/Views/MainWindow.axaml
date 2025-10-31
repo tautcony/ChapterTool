@@ -3,18 +3,61 @@
         xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="ChapterTool.Avalonia">
+        Icon="/Assets/icon.ico"
+        Title="ChapterTool - Modern Edition"
+        Width="1000" Height="600">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <DockPanel>
+        <!-- Status Bar -->
+        <Border DockPanel.Dock="Bottom" Background="#F0F0F0" Padding="8,4">
+            <TextBlock Text="{Binding StatusMessage}" />
+        </Border>
+
+        <!-- Toolbar -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8">
+            <Button Command="{Binding LoadFileCommand}" Margin="0,0,8,0">
+                Load File
+            </Button>
+            <Button Command="{Binding ExportChaptersCommand}">
+                Export Chapters
+            </Button>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <Grid Margin="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- File Path Display -->
+            <Border Grid.Row="0" BorderBrush="#CCCCCC" BorderThickness="1" Padding="8" Margin="0,0,0,8">
+                <TextBlock Text="{Binding FilePath, FallbackValue='No file loaded'}" 
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Chapters DataGrid -->
+            <DataGrid Grid.Row="1" 
+                      ItemsSource="{Binding Chapters}"
+                      IsReadOnly="True"
+                      GridLinesVisibility="All"
+                      BorderThickness="1"
+                      BorderBrush="#CCCCCC">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="No." Binding="{Binding Number}" Width="60"/>
+                    <DataGridTextColumn Header="Time" Binding="{Binding TimeString}" Width="120"/>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="Frame" Binding="{Binding FramesInfo}" Width="100"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </DockPanel>
 
 </Window>
