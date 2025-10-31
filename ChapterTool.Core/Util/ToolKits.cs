@@ -20,6 +20,7 @@
 namespace ChapterTool.Util
 {
     using System;
+    using System.Text;
     using System.Text.RegularExpressions;
 
     public static class ToolKits
@@ -74,6 +75,24 @@ namespace ChapterTool.Util
             var frames = (int)Math.Round(input.Milliseconds * 75 / 1000F);
             if (frames > 99) frames = 99;
             return $"{(input.Hours * 60) + input.Minutes:D2}:{input.Seconds:D2}:{frames:D2}";
+        }
+
+        /// <summary>
+        /// Detects BOM and converts byte array to UTF string
+        /// </summary>
+        /// <param name="buffer">Byte array to convert</param>
+        /// <returns>UTF string</returns>
+        public static string? GetUTFString(this byte[] buffer)
+        {
+            if (buffer == null) return null;
+            if (buffer.Length <= 3) return Encoding.UTF8.GetString(buffer);
+            if (buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
+                return new UTF8Encoding(false).GetString(buffer, 3, buffer.Length - 3);
+            if (buffer[0] == 0xFF && buffer[1] == 0xFE)
+                return Encoding.Unicode.GetString(buffer);
+            if (buffer[0] == 0xFE && buffer[1] == 0xFF)
+                return Encoding.BigEndianUnicode.GetString(buffer);
+            return Encoding.UTF8.GetString(buffer);
         }
     }
 }

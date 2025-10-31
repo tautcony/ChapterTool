@@ -23,6 +23,7 @@ namespace ChapterTool.Util.ChapterData
     using System;
     using System.Diagnostics;
     using System.IO;
+    using static ChapterTool.Util.Logger;
 
     public static class IfoParser
     {

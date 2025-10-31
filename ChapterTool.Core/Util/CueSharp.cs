@@ -402,11 +402,11 @@ namespace ChapterTool.Util
             }
             else if (indexType == "PREGAP")
             {
-                Tracks[trackOn].PreGap = new Index(0, minutes, seconds, frames);
+                Tracks[trackOn].PreGap = new Cue.Types.Index(0, minutes, seconds, frames);
             }
             else if (indexType == "POSTGAP")
             {
-                Tracks[trackOn].PostGap = new Index(0, minutes, seconds, frames);
+                Tracks[trackOn].PostGap = new Cue.Types.Index(0, minutes, seconds, frames);
             }
         }
 
