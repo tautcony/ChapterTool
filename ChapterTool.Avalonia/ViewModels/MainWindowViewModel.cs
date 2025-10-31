@@ -10,6 +10,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ChapterTool.Util;
 using ChapterTool.Util.ChapterData;
+using ChapterTool.Avalonia.Views;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
@@ -316,15 +317,48 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ShowLog()
     {
-        // Log viewer - show current log content
-        var logText = Logger.LogText;
-        StatusMessage = $"Log has {logText.Split('\n').Length} lines";
+        // Open log viewer window
+        var logWindow = new LogWindow
+        {
+            DataContext = new LogWindowViewModel()
+        };
+        logWindow.Show();
+        StatusMessage = "Log viewer opened";
     }
 
     [RelayCommand]
     private void ShowAbout()
     {
+        // Open about dialog
+        if (_mainWindow != null)
+        {
+            var aboutWindow = new AboutWindow();
+            aboutWindow.ShowDialog(_mainWindow);
+        }
         StatusMessage = "ChapterTool - Modern Edition | .NET 8 + Avalonia UI";
+    }
+
+    public async void HandleFileDrop(string[] files)
+    {
+        if (files == null || files.Length == 0) return;
+
+        var filePath = files[0]; // Take first file
+        FilePath = filePath;
+        
+        StatusMessage = "Loading dropped file...";
+        Logger.Log($"File dropped: {filePath}");
+
+        try
+        {
+            await LoadChapterFile(filePath);
+            StatusMessage = $"Loaded: {Path.GetFileName(filePath)} - {Chapters.Count} chapters";
+            WindowTitle = $"ChapterTool - {Path.GetFileName(filePath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error: {ex.Message}";
+            Logger.Log($"Error loading dropped file: {ex.Message}");
+        }
     }
 
     partial void OnAutoGenNameChanged(bool value)

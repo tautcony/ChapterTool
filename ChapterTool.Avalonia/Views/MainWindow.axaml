@@ -9,7 +9,8 @@
         Icon="/Assets/icon.ico"
         Title="{Binding WindowTitle}"
         Width="1200" Height="700"
-        MinWidth="800" MinHeight="600">
+        MinWidth="800" MinHeight="600"
+        DragDrop.AllowDrop="True">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
@@ -59,6 +60,12 @@
                     Background="#FAFAFA">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Left" Text="File: " FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock DockPanel.Dock="Right" 
+                               Text="💾 Drag &amp; drop files here" 
+                               VerticalAlignment="Center" 
+                               Margin="8,0,0,0"
+                               Foreground="#888888"
+                               FontSize="11"/>
                     <TextBlock Text="{Binding FilePath, FallbackValue='No file loaded'}" 
                                TextWrapping="Wrap" VerticalAlignment="Center"
                                Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"/>

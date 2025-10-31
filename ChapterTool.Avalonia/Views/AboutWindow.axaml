@@ -1,0 +1,89 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="400"
+        x:Class="ChapterTool.Avalonia.Views.AboutWindow"
+        Title="About ChapterTool"
+        Width="500" Height="400"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Icon="/Assets/icon.ico">
+
+    <Border Padding="20">
+        <StackPanel Spacing="16">
+            <!-- App Icon -->
+            <Border Width="80" Height="80" HorizontalAlignment="Center">
+                <Image Source="/Assets/icon.ico" />
+            </Border>
+
+            <!-- App Name and Version -->
+            <StackPanel Spacing="4" HorizontalAlignment="Center">
+                <TextBlock Text="ChapterTool" 
+                           FontSize="24" 
+                           FontWeight="Bold" 
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Modern Cross-Platform Edition" 
+                           FontSize="14" 
+                           Foreground="#666666"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="Version 2.0.0" 
+                           FontSize="12" 
+                           Foreground="#888888"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Description -->
+            <TextBlock Text="A modern tool for extracting and editing chapters from various media formats" 
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       MaxWidth="400"
+                       Foreground="#555555"/>
+
+            <Separator/>
+
+            <!-- Technology Stack -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Technology Stack:" FontWeight="Bold" Foreground="#333333"/>
+                <StackPanel Spacing="4" Margin="16,0,0,0">
+                    <TextBlock Text="• .NET 8.0" Foreground="#555555"/>
+                    <TextBlock Text="• Avalonia UI 11.3.6" Foreground="#555555"/>
+                    <TextBlock Text="• MVVM Toolkit 8.2.1" Foreground="#555555"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Separator/>
+
+            <!-- Supported Formats -->
+            <StackPanel Spacing="8">
+                <TextBlock Text="Supported Formats:" FontWeight="Bold" Foreground="#333333"/>
+                <TextBlock Text="MPLS, XML, OGM, IFO, Matroska, CUE, FLAC, TAK, XPL, MP4, WebVTT" 
+                           TextWrapping="Wrap"
+                           Margin="16,0,0,0"
+                           Foreground="#555555"/>
+            </StackPanel>
+
+            <Separator/>
+
+            <!-- Copyright -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="© 2014-2025 TautCony" 
+                           HorizontalAlignment="Center"
+                           Foreground="#888888"
+                           FontSize="11"/>
+                <TextBlock Text="Licensed under GPL v3+" 
+                           HorizontalAlignment="Center"
+                           Foreground="#888888"
+                           FontSize="11"/>
+            </StackPanel>
+
+            <!-- Close Button -->
+            <Button Content="Close" 
+                    HorizontalAlignment="Center"
+                    MinWidth="100"
+                    Click="CloseButton_Click"
+                    Margin="0,8,0,0"/>
+        </StackPanel>
+    </Border>
+</Window>

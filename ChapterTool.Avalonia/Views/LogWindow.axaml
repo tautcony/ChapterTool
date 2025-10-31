@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        x:Class="ChapterTool.Avalonia.Views.LogWindow"
+        x:DataType="vm:LogWindowViewModel"
+        Title="Log Viewer"
+        Width="800" Height="600"
+        MinWidth="600" MinHeight="400"
+        Icon="/Assets/icon.ico">
+
+    <Design.DataContext>
+        <vm:LogWindowViewModel/>
+    </Design.DataContext>
+
+    <DockPanel>
+        <!-- Toolbar -->
+        <Border DockPanel.Dock="Top" BorderBrush="#CCCCCC" BorderThickness="0,0,0,1" Padding="8">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{Binding ClearLogCommand}" Padding="8,4">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <PathIcon Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" 
+                                  Width="14" Height="14"/>
+                        <TextBlock Text="Clear" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                
+                <Button Command="{Binding CopyLogCommand}" Padding="8,4">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <PathIcon Data="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z" 
+                                  Width="14" Height="14"/>
+                        <TextBlock Text="Copy" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
+                <Separator/>
+
+                <TextBlock Text="{Binding LineCount, StringFormat='Lines: {0}'}" 
+                           VerticalAlignment="Center" 
+                           Margin="8,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Log Content -->
+        <Border BorderBrush="#CCCCCC" BorderThickness="1" Margin="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <TextBox Text="{Binding LogText}" 
+                         IsReadOnly="True"
+                         TextWrapping="NoWrap"
+                         BorderThickness="0"
+                         Background="White"
+                         FontFamily="Consolas,Courier New,monospace"
+                         FontSize="12"
+                         AcceptsReturn="True"/>
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+</Window>
