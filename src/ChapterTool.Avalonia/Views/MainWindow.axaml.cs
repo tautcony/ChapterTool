@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Editing;
@@ -15,6 +16,7 @@ public sealed partial class MainWindow : Window
     private readonly MainWindowViewModel viewModel;
     private readonly ShortcutRouter shortcutRouter;
     private readonly IFilePickerService filePickerService;
+    private readonly string? startupPath;
     private bool isRefreshing;
 
     public MainWindow()
@@ -24,7 +26,7 @@ public sealed partial class MainWindow : Window
 
     public MainWindow(string? startupPath)
     {
-        InitializeComponent();
+        this.startupPath = startupPath;
         var formatter = new ChapterTimeFormatter();
         var settingsDirectory = SettingsDirectory();
         var appSettingsStore = new AppSettingsStore(settingsDirectory);
@@ -38,98 +40,77 @@ public sealed partial class MainWindow : Window
             formatter,
             new InMemoryApplicationLogService(),
             new ShellService(),
-            appSettingsStore);
+            appSettingsStore,
+            new FrameRateService());
         filePickerService = new AvaloniaFilePickerService(this);
-
-        DataContext = viewModel;
         shortcutRouter = new ShortcutRouter(viewModel);
-        DragDrop.SetAllowDrop(this, true);
-        AddHandler(DragDrop.DropEvent, OnDrop);
-        KeyDown += OnKeyDown;
-        SizeChanged += (_, _) => ApplyAdvancedOptionsLayout();
-
-        LoadButton.Click += async (_, _) => await LoadOrBrowseAsync();
-        ReloadMenuItem.Click += async (_, _) => await LoadAsync();
-        AppendLoadMenuItem.Click += async (_, _) => await AppendMplsAsync();
-        SaveButton.Click += async (_, _) => await SaveAsync(null);
-        SaveToButton.Click += async (_, _) => await SaveToAsync();
-        SaveToMenuItem.Click += async (_, _) => await SaveToAsync();
-        RefreshButton.Click += (_, _) =>
+        BrowseAndLoadCommand = new UiCommand(async (_, _) => await BrowseAndLoadAsync());
+        ReloadCommand = new UiCommand(async (_, _) => await LoadAsync(), _ => viewModel.ReloadCommand.CanExecute());
+        AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
+        SaveCommand = new UiCommand(async (_, _) => await SaveAsync(null), _ => viewModel.SaveCommand.CanExecute());
+        SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
+        RefreshRowsCommand = new UiCommand((_, _) =>
         {
             ReadAdvancedOptions();
+            ReadFrameOptions();
             _ = viewModel.RefreshCommand.ExecuteAsync();
             Refresh();
-        };
-        ClipBox.SelectionChanged += (_, _) =>
+            return ValueTask.CompletedTask;
+        }, _ => viewModel.RefreshCommand.CanExecute());
+        InsertSelectedCommand = new UiCommand((_, _) =>
         {
-            if (isRefreshing)
-            {
-                return;
-            }
-
-            if (ClipBox.SelectedIndex >= 0)
-            {
-                _ = viewModel.SelectClipCommand.ExecuteAsync(ClipBox.SelectedIndex);
-                Refresh();
-            }
-        };
-        CombineButton.Click += (_, _) =>
+            InsertSelected();
+            return ValueTask.CompletedTask;
+        }, _ => viewModel.InsertCommand.CanExecute());
+        DeleteSelectedCommand = new UiCommand((_, _) =>
         {
-            _ = viewModel.CombineCommand.ExecuteAsync();
-            Refresh();
-        };
-        AppendMplsButton.Click += async (_, _) => await AppendMplsAsync();
-        OpenMediaButton.Click += async (_, _) => await OpenRelatedMediaAsync();
-        InsertMenuItem.Click += (_, _) => InsertSelected();
-        DeleteMenuItem.Click += (_, _) => DeleteSelected();
-        CombineMenuItem.Click += (_, _) =>
+            DeleteSelected();
+            return ValueTask.CompletedTask;
+        }, _ => viewModel.DeleteCommand.CanExecute());
+        OpenRelatedMediaCommand = new UiCommand(async (_, _) => await OpenRelatedMediaAsync(), _ => viewModel.OpenRelatedMediaCommand.CanExecute());
+        OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
+        OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
+        CombineCommand = new UiCommand((_, _) =>
         {
             _ = viewModel.CombineCommand.ExecuteAsync();
             Refresh();
-        };
-        OpenMediaMenuItem.Click += async (_, _) => await OpenRelatedMediaAsync();
-        ZonesMenuItem.Click += async (_, _) => await OpenZonesAsync();
-        ForwardShiftMenuItem.Click += async (_, _) => await OpenForwardShiftAsync();
-        PreviewMenuItem.Click += async (_, _) => await viewModel.PreviewCommand.ExecuteAsync();
-        ChapterGrid.CellEditEnded += (_, args) => CommitCellEdit(args);
+            return ValueTask.CompletedTask;
+        }, _ => viewModel.CombineCommand.CanExecute());
 
-        PreviewButton.Click += async (_, _) => await viewModel.PreviewCommand.ExecuteAsync();
-        LogButton.Click += async (_, _) => await viewModel.LogCommand.ExecuteAsync();
-        ColorButton.Click += async (_, _) => await viewModel.ColorSettingsCommand.ExecuteAsync();
-        ExpressionButton.Click += async (_, _) => await viewModel.ExpressionCommand.ExecuteAsync();
-        TemplateButton.Click += async (_, _) => await viewModel.TemplateNamesCommand.ExecuteAsync();
-        ZonesButton.Click += async (_, _) => await OpenZonesAsync();
-        ForwardShiftButton.Click += async (_, _) => await OpenForwardShiftAsync();
-
-        Opened += async (_, _) =>
-        {
-            await viewModel.LoadSettingsAsync(CancellationToken.None);
-            Refresh();
-            if (!string.IsNullOrWhiteSpace(startupPath))
-            {
-                PathBox.Text = startupPath;
-                await LoadAsync();
-            }
-        };
+        InitializeComponent();
+        DataContext = viewModel;
         ApplyAdvancedOptionsLayout();
         Refresh();
     }
+
+    public UiCommand BrowseAndLoadCommand { get; }
+
+    public UiCommand ReloadCommand { get; }
+
+    public UiCommand AppendMplsCommand { get; }
+
+    public UiCommand SaveCommand { get; }
+
+    public UiCommand SaveToCommand { get; }
+
+    public UiCommand RefreshRowsCommand { get; }
+
+    public UiCommand InsertSelectedCommand { get; }
+
+    public UiCommand DeleteSelectedCommand { get; }
+
+    public UiCommand OpenRelatedMediaCommand { get; }
+
+    public UiCommand OpenZonesCommand { get; }
+
+    public UiCommand OpenForwardShiftCommand { get; }
+
+    public UiCommand CombineCommand { get; }
 
     private async Task LoadAsync()
     {
         await viewModel.LoadCommand.ExecuteAsync(PathBox.Text ?? string.Empty);
         Refresh();
-    }
-
-    private async Task LoadOrBrowseAsync()
-    {
-        if (string.IsNullOrWhiteSpace(PathBox.Text))
-        {
-            await BrowseAndLoadAsync();
-            return;
-        }
-
-        await LoadAsync();
     }
 
     private async Task BrowseAndLoadAsync()
@@ -196,6 +177,46 @@ public sealed partial class MainWindow : Window
         viewModel.UpdateSelectedRows(SelectedIndexes());
         await viewModel.ForwardShiftCommand.ExecuteAsync();
         Refresh();
+    }
+
+    private async void OnOpened(object? sender, EventArgs args)
+    {
+        await viewModel.LoadSettingsAsync(CancellationToken.None);
+        Refresh();
+        if (!string.IsNullOrWhiteSpace(startupPath))
+        {
+            PathBox.Text = startupPath;
+            await LoadAsync();
+        }
+    }
+
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs args)
+    {
+        ApplyAdvancedOptionsLayout();
+    }
+
+    private void OnFrameOptionsChanged(object? sender, RoutedEventArgs args)
+    {
+        ApplyFrameOptionsAndRefresh();
+    }
+
+    private void OnClipSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    {
+        if (isRefreshing)
+        {
+            return;
+        }
+
+        if (ClipBox.SelectedIndex >= 0)
+        {
+            _ = viewModel.SelectClipCommand.ExecuteAsync(ClipBox.SelectedIndex);
+            Refresh();
+        }
+    }
+
+    private void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args)
+    {
+        CommitCellEdit(args);
     }
 
     private async void OnDrop(object? sender, DragEventArgs args)
@@ -437,6 +458,23 @@ public sealed partial class MainWindow : Window
         viewModel.OrderShift = (int)(OrderShiftBox.Value ?? 0);
     }
 
+    private void ReadFrameOptions()
+    {
+        viewModel.SetFrameOptions(FrameRateBox.SelectedIndex, RoundFramesBox.IsChecked == true);
+    }
+
+    private void ApplyFrameOptionsAndRefresh()
+    {
+        if (isRefreshing)
+        {
+            return;
+        }
+
+        ReadFrameOptions();
+        _ = viewModel.RefreshCommand.ExecuteAsync();
+        Refresh();
+    }
+
     private void Refresh()
     {
         isRefreshing = true;
@@ -446,21 +484,15 @@ public sealed partial class MainWindow : Window
             ProgressBar.Value = viewModel.Progress;
             ChapterGrid.ItemsSource = null;
             ChapterGrid.ItemsSource = viewModel.Rows;
+            RoundFramesBox.IsChecked = viewModel.RoundFrames;
+            FrameRateBox.SelectedIndex = viewModel.SelectedFrameRateIndex;
             ClipBox.ItemsSource = viewModel.ClipOptions.Select(static option => option.DisplayName).ToArray();
             ClipBox.SelectedIndex = viewModel.ClipOptions.Count == 0 ? -1 : viewModel.SelectedClipIndex;
-            ClipBox.IsVisible = false;
+            ClipBox.IsVisible = viewModel.IsClipSelectionVisible;
             CombineButton.IsVisible = false;
             AppendMplsButton.IsVisible = false;
             OpenMediaButton.IsVisible = false;
-            CombineButton.IsEnabled = viewModel.CombineCommand.CanExecute();
-            CombineMenuItem.IsEnabled = viewModel.CombineCommand.CanExecute();
-            AppendMplsButton.IsEnabled = viewModel.CanAppendMpls;
-            OpenMediaButton.IsEnabled = viewModel.OpenRelatedMediaCommand.CanExecute();
-            OpenMediaMenuItem.IsEnabled = viewModel.OpenRelatedMediaCommand.CanExecute();
-            ZonesMenuItem.IsEnabled = viewModel.Rows.Count > 0;
-            ForwardShiftMenuItem.IsEnabled = viewModel.Rows.Count > 0;
-            SaveButton.IsEnabled = viewModel.SaveCommand.CanExecute();
-            SaveToButton.IsEnabled = viewModel.SaveCommand.CanExecute();
+            RaiseCommandStates();
             SelectComboText(XmlLanguageBox, viewModel.XmlLanguage);
             AutoNamesBox.IsChecked = viewModel.AutoGenerateNames;
             TemplateNamesBox.IsChecked = viewModel.UseTemplateNames;
@@ -472,6 +504,28 @@ public sealed partial class MainWindow : Window
         {
             isRefreshing = false;
         }
+    }
+
+    private void RaiseCommandStates()
+    {
+        ReloadCommand.RaiseCanExecuteChanged();
+        AppendMplsCommand.RaiseCanExecuteChanged();
+        SaveCommand.RaiseCanExecuteChanged();
+        SaveToCommand.RaiseCanExecuteChanged();
+        RefreshRowsCommand.RaiseCanExecuteChanged();
+        InsertSelectedCommand.RaiseCanExecuteChanged();
+        DeleteSelectedCommand.RaiseCanExecuteChanged();
+        OpenRelatedMediaCommand.RaiseCanExecuteChanged();
+        OpenZonesCommand.RaiseCanExecuteChanged();
+        OpenForwardShiftCommand.RaiseCanExecuteChanged();
+        CombineCommand.RaiseCanExecuteChanged();
+        viewModel.SaveCommand.RaiseCanExecuteChanged();
+        viewModel.CombineCommand.RaiseCanExecuteChanged();
+        viewModel.OpenRelatedMediaCommand.RaiseCanExecuteChanged();
+        viewModel.PreviewCommand.RaiseCanExecuteChanged();
+        viewModel.ColorSettingsCommand.RaiseCanExecuteChanged();
+        viewModel.ExpressionCommand.RaiseCanExecuteChanged();
+        viewModel.TemplateNamesCommand.RaiseCanExecuteChanged();
     }
 
     private void ApplyAdvancedOptionsLayout()

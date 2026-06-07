@@ -109,7 +109,7 @@ public sealed class MainWindowXamlTests
         Assert.Contains("MinWidth=\"240\"", text, StringComparison.Ordinal);
         Assert.Contains("MinWidth=\"300\"", text, StringComparison.Ordinal);
         Assert.Contains("MinWidth=\"78\"", text, StringComparison.Ordinal);
-        Assert.Contains("SizeChanged += (_, _) => ApplyAdvancedOptionsLayout();", code, StringComparison.Ordinal);
+        Assert.Contains("SizeChanged=\"OnSizeChanged\"", text, StringComparison.Ordinal);
         Assert.Contains("private void ApplyAdvancedOptionsLayout()", code, StringComparison.Ordinal);
         Assert.Contains("Bounds.Width >= 900", code, StringComparison.Ordinal);
         Assert.Contains("*,*,*", code, StringComparison.Ordinal);
@@ -136,6 +136,41 @@ public sealed class MainWindowXamlTests
         Assert.Contains("if (isRefreshing)", text, StringComparison.Ordinal);
         Assert.Contains("finally", text, StringComparison.Ordinal);
         Assert.Contains("isRefreshing = false", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainWindowKeepsPrimaryLoadBrowsingAndShowsClipSelectorWhenAvailable()
+    {
+        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml"), Encoding.UTF8);
+        var code = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml.cs"), Encoding.UTF8);
+
+        Assert.Contains("Command=\"{Binding #RootWindow.BrowseAndLoadCommand}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding #RootWindow.ReloadCommand}\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("private async Task LoadOrBrowseAsync()", code, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"ClipBox\"", text, StringComparison.Ordinal);
+        Assert.Contains("Grid.Column=\"1\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"ClipCombineMenuItem\" Header=\"Combine\" Command=\"{Binding #RootWindow.CombineCommand}\"", text, StringComparison.Ordinal);
+        Assert.Contains("ClipBox.IsVisible = viewModel.IsClipSelectionVisible;", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("ClipBox.IsVisible = false;", code, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainWindowUsesXamlCommandsInsteadOfConstructorClickRegistration()
+    {
+        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml"), Encoding.UTF8);
+        var code = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml.cs"), Encoding.UTF8);
+
+        Assert.Contains("Command=\"{Binding #RootWindow.SaveCommand}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding PreviewCommand}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding LogCommand}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Opened=\"OnOpened\"", text, StringComparison.Ordinal);
+        Assert.Contains("SelectionChanged=\"OnClipSelectionChanged\"", text, StringComparison.Ordinal);
+        Assert.Contains("CellEditEnded=\"OnChapterGridCellEditEnded\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(".Click +=", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("SelectionChanged +=", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("CellEditEnded +=", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("KeyDown +=", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("Opened +=", code, StringComparison.Ordinal);
     }
 
     [Theory]

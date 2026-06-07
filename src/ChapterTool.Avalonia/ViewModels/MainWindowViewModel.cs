@@ -19,12 +19,15 @@ public sealed class MainWindowViewModel
     private readonly ChapterSegmentService segmentService;
     private readonly IWindowService windowService;
     private readonly IChapterTimeFormatter formatter;
+    private readonly IFrameRateService frameRateService;
     private readonly IApplicationLogService logService;
     private readonly IShellService? shellService;
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
 
     private ChapterInfoGroup? currentGroup;
     private ChapterInfo? currentInfo;
+    private FrameRateOption selectedFrameRateOption;
+    private bool currentInfoBelongsToSelectedClip;
 
     public MainWindowViewModel(
         IChapterLoadService loadService,
@@ -35,7 +38,8 @@ public sealed class MainWindowViewModel
         IChapterTimeFormatter formatter,
         IApplicationLogService? logService = null,
         IShellService? shellService = null,
-        ISettingsStore<AppSettings>? appSettingsStore = null)
+        ISettingsStore<AppSettings>? appSettingsStore = null,
+        IFrameRateService? frameRateService = null)
     {
         this.loadService = loadService;
         this.saveService = saveService;
@@ -43,9 +47,11 @@ public sealed class MainWindowViewModel
         this.segmentService = segmentService;
         this.windowService = windowService;
         this.formatter = formatter;
+        this.frameRateService = frameRateService ?? new FrameRateService();
         this.logService = logService ?? new InMemoryApplicationLogService();
         this.shellService = shellService;
         this.appSettingsStore = appSettingsStore;
+        selectedFrameRateOption = this.frameRateService.Options[0];
 
         LoadCommand = new UiCommand(async (parameter, token) =>
         {
@@ -67,7 +73,7 @@ public sealed class MainWindowViewModel
         SaveDirectoryCommand = new UiCommand(async (parameter, token) => await SaveAsync(parameter?.ToString() ?? SaveDirectory, token), _ => currentInfo is not null);
         RefreshCommand = new UiCommand((_, _) =>
         {
-            RefreshRows();
+            ApplyFrameInfo();
             return ValueTask.CompletedTask;
         }, _ => currentInfo is not null);
         SelectClipCommand = new UiCommand((parameter, _) =>
@@ -125,6 +131,10 @@ public sealed class MainWindowViewModel
     public int SelectedClipIndex { get; private set; }
 
     public IReadOnlySet<int> SelectedRowIndexes { get; private set; } = new HashSet<int>();
+
+    public bool RoundFrames { get; set; } = true;
+
+    public int SelectedFrameRateIndex { get; private set; } = -1;
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 1;
 
@@ -188,6 +198,23 @@ public sealed class MainWindowViewModel
     public UiCommand ZonesCommand { get; }
     public UiCommand ForwardShiftCommand { get; }
     public UiCommand OpenRelatedMediaCommand { get; }
+
+    public void SetFrameOptions(int frameRateIndex, bool roundFrames)
+    {
+        RoundFrames = roundFrames;
+        var option = FrameRateOptionForComboIndex(frameRateIndex);
+        if (option is not null)
+        {
+            selectedFrameRateOption = option;
+            SelectedFrameRateIndex = frameRateIndex;
+            return;
+        }
+
+        selectedFrameRateOption = currentInfo is null
+            ? frameRateService.Options[0]
+            : frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
+        SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+    }
 
     public async ValueTask LoadSettingsAsync(CancellationToken cancellationToken)
     {
@@ -300,6 +327,7 @@ public sealed class MainWindowViewModel
         CurrentPath = path;
         DisplayPath = Path.GetFileName(path);
         currentGroup = result.Groups[0];
+        currentInfoBelongsToSelectedClip = false;
         ClipOptions.Clear();
         foreach (var option in currentGroup.Options)
         {
@@ -345,7 +373,10 @@ public sealed class MainWindowViewModel
 
         SelectedClipIndex = index;
         currentInfo = ClipOptions[index].ChapterInfo;
-        RefreshRows();
+        currentInfoBelongsToSelectedClip = true;
+        selectedFrameRateOption = frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
+        SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        ApplyFrameInfo();
     }
 
     private ValueTask EditCell(object? parameter, EditKind kind)
@@ -413,7 +444,8 @@ public sealed class MainWindowViewModel
         }
 
         currentInfo = edit.ChapterInfo;
-        RefreshRows();
+        currentInfoBelongsToSelectedClip = false;
+        ApplyFrameInfo();
         StatusText = $"Appended {result.Groups[0].Options.Count} MPLS segment(s)";
         logService.Add(StatusText);
     }
@@ -421,9 +453,49 @@ public sealed class MainWindowViewModel
     private void ApplyEdit(ChapterEditResult result)
     {
         currentInfo = result.ChapterInfo;
-        RefreshRows();
+        ApplyFrameInfo();
         StatusText = result.Diagnostics.Count == 0 ? "Updated" : result.Diagnostics[0].Message;
         logService.Add(StatusText);
+    }
+
+    private void ApplyFrameInfo()
+    {
+        if (currentInfo is null)
+        {
+            RefreshRows();
+            return;
+        }
+
+        var option = selectedFrameRateOption.LegacyMplsCode == 0
+            ? frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond)
+            : selectedFrameRateOption;
+        var result = frameRateService.UpdateFrames(currentInfo, option, RoundFrames, tolerance: 0.01m);
+        currentInfo = result.Info;
+        selectedFrameRateOption = result.SelectedOption;
+        SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        if (currentInfoBelongsToSelectedClip)
+        {
+            UpdateCurrentClipOption(currentInfo);
+        }
+        RefreshRows();
+    }
+
+    private void UpdateCurrentClipOption(ChapterInfo info)
+    {
+        if (currentGroup is null || SelectedClipIndex < 0 || SelectedClipIndex >= ClipOptions.Count)
+        {
+            return;
+        }
+
+        var updatedOption = ClipOptions[SelectedClipIndex] with { ChapterInfo = info };
+        ClipOptions[SelectedClipIndex] = updatedOption;
+
+        var options = currentGroup.Options.ToArray();
+        if (SelectedClipIndex < options.Length)
+        {
+            options[SelectedClipIndex] = updatedOption;
+            currentGroup = currentGroup with { Options = options };
+        }
     }
 
     private void RefreshRows()
@@ -438,6 +510,20 @@ public sealed class MainWindowViewModel
         {
             Rows.Add(new ChapterRowViewModel(chapter, formatter));
         }
+    }
+
+    private static int ComboIndexFor(FrameRateOption option) =>
+        option.LegacyMplsCode > 0 ? option.LegacyMplsCode - 1 : -1;
+
+    private FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
+    {
+        var legacyCode = frameRateIndex >= 0 ? frameRateIndex + 1 : 0;
+        if (legacyCode == 5)
+        {
+            legacyCode = 4;
+        }
+
+        return frameRateService.Options.FirstOrDefault(option => option.LegacyMplsCode == legacyCode && option.IsValid);
     }
 
     private UiCommand WindowCommand(string id) =>

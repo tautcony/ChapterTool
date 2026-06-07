@@ -1,6 +1,8 @@
+using System.Windows.Input;
+
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed class UiCommand
+public sealed class UiCommand : ICommand
 {
     private readonly Func<object?, CancellationToken, ValueTask> execute;
     private readonly Func<object?, bool> canExecute;
@@ -16,6 +18,8 @@ public sealed class UiCommand
     {
     }
 
+    public event EventHandler? CanExecuteChanged;
+
     public bool CanExecute(object? parameter = null) => canExecute(parameter);
 
     public ValueTask ExecuteAsync(object? parameter = null, CancellationToken cancellationToken = default)
@@ -27,4 +31,11 @@ public sealed class UiCommand
 
         return execute(parameter, cancellationToken);
     }
+
+    public async void Execute(object? parameter)
+    {
+        await ExecuteAsync(parameter);
+    }
+
+    public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }

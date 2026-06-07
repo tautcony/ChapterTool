@@ -70,8 +70,29 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("movie.mpls", vm.DisplayPath);
         Assert.True(vm.IsClipSelectionVisible);
         Assert.Single(vm.Rows);
+        Assert.Equal("0 K", vm.Rows[0].FramesInfo);
+        Assert.Equal(1, vm.SelectedFrameRateIndex);
         Assert.Equal("Loaded 1 chapters", vm.StatusText);
         Assert.Equal(1, vm.Progress);
+    }
+
+    [Fact]
+    public async Task RefreshCommandRecalculatesFramesFromSelectedFrameOptions()
+    {
+        var info = Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(0.5), "Intro"));
+        var load = new FakeLoadService(ImportResult("movie.txt", info));
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(load, save);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SetFrameOptions(frameRateIndex: 2, roundFrames: false);
+        await vm.RefreshCommand.ExecuteAsync();
+        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+
+        Assert.Equal("12.5", vm.Rows[0].FramesInfo);
+        Assert.Equal(2, vm.SelectedFrameRateIndex);
+        Assert.NotNull(save.LastInfo);
+        Assert.Equal("12.5", save.LastInfo.Chapters[0].FramesInfo);
     }
 
     [Fact]
@@ -292,11 +313,13 @@ public sealed class MainWindowViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
+        public ChapterInfo? LastInfo { get; private set; }
         public ChapterExportOptions? LastOptions { get; private set; }
         public string? LastDirectory { get; private set; }
 
         public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken)
         {
+            LastInfo = info;
             LastOptions = options;
             LastDirectory = directory;
             return ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", Array.Empty<ChapterDiagnostic>()));
