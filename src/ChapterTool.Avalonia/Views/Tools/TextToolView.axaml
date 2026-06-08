@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             x:Class="ChapterTool.Avalonia.Views.Tools.TextToolView"
+             x:DataType="vm:TextToolViewModel"
+             x:CompileBindings="True">
+  <DockPanel Margin="12">
+    <StackPanel DockPanel.Dock="Top"
+                Orientation="Horizontal"
+                Spacing="8"
+                Margin="0,0,0,8">
+      <Button Content="Refresh" MinWidth="80" Command="{Binding RefreshCommand}" />
+      <Button Content="Copy" MinWidth="80" Click="OnCopyClicked" />
+      <Button Content="Clear" MinWidth="80" Command="{Binding ClearCommand}" />
+    </StackPanel>
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <TextBox Text="{Binding Text}"
+               AcceptsReturn="True"
+               TextWrapping="NoWrap"
+               IsReadOnly="True" />
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

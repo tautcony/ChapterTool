@@ -1,7 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using ChapterTool.Avalonia.Views;
+using ChapterTool.Avalonia.Composition;
 
 namespace ChapterTool.Avalonia;
 
@@ -17,7 +17,8 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var startupPath = Program.StartupArgs.FirstOrDefault(static arg => !arg.StartsWith("--", StringComparison.Ordinal));
-            desktop.MainWindow = new MainWindow(startupPath);
+            var composition = new AppCompositionRoot(startupPath);
+            desktop.MainWindow = composition.CreateMainWindow();
         }
 
         base.OnFrameworkInitializationCompleted();

@@ -14,7 +14,7 @@ public sealed class MainWindowXamlTests
         Assert.Contains("<DataGrid.ContextMenu>", text, StringComparison.Ordinal);
         Assert.Contains("ProgressBar", text, StringComparison.Ordinal);
         Assert.Contains("AutomationProperties.AutomationId=\"AdvancedOptions\"", text, StringComparison.Ordinal);
-        Assert.Contains("AppendMplsButton", text, StringComparison.Ordinal);
+        Assert.Contains("AppendLoadMenuItem", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -139,6 +139,29 @@ public sealed class MainWindowXamlTests
     }
 
     [Fact]
+    public void MainWindowDoesNotUseHiddenCommandShimControls()
+    {
+        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml"), Encoding.UTF8);
+
+        Assert.DoesNotContain("x:Name=\"SaveToButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"AppendMplsButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"CombineButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"OpenMediaButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"ColorButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"ExpressionButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"TemplateButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"ZonesButton\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:Name=\"ForwardShiftButton\"", text, StringComparison.Ordinal);
+
+        Assert.Contains("x:Name=\"SaveToMenuItem\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"AppendLoadMenuItem\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"ClipCombineMenuItem\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"OpenMediaMenuItem\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"ZonesMenuItem\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"ForwardShiftMenuItem\"", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void MainWindowKeepsPrimaryLoadBrowsingAndShowsClipSelectorWhenAvailable()
     {
         var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml"), Encoding.UTF8);
@@ -149,9 +172,51 @@ public sealed class MainWindowXamlTests
         Assert.DoesNotContain("private async Task LoadOrBrowseAsync()", code, StringComparison.Ordinal);
         Assert.Contains("x:Name=\"ClipBox\"", text, StringComparison.Ordinal);
         Assert.Contains("Grid.Column=\"1\"", text, StringComparison.Ordinal);
-        Assert.Contains("x:Name=\"ClipCombineMenuItem\" Header=\"Combine\" Command=\"{Binding #RootWindow.CombineCommand}\"", text, StringComparison.Ordinal);
-        Assert.Contains("ClipBox.IsVisible = viewModel.IsClipSelectionVisible;", code, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"ClipCombineMenuItem\"", text, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Combine\"", text, StringComparison.Ordinal);
+        Assert.Contains("IsEnabled=\"{Binding CanCombine}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Command=\"{Binding #RootWindow.CombineCommand}\"", text, StringComparison.Ordinal);
+        Assert.Contains("IsVisible=\"{Binding IsClipSelectionVisible}\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("ClipBox.IsVisible = viewModel.IsClipSelectionVisible;", code, StringComparison.Ordinal);
         Assert.DoesNotContain("ClipBox.IsVisible = false;", code, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainWindowBindsRoutineStateInsteadOfRefreshingControls()
+    {
+        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml"), Encoding.UTF8);
+        var code = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml.cs"), Encoding.UTF8);
+
+        Assert.Contains("Text=\"{Binding StatusText}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Value=\"{Binding Progress}\"", text, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding Rows}\"", text, StringComparison.Ordinal);
+        Assert.Contains("ItemsSource=\"{Binding ClipOptions}\"", text, StringComparison.Ordinal);
+        Assert.Contains("SelectedIndex=\"{Binding SelectedClipIndex}\"", text, StringComparison.Ordinal);
+        Assert.Contains("IsChecked=\"{Binding RoundFrames}\"", text, StringComparison.Ordinal);
+        Assert.Contains("SelectedIndex=\"{Binding SelectedFrameRateIndex}\"", text, StringComparison.Ordinal);
+        Assert.Contains("SelectedIndex=\"{Binding SaveFormatIndex}\"", text, StringComparison.Ordinal);
+        Assert.Contains("IsChecked=\"{Binding UseTemplateNames}\"", text, StringComparison.Ordinal);
+        Assert.Contains("IsChecked=\"{Binding AutoGenerateNames}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Value=\"{Binding OrderShift}\"", text, StringComparison.Ordinal);
+        Assert.Contains("IsChecked=\"{Binding ApplyExpression}\"", text, StringComparison.Ordinal);
+        Assert.Contains("Text=\"{Binding Expression}\"", text, StringComparison.Ordinal);
+
+        Assert.DoesNotContain("StatusBlock.Text = viewModel.StatusText", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("ProgressBar.Value = viewModel.Progress", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("ChapterGrid.ItemsSource", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("ClipBox.ItemsSource", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("RoundFramesBox.IsChecked = viewModel.RoundFrames", code, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MainWindowUsesTypedCompiledBindings()
+    {
+        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml"), Encoding.UTF8);
+
+        Assert.Contains("xmlns:vm=\"using:ChapterTool.Avalonia.ViewModels\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:DataType=\"vm:MainWindowViewModel\"", text, StringComparison.Ordinal);
+        Assert.Contains("x:CompileBindings=\"True\"", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("x:CompileBindings=\"False\"", text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -173,14 +238,41 @@ public sealed class MainWindowXamlTests
         Assert.DoesNotContain("Opened +=", code, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void MainWindowDoesNotFireAndForgetAsyncCommands()
+    {
+        var code = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Views", "MainWindow.axaml.cs"), Encoding.UTF8);
+
+        Assert.DoesNotContain("_ = viewModel.", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("Execute(null)", code, StringComparison.Ordinal);
+        Assert.Contains("await viewModel.RefreshCommand.ExecuteAsync()", code, StringComparison.Ordinal);
+        Assert.Contains("await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex())", code, StringComparison.Ordinal);
+        Assert.Contains("await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes())", code, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WindowServiceUsesDedicatedToolViews()
+    {
+        var code = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Services", "AvaloniaWindowService.cs"), Encoding.UTF8);
+
+        Assert.Contains("new TextToolView", code, StringComparison.Ordinal);
+        Assert.Contains("new ColorSettingsView", code, StringComparison.Ordinal);
+        Assert.Contains("new LanguageToolView", code, StringComparison.Ordinal);
+        Assert.Contains("new ExpressionToolView", code, StringComparison.Ordinal);
+        Assert.Contains("new TemplateNamesToolView", code, StringComparison.Ordinal);
+        Assert.Contains("new ForwardShiftToolView", code, StringComparison.Ordinal);
+        Assert.DoesNotContain(".Click +=", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("new TextBox {", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("new CheckBox {", code, StringComparison.Ordinal);
+        Assert.DoesNotContain("new NumericUpDown", code, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("SourcePath")]
     [InlineData("LoadButton")]
     [InlineData("SaveButton")]
-    [InlineData("SaveToButton")]
     [InlineData("ChapterGrid")]
     [InlineData("ClipSelector")]
-    [InlineData("OpenRelatedMediaButton")]
     [InlineData("AdvancedOptions")]
     [InlineData("PreviewWindow")]
     [InlineData("LogWindow")]

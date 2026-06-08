@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             x:Class="ChapterTool.Avalonia.Views.Tools.TemplateNamesToolView"
+             x:DataType="vm:TemplateNamesToolViewModel"
+             x:CompileBindings="True">
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock Text="Template Names" FontSize="18" />
+    <CheckBox Content="Use template names" IsChecked="{Binding UseTemplateNames}" />
+    <CheckBox Content="Auto-generate missing names" IsChecked="{Binding AutoGenerateNames}" />
+    <Button Content="Apply" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
+  </StackPanel>
+</UserControl>

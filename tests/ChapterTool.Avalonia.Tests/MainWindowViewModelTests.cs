@@ -9,6 +9,7 @@ using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using System.ComponentModel;
 
 namespace ChapterTool.Avalonia.Tests;
 
@@ -74,6 +75,48 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(1, vm.SelectedFrameRateIndex);
         Assert.Equal("Loaded 1 chapters", vm.StatusText);
         Assert.Equal(1, vm.Progress);
+    }
+
+    [Fact]
+    public async Task ScalarStateChangesRaisePropertyNotifications()
+    {
+        var vm = CreateViewModel();
+        var changed = new List<string?>();
+        Assert.IsAssignableFrom<INotifyPropertyChanged>(vm);
+        vm.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Json;
+        vm.XmlLanguage = "jpn";
+        vm.AutoGenerateNames = true;
+        vm.SetFrameOptions(frameRateIndex: 2, roundFrames: false);
+
+        Assert.Contains(nameof(MainWindowViewModel.CurrentPath), changed);
+        Assert.Contains(nameof(MainWindowViewModel.DisplayPath), changed);
+        Assert.Contains(nameof(MainWindowViewModel.StatusText), changed);
+        Assert.Contains(nameof(MainWindowViewModel.Progress), changed);
+        Assert.Contains(nameof(MainWindowViewModel.SaveFormat), changed);
+        Assert.Contains(nameof(MainWindowViewModel.XmlLanguage), changed);
+        Assert.Contains(nameof(MainWindowViewModel.AutoGenerateNames), changed);
+        Assert.Contains(nameof(MainWindowViewModel.RoundFrames), changed);
+        Assert.Contains(nameof(MainWindowViewModel.SelectedFrameRateIndex), changed);
+    }
+
+    [Fact]
+    public async Task LoadRaisesCommandAvailabilityChanges()
+    {
+        var vm = CreateViewModel();
+        var saveChanges = 0;
+        var reloadChanges = 0;
+        vm.SaveCommand.CanExecuteChanged += (_, _) => saveChanges++;
+        vm.ReloadCommand.CanExecuteChanged += (_, _) => reloadChanges++;
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        Assert.True(vm.SaveCommand.CanExecute());
+        Assert.True(vm.ReloadCommand.CanExecute());
+        Assert.True(saveChanges > 0);
+        Assert.True(reloadChanges > 0);
     }
 
     [Fact]

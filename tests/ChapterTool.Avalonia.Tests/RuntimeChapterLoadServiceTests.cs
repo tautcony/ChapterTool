@@ -1,5 +1,5 @@
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Core.Transform;
+using ChapterTool.Avalonia.Composition;
 
 namespace ChapterTool.Avalonia.Tests;
 
@@ -16,7 +16,7 @@ public sealed class RuntimeChapterLoadServiceTests
         await File.WriteAllTextAsync(path, content);
         try
         {
-            var result = await new RuntimeChapterLoadService(new ChapterTimeFormatter()).LoadAsync(path, CancellationToken.None);
+            var result = await CreateService().LoadAsync(path, CancellationToken.None);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
             Assert.Single(result.Groups.Single().Options.Single().ChapterInfo.Chapters);
@@ -46,7 +46,7 @@ public sealed class RuntimeChapterLoadServiceTests
             """);
         try
         {
-            var result = await new RuntimeChapterLoadService(new ChapterTimeFormatter()).LoadAsync(path, CancellationToken.None);
+            var result = await CreateService().LoadAsync(path, CancellationToken.None);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
             Assert.Single(result.Groups.Single().Options.Single().ChapterInfo.Chapters);
@@ -67,7 +67,7 @@ public sealed class RuntimeChapterLoadServiceTests
         await File.WriteAllBytesAsync(path, [0]);
         try
         {
-            var result = await new RuntimeChapterLoadService(new ChapterTimeFormatter()).LoadAsync(path, CancellationToken.None);
+            var result = await CreateService().LoadAsync(path, CancellationToken.None);
 
             Assert.False(result.Success);
             Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == expectedCode);
@@ -89,7 +89,7 @@ public sealed class RuntimeChapterLoadServiceTests
         await File.WriteAllBytesAsync(path, [0]);
         try
         {
-            var result = await new RuntimeChapterLoadService(new ChapterTimeFormatter()).LoadAsync(path, CancellationToken.None);
+            var result = await CreateService().LoadAsync(path, CancellationToken.None);
 
             Assert.False(result.Success);
             Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == expectedCode);
@@ -108,7 +108,7 @@ public sealed class RuntimeChapterLoadServiceTests
         Directory.CreateDirectory(Path.Combine(root, "BDMV", "PLAYLIST"));
         try
         {
-            var result = await new RuntimeChapterLoadService(new ChapterTimeFormatter()).LoadAsync(root, CancellationToken.None);
+            var result = await CreateService().LoadAsync(root, CancellationToken.None);
 
             Assert.False(result.Success);
             Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MissingDependency");
@@ -126,7 +126,7 @@ public sealed class RuntimeChapterLoadServiceTests
         var root = RepositoryRoot();
         var path = Path.Combine(root, "Time_Shift_Test", "[ifo_Sample]", "VTS_05_0.IFO");
 
-        var result = await new RuntimeChapterLoadService(new ChapterTimeFormatter()).LoadAsync(path, CancellationToken.None);
+        var result = await CreateService().LoadAsync(path, CancellationToken.None);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
         var info = result.Groups.Single().Options.Single().ChapterInfo;
@@ -149,4 +149,8 @@ public sealed class RuntimeChapterLoadServiceTests
 
         throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
     }
+
+    private static IChapterLoadService CreateService() =>
+        new AppCompositionRoot(settingsDirectory: Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")))
+            .CreateChapterLoadService();
 }

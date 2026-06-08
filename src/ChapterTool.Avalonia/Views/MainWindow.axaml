@@ -1,7 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:Name="RootWindow"
+        x:DataType="vm:MainWindowViewModel"
         Title="[VCB-Studio] ChapterTool"
         Width="920"
         Height="720"
@@ -14,7 +16,7 @@
         SizeChanged="OnSizeChanged"
         DragDrop.AllowDrop="True"
         DragDrop.Drop="OnDrop"
-        x:CompileBindings="False">
+        x:CompileBindings="True">
   <Window.Styles>
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="2" />
@@ -89,7 +91,7 @@
                    Margin="10,0"
                    VerticalAlignment="Center"
                    FontSize="13"
-                   Text="Ready" />
+                   Text="{Binding StatusText}" />
         <ProgressBar x:Name="ProgressBar"
                      Grid.Column="1"
                      Width="180"
@@ -98,6 +100,7 @@
                      VerticalAlignment="Center"
                      Minimum="0"
                      Maximum="1"
+                     Value="{Binding Progress}"
                      AutomationProperties.AutomationId="ProgressBar" />
       </Grid>
     </Border>
@@ -115,7 +118,7 @@
             <Button.ContextMenu>
               <ContextMenu>
                 <MenuItem x:Name="ReloadMenuItem" Header="重新载入" Command="{Binding #RootWindow.ReloadCommand}" />
-                <MenuItem x:Name="AppendLoadMenuItem" Header="追加合并 MPLS" Command="{Binding #RootWindow.AppendMplsCommand}" />
+                <MenuItem x:Name="AppendLoadMenuItem" Header="追加合并 MPLS" IsEnabled="{Binding CanAppendMpls}" Command="{Binding #RootWindow.AppendMplsCommand}" />
               </ContextMenu>
             </Button.ContextMenu>
           </Button>
@@ -123,6 +126,7 @@
                   Classes="primaryAction"
                   AutomationProperties.AutomationId="SaveButton"
                   Content="保存"
+                  IsEnabled="{Binding CanSave}"
                   Command="{Binding #RootWindow.SaveCommand}">
             <Button.ContextMenu>
               <ContextMenu>
@@ -138,12 +142,14 @@
                   MaxWidth="360"
                   HorizontalAlignment="Left"
                   VerticalAlignment="Bottom"
-                  IsVisible="False"
+                  ItemsSource="{Binding ClipOptions}"
+                  SelectedIndex="{Binding SelectedClipIndex}"
+                  IsVisible="{Binding IsClipSelectionVisible}"
                   SelectionChanged="OnClipSelectionChanged"
                   AutomationProperties.AutomationId="ClipSelector">
           <ComboBox.ContextMenu>
             <ContextMenu>
-              <MenuItem x:Name="ClipCombineMenuItem" Header="Combine" Command="{Binding #RootWindow.CombineCommand}" />
+              <MenuItem x:Name="ClipCombineMenuItem" Header="Combine" IsEnabled="{Binding CanCombine}" Command="{Binding #RootWindow.CombineCommand}" />
             </ContextMenu>
           </ComboBox.ContextMenu>
         </ComboBox>
@@ -155,8 +161,8 @@
               MinWidth="260">
           <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
             <CheckBox x:Name="RoundFramesBox"
-                      IsChecked="True"
                       Content="帧数取整"
+                      IsChecked="{Binding RoundFrames}"
                       IsCheckedChanged="OnFrameOptionsChanged" />
             <Button x:Name="PreviewButton"
                     Classes="iconAction"
@@ -167,13 +173,14 @@
                     Classes="iconAction"
                     AutomationProperties.AutomationId="RefreshRows"
                     Content="↻"
+                    IsEnabled="{Binding CanRefreshRows}"
                     Command="{Binding #RootWindow.RefreshRowsCommand}" />
           </StackPanel>
           <ComboBox x:Name="FrameRateBox"
                     Grid.Row="1"
                     Width="190"
                     HorizontalAlignment="Right"
-                    SelectedIndex="-1"
+                    SelectedIndex="{Binding SelectedFrameRateIndex}"
                     SelectionChanged="OnFrameOptionsChanged">
             <ComboBoxItem Content="24000 / 1001" />
             <ComboBoxItem Content="24000 / 1000" />
@@ -199,14 +206,15 @@
                   CanUserResizeColumns="True"
                   IsReadOnly="False"
                   SelectionMode="Extended"
+                  ItemsSource="{Binding Rows}"
                   CellEditEnded="OnChapterGridCellEditEnded"
                   AutomationProperties.AutomationId="ChapterGrid">
           <DataGrid.ContextMenu>
             <ContextMenu>
-              <MenuItem x:Name="InsertMenuItem" Header="Insert" Command="{Binding #RootWindow.InsertSelectedCommand}" />
-              <MenuItem x:Name="DeleteMenuItem" Header="Delete" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
-              <MenuItem x:Name="GridCombineMenuItem" Header="Combine" Command="{Binding #RootWindow.CombineCommand}" />
-              <MenuItem x:Name="OpenMediaMenuItem" Header="Open Related Media" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
+              <MenuItem x:Name="InsertMenuItem" Header="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
+              <MenuItem x:Name="DeleteMenuItem" Header="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
+              <MenuItem x:Name="GridCombineMenuItem" Header="Combine" IsEnabled="{Binding CanCombine}" Command="{Binding #RootWindow.CombineCommand}" />
+              <MenuItem x:Name="OpenMediaMenuItem" Header="Open Related Media" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
               <MenuItem x:Name="ZonesMenuItem" Header="Create Zones" Command="{Binding #RootWindow.OpenZonesCommand}" />
               <MenuItem x:Name="ForwardShiftMenuItem" Header="Forward Translation" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
               <MenuItem x:Name="PreviewMenuItem" Header="Preview" Command="{Binding PreviewCommand}" />
@@ -240,7 +248,7 @@
           <ComboBox x:Name="FormatBox"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
-                    SelectedIndex="0"
+                    SelectedIndex="{Binding SaveFormatIndex}"
                     AutomationProperties.AutomationId="ExportFormat">
             <ComboBoxItem Content="TXT" />
             <ComboBoxItem Content="XML" />
@@ -262,9 +270,11 @@
                     VerticalAlignment="Center">
           <CheckBox x:Name="TemplateNamesBox"
                     AutomationProperties.AutomationId="TemplateNames"
+                    IsChecked="{Binding UseTemplateNames}"
                     Content="使用章节名模板" />
           <CheckBox x:Name="AutoNamesBox"
                     AutomationProperties.AutomationId="AutoNames"
+                    IsChecked="{Binding AutoGenerateNames}"
                     Content="不使用章节名" />
         </StackPanel>
 
@@ -283,6 +293,7 @@
                          MinWidth="124"
                          Minimum="-1000"
                          Maximum="1000"
+                         Value="{Binding OrderShift}"
                          AutomationProperties.AutomationId="OrderShift" />
         </Grid>
 
@@ -298,6 +309,7 @@
           <ComboBox x:Name="XmlLanguageBox"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
+                    SelectedIndex="0"
                     AutomationProperties.AutomationId="XmlLanguage">
             <ComboBoxItem Content="und" />
             <ComboBoxItem Content="zh" />
@@ -317,6 +329,7 @@
           <CheckBox x:Name="ApplyExpressionBox"
                     Grid.Column="0"
                     AutomationProperties.AutomationId="ApplyExpression"
+                    IsChecked="{Binding ApplyExpression}"
                     Content="应用表达式 (t)" />
           <CheckBox x:Name="ExpressionEnableBox"
                     Grid.Column="1" />
@@ -324,7 +337,7 @@
                    Grid.Column="2"
                    MinWidth="120"
                    HorizontalAlignment="Stretch"
-                   Text="t"
+                   Text="{Binding Expression}"
                    AutomationProperties.AutomationId="ExpressionText" />
         </Grid>
 
@@ -337,52 +350,6 @@
                 AutomationProperties.AutomationId="LogWindow"
                 Content="LOG"
                 Command="{Binding LogCommand}" />
-
-        <Button x:Name="SaveToButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="SaveToButton"
-                Content="Save To"
-                Command="{Binding #RootWindow.SaveToCommand}" />
-        <Button x:Name="AppendMplsButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="AppendMplsButton"
-                Content="Append"
-                Command="{Binding #RootWindow.AppendMplsCommand}" />
-        <Button x:Name="CombineButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="CombineButton"
-                Content="Merge"
-                Command="{Binding #RootWindow.CombineCommand}" />
-        <Button x:Name="OpenMediaButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="OpenRelatedMediaButton"
-                Content="Open"
-                Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
-        <Button x:Name="ColorButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="ColorSettingsWindow"
-                Content="Color"
-                Command="{Binding ColorSettingsCommand}" />
-        <Button x:Name="ExpressionButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="ExpressionWindow"
-                Content="Expr"
-                Command="{Binding ExpressionCommand}" />
-        <Button x:Name="TemplateButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="TemplateNamesWindow"
-                Content="Templates"
-                Command="{Binding TemplateNamesCommand}" />
-        <Button x:Name="ZonesButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="ZonesWindow"
-                Content="Zones"
-                Command="{Binding #RootWindow.OpenZonesCommand}" />
-        <Button x:Name="ForwardShiftButton"
-                IsVisible="False"
-                AutomationProperties.AutomationId="ForwardShiftWindow"
-                Content="Shift"
-                Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
       </Grid>
     </Grid>
   </DockPanel>

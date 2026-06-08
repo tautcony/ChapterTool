@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             x:Class="ChapterTool.Avalonia.Views.Tools.ColorSettingsView"
+             x:DataType="vm:ColorSettingsViewModel"
+             x:CompileBindings="True">
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock Text="Legacy color slots" FontSize="18" />
+    <ItemsControl ItemsSource="{Binding Slots}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate DataType="vm:ColorSlotViewModel">
+          <Grid ColumnDefinitions="150,*" ColumnSpacing="10" Margin="0,0,0,8">
+            <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Text="{Binding Value}" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <Button Content="Save" MinWidth="80" HorizontalAlignment="Left" Command="{Binding SaveCommand}" />
+  </StackPanel>
+</UserControl>

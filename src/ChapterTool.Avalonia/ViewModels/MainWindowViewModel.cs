@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -11,7 +12,7 @@ using ChapterTool.Infrastructure.Platform;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed class MainWindowViewModel
+public sealed class MainWindowViewModel : ObservableViewModel
 {
     private readonly IChapterLoadService loadService;
     private readonly IChapterSaveService saveService;
@@ -28,6 +29,24 @@ public sealed class MainWindowViewModel
     private ChapterInfo? currentInfo;
     private FrameRateOption selectedFrameRateOption;
     private bool currentInfoBelongsToSelectedClip;
+    private string currentPath = string.Empty;
+    private string displayPath = string.Empty;
+    private int selectedClipIndex;
+    private IReadOnlySet<int> selectedRowIndexes = new HashSet<int>();
+    private bool roundFrames = true;
+    private int selectedFrameRateIndex = -1;
+    private bool isAdvancedPanelExpanded;
+    private ChapterExportFormat saveFormat = ChapterExportFormat.Txt;
+    private string xmlLanguage = "und";
+    private string uiLanguage = "";
+    private bool autoGenerateNames;
+    private bool useTemplateNames;
+    private int orderShift;
+    private bool applyExpression;
+    private string expression = "t";
+    private string? saveDirectory;
+    private string statusText = "Ready";
+    private double progress;
 
     public MainWindowViewModel(
         IChapterLoadService loadService,
@@ -52,6 +71,8 @@ public sealed class MainWindowViewModel
         this.shellService = shellService;
         this.appSettingsStore = appSettingsStore;
         selectedFrameRateOption = this.frameRateService.Options[0];
+        ClipOptions.CollectionChanged += OnClipOptionsChanged;
+        Rows.CollectionChanged += OnRowsChanged;
 
         LoadCommand = new UiCommand(async (parameter, token) =>
         {
@@ -120,47 +141,137 @@ public sealed class MainWindowViewModel
         OpenRelatedMediaCommand = new UiCommand(async (parameter, token) => await OpenRelatedMediaAsync(parameter, token), _ => RelatedMediaReferences.Count > 0);
     }
 
-    public string CurrentPath { get; private set; } = string.Empty;
+    public string CurrentPath
+    {
+        get => currentPath;
+        private set => SetProperty(ref currentPath, value);
+    }
 
-    public string DisplayPath { get; private set; } = string.Empty;
+    public string DisplayPath
+    {
+        get => displayPath;
+        private set => SetProperty(ref displayPath, value);
+    }
 
     public ObservableCollection<ChapterRowViewModel> Rows { get; } = [];
 
     public ObservableCollection<ChapterSourceOption> ClipOptions { get; } = [];
 
-    public int SelectedClipIndex { get; private set; }
+    public int SelectedClipIndex
+    {
+        get => selectedClipIndex;
+        private set
+        {
+            if (SetProperty(ref selectedClipIndex, value))
+            {
+                OnPropertyChanged(nameof(RelatedMediaReferences));
+            }
+        }
+    }
 
-    public IReadOnlySet<int> SelectedRowIndexes { get; private set; } = new HashSet<int>();
+    public IReadOnlySet<int> SelectedRowIndexes
+    {
+        get => selectedRowIndexes;
+        private set => SetProperty(ref selectedRowIndexes, value);
+    }
 
-    public bool RoundFrames { get; set; } = true;
+    public bool RoundFrames
+    {
+        get => roundFrames;
+        set => SetProperty(ref roundFrames, value);
+    }
 
-    public int SelectedFrameRateIndex { get; private set; } = -1;
+    public int SelectedFrameRateIndex
+    {
+        get => selectedFrameRateIndex;
+        private set => SetProperty(ref selectedFrameRateIndex, value);
+    }
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 1;
 
-    public bool IsAdvancedPanelExpanded { get; set; }
+    public bool IsAdvancedPanelExpanded
+    {
+        get => isAdvancedPanelExpanded;
+        set => SetProperty(ref isAdvancedPanelExpanded, value);
+    }
 
-    public ChapterExportFormat SaveFormat { get; set; } = ChapterExportFormat.Txt;
+    public ChapterExportFormat SaveFormat
+    {
+        get => saveFormat;
+        set
+        {
+            if (SetProperty(ref saveFormat, value))
+            {
+                OnPropertyChanged(nameof(SaveFormatIndex));
+            }
+        }
+    }
 
-    public string XmlLanguage { get; set; } = "und";
+    public int SaveFormatIndex
+    {
+        get => (int)SaveFormat;
+        set => SaveFormat = (ChapterExportFormat)Math.Max(0, value);
+    }
 
-    public string UiLanguage { get; private set; } = "";
+    public string XmlLanguage
+    {
+        get => xmlLanguage;
+        set => SetProperty(ref xmlLanguage, value);
+    }
 
-    public bool AutoGenerateNames { get; set; }
+    public string UiLanguage
+    {
+        get => uiLanguage;
+        private set => SetProperty(ref uiLanguage, value);
+    }
 
-    public bool UseTemplateNames { get; set; }
+    public bool AutoGenerateNames
+    {
+        get => autoGenerateNames;
+        set => SetProperty(ref autoGenerateNames, value);
+    }
 
-    public int OrderShift { get; set; }
+    public bool UseTemplateNames
+    {
+        get => useTemplateNames;
+        set => SetProperty(ref useTemplateNames, value);
+    }
 
-    public bool ApplyExpression { get; set; }
+    public int OrderShift
+    {
+        get => orderShift;
+        set => SetProperty(ref orderShift, value);
+    }
 
-    public string Expression { get; set; } = "t";
+    public bool ApplyExpression
+    {
+        get => applyExpression;
+        set => SetProperty(ref applyExpression, value);
+    }
 
-    public string? SaveDirectory { get; set; }
+    public string Expression
+    {
+        get => expression;
+        set => SetProperty(ref expression, value);
+    }
 
-    public string StatusText { get; private set; } = "Ready";
+    public string? SaveDirectory
+    {
+        get => saveDirectory;
+        set => SetProperty(ref saveDirectory, value);
+    }
 
-    public double Progress { get; private set; }
+    public string StatusText
+    {
+        get => statusText;
+        private set => SetProperty(ref statusText, value);
+    }
+
+    public double Progress
+    {
+        get => progress;
+        private set => SetProperty(ref progress, value);
+    }
 
     public IReadOnlyList<SourceMediaReference> RelatedMediaReferences =>
         currentGroup is null || SelectedClipIndex < 0 || SelectedClipIndex >= currentGroup.Options.Count
@@ -173,6 +284,14 @@ public sealed class MainWindowViewModel
         && currentGroup.Options.Count > 1
         && currentGroup.Options[0].ChapterInfo.SourceType is "MPLS" or "DVD"
         && currentGroup.Options.All(option => option.ChapterInfo.SourceType == currentGroup.Options[0].ChapterInfo.SourceType);
+
+    public bool CanSave => currentInfo is not null;
+
+    public bool CanRefreshRows => currentInfo is not null;
+
+    public bool CanEditRows => currentInfo is not null;
+
+    public bool CanOpenRelatedMedia => RelatedMediaReferences.Count > 0;
 
     public UiCommand LoadCommand { get; }
     public UiCommand ReloadCommand { get; }
@@ -227,6 +346,7 @@ public sealed class MainWindowViewModel
         SaveDirectory = settings.SavingPath;
         UiLanguage = settings.Language;
         logService.Add("Settings loaded");
+        NotifyStateChanged();
     }
 
     public async ValueTask SaveUiLanguageAsync(string language, CancellationToken cancellationToken)
@@ -240,6 +360,7 @@ public sealed class MainWindowViewModel
         var current = await appSettingsStore.LoadAsync(cancellationToken);
         await appSettingsStore.SaveAsync(current with { Language = language }, cancellationToken);
         logService.Add($"Language set to {(string.IsNullOrWhiteSpace(language) ? "default" : language)}");
+        NotifyStateChanged();
     }
 
     public string BuildPreview()
@@ -266,6 +387,7 @@ public sealed class MainWindowViewModel
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
         SelectedRowIndexes = indexes.Where(index => index >= 0).ToHashSet();
+        NotifyCommandStates();
     }
 
     public string CreateZonesText()
@@ -281,6 +403,7 @@ public sealed class MainWindowViewModel
         var result = editingService.CreateZones(currentInfo, indexes, (decimal)currentInfo.FramesPerSecond);
         StatusText = result.Diagnostics.Count == 0 ? "Zones generated" : result.Diagnostics[0].Message;
         logService.Add(StatusText);
+        NotifyStateChanged();
         return result.Zones;
     }
 
@@ -311,6 +434,7 @@ public sealed class MainWindowViewModel
         {
             StatusText = "No source selected";
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
@@ -321,6 +445,7 @@ public sealed class MainWindowViewModel
             StatusText = result.Diagnostics.FirstOrDefault()?.Message ?? "Load failed";
             Progress = 0;
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
@@ -338,6 +463,7 @@ public sealed class MainWindowViewModel
         StatusText = $"Loaded {Rows.Count} chapters";
         Progress = 1;
         logService.Add($"{StatusText} from {path}");
+        NotifyStateChanged();
     }
 
     private async ValueTask SaveAsync(string? directory, CancellationToken cancellationToken)
@@ -362,6 +488,7 @@ public sealed class MainWindowViewModel
         StatusText = result.Success ? "Saved" : result.Diagnostics.FirstOrDefault()?.Message ?? "Save failed";
         var detail = result.Diagnostics.LastOrDefault()?.Message;
         logService.Add(string.IsNullOrWhiteSpace(detail) ? StatusText : $"{StatusText}: {detail}");
+        NotifyStateChanged();
     }
 
     private void SelectClip(int index)
@@ -414,6 +541,7 @@ public sealed class MainWindowViewModel
         {
             StatusText = "No current MPLS group is loaded";
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
@@ -423,6 +551,7 @@ public sealed class MainWindowViewModel
         {
             StatusText = result.Diagnostics.FirstOrDefault()?.Message ?? "Append failed";
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
@@ -431,6 +560,7 @@ public sealed class MainWindowViewModel
         {
             StatusText = edit.Diagnostics[0].Message;
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
@@ -448,6 +578,7 @@ public sealed class MainWindowViewModel
         ApplyFrameInfo();
         StatusText = $"Appended {result.Groups[0].Options.Count} MPLS segment(s)";
         logService.Add(StatusText);
+        NotifyStateChanged();
     }
 
     private void ApplyEdit(ChapterEditResult result)
@@ -456,6 +587,7 @@ public sealed class MainWindowViewModel
         ApplyFrameInfo();
         StatusText = result.Diagnostics.Count == 0 ? "Updated" : result.Diagnostics[0].Message;
         logService.Add(StatusText);
+        NotifyStateChanged();
     }
 
     private void ApplyFrameInfo()
@@ -478,6 +610,7 @@ public sealed class MainWindowViewModel
             UpdateCurrentClipOption(currentInfo);
         }
         RefreshRows();
+        NotifyStateChanged();
     }
 
     private void UpdateCurrentClipOption(ChapterInfo info)
@@ -496,6 +629,8 @@ public sealed class MainWindowViewModel
             options[SelectedClipIndex] = updatedOption;
             currentGroup = currentGroup with { Options = options };
         }
+
+        OnPropertyChanged(nameof(RelatedMediaReferences));
     }
 
     private void RefreshRows()
@@ -510,6 +645,54 @@ public sealed class MainWindowViewModel
         {
             Rows.Add(new ChapterRowViewModel(chapter, formatter));
         }
+    }
+
+    private void OnClipOptionsChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        OnPropertyChanged(nameof(IsClipSelectionVisible));
+        OnPropertyChanged(nameof(RelatedMediaReferences));
+        NotifyCommandStates();
+    }
+
+    private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs args)
+    {
+        NotifyCommandStates();
+    }
+
+    private void NotifyStateChanged()
+    {
+        OnPropertyChanged(nameof(IsClipSelectionVisible));
+        OnPropertyChanged(nameof(RelatedMediaReferences));
+        OnPropertyChanged(nameof(CanAppendMpls));
+        OnPropertyChanged(nameof(CanCombine));
+        OnPropertyChanged(nameof(CanSave));
+        OnPropertyChanged(nameof(CanRefreshRows));
+        OnPropertyChanged(nameof(CanEditRows));
+        OnPropertyChanged(nameof(CanOpenRelatedMedia));
+        NotifyCommandStates();
+    }
+
+    private void NotifyCommandStates()
+    {
+        ReloadCommand.RaiseCanExecuteChanged();
+        AppendMplsCommand.RaiseCanExecuteChanged();
+        SaveCommand.RaiseCanExecuteChanged();
+        SaveDirectoryCommand.RaiseCanExecuteChanged();
+        RefreshCommand.RaiseCanExecuteChanged();
+        SelectClipCommand.RaiseCanExecuteChanged();
+        CombineCommand.RaiseCanExecuteChanged();
+        DeleteCommand.RaiseCanExecuteChanged();
+        InsertCommand.RaiseCanExecuteChanged();
+        OpenRelatedMediaCommand.RaiseCanExecuteChanged();
+        PreviewCommand.RaiseCanExecuteChanged();
+        LogCommand.RaiseCanExecuteChanged();
+        ColorSettingsCommand.RaiseCanExecuteChanged();
+        LanguageCommand.RaiseCanExecuteChanged();
+        ExpressionCommand.RaiseCanExecuteChanged();
+        TemplateNamesCommand.RaiseCanExecuteChanged();
+        FileAssociationCommand.RaiseCanExecuteChanged();
+        ZonesCommand.RaiseCanExecuteChanged();
+        ForwardShiftCommand.RaiseCanExecuteChanged();
     }
 
     private static int ComboIndexFor(FrameRateOption option) =>
@@ -535,6 +718,7 @@ public sealed class MainWindowViewModel
         {
             StatusText = "Shell service is unavailable";
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
@@ -550,12 +734,14 @@ public sealed class MainWindowViewModel
         {
             StatusText = "Related media file was not found";
             logService.Add(StatusText);
+            NotifyStateChanged();
             return;
         }
 
         await shellService.OpenAsync(target, cancellationToken);
         StatusText = $"Opened {Path.GetFileName(target)}";
         logService.Add(StatusText);
+        NotifyStateChanged();
     }
 
     private enum EditKind

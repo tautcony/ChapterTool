@@ -3,11 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
-using ChapterTool.Infrastructure.Configuration;
-using ChapterTool.Infrastructure.Platform;
-using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Views;
 
@@ -20,61 +16,46 @@ public sealed partial class MainWindow : Window
     private bool isRefreshing;
 
     public MainWindow()
-        : this(null)
     {
+        throw new InvalidOperationException("MainWindow must be created by the application composition root.");
     }
 
-    public MainWindow(string? startupPath)
+    public MainWindow(
+        MainWindowViewModel viewModel,
+        Func<Window, IFilePickerService> filePickerServiceFactory,
+        string? startupPath = null)
     {
+        this.viewModel = viewModel;
         this.startupPath = startupPath;
-        var formatter = new ChapterTimeFormatter();
-        var settingsDirectory = SettingsDirectory();
-        var appSettingsStore = new AppSettingsStore(settingsDirectory);
-        var themeSettingsStore = new ThemeSettingsStore(settingsDirectory);
-        viewModel = new MainWindowViewModel(
-            new RuntimeChapterLoadService(formatter),
-            new RuntimeChapterSaveService(new ChapterExportService(formatter, new ExpressionService())),
-            new ChapterEditingService(formatter),
-            new ChapterSegmentService(),
-            new AvaloniaWindowService(themeSettingsStore),
-            formatter,
-            new InMemoryApplicationLogService(),
-            new ShellService(),
-            appSettingsStore,
-            new FrameRateService());
-        filePickerService = new AvaloniaFilePickerService(this);
+        filePickerService = filePickerServiceFactory(this);
         shortcutRouter = new ShortcutRouter(viewModel);
         BrowseAndLoadCommand = new UiCommand(async (_, _) => await BrowseAndLoadAsync());
         ReloadCommand = new UiCommand(async (_, _) => await LoadAsync(), _ => viewModel.ReloadCommand.CanExecute());
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
         SaveCommand = new UiCommand(async (_, _) => await SaveAsync(null), _ => viewModel.SaveCommand.CanExecute());
         SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
-        RefreshRowsCommand = new UiCommand((_, _) =>
+        RefreshRowsCommand = new UiCommand(async (_, _) =>
         {
             ReadAdvancedOptions();
             ReadFrameOptions();
-            _ = viewModel.RefreshCommand.ExecuteAsync();
+            await viewModel.RefreshCommand.ExecuteAsync();
             Refresh();
-            return ValueTask.CompletedTask;
         }, _ => viewModel.RefreshCommand.CanExecute());
-        InsertSelectedCommand = new UiCommand((_, _) =>
+        InsertSelectedCommand = new UiCommand(async (_, _) =>
         {
-            InsertSelected();
-            return ValueTask.CompletedTask;
+            await InsertSelectedAsync();
         }, _ => viewModel.InsertCommand.CanExecute());
-        DeleteSelectedCommand = new UiCommand((_, _) =>
+        DeleteSelectedCommand = new UiCommand(async (_, _) =>
         {
-            DeleteSelected();
-            return ValueTask.CompletedTask;
+            await DeleteSelectedAsync();
         }, _ => viewModel.DeleteCommand.CanExecute());
         OpenRelatedMediaCommand = new UiCommand(async (_, _) => await OpenRelatedMediaAsync(), _ => viewModel.OpenRelatedMediaCommand.CanExecute());
         OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
         OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
-        CombineCommand = new UiCommand((_, _) =>
+        CombineCommand = new UiCommand(async (_, _) =>
         {
-            _ = viewModel.CombineCommand.ExecuteAsync();
+            await viewModel.CombineCommand.ExecuteAsync();
             Refresh();
-            return ValueTask.CompletedTask;
         }, _ => viewModel.CombineCommand.CanExecute());
 
         InitializeComponent();
@@ -195,12 +176,12 @@ public sealed partial class MainWindow : Window
         ApplyAdvancedOptionsLayout();
     }
 
-    private void OnFrameOptionsChanged(object? sender, RoutedEventArgs args)
+    private async void OnFrameOptionsChanged(object? sender, RoutedEventArgs args)
     {
-        ApplyFrameOptionsAndRefresh();
+        await ApplyFrameOptionsAndRefreshAsync();
     }
 
-    private void OnClipSelectionChanged(object? sender, SelectionChangedEventArgs args)
+    private async void OnClipSelectionChanged(object? sender, SelectionChangedEventArgs args)
     {
         if (isRefreshing)
         {
@@ -209,14 +190,14 @@ public sealed partial class MainWindow : Window
 
         if (ClipBox.SelectedIndex >= 0)
         {
-            _ = viewModel.SelectClipCommand.ExecuteAsync(ClipBox.SelectedIndex);
+            await viewModel.SelectClipCommand.ExecuteAsync(ClipBox.SelectedIndex);
             Refresh();
         }
     }
 
-    private void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args)
+    private async void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args)
     {
-        CommitCellEdit(args);
+        await CommitCellEditAsync(args);
     }
 
     private async void OnDrop(object? sender, DragEventArgs args)
@@ -246,7 +227,7 @@ public sealed partial class MainWindow : Window
         if (args.Key == Key.Insert)
         {
             args.Handled = true;
-            _ = viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
+            await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
             Refresh();
             return;
         }
@@ -254,7 +235,7 @@ public sealed partial class MainWindow : Window
         if (args.Key == Key.Delete)
         {
             args.Handled = true;
-            _ = viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
+            await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
             Refresh();
             return;
         }
@@ -395,7 +376,7 @@ public sealed partial class MainWindow : Window
         };
     }
 
-    private void CommitCellEdit(DataGridCellEditEndedEventArgs args)
+    private async ValueTask CommitCellEditAsync(DataGridCellEditEndedEventArgs args)
     {
         if (args.EditAction != DataGridEditAction.Commit || args.Row.DataContext is not ChapterRowViewModel row)
         {
@@ -412,29 +393,29 @@ public sealed partial class MainWindow : Window
         var header = args.Column.Header?.ToString();
         if (columnIndex == 1 || string.Equals(header, "Time", StringComparison.Ordinal) || header == "时间点")
         {
-            _ = viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText));
+            await viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText));
         }
         else if (columnIndex == 2 || string.Equals(header, "Name", StringComparison.Ordinal) || header == "章节名")
         {
-            _ = viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name));
+            await viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name));
         }
         else if (columnIndex == 3 || string.Equals(header, "Frames", StringComparison.Ordinal) || header == "帧数")
         {
-            _ = viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
+            await viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
         }
 
         Refresh();
     }
 
-    private void InsertSelected()
+    private async ValueTask InsertSelectedAsync()
     {
-        _ = viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
+        await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
         Refresh();
     }
 
-    private void DeleteSelected()
+    private async ValueTask DeleteSelectedAsync()
     {
-        _ = viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
+        await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
         Refresh();
     }
 
@@ -463,7 +444,7 @@ public sealed partial class MainWindow : Window
         viewModel.SetFrameOptions(FrameRateBox.SelectedIndex, RoundFramesBox.IsChecked == true);
     }
 
-    private void ApplyFrameOptionsAndRefresh()
+    private async ValueTask ApplyFrameOptionsAndRefreshAsync()
     {
         if (isRefreshing)
         {
@@ -471,7 +452,7 @@ public sealed partial class MainWindow : Window
         }
 
         ReadFrameOptions();
-        _ = viewModel.RefreshCommand.ExecuteAsync();
+        await viewModel.RefreshCommand.ExecuteAsync();
         Refresh();
     }
 
@@ -480,25 +461,7 @@ public sealed partial class MainWindow : Window
         isRefreshing = true;
         try
         {
-            StatusBlock.Text = viewModel.StatusText;
-            ProgressBar.Value = viewModel.Progress;
-            ChapterGrid.ItemsSource = null;
-            ChapterGrid.ItemsSource = viewModel.Rows;
-            RoundFramesBox.IsChecked = viewModel.RoundFrames;
-            FrameRateBox.SelectedIndex = viewModel.SelectedFrameRateIndex;
-            ClipBox.ItemsSource = viewModel.ClipOptions.Select(static option => option.DisplayName).ToArray();
-            ClipBox.SelectedIndex = viewModel.ClipOptions.Count == 0 ? -1 : viewModel.SelectedClipIndex;
-            ClipBox.IsVisible = viewModel.IsClipSelectionVisible;
-            CombineButton.IsVisible = false;
-            AppendMplsButton.IsVisible = false;
-            OpenMediaButton.IsVisible = false;
             RaiseCommandStates();
-            SelectComboText(XmlLanguageBox, viewModel.XmlLanguage);
-            AutoNamesBox.IsChecked = viewModel.AutoGenerateNames;
-            TemplateNamesBox.IsChecked = viewModel.UseTemplateNames;
-            ApplyExpressionBox.IsChecked = viewModel.ApplyExpression;
-            ExpressionBox.Text = viewModel.Expression;
-            OrderShiftBox.Value = viewModel.OrderShift;
         }
         finally
         {
@@ -558,14 +521,6 @@ public sealed partial class MainWindow : Window
         Grid.SetColumnSpan(control, 1);
     }
 
-    private static string SettingsDirectory()
-    {
-        var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return string.IsNullOrWhiteSpace(root)
-            ? Path.Combine(Environment.CurrentDirectory, "settings")
-            : Path.Combine(root, "ChapterTool");
-    }
-
     private static string SelectedComboText(ComboBox comboBox, string fallback)
     {
         return comboBox.SelectedItem switch
@@ -576,18 +531,4 @@ public sealed partial class MainWindow : Window
         };
     }
 
-    private static void SelectComboText(ComboBox comboBox, string value)
-    {
-        for (var index = 0; index < comboBox.ItemCount; index++)
-        {
-            if (comboBox.Items[index] is ComboBoxItem item
-                && string.Equals(item.Content?.ToString(), value, StringComparison.OrdinalIgnoreCase))
-            {
-                comboBox.SelectedIndex = index;
-                return;
-            }
-        }
-
-        comboBox.SelectedIndex = comboBox.ItemCount > 0 ? 0 : -1;
-    }
 }

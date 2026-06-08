@@ -5,4 +5,7 @@ public sealed record ChapterSourceOption(
     string DisplayName,
     ChapterInfo ChapterInfo,
     bool CanCombine = false,
-    IReadOnlyList<SourceMediaReference>? MediaReferences = null);
+    IReadOnlyList<SourceMediaReference>? MediaReferences = null)
+{
+    public override string ToString() => DisplayName;
+}
