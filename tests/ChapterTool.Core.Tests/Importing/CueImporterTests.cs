@@ -40,6 +40,24 @@ public sealed class CueImporterTests
         Assert.Contains("のんのんバイオリン", result.Groups.Single().Options.Single().ChapterInfo.Chapters[0].Name, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task CueImporterReadsCopiedExampleFixture()
+    {
+        var importer = new CueChapterImporter();
+        var result = await importer.ImportAsync(
+            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Cue", "example-cue-sheet-1.cue")),
+            CancellationToken.None);
+
+        Assert.True(result.Success);
+        var info = result.Groups.Single().Options.Single().ChapterInfo;
+        Assert.Equal("Back To Mine", info.Title);
+        Assert.Equal("Orbital - Back To Mine.mp3", info.SourceName);
+        Assert.Equal(19, info.Chapters.Count);
+        Assert.Equal("John Barry & His Orchestra - The Knack [Orbital]", info.Chapters[0].Name);
+        Assert.Equal("Robert Mellin Orchestra - The Adventures Of Robinson Crusoe [Orbital]", info.Chapters[^1].Name);
+        Assert.Equal(new TimeSpan(0, 1, 11, 17, 707), info.Chapters[^1].Time);
+    }
+
     [Theory]
     [MemberData(nameof(EncodedCueSheets))]
     public async Task CueImporterSupportsExpectedEncodings(byte[] bytes)
@@ -51,6 +69,25 @@ public sealed class CueImporterTests
 
         Assert.True(result.Success);
         Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+    }
+
+    [Fact]
+    public void CueParserSkipsBlankLinesBetweenTracksAsIntentionalExpansion()
+    {
+        var result = new CueSheetParser().Parse(
+            """
+            FILE "a.wav" WAVE
+              TRACK 01 AUDIO
+                TITLE "Track 1"
+                INDEX 01 00:00:00
+
+              TRACK 02 AUDIO
+                TITLE "Track 2"
+                INDEX 01 00:10:00
+            """);
+
+        Assert.True(result.Success);
+        Assert.Equal(["Track 1", "Track 2"], result.Groups.Single().Options.Single().ChapterInfo.Chapters.Select(chapter => chapter.Name));
     }
 
     [Theory]
@@ -82,6 +119,18 @@ public sealed class CueImporterTests
     {
         var cue = MinimalCue();
         using var stream = new MemoryStream(CreateFlac(cue, includeNativeCueSheetBlock: true));
+
+        var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), CancellationToken.None);
+
+        Assert.True(result.Success);
+        Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+    }
+
+    [Fact]
+    public async Task FlacImporterAcceptsUppercaseVorbisCuesheetKeyAsIntentionalExpansion()
+    {
+        var cue = MinimalCue();
+        using var stream = new MemoryStream(CreateFlac(cue, includeNativeCueSheetBlock: false, cueKey: "CUESHEET"));
 
         var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), CancellationToken.None);
 
@@ -195,7 +244,7 @@ public sealed class CueImporterTests
             INDEX 01 00:00:00
         """;
 
-    private static byte[] CreateFlac(string? cue, bool includeNativeCueSheetBlock)
+    private static byte[] CreateFlac(string? cue, bool includeNativeCueSheetBlock, string cueKey = "cuesheet")
     {
         using var stream = new MemoryStream();
         stream.Write("fLaC"u8);
@@ -204,11 +253,11 @@ public sealed class CueImporterTests
             WriteBlock(stream, type: 5, isLast: false, [1, 2, 3, 4]);
         }
 
-        WriteBlock(stream, type: 4, isLast: true, CreateVorbisBlock(cue));
+        WriteBlock(stream, type: 4, isLast: true, CreateVorbisBlock(cue, cueKey));
         return stream.ToArray();
     }
 
-    private static byte[] CreateVorbisBlock(string? cue)
+    private static byte[] CreateVorbisBlock(string? cue, string cueKey)
     {
         using var stream = new MemoryStream();
         WriteLittleEndianInt32(stream, 6);
@@ -217,7 +266,7 @@ public sealed class CueImporterTests
         WriteVorbisComment(stream, "ARTIST=Someone");
         if (cue is not null)
         {
-            WriteVorbisComment(stream, "cuesheet=" + cue);
+            WriteVorbisComment(stream, cueKey + "=" + cue);
         }
 
         return stream.ToArray();

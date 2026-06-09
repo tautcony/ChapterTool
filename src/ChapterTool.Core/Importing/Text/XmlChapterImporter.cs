@@ -134,6 +134,11 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         {
             yield return chapter;
         }
+
+        if (end > start)
+        {
+            yield return new Chapter(index, end.Value, name);
+        }
     }
 
     private static IReadOnlyList<Chapter> Renumber(IReadOnlyList<Chapter> chapters) =>

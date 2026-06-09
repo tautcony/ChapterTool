@@ -184,8 +184,9 @@ public sealed class TextImporterTests
 
         Assert.True(result.Success);
         var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
-        Assert.Equal(["Parent", "Child"], chapters.Select(chapter => chapter.Name));
+        Assert.Equal(["Parent", "Child", "Parent"], chapters.Select(chapter => chapter.Name));
         Assert.Equal(TimeSpan.FromSeconds(30), chapters[0].End);
+        Assert.Equal(TimeSpan.FromSeconds(30), chapters[2].Time);
     }
 
     [Fact]
