@@ -8,18 +8,45 @@ public sealed class ExpressionService : IExpressionService
     private static readonly Dictionary<string, decimal> Constants = new(StringComparer.Ordinal)
     {
         ["M_E"] = 2.71828182845904523536m,
+        ["M_LOG2E"] = 1.44269504088896340736m,
+        ["M_LOG10E"] = 0.43429448190325182765m,
         ["M_PI"] = 3.14159265358979323846m,
         ["M_PI_2"] = 1.57079632679489661923m,
         ["M_PI_4"] = 0.78539816339744830962m,
+        ["M_1_PI"] = 0.31830988618379067154m,
+        ["M_2_PI"] = 0.63661977236758134308m,
+        ["M_2_SQRTPI"] = 1.12837916709551257390m,
         ["M_LN2"] = 0.69314718055994530942m,
         ["M_LN10"] = 2.30258509299404568402m,
         ["M_SQRT2"] = 1.41421356237309504880m,
+        ["M_SQRT1_2"] = 0.70710678118654752440m,
     };
 
-    private static readonly HashSet<string> Functions = new(StringComparer.Ordinal)
+    private static readonly Dictionary<string, int> Functions = new(StringComparer.Ordinal)
     {
-        "abs", "acos", "asin", "atan", "atan2", "cos", "sin", "tan", "cosh", "sinh", "tanh",
-        "exp", "log", "log10", "sqrt", "ceil", "floor", "round", "int", "sign", "pow", "max", "min"
+        ["abs"] = 1,
+        ["acos"] = 1,
+        ["asin"] = 1,
+        ["atan"] = 1,
+        ["atan2"] = 2,
+        ["cos"] = 1,
+        ["sin"] = 1,
+        ["tan"] = 1,
+        ["cosh"] = 1,
+        ["sinh"] = 1,
+        ["tanh"] = 1,
+        ["exp"] = 1,
+        ["log"] = 1,
+        ["log10"] = 1,
+        ["sqrt"] = 1,
+        ["ceil"] = 1,
+        ["floor"] = 1,
+        ["round"] = 1,
+        ["int"] = 1,
+        ["sign"] = 1,
+        ["pow"] = 2,
+        ["max"] = 2,
+        ["min"] = 2,
     };
 
     private static readonly Dictionary<string, int> Precedence = new(StringComparer.Ordinal)
@@ -34,6 +61,17 @@ public sealed class ExpressionService : IExpressionService
         ["/"] = 1,
         ["%"] = 1,
         ["^"] = 2,
+        ["u+"] = 3,
+        ["u-"] = 3,
+        ["?:"] = -2,
+    };
+
+    private static readonly HashSet<string> RightAssociativeOperators = new(StringComparer.Ordinal)
+    {
+        "^",
+        "u+",
+        "u-",
+        "?:",
     };
 
     public ExpressionEvaluationResult EvaluateInfix(string expression, decimal timeSeconds, decimal framesPerSecond)
@@ -79,7 +117,7 @@ public sealed class ExpressionService : IExpressionService
                 {
                     stack.Push(constant);
                 }
-                else if (Functions.Contains(token))
+                else if (Functions.ContainsKey(token))
                 {
                     ApplyFunction(token, stack);
                 }
@@ -167,7 +205,7 @@ public sealed class ExpressionService : IExpressionService
                 continue;
             }
 
-            if ("()+-*/%^,<>".Contains(c, StringComparison.Ordinal))
+            if ("()+-*/%^,<>\u003f:".Contains(c, StringComparison.Ordinal))
             {
                 tokens.Add(c.ToString(CultureInfo.InvariantCulture));
                 i++;
@@ -192,25 +230,76 @@ public sealed class ExpressionService : IExpressionService
                 token is "t" or "fps" ||
                 Constants.ContainsKey(token))
             {
+                if (previous.Length > 0 &&
+                    previous != "(" &&
+                    previous != "," &&
+                    previous != "?" &&
+                    previous != ":" &&
+                    !Precedence.ContainsKey(previous))
+                {
+                    throw new InvalidOperationException($"Missing operator before '{token}'.");
+                }
+
                 output.Add(token);
             }
-            else if (Functions.Contains(token))
+            else if (Functions.ContainsKey(token))
             {
+                if (previous is not "" and not "(" and not "," and not "?" and not ":" && !Precedence.ContainsKey(previous))
+                {
+                    throw new InvalidOperationException($"Missing operator before function '{token}'.");
+                }
+
                 operators.Push(token);
             }
             else if (token == ",")
             {
+                if (previous.Length == 0 ||
+                    previous == "(" ||
+                    previous == "," ||
+                    Precedence.ContainsKey(previous) ||
+                    Functions.ContainsKey(previous) ||
+                    previous == "?")
+                {
+                    throw new InvalidOperationException("Misplaced comma.");
+                }
+
                 while (operators.Count > 0 && operators.Peek() != "(")
                 {
                     output.Add(operators.Pop());
                 }
+
+                if (operators.Count == 0)
+                {
+                    throw new InvalidOperationException("Misplaced comma.");
+                }
             }
             else if (token == "(")
             {
+                if (previous.Length > 0 &&
+                    previous != "(" &&
+                    previous != "," &&
+                    previous != "?" &&
+                    previous != ":" &&
+                    !Precedence.ContainsKey(previous) &&
+                    !Functions.ContainsKey(previous))
+                {
+                    throw new InvalidOperationException("Missing operator before '('.");
+                }
+
                 operators.Push(token);
             }
             else if (token == ")")
             {
+                if (previous.Length == 0 ||
+                    previous == "(" ||
+                    previous == "," ||
+                    Precedence.ContainsKey(previous) ||
+                    Functions.ContainsKey(previous) ||
+                    previous == "?")
+                {
+                    throw new InvalidOperationException("Missing operand before ')'.");
+                }
+
                 while (operators.Count > 0 && operators.Peek() != "(")
                 {
                     output.Add(operators.Pop());
@@ -222,25 +311,82 @@ public sealed class ExpressionService : IExpressionService
                 }
 
                 operators.Pop();
-                if (operators.Count > 0 && Functions.Contains(operators.Peek()))
+                if (operators.Count > 0 && Functions.ContainsKey(operators.Peek()))
                 {
                     output.Add(operators.Pop());
                 }
             }
-            else if (Precedence.ContainsKey(token))
+            else if (token == "?")
             {
-                if (token == "-" && (previous.Length == 0 || previous is "(" or "," || Precedence.ContainsKey(previous)))
+                if (previous.Length == 0 ||
+                    previous == "(" ||
+                    previous == "," ||
+                    previous == "?" ||
+                    Precedence.ContainsKey(previous) ||
+                    Functions.ContainsKey(previous))
                 {
-                    output.Add("0");
+                    throw new InvalidOperationException("Operator '?' requires a condition.");
                 }
 
                 while (operators.Count > 0 && Precedence.TryGetValue(operators.Peek(), out var lastPrecedence) &&
-                       lastPrecedence >= Precedence[token])
+                       ShouldPopOperator(lastPrecedence, "?:"))
                 {
                     output.Add(operators.Pop());
                 }
 
                 operators.Push(token);
+            }
+            else if (token == ":")
+            {
+                if (previous.Length == 0 ||
+                    previous == "(" ||
+                    previous == "," ||
+                    previous == "?" ||
+                    Precedence.ContainsKey(previous) ||
+                    Functions.ContainsKey(previous))
+                {
+                    throw new InvalidOperationException("Operator ':' requires a true expression.");
+                }
+
+                while (operators.Count > 0 && operators.Peek() != "?" && operators.Peek() != "(")
+                {
+                    output.Add(operators.Pop());
+                }
+
+                if (operators.Count == 0 || operators.Peek() != "?")
+                {
+                    throw new InvalidOperationException("Operator ':' requires a matching '?'.");
+                }
+
+                operators.Pop();
+
+                while (operators.Count > 0 && Precedence.TryGetValue(operators.Peek(), out var lastPrecedence) &&
+                       ShouldPopOperator(lastPrecedence, "?:"))
+                {
+                    output.Add(operators.Pop());
+                }
+
+                operators.Push("?:");
+            }
+            else if (Precedence.ContainsKey(token))
+            {
+                var isUnarySign = token is "-" or "+" &&
+                    (previous.Length == 0 || previous is "(" or "," or "?" or ":" || Precedence.ContainsKey(previous));
+                var operatorToken = isUnarySign ? $"u{token}" : token;
+
+                if (!isUnarySign &&
+                    (previous.Length == 0 || previous == "(" || previous == "," || previous == "?" || Precedence.ContainsKey(previous)))
+                {
+                    throw new InvalidOperationException($"Operator '{token}' requires a left operand.");
+                }
+
+                while (operators.Count > 0 && Precedence.TryGetValue(operators.Peek(), out var lastPrecedence) &&
+                       ShouldPopOperator(lastPrecedence, operatorToken))
+                {
+                    output.Add(operators.Pop());
+                }
+
+                operators.Push(operatorToken);
             }
             else
             {
@@ -253,9 +399,9 @@ public sealed class ExpressionService : IExpressionService
         while (operators.Count > 0)
         {
             var token = operators.Pop();
-            if (token == "(")
+            if (token == "(" || token == "?")
             {
-                throw new InvalidOperationException("Unbalanced parentheses.");
+                throw new InvalidOperationException(token == "(" ? "Unbalanced parentheses." : "Operator '?' requires a matching ':'.");
             }
 
             output.Add(token);
@@ -264,8 +410,30 @@ public sealed class ExpressionService : IExpressionService
         return output;
     }
 
+    private static bool ShouldPopOperator(int previousPrecedence, string currentOperator)
+    {
+        return previousPrecedence > Precedence[currentOperator] ||
+            (previousPrecedence == Precedence[currentOperator] && !RightAssociativeOperators.Contains(currentOperator));
+    }
+
     private static void ApplyOperator(string op, Stack<decimal> stack)
     {
+        if (op is "u+" or "u-")
+        {
+            var value = Pop(stack, op);
+            stack.Push(op == "u-" ? -value : value);
+            return;
+        }
+
+        if (op == "?:")
+        {
+            var falseValue = Pop(stack, op);
+            var trueValue = Pop(stack, op);
+            var condition = Pop(stack, op);
+            stack.Push(condition == 0 ? falseValue : trueValue);
+            return;
+        }
+
         var rhs = Pop(stack, op);
         var lhs = Pop(stack, op);
         stack.Push(op switch
