@@ -25,10 +25,12 @@ public sealed class AvaloniaWindowService(ISettingsStore<ThemeColorSettings>? th
         var window = new Window
         {
             Title = Title(windowId),
-            Width = 620,
+            Width = windowId is "preview" or "log" ? 760 : 620,
             Height = 460,
             MinWidth = 420,
-            MinHeight = 280
+            MinHeight = 280,
+            MaxWidth = 1100,
+            MaxHeight = 840
         };
         Refresh(window, windowId, parameter);
         window.Closed += (_, _) => windows.Remove(windowId);
@@ -59,8 +61,18 @@ public sealed class AvaloniaWindowService(ISettingsStore<ThemeColorSettings>? th
     private Control CreateContent(Window window, string id, MainWindowViewModel viewModel) =>
         id switch
         {
-            "preview" => new TextToolView { DataContext = new TextToolViewModel(viewModel.BuildPreview) },
-            "log" => new TextToolView { DataContext = new TextToolViewModel(viewModel.LogText, viewModel.ClearLog) },
+            "preview" => new TextToolView
+            {
+                DataContext = new TextToolViewModel(
+                    viewModel.BuildPreview,
+                    new TextToolOptions { FormatSelector = new TextToolFormatSelector(viewModel) })
+            },
+            "log" => new TextToolView
+            {
+                DataContext = new TextToolViewModel(
+                    viewModel.LogText,
+                    new TextToolOptions { ClearAction = viewModel.ClearLog })
+            },
             "color-settings" => new ColorSettingsView { DataContext = new ColorSettingsViewModel(themeSettingsStore) },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
             "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel) },
@@ -93,4 +105,5 @@ public sealed class AvaloniaWindowService(ISettingsStore<ThemeColorSettings>? th
         "forward-shift" => "Forward Shift",
         _ => id
     };
+
 }

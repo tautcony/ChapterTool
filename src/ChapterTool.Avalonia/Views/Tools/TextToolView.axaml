@@ -4,20 +4,65 @@
              x:Class="ChapterTool.Avalonia.Views.Tools.TextToolView"
              x:DataType="vm:TextToolViewModel"
              x:CompileBindings="True">
-  <DockPanel Margin="12">
-    <StackPanel DockPanel.Dock="Top"
-                Orientation="Horizontal"
-                Spacing="8"
-                Margin="0,0,0,8">
-      <Button Content="Refresh" MinWidth="80" Command="{Binding RefreshCommand}" />
-      <Button Content="Copy" MinWidth="80" Click="OnCopyClicked" />
-      <Button Content="Clear" MinWidth="80" Command="{Binding ClearCommand}" />
-    </StackPanel>
-    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-      <TextBox Text="{Binding Text}"
-               AcceptsReturn="True"
-               TextWrapping="NoWrap"
-               IsReadOnly="True" />
-    </ScrollViewer>
-  </DockPanel>
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="MinWidth" Value="82" />
+      <Setter Property="Background" Value="#ffffff" />
+      <Setter Property="BorderBrush" Value="#0a84ff" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*"
+        RowSpacing="10"
+        Margin="14"
+        MinWidth="0"
+        MinHeight="0">
+    <DockPanel Grid.Row="0" LastChildFill="False">
+      <StackPanel DockPanel.Dock="Left"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  VerticalAlignment="Center">
+        <ComboBox Width="150"
+                  ItemsSource="{Binding FormatOptions}"
+                  SelectedIndex="{Binding SelectedFormatIndex}"
+                  IsVisible="{Binding CanSelectFormat}" />
+        <TextBlock VerticalAlignment="Center"
+                   FontSize="13"
+                   Foreground="#5f6b7a"
+                   Text="{Binding Kind}" />
+      </StackPanel>
+      <StackPanel DockPanel.Dock="Right"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  HorizontalAlignment="Right">
+        <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+        <Button Content="Copy" Click="OnCopyClicked" />
+        <Button Content="Clear"
+                IsVisible="{Binding CanClear}"
+                Command="{Binding ClearCommand}" />
+      </StackPanel>
+    </DockPanel>
+
+    <Border Grid.Row="1"
+            Background="#ffffff"
+            BorderBrush="#c7ccd1"
+            BorderThickness="1"
+            CornerRadius="2"
+            MinWidth="0"
+            MinHeight="0"
+            ClipToBounds="True">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto"
+                    Padding="0">
+        <StackPanel x:Name="LinesHost"
+                    MinWidth="0" />
+      </ScrollViewer>
+    </Border>
+  </Grid>
 </UserControl>

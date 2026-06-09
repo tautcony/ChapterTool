@@ -16,7 +16,7 @@ public sealed class ToolWindowViewModelTests
     {
         var text = "one";
         var cleared = false;
-        var vm = new TextToolViewModel(() => text, () => cleared = true);
+        var vm = new TextToolViewModel(() => text, new TextToolOptions { ClearAction = () => cleared = true });
 
         text = "two";
         await vm.RefreshCommand.ExecuteAsync();
@@ -24,6 +24,44 @@ public sealed class ToolWindowViewModelTests
 
         Assert.Equal(string.Empty, vm.Text);
         Assert.True(cleared);
+    }
+
+    [Fact]
+    public void TextToolFormatsJsonAndBuildsHighlightLines()
+    {
+        var owner = CreateOwner();
+        owner.SaveFormat = ChapterExportFormat.Json;
+        var vm = new TextToolViewModel(() => "{\"name\":\"Intro\",\"time\":1}", new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner) });
+
+        Assert.Contains(Environment.NewLine, vm.Text, StringComparison.Ordinal);
+        Assert.Contains(vm.Lines.SelectMany(line => line.Spans), span => span.Kind == TextToolSpanKind.Name);
+        Assert.Contains(vm.Lines.SelectMany(line => line.Spans), span => span.Kind == TextToolSpanKind.Number);
+    }
+
+    [Fact]
+    public void TextToolFormatsXmlAndBuildsHighlightLines()
+    {
+        var owner = CreateOwner();
+        owner.SaveFormat = ChapterExportFormat.Xml;
+        var vm = new TextToolViewModel(() => "<Chapters><ChapterAtom><ChapterUID>1</ChapterUID></ChapterAtom></Chapters>", new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner) });
+
+        Assert.Contains(Environment.NewLine, vm.Text, StringComparison.Ordinal);
+        Assert.Contains(vm.Lines.SelectMany(line => line.Spans), span => span.Kind == TextToolSpanKind.Name);
+        Assert.Contains(vm.Lines.SelectMany(line => line.Spans), span => span.Kind == TextToolSpanKind.String);
+    }
+
+    [Fact]
+    public void TextToolFormatSelectorUpdatesOwnerAndRefreshesPreviewKind()
+    {
+        var owner = CreateOwner();
+        var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner) });
+
+        vm.SelectedFormatIndex = (int)ChapterExportFormat.Json;
+
+        Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
+        Assert.Equal(TextToolKind.Json, vm.Kind);
+        Assert.True(vm.CanSelectFormat);
+        Assert.False(vm.CanClear);
     }
 
     [Fact]
