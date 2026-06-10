@@ -82,10 +82,21 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
     public ChapterEditResult ApplyOrderShift(ChapterInfo info, int shift)
     {
+        var effectiveShift = Math.Max(0, shift);
+        var number = 0;
         var chapters = info.Chapters
-            .Select((chapter, index) => chapter.IsSeparator ? chapter : chapter with { Number = index + 1 + shift })
+            .Select(chapter => chapter.IsSeparator ? chapter with { Number = 0 } : chapter with { Number = ++number + effectiveShift })
             .ToArray();
-        return new ChapterEditResult(info with { Chapters = chapters }, Array.Empty<ChapterDiagnostic>());
+        var diagnostics = effectiveShift == shift
+            ? Array.Empty<ChapterDiagnostic>()
+            :
+            [
+                new ChapterDiagnostic(
+                    DiagnosticSeverity.Warning,
+                    "OrderShiftNormalized",
+                    $"Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.")
+            ];
+        return new ChapterEditResult(info with { Chapters = chapters }, diagnostics);
     }
 
     public ChapterEditResult ApplyTemplate(ChapterInfo info, string templateText)

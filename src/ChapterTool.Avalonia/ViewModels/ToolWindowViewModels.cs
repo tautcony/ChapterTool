@@ -468,14 +468,7 @@ public sealed class ExpressionToolViewModel(MainWindowViewModel owner) : Observa
 
 public sealed class TemplateNamesToolViewModel(MainWindowViewModel owner) : ObservableViewModel
 {
-    private bool autoGenerateNames = owner.AutoGenerateNames;
     private bool useTemplateNames = owner.UseTemplateNames;
-
-    public bool AutoGenerateNames
-    {
-        get => autoGenerateNames;
-        set => SetProperty(ref autoGenerateNames, value);
-    }
 
     public bool UseTemplateNames
     {
@@ -487,7 +480,7 @@ public sealed class TemplateNamesToolViewModel(MainWindowViewModel owner) : Obse
     {
         if (parameter is TemplateNamesToolViewModel viewModel)
         {
-            owner.AutoGenerateNames = viewModel.AutoGenerateNames;
+            owner.AutoGenerateNames = false;
             owner.UseTemplateNames = viewModel.UseTemplateNames;
         }
 

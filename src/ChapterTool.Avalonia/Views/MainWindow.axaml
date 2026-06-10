@@ -41,6 +41,14 @@
       <Setter Property="Height" Value="44" />
       <Setter Property="Padding" Value="0" />
     </Style>
+    <Style Selector="Button.statusAction">
+      <Setter Property="Background" Value="#ffffff" />
+      <Setter Property="BorderBrush" Value="#c7ccd1" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="MinWidth" Value="52" />
+      <Setter Property="MinHeight" Value="24" />
+      <Setter Property="Padding" Value="10,2" />
+    </Style>
     <Style Selector="ComboBox, TextBox, NumericUpDown">
       <Setter Property="Background" Value="#ffffff" />
       <Setter Property="BorderBrush" Value="#c7ccd1" />
@@ -55,6 +63,11 @@
     </Style>
     <Style Selector="TextBlock.optionLabel">
       <Setter Property="FontSize" Value="14" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Grid.optionCell">
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="DataGrid">
@@ -85,7 +98,7 @@
             Background="#f3f4f6"
             BorderBrush="#d8dee4"
             BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto" Height="34">
+      <Grid ColumnDefinitions="*,Auto,Auto" Height="34">
         <TextBlock x:Name="StatusBlock"
                    Grid.Column="0"
                    Margin="10,0"
@@ -93,7 +106,7 @@
                    FontSize="13"
                    Text="{Binding StatusText}" />
         <ProgressBar x:Name="ProgressBar"
-                     Grid.Column="1"
+                     Grid.Column="2"
                      Width="180"
                      Height="10"
                      Margin="12,0,16,0"
@@ -102,6 +115,13 @@
                      Maximum="1"
                      Value="{Binding Progress}"
                      AutomationProperties.AutomationId="ProgressBar" />
+        <Button x:Name="LogButton"
+                Grid.Column="1"
+                Classes="statusAction"
+                VerticalAlignment="Center"
+                AutomationProperties.AutomationId="LogWindow"
+                Content="Log"
+                Command="{Binding LogCommand}" />
       </Grid>
     </Border>
 
@@ -231,19 +251,18 @@
 
       <Grid x:Name="AdvancedOptionsGrid"
             Grid.Row="2"
-            ColumnDefinitions="*,*"
-            RowDefinitions="Auto,Auto,Auto"
+            ColumnDefinitions="*,2*,*"
+            RowDefinitions="Auto,Auto"
             ColumnSpacing="18"
             RowSpacing="10"
+            Margin="0"
             AutomationProperties.AutomationId="AdvancedOptions">
         <Grid x:Name="FormatOptionsGroup"
+              Classes="optionCell"
               Grid.Row="0"
               Grid.Column="0"
-              ColumnDefinitions="84,*"
-              ColumnSpacing="10"
-              MinWidth="240"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Center">
+              ColumnDefinitions="72,*"
+              ColumnSpacing="8">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="保存格式" />
           <ComboBox x:Name="FormatBox"
                     Grid.Column="1"
@@ -260,53 +279,60 @@
           </ComboBox>
         </Grid>
 
-        <Grid x:Name="NamingOptionsGroup"
+        <Grid x:Name="ChapterNameOptionsGroup"
+              Classes="optionCell"
               Grid.Row="0"
               Grid.Column="1"
-              ColumnDefinitions="132,*"
-              ColumnSpacing="10"
-              MinWidth="300"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Center">
-          <CheckBox x:Name="TemplateNamesBox"
-                    Grid.Column="0"
-                    AutomationProperties.AutomationId="TemplateNames"
-                    IsChecked="{Binding UseTemplateNames}"
-                    Content="使用章节名模板" />
-          <CheckBox x:Name="AutoNamesBox"
+              ColumnDefinitions="84,*,Auto"
+              ColumnSpacing="8">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="章节名" />
+          <ComboBox x:Name="ChapterNameModeBox"
                     Grid.Column="1"
-                    AutomationProperties.AutomationId="AutoNames"
-                    IsChecked="{Binding AutoGenerateNames}"
-                    Content="不使用章节名" />
+                    MinWidth="120"
+                    HorizontalAlignment="Stretch"
+                    SelectedIndex="{Binding ChapterNameModeIndex}"
+                    AutomationProperties.AutomationId="ChapterNameMode">
+            <ComboBoxItem Content="保留原名" />
+            <ComboBoxItem Content="统一模板" />
+            <ComboBoxItem Content="模板文件" />
+          </ComboBox>
+          <Button x:Name="ChapterNameTemplateButton"
+                  Grid.Column="2"
+                  MinWidth="44"
+                  MinHeight="32"
+                  Padding="8,4"
+                  AutomationProperties.AutomationId="ChapterNameTemplateFile"
+                  Content="..."
+                  Command="{Binding #RootWindow.LoadChapterNameTemplateCommand}" />
         </Grid>
 
         <Grid x:Name="OrderShiftOptionsGroup"
+              Classes="optionCell"
               Grid.Row="1"
               Grid.Column="1"
-              ColumnDefinitions="84,124"
-              ColumnSpacing="10"
-              MinWidth="230"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Center">
+              ColumnDefinitions="84,*"
+              ColumnSpacing="8">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="平移章节号" />
           <NumericUpDown x:Name="OrderShiftBox"
                          Grid.Column="1"
-                         Width="124"
-                         MinWidth="124"
+                         MinWidth="92"
+                         HorizontalAlignment="Stretch"
                          Minimum="-1000"
                          Maximum="1000"
+                         Increment="1"
                          Value="{Binding OrderShift}"
+                         ValueChanged="OnOrderShiftValueChanged"
                          AutomationProperties.AutomationId="OrderShift" />
         </Grid>
 
         <Grid x:Name="XmlLanguageOptionsGroup"
+              Classes="optionCell"
               Grid.Row="1"
               Grid.Column="0"
-              ColumnDefinitions="84,*"
-              ColumnSpacing="10"
-              MinWidth="240"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Center">
+              ColumnDefinitions="72,*"
+              ColumnSpacing="8"
+              IsEnabled="{Binding IsXmlLanguageEnabled}"
+              HorizontalAlignment="Stretch">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="XML语言" />
           <ComboBox x:Name="XmlLanguageBox"
                     Grid.Column="1"
@@ -321,35 +347,24 @@
         </Grid>
 
         <Grid x:Name="ExpressionOptionsGroup"
+              Classes="optionCell"
               Grid.Row="2"
               Grid.Column="0"
-              ColumnDefinitions="132,*"
-              ColumnSpacing="10"
-              MinWidth="300"
-              HorizontalAlignment="Stretch"
-              VerticalAlignment="Center">
+              ColumnDefinitions="84,88,*"
+              ColumnSpacing="8">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="表达式" />
           <CheckBox x:Name="ApplyExpressionBox"
-                    Grid.Column="0"
+                    Grid.Column="1"
                     AutomationProperties.AutomationId="ApplyExpression"
                     IsChecked="{Binding ApplyExpression}"
-                    Content="应用表达式 (t)" />
+                    Content="使用" />
           <TextBox x:Name="ExpressionBox"
-                   Grid.Column="1"
+                   Grid.Column="2"
                    MinWidth="120"
                    HorizontalAlignment="Stretch"
                    Text="{Binding Expression, UpdateSourceTrigger=PropertyChanged}"
                    AutomationProperties.AutomationId="ExpressionText" />
         </Grid>
-
-        <Button x:Name="LogButton"
-                Grid.Row="2"
-                Grid.Column="1"
-                MinWidth="78"
-                VerticalAlignment="Center"
-                HorizontalAlignment="Right"
-                AutomationProperties.AutomationId="LogWindow"
-                Content="LOG"
-                Command="{Binding LogCommand}" />
       </Grid>
     </Grid>
   </DockPanel>

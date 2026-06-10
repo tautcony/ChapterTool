@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -21,7 +22,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly IWindowService windowService;
     private readonly IChapterTimeFormatter formatter;
     private readonly IFrameRateService frameRateService;
-    private readonly ChapterExpressionService chapterExpressionService;
+    private readonly ChapterOutputProjectionService outputProjectionService;
     private readonly IApplicationLogService logService;
     private readonly IShellService? shellService;
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
@@ -42,6 +43,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string uiLanguage = "";
     private bool autoGenerateNames;
     private bool useTemplateNames;
+    private string chapterNameTemplateText = string.Empty;
+    private string chapterNameTemplateStatus = "未选择";
     private int orderShift;
     private bool applyExpression;
     private string expression = "t";
@@ -68,7 +71,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         this.windowService = windowService;
         this.formatter = formatter;
         this.frameRateService = frameRateService ?? new FrameRateService();
-        chapterExpressionService = new ChapterExpressionService(new ExpressionService());
+        outputProjectionService = new ChapterOutputProjectionService(new ExpressionService());
         this.logService = logService ?? new InMemoryApplicationLogService();
         this.shellService = shellService;
         this.appSettingsStore = appSettingsStore;
@@ -116,7 +119,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             if (currentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(editingService.Delete(currentInfo, indexes));
+                ApplyEdit(editingService.Delete(currentInfo, indexes), $"Delete rows: indexes={string.Join(",", indexes.Order())}");
             }
 
             return ValueTask.CompletedTask;
@@ -125,7 +128,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             if (currentInfo is not null)
             {
-                ApplyEdit(editingService.InsertBefore(currentInfo, parameter is int index ? index : Rows.Count));
+                var index = parameter is int value ? value : Rows.Count;
+                ApplyEdit(editingService.InsertBefore(currentInfo, index), $"Insert row: index={index}");
             }
 
             return ValueTask.CompletedTask;
@@ -205,6 +209,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             if (SetProperty(ref saveFormat, value))
             {
                 OnPropertyChanged(nameof(SaveFormatIndex));
+                OnPropertyChanged(nameof(IsXmlLanguageEnabled));
             }
         }
     }
@@ -221,6 +226,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         set => SetProperty(ref xmlLanguage, value);
     }
 
+    public bool IsXmlLanguageEnabled => SaveFormat == ChapterExportFormat.Xml;
+
     public string UiLanguage
     {
         get => uiLanguage;
@@ -230,19 +237,100 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public bool AutoGenerateNames
     {
         get => autoGenerateNames;
-        set => SetProperty(ref autoGenerateNames, value);
+        set
+        {
+            if (SetProperty(ref autoGenerateNames, value))
+            {
+                if (value && useTemplateNames)
+                {
+                    useTemplateNames = false;
+                    OnPropertyChanged(nameof(UseTemplateNames));
+                }
+
+                OnPropertyChanged(nameof(ChapterNameModeIndex));
+                RefreshRows();
+            }
+        }
     }
 
     public bool UseTemplateNames
     {
         get => useTemplateNames;
-        set => SetProperty(ref useTemplateNames, value);
+        set
+        {
+            if (SetProperty(ref useTemplateNames, value))
+            {
+                if (value && autoGenerateNames)
+                {
+                    autoGenerateNames = false;
+                    OnPropertyChanged(nameof(AutoGenerateNames));
+                }
+
+                OnPropertyChanged(nameof(ChapterNameModeIndex));
+                RefreshRows();
+            }
+        }
+    }
+
+    public string ChapterNameTemplateText
+    {
+        get => chapterNameTemplateText;
+        set
+        {
+            if (SetProperty(ref chapterNameTemplateText, value))
+            {
+                OnPropertyChanged(nameof(ChapterNameModeIndex));
+                RefreshRows();
+            }
+        }
+    }
+
+    public string ChapterNameTemplateStatus
+    {
+        get => chapterNameTemplateStatus;
+        set => SetProperty(ref chapterNameTemplateStatus, value);
+    }
+
+    public int ChapterNameModeIndex
+    {
+        get
+        {
+            if (UseTemplateNames && !string.IsNullOrWhiteSpace(ChapterNameTemplateText))
+            {
+                return 2;
+            }
+
+            if (UseTemplateNames)
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+        set
+        {
+            AutoGenerateNames = false;
+            UseTemplateNames = value is 1 or 2;
+            if (value != 2)
+            {
+                ChapterNameTemplateText = string.Empty;
+                ChapterNameTemplateStatus = "未选择";
+            }
+
+            OnPropertyChanged();
+        }
     }
 
     public int OrderShift
     {
         get => orderShift;
-        set => SetProperty(ref orderShift, value);
+        set
+        {
+            if (SetProperty(ref orderShift, value))
+            {
+                RefreshRows();
+            }
+        }
     }
 
     public bool ApplyExpression
@@ -359,7 +447,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var settings = await appSettingsStore.LoadAsync(cancellationToken);
         SaveDirectory = settings.SavingPath;
         UiLanguage = settings.Language;
-        logService.Add("Settings loaded");
+        Log($"Settings loaded: savingPath='{SaveDirectory ?? string.Empty}', language='{(string.IsNullOrWhiteSpace(UiLanguage) ? "default" : UiLanguage)}'");
         NotifyStateChanged();
     }
 
@@ -373,7 +461,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         var current = await appSettingsStore.LoadAsync(cancellationToken);
         await appSettingsStore.SaveAsync(current with { Language = language }, cancellationToken);
-        logService.Add($"Language set to {(string.IsNullOrWhiteSpace(language) ? "default" : language)}");
+        Log($"Language set to {(string.IsNullOrWhiteSpace(language) ? "default" : language)}");
         NotifyStateChanged();
     }
 
@@ -384,7 +472,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return string.Empty;
         }
 
-        var projection = CurrentExpressionProjection();
+        var projection = CurrentOutputProjection();
         var options = CurrentExportOptionsForProjectedInfo();
         var result = new ChapterExportService(formatter, new ExpressionService()).Export(projection.Info, options);
         if (!result.Success)
@@ -417,7 +505,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
             : SelectedRowIndexes;
         var result = editingService.CreateZones(currentInfo, indexes, (decimal)currentInfo.FramesPerSecond);
         StatusText = result.Diagnostics.Count == 0 ? "Zones generated" : result.Diagnostics[0].Message;
-        logService.Add(StatusText);
+        Log($"Create zones: selectedRows={indexes.Count}, chapters={currentInfo.Chapters.Count}");
+        LogDiagnostics("Create zones", result.Diagnostics);
+        Log(StatusText);
         NotifyStateChanged();
         return result.Zones;
     }
@@ -429,37 +519,40 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        ApplyEdit(editingService.ShiftFramesForward(currentInfo, frames, (decimal)currentInfo.FramesPerSecond));
+        ApplyEdit(editingService.ShiftFramesForward(currentInfo, frames, (decimal)currentInfo.FramesPerSecond), $"Shift frames forward: frames={frames}");
     }
 
     public ChapterExportOptions CurrentExportOptions() =>
         new(
-            SaveFormat,
-            XmlLanguage,
-            currentInfo?.SourceName,
-            AutoGenerateNames,
-            UseTemplateNames,
-            OrderShift,
-            ApplyExpression,
-            Expression);
+            Format: SaveFormat,
+            XmlLanguage: XmlLanguage,
+            SourceFileName: currentInfo?.SourceName,
+            AutoGenerateNames: AutoGenerateNames,
+            UseTemplateNames: UseTemplateNames,
+            ChapterNameTemplateText: ChapterNameTemplateText,
+            OrderShift: OrderShift,
+            ApplyExpression: ApplyExpression,
+            Expression: Expression);
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
             StatusText = "No source selected";
-            logService.Add(StatusText);
+            Log(StatusText);
             NotifyStateChanged();
             return;
         }
 
-        logService.Add($"Loading {path}");
+        Log($"Loading source: path='{path}'");
         var result = await loadService.LoadAsync(path, cancellationToken);
+        LogImportSummary("Load", result);
         if (!result.Success || result.Groups.Count == 0)
         {
             StatusText = result.Diagnostics.FirstOrDefault()?.Message ?? "Load failed";
             Progress = 0;
-            logService.Add(StatusText);
+            Log(StatusText);
+            LogDiagnostics("Load", result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -477,7 +570,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectClip(Math.Clamp(currentGroup.DefaultOptionIndex, 0, ClipOptions.Count - 1));
         StatusText = $"Loaded {Rows.Count} chapters";
         Progress = 1;
-        logService.Add($"{StatusText} from {path}");
+        Log($"{StatusText} from {path}");
+        LogDiagnostics("Load", result.Diagnostics);
         NotifyStateChanged();
     }
 
@@ -488,8 +582,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        var projection = CurrentExpressionProjection();
+        var projection = CurrentOutputProjection();
         var options = CurrentExportOptionsForProjectedInfo();
+        Log($"Saving chapters: format={options.Format}, directory='{directory ?? string.Empty}', source='{currentInfo.SourceName ?? string.Empty}', chapters={projection.Info.Chapters.Count}, applyExpression={ApplyExpression}, expression='{Expression}'");
+        LogDiagnostics("Output projection", projection.Diagnostics);
         var result = await saveService.SaveAsync(projection.Info, options, directory, cancellationToken);
         if (!string.IsNullOrWhiteSpace(directory))
         {
@@ -502,8 +598,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
 
         StatusText = result.Success ? "Saved" : result.Diagnostics.FirstOrDefault()?.Message ?? "Save failed";
-        var detail = result.Diagnostics.LastOrDefault()?.Message;
-        logService.Add(string.IsNullOrWhiteSpace(detail) ? StatusText : $"{StatusText}: {detail}");
+        Log(StatusText);
+        LogDiagnostics("Save", result.Diagnostics);
         NotifyStateChanged();
     }
 
@@ -517,6 +613,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectedClipIndex = index;
         currentInfo = ClipOptions[index].ChapterInfo;
         currentInfoBelongsToSelectedClip = true;
+        Log($"Selected source option: index={index}, label='{ClipOptions[index].DisplayName}', source='{currentInfo.SourceName ?? string.Empty}', sourceType={currentInfo.SourceType}, chapters={currentInfo.Chapters.Count}, fps={currentInfo.FramesPerSecond:0.###}");
         selectedFrameRateOption = frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
         SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
         ApplyFrameInfo();
@@ -536,7 +633,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             EditKind.Frame => editingService.EditFrame(currentInfo, edit.Index, edit.Value, (decimal)currentInfo.FramesPerSecond),
             _ => new ChapterEditResult(currentInfo, Array.Empty<Core.Diagnostics.ChapterDiagnostic>())
         };
-        ApplyEdit(result);
+        ApplyEdit(result, $"Edit {kind}: row={edit.Index}, value='{edit.Value}'");
         return ValueTask.CompletedTask;
     }
 
@@ -548,7 +645,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
 
         var result = segmentService.Combine(currentGroup);
-        ApplyEdit(result);
+        ApplyEdit(result, $"Combine segments: options={currentGroup.Options.Count}, sourceType={currentGroup.Options[0].ChapterInfo.SourceType}");
     }
 
     private async ValueTask AppendMplsAsync(string path, CancellationToken cancellationToken)
@@ -556,17 +653,19 @@ public sealed class MainWindowViewModel : ObservableViewModel
         if (currentGroup is null)
         {
             StatusText = "No current MPLS group is loaded";
-            logService.Add(StatusText);
+            Log(StatusText);
             NotifyStateChanged();
             return;
         }
 
-        logService.Add($"Appending MPLS {path}");
+        Log($"Appending MPLS: path='{path}'");
         var result = await loadService.LoadAsync(path, cancellationToken);
+        LogImportSummary("Append load", result);
         if (!result.Success || result.Groups.Count == 0)
         {
             StatusText = result.Diagnostics.FirstOrDefault()?.Message ?? "Append failed";
-            logService.Add(StatusText);
+            Log(StatusText);
+            LogDiagnostics("Append load", result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -575,7 +674,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         if (edit.Diagnostics.Count > 0)
         {
             StatusText = edit.Diagnostics[0].Message;
-            logService.Add(StatusText);
+            Log(StatusText);
+            LogDiagnostics("Append edit", edit.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -593,16 +693,20 @@ public sealed class MainWindowViewModel : ObservableViewModel
         currentInfoBelongsToSelectedClip = false;
         ApplyFrameInfo();
         StatusText = $"Appended {result.Groups[0].Options.Count} MPLS segment(s)";
-        logService.Add(StatusText);
+        Log(StatusText);
+        LogDiagnostics("Append load", result.Diagnostics);
         NotifyStateChanged();
     }
 
-    private void ApplyEdit(ChapterEditResult result)
+    private void ApplyEdit(ChapterEditResult result, string action = "Edit chapters")
     {
+        var before = currentInfo?.Chapters.Count ?? 0;
         currentInfo = result.ChapterInfo;
         ApplyFrameInfo();
         StatusText = result.Diagnostics.Count == 0 ? "Updated" : result.Diagnostics[0].Message;
-        logService.Add(StatusText);
+        Log($"{action}: chapters {before} -> {currentInfo.Chapters.Count}");
+        LogDiagnostics(action, result.Diagnostics);
+        Log(StatusText);
         NotifyStateChanged();
     }
 
@@ -621,6 +725,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         currentInfo = result.Info;
         selectedFrameRateOption = result.SelectedOption;
         SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        Log($"Frame info updated: option={selectedFrameRateOption.DisplayName}, fps={result.FramesPerSecond:0.###}, round={RoundFrames}, chapters={currentInfo.Chapters.Count}");
         if (currentInfoBelongsToSelectedClip)
         {
             UpdateCurrentClipOption(currentInfo);
@@ -657,22 +762,30 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        var projection = CurrentExpressionProjection();
-        foreach (var chapter in projection.Info.Chapters)
+        var projection = CurrentOutputProjection();
+        foreach (var chapter in projection.OutputChapters)
         {
             Rows.Add(new ChapterRowViewModel(chapter, formatter));
         }
     }
 
-    private ChapterExpressionResult CurrentExpressionProjection() =>
+    private ChapterOutputProjectionResult CurrentOutputProjection() =>
         currentInfo is null
-            ? new ChapterExpressionResult(
+            ? new ChapterOutputProjectionResult(
                 new ChapterInfo(string.Empty, null, 0, string.Empty, 0, TimeSpan.Zero, Array.Empty<Chapter>()),
-                Array.Empty<Core.Diagnostics.ChapterDiagnostic>())
-            : chapterExpressionService.Apply(currentInfo, ApplyExpression, Expression);
+                Array.Empty<ChapterDiagnostic>())
+            : outputProjectionService.Project(currentInfo, CurrentExportOptions());
 
     private ChapterExportOptions CurrentExportOptionsForProjectedInfo() =>
-        CurrentExportOptions() with { ApplyExpression = false };
+        CurrentExportOptions() with
+        {
+            ApplyExpression = false,
+            AutoGenerateNames = false,
+            UseTemplateNames = false,
+            ChapterNameTemplateText = string.Empty,
+            OrderShift = 0,
+            ProjectOutput = false
+        };
 
     private void OnClipOptionsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
@@ -744,7 +857,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         if (shellService is null)
         {
             StatusText = "Shell service is unavailable";
-            logService.Add(StatusText);
+            Log(StatusText);
             NotifyStateChanged();
             return;
         }
@@ -760,15 +873,52 @@ public sealed class MainWindowViewModel : ObservableViewModel
         if (string.IsNullOrWhiteSpace(target) || !File.Exists(target))
         {
             StatusText = "Related media file was not found";
-            logService.Add(StatusText);
+            Log($"{StatusText}: reference='{reference?.RelativePath ?? string.Empty}', resolved='{target ?? string.Empty}'");
             NotifyStateChanged();
             return;
         }
 
         await shellService.OpenAsync(target, cancellationToken);
         StatusText = $"Opened {Path.GetFileName(target)}";
-        logService.Add(StatusText);
+        Log($"{StatusText}: path='{target}'");
         NotifyStateChanged();
+    }
+
+    private void Log(string message) => logService.Add(message);
+
+    private void LogImportSummary(string operation, ChapterImportResult result)
+    {
+        var optionCount = result.Groups.Sum(static group => group.Options.Count);
+        var chapterCount = result.Groups
+            .SelectMany(static group => group.Options)
+            .Sum(static option => option.ChapterInfo.Chapters.Count);
+        Log($"{operation} result: success={result.Success}, partial={result.IsPartial}, groups={result.Groups.Count}, options={optionCount}, chapters={chapterCount}, diagnostics={result.Diagnostics.Count}");
+        for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
+        {
+            var group = result.Groups[groupIndex];
+            Log($"{operation} group {groupIndex + 1}: sourcePath='{group.SourcePath}', defaultOptionIndex={group.DefaultOptionIndex}, options={group.Options.Count}");
+            for (var optionIndex = 0; optionIndex < group.Options.Count; optionIndex++)
+            {
+                var option = group.Options[optionIndex];
+                var info = option.ChapterInfo;
+                Log($"{operation} option {optionIndex + 1}: id='{option.Id}', label='{option.DisplayName}', source='{info.SourceName ?? string.Empty}', sourceType={info.SourceType}, chapters={info.Chapters.Count}, duration={formatter.Format(info.Duration)}, fps={info.FramesPerSecond:0.###}");
+            }
+        }
+    }
+
+    private void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
+    {
+        if (diagnostics.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var diagnostic in diagnostics)
+        {
+            var location = string.IsNullOrWhiteSpace(diagnostic.Location) ? string.Empty : $" location='{diagnostic.Location}'";
+            var details = string.IsNullOrWhiteSpace(diagnostic.Details) ? string.Empty : $" details='{diagnostic.Details}'";
+            Log($"{operation} diagnostic: severity={diagnostic.Severity}, code={diagnostic.Code}{location} message='{diagnostic.Message}'{details}");
+        }
     }
 
     private enum EditKind

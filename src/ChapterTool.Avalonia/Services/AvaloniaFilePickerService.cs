@@ -53,6 +53,23 @@ public sealed class AvaloniaFilePickerService(Window owner) : IFilePickerService
         return files.Count > 0 ? files[0].Path.LocalPath : null;
     }
 
+    public async ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken)
+    {
+        var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open Chapter Name Template",
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Text files") { Patterns = ["*.txt"] },
+                FilePickerFileTypes.All
+            ]
+        });
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return files.Count > 0 ? files[0].Path.LocalPath : null;
+    }
+
     public async ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken)
     {
         var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions

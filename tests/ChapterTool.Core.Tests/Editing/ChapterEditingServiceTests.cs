@@ -54,6 +54,34 @@ public sealed class ChapterEditingServiceTests
     }
 
     [Fact]
+    public void ApplyOrderShift_normalizes_negative_shift_to_zero()
+    {
+        var result = service.ApplyOrderShift(Sample(), -2);
+
+        Assert.Equal([1, 2, 3], result.ChapterInfo.Chapters.Select(static chapter => chapter.Number).ToArray());
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OrderShiftNormalized");
+    }
+
+    [Fact]
+    public void ApplyOrderShift_uses_non_separator_output_order()
+    {
+        var info = Sample() with
+        {
+            Chapters =
+            [
+                new Chapter(1, TimeSpan.Zero, "Intro"),
+                new Chapter(-1, Chapter.SeparatorTime, ""),
+                new Chapter(2, TimeSpan.FromSeconds(10), "Middle")
+            ]
+        };
+
+        var result = service.ApplyOrderShift(info, 2);
+
+        Assert.Equal([3, 0, 4], result.ChapterInfo.Chapters.Select(static chapter => chapter.Number).ToArray());
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
     public void ShiftFramesForward_subtracts_shift_and_removes_negative_chapters()
     {
         var result = service.ShiftFramesForward(Sample(), 240, 24);

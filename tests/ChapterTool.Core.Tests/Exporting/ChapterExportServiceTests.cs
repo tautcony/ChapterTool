@@ -43,6 +43,82 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
+    public void Txt_export_applies_order_shift_and_generated_names()
+    {
+        var result = service.Export(
+            Sample(),
+            new ChapterExportOptions(ChapterExportFormat.Txt, AutoGenerateNames: true, OrderShift: 2));
+
+        Assert.Contains("CHAPTER03=00:00:00.000", result.Content, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER03NAME=Chapter 01", result.Content, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER05=00:00:20.000", result.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER01=", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Xml_export_applies_order_shift_language_and_template_names()
+    {
+        var result = service.Export(
+            Sample(),
+            new ChapterExportOptions(ChapterExportFormat.Xml, XmlLanguage: "jpn", UseTemplateNames: true, OrderShift: 4));
+
+        Assert.Contains("<ChapterUID>5</ChapterUID>", result.Content, StringComparison.Ordinal);
+        Assert.Contains("<ChapterLanguage>jpn</ChapterLanguage>", result.Content, StringComparison.Ordinal);
+        Assert.Contains("<ChapterString>Chapter 01</ChapterString>", result.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("<ChapterString>Intro</ChapterString>", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Txt_export_applies_template_file_names_by_line()
+    {
+        var result = service.Export(
+            Sample(),
+            new ChapterExportOptions(
+                ChapterExportFormat.Txt,
+                UseTemplateNames: true,
+                ChapterNameTemplateText: "Opening\nMiddle Part\nFinale"));
+
+        Assert.Contains("CHAPTER01NAME=Opening", result.Content, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER02NAME=Middle Part", result.Content, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER03NAME=Finale", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Negative_order_shift_is_normalized_to_zero()
+    {
+        var result = service.Export(
+            Sample(),
+            new ChapterExportOptions(ChapterExportFormat.Txt, OrderShift: -2));
+
+        Assert.Contains("CHAPTER01=00:00:00.000", result.Content, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER03=00:00:20.000", result.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER00", result.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER-01", result.Content, StringComparison.Ordinal);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OrderShiftNormalized");
+    }
+
+    [Fact]
+    public void Order_shift_ignores_separator_markers()
+    {
+        var info = Sample() with
+        {
+            Chapters =
+            [
+                new Chapter(1, TimeSpan.Zero, "A", "0 K"),
+                new Chapter(-1, Chapter.SeparatorTime, ""),
+                new Chapter(2, TimeSpan.FromSeconds(7), "B", "168 K")
+            ]
+        };
+
+        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.Txt, OrderShift: 2));
+
+        Assert.Contains("CHAPTER03=00:00:00.000", result.Content, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER04=00:00:07.000", result.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER-01", result.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER05", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Cue_export_numbers_tracks_by_output_order()
     {
         var result = service.Export(

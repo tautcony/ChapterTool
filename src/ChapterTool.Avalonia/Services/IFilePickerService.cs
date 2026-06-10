@@ -6,5 +6,7 @@ public interface IFilePickerService
 
     ValueTask<string?> PickMplsAsync(CancellationToken cancellationToken);
 
+    ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken);
+
     ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken);
 }

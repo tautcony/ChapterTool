@@ -86,7 +86,7 @@ public sealed class ToolWindowViewModelTests
 
         var expression = new ExpressionToolViewModel(owner) { Expression = "t + 1", ApplyExpression = true };
         await expression.ApplyCommand.ExecuteAsync(expression);
-        var template = new TemplateNamesToolViewModel(owner) { UseTemplateNames = true, AutoGenerateNames = true };
+        var template = new TemplateNamesToolViewModel(owner) { UseTemplateNames = true };
         await template.ApplyCommand.ExecuteAsync(template);
         var forward = new ForwardShiftToolViewModel(owner) { Frames = 24 };
         await forward.ApplyCommand.ExecuteAsync(forward);
@@ -94,7 +94,7 @@ public sealed class ToolWindowViewModelTests
         Assert.Equal("t + 1", owner.Expression);
         Assert.True(owner.ApplyExpression);
         Assert.True(owner.UseTemplateNames);
-        Assert.True(owner.AutoGenerateNames);
+        Assert.False(owner.AutoGenerateNames);
         Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
 

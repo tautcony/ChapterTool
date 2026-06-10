@@ -32,6 +32,7 @@ public sealed partial class MainWindow : Window
         BrowseAndLoadCommand = new UiCommand(async (_, _) => await BrowseAndLoadAsync());
         ReloadCommand = new UiCommand(async (_, _) => await LoadAsync(), _ => viewModel.ReloadCommand.CanExecute());
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
+        LoadChapterNameTemplateCommand = new UiCommand(async (_, _) => await LoadChapterNameTemplateAsync());
         SaveCommand = new UiCommand(async (_, _) => await SaveAsync(null), _ => viewModel.SaveCommand.CanExecute());
         SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
         PreviewCommand = new UiCommand(async (_, _) =>
@@ -74,6 +75,8 @@ public sealed partial class MainWindow : Window
     public UiCommand ReloadCommand { get; }
 
     public UiCommand AppendMplsCommand { get; }
+
+    public UiCommand LoadChapterNameTemplateCommand { get; }
 
     public UiCommand SaveCommand { get; }
 
@@ -144,6 +147,21 @@ public sealed partial class MainWindow : Window
         }
 
         await viewModel.AppendMplsCommand.ExecuteAsync(path);
+        Refresh();
+    }
+
+    private async Task LoadChapterNameTemplateAsync()
+    {
+        var path = await filePickerService.PickChapterNameTemplateAsync(CancellationToken.None);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var text = await ChapterNameTemplateReader.ReadAsync(path, CancellationToken.None);
+        viewModel.ChapterNameTemplateText = text;
+        viewModel.ChapterNameTemplateStatus = Path.GetFileName(path);
+        viewModel.ChapterNameModeIndex = 2;
         Refresh();
     }
 
@@ -439,11 +457,29 @@ public sealed partial class MainWindow : Window
     private void ReadAdvancedOptions()
     {
         viewModel.XmlLanguage = SelectedComboText(XmlLanguageBox, "und");
-        viewModel.AutoGenerateNames = AutoNamesBox.IsChecked == true;
-        viewModel.UseTemplateNames = TemplateNamesBox.IsChecked == true;
+        viewModel.ChapterNameModeIndex = Math.Max(0, ChapterNameModeBox.SelectedIndex);
         viewModel.ApplyExpression = ApplyExpressionBox.IsChecked == true;
         viewModel.Expression = ExpressionBox.Text ?? "t";
-        viewModel.OrderShift = (int)(OrderShiftBox.Value ?? 0);
+        viewModel.OrderShift = NormalizedOrderShiftValue();
+    }
+
+    private void OnOrderShiftValueChanged(object? sender, NumericUpDownValueChangedEventArgs args)
+    {
+        if (OrderShiftBox.Value is null)
+        {
+            OrderShiftBox.Value = 0;
+        }
+    }
+
+    private int NormalizedOrderShiftValue()
+    {
+        if (OrderShiftBox.Value is { } value)
+        {
+            return (int)value;
+        }
+
+        OrderShiftBox.Value = 0;
+        return 0;
     }
 
     private void ReadFrameOptions()
@@ -501,25 +537,14 @@ public sealed partial class MainWindow : Window
 
     private void ApplyAdvancedOptionsLayout()
     {
-        var wide = Bounds.Width >= 900;
-        AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions(wide ? "*,*,*" : "*,*");
-        AdvancedOptionsGrid.RowDefinitions = new RowDefinitions(wide ? "Auto,Auto" : "Auto,Auto,Auto");
+        AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,2*,*");
+        AdvancedOptionsGrid.RowDefinitions = new RowDefinitions("Auto,Auto");
 
         SetGridPosition(FormatOptionsGroup, 0, 0);
-        SetGridPosition(NamingOptionsGroup, 0, 1);
-        if (wide)
-        {
-            SetGridPosition(OrderShiftOptionsGroup, 0, 2);
-            SetGridPosition(XmlLanguageOptionsGroup, 1, 0);
-            SetGridPosition(ExpressionOptionsGroup, 1, 1);
-            SetGridPosition(LogButton, 1, 2);
-            return;
-        }
-
+        SetGridPosition(ChapterNameOptionsGroup, 0, 1);
+        SetGridPosition(OrderShiftOptionsGroup, 0, 2);
         SetGridPosition(XmlLanguageOptionsGroup, 1, 0);
-        SetGridPosition(OrderShiftOptionsGroup, 1, 1);
-        SetGridPosition(ExpressionOptionsGroup, 2, 0);
-        SetGridPosition(LogButton, 2, 1);
+        SetGridPosition(ExpressionOptionsGroup, 1, 1);
     }
 
     private static void SetGridPosition(Control control, int row, int column)

@@ -15,34 +15,36 @@ public sealed class ChapterExportService(
 {
     public ChapterExportResult Export(ChapterInfo info, ChapterExportOptions options)
     {
-        var expressionResult = new ChapterExpressionService(expressionService).Apply(info, options.ApplyExpression, options.Expression);
-        info = expressionResult.Info;
+        var projection = options.ProjectOutput
+            ? new ChapterOutputProjectionService(expressionService).Project(info, options)
+            : new ChapterOutputProjectionResult(info, Array.Empty<ChapterDiagnostic>());
+        info = projection.Info;
+        var outputInfo = info with { Chapters = projection.OutputChapters };
         var result = options.Format switch
         {
-            ChapterExportFormat.Txt => Text(info, options),
-            ChapterExportFormat.Xml => Xml(info, options),
-            ChapterExportFormat.Qpf => Lines(".qpf", info.Chapters.Where(NotSeparator).Select(static c => c.FramesInfo.TrimEnd('K', '*') + "I")),
-            ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", info.Chapters.Where(NotSeparator).Select(FormatTime)),
-            ChapterExportFormat.TsMuxerMeta => TsMuxer(info, options),
-            ChapterExportFormat.Cue => Cue(info, options),
+            ChapterExportFormat.Txt => Text(outputInfo, options),
+            ChapterExportFormat.Xml => Xml(outputInfo, options),
+            ChapterExportFormat.Qpf => Lines(".qpf", outputInfo.Chapters.Select(static c => c.FramesInfo.TrimEnd('K', '*') + "I")),
+            ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", outputInfo.Chapters.Select(FormatTime)),
+            ChapterExportFormat.TsMuxerMeta => TsMuxer(outputInfo, options),
+            ChapterExportFormat.Cue => Cue(outputInfo, options),
             ChapterExportFormat.Json => Json(info, options),
             _ => Failure("UnsupportedExportFormat", "Unsupported export format.")
         };
 
         return result with
         {
-            Diagnostics = result.Diagnostics.Concat(expressionResult.Diagnostics).ToArray()
+            Diagnostics = result.Diagnostics.Concat(projection.Diagnostics).ToArray()
         };
     }
 
     private ChapterExportResult Text(ChapterInfo info, ChapterExportOptions options)
     {
         var builder = new StringBuilder();
-        foreach (var (chapter, index) in info.Chapters.Where(NotSeparator).Select((chapter, index) => (chapter, index)))
+        foreach (var chapter in info.Chapters.Where(NotSeparator))
         {
-            var number = chapter.Number <= 0 ? index + 1 : chapter.Number;
-            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{number:D2}={FormatTime(chapter)}");
-            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{number:D2}NAME={DisplayName(chapter, index, options)}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{chapter.Number:D2}={FormatTime(chapter)}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{chapter.Number:D2}NAME={chapter.Name}");
         }
 
         return Success(builder.ToString(), ".txt");
@@ -51,11 +53,11 @@ public sealed class ChapterExportService(
     private ChapterExportResult Xml(ChapterInfo info, ChapterExportOptions options)
     {
         var language = string.IsNullOrWhiteSpace(options.XmlLanguage) ? "und" : options.XmlLanguage;
-        var atoms = info.Chapters.Where(NotSeparator).Select((chapter, index) =>
+        var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
             new XElement(
                 "ChapterAtom",
-                new XElement("ChapterDisplay", new XElement("ChapterString", DisplayName(chapter, index, options)), new XElement("ChapterLanguage", language)),
-                new XElement("ChapterUID", index + 1),
+                new XElement("ChapterDisplay", new XElement("ChapterString", chapter.Name), new XElement("ChapterLanguage", language)),
+                new XElement("ChapterUID", chapter.Number),
                 new XElement("ChapterTimeStart", FormatTime(chapter) + "000"),
                 new XElement("ChapterFlagHidden", "0"),
                 new XElement("ChapterFlagEnabled", "1")));
@@ -89,10 +91,10 @@ public sealed class ChapterExportService(
         builder.AppendLine(CultureInfo.InvariantCulture, $"TITLE \"{Escape(info.Title)}\"");
         builder.AppendLine(CultureInfo.InvariantCulture, $"FILE \"{Escape(options.SourceFileName ?? info.SourceName ?? string.Empty)}\" WAVE");
         var track = 0;
-        foreach (var (chapter, index) in info.Chapters.Where(NotSeparator).Select((chapter, index) => (chapter, index)))
+        foreach (var chapter in info.Chapters.Where(NotSeparator))
         {
             builder.AppendLine(CultureInfo.InvariantCulture, $"  TRACK {++track:D2} AUDIO");
-            builder.AppendLine(CultureInfo.InvariantCulture, $"    TITLE \"{Escape(DisplayName(chapter, index, options))}\"");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"    TITLE \"{Escape(chapter.Name)}\"");
             builder.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {timeFormatter.FormatCue(chapter.Time)}");
         }
 
@@ -104,7 +106,6 @@ public sealed class ChapterExportService(
         var entries = new List<JsonChapter>();
         var baseTime = TimeSpan.Zero;
         Chapter? previous = null;
-        var autoIndex = 0;
         foreach (var chapter in info.Chapters)
         {
             if (chapter.IsSeparator)
@@ -112,14 +113,13 @@ public sealed class ChapterExportService(
                 if (previous is not null)
                 {
                     baseTime = previous.Time;
-                    autoIndex = 0;
-                    entries.Add(new JsonChapter(DisplayName(previous, autoIndex++, options), 0));
+                    entries.Add(new JsonChapter(previous.Name, 0));
                 }
 
                 continue;
             }
 
-            entries.Add(new JsonChapter(DisplayName(chapter, autoIndex++, options), (chapter.Time - baseTime).TotalSeconds));
+            entries.Add(new JsonChapter(chapter.Name, (chapter.Time - baseTime).TotalSeconds));
             previous = chapter;
         }
 
@@ -135,9 +135,6 @@ public sealed class ChapterExportService(
     private static string Escape(string value) => value.Replace("\"", "\\\"", StringComparison.Ordinal);
 
     private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.Time);
-
-    private static string DisplayName(Chapter chapter, int index, ChapterExportOptions options) =>
-        options.AutoGenerateNames ? $"Chapter {index + 1:D2}" : chapter.Name;
 
     private static ChapterExportResult Success(string content, string extension) =>
         new(true, content, extension, Array.Empty<ChapterDiagnostic>());

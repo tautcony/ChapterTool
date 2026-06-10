@@ -100,6 +100,41 @@ public sealed class MainWindowViewModelTests
         Assert.Contains(nameof(MainWindowViewModel.AutoGenerateNames), changed);
         Assert.Contains(nameof(MainWindowViewModel.RoundFrames), changed);
         Assert.Contains(nameof(MainWindowViewModel.SelectedFrameRateIndex), changed);
+        Assert.Contains(nameof(MainWindowViewModel.IsXmlLanguageEnabled), changed);
+    }
+
+    [Fact]
+    public void XmlLanguageIsEnabledOnlyForXmlExport()
+    {
+        var vm = CreateViewModel();
+
+        Assert.False(vm.IsXmlLanguageEnabled);
+
+        vm.SaveFormat = ChapterExportFormat.Xml;
+        Assert.True(vm.IsXmlLanguageEnabled);
+
+        vm.SaveFormat = ChapterExportFormat.Txt;
+        Assert.False(vm.IsXmlLanguageEnabled);
+    }
+
+    [Fact]
+    public async Task ChapterNameTemplateReaderDetectsUtf8Bom()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "names.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllBytesAsync(path, [0xEF, 0xBB, 0xBF, .. "Opening\nMiddle"u8.ToArray()]);
+
+        try
+        {
+            var text = await ChapterNameTemplateReader.ReadAsync(path, CancellationToken.None);
+
+            Assert.Equal("Opening\nMiddle", text);
+            Assert.DoesNotContain("\uFEFF", text, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(path)!, recursive: true);
+        }
     }
 
     [Fact]
@@ -139,7 +174,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task SaveDelegatesOptions()
+    public async Task SaveProjectsChaptersAndDelegatesNeutralOptions()
     {
         var save = new FakeSaveService();
         var vm = CreateViewModel(saveService: save);
@@ -156,10 +191,15 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastOptions);
         Assert.Equal(ChapterExportFormat.Cue, save.LastOptions.Format);
         Assert.Equal("jpn", save.LastOptions.XmlLanguage);
-        Assert.True(save.LastOptions.AutoGenerateNames);
-        Assert.Equal(2, save.LastOptions.OrderShift);
+        Assert.False(save.LastOptions.AutoGenerateNames);
+        Assert.False(save.LastOptions.UseTemplateNames);
+        Assert.Equal(0, save.LastOptions.OrderShift);
         Assert.False(save.LastOptions.ApplyExpression);
         Assert.Equal("t + 1", save.LastOptions.Expression);
+        Assert.NotNull(save.LastInfo);
+        Assert.Equal(3, save.LastInfo.Chapters[0].Number);
+        Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
+        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].Time);
         Assert.Equal("out", save.LastDirectory);
     }
 
@@ -185,6 +225,94 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("24 K", save.LastInfo.Chapters[0].FramesInfo);
         Assert.NotNull(save.LastOptions);
         Assert.False(save.LastOptions.ApplyExpression);
+    }
+
+    [Fact]
+    public async Task NamingAndOrderOptionsApplyToRowsAndPreview()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Txt;
+
+        vm.OrderShift = 2;
+        vm.AutoGenerateNames = true;
+
+        Assert.Equal(3, vm.Rows[0].Number);
+        Assert.Equal("Chapter 01", vm.Rows[0].Name);
+        Assert.Contains("CHAPTER03=00:00:00.000", vm.BuildPreview(), StringComparison.Ordinal);
+        Assert.Contains("CHAPTER03NAME=Chapter 01", vm.BuildPreview(), StringComparison.Ordinal);
+
+        vm.AutoGenerateNames = false;
+        vm.UseTemplateNames = true;
+
+        Assert.Equal("Chapter 01", vm.Rows[0].Name);
+
+        vm.ChapterNameTemplateText = "Opening";
+
+        Assert.Equal("Opening", vm.Rows[0].Name);
+        Assert.Contains("CHAPTER03NAME=Opening", vm.BuildPreview(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task NegativeOrderShiftNormalizesToZeroAcrossRowsPreviewAndSave()
+    {
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Txt;
+
+        vm.OrderShift = -2;
+
+        Assert.Equal(1, vm.Rows[0].Number);
+        var preview = vm.BuildPreview();
+        Assert.Contains("CHAPTER01=00:00:00.000", preview, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER00", preview, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER-01", preview, StringComparison.Ordinal);
+
+        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+
+        Assert.NotNull(save.LastInfo);
+        Assert.Equal(1, save.LastInfo.Chapters[0].Number);
+        Assert.NotNull(save.LastOptions);
+        Assert.Equal(0, save.LastOptions.OrderShift);
+    }
+
+    [Fact]
+    public async Task OrderShiftUsesOutputChapterOrderAndSkipsSeparators()
+    {
+        var load = new FakeLoadService(ImportResult(
+            "album.cue",
+            Info(
+                "CUE",
+                "album.cue",
+                new Chapter(1, TimeSpan.Zero, "A", "0 K"),
+                new Chapter(-1, Chapter.SeparatorTime, ""),
+                new Chapter(2, TimeSpan.FromSeconds(7), "B", "168 K"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("album.cue");
+        vm.SaveFormat = ChapterExportFormat.Txt;
+
+        vm.OrderShift = 2;
+
+        Assert.Equal([3, 4], vm.Rows.Select(static row => row.Number).ToArray());
+        var preview = vm.BuildPreview();
+        Assert.Contains("CHAPTER03=00:00:00.000", preview, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER04=00:00:07.000", preview, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER-01", preview, StringComparison.Ordinal);
+        Assert.DoesNotContain("CHAPTER05", preview, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ZeroOrderShiftUsesFirstChapterNumber()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Txt;
+
+        vm.OrderShift = 0;
+
+        Assert.Equal(1, vm.Rows[0].Number);
+        Assert.Contains("CHAPTER01=00:00:00.000", vm.BuildPreview(), StringComparison.Ordinal);
     }
 
     [Fact]

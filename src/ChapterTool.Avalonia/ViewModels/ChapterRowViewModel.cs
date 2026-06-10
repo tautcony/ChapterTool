@@ -5,17 +5,18 @@ namespace ChapterTool.Avalonia.ViewModels;
 
 public sealed class ChapterRowViewModel
 {
-    public ChapterRowViewModel(Chapter chapter, IChapterTimeFormatter formatter)
+    public ChapterRowViewModel(Chapter chapter, IChapterTimeFormatter formatter, int? number = null, string? name = null)
     {
         Chapter = chapter;
         TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.Time);
-        Name = chapter.Name;
+        Number = number ?? chapter.Number;
+        Name = name ?? chapter.Name;
         FramesInfo = chapter.FramesInfo;
     }
 
     public Chapter Chapter { get; }
 
-    public int Number => Chapter.Number;
+    public int Number { get; }
 
     public string TimeText { get; set; }
 
