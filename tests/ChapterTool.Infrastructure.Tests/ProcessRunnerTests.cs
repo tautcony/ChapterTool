@@ -94,7 +94,10 @@ public sealed class ProcessRunnerTests
         {
             if (OperatingSystem.IsWindows())
             {
-                return Create($"chcp 65001 > nul && powershell -NoProfile -Command \"[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; [Console]::Error.WriteLine('{stderr}'); [Console]::WriteLine('{stdout}')\"");
+                return new ProcessRunRequest(
+                    "powershell.exe",
+                    ["-NoProfile", "-Command", $"$OutputEncoding = [System.Text.Encoding]::UTF8; [Console]::Error.WriteLine('{stderr}'); [Console]::WriteLine('{stdout}')"],
+                    null);
             }
 
             return Create($"printf '{stdout}\\n'; printf '{stderr}\\n' 1>&2");

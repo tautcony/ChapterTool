@@ -17,6 +17,9 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Install external tools
+        run: choco install ffmpeg mkvtoolnix --no-progress -y
+
       - name: Restore
         run: dotnet restore ChapterTool.Avalonia.slnx
 

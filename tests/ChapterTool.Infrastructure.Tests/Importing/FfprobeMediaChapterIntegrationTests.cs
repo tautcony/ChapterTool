@@ -68,7 +68,7 @@ public sealed class FfprobeMediaChapterIntegrationTests
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var locator = new ExternalToolLocator(new EmptySettingsStore(), searchDirectories, new EmptyMkvToolNixInstallProbe());
         var location = await locator.LocateAsync("ffprobe", CancellationToken.None);
-        Assert.True(location.Found, location.Message ?? "ffprobe was not found.");
+        Assert.True(location.Found, location.Message ?? "External tool 'ffprobe' was not found.");
         return location;
     }
 

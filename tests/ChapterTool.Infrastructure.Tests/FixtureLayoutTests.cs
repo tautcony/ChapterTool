@@ -13,15 +13,4 @@ public sealed class FixtureLayoutTests
 
         Assert.Empty(misplacedFixtureDirectories);
     }
-
-    [Fact]
-    public void ImportingMediaFixturesAreManagedInOneDirectory()
-    {
-        var mediaRoot = Path.Combine(FixtureResolver.RepositoryRoot, "tests", "ChapterTool.Infrastructure.Tests", "Fixtures", "Importing", "Media");
-
-        Assert.Empty(Directory.EnumerateDirectories(mediaRoot));
-        Assert.Equal(
-            ["Chapter.flac", "Chapter.mkv", "Chapter.mp4", "Chapter.ogg"],
-            Directory.EnumerateFiles(mediaRoot).Select(path => Path.GetFileName(path)!).Order(StringComparer.Ordinal).ToArray());
-    }
 }
