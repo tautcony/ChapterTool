@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
@@ -24,6 +25,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private readonly IFrameRateService frameRateService;
     private readonly ChapterOutputProjectionService outputProjectionService;
     private readonly IApplicationLogService logService;
+    private readonly IAppLocalizer localizer;
     private readonly IShellService? shellService;
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
 
@@ -44,12 +46,13 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private bool autoGenerateNames;
     private bool useTemplateNames;
     private string chapterNameTemplateText = string.Empty;
-    private string chapterNameTemplateStatus = "未选择";
+    private string chapterNameTemplateStatus = string.Empty;
     private int orderShift;
     private bool applyExpression;
     private string expression = "t";
     private string? saveDirectory;
-    private string statusText = "Ready";
+    private string statusText = string.Empty;
+    private LocalizedMessage? currentStatusMessage;
     private double progress;
 
     public MainWindowViewModel(
@@ -62,7 +65,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         IApplicationLogService? logService = null,
         IShellService? shellService = null,
         ISettingsStore<AppSettings>? appSettingsStore = null,
-        IFrameRateService? frameRateService = null)
+        IFrameRateService? frameRateService = null,
+        IAppLocalizer? localizer = null)
     {
         this.loadService = loadService;
         this.saveService = saveService;
@@ -73,8 +77,12 @@ public sealed class MainWindowViewModel : ObservableViewModel
         this.frameRateService = frameRateService ?? new FrameRateService();
         outputProjectionService = new ChapterOutputProjectionService(new ExpressionService());
         this.logService = logService ?? new InMemoryApplicationLogService();
+        this.localizer = localizer ?? new AppLocalizationManager();
         this.shellService = shellService;
         this.appSettingsStore = appSettingsStore;
+        chapterNameTemplateStatus = this.localizer.GetString("Status.TemplateNotSelected");
+        statusText = this.localizer.GetString("Status.Ready");
+        this.localizer.CultureChanged += (_, _) => RefreshLocalizedState();
         selectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
         Rows.CollectionChanged += OnRowsChanged;
@@ -234,6 +242,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         private set => SetProperty(ref uiLanguage, value);
     }
 
+    public IAppLocalizer Localizer => localizer;
+
     public bool AutoGenerateNames
     {
         get => autoGenerateNames;
@@ -314,7 +324,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             if (value != 2)
             {
                 ChapterNameTemplateText = string.Empty;
-                ChapterNameTemplateStatus = "未选择";
+                ChapterNameTemplateStatus = localizer.GetString("Status.TemplateNotSelected");
             }
 
             OnPropertyChanged();
@@ -446,22 +456,26 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         var settings = await appSettingsStore.LoadAsync(cancellationToken);
         SaveDirectory = settings.SavingPath;
-        UiLanguage = settings.Language;
-        Log($"Settings loaded: savingPath='{SaveDirectory ?? string.Empty}', language='{(string.IsNullOrWhiteSpace(UiLanguage) ? "default" : UiLanguage)}'");
+        UiLanguage = AppLanguage.Normalize(settings.Language);
+        localizer.SetCulture(UiLanguage);
+        Log("Log.SettingsLoaded",
+            ("savingPath", SaveDirectory ?? string.Empty),
+            ("language", UiLanguage));
         NotifyStateChanged();
     }
 
     public async ValueTask SaveUiLanguageAsync(string language, CancellationToken cancellationToken)
     {
-        UiLanguage = language;
+        UiLanguage = AppLanguage.Normalize(language);
+        localizer.SetCulture(UiLanguage);
         if (appSettingsStore is null)
         {
             return;
         }
 
         var current = await appSettingsStore.LoadAsync(cancellationToken);
-        await appSettingsStore.SaveAsync(current with { Language = language }, cancellationToken);
-        Log($"Language set to {(string.IsNullOrWhiteSpace(language) ? "default" : language)}");
+        await appSettingsStore.SaveAsync(current with { Language = UiLanguage }, cancellationToken);
+        Log("Log.LanguageSet", ("language", UiLanguage));
         NotifyStateChanged();
     }
 
@@ -483,7 +497,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         return result.Content;
     }
 
-    public string LogText() => logService.Format();
+    public string LogText() => logService.Format(FormatLogEntry);
 
     public void ClearLog() => logService.Clear();
 
@@ -504,10 +518,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             ? Enumerable.Range(0, currentInfo.Chapters.Count).ToHashSet()
             : SelectedRowIndexes;
         var result = editingService.CreateZones(currentInfo, indexes, (decimal)currentInfo.FramesPerSecond);
-        StatusText = result.Diagnostics.Count == 0 ? "Zones generated" : result.Diagnostics[0].Message;
-        Log($"Create zones: selectedRows={indexes.Count}, chapters={currentInfo.Chapters.Count}");
+        SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
+        Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", currentInfo.Chapters.Count));
         LogDiagnostics("Create zones", result.Diagnostics);
-        Log(StatusText);
+        LogStatus();
         NotifyStateChanged();
         return result.Zones;
     }
@@ -538,20 +552,20 @@ public sealed class MainWindowViewModel : ObservableViewModel
     {
         if (string.IsNullOrWhiteSpace(path))
         {
-            StatusText = "No source selected";
-            Log(StatusText);
+            SetStatus("Status.NoSourceSelected");
+            LogStatus();
             NotifyStateChanged();
             return;
         }
 
-        Log($"Loading source: path='{path}'");
+        Log("Log.LoadingSource", ("path", path));
         var result = await loadService.LoadAsync(path, cancellationToken);
         LogImportSummary("Load", result);
         if (!result.Success || result.Groups.Count == 0)
         {
-            StatusText = result.Diagnostics.FirstOrDefault()?.Message ?? "Load failed";
+            SetStatus("Status.LoadFailed", diagnostic: result.Diagnostics.FirstOrDefault());
             Progress = 0;
-            Log(StatusText);
+            LogStatus();
             LogDiagnostics("Load", result.Diagnostics);
             NotifyStateChanged();
             return;
@@ -569,9 +583,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
 
         SelectClip(Math.Clamp(currentGroup.DefaultOptionIndex, 0, ClipOptions.Count - 1));
-        StatusText = $"Loaded {Rows.Count} chapters";
+        SetStatus("Status.LoadedChapters", ("count", Rows.Count));
         Progress = 1;
-        Log($"{StatusText} from {path}");
+        Log("Log.StatusFromPath", ("status", StatusText), ("path", path));
         LogDiagnostics("Load", result.Diagnostics);
         NotifyStateChanged();
     }
@@ -585,7 +599,13 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         var projection = CurrentOutputProjection();
         var options = CurrentExportOptionsForProjectedInfo();
-        Log($"Saving chapters: format={options.Format}, directory='{directory ?? string.Empty}', source='{currentInfo.SourceName ?? string.Empty}', chapters={projection.Info.Chapters.Count}, applyExpression={ApplyExpression}, expression='{Expression}'");
+        Log("Log.SavingChapters",
+            ("format", options.Format),
+            ("directory", directory ?? string.Empty),
+            ("source", currentInfo.SourceName ?? string.Empty),
+            ("chapters", projection.Info.Chapters.Count),
+            ("applyExpression", ApplyExpression),
+            ("expression", Expression));
         LogDiagnostics("Output projection", projection.Diagnostics);
         var result = await saveService.SaveAsync(projection.Info, options, directory, cancellationToken);
         if (!string.IsNullOrWhiteSpace(directory))
@@ -598,8 +618,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
             }
         }
 
-        StatusText = result.Success ? "Saved" : result.Diagnostics.FirstOrDefault()?.Message ?? "Save failed";
-        Log(StatusText);
+        SetStatus(result.Success ? "Status.Saved" : "Status.SaveFailed", diagnostic: result.Diagnostics.FirstOrDefault());
+        LogStatus();
         LogDiagnostics("Save", result.Diagnostics);
         NotifyStateChanged();
     }
@@ -614,7 +634,13 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectedClipIndex = index;
         currentInfo = ClipOptions[index].ChapterInfo;
         currentInfoBelongsToSelectedClip = true;
-        Log($"Selected source option: index={index}, label='{ClipOptions[index].DisplayName}', source='{currentInfo.SourceName ?? string.Empty}', sourceType={currentInfo.SourceType}, chapters={currentInfo.Chapters.Count}, fps={currentInfo.FramesPerSecond:0.###}");
+        Log("Log.SelectedSourceOption",
+            ("index", index),
+            ("label", ClipOptions[index].DisplayName),
+            ("source", currentInfo.SourceName ?? string.Empty),
+            ("sourceType", currentInfo.SourceType),
+            ("chapters", currentInfo.Chapters.Count),
+            ("fps", $"{currentInfo.FramesPerSecond:0.###}"));
         selectedFrameRateOption = frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
         SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
         ApplyFrameInfo();
@@ -653,19 +679,19 @@ public sealed class MainWindowViewModel : ObservableViewModel
     {
         if (currentGroup is null)
         {
-            StatusText = "No current MPLS group is loaded";
-            Log(StatusText);
+            SetStatus("Status.NoCurrentMplsGroup");
+            LogStatus();
             NotifyStateChanged();
             return;
         }
 
-        Log($"Appending MPLS: path='{path}'");
+        Log("Log.AppendingMpls", ("path", path));
         var result = await loadService.LoadAsync(path, cancellationToken);
         LogImportSummary("Append load", result);
         if (!result.Success || result.Groups.Count == 0)
         {
-            StatusText = result.Diagnostics.FirstOrDefault()?.Message ?? "Append failed";
-            Log(StatusText);
+            SetStatus("Status.AppendFailed", diagnostic: result.Diagnostics.FirstOrDefault());
+            LogStatus();
             LogDiagnostics("Append load", result.Diagnostics);
             NotifyStateChanged();
             return;
@@ -674,8 +700,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var edit = segmentService.Append(currentGroup, result.Groups[0]);
         if (edit.Diagnostics.Count > 0)
         {
-            StatusText = edit.Diagnostics[0].Message;
-            Log(StatusText);
+            SetStatus(null, diagnostic: edit.Diagnostics[0]);
+            LogStatus();
             LogDiagnostics("Append edit", edit.Diagnostics);
             NotifyStateChanged();
             return;
@@ -693,8 +719,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         currentInfo = edit.ChapterInfo;
         currentInfoBelongsToSelectedClip = false;
         ApplyFrameInfo();
-        StatusText = $"Appended {result.Groups[0].Options.Count} MPLS segment(s)";
-        Log(StatusText);
+        SetStatus("Status.AppendedMplsSegments", ("count", result.Groups[0].Options.Count));
+        LogStatus();
         LogDiagnostics("Append load", result.Diagnostics);
         NotifyStateChanged();
     }
@@ -704,10 +730,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var before = currentInfo?.Chapters.Count ?? 0;
         currentInfo = result.ChapterInfo;
         ApplyFrameInfo();
-        StatusText = result.Diagnostics.Count == 0 ? "Updated" : result.Diagnostics[0].Message;
-        Log($"{action}: chapters {before} -> {currentInfo.Chapters.Count}");
+        SetStatus(result.Diagnostics.Count == 0 ? "Status.Updated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
+        Log("Log.EditChapters", ("action", action), ("before", before), ("after", currentInfo.Chapters.Count));
         LogDiagnostics(action, result.Diagnostics);
-        Log(StatusText);
+        LogStatus();
         NotifyStateChanged();
     }
 
@@ -738,8 +764,13 @@ public sealed class MainWindowViewModel : ObservableViewModel
         if (detection is not null)
         {
             selectedFrameRateOption = frameRateService.Options[0];
-            StatusText = $"Detected {detection.Option.DisplayName} (confidence: {detection.Confidence})";
-            Log($"Auto frame-rate detection: option={detection.Option.DisplayName}, confidence={detection.Confidence}, accurate={detection.AccurateChapterCount}/{detection.EvaluatedChapterCount}, deviation={detection.CumulativeDeviation:0.######}");
+            SetStatus("Status.DetectedFrameRate", ("displayName", detection.Option.DisplayName), ("confidence", detection.Confidence));
+            Log("Log.AutoFrameRateDetection",
+                ("option", detection.Option.DisplayName),
+                ("confidence", detection.Confidence),
+                ("accurate", detection.AccurateChapterCount),
+                ("evaluated", detection.EvaluatedChapterCount),
+                ("deviation", $"{detection.CumulativeDeviation:0.######}"));
         }
         else
         {
@@ -747,7 +778,11 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
 
         SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
-        Log($"Frame info updated: option={appliedOption.DisplayName}, fps={result.FramesPerSecond:0.###}, round={RoundFrames}, chapters={currentInfo.Chapters.Count}");
+        Log("Log.FrameInfoUpdated",
+            ("option", appliedOption.DisplayName),
+            ("fps", $"{result.FramesPerSecond:0.###}"),
+            ("round", RoundFrames),
+            ("chapters", currentInfo.Chapters.Count));
         if (currentInfoBelongsToSelectedClip)
         {
             UpdateCurrentClipOption(currentInfo);
@@ -902,8 +937,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
     {
         if (shellService is null)
         {
-            StatusText = "Shell service is unavailable";
-            Log(StatusText);
+            SetStatus("Status.ShellUnavailable");
+            LogStatus();
             NotifyStateChanged();
             return;
         }
@@ -918,19 +953,85 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         if (string.IsNullOrWhiteSpace(target) || !File.Exists(target))
         {
-            StatusText = "Related media file was not found";
-            Log($"{StatusText}: reference='{reference?.RelativePath ?? string.Empty}', resolved='{target ?? string.Empty}'");
+            SetStatus("Status.RelatedMediaNotFound");
+            Log("Log.RelatedMediaNotFound",
+                ("status", StatusText),
+                ("reference", reference?.RelativePath ?? string.Empty),
+                ("resolved", target ?? string.Empty));
             NotifyStateChanged();
             return;
         }
 
         await shellService.OpenAsync(target, cancellationToken);
-        StatusText = $"Opened {Path.GetFileName(target)}";
-        Log($"{StatusText}: path='{target}'");
+        SetStatus("Status.OpenedFile", ("fileName", Path.GetFileName(target)));
+        Log("Log.OpenedPath", ("status", StatusText), ("path", target));
         NotifyStateChanged();
     }
 
+    private void SetStatus(string? key, params (string Name, object? Value)[] arguments)
+    {
+        currentStatusMessage = key is null
+            ? null
+            : new LocalizedMessage(
+                key,
+                arguments.ToDictionary(static item => item.Name, static item => item.Value, StringComparer.Ordinal));
+        StatusText = currentStatusMessage is null ? string.Empty : localizer.Format(currentStatusMessage);
+    }
+
+    private void SetStatus(string? key, ChapterDiagnostic? diagnostic, params (string Name, object? Value)[] arguments)
+    {
+        if (diagnostic is not null)
+        {
+            currentStatusMessage = null;
+            StatusText = LocalizeDiagnostic(diagnostic);
+            return;
+        }
+
+        SetStatus(key, arguments);
+    }
+
+    private string LocalizeDiagnostic(ChapterDiagnostic diagnostic)
+    {
+        var diagnosticKey = $"Diagnostic.{diagnostic.Code}";
+        return localizer.TryGetString(diagnosticKey, out _)
+            ? localizer.Format(diagnosticKey)
+            : diagnostic.Message;
+    }
+
+    private void LogStatus() => Log("Log.Status", ("status", StatusText));
+
     private void Log(string message) => logService.Add(message);
+
+    private void Log(string key, params (string Name, object? Value)[] arguments) =>
+        logService.Add(
+            key,
+            arguments.ToDictionary(static item => item.Name, static item => item.Value, StringComparer.Ordinal));
+
+    private string FormatLogEntry(ApplicationLogEntry entry)
+    {
+        if (entry.MessageKey is null)
+        {
+            return entry.Message;
+        }
+
+        var message = localizer.Format(entry.MessageKey, entry.Arguments);
+        return string.IsNullOrWhiteSpace(entry.TechnicalDetail)
+            ? message
+            : $"{message} {entry.TechnicalDetail}";
+    }
+
+    private void RefreshLocalizedState()
+    {
+        if (string.IsNullOrEmpty(chapterNameTemplateText))
+        {
+            ChapterNameTemplateStatus = localizer.GetString("Status.TemplateNotSelected");
+        }
+
+        if (currentStatusMessage is not null)
+        {
+            StatusText = localizer.Format(currentStatusMessage);
+        }
+    }
 
     private void LogImportSummary(string operation, ChapterImportResult result)
     {
@@ -938,16 +1039,37 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var chapterCount = result.Groups
             .SelectMany(static group => group.Options)
             .Sum(static option => option.ChapterInfo.Chapters.Count);
-        Log($"{operation} result: success={result.Success}, partial={result.IsPartial}, groups={result.Groups.Count}, options={optionCount}, chapters={chapterCount}, diagnostics={result.Diagnostics.Count}");
+        Log("Log.ImportSummary",
+            ("operation", operation),
+            ("success", result.Success),
+            ("partial", result.IsPartial),
+            ("groups", result.Groups.Count),
+            ("options", optionCount),
+            ("chapters", chapterCount),
+            ("diagnostics", result.Diagnostics.Count));
         for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
         {
             var group = result.Groups[groupIndex];
-            Log($"{operation} group {groupIndex + 1}: sourcePath='{group.SourcePath}', defaultOptionIndex={group.DefaultOptionIndex}, options={group.Options.Count}");
+            Log("Log.ImportGroup",
+                ("operation", operation),
+                ("groupIndex", groupIndex + 1),
+                ("sourcePath", group.SourcePath),
+                ("defaultOptionIndex", group.DefaultOptionIndex),
+                ("options", group.Options.Count));
             for (var optionIndex = 0; optionIndex < group.Options.Count; optionIndex++)
             {
                 var option = group.Options[optionIndex];
                 var info = option.ChapterInfo;
-                Log($"{operation} option {optionIndex + 1}: id='{option.Id}', label='{option.DisplayName}', source='{info.SourceName ?? string.Empty}', sourceType={info.SourceType}, chapters={info.Chapters.Count}, duration={formatter.Format(info.Duration)}, fps={info.FramesPerSecond:0.###}");
+                Log("Log.ImportOption",
+                    ("operation", operation),
+                    ("optionIndex", optionIndex + 1),
+                    ("id", option.Id),
+                    ("label", option.DisplayName),
+                    ("source", info.SourceName ?? string.Empty),
+                    ("sourceType", info.SourceType),
+                    ("chapters", info.Chapters.Count),
+                    ("duration", formatter.Format(info.Duration)),
+                    ("fps", $"{info.FramesPerSecond:0.###}"));
             }
         }
     }
@@ -963,7 +1085,13 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             var location = string.IsNullOrWhiteSpace(diagnostic.Location) ? string.Empty : $" location='{diagnostic.Location}'";
             var details = string.IsNullOrWhiteSpace(diagnostic.Details) ? string.Empty : $" details='{diagnostic.Details}'";
-            Log($"{operation} diagnostic: severity={diagnostic.Severity}, code={diagnostic.Code}{location} message='{diagnostic.Message}'{details}");
+            Log("Log.Diagnostic",
+                ("operation", operation),
+                ("severity", diagnostic.Severity),
+                ("code", diagnostic.Code),
+                ("location", location),
+                ("message", diagnostic.Message),
+                ("details", details));
         }
     }
 

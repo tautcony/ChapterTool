@@ -5,7 +5,7 @@
              x:DataType="vm:ColorSettingsViewModel"
              x:CompileBindings="True">
   <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="Legacy color slots" FontSize="18" />
+    <TextBlock Text="{DynamicResource Tool.ColorSlots}" FontSize="18" />
     <ItemsControl ItemsSource="{Binding Slots}">
       <ItemsControl.ItemTemplate>
         <DataTemplate DataType="vm:ColorSlotViewModel">
@@ -16,6 +16,6 @@
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
-    <Button Content="Save" MinWidth="80" HorizontalAlignment="Left" Command="{Binding SaveCommand}" />
+    <Button Content="{DynamicResource Common.Save}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding SaveCommand}" />
   </StackPanel>
 </UserControl>

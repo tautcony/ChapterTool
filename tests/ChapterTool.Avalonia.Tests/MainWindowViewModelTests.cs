@@ -1,3 +1,4 @@
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Diagnostics;
@@ -566,6 +567,37 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task BlankUiLanguageFallsBackToSimplifiedChinese()
+    {
+        var store = new FakeSettingsStore(new AppSettings(Language: ""));
+        var localizer = new AppLocalizationManager("en-US");
+        var vm = CreateViewModel(appSettingsStore: store, localizer: localizer);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+
+        Assert.Equal("zh-CN", vm.UiLanguage);
+        Assert.Equal("zh-CN", localizer.CurrentCultureName);
+    }
+
+    [Fact]
+    public async Task LocalizedStatusAndLogRefreshAfterLanguageSwitch()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var log = new InMemoryApplicationLogService();
+        var vm = CreateViewModel(logService: log, localizer: localizer);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Contains("Loading source", vm.LogText(), StringComparison.Ordinal);
+
+        localizer.SetCulture("ja-JP");
+
+        Assert.Equal("1 個のチャプターを読み込みました", vm.StatusText);
+        Assert.Contains("ソースを読み込み中", vm.LogText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AvaloniaViewModelsDoNotReferenceWinForms()
     {
         var root = RepositoryRoot();
@@ -585,7 +617,8 @@ public sealed class MainWindowViewModelTests
         FakeWindowService? windowService = null,
         IApplicationLogService? logService = null,
         IShellService? shellService = null,
-        ISettingsStore<AppSettings>? appSettingsStore = null) =>
+        ISettingsStore<AppSettings>? appSettingsStore = null,
+        IAppLocalizer? localizer = null) =>
         new(
             loadService ?? new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro")))),
             saveService ?? new FakeSaveService(),
@@ -595,7 +628,9 @@ public sealed class MainWindowViewModelTests
             new ChapterTimeFormatter(),
             logService,
             shellService,
-            appSettingsStore);
+            appSettingsStore,
+            frameRateService: null,
+            localizer ?? new AppLocalizationManager("en-US"));
 
     private static ChapterInfo Info(string sourceType, string sourceName, params Chapter[] chapters) =>
         new(sourceName, sourceName, 0, sourceType, 24, chapters.Last().Time, chapters);

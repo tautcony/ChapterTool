@@ -4,7 +4,7 @@
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:Name="RootWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="[VCB-Studio] ChapterTool"
+        Title="{DynamicResource App.Title}"
         Width="920"
         Height="720"
         MinWidth="760"
@@ -120,7 +120,7 @@
                 Classes="statusAction"
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="LogWindow"
-                Content="Log"
+                Content="{DynamicResource Main.Log}"
                 Command="{Binding LogCommand}" />
       </Grid>
     </Border>
@@ -133,24 +133,24 @@
           <Button x:Name="LoadButton"
                   Classes="primaryAction"
                   AutomationProperties.AutomationId="LoadButton"
-                  Content="载入"
+                  Content="{DynamicResource Main.Load}"
                   Command="{Binding #RootWindow.BrowseAndLoadCommand}">
             <Button.ContextMenu>
               <ContextMenu>
-                <MenuItem x:Name="ReloadMenuItem" Header="重新载入" Command="{Binding #RootWindow.ReloadCommand}" />
-                <MenuItem x:Name="AppendLoadMenuItem" Header="追加合并 MPLS" IsEnabled="{Binding CanAppendMpls}" Command="{Binding #RootWindow.AppendMplsCommand}" />
+                <MenuItem x:Name="ReloadMenuItem" Header="{DynamicResource Main.Reload}" Command="{Binding #RootWindow.ReloadCommand}" />
+                <MenuItem x:Name="AppendLoadMenuItem" Header="{DynamicResource Main.AppendMpls}" IsEnabled="{Binding CanAppendMpls}" Command="{Binding #RootWindow.AppendMplsCommand}" />
               </ContextMenu>
             </Button.ContextMenu>
           </Button>
           <Button x:Name="SaveButton"
                   Classes="primaryAction"
                   AutomationProperties.AutomationId="SaveButton"
-                  Content="保存"
+                  Content="{DynamicResource Common.Save}"
                   IsEnabled="{Binding CanSave}"
                   Command="{Binding #RootWindow.SaveCommand}">
             <Button.ContextMenu>
               <ContextMenu>
-                <MenuItem x:Name="SaveToMenuItem" Header="选择保存目录" Command="{Binding #RootWindow.SaveToCommand}" />
+                <MenuItem x:Name="SaveToMenuItem" Header="{DynamicResource Main.SaveTo}" Command="{Binding #RootWindow.SaveToCommand}" />
               </ContextMenu>
             </Button.ContextMenu>
           </Button>
@@ -169,7 +169,7 @@
                   AutomationProperties.AutomationId="ClipSelector">
           <ComboBox.ContextMenu>
             <ContextMenu>
-              <MenuItem x:Name="ClipCombineMenuItem" Header="Combine" IsEnabled="{Binding CanCombine}" Command="{Binding #RootWindow.CombineCommand}" />
+              <MenuItem x:Name="ClipCombineMenuItem" Header="{DynamicResource Main.Combine}" IsEnabled="{Binding CanCombine}" Command="{Binding #RootWindow.CombineCommand}" />
             </ContextMenu>
           </ComboBox.ContextMenu>
         </ComboBox>
@@ -181,18 +181,18 @@
               MinWidth="260">
           <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
             <CheckBox x:Name="RoundFramesBox"
-                      Content="帧数取整"
+                      Content="{DynamicResource Main.RoundFrames}"
                       IsChecked="{Binding RoundFrames}"
                       IsCheckedChanged="OnFrameOptionsChanged" />
             <Button x:Name="PreviewButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="PreviewWindow"
-                    Content="P"
+                    Content="{DynamicResource Main.PreviewShort}"
                     Command="{Binding #RootWindow.PreviewCommand}" />
             <Button x:Name="RefreshButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="RefreshRows"
-                    Content="↻"
+                    Content="{DynamicResource Common.Refresh}"
                     IsEnabled="{Binding CanRefreshRows}"
                     Command="{Binding #RootWindow.RefreshRowsCommand}" />
           </StackPanel>
@@ -202,7 +202,7 @@
                     HorizontalAlignment="Right"
                     SelectedIndex="{Binding SelectedFrameRateIndex}"
                     SelectionChanged="OnFrameOptionsChanged">
-            <ComboBoxItem Content="Auto" />
+            <ComboBoxItem Content="{DynamicResource Main.AutoFrameRate}" />
             <ComboBoxItem Content="24000 / 1001" />
             <ComboBoxItem Content="24000 / 1000" />
             <ComboBoxItem Content="25000 / 1000" />
@@ -232,20 +232,20 @@
                   AutomationProperties.AutomationId="ChapterGrid">
           <DataGrid.ContextMenu>
             <ContextMenu>
-              <MenuItem x:Name="InsertMenuItem" Header="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
-              <MenuItem x:Name="DeleteMenuItem" Header="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
-              <MenuItem x:Name="GridCombineMenuItem" Header="Combine" IsEnabled="{Binding CanCombine}" Command="{Binding #RootWindow.CombineCommand}" />
-              <MenuItem x:Name="OpenMediaMenuItem" Header="Open Related Media" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
-              <MenuItem x:Name="ZonesMenuItem" Header="Create Zones" Command="{Binding #RootWindow.OpenZonesCommand}" />
-              <MenuItem x:Name="ForwardShiftMenuItem" Header="Forward Translation" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
-              <MenuItem x:Name="PreviewMenuItem" Header="Preview" Command="{Binding #RootWindow.PreviewCommand}" />
+              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
+              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Main.Delete}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
+              <MenuItem x:Name="GridCombineMenuItem" Header="{DynamicResource Main.Combine}" IsEnabled="{Binding CanCombine}" Command="{Binding #RootWindow.CombineCommand}" />
+              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
+              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootWindow.OpenZonesCommand}" />
+              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" Command="{Binding #RootWindow.PreviewCommand}" />
             </ContextMenu>
           </DataGrid.ContextMenu>
           <DataGrid.Columns>
             <DataGridTextColumn Header="#" Binding="{Binding Number}" IsReadOnly="True" Width="64" MinWidth="56" />
-            <DataGridTextColumn Header="时间点" Binding="{Binding TimeText}" Width="170" MinWidth="132" />
-            <DataGridTextColumn Header="章节名" Binding="{Binding Name}" Width="*" MinWidth="180" />
-            <DataGridTextColumn Header="帧数" Binding="{Binding FramesInfo}" Width="150" MinWidth="96" />
+            <DataGridTextColumn Header="{DynamicResource Main.ColumnTime}" Binding="{Binding TimeText}" Width="170" MinWidth="132" />
+            <DataGridTextColumn Header="{DynamicResource Main.ColumnName}" Binding="{Binding Name}" Width="*" MinWidth="180" />
+            <DataGridTextColumn Header="{DynamicResource Main.ColumnFrames}" Binding="{Binding FramesInfo}" Width="150" MinWidth="96" />
           </DataGrid.Columns>
         </DataGrid>
       </Grid>
@@ -264,7 +264,7 @@
               Grid.Column="0"
               ColumnDefinitions="72,*"
               ColumnSpacing="8">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="保存格式" />
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="{DynamicResource Main.SaveFormat}" />
           <ComboBox x:Name="FormatBox"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
@@ -286,16 +286,16 @@
               Grid.Column="1"
               ColumnDefinitions="84,*,Auto"
               ColumnSpacing="8">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="章节名" />
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="{DynamicResource Main.ChapterName}" />
           <ComboBox x:Name="ChapterNameModeBox"
                     Grid.Column="1"
                     MinWidth="120"
                     HorizontalAlignment="Stretch"
                     SelectedIndex="{Binding ChapterNameModeIndex}"
                     AutomationProperties.AutomationId="ChapterNameMode">
-            <ComboBoxItem Content="保留原名" />
-            <ComboBoxItem Content="统一模板" />
-            <ComboBoxItem Content="模板文件" />
+            <ComboBoxItem Content="{DynamicResource Main.KeepOriginalName}" />
+            <ComboBoxItem Content="{DynamicResource Main.StandardTemplate}" />
+            <ComboBoxItem Content="{DynamicResource Main.TemplateFile}" />
           </ComboBox>
           <Button x:Name="ChapterNameTemplateButton"
                   Grid.Column="2"
@@ -313,7 +313,7 @@
               Grid.Column="1"
               ColumnDefinitions="84,*"
               ColumnSpacing="8">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="平移章节号" />
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="{DynamicResource Main.OrderShift}" />
           <NumericUpDown x:Name="OrderShiftBox"
                          Grid.Column="1"
                          MinWidth="92"
@@ -334,7 +334,7 @@
               ColumnSpacing="8"
               IsEnabled="{Binding IsXmlLanguageEnabled}"
               HorizontalAlignment="Stretch">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="XML语言" />
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="{DynamicResource Main.XmlLanguage}" />
           <ComboBox x:Name="XmlLanguageBox"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
@@ -353,12 +353,12 @@
               Grid.Column="0"
               ColumnDefinitions="84,88,*"
               ColumnSpacing="8">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="表达式" />
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Right" Text="{DynamicResource Main.Expression}" />
           <CheckBox x:Name="ApplyExpressionBox"
                     Grid.Column="1"
                     AutomationProperties.AutomationId="ApplyExpression"
                     IsChecked="{Binding ApplyExpression}"
-                    Content="使用" />
+                    Content="{DynamicResource Common.Use}" />
           <TextBox x:Name="ExpressionBox"
                    Grid.Column="2"
                    MinWidth="120"

@@ -18,8 +18,29 @@ public sealed class InMemoryApplicationLogService : IApplicationLogService
         entries.Add(new ApplicationLogEntry(DateTimeOffset.Now, message.Trim()));
     }
 
-    public string Format() =>
-        string.Join(Environment.NewLine, entries.Select(static entry => $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] {entry.Message}"));
+    public void Add(string key, IReadOnlyDictionary<string, object?> arguments, string? technicalDetail = null)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        entries.Add(new ApplicationLogEntry(
+            DateTimeOffset.Now,
+            key.Trim(),
+            key.Trim(),
+            new Dictionary<string, object?>(arguments, StringComparer.Ordinal),
+            technicalDetail));
+    }
+
+    public string Format(Func<ApplicationLogEntry, string>? formatter = null) =>
+        string.Join(
+            Environment.NewLine,
+            entries.Select(entry =>
+            {
+                var message = formatter is null ? entry.Message : formatter(entry);
+                return $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] {message}";
+            }));
 
     public void Clear() => entries.Clear();
 }

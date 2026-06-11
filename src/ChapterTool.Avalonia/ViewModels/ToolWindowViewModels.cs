@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Xml.Linq;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Services;
 using ChapterTool.Infrastructure.Configuration;
@@ -406,16 +407,37 @@ public sealed class ColorSlotViewModel(string name, string value) : ObservableVi
     }
 }
 
-public sealed class LanguageToolViewModel(MainWindowViewModel owner) : ObservableViewModel
+public sealed class LanguageToolViewModel : ObservableViewModel
 {
-    private string selectedLanguage = string.Equals(owner.UiLanguage, "en-US", StringComparison.OrdinalIgnoreCase) ? "en-US" : "";
+    private readonly MainWindowViewModel owner;
+    private string selectedLanguage;
+
+    public LanguageToolViewModel(MainWindowViewModel owner)
+    {
+        this.owner = owner;
+        selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
+        Languages = BuildLanguages();
+        owner.Localizer.CultureChanged += (_, _) =>
+        {
+            Languages = BuildLanguages();
+        };
+        ApplyCommand = new UiCommand(async (parameter, token) =>
+        {
+            var language = parameter is LanguageToolViewModel viewModel
+                ? viewModel.SelectedLanguage
+                : AppLanguage.Normalize(parameter?.ToString());
+            await owner.SaveUiLanguageAsync(language, token);
+        });
+    }
+
+    public IReadOnlyList<LanguageOptionViewModel> Languages { get; private set; }
 
     public string SelectedLanguage
     {
         get => selectedLanguage;
         set
         {
-            if (SetProperty(ref selectedLanguage, value))
+            if (SetProperty(ref selectedLanguage, AppLanguage.Normalize(value)))
             {
                 OnPropertyChanged(nameof(SelectedLanguageIndex));
             }
@@ -424,18 +446,36 @@ public sealed class LanguageToolViewModel(MainWindowViewModel owner) : Observabl
 
     public int SelectedLanguageIndex
     {
-        get => string.Equals(SelectedLanguage, "en-US", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
-        set => SelectedLanguage = value == 1 ? "en-US" : "";
+        get
+        {
+            var index = Languages.ToList().FindIndex(option => string.Equals(option.CultureName, SelectedLanguage, StringComparison.OrdinalIgnoreCase));
+            return Math.Max(0, index);
+        }
+        set
+        {
+            if (value >= 0 && value < Languages.Count)
+            {
+                SelectedLanguage = Languages[value].CultureName;
+            }
+        }
     }
 
-    public UiCommand ApplyCommand { get; } = new(async (parameter, token) =>
+    public UiCommand ApplyCommand { get; }
+
+    private IReadOnlyList<LanguageOptionViewModel> BuildLanguages()
     {
-        var language = parameter is LanguageToolViewModel viewModel
-            ? viewModel.SelectedLanguage
-            : parameter?.ToString() == "en-US" ? "en-US" : "";
-        await owner.SaveUiLanguageAsync(language, token);
-    });
+        var languages = owner.Localizer.SupportedLanguages
+            .Select(language => new LanguageOptionViewModel(
+                language.CultureName,
+                owner.Localizer.GetString(language.DisplayNameKey)))
+            .ToArray();
+        OnPropertyChanged(nameof(Languages));
+        OnPropertyChanged(nameof(SelectedLanguageIndex));
+        return languages;
+    }
 }
+
+public sealed record LanguageOptionViewModel(string CultureName, string DisplayName);
 
 public sealed class ExpressionToolViewModel(MainWindowViewModel owner) : ObservableViewModel
 {

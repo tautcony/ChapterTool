@@ -5,9 +5,9 @@
              x:DataType="vm:ExpressionToolViewModel"
              x:CompileBindings="True">
   <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="Expression" FontSize="18" />
-    <TextBox Text="{Binding Expression}" PlaceholderText="Expression, e.g. t + 1" />
-    <CheckBox Content="Apply expression" IsChecked="{Binding ApplyExpression}" />
-    <Button Content="Apply" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
+    <TextBlock Text="{DynamicResource Tool.Expression.Title}" FontSize="18" />
+    <TextBox Text="{Binding Expression}" PlaceholderText="{DynamicResource Tool.Expression.Placeholder}" />
+    <CheckBox Content="{DynamicResource Tool.Expression.Apply}" IsChecked="{Binding ApplyExpression}" />
+    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
   </StackPanel>
 </UserControl>

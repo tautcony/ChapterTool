@@ -5,11 +5,15 @@
              x:DataType="vm:LanguageToolViewModel"
              x:CompileBindings="True">
   <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="Language" FontSize="18" />
-    <ComboBox SelectedIndex="{Binding SelectedLanguageIndex}">
-      <ComboBoxItem Content="Default" Tag="" />
-      <ComboBoxItem Content="en-US" Tag="en-US" />
+    <TextBlock Text="{DynamicResource Tool.Language.Title}" FontSize="18" />
+    <ComboBox ItemsSource="{Binding Languages}"
+              SelectedIndex="{Binding SelectedLanguageIndex}">
+      <ComboBox.ItemTemplate>
+        <DataTemplate DataType="vm:LanguageOptionViewModel">
+          <TextBlock Text="{Binding DisplayName}" />
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
     </ComboBox>
-    <Button Content="Apply" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
+    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
   </StackPanel>
 </UserControl>

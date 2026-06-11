@@ -41,9 +41,9 @@
                   Orientation="Horizontal"
                   Spacing="8"
                   HorizontalAlignment="Right">
-        <Button Content="Refresh" Command="{Binding RefreshCommand}" />
-        <Button Content="Copy" Click="OnCopyClicked" />
-        <Button Content="Clear"
+        <Button Content="{DynamicResource Common.Refresh}" Command="{Binding RefreshCommand}" />
+        <Button Content="{DynamicResource Common.Copy}" Click="OnCopyClicked" />
+        <Button Content="{DynamicResource Common.Clear}"
                 IsVisible="{Binding CanClear}"
                 Command="{Binding ClearCommand}" />
       </StackPanel>

@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views;
@@ -21,6 +22,7 @@ public sealed class AppCompositionRoot
     private readonly ExpressionService expressionService = new();
     private readonly FrameRateService frameRateService = new();
     private readonly InMemoryApplicationLogService logService = new();
+    private readonly AppLocalizationManager localizationManager = new();
     private readonly AppSettingsStore appSettingsStore;
     private readonly ThemeSettingsStore themeSettingsStore;
 
@@ -30,6 +32,8 @@ public sealed class AppCompositionRoot
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         appSettingsStore = new AppSettingsStore(resolvedSettingsDirectory);
         themeSettingsStore = new ThemeSettingsStore(resolvedSettingsDirectory);
+        var settings = appSettingsStore.LoadAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+        localizationManager.SetCulture(settings.Language);
     }
 
     public MainWindow CreateMainWindow()
@@ -49,7 +53,8 @@ public sealed class AppCompositionRoot
             logService,
             CreateShellService(),
             appSettingsStore,
-            frameRateService);
+            frameRateService,
+            localizationManager);
 
     public IChapterLoadService CreateChapterLoadService() => new RuntimeChapterLoadService(CreateChapterImporterRegistry());
 
@@ -73,7 +78,9 @@ public sealed class AppCompositionRoot
 
     public ChapterSegmentService CreateChapterSegmentService() => new();
 
-    public IWindowService CreateWindowService() => new AvaloniaWindowService(themeSettingsStore);
+    public IWindowService CreateWindowService() => new AvaloniaWindowService(themeSettingsStore, localizationManager);
+
+    public IAppLocalizer CreateLocalizer() => localizationManager;
 
     public IShellService CreateShellService() => new ShellService();
 
