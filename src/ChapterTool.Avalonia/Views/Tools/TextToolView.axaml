@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              x:Class="ChapterTool.Avalonia.Views.Tools.TextToolView"
              x:DataType="vm:TextToolViewModel"
@@ -41,11 +42,26 @@
                   Orientation="Horizontal"
                   Spacing="8"
                   HorizontalAlignment="Right">
-        <Button Content="{DynamicResource Common.Refresh}" Command="{Binding RefreshCommand}" />
-        <Button Content="{DynamicResource Common.Copy}" Click="OnCopyClicked" />
-        <Button Content="{DynamicResource Common.Clear}"
-                IsVisible="{Binding CanClear}"
-                Command="{Binding ClearCommand}" />
+        <Button Command="{Binding RefreshCommand}" ToolTip.Tip="{DynamicResource Common.Refresh}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <i:Icon Value="fa-solid fa-rotate" FontSize="14" />
+            <TextBlock Text="{DynamicResource Common.Refresh}" />
+          </StackPanel>
+        </Button>
+        <Button Click="OnCopyClicked" ToolTip.Tip="{DynamicResource Common.Copy}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <i:Icon Value="fa-solid fa-copy" FontSize="14" />
+            <TextBlock Text="{DynamicResource Common.Copy}" />
+          </StackPanel>
+        </Button>
+        <Button IsVisible="{Binding CanClear}"
+                Command="{Binding ClearCommand}"
+                ToolTip.Tip="{DynamicResource Common.Clear}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
+            <TextBlock Text="{DynamicResource Common.Clear}" />
+          </StackPanel>
+        </Button>
       </StackPanel>
     </DockPanel>
 

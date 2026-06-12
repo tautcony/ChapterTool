@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
         xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
         xmlns:models="using:ChapterTool.Core.Models"
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
@@ -198,19 +199,25 @@
             <Button x:Name="PreviewButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="PreviewWindow"
-                    Content="{DynamicResource Main.PreviewShort}"
-                    Command="{Binding #RootWindow.PreviewCommand}" />
+                    Command="{Binding #RootWindow.PreviewCommand}"
+                    ToolTip.Tip="{DynamicResource Main.Preview}">
+              <i:Icon Value="fa-solid fa-eye" FontSize="17" />
+            </Button>
             <Button x:Name="RefreshButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="RefreshRows"
-                    Content="{DynamicResource Common.Refresh}"
                     IsEnabled="{Binding CanRefreshRows}"
-                    Command="{Binding #RootWindow.RefreshRowsCommand}" />
+                    Command="{Binding #RootWindow.RefreshRowsCommand}"
+                    ToolTip.Tip="{DynamicResource Common.Refresh}">
+              <i:Icon Value="fa-solid fa-rotate" FontSize="17" />
+            </Button>
             <Button x:Name="SettingsButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="SettingsWindow"
-                    Content="{DynamicResource Main.SettingsShort}"
-                    Command="{Binding SettingsCommand}" />
+                    Command="{Binding SettingsCommand}"
+                    ToolTip.Tip="{DynamicResource Main.SettingsShort}">
+              <i:Icon Value="fa-solid fa-gear" FontSize="17" />
+            </Button>
           </StackPanel>
           <ComboBox x:Name="FrameRateBox"
                     Grid.Row="1"
@@ -327,8 +334,10 @@
                   MinHeight="32"
                   Padding="8,4"
                   AutomationProperties.AutomationId="ChapterNameTemplateFile"
-                  Content="..."
-                  Command="{Binding #RootWindow.LoadChapterNameTemplateCommand}" />
+                  Command="{Binding #RootWindow.LoadChapterNameTemplateCommand}"
+                  ToolTip.Tip="{DynamicResource Main.TemplateFile}">
+            <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
+          </Button>
         </Grid>
 
         <Grid x:Name="OrderShiftOptionsGroup"

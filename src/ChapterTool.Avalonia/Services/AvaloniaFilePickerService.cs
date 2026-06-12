@@ -26,14 +26,8 @@ public sealed class AvaloniaFilePickerService(Window owner) : IFilePickerService
             return files[0].Path.LocalPath;
         }
 
-        var folders = await owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
-        {
-            Title = "Open BDMV Directory",
-            AllowMultiple = false
-        });
-
         cancellationToken.ThrowIfCancellationRequested();
-        return folders.Count > 0 ? folders[0].Path.LocalPath : null;
+        return null;
     }
 
     public async ValueTask<string?> PickMplsAsync(CancellationToken cancellationToken)
