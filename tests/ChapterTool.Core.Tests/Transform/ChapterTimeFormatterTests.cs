@@ -32,6 +32,16 @@ public sealed class ChapterTimeFormatterTests
     }
 
     [Fact]
+    public void Format_uses_legacy_banker_midpoint_rounding()
+    {
+        var time = TimeSpan.FromTicks(5000);
+
+        var actual = _formatter.Format(time);
+
+        Assert.Equal("00:00:00.000", actual);
+    }
+
+    [Fact]
     public void Format_uses_hour_component_for_times_over_one_day()
     {
         var time = TimeSpan.FromDays(1) + new TimeSpan(0, 1, 2, 3, 4);

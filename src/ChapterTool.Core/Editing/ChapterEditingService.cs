@@ -121,7 +121,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
                 [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidFrameRate", "Frame rate must be greater than zero.")]);
         }
 
-        var shift = TimeSpan.FromTicks((long)Math.Round(frames / framesPerSecond * TimeSpan.TicksPerSecond));
+        var shift = ChapterRounding.SecondsToTimeSpan(frames / framesPerSecond);
         var chapters = info.Chapters
             .Select(chapter => chapter.IsSeparator ? chapter : chapter with { Time = chapter.Time - shift })
             .Where(static chapter => chapter.IsSeparator || chapter.Time >= TimeSpan.Zero)
@@ -209,6 +209,6 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
             return long.Parse(match.Value, CultureInfo.InvariantCulture);
         }
 
-        return (long)Math.Round((decimal)chapter.Time.TotalSeconds * framesPerSecond, MidpointRounding.AwayFromZero);
+        return ChapterRounding.RoundToInt64((decimal)chapter.Time.TotalSeconds * framesPerSecond);
     }
 }

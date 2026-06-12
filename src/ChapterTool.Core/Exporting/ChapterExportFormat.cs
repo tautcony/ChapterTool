@@ -9,5 +9,7 @@ public enum ChapterExportFormat
     TsMuxerMeta,
     Cue,
     Json,
-    WebVtt
+    WebVtt,
+    Celltimes,
+    Chapter2Qpfile
 }

@@ -488,7 +488,6 @@ public sealed partial class MainWindow : Window
 
     private void ReadAdvancedOptions()
     {
-        viewModel.XmlLanguage = SelectedComboText(XmlLanguageBox, "und");
         viewModel.ChapterNameModeIndex = Math.Max(0, ChapterNameModeBox.SelectedIndex);
         viewModel.ApplyExpression = ApplyExpressionBox.IsChecked == true;
         viewModel.Expression = ExpressionBox.Text ?? "t";

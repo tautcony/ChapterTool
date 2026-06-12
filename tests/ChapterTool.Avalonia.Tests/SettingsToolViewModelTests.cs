@@ -39,7 +39,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.FfprobePath = "new-ffprobe";
         viewModel.FfmpegPath = "new-ffmpeg";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("Json");
-        viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("en");
+        viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         viewModel.ColorSlots[0].Value = "#010203";
 
         await viewModel.SaveCommand.ExecuteAsync();
@@ -51,9 +51,9 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("new-ffprobe", appStore.Current.FfprobePath);
         Assert.Equal("new-ffmpeg", appStore.Current.FfmpegPath);
         Assert.Equal("Json", appStore.Current.DefaultSaveFormat);
-        Assert.Equal("en", appStore.Current.DefaultXmlLanguage);
+        Assert.Equal("jpn", appStore.Current.DefaultXmlLanguage);
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
-        Assert.Equal("en", owner.XmlLanguage);
+        Assert.Equal("jpn", owner.XmlLanguage);
         Assert.Equal("new-out", owner.SaveDirectory);
         Assert.Equal("ja-JP", owner.UiLanguage);
         Assert.Equal("#010203", themeStore.Current.BackChange);

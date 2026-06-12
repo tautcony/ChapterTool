@@ -65,7 +65,7 @@ public sealed class ChapterExpressionService(IExpressionService expressionServic
     private static string FormatFrames(decimal seconds, decimal framesPerSecond)
     {
         var frames = seconds * framesPerSecond;
-        var rounded = Math.Round(frames, MidpointRounding.AwayFromZero);
+        var rounded = ChapterRounding.RoundToInt64(frames);
         var marker = Math.Abs(frames - rounded) < 0.01m ? "K" : "*";
         return $"{rounded.ToString(CultureInfo.InvariantCulture)} {marker}";
     }

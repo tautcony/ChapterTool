@@ -18,7 +18,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ChapterExportFormat.TimeCodes,
         ChapterExportFormat.TsMuxerMeta,
         ChapterExportFormat.Cue,
-        ChapterExportFormat.Json
+        ChapterExportFormat.Json,
+        ChapterExportFormat.WebVtt,
+        ChapterExportFormat.Celltimes,
+        ChapterExportFormat.Chapter2Qpfile
     ];
 
     private readonly MainWindowViewModel owner;
@@ -95,7 +98,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(static format => format.ToString()).ToArray();
 
-    public IReadOnlyList<string> XmlLanguageOptions { get; } = ["und", "zh", "ja", "en"];
+    public IReadOnlyList<string> XmlLanguageOptions { get; } =
+        XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToArray();
 
     public ObservableCollection<ColorSlotViewModel> ColorSlots { get; }
 

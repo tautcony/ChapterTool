@@ -291,7 +291,10 @@ public sealed class TextToolFormatSelector
         ChapterExportFormat.TimeCodes,
         ChapterExportFormat.TsMuxerMeta,
         ChapterExportFormat.Cue,
-        ChapterExportFormat.Json
+        ChapterExportFormat.Json,
+        ChapterExportFormat.WebVtt,
+        ChapterExportFormat.Celltimes,
+        ChapterExportFormat.Chapter2Qpfile
     ];
 
     private int selectedIndex;

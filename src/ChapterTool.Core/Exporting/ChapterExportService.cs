@@ -30,6 +30,10 @@ public sealed class ChapterExportService(
             ChapterExportFormat.Cue => Cue(outputInfo, options),
             ChapterExportFormat.Json => Json(info, options),
             ChapterExportFormat.WebVtt => WebVtt(outputInfo, options),
+            ChapterExportFormat.Celltimes => new ChapterConversionService(timeFormatter).ToCelltimes(outputInfo, (decimal)outputInfo.FramesPerSecond) is { } conversion
+                ? new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics)
+                : Failure("CelltimesExportFailed", "Celltimes export failed."),
+            ChapterExportFormat.Chapter2Qpfile => Chapter2Qpfile(outputInfo, options),
             _ => Failure("UnsupportedExportFormat", "Unsupported export format.")
         };
 
@@ -53,25 +57,29 @@ public sealed class ChapterExportService(
 
     private ChapterExportResult Xml(ChapterInfo info, ChapterExportOptions options)
     {
-        var language = string.IsNullOrWhiteSpace(options.XmlLanguage) ? "und" : options.XmlLanguage;
+        var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
+        var uidSeed = HashCode.Combine(info.Title, info.SourceName, info.SourceType, info.Chapters.Count);
+        var random = new Random(uidSeed);
         var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
             new XElement(
                 "ChapterAtom",
                 new XElement("ChapterDisplay", new XElement("ChapterString", chapter.Name), new XElement("ChapterLanguage", language)),
-                new XElement("ChapterUID", chapter.Number),
+                new XElement("ChapterUID", NextUid(random)),
                 new XElement("ChapterTimeStart", FormatTime(chapter) + "000"),
                 new XElement("ChapterFlagHidden", "0"),
                 new XElement("ChapterFlagEnabled", "1")));
         var document = new XDocument(
+            new XDeclaration("1.0", "utf-8", null),
+            new XComment("<!DOCTYPE Tags SYSTEM \"matroskatags.dtd\">"),
             new XElement(
                 "Chapters",
                 new XElement(
                     "EditionEntry",
                     new XElement("EditionFlagHidden", "0"),
                     new XElement("EditionFlagDefault", "0"),
-                    new XElement("EditionUID", "1"),
+                    new XElement("EditionUID", NextUid(random)),
                     atoms)));
-        return Success(document.ToString(SaveOptions.DisableFormatting), ".xml");
+        return Success(document.Declaration + Environment.NewLine + document.ToString(SaveOptions.None), ".xml");
     }
 
     private ChapterExportResult TsMuxer(ChapterInfo info, ChapterExportOptions options)
@@ -83,6 +91,14 @@ public sealed class ChapterExportService(
         }
 
         return Success($"--custom-{Environment.NewLine}chapters={string.Join(';', chapters)}", ".TsMuxeR_Meta.txt");
+    }
+
+    private ChapterExportResult Chapter2Qpfile(ChapterInfo info, ChapterExportOptions options)
+    {
+        var text = Text(info, options);
+        var conversion = new ChapterConversionService(timeFormatter)
+            .ChapterTextToQpfile(text.Content, (decimal)info.FramesPerSecond);
+        return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
     private ChapterExportResult Cue(ChapterInfo info, ChapterExportOptions options)
@@ -168,6 +184,8 @@ public sealed class ChapterExportService(
     private static string Escape(string value) => value.Replace("\"", "\\\"", StringComparison.Ordinal);
 
     private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.Time);
+
+    private static int NextUid(Random random) => random.Next(1, int.MaxValue);
 
     private static ChapterExportResult Success(string content, string extension) =>
         new(true, content, extension, Array.Empty<ChapterDiagnostic>());

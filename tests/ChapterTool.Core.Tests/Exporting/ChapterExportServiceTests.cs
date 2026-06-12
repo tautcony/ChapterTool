@@ -1,6 +1,8 @@
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using System.Globalization;
+using System.Xml.Linq;
 
 namespace ChapterTool.Core.Tests.Exporting;
 
@@ -22,8 +24,11 @@ public sealed class ChapterExportServiceTests
     {
         var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Xml));
 
+        Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", result.Content, StringComparison.Ordinal);
+        Assert.Contains("<!--<!DOCTYPE Tags SYSTEM \"matroskatags.dtd\">-->", result.Content, StringComparison.Ordinal);
         Assert.Contains("<ChapterLanguage>und</ChapterLanguage>", result.Content, StringComparison.Ordinal);
         Assert.Contains("<ChapterTimeStart>00:00:10.000000</ChapterTimeStart>", result.Content, StringComparison.Ordinal);
+        Assert.Contains(Environment.NewLine, result.Content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -32,6 +37,33 @@ public sealed class ChapterExportServiceTests
         var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Qpf));
 
         Assert.Equal($"0 I{Environment.NewLine}240 I{Environment.NewLine}480 I", result.Content);
+    }
+
+    [Fact]
+    public void Celltimes_export_writes_start_frames()
+    {
+        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Celltimes));
+
+        Assert.True(result.Success);
+        Assert.Equal($"0{Environment.NewLine}240{Environment.NewLine}480", result.Content);
+    }
+
+    [Fact]
+    public void Chapter2Qpfile_export_converts_chapter_times_to_qpf()
+    {
+        var info = Sample() with
+        {
+            Chapters =
+            [
+                new Chapter(1, TimeSpan.Zero, "Intro", "stale"),
+                new Chapter(2, TimeSpan.FromSeconds(10), "Middle", "stale")
+            ]
+        };
+
+        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.Chapter2Qpfile));
+
+        Assert.True(result.Success);
+        Assert.Equal($"0 I{Environment.NewLine}240 I", result.Content);
     }
 
     [Fact]
@@ -62,10 +94,28 @@ public sealed class ChapterExportServiceTests
             Sample(),
             new ChapterExportOptions(ChapterExportFormat.Xml, XmlLanguage: "jpn", UseTemplateNames: true, OrderShift: 4));
 
-        Assert.Contains("<ChapterUID>5</ChapterUID>", result.Content, StringComparison.Ordinal);
         Assert.Contains("<ChapterLanguage>jpn</ChapterLanguage>", result.Content, StringComparison.Ordinal);
         Assert.Contains("<ChapterString>Chapter 01</ChapterString>", result.Content, StringComparison.Ordinal);
         Assert.DoesNotContain("<ChapterString>Intro</ChapterString>", result.Content, StringComparison.Ordinal);
+
+        var document = XDocument.Parse(result.Content);
+        var chapterUid = Assert.Single(document.Descendants("ChapterUID").Take(1)).Value;
+        Assert.True(int.Parse(chapterUid, CultureInfo.InvariantCulture) > 0);
+        Assert.NotEqual("5", chapterUid);
+    }
+
+    [Fact]
+    public void Xml_export_uses_valid_non_trivial_uids()
+    {
+        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Xml));
+        var document = XDocument.Parse(result.Content);
+
+        var editionUid = Assert.Single(document.Descendants("EditionUID")).Value;
+        var chapterUids = document.Descendants("ChapterUID").Select(static element => element.Value).ToArray();
+
+        Assert.True(int.Parse(editionUid, CultureInfo.InvariantCulture) > 1);
+        Assert.Equal(3, chapterUids.Length);
+        Assert.NotEqual(["1", "2", "3"], chapterUids);
     }
 
     [Fact]

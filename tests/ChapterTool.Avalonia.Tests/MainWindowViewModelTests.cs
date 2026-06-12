@@ -42,6 +42,7 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(vm.SaveCommand);
         Assert.NotNull(vm.SaveDirectoryCommand);
         Assert.NotNull(vm.RefreshCommand);
+        Assert.NotNull(vm.ChangeFpsCommand);
         Assert.NotNull(vm.SelectClipCommand);
         Assert.NotNull(vm.CombineCommand);
         Assert.NotNull(vm.EditTimeCommand);
@@ -182,6 +183,42 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void XmlLanguageOptionsIncludeLegacyAndIsoCodes()
+    {
+        var vm = CreateViewModel();
+
+        Assert.Contains("und", vm.XmlLanguageOptions);
+        Assert.Contains("zh", vm.XmlLanguageOptions);
+        Assert.Contains("ja", vm.XmlLanguageOptions);
+        Assert.Contains("en", vm.XmlLanguageOptions);
+        Assert.Contains("jpn", vm.XmlLanguageOptions);
+        Assert.Contains("fr", vm.XmlLanguageOptions);
+    }
+
+    [Fact]
+    public async Task Chapter2QpfileIsAvailableAsPreviewOutputType()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        vm.SaveFormat = ChapterExportFormat.Chapter2Qpfile;
+
+        Assert.Equal("0 I", vm.BuildPreview());
+    }
+
+    [Fact]
+    public void XmlLanguageIndexUpdatesSelectedLanguage()
+    {
+        var vm = CreateViewModel();
+        var index = vm.XmlLanguageOptions.ToList().IndexOf("jpn");
+
+        vm.XmlLanguageIndex = index;
+
+        Assert.Equal("jpn", vm.XmlLanguage);
+        Assert.Equal(index, vm.XmlLanguageIndex);
+    }
+
+    [Fact]
     public async Task ChapterNameTemplateReaderDetectsUtf8Bom()
     {
         var path = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "names.txt");
@@ -275,6 +312,20 @@ public sealed class MainWindowViewModelTests
 
         Assert.Equal(3, vm.SelectedFrameRateIndex);
         Assert.DoesNotContain("Detected", vm.StatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ChangeFpsCommandPreservesFramesWhenApplyingSelectedFrameRate()
+    {
+        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "A"))));
+        var vm = CreateViewModel(load);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SetFrameOptions(frameRateIndex: 7, roundFrames: true);
+        await vm.ChangeFpsCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:04.004", vm.Rows[0].TimeText);
+        Assert.Equal("240 K", vm.Rows[0].FramesInfo);
     }
 
     [Fact]

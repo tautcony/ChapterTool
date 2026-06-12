@@ -49,7 +49,7 @@ public sealed class FrameRateService : IFrameRateService
             foreach (var chapter in info.Chapters.Where(static chapter => !chapter.IsSeparator))
             {
                 var frames = CalculateFrames(chapter, option.Value);
-                var rounded = Math.Round(frames, MidpointRounding.AwayFromZero);
+                var rounded = ChapterRounding.RoundToInt64(frames);
                 var delta = Math.Abs(frames - rounded);
                 deviation += Math.Min(delta, tolerance);
                 if (delta < tolerance)
@@ -130,7 +130,7 @@ public sealed class FrameRateService : IFrameRateService
             return frames.ToString(CultureInfo.InvariantCulture);
         }
 
-        var rounded = Math.Round(frames, MidpointRounding.AwayFromZero);
+        var rounded = ChapterRounding.RoundToInt64(frames);
         var marker = Math.Abs(frames - rounded) < tolerance ? "K" : "*";
         return $"{rounded.ToString(CultureInfo.InvariantCulture)} {marker}";
     }

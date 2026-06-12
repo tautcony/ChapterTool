@@ -114,6 +114,11 @@ public sealed class MainWindowViewModel : ObservableViewModel
             ApplyFrameInfo();
             return ValueTask.CompletedTask;
         }, _ => currentInfo is not null);
+        ChangeFpsCommand = new UiCommand((_, _) =>
+        {
+            ChangeFpsToSelectedOption();
+            return ValueTask.CompletedTask;
+        }, _ => currentInfo is not null && selectedFrameRateOption.IsValid);
         SelectClipCommand = new UiCommand((parameter, _) =>
         {
             SelectClip(Convert.ToInt32(parameter));
@@ -233,10 +238,36 @@ public sealed class MainWindowViewModel : ObservableViewModel
         set => SaveFormat = (ChapterExportFormat)Math.Max(0, value);
     }
 
+    public IReadOnlyList<string> XmlLanguageOptions { get; } =
+        XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToArray();
+
     public string XmlLanguage
     {
         get => xmlLanguage;
-        set => SetProperty(ref xmlLanguage, value);
+        set
+        {
+            var normalized = string.IsNullOrWhiteSpace(value) ? "und" : value.Trim().ToLowerInvariant();
+            if (SetProperty(ref xmlLanguage, normalized))
+            {
+                OnPropertyChanged(nameof(XmlLanguageIndex));
+            }
+        }
+    }
+
+    public int XmlLanguageIndex
+    {
+        get
+        {
+            var index = XmlLanguageOptions.ToList().FindIndex(option => string.Equals(option, XmlLanguage, StringComparison.OrdinalIgnoreCase));
+            return Math.Max(0, index);
+        }
+        set
+        {
+            if (value >= 0 && value < XmlLanguageOptions.Count)
+            {
+                XmlLanguage = XmlLanguageOptions[value];
+            }
+        }
     }
 
     public bool IsXmlLanguageEnabled => SaveFormat == ChapterExportFormat.Xml;
@@ -417,6 +448,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public UiCommand SaveCommand { get; }
     public UiCommand SaveDirectoryCommand { get; }
     public UiCommand RefreshCommand { get; }
+    public UiCommand ChangeFpsCommand { get; }
     public UiCommand SelectClipCommand { get; }
     public UiCommand CombineCommand { get; }
     public UiCommand EditTimeCommand { get; }
@@ -811,6 +843,34 @@ public sealed class MainWindowViewModel : ObservableViewModel
         NotifyStateChanged();
     }
 
+    private void ChangeFpsToSelectedOption()
+    {
+        if (currentInfo is null || !selectedFrameRateOption.IsValid)
+        {
+            return;
+        }
+
+        var sourceFps = (decimal)currentInfo.FramesPerSecond;
+        var result = new ChapterFpsTransformService().ChangeFps(currentInfo, sourceFps, selectedFrameRateOption.Value);
+        if (!result.Success)
+        {
+            SetStatus(null, diagnostic: result.Diagnostics.FirstOrDefault());
+            LogDiagnostics("Change FPS", result.Diagnostics);
+            NotifyStateChanged();
+            return;
+        }
+
+        currentInfo = result.ChapterInfo;
+        ApplyFrameInfo();
+        SetStatus("Status.Updated");
+        Log("Log.EditChapters",
+            ("action", $"Change FPS: {sourceFps:0.###} -> {selectedFrameRateOption.Value:0.###}"),
+            ("before", result.ChapterInfo.Chapters.Count),
+            ("after", result.ChapterInfo.Chapters.Count));
+        LogStatus();
+        NotifyStateChanged();
+    }
+
     private void UpdateCurrentClipOption(ChapterInfo info)
     {
         if (currentGroup is null)
@@ -903,6 +963,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SaveCommand.RaiseCanExecuteChanged();
         SaveDirectoryCommand.RaiseCanExecuteChanged();
         RefreshCommand.RaiseCanExecuteChanged();
+        ChangeFpsCommand.RaiseCanExecuteChanged();
         SelectClipCommand.RaiseCanExecuteChanged();
         CombineCommand.RaiseCanExecuteChanged();
         DeleteCommand.RaiseCanExecuteChanged();
