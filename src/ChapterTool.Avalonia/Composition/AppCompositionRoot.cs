@@ -102,7 +102,8 @@ public sealed class AppCompositionRoot : IDisposable
             appSettingsStore,
             themeSettingsStore,
             localizationManager,
-            owner => new AvaloniaSettingsPickerService(owner));
+            owner => new AvaloniaSettingsPickerService(owner),
+            CreateExternalToolLocator());
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 

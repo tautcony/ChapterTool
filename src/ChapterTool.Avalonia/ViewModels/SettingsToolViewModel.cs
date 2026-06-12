@@ -29,6 +29,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     private readonly ISettingsStore<ThemeColorSettings>? themeSettingsStore;
     private readonly IAppLocalizer localizer;
     private readonly ISettingsPickerService? picker;
+    private readonly IExternalToolLocator? externalToolLocator;
     private string selectedLanguage;
     private string? saveDirectory;
     private string? mkvToolnixPath;
@@ -48,13 +49,15 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ISettingsStore<AppSettings>? appSettingsStore,
         ISettingsStore<ThemeColorSettings>? themeSettingsStore,
         IAppLocalizer? localizer = null,
-        ISettingsPickerService? picker = null)
+        ISettingsPickerService? picker = null,
+        IExternalToolLocator? externalToolLocator = null)
     {
         this.owner = owner;
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
         this.localizer = localizer ?? owner.Localizer;
         this.picker = picker;
+        this.externalToolLocator = externalToolLocator;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Length - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
@@ -67,11 +70,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             ApplyDefaults();
             return ValueTask.CompletedTask;
         });
-        ValidateToolsCommand = new UiCommand((_, _) =>
-        {
-            RefreshToolStatuses();
-            return ValueTask.CompletedTask;
-        });
+        ValidateToolsCommand = new UiCommand(async (_, token) => await DiscoverAndFillToolPathsAsync(token));
         BrowseSaveDirectoryCommand = new UiCommand(async (_, token) => await PickDirectoryAsync(value => SaveDirectory = value, token));
         BrowseMkvToolnixCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => MkvToolnixPath = value, token));
         BrowseEac3toCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => Eac3toPath = value, token));
@@ -376,6 +375,40 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         Eac3toStatus = FormatToolStatus(ValidateTool(Eac3toPath, "eac3to"));
         FfprobeStatus = FormatToolStatus(ValidateTool(FfprobePath, "ffprobe"));
         FfmpegStatus = FormatToolStatus(ValidateTool(FfmpegPath, "ffprobe"));
+    }
+
+    private async ValueTask DiscoverAndFillToolPathsAsync(CancellationToken cancellationToken)
+    {
+        if (externalToolLocator is null)
+        {
+            RefreshToolStatuses();
+            return;
+        }
+
+        MkvToolnixPath = await DiscoverExecutableAsync("mkvextract", MkvToolnixPath, cancellationToken);
+        Eac3toPath = await DiscoverExecutableAsync("eac3to", Eac3toPath, cancellationToken);
+        var ffprobe = await DiscoverExecutableAsync("ffprobe", FfprobePath, cancellationToken);
+        FfprobePath = ffprobe;
+
+        if (string.IsNullOrWhiteSpace(FfmpegPath) || ValidateTool(FfmpegPath, "ffprobe").Kind != SettingsToolStatusKind.Found)
+        {
+            var ffprobeDirectory = string.IsNullOrWhiteSpace(ffprobe) ? null : Path.GetDirectoryName(ffprobe);
+            FfmpegPath = string.IsNullOrWhiteSpace(ffprobeDirectory) ? FfmpegPath : ffprobeDirectory;
+        }
+
+        RefreshToolStatuses();
+    }
+
+    private async ValueTask<string?> DiscoverExecutableAsync(string toolId, string? currentPath, CancellationToken cancellationToken)
+    {
+        var current = ValidateTool(currentPath, toolId);
+        if (current.Kind == SettingsToolStatusKind.Found)
+        {
+            return current.ResolvedPath ?? currentPath;
+        }
+
+        var location = await externalToolLocator!.LocateAsync(toolId, cancellationToken);
+        return location.Found ? location.Path : currentPath;
     }
 
     private string FormatToolStatus(SettingsToolStatus status) =>

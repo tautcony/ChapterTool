@@ -98,6 +98,51 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
+    public async Task ValidateToolsDiscoversAndFillsExternalToolPaths()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var mkvextract = Path.Combine(root, ToolExecutable("mkvextract"));
+        var eac3to = Path.Combine(root, ToolExecutable("eac3to"));
+        var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
+        await File.WriteAllTextAsync(mkvextract, "");
+        await File.WriteAllTextAsync(eac3to, "");
+        await File.WriteAllTextAsync(ffprobe, "");
+        var appStore = new FakeAppSettingsStore(new AppSettings());
+        var owner = CreateOwner(appStore);
+        var locator = new FakeExternalToolLocator(new Dictionary<string, ExternalToolLocation>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["mkvextract"] = new(true, mkvextract),
+            ["eac3to"] = new(true, eac3to),
+            ["ffprobe"] = new(true, ffprobe)
+        });
+        var viewModel = new SettingsToolViewModel(
+            owner,
+            appStore,
+            new FakeThemeSettingsStore(ThemeColorSettings.Default),
+            new AppLocalizationManager("en-US"),
+            externalToolLocator: locator);
+
+        try
+        {
+            await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+            await viewModel.ValidateToolsCommand.ExecuteAsync();
+
+            Assert.Equal(mkvextract, viewModel.MkvToolnixPath);
+            Assert.Equal(eac3to, viewModel.Eac3toPath);
+            Assert.Equal(ffprobe, viewModel.FfprobePath);
+            Assert.Equal(root, viewModel.FfmpegPath);
+            Assert.Contains(mkvextract, viewModel.MkvToolnixStatus, StringComparison.Ordinal);
+            Assert.Contains(eac3to, viewModel.Eac3toStatus, StringComparison.Ordinal);
+            Assert.Contains(ffprobe, viewModel.FfprobeStatus, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task PickerCommandsUseInjectedPicker()
     {
         var appStore = new FakeAppSettingsStore(new AppSettings());
@@ -162,6 +207,15 @@ public sealed class SettingsToolViewModelTests
         public ValueTask<string?> PickExecutableAsync(string title, CancellationToken cancellationToken) => ValueTask.FromResult<string?>(executable);
     }
 
+    private sealed class FakeExternalToolLocator(IReadOnlyDictionary<string, ExternalToolLocation> locations) : IExternalToolLocator
+    {
+        public ValueTask<ExternalToolLocation> LocateAsync(string toolId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(
+                locations.TryGetValue(toolId, out var location)
+                    ? location
+                    : new ExternalToolLocation(false, null, "MissingDependency", toolId));
+    }
+
     private sealed class FakeLoadService : IChapterLoadService
     {
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
@@ -170,6 +224,8 @@ public sealed class SettingsToolViewModelTests
                 [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, Array.Empty<Chapter>()))], 0)],
                 Array.Empty<ChapterDiagnostic>()));
     }
+
+    private static string ToolExecutable(string name) => OperatingSystem.IsWindows() ? $"{name}.exe" : name;
 
     private sealed class FakeSaveService : IChapterSaveService
     {

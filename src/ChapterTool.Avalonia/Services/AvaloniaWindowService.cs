@@ -14,6 +14,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
     private readonly ISettingsStore<ThemeColorSettings>? themeSettingsStore;
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
+    private readonly IExternalToolLocator? externalToolLocator;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
@@ -22,12 +23,14 @@ public sealed class AvaloniaWindowService : IWindowService
         ISettingsStore<AppSettings>? appSettingsStore = null,
         ISettingsStore<ThemeColorSettings>? themeSettingsStore = null,
         IAppLocalizer? localizer = null,
-        Func<Window, ISettingsPickerService>? settingsPickerFactory = null)
+        Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
+        IExternalToolLocator? externalToolLocator = null)
     {
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
         this.localizer = localizer ?? new AppLocalizationManager();
         this.settingsPickerFactory = settingsPickerFactory;
+        this.externalToolLocator = externalToolLocator;
         this.localizer.CultureChanged += (_, _) =>
         {
             foreach (var (id, window) in windows)
@@ -108,7 +111,8 @@ public sealed class AvaloniaWindowService : IWindowService
                     appSettingsStore,
                     themeSettingsStore,
                     localizer,
-                    settingsPickerFactory?.Invoke(window))
+                    settingsPickerFactory?.Invoke(window),
+                    externalToolLocator)
             },
             "color-settings" => new ColorSettingsView { DataContext = new ColorSettingsViewModel(themeSettingsStore) },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },

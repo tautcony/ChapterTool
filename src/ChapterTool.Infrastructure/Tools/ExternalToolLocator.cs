@@ -34,6 +34,15 @@ public sealed class ExternalToolLocator(
             }
         }
 
+        foreach (var candidate in ExternalToolPathResolver.DefaultCandidates(toolId, executableName))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (File.Exists(candidate))
+            {
+                return new ExternalToolLocation(true, candidate);
+            }
+        }
+
         if (toolId.Equals("mkvextract", StringComparison.OrdinalIgnoreCase))
         {
             foreach (var candidate in mkvToolNixInstallProbe.FindMkvExtractCandidates(executableName))
