@@ -35,7 +35,7 @@
 
 - Run the focused Avalonia tests after XAML or UI shell changes:
   - `dotnet test tests\ChapterTool.Avalonia.Tests\ChapterTool.Avalonia.Tests.csproj --no-restore`
-- Do not test `.axaml` by reading XAML files as raw text and asserting strings. Prefer compiled XAML coverage, ViewModel/behavior tests, and visual/runtime verification for UI changes.
+- Do not test source/configuration files by reading them as text and asserting strings. This includes `.cs`, `.axaml`, `.csproj`, scripts, CI YAML, README, and docs. Prefer compiled coverage, behavior tests, runtime verification, structured public APIs, or integration checks.
 - Run the full solution tests before finalizing broader changes:
   - `dotnet test ChapterTool.Avalonia.slnx --no-restore`
 - Build the Avalonia app when changing app project files:
@@ -59,7 +59,7 @@
 - Buttons should center content horizontally and vertically.
 - Do not expose Windows registry-dependent actions, such as file association, as always-visible primary UI.
 - When verifying visual layout changes, capture screenshots at default, wide, and narrow sizes and store them under `artifacts/`.
-- Avoid static string assertions over `.axaml` layout. Validate layout through Avalonia compilation, behavior-level tests, and screenshots/runtime checks instead.
+- Avoid static string assertions over source/configuration layout. Validate UI through Avalonia compilation, behavior-level tests, and screenshots/runtime checks instead.
 
 ## PR Instructions
 

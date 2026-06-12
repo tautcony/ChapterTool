@@ -2,11 +2,7 @@ using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Composition;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
-using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Models;
-using ChapterTool.Core.Services;
-using ChapterTool.Core.Transform;
-using ChapterTool.Infrastructure.Platform;
 
 namespace ChapterTool.Avalonia.Tests;
 
@@ -238,7 +234,7 @@ public sealed class RuntimeChapterLoadServiceTests
     public async Task RuntimeLoadsExistingIfoFixture()
     {
         var root = RepositoryRoot();
-        var path = Path.Combine(root, "Time_Shift_Test", "[ifo_Sample]", "VTS_05_0.IFO");
+        var path = Path.Combine(root, "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Ifo", "VTS_05_0.IFO");
 
         var result = await CreateService().LoadAsync(path, TestContext.Current.CancellationToken);
 
@@ -253,7 +249,7 @@ public sealed class RuntimeChapterLoadServiceTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Time_Shift.sln")))
+            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
             {
                 return directory.FullName;
             }

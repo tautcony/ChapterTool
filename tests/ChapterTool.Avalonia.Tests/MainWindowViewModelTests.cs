@@ -622,20 +622,6 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("Load diagnostic: severity=Warning, code=PartialParse", vm.LogText(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void AvaloniaViewModelsDoNotReferenceWinForms()
-    {
-        var root = RepositoryRoot();
-        var files = Directory.EnumerateFiles(Path.Combine(root, "src", "ChapterTool.Avalonia"), "*.cs", SearchOption.AllDirectories);
-        var banned = new[] { "DataGridView", "ToolStrip", "MessageBox", "Application.DoEvents", "System.Windows.Forms" };
-
-        foreach (var file in files)
-        {
-            var text = File.ReadAllText(file);
-            Assert.DoesNotContain(banned, token => text.Contains(token, StringComparison.Ordinal));
-        }
-    }
-
     private static MainWindowViewModel CreateViewModel(
         FakeLoadService? loadService = null,
         FakeSaveService? saveService = null,
@@ -676,7 +662,7 @@ public sealed class MainWindowViewModelTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Time_Shift.sln")))
+            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
             {
                 return directory.FullName;
             }

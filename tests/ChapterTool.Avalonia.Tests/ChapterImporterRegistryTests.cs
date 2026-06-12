@@ -151,23 +151,12 @@ public sealed class ChapterImporterRegistryTests
         Assert.Null(registry.ResolveFallback("movie.mov", movPrimary, missingFfprobe));
     }
 
-    [Fact]
-    public void RuntimeChapterLoadServiceDoesNotConstructImporterInfrastructureInsideLoad()
-    {
-        var text = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "ChapterTool.Avalonia", "Services", "RuntimeChapterLoadService.cs"));
-
-        Assert.Contains("IChapterImporterRegistry", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("new ProcessRunner", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("new ExternalToolLocator", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("new FileSystemNativeDependencyService", text, StringComparison.Ordinal);
-    }
-
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Time_Shift.sln")))
+            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
             {
                 return directory.FullName;
             }
