@@ -1,4 +1,7 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Localization;
@@ -12,19 +15,52 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
 internal sealed class MainWindowHeadlessTestHost : IDisposable
 {
-    public MainWindowHeadlessTestHost(ChapterImportResult? loadResult = null)
+    private readonly ApplicationLogPanelProvider logService;
+
+    public MainWindowHeadlessTestHost(
+        ChapterImportResult? loadResult = null,
+        AppLocalizationManager? localizer = null,
+        AppSettings? appSettings = null,
+        ThemeColorSettings? themeSettings = null,
+        IShellService? shellService = null)
+        : this(
+            loadResult is null
+                ? [ImportResult("movie.txt", Option("OGM", "movie.txt", "Intro"))]
+                : [loadResult],
+            localizer,
+            appSettings,
+            themeSettings,
+            shellService)
     {
-        LoadService = new FakeLoadService(loadResult ?? ImportResult("movie.txt", Option("OGM", "movie.txt", "Intro")));
+    }
+
+    public MainWindowHeadlessTestHost(
+        IReadOnlyList<ChapterImportResult> loadResults,
+        AppLocalizationManager? localizer = null,
+        AppSettings? appSettings = null,
+        ThemeColorSettings? themeSettings = null,
+        IShellService? shellService = null)
+    {
+        Localizer = localizer ?? new AppLocalizationManager("en-US");
+        LoadService = new FakeLoadService(loadResults.Count == 0
+            ? [ImportResult("movie.txt", Option("OGM", "movie.txt", "Intro"))]
+            : loadResults);
         SaveService = new FakeSaveService();
         WindowService = new FakeWindowService();
         FilePickerService = new FakeFilePickerService();
-        var logService = new ApplicationLogPanelProvider();
+        SettingsPickerService = new FakeSettingsPickerService();
+        AppSettingsStore = new FakeSettingsStore<AppSettings>(appSettings ?? new AppSettings(Language: "en-US"));
+        ThemeSettingsStore = new FakeSettingsStore<ThemeColorSettings>(themeSettings ?? ThemeColorSettings.Default);
+        ShellService = shellService ?? new FakeShellService();
+        logService = new ApplicationLogPanelProvider();
         ViewModel = new MainWindowViewModel(
             LoadService,
             SaveService,
@@ -34,16 +70,18 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             new ChapterTimeFormatter(),
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
-            shellService: null,
-            appSettingsStore: null,
+            ShellService,
+            AppSettingsStore,
             frameRateService: null,
-            new AppLocalizationManager("en-US"));
+            Localizer);
         Window = new MainWindow(ViewModel, _ => FilePickerService);
     }
 
     public MainWindow Window { get; }
 
     public MainWindowViewModel ViewModel { get; }
+
+    public AppLocalizationManager Localizer { get; }
 
     public FakeLoadService LoadService { get; }
 
@@ -53,17 +91,38 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public FakeFilePickerService FilePickerService { get; }
 
+    public FakeSettingsPickerService SettingsPickerService { get; }
+
+    public FakeSettingsStore<AppSettings> AppSettingsStore { get; }
+
+    public FakeSettingsStore<ThemeColorSettings> ThemeSettingsStore { get; }
+
+    public IShellService ShellService { get; }
+
+    public IApplicationLogService LogService => logService;
+
     public static ChapterImportResult ImportResult(string path, params ChapterSourceOption[] options) =>
         new(true, [new ChapterInfoGroup(path, options, 0)], Array.Empty<ChapterDiagnostic>());
 
+    public static ChapterImportResult ImportResult(string path, int defaultOptionIndex, params ChapterSourceOption[] options) =>
+        new(true, [new ChapterInfoGroup(path, options, defaultOptionIndex)], Array.Empty<ChapterDiagnostic>());
+
     public static ChapterSourceOption Option(string sourceType, string sourceName, params string[] chapterNames)
     {
-        var chapters = chapterNames
-            .Select((name, index) => new Chapter(index + 1, TimeSpan.FromSeconds(index * 10), name))
-            .ToArray();
+        var chapters = chapterNames.Length == 0
+            ? [new Chapter(1, TimeSpan.Zero, "Intro")]
+            : chapterNames
+                .Select((name, index) => new Chapter(index + 1, TimeSpan.FromSeconds(index * 10), name))
+                .ToArray();
         var duration = chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].Time;
         var info = new ChapterInfo(sourceName, sourceName, 0, sourceType, 24, duration, chapters);
         return new ChapterSourceOption(sourceName, sourceName, info);
+    }
+
+    public static ChapterSourceOption OptionWithMedia(string sourceType, string sourceName, SourceMediaReference media, params string[] chapterNames)
+    {
+        var option = Option(sourceType, sourceName, chapterNames);
+        return option with { MediaReferences = [media] };
     }
 
     public async ValueTask LoadAsync(string path)
@@ -74,23 +133,62 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         await LayoutAsync();
     }
 
-    public async ValueTask LayoutAsync()
+    public async ValueTask LayoutAsync(double width = 920, double height = 720)
     {
         Window.Show();
-        Window.Width = 920;
-        Window.Height = 720;
+        Window.Width = width;
+        Window.Height = height;
+        await ExecuteLayoutAsync(Window);
+    }
+
+    public async ValueTask LayoutAtAsync(UiTestSize size)
+    {
+        var (width, height) = size switch
+        {
+            UiTestSize.Narrow => (760d, 640d),
+            UiTestSize.Wide => (1180d, 780d),
+            _ => (920d, 720d)
+        };
+        await LayoutAsync(width, height);
+    }
+
+    public static async ValueTask ExecuteLayoutAsync(Window window)
+    {
         Dispatcher.UIThread.RunJobs();
-        var layoutManager = Window.GetLayoutManager()
-            ?? throw new InvalidOperationException("MainWindow layout manager was not available.");
+        var layoutManager = window.GetLayoutManager()
+            ?? throw new InvalidOperationException("Window layout manager was not available.");
         layoutManager.ExecuteInitialLayoutPass();
         layoutManager.ExecuteLayoutPass();
         Dispatcher.UIThread.RunJobs();
         await Task.Yield();
     }
 
+    public static async ValueTask<Window> RenderToolAsync(Control view, object viewModel, double width = 760, double height = 520)
+    {
+        var window = new Window
+        {
+            Content = view,
+            DataContext = viewModel,
+            Width = width,
+            Height = height
+        };
+        window.Show();
+        await ExecuteLayoutAsync(window);
+        return window;
+    }
+
     public T RequiredControl<T>(string name)
         where T : Control =>
         Window.FindControl<T>(name) ?? throw new InvalidOperationException($"Control '{name}' was not found.");
+
+    public static T RequiredDescendant<T>(Control scope, Func<T, bool> predicate, string description)
+        where T : Control =>
+        scope.GetVisualDescendants().OfType<T>().FirstOrDefault(predicate)
+        ?? throw new InvalidOperationException($"Expected descendant control was not found: {description}.");
+
+    public static IReadOnlyList<T> Descendants<T>(Control scope)
+        where T : Control =>
+        scope.GetVisualDescendants().OfType<T>().ToArray();
 
     public bool ContainsRenderedText(string text) =>
         ContainsRenderedText(Window, text);
@@ -98,13 +196,73 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public bool ContainsRenderedText(Control scope, string text) =>
         RenderedTexts(scope).Any(rendered => string.Equals(rendered, text, StringComparison.Ordinal));
 
-    public IReadOnlyList<string> RenderedTexts(Control scope) =>
+    public static bool ContainsRenderedTextStatic(Control scope, string text) =>
+        RenderedTextsStatic(scope).Any(rendered => string.Equals(rendered, text, StringComparison.Ordinal));
+
+    public IReadOnlyList<string> RenderedTexts(Control scope) => RenderedTextsStatic(scope);
+
+    public static IReadOnlyList<string> RenderedTextsStatic(Control scope) =>
         scope
             .GetVisualDescendants()
             .OfType<TextBlock>()
             .Select(static block => block.Text)
             .Where(static text => !string.IsNullOrWhiteSpace(text))
             .ToArray()!;
+
+    public string DescribeRenderedTexts(Control scope) =>
+        RenderedTexts(scope)
+            .Aggregate(string.Empty, static (current, text) => string.IsNullOrEmpty(current) ? text! : current + Environment.NewLine + text);
+
+    public async ValueTask FocusAndPressAsync(Key key, KeyModifiers modifiers = KeyModifiers.None)
+    {
+        Window.Focus();
+        Window.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = key,
+            KeyModifiers = modifiers,
+            Source = Window
+        });
+        await LayoutAsync(Window.Width, Window.Height);
+    }
+
+    public IReadOnlyList<MenuItem> OpenContextMenu(Control control)
+    {
+        var menu = control.ContextMenu ?? throw new InvalidOperationException($"Control '{control.Name}' does not have a context menu.");
+        menu.PlacementTarget = control;
+        menu.Open();
+        Dispatcher.UIThread.RunJobs();
+        return menu.Items.OfType<MenuItem>().ToArray();
+    }
+
+    public MenuItem RequiredMenuItem(Control control, string name) =>
+        OpenContextMenu(control).FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))
+        ?? throw new InvalidOperationException($"Menu item '{name}' was not found on '{control.Name}'.");
+
+    public void SelectRows(params int[] indexes)
+    {
+        var grid = RequiredControl<DataGrid>("ChapterGrid");
+        grid.SelectedItems.Clear();
+        foreach (var index in indexes)
+        {
+            grid.SelectedItems.Add(ViewModel.Rows[index]);
+        }
+
+        ViewModel.UpdateSelectedRows(indexes.ToHashSet());
+    }
+
+    public async ValueTask<string> CaptureArtifactAsync(string name, Window? window = null)
+    {
+        var target = window ?? Window;
+        await ExecuteLayoutAsync(target);
+        var artifactPath = Path.Combine(RepositoryRoot(), "artifacts", name);
+        Directory.CreateDirectory(Path.GetDirectoryName(artifactPath)!);
+        var bitmap = target.CaptureRenderedFrame()
+            ?? throw new InvalidOperationException($"Frame '{name}' was not rendered.");
+        await using var stream = File.Create(artifactPath);
+        bitmap.Save(stream);
+        return artifactPath;
+    }
 
     public static string RepositoryRoot()
     {
@@ -122,35 +280,62 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
     }
 
-    public string DescribeRenderedTexts(Control scope) =>
-        RenderedTexts(scope)
-            .Aggregate(string.Empty, static (current, text) => string.IsNullOrEmpty(current) ? text! : current + Environment.NewLine + text);
-
     public void Dispose() => Window.Close();
 
-    internal sealed class FakeLoadService(ChapterImportResult result) : IChapterLoadService
+    internal sealed class FakeLoadService : IChapterLoadService
     {
-        public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(result);
+        private readonly Queue<ChapterImportResult> results;
+
+        public FakeLoadService(IReadOnlyList<ChapterImportResult> results)
+        {
+            this.results = new Queue<ChapterImportResult>(results);
+        }
+
+        public List<string> Paths { get; } = [];
+
+        public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken)
+        {
+            Paths.Add(path);
+            if (results.Count == 0)
+            {
+                throw new InvalidOperationException("FakeLoadService has no more results queued.");
+            }
+
+            var result = results.Count == 1 ? results.Peek() : results.Dequeue();
+            return ValueTask.FromResult(result);
+        }
     }
 
     internal sealed class FakeSaveService : IChapterSaveService
     {
+        public ChapterInfo? LastInfo { get; private set; }
+        public ChapterExportOptions? LastOptions { get; private set; }
+        public string? LastDirectory { get; private set; }
+        public int Calls { get; private set; }
+
         public ValueTask<ChapterExportResult> SaveAsync(
             ChapterInfo info,
             ChapterExportOptions options,
             string? directory,
-            CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", Array.Empty<ChapterDiagnostic>()));
+            CancellationToken cancellationToken)
+        {
+            Calls++;
+            LastInfo = info;
+            LastOptions = options;
+            LastDirectory = directory;
+            return ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", Array.Empty<ChapterDiagnostic>()));
+        }
     }
 
     internal sealed class FakeWindowService : IWindowService
     {
         public List<string> Opened { get; } = [];
+        public List<object?> Parameters { get; } = [];
 
         public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
         {
             Opened.Add(windowId);
+            Parameters.Add(parameter);
             return ValueTask.CompletedTask;
         }
 
@@ -160,13 +345,70 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeFilePickerService : IFilePickerService
     {
         public string? SourcePath { get; set; }
+        public string? MplsPath { get; set; }
+        public string? ChapterNameTemplatePath { get; set; }
+        public string? SaveDirectoryPath { get; set; }
 
-        public ValueTask<string?> PickSourceAsync(CancellationToken cancellationToken) => ValueTask.FromResult(SourcePath);
+        public int SourcePickCount { get; private set; }
+        public int SaveDirectoryPickCount { get; private set; }
 
-        public ValueTask<string?> PickMplsAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+        public ValueTask<string?> PickSourceAsync(CancellationToken cancellationToken)
+        {
+            SourcePickCount++;
+            return ValueTask.FromResult(SourcePath);
+        }
 
-        public ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+        public ValueTask<string?> PickMplsAsync(CancellationToken cancellationToken) => ValueTask.FromResult(MplsPath);
 
-        public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+        public ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken) => ValueTask.FromResult(ChapterNameTemplatePath);
+
+        public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken)
+        {
+            SaveDirectoryPickCount++;
+            return ValueTask.FromResult(SaveDirectoryPath);
+        }
     }
+
+    internal sealed class FakeSettingsPickerService : ISettingsPickerService
+    {
+        public string? DirectoryPath { get; set; }
+        public string? ExecutablePath { get; set; }
+
+        public ValueTask<string?> PickDirectoryAsync(string title, CancellationToken cancellationToken) => ValueTask.FromResult(DirectoryPath);
+
+        public ValueTask<string?> PickExecutableAsync(string title, CancellationToken cancellationToken) => ValueTask.FromResult(ExecutablePath);
+    }
+
+    internal sealed class FakeSettingsStore<TSettings>(TSettings current) : ISettingsStore<TSettings>
+    {
+        public TSettings Current { get; private set; } = current;
+        public int Saves { get; private set; }
+
+        public ValueTask<TSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
+
+        public ValueTask SaveAsync(TSettings settings, CancellationToken cancellationToken)
+        {
+            Saves++;
+            Current = settings;
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    internal sealed class FakeShellService : IShellService
+    {
+        public List<string> Opened { get; } = [];
+
+        public ValueTask OpenAsync(string target, CancellationToken cancellationToken)
+        {
+            Opened.Add(target);
+            return ValueTask.CompletedTask;
+        }
+    }
+}
+
+internal enum UiTestSize
+{
+    Default,
+    Wide,
+    Narrow
 }
