@@ -10,8 +10,8 @@ public sealed record ChapterImportResult(
     bool IsPartial = false)
 {
     public static ChapterImportResult Succeeded(params ChapterInfoGroup[] groups) =>
-        new(true, groups, Array.Empty<ChapterDiagnostic>());
+        new(true, groups, []);
 
     public static ChapterImportResult Failed(params ChapterDiagnostic[] diagnostics) =>
-        new(false, Array.Empty<ChapterInfoGroup>(), diagnostics);
+        new(false, [], diagnostics);
 }

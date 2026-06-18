@@ -30,8 +30,8 @@ public sealed class MplsChapterImporter : IChapterImporter
         try
         {
             var parsed = MplsPlaylistFile.Read(stream);
-            var options = parsed.PlayList.PlayItems.Select((playItem, index) => ToOption(request.Path, playItem, parsed.PlayListMark.Marks, index)).ToArray();
-            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options, 0)], Array.Empty<ChapterDiagnostic>());
+            var options = parsed.PlayList.PlayItems.Select((playItem, index) => ToOption(request.Path, playItem, parsed.PlayListMark.Marks, index)).ToList();
+            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], []);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
         {
@@ -81,16 +81,18 @@ public sealed class MplsChapterImporter : IChapterImporter
     {
         var matchingMarks = marks
             .Where(mark => mark.MarkType == 0x01 && mark.RefToPlayItemID == playItemIndex)
-            .ToArray();
-        var offset = matchingMarks.Length == 0 ? playItem.INTime : matchingMarks[0].MarkTimeStamp;
+            .ToList();
+        var offset = matchingMarks.Count == 0 ? playItem.INTime : matchingMarks[0].MarkTimeStamp;
         if (playItem.INTime < offset)
         {
             offset = playItem.INTime;
         }
 
-        var chapters = matchingMarks.Length == 0
+        var chapters = matchingMarks.Count == 0
             ? [new Chapter(1, TimeSpan.Zero, "Chapter 1")]
-            : matchingMarks.Select((mark, index) => new Chapter(index + 1, PtsToTime(mark.MarkTimeStamp - offset), $"Chapter {index + 1:D2}")).ToArray();
+            : matchingMarks
+                .Select((mark, index) => new Chapter(index + 1, PtsToTime(mark.MarkTimeStamp - offset), $"Chapter {index + 1:D2}"))
+                .ToList();
         var frameRateCode = playItem.STNTable.PrimaryVideoStreamEntries.FirstOrDefault()?.StreamAttributes.FrameRate ?? 0;
         var info = new ChapterInfo(
             string.Empty,
@@ -105,15 +107,15 @@ public sealed class MplsChapterImporter : IChapterImporter
         var refs = playItem.FullName
             .Split('&', StringSplitOptions.RemoveEmptyEntries)
             .Select(clip => new SourceMediaReference($"{clip}.m2ts", Path.Combine("..", "STREAM", $"{clip}.m2ts")))
-            .ToArray();
-        return new ChapterSourceOption($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Length}", info, CanCombine: true, MediaReferences: refs);
+            .ToList();
+        return new ChapterSourceOption($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Count}", info, CanCombine: true, MediaReferences: refs);
     }
 
-    private static IReadOnlyList<Chapter> PlaylistChapters(IReadOnlyList<MplsPlayItem> playItems, IReadOnlyList<MplsMark> marks)
+    private static List<Chapter> PlaylistChapters(IReadOnlyList<MplsPlayItem> playItems, IReadOnlyList<MplsMark> marks)
     {
         if (playItems.Count == 0)
         {
-            return Array.Empty<Chapter>();
+            return [];
         }
 
         var playItemStartPts = new ulong[playItems.Count];
@@ -139,9 +141,9 @@ public sealed class MplsChapterImporter : IChapterImporter
                 index + 1,
                 PtsToTime(checked((uint)Math.Min(pts, uint.MaxValue))),
                 $"Chapter {index + 1:D2}"))
-            .ToArray();
+            .ToList();
 
-        return chapters.Length == 0
+        return chapters.Count == 0
             ? [new Chapter(1, TimeSpan.Zero, "Chapter 01")]
             : chapters;
     }

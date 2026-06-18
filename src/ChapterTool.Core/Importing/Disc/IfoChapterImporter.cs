@@ -25,13 +25,13 @@ public sealed partial class IfoChapterImporter : IChapterImporter
                     info,
                     CanCombine: true,
                     MediaReferences: [new SourceMediaReference($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))
-                .ToArray();
-            if (options.Length == 0)
+                .ToList();
+            if (options.Count == 0)
             {
                 return ChapterImportResult.Failed(Error("NoChaptersFound", "No DVD chapters were parsed."));
             }
 
-            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options, 0)], Array.Empty<ChapterDiagnostic>());
+            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], []);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or EndOfStreamException)
         {
@@ -55,7 +55,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         return streams;
     }
 
-    public static int BcdToInt(byte value) => ((0xFF & (value >> 4)) * 10) + (value & 0x0F);
+    public static int BcdToInt(byte value) => (0xFF & (value >> 4)) * 10 + (value & 0x0F);
 
     public static TimeSpan ConvertDvdPlaybackTime(byte hour, byte minute, byte second, byte frameByte, out bool isNtsc)
     {
@@ -64,7 +64,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         var rawRate = isNtsc ? 30 : 25;
         var rate = isNtsc ? 30000d / 1001d : 25d;
         var frames = BcdToInt((byte)(frameByte & 0x3F));
-        var totalFrames = frames + (((BcdToInt(hour) * 3600) + (BcdToInt(minute) * 60) + BcdToInt(second)) * rawRate);
+        var totalFrames = frames + (BcdToInt(hour) * 3600 + BcdToInt(minute) * 60 + BcdToInt(second)) * rawRate;
         return TimeSpan.FromSeconds(totalFrames / rate);
     }
 
@@ -93,7 +93,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
             chapters);
     }
 
-    private static IReadOnlyList<Chapter> GetChapters(string path, int programChain, out TimeSpan duration, out bool isNtsc)
+    private static List<Chapter> GetChapters(string path, int programChain, out TimeSpan duration, out bool isNtsc)
     {
         duration = TimeSpan.Zero;
         isNtsc = true;
@@ -117,7 +117,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
             var programDuration = TimeSpan.Zero;
             for (var currentCell = entryCell; currentCell <= exitCell; currentCell++)
             {
-                var cellStart = cellTableOffset + ((currentCell - 1) * 0x18);
+                var cellStart = cellTableOffset + (currentCell - 1) * 0x18;
                 var typeBytes = ReadBlock(stream, pcgit + chainOffset + cellStart, 4);
                 var cellType = typeBytes[0] >> 6;
                 if (cellType is 0x00 or 0x01)
@@ -141,14 +141,14 @@ public sealed partial class IfoChapterImporter : IChapterImporter
     {
         using var stream = File.OpenRead(path);
         var offset = ToInt32(ReadBlock(stream, 0xCC, 4));
-        stream.Position = (2048 * offset) + 0x01;
+        stream.Position = 2048 * offset + 0x01;
         return stream.ReadByte();
     }
 
     private static long GetPcgitPosition(Stream stream) => ToInt32(ReadBlock(stream, 0xCC, 4)) * 0x800L;
 
     private static uint GetChainOffset(Stream stream, long pcgit, int programChain) =>
-        ToInt32(ReadBlock(stream, pcgit + (8 * programChain) + 4, 4));
+        ToInt32(ReadBlock(stream, pcgit + 8 * programChain + 4, 4));
 
     private static int GetNumberOfPrograms(Stream stream, long pcgit, uint chainOffset) =>
         ReadBlock(stream, pcgit + chainOffset + 2, 1)[0];

@@ -30,15 +30,15 @@ public sealed class ChapterOutputProjectionService(IExpressionService expression
                 Number = outputIndex + effectiveShift,
                 Name = OutputName(chapter.Name, outputIndex, useGeneratedNames, templateNames)
             };
-        }).ToArray();
+        }).ToList();
 
         return new ChapterOutputProjectionResult(
             expressionResult.Info with { Chapters = chapters },
-            chapters.Where(static chapter => !chapter.IsSeparator).ToArray(),
+            chapters.Where(static chapter => !chapter.IsSeparator).ToList(),
             diagnostics);
     }
 
-    private static int NormalizeOrderShift(int orderShift, ICollection<ChapterDiagnostic> diagnostics)
+    private static int NormalizeOrderShift(int orderShift, List<ChapterDiagnostic> diagnostics)
     {
         if (orderShift >= 0)
         {
@@ -52,15 +52,15 @@ public sealed class ChapterOutputProjectionService(IExpressionService expression
         return 0;
     }
 
-    private static IReadOnlyList<string> TemplateNames(string templateText) =>
+    private static List<string> TemplateNames(string templateText) =>
         string.IsNullOrWhiteSpace(templateText)
-            ? Array.Empty<string>()
+            ? []
             : templateText
                 .Trim(' ', '\r', '\n')
-                .Split('\n', StringSplitOptions.None)
+                .Split('\n')
                 .Select(static line => line.TrimEnd('\r'))
                 .Where(static line => line.Length > 0)
-                .ToArray();
+                .ToList();
 
     private static string OutputName(
         string originalName,
@@ -85,7 +85,7 @@ public sealed record ChapterOutputProjectionResult(
     IReadOnlyList<ChapterDiagnostic> Diagnostics)
 {
     public ChapterOutputProjectionResult(ChapterInfo info, IReadOnlyList<ChapterDiagnostic> diagnostics)
-        : this(info, info.Chapters.Where(static chapter => !chapter.IsSeparator).ToArray(), diagnostics)
+        : this(info, info.Chapters.Where(static chapter => !chapter.IsSeparator).ToList(), diagnostics)
     {
     }
 }

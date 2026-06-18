@@ -28,18 +28,17 @@ public sealed partial class ChapterTimeFormatter : IChapterTimeFormatter
     {
         if (TryParse(text, out var value))
         {
-            return new TimeParseResult(value, Array.Empty<ChapterDiagnostic>());
+            return new TimeParseResult(value, []);
         }
 
         return new TimeParseResult(
             TimeSpan.Zero,
-            new[]
-            {
+            [
                 new ChapterDiagnostic(
                     DiagnosticSeverity.Warning,
                     "InvalidTimeText",
                     "Time text is empty or does not match the legacy HH:mm:ss.sss format.")
-            });
+            ]);
     }
 
     public string FormatCue(TimeSpan time)
@@ -50,7 +49,7 @@ public sealed partial class ChapterTimeFormatter : IChapterTimeFormatter
             frames = 99;
         }
 
-        return $"{(time.Hours * 60) + time.Minutes:D2}:{time.Seconds:D2}:{frames:D2}";
+        return $"{time.Hours * 60 + time.Minutes:D2}:{time.Seconds:D2}:{frames:D2}";
     }
 
     private static bool TryParse(string text, out TimeSpan value)

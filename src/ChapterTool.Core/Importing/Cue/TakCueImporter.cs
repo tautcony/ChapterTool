@@ -39,7 +39,7 @@ public sealed class TakCueImporter(CueSheetParser? parser = null) : IChapterImpo
             return ChapterImportResult.Failed(Error("EmbeddedCueNotFound", "No TAK cuesheet marker was found."));
         }
 
-        return parser.Parse(cue, request.Path);
+        return CueSheetParser.Parse(cue, request.Path);
     }
 
     public static string? ExtractCue(ReadOnlySpan<byte> data)

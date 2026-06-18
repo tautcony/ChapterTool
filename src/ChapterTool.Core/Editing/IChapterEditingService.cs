@@ -25,4 +25,4 @@ public interface IChapterEditingService
 
 public sealed record ChapterZonesResult(
     string Zones,
-    IReadOnlyList<ChapterTool.Core.Diagnostics.ChapterDiagnostic> Diagnostics);
+    IReadOnlyList<Diagnostics.ChapterDiagnostic> Diagnostics);

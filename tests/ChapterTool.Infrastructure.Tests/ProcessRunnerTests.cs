@@ -96,11 +96,10 @@ public sealed class ProcessRunnerTests
             {
                 return new ProcessRunRequest(
                     "powershell.exe",
-                    ["-NoProfile", "-Command", $"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; [Console]::WriteLine('{stdout}'); [Console]::Error.WriteLine('{stderr}')"],
-                    null);
+                    ["-NoProfile", "-Command", $"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; [Console]::WriteLine('{stdout}'); [Console]::Error.WriteLine('{stderr}')"]);
             }
 
-            return Create($"printf '{stdout}\\n'; printf '{stderr}\\n' 1>&2");
+            return Create($@"printf '{stdout}\n'; printf '{stderr}\n' 1>&2");
         }
     }
 }

@@ -41,7 +41,7 @@ public sealed class CueImporterTests
                 INDEX 00 32:10:44
                 INDEX 01 32:12:13
             """;
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(cueText));
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(cueText));
         var result = await importer.ImportAsync(new ChapterImportRequest("ARCHIVES 2.cue", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
@@ -100,7 +100,7 @@ public sealed class CueImporterTests
     [Fact]
     public void CueParserSkipsBlankLinesBetweenTracksAsIntentionalExpansion()
     {
-        var result = new CueSheetParser().Parse(
+        var result = CueSheetParser.Parse(
             """
             FILE "a.wav" WAVE
               TRACK 01 AUDIO
@@ -123,7 +123,7 @@ public sealed class CueImporterTests
     [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 01 bad", "MalformedCueSyntax")]
     public void CueParserFailsEmptyOrMalformedText(string text, string code)
     {
-        var result = new CueSheetParser().Parse(text);
+        var result = CueSheetParser.Parse(text);
 
         Assert.False(result.Success);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
@@ -215,7 +215,7 @@ public sealed class CueImporterTests
     [Fact]
     public async Task TakImporterFailsMissingMarkerForSmallFile()
     {
-        var bytes = Encoding.UTF8.GetBytes("tBaKsmall");
+        var bytes = "tBaKsmall"u8.ToArray();
         using var stream = new MemoryStream(bytes);
 
         var result = await new TakCueImporter().ImportAsync(new ChapterImportRequest("music.tak", stream), TestContext.Current.CancellationToken);

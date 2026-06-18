@@ -1,6 +1,6 @@
 using ChapterTool.Avalonia.ViewModels;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.Commands;
 
 public sealed class UiCommandTests
 {

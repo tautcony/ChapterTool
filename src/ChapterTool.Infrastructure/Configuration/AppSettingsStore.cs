@@ -110,7 +110,7 @@ public sealed partial class AppSettingsStore : ISettingsStore<AppSettings>
     }
 
     private static string? Get(IReadOnlyDictionary<string, string> values, string key) =>
-        values.TryGetValue(key, out var value) ? value : null;
+        values.GetValueOrDefault(key);
 
     private static WindowLocation? ParseLocation(string? value)
     {

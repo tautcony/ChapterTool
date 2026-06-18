@@ -12,12 +12,12 @@ public sealed class AvaloniaClipboardService(Window owner) : IClipboardService
         return owner.Clipboard is null ? null : await owner.Clipboard.TryGetTextAsync();
     }
 
-    public async ValueTask SetTextAsync(string text, CancellationToken cancellationToken)
+    public async ValueTask SetTextAsync(string value, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         if (owner.Clipboard is not null)
         {
-            await owner.Clipboard.SetTextAsync(text);
+            await owner.Clipboard.SetTextAsync(value);
         }
     }
 }

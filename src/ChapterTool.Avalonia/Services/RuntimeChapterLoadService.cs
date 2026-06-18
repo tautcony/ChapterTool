@@ -39,7 +39,7 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
             DiagnosticSeverity.Info,
             "ImporterFallbackUsed",
             $"Primary importer '{importer.Id}' could not be invoked; used fallback importer '{fallback.Id}'.");
-        var diagnostics = primaryResult.Diagnostics.Concat([fallbackDiagnostic]).Concat(fallbackResult.Diagnostics).ToArray();
+        var diagnostics = primaryResult.Diagnostics.Concat([fallbackDiagnostic]).Concat(fallbackResult.Diagnostics).ToList();
         return fallbackResult with { Diagnostics = diagnostics };
     }
 }

@@ -5,7 +5,7 @@ namespace ChapterTool.Core.Editing;
 
 public sealed class ChapterSegmentService
 {
-    public ChapterEditResult Combine(ChapterInfoGroup group)
+    public static ChapterEditResult Combine(ChapterInfoGroup group)
     {
         if (group.Options.Count == 0)
         {
@@ -38,7 +38,7 @@ public sealed class ChapterSegmentService
             group.Options[0].ChapterInfo.FramesPerSecond,
             offset,
             chapters);
-        return new ChapterEditResult(info, Array.Empty<ChapterDiagnostic>());
+        return new ChapterEditResult(info, []);
     }
 
     public ChapterEditResult Append(ChapterInfoGroup existing, ChapterInfoGroup appended)
@@ -55,11 +55,11 @@ public sealed class ChapterSegmentService
 
         var combined = new ChapterInfoGroup(
             existing.SourcePath,
-            existing.Options.Concat(appended.Options).ToArray(),
+            existing.Options.Concat(appended.Options).ToList(),
             existing.DefaultOptionIndex);
         return Combine(combined);
     }
 
     private static ChapterInfo Empty() =>
-        new(string.Empty, null, 0, string.Empty, 0, TimeSpan.Zero, Array.Empty<Chapter>());
+        new(string.Empty, null, 0, string.Empty, 0, TimeSpan.Zero, []);
 }

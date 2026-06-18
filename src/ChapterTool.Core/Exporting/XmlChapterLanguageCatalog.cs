@@ -35,7 +35,7 @@ public static class XmlChapterLanguageCatalog
         return IsValidCode(trimmed) ? trimmed.ToLowerInvariant() : "und";
     }
 
-    private static IReadOnlyList<XmlChapterLanguage> BuildLanguages()
+    private static List<XmlChapterLanguage> BuildLanguages()
     {
         var cultures = CultureInfo.GetCultures(CultureTypes.NeutralCultures)
             .SelectMany(static culture => new[]
@@ -51,7 +51,7 @@ public static class XmlChapterLanguageCatalog
         return QuickCodes
             .Select(static code => new XmlChapterLanguage(code, DisplayNameFor(code)))
             .Concat(cultures.Where(static language => !QuickCodes.Contains(language.Code, StringComparer.OrdinalIgnoreCase)))
-            .ToArray();
+            .ToList();
     }
 
     private static string DisplayNameFor(string code)

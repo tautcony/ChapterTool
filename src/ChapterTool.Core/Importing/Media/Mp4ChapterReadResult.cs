@@ -8,5 +8,5 @@ public sealed record Mp4ChapterReadResult(
 {
     public static Mp4ChapterReadResult Succeeded(params Mp4ChapterClip[] chapters) => new(true, chapters);
 
-    public static Mp4ChapterReadResult Failed(string code, string message) => new(false, Array.Empty<Mp4ChapterClip>(), code, message);
+    public static Mp4ChapterReadResult Failed(string code, string message) => new(false, [], code, message);
 }

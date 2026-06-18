@@ -21,7 +21,7 @@ public sealed class ChapterExportService(
     {
         var projection = options.ProjectOutput
             ? new ChapterOutputProjectionService(expressionService).Project(info, options)
-            : new ChapterOutputProjectionResult(info, Array.Empty<ChapterDiagnostic>());
+            : new ChapterOutputProjectionResult(info, []);
         info = projection.Info;
         var outputInfo = info with { Chapters = projection.OutputChapters };
         var result = options.Format switch
@@ -41,7 +41,7 @@ public sealed class ChapterExportService(
 
         return result with
         {
-            Diagnostics = result.Diagnostics.Concat(projection.Diagnostics).ToArray()
+            Diagnostics = result.Diagnostics.Concat(projection.Diagnostics).ToList()
         };
     }
 
@@ -86,8 +86,8 @@ public sealed class ChapterExportService(
 
     private ChapterExportResult TsMuxer(ChapterInfo info, ChapterExportOptions options)
     {
-        var chapters = info.Chapters.Where(NotSeparator).Select(FormatTime).ToArray();
-        if (chapters.Length == 0)
+        var chapters = info.Chapters.Where(NotSeparator).Select(FormatTime).ToList();
+        if (chapters.Count == 0)
         {
             return Failure("NoChapters", "No chapters are available for tsMuxeR meta export.");
         }
@@ -97,7 +97,7 @@ public sealed class ChapterExportService(
 
     private ChapterExportResult Celltimes(ChapterInfo info)
     {
-        var conversion = chapterConversionService.ToCelltimes(info, (decimal)info.FramesPerSecond);
+        var conversion = ChapterConversionService.ToCelltimes(info, (decimal)info.FramesPerSecond);
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
@@ -125,21 +125,21 @@ public sealed class ChapterExportService(
         return Success(builder.ToString(), ".cue");
     }
 
-    private ChapterExportResult WebVtt(ChapterInfo info, ChapterExportOptions options)
+    private static ChapterExportResult WebVtt(ChapterInfo info, ChapterExportOptions options)
     {
         var builder = new StringBuilder();
         builder.AppendLine("WEBVTT");
         builder.AppendLine();
 
-        var chapters = info.Chapters.Where(NotSeparator).ToArray();
-        for (var i = 0; i < chapters.Length; i++)
+        var chapters = info.Chapters.Where(NotSeparator).ToList();
+        for (var i = 0; i < chapters.Count; i++)
         {
             var chapter = chapters[i];
-            var endTime = i + 1 < chapters.Length ? chapters[i + 1].Time : info.Duration;
+            var endTime = i + 1 < chapters.Count ? chapters[i + 1].Time : info.Duration;
 
             builder.AppendLine(CultureInfo.InvariantCulture, $"{FormatWebVttTime(chapter.Time)} --> {FormatWebVttTime(endTime)}");
             builder.AppendLine(chapter.Name);
-            if (i < chapters.Length - 1)
+            if (i < chapters.Count - 1)
             {
                 builder.AppendLine();
             }
@@ -157,7 +157,7 @@ public sealed class ChapterExportService(
         return $"{hours:D2}:{minutes:D2}:{seconds:D2}.{milliseconds:D3}";
     }
 
-    private ChapterExportResult Json(ChapterInfo info, ChapterExportOptions options)
+    private static ChapterExportResult Json(ChapterInfo info, ChapterExportOptions options)
     {
         var entries = new List<JsonChapter>();
         var baseTime = TimeSpan.Zero;
@@ -183,7 +183,7 @@ public sealed class ChapterExportService(
         return Success(JsonSerializer.Serialize(payload, JsonOptions), ".json");
     }
 
-    private ChapterExportResult Lines(string extension, IEnumerable<string> lines) =>
+    private static ChapterExportResult Lines(string extension, IEnumerable<string> lines) =>
         Success(string.Join(Environment.NewLine, lines), extension);
 
     private static bool NotSeparator(Chapter chapter) => !chapter.IsSeparator;
@@ -202,7 +202,7 @@ public sealed class ChapterExportService(
     }
 
     private static ChapterExportResult Success(string content, string extension) =>
-        new(true, content, extension, Array.Empty<ChapterDiagnostic>());
+        new(true, content, extension, []);
 
     private static ChapterExportResult Failure(string code, string message) =>
         new(false, string.Empty, string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);

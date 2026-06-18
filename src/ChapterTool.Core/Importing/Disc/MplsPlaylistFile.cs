@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace ChapterTool.Core.Importing.Disc;
 
 internal sealed record MplsPlaylistFile(
@@ -358,7 +356,7 @@ internal sealed record MplsSTNTable(
     IReadOnlyList<MplsBasicStreamEntry> PIPPGStreamEntries,
     IReadOnlyList<MplsBasicStreamEntry> DVStreamEntries)
 {
-    public IReadOnlyList<MplsBasicStreamEntry> SubPathStreamEntries => PIPPGStreamEntries.Concat(DVStreamEntries).ToArray();
+    public IReadOnlyList<MplsBasicStreamEntry> SubPathStreamEntries => PIPPGStreamEntries.Concat(DVStreamEntries).ToList();
 
     public static MplsSTNTable Read(Stream stream)
     {
@@ -405,7 +403,7 @@ internal sealed record MplsSTNTable(
             dvEntries);
     }
 
-    private static IReadOnlyList<MplsBasicStreamEntry> ReadEntries(Stream stream, int count)
+    private static List<MplsBasicStreamEntry> ReadEntries(Stream stream, int count)
     {
         var entries = new List<MplsBasicStreamEntry>(count);
         for (var i = 0; i < count; i++)

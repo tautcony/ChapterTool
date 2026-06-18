@@ -18,10 +18,10 @@ public sealed class WebVttChapterImporter : IChapterImporter
         return ImportText(text, request.Path);
     }
 
-    public ChapterImportResult ImportText(string text, string path = "")
+    public static ChapterImportResult ImportText(string text, string path = "")
     {
         text = text.Replace("\r", string.Empty, StringComparison.Ordinal);
-        var blocks = text.Split("\n\n", StringSplitOptions.None);
+        var blocks = text.Split("\n\n");
         if (blocks.Length == 0 || !blocks[0].TrimStart().StartsWith("WEBVTT", StringComparison.Ordinal))
         {
             return ChapterImportResult.Failed(Error("WebVttInvalidHeader", "WebVTT header is missing."));

@@ -7,7 +7,7 @@ namespace ChapterTool.Core.Exporting;
 
 public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter)
 {
-    public ChapterConversionResult ToCelltimes(ChapterInfo info, decimal framesPerSecond)
+    public static ChapterConversionResult ToCelltimes(ChapterInfo info, decimal framesPerSecond)
     {
         ArgumentNullException.ThrowIfNull(info);
 
@@ -100,7 +100,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
     }
 
     private static ChapterConversionResult Success(string content, string extension) =>
-        new(true, content, extension, Array.Empty<ChapterDiagnostic>());
+        new(true, content, extension, []);
 
     private static ChapterConversionResult Failure(string code, string message) =>
         new(false, string.Empty, string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);

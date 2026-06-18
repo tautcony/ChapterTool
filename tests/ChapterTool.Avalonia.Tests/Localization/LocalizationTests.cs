@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -11,9 +10,9 @@ using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Platform;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.Localization;
 
-public sealed class LocalizationTests
+public sealed partial class LocalizationTests
 {
     [Fact]
     public void SupportedCulturesHaveMatchingResourceKeys()
@@ -76,7 +75,7 @@ public sealed class LocalizationTests
     }
 
     private static string[] Placeholders(string value) =>
-        Regex.Matches(value, @"\{(?<name>[A-Za-z0-9_]+)\}")
+        PlaceholderRegex().Matches(value)
             .Select(static match => match.Groups["name"].Value)
             .Order(StringComparer.Ordinal)
             .ToArray();
@@ -102,14 +101,14 @@ public sealed class LocalizationTests
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterImportResult(
                 true,
-                [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, Array.Empty<Chapter>()))], 0)],
-                Array.Empty<ChapterDiagnostic>()));
+                [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, []))])],
+                []));
     }
 
     private sealed class FakeSaveService : IChapterSaveService
     {
         public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", Array.Empty<ChapterDiagnostic>()));
+            ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 
     private sealed class FakeWindowService : IWindowService
@@ -118,4 +117,7 @@ public sealed class LocalizationTests
 
         public ValueTask HideAsync(string windowId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
+
+    [GeneratedRegex(@"\{(?<name>[A-Za-z0-9_]+)\}")]
+    private static partial Regex PlaceholderRegex();
 }

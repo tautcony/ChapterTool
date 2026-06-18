@@ -116,7 +116,7 @@ public sealed class MainWindowHeadlessTests
 
     private static MainWindowHeadlessTestHost CreateMultiOptionHost(
         string path,
-        params ChapterTool.Core.Models.ChapterSourceOption[] options) =>
+        params Core.Models.ChapterSourceOption[] options) =>
         new(MainWindowHeadlessTestHost.ImportResult(path, options));
 
     private static async Task AssertSelectingOptionDisplaysNamesAsync(

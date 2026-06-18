@@ -38,6 +38,7 @@
 - Do not test source/configuration files by reading them as text and asserting strings. This includes `.cs`, `.axaml`, `.csproj`, scripts, CI YAML, README, and docs. Prefer compiled coverage, behavior tests, runtime verification, structured public APIs, or integration checks.
 - Run the full solution tests before finalizing broader changes:
   - `dotnet test ChapterTool.Avalonia.slnx --no-restore`
+- Do not run multiple `dotnet test` commands for projects in this solution in parallel. The test projects share referenced project `obj/` outputs, and parallel external test processes can fail with locked files such as `src/ChapterTool.Core/obj/Debug/net10.0/ChapterTool.Core.dll`. Prefer the full solution test command above, or run individual test projects sequentially.
 - Build the Avalonia app when changing app project files:
   - `dotnet build src\ChapterTool.Avalonia\ChapterTool.Avalonia.csproj --no-restore`
 - The CI workflow is in `.github/workflows/dotnet-ci.yml`.

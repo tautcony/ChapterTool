@@ -105,15 +105,15 @@ public sealed class SettingsToolViewModel : ObservableViewModel
                 StatusText = this.localizer.GetString("Settings.Status.Ready");
             }
         };
-        _ = LoadAsync(CancellationToken.None);
+        _ = InitializeAsync();
     }
 
     public IReadOnlyList<LanguageOptionViewModel> Languages { get; private set; }
 
-    public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(static format => format.ToString()).ToArray();
+    public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(static format => format.ToString()).ToList();
 
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
-        XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToArray();
+        XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
 
     public ObservableCollection<ColorSlotViewModel> ColorSlots { get; }
 
@@ -294,6 +294,11 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         StatusText = localizer.GetString("Settings.Status.Ready");
     }
 
+    private async Task InitializeAsync()
+    {
+        await LoadAsync(CancellationToken.None);
+    }
+
     private async ValueTask SaveAsync(CancellationToken cancellationToken)
     {
         if (appSettingsStore is not null)
@@ -390,13 +395,13 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             return ValueTask.CompletedTask;
         });
 
-    private IReadOnlyList<LanguageOptionViewModel> BuildLanguages()
+    private List<LanguageOptionViewModel> BuildLanguages()
     {
         var languages = localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
                 localizer.GetString(language.DisplayNameKey)))
-            .ToArray();
+            .ToList();
         OnPropertyChanged(nameof(Languages));
         OnPropertyChanged(nameof(SelectedLanguageIndex));
         return languages;
@@ -481,22 +486,22 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     private ThemeColorSettings CurrentThemeSettings()
     {
-        var defaults = ThemeColorSettings.Default.OrderedSlots.ToArray();
-        var values = ColorSlots.Select((slot, index) => NormalizeColor(slot.Value, defaults[index].Value)).ToArray();
+        var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
+        var values = ColorSlots.Select((slot, index) => NormalizeColor(slot.Value, defaults[index].Value)).ToList();
         return new ThemeColorSettings(values[0], values[1], values[2], values[3], values[4], values[5]);
     }
 
     private static ThemeColorSettings NormalizeThemeSettings(ThemeColorSettings settings)
     {
-        var defaults = ThemeColorSettings.Default.OrderedSlots.ToArray();
-        var values = settings.OrderedSlots.Select((slot, index) => NormalizeColor(slot.Value, defaults[index].Value)).ToArray();
+        var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
+        var values = settings.OrderedSlots.Select((slot, index) => NormalizeColor(slot.Value, defaults[index].Value)).ToList();
         return new ThemeColorSettings(values[0], values[1], values[2], values[3], values[4], values[5]);
     }
 
     private void ApplyColors(ThemeColorSettings settings)
     {
-        var values = settings.OrderedSlots.ToArray();
-        for (var index = 0; index < ColorSlots.Count && index < values.Length; index++)
+        var values = settings.OrderedSlots.ToList();
+        for (var index = 0; index < ColorSlots.Count && index < values.Count; index++)
         {
             ColorSlots[index].Value = values[index].Value;
         }

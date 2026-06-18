@@ -11,7 +11,7 @@ public sealed class ChapterConversionServiceTests
     [Fact]
     public void Celltimes_exports_non_separator_start_frames()
     {
-        var result = service.ToCelltimes(Sample(), 24m);
+        var result = ChapterConversionService.ToCelltimes(Sample(), 24m);
 
         Assert.True(result.Success);
         Assert.Equal($"0{Environment.NewLine}240", result.Content);
@@ -25,8 +25,8 @@ public sealed class ChapterConversionServiceTests
             Chapters = [new Chapter(1, TimeSpan.FromSeconds(0.0625), "Half")]
         };
 
-        var result = service.ToCelltimes(info, 24m);
-        var invalid = service.ToCelltimes(info, 0);
+        var result = ChapterConversionService.ToCelltimes(info, 24m);
+        var invalid = ChapterConversionService.ToCelltimes(info, 0);
 
         Assert.Equal("2", result.Content);
         Assert.False(invalid.Success);
@@ -36,13 +36,13 @@ public sealed class ChapterConversionServiceTests
     [Fact]
     public void ToCelltimes_null_info_throws()
     {
-        Assert.Throws<ArgumentNullException>(() => service.ToCelltimes(null!, 24m));
+        Assert.Throws<ArgumentNullException>(() => ChapterConversionService.ToCelltimes(null!, 24m));
     }
 
     [Fact]
     public void ToCelltimes_empty_chapters_succeeds_with_empty_content()
     {
-        var result = service.ToCelltimes(Sample() with { Chapters = [] }, 24m);
+        var result = ChapterConversionService.ToCelltimes(Sample() with { Chapters = [] }, 24m);
 
         Assert.True(result.Success);
         Assert.Equal(string.Empty, result.Content);
@@ -127,15 +127,16 @@ public sealed class ChapterConversionServiceTests
     {
         var info = Sample() with
         {
-            Chapters = [new Chapter(1, serviceTime(time), "Boundary")]
+            Chapters = [new Chapter(1, ServiceTime(time), "Boundary")]
         };
 
-        var result = service.ToCelltimes(info, 24m);
+        var result = ChapterConversionService.ToCelltimes(info, 24m);
 
         Assert.True(result.Success);
         Assert.Equal(expected, result.Content);
+        return;
 
-        static TimeSpan serviceTime(string value) => new ChapterTimeFormatter().ParseOrZero(value);
+        static TimeSpan ServiceTime(string value) => new ChapterTimeFormatter().ParseOrZero(value);
     }
 
     [Fact]

@@ -25,10 +25,7 @@ public static class ExternalToolPathResolver
 
     public static IEnumerable<string> DefaultCandidates(string toolId, string executableName)
     {
-        foreach (var directory in DefaultCandidateDirectories(toolId))
-        {
-            yield return Path.Combine(directory, executableName);
-        }
+        return DefaultCandidateDirectories(toolId).Select(directory => Path.Combine(directory, executableName));
     }
 
     private static IEnumerable<string> DefaultCandidateDirectories(string toolId)

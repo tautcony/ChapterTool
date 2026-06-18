@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
@@ -86,7 +85,7 @@ public sealed class SettingsToolHeadlessTests
                 Directory.CreateDirectory(Path.GetDirectoryName(artifactPath)!);
                 var bitmap = window.CaptureRenderedFrame()
                     ?? throw new InvalidOperationException($"Settings panel frame '{name}' was not rendered.");
-                using (var stream = File.Create(artifactPath))
+                await using (var stream = File.Create(artifactPath))
                 {
                     bitmap.Save(stream);
                 }

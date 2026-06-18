@@ -12,7 +12,7 @@ public sealed class ChapterFpsTransformServiceTests
     {
         var info = Sample();
 
-        var result = service.ChangeFps(info, 24m, 48m);
+        var result = ChapterFpsTransformService.ChangeFps(info, 24m, 48m);
 
         Assert.True(result.Success);
         Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[1].Time);
@@ -30,7 +30,7 @@ public sealed class ChapterFpsTransformServiceTests
             ]
         };
 
-        var result = service.ChangeFps(info, 24m, 48m);
+        var result = ChapterFpsTransformService.ChangeFps(info, 24m, 48m);
 
         Assert.True(result.Success);
         Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[0].Time);
@@ -42,7 +42,7 @@ public sealed class ChapterFpsTransformServiceTests
     {
         var info = Sample();
 
-        var result = service.ChangeFps(info, 0, 24m);
+        var result = ChapterFpsTransformService.ChangeFps(info, 0, 24m);
 
         Assert.False(result.Success);
         Assert.Same(info, result.Info);

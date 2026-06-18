@@ -142,7 +142,7 @@ public sealed class TextImporterTests
             00:08:13.000 --> 00:09:07.500
             The Colossus of Rhodes
             """;
-        var result = importer.ImportText(vttText);
+        var result = WebVttChapterImporter.ImportText(vttText);
 
         Assert.True(result.Success);
         var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
@@ -154,8 +154,7 @@ public sealed class TextImporterTests
     [Fact]
     public async Task WebVttImporterSkipsCueIds()
     {
-        var importer = new WebVttChapterImporter();
-        var result = importer.ImportText(
+        var result = WebVttChapterImporter.ImportText(
             """
             WEBVTT
 
@@ -175,7 +174,7 @@ public sealed class TextImporterTests
     public async Task WebVttImporterFailsMalformedInput(string text, string code)
     {
         var importer = new WebVttChapterImporter();
-        var result = importer.ImportText(text);
+        var result = WebVttChapterImporter.ImportText(text);
 
         Assert.False(result.Success);
         Assert.Empty(result.Groups);
@@ -484,14 +483,15 @@ public sealed class TextImporterTests
         }
     }
 
-    public static TheoryData<XmlSampleExpectation> XmlSampleExpectations() => new()
-    {
+    public static TheoryData<XmlSampleExpectation> XmlSampleExpectations() =>
+    [
         XmlSample("[philosophy-raws][Hatsune Miku Magical Mirai 2014 in OSAKA][Live].xml",
         [
             new(30, Ms(6789383), "01 High-energy Particle", TimeSpan.Zero, "End Roll", Ms(6789383))
         ]),
+
         XmlSample("Angel Beats! - NCOP_Ordered_Chapter.xml", AngelBeatsEditions())
-    };
+    ];
 
     public sealed record XmlSampleExpectation(string FileName, XmlOptionExpectation[] Options);
 

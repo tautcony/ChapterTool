@@ -47,6 +47,6 @@ public sealed class Mp4ChapterImporter(IMp4ChapterReader reader) : IChapterImpor
             start,
             chapters);
         var reference = new SourceMediaReference(Path.GetFileName(request.Path), Path.GetFileName(request.Path), request.Path);
-        return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, [new ChapterSourceOption("default", "MP4 Chapters", info, MediaReferences: [reference])], 0)], Array.Empty<ChapterDiagnostic>());
+        return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, [new ChapterSourceOption("default", "MP4 Chapters", info, MediaReferences: [reference])])], []);
     }
 }

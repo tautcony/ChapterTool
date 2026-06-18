@@ -5,7 +5,7 @@ namespace ChapterTool.Core.Transform;
 
 public sealed class ChapterFpsTransformService
 {
-    public ChangeFpsResult ChangeFps(ChapterInfo info, decimal sourceFps, decimal targetFps)
+    public static ChangeFpsResult ChangeFps(ChapterInfo info, decimal sourceFps, decimal targetFps)
     {
         if (sourceFps <= 0 || targetFps <= 0)
         {
@@ -15,7 +15,7 @@ public sealed class ChapterFpsTransformService
                 [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidFrameRate", "Source and target frame rates must be greater than zero.")]);
         }
 
-        var chapters = info.Chapters.Select(chapter => TransformChapter(chapter, sourceFps, targetFps)).ToArray();
+        var chapters = info.Chapters.Select(chapter => TransformChapter(chapter, sourceFps, targetFps)).ToList();
         var durationFrames = ChapterRounding.RoundToInt64((decimal)info.Duration.TotalSeconds * sourceFps);
         var updated = info with
         {
@@ -24,7 +24,7 @@ public sealed class ChapterFpsTransformService
             Chapters = chapters
         };
 
-        return new ChangeFpsResult(true, updated, Array.Empty<ChapterDiagnostic>());
+        return new ChangeFpsResult(true, updated, []);
     }
 
     private static Chapter TransformChapter(Chapter chapter, decimal sourceFps, decimal targetFps)

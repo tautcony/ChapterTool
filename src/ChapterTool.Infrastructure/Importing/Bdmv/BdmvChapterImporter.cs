@@ -90,7 +90,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             return ChapterImportResult.Failed(Error("NoChaptersFound", "No BDMV playlists with chapters were parsed."));
         }
 
-        return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options, 0)], Array.Empty<ChapterDiagnostic>());
+        return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], []);
     }
 
     private async ValueTask<ChapterImportResult> RunAsync(string executable, string workingDirectory, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
@@ -111,10 +111,10 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             return ChapterImportResult.Failed(Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
         }
 
-        return new ChapterImportResult(true, Array.Empty<ChapterInfoGroup>(), [new ChapterDiagnostic(DiagnosticSeverity.Info, "Stdout", result.StandardOutput)]);
+        return new ChapterImportResult(true, [], [new ChapterDiagnostic(DiagnosticSeverity.Info, "Stdout", result.StandardOutput)]);
     }
 
-    private static IReadOnlyList<PlaylistCandidate> ParsePlaylistList(string text)
+    private static List<PlaylistCandidate> ParsePlaylistList(string text)
     {
         var candidates = new List<PlaylistCandidate>();
         foreach (var block in PlaylistBlocks(text))

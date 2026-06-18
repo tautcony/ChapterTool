@@ -14,7 +14,9 @@ using ChapterTool.Infrastructure.Processes;
 using ChapterTool.Infrastructure.Tools;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
+using ILogger = Serilog.ILogger;
 
 namespace ChapterTool.Avalonia.Composition;
 
@@ -30,7 +32,6 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly ThemeSettingsStore themeSettingsStore;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
     private readonly ILoggerFactory loggerFactory;
-    private readonly Serilog.ILogger serilogLogger;
     private bool disposed;
 
     public AppCompositionRoot(string? startupPath = null, string? settingsDirectory = null)
@@ -39,11 +40,11 @@ public sealed class AppCompositionRoot : IDisposable
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         appSettingsStore = new AppSettingsStore(resolvedSettingsDirectory);
         themeSettingsStore = new ThemeSettingsStore(resolvedSettingsDirectory);
-        serilogLogger = CreateSerilogLogger(resolvedSettingsDirectory);
+        var serilogLogger1 = CreateSerilogLogger(resolvedSettingsDirectory);
         loggerFactory = LoggerFactory.Create(builder =>
         {
             builder.SetMinimumLevel(LogLevel.Debug);
-            builder.AddSerilog(serilogLogger, dispose: true);
+            builder.AddSerilog(serilogLogger1, dispose: true);
             builder.AddProvider(logService);
         });
 
@@ -88,7 +89,7 @@ public sealed class AppCompositionRoot : IDisposable
             CreateMediaChapterReader(),
             CreateMp4ChapterReader());
 
-    public AtlMp4ChapterReader CreateMp4ChapterReader() => new();
+    public static AtlMp4ChapterReader CreateMp4ChapterReader() => new();
 
     public FfprobeMediaChapterReader CreateMediaChapterReader() =>
         new(CreateExternalToolLocator(), CreateProcessRunner());
@@ -98,7 +99,7 @@ public sealed class AppCompositionRoot : IDisposable
 
     public IChapterEditingService CreateChapterEditingService() => new ChapterEditingService(formatter);
 
-    public ChapterSegmentService CreateChapterSegmentService() => new();
+    public static ChapterSegmentService CreateChapterSegmentService() => new();
 
     public IWindowService CreateWindowService() =>
         new AvaloniaWindowService(
@@ -111,17 +112,17 @@ public sealed class AppCompositionRoot : IDisposable
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 
-    public IShellService CreateShellService() => new ShellService();
+    public static IShellService CreateShellService() => new ShellService();
 
-    public IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner);
+    public static IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner);
 
     public IExternalToolLocator CreateExternalToolLocator() =>
-        new ExternalToolLocator(appSettingsStore, PathSearchDirectories().ToArray());
+        new ExternalToolLocator(appSettingsStore, PathSearchDirectories().ToList());
 
     public IProcessRunner CreateProcessRunner() => new ProcessRunner();
 
-    public INativeDependencyService CreateNativeDependencyService() =>
-        new FileSystemNativeDependencyService(PathSearchDirectories().Prepend(AppContext.BaseDirectory).ToArray());
+    public static INativeDependencyService CreateNativeDependencyService() =>
+        new FileSystemNativeDependencyService(PathSearchDirectories().Prepend(AppContext.BaseDirectory).ToList());
 
     private async Task ApplyThemeSettingsAsync()
     {
@@ -151,7 +152,7 @@ public sealed class AppCompositionRoot : IDisposable
         loggerFactory.Dispose();
     }
 
-    private static Serilog.ILogger CreateSerilogLogger(string settingsDirectory)
+    private static Logger CreateSerilogLogger(string settingsDirectory)
     {
         var logDirectory = Path.Combine(settingsDirectory, "logs");
         Directory.CreateDirectory(logDirectory);

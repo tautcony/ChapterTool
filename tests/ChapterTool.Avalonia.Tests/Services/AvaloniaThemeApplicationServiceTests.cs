@@ -5,7 +5,7 @@ using Avalonia.Threading;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Infrastructure.Configuration;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.Services;
 
 public sealed class AvaloniaThemeApplicationServiceTests
 {

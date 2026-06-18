@@ -10,7 +10,7 @@ public sealed class ChapterExpressionService(IExpressionService expressionServic
     {
         if (!applyExpression)
         {
-            return new ChapterExpressionResult(info, Array.Empty<ChapterDiagnostic>());
+            return new ChapterExpressionResult(info, []);
         }
 
         var diagnostics = new List<ChapterDiagnostic>();
@@ -39,7 +39,7 @@ public sealed class ChapterExpressionService(IExpressionService expressionServic
                 Time = TimeSpan.FromSeconds((double)normalized),
                 FramesInfo = FormatFrames(normalized, (decimal)info.FramesPerSecond)
             };
-        }).ToArray();
+        }).ToList();
 
         return new ChapterExpressionResult(info with { Chapters = chapters }, diagnostics);
     }

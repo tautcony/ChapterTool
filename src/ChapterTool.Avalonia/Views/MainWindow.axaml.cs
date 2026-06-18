@@ -38,13 +38,13 @@ public sealed partial class MainWindow : Window
         PreviewCommand = new UiCommand(async (_, _) =>
         {
             ReadAdvancedOptions();
-            await viewModel.PreviewCommand.ExecuteAsync();
+            await viewModel.PreviewCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
         }, _ => viewModel.PreviewCommand.CanExecute());
         RefreshRowsCommand = new UiCommand(async (_, _) =>
         {
             ReadAdvancedOptions();
             ReadFrameOptions();
-            await viewModel.RefreshCommand.ExecuteAsync();
+            await viewModel.RefreshCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
             Refresh();
         }, _ => viewModel.RefreshCommand.CanExecute());
         InsertSelectedCommand = new UiCommand(async (_, _) =>
@@ -60,7 +60,7 @@ public sealed partial class MainWindow : Window
         OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
         CombineCommand = new UiCommand(async (_, _) =>
         {
-            await viewModel.CombineCommand.ExecuteAsync();
+            await viewModel.CombineCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
             Refresh();
         }, _ => viewModel.CombineCommand.CanExecute());
 
@@ -479,7 +479,7 @@ public sealed partial class MainWindow : Window
     private int SelectedRowIndex() =>
         ChapterGrid.SelectedItem is ChapterRowViewModel row ? viewModel.Rows.IndexOf(row) : viewModel.Rows.Count;
 
-    private IReadOnlySet<int> SelectedIndexes() =>
+    private HashSet<int> SelectedIndexes() =>
         ChapterGrid.SelectedItems
             .OfType<ChapterRowViewModel>()
             .Select(row => viewModel.Rows.IndexOf(row))

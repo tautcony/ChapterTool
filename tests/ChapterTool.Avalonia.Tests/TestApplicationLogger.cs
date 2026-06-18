@@ -15,14 +15,9 @@ internal static class TestApplicationLogger
         return new ProviderLogger<T>(provider);
     }
 
-    private sealed class ProviderLogger<T> : ILogger<T>
+    private sealed class ProviderLogger<T>(ILoggerProvider provider) : ILogger<T>
     {
-        private readonly ILogger inner;
-
-        public ProviderLogger(ILoggerProvider provider)
-        {
-            inner = provider.CreateLogger(typeof(T).FullName ?? typeof(T).Name);
-        }
+        private readonly ILogger inner = provider.CreateLogger(typeof(T).FullName ?? typeof(T).Name);
 
         public IDisposable? BeginScope<TState>(TState state)
             where TState : notnull =>

@@ -135,7 +135,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         }
 
         groups.Add(new ChapterInfoGroup(path, options, defaultOptionIndex));
-        return new ChapterImportResult(true, groups, Array.Empty<ChapterDiagnostic>());
+        return new ChapterImportResult(true, groups, []);
     }
 
     private IEnumerable<Chapter> ParseAtom(XmlNode atom, int index)
@@ -179,7 +179,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
     }
 
     private static IReadOnlyList<Chapter> Renumber(IReadOnlyList<Chapter> chapters) =>
-        chapters.Select((chapter, index) => chapter with { Number = index + 1 }).ToArray();
+        chapters.Select((chapter, index) => chapter with { Number = index + 1 }).ToList();
 
     private static ChapterDiagnostic Error(string code, string message) =>
         new(DiagnosticSeverity.Error, code, message);

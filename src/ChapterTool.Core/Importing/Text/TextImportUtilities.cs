@@ -19,7 +19,7 @@ internal static class TextImportUtilities
     public static ChapterImportResult SingleGroup(string path, ChapterInfo info)
     {
         var option = new ChapterSourceOption("default", info.Title, info);
-        var group = new ChapterInfoGroup(path, [option], 0);
+        var group = new ChapterInfoGroup(path, [option]);
         return ChapterImportResult.Succeeded(group);
     }
 }

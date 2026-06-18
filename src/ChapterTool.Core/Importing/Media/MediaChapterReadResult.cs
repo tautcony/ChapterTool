@@ -10,5 +10,5 @@ public sealed record MediaChapterReadResult(
     public static MediaChapterReadResult Succeeded(params MediaChapterEntry[] chapters) => new(true, chapters);
 
     public static MediaChapterReadResult Failed(string code, string message, string? details = null) =>
-        new(false, Array.Empty<MediaChapterEntry>(), code, message, details);
+        new(false, [], code, message, details);
 }

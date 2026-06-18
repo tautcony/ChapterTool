@@ -26,6 +26,6 @@ public sealed class CueChapterImporter(CueSheetParser? parser = null) : IChapter
         }
 
         var text = CueTextDecoder.Decode(bytes);
-        return parser.Parse(text, request.Path);
+        return CueSheetParser.Parse(text, request.Path);
     }
 }

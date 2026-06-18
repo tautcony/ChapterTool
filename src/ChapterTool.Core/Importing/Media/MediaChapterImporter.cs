@@ -63,13 +63,13 @@ public sealed class MediaChapterImporter(
         if (normalized.Count == 0)
         {
             diagnostics.Add(Error("InvalidChapterTimestamp", "No media chapter had a valid non-negative start timestamp."));
-            return ChapterImportResult.Failed(diagnostics.ToArray());
+            return new ChapterImportResult(false, [], diagnostics);
         }
 
         var options = CreateOptions(request.Path, normalized);
         return new ChapterImportResult(
             true,
-            [new ChapterInfoGroup(request.Path, options, 0)],
+            [new ChapterInfoGroup(request.Path, options)],
             diagnostics);
     }
 
@@ -89,7 +89,7 @@ public sealed class MediaChapterImporter(
         return [new ChapterSourceOption("default", "FFprobe Chapters", info, MediaReferences: [CreateReference(path)])];
     }
 
-    private static IReadOnlyList<ChapterSourceOption> CreateEditionOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
+    private static List<ChapterSourceOption> CreateEditionOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
     {
         var editionKeys = new List<string>();
         foreach (var chapter in chapters)
@@ -106,12 +106,12 @@ public sealed class MediaChapterImporter(
         var editionIndex = 0;
         foreach (var key in editionKeys)
         {
-            options.Add(CreateEditionOption(path, editionIndex++, chapters.Where(chapter => EditionUid(chapter.Entry) == key).ToArray()));
+            options.Add(CreateEditionOption(path, editionIndex++, chapters.Where(chapter => EditionUid(chapter.Entry) == key).ToList()));
         }
 
         if (hasUntagged)
         {
-            options.Add(CreateEditionOption(path, editionIndex, chapters.Where(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry))).ToArray()));
+            options.Add(CreateEditionOption(path, editionIndex, chapters.Where(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry))).ToList()));
         }
 
         return options;
@@ -135,14 +135,14 @@ public sealed class MediaChapterImporter(
             .OrderBy(static chapter => chapter.Start)
             .ThenBy(static chapter => chapter.Entry.Id ?? int.MaxValue)
             .ThenBy(static chapter => chapter.Entry.SourceOrder)
-            .ToArray();
+            .ToList();
         var modelChapters = ordered
             .Select((chapter, index) => new Chapter(
                 index + 1,
                 chapter.Start,
                 ChapterName(chapter.Entry, renumberFallbacks ? index + 1 : chapter.Entry.SourceOrder + 1),
                 End: chapter.End))
-            .ToArray();
+            .ToList();
         var duration = ordered
             .Select(static chapter => chapter.End)
             .Where(static end => end.HasValue)
@@ -155,7 +155,7 @@ public sealed class MediaChapterImporter(
 
     private static List<NormalizedMediaChapter> NormalizeEntries(
         IReadOnlyList<MediaChapterEntry> entries,
-        ICollection<ChapterDiagnostic> diagnostics)
+        List<ChapterDiagnostic> diagnostics)
     {
         var normalized = new List<NormalizedMediaChapter>(entries.Count);
         foreach (var entry in entries)

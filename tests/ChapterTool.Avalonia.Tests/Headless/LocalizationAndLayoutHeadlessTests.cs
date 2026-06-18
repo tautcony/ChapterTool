@@ -49,7 +49,7 @@ public sealed class LocalizationAndLayoutHeadlessTests
 
         Assert.Equal("zh-CN", host.ViewModel.UiLanguage);
         Assert.True(host.ContainsRenderedText("载入"));
-        var rendered = host.RenderedTexts(host.Window);
+        var rendered = MainWindowHeadlessTestHost.RenderedTexts(host.Window);
         Assert.DoesNotContain(rendered, text => text.StartsWith("Main.", StringComparison.Ordinal) || text.StartsWith("Common.", StringComparison.Ordinal));
         Assert.DoesNotContain(rendered, text => text.Contains("杞藉叆", StringComparison.Ordinal) || text.Contains("淇濆瓨", StringComparison.Ordinal));
     }

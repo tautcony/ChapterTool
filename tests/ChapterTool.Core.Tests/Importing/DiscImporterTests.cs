@@ -1,7 +1,6 @@
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Media;
-using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Importing;
@@ -36,13 +35,13 @@ public sealed class DiscImporterTests
         Assert.Equal(1, playItem.STNTable.NumberOfPrimaryVideoStreamEntries);
         Assert.Empty(playItem.STNTable.SubPathStreamEntries);
 
-        var primaryVideo = playItem.STNTable.PrimaryVideoStreamEntries.First();
+        var primaryVideo = playItem.STNTable.PrimaryVideoStreamEntries[0];
         Assert.Equal(0x01, primaryVideo.StreamEntry.StreamType);
         Assert.True(primaryVideo.StreamEntry.RefToStreamPID > 0);
         Assert.Equal(0x1B, primaryVideo.StreamAttributes.StreamCodingType);
         Assert.Equal((byte)2, primaryVideo.StreamAttributes.FrameRate.GetValueOrDefault());
 
-        var firstMark = file.PlayListMark.Marks.First();
+        var firstMark = file.PlayListMark.Marks[0];
         Assert.Equal(0x01, firstMark.MarkType);
         Assert.Equal(0, firstMark.RefToPlayItemID);
         Assert.Equal(188460000U, firstMark.MarkTimeStamp);
@@ -190,7 +189,7 @@ public sealed class DiscImporterTests
             var low = value & 0x0f;
             if (high <= 9 && low <= 9)
             {
-                Assert.Equal((high * 10) + low, IfoChapterImporter.BcdToInt((byte)value));
+                Assert.Equal(high * 10 + low, IfoChapterImporter.BcdToInt((byte)value));
             }
         }
     }
@@ -254,20 +253,19 @@ public sealed class DiscImporterTests
     public async Task XplImporterReadsSyntheticTitle()
     {
         var importer = new XplChapterImporter();
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(
-            """
-            <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
-              <TitleSet timeBase="60fps" tickBase="24fps">
-                <Title id="title-id" displayName="Main" titleDuration="00:10:00:00" tickBaseDivisor="1">
-                  <PrimaryAudioVideoClip src="ADV_OBJ/main.evo" />
-                  <ChapterList>
-                    <Chapter id="c1" displayName="Start" titleTimeBegin="00:00:00:00" />
-                    <Chapter id="c2" displayName="Middle" titleTimeBegin="00:01:00:12" />
-                  </ChapterList>
-                </Title>
-              </TitleSet>
-            </Playlist>
-            """));
+        using var stream = new MemoryStream("""
+                                            <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
+                                              <TitleSet timeBase="60fps" tickBase="24fps">
+                                                <Title id="title-id" displayName="Main" titleDuration="00:10:00:00" tickBaseDivisor="1">
+                                                  <PrimaryAudioVideoClip src="ADV_OBJ/main.evo" />
+                                                  <ChapterList>
+                                                    <Chapter id="c1" displayName="Start" titleTimeBegin="00:00:00:00" />
+                                                    <Chapter id="c2" displayName="Middle" titleTimeBegin="00:01:00:12" />
+                                                  </ChapterList>
+                                                </Title>
+                                              </TitleSet>
+                                            </Playlist>
+                                            """u8.ToArray());
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.xpl", stream), TestContext.Current.CancellationToken);
 
@@ -284,24 +282,23 @@ public sealed class DiscImporterTests
     public async Task XplImporterPreservesLegacyDefaultsAndNamePrecedence()
     {
         var importer = new XplChapterImporter();
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(
-            """
-            <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
-              <TitleSet>
-                <Title id="title-id" displayName="Display Title" titleDuration="00:00:10:12">
-                  <PrimaryAudioVideoClip src="ADV_OBJ/one.evo" />
-                  <ChapterList>
-                    <Chapter id="chapter-id" displayName="Display Chapter" titleTimeBegin="00:00:01:12" />
-                  </ChapterList>
-                </Title>
-                <Title id="Second Title" titleDuration="00:00:20:00">
-                  <ChapterList>
-                    <Chapter id="Second Chapter" titleTimeBegin="00:00:02:00" />
-                  </ChapterList>
-                </Title>
-              </TitleSet>
-            </Playlist>
-            """));
+        using var stream = new MemoryStream("""
+                                            <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
+                                              <TitleSet>
+                                                <Title id="title-id" displayName="Display Title" titleDuration="00:00:10:12">
+                                                  <PrimaryAudioVideoClip src="ADV_OBJ/one.evo" />
+                                                  <ChapterList>
+                                                    <Chapter id="chapter-id" displayName="Display Chapter" titleTimeBegin="00:00:01:12" />
+                                                  </ChapterList>
+                                                </Title>
+                                                <Title id="Second Title" titleDuration="00:00:20:00">
+                                                  <ChapterList>
+                                                    <Chapter id="Second Chapter" titleTimeBegin="00:00:02:00" />
+                                                  </ChapterList>
+                                                </Title>
+                                              </TitleSet>
+                                            </Playlist>
+                                            """u8.ToArray());
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.xpl", stream), TestContext.Current.CancellationToken);
 
@@ -390,7 +387,7 @@ public sealed class DiscImporterTests
 
     private static double MplsFrameRate(MplsPlayItem playItem)
     {
-        var frameRateCode = playItem.STNTable.PrimaryVideoStreamEntries.First().StreamAttributes.FrameRate;
+        var frameRateCode = playItem.STNTable.PrimaryVideoStreamEntries[0].StreamAttributes.FrameRate;
         return frameRateCode switch
         {
             1 => 24000d / 1001d,

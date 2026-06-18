@@ -146,7 +146,7 @@ public sealed class FfprobeMediaChapterReader(
             ? property.GetString()
             : null;
 
-    private static IReadOnlyDictionary<string, string> Tags(JsonElement element)
+    private static Dictionary<string, string> Tags(JsonElement element)
     {
         if (!element.TryGetProperty("tags", out var tagsElement) || tagsElement.ValueKind != JsonValueKind.Object)
         {

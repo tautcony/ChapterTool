@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -8,7 +7,6 @@ using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views;
-using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -17,7 +15,6 @@ using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
-using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
@@ -102,10 +99,10 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public IApplicationLogService LogService => logService;
 
     public static ChapterImportResult ImportResult(string path, params ChapterSourceOption[] options) =>
-        new(true, [new ChapterInfoGroup(path, options, 0)], Array.Empty<ChapterDiagnostic>());
+        new(true, [new ChapterInfoGroup(path, options)], []);
 
     public static ChapterImportResult ImportResult(string path, int defaultOptionIndex, params ChapterSourceOption[] options) =>
-        new(true, [new ChapterInfoGroup(path, options, defaultOptionIndex)], Array.Empty<ChapterDiagnostic>());
+        new(true, [new ChapterInfoGroup(path, options, defaultOptionIndex)], []);
 
     public static ChapterSourceOption Option(string sourceType, string sourceName, params string[] chapterNames)
     {
@@ -199,7 +196,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public static bool ContainsRenderedTextStatic(Control scope, string text) =>
         RenderedTextsStatic(scope).Any(rendered => string.Equals(rendered, text, StringComparison.Ordinal));
 
-    public IReadOnlyList<string> RenderedTexts(Control scope) => RenderedTextsStatic(scope);
+    public static IReadOnlyList<string> RenderedTexts(Control scope) => RenderedTextsStatic(scope);
 
     public static IReadOnlyList<string> RenderedTextsStatic(Control scope) =>
         scope
@@ -211,7 +208,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public string DescribeRenderedTexts(Control scope) =>
         RenderedTexts(scope)
-            .Aggregate(string.Empty, static (current, text) => string.IsNullOrEmpty(current) ? text! : current + Environment.NewLine + text);
+            .Aggregate(string.Empty, static (current, text) => string.IsNullOrEmpty(current) ? text : current + Environment.NewLine + text);
 
     public async ValueTask FocusAndPressAsync(Key key, KeyModifiers modifiers = KeyModifiers.None)
     {
@@ -282,14 +279,9 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public void Dispose() => Window.Close();
 
-    internal sealed class FakeLoadService : IChapterLoadService
+    internal sealed class FakeLoadService(IReadOnlyList<ChapterImportResult> results) : IChapterLoadService
     {
-        private readonly Queue<ChapterImportResult> results;
-
-        public FakeLoadService(IReadOnlyList<ChapterImportResult> results)
-        {
-            this.results = new Queue<ChapterImportResult>(results);
-        }
+        private readonly Queue<ChapterImportResult> results = new(results);
 
         public List<string> Paths { get; } = [];
 
@@ -323,7 +315,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             LastInfo = info;
             LastOptions = options;
             LastDirectory = directory;
-            return ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", Array.Empty<ChapterDiagnostic>()));
+            return ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
         }
     }
 

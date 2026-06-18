@@ -4,7 +4,7 @@ using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.Services;
 
 public sealed class RuntimeChapterSaveServiceTests
 {

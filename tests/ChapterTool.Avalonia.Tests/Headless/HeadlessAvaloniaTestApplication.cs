@@ -1,8 +1,5 @@
 using Avalonia;
 using Avalonia.Headless;
-using Avalonia.Headless.XUnit;
-using Avalonia.Skia;
-using ChapterTool.Avalonia;
 using Optris.Icons.Avalonia;
 using Optris.Icons.Avalonia.FontAwesome;
 

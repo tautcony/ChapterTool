@@ -12,11 +12,13 @@ namespace ChapterTool.Avalonia.ViewModels;
 
 public sealed class TextToolViewModel : ObservableViewModel
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
+
     private readonly Func<string> refreshText;
     private readonly TextToolOptions options;
     private string text;
     private TextToolKind kind;
-    private IReadOnlyList<TextToolLineViewModel> lines = Array.Empty<TextToolLineViewModel>();
+    private IReadOnlyList<TextToolLineViewModel> lines;
 
     public TextToolViewModel(Func<string> refreshText, TextToolOptions? options = null)
     {
@@ -66,7 +68,7 @@ public sealed class TextToolViewModel : ObservableViewModel
 
     public bool CanSelectFormat => options.FormatSelector is not null;
 
-    public IReadOnlyList<string> FormatOptions => options.FormatSelector?.Labels ?? Array.Empty<string>();
+    public IReadOnlyList<string> FormatOptions => options.FormatSelector?.Labels ?? [];
 
     public int SelectedFormatIndex
     {
@@ -110,7 +112,7 @@ public sealed class TextToolViewModel : ObservableViewModel
             {
                 TextToolKind.Json => JsonSerializer.Serialize(
                     JsonSerializer.Deserialize<JsonElement>(text),
-                    new JsonSerializerOptions { WriteIndented = true }),
+                    IndentedJsonOptions),
                 TextToolKind.Xml => XDocument.Parse(text).ToString(SaveOptions.None),
                 _ => text
             };
@@ -129,13 +131,13 @@ public sealed class TextToolViewModel : ObservableViewModel
     {
         if (text.Length == 0)
         {
-            return Array.Empty<TextToolLineViewModel>();
+            return [];
         }
 
         return text.ReplaceLineEndings("\n")
             .Split('\n')
             .Select((line, index) => new TextToolLineViewModel(index + 1, Highlight(line, kind)))
-            .ToArray();
+            .ToList();
     }
 
     private static IReadOnlyList<TextToolSpanViewModel> Highlight(string line, TextToolKind kind) =>
@@ -219,7 +221,7 @@ public sealed class TextToolViewModel : ObservableViewModel
         }
     }
 
-    private static IReadOnlyList<TextToolSpanViewModel> HighlightXml(string line)
+    private static List<TextToolSpanViewModel> HighlightXml(string line)
     {
         var spans = new List<TextToolSpanViewModel>();
         for (var index = 0; index < line.Length;)
@@ -283,7 +285,7 @@ public sealed class TextToolOptions
     public TextToolFormatSelector? FormatSelector { get; init; }
 }
 
-public sealed class TextToolFormatSelector
+public sealed class TextToolFormatSelector(MainWindowViewModel owner)
 {
     private static readonly ChapterExportFormat[] Formats =
     [
@@ -299,17 +301,11 @@ public sealed class TextToolFormatSelector
         ChapterExportFormat.Chapter2Qpfile
     ];
 
-    private int selectedIndex;
+    private int selectedIndex = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Length - 1);
 
-    public TextToolFormatSelector(MainWindowViewModel owner)
-    {
-        Owner = owner;
-        selectedIndex = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Length - 1);
-    }
+    private MainWindowViewModel Owner { get; } = owner;
 
-    private MainWindowViewModel Owner { get; }
-
-    public IReadOnlyList<string> Labels { get; } = Formats.Select(static format => format.ToString()).ToArray();
+    public IReadOnlyList<string> Labels { get; } = Formats.Select(static format => format.ToString()).ToList();
 
     public int SelectedIndex
     {
@@ -319,9 +315,9 @@ public sealed class TextToolFormatSelector
 
     public TextToolKind Kind => KindFor(Formats[SelectedIndex]);
 
-    public void Apply(int selectedIndex)
+    public void Apply(int index)
     {
-        SelectedIndex = selectedIndex;
+        SelectedIndex = index;
         Owner.SaveFormatIndex = SelectedIndex;
     }
 
@@ -374,8 +370,8 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
         }
 
         var settings = await store.LoadAsync(CancellationToken.None);
-        var values = settings.OrderedSlots.ToArray();
-        for (var index = 0; index < Slots.Count && index < values.Length; index++)
+        var values = settings.OrderedSlots.ToList();
+        for (var index = 0; index < Slots.Count && index < values.Count; index++)
         {
             Slots[index].Value = values[index].Value;
         }
@@ -390,7 +386,7 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
             return;
         }
 
-        var defaults = ThemeColorSettings.Default.OrderedSlots.ToArray();
+        var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
         var settings = new ThemeColorSettings(
             NormalizeColor(Slots[0].Value, defaults[0].Value),
             NormalizeColor(Slots[1].Value, defaults[1].Value),
@@ -409,7 +405,7 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
             return;
         }
 
-        var defaults = ThemeColorSettings.Default.OrderedSlots.ToArray();
+        var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
         themeApplicationService?.Apply(new ThemeColorSettings(
             NormalizeColor(Slots[0].Value, defaults[0].Value),
             NormalizeColor(Slots[1].Value, defaults[1].Value),
@@ -557,13 +553,13 @@ public sealed class LanguageToolViewModel : ObservableViewModel
 
     public UiCommand ApplyCommand { get; }
 
-    private IReadOnlyList<LanguageOptionViewModel> BuildLanguages()
+    private List<LanguageOptionViewModel> BuildLanguages()
     {
         var languages = owner.Localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
                 owner.Localizer.GetString(language.DisplayNameKey)))
-            .ToArray();
+            .ToList();
         OnPropertyChanged(nameof(Languages));
         OnPropertyChanged(nameof(SelectedLanguageIndex));
         return languages;

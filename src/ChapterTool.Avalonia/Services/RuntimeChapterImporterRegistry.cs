@@ -7,7 +7,6 @@ using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Bdmv;
 using ChapterTool.Infrastructure.Importing.Matroska;
-using ChapterTool.Infrastructure.Importing.Media;
 
 namespace ChapterTool.Avalonia.Services;
 

@@ -5,7 +5,7 @@ namespace ChapterTool.Core.Tests.Transform;
 
 public sealed class ChapterTimeFormatterTests
 {
-    private readonly ChapterTimeFormatter _formatter = new();
+    private readonly ChapterTimeFormatter formatter = new();
 
     [Theory]
     [InlineData(1, 59, 45, 999, "01:59:45.999")]
@@ -16,7 +16,7 @@ public sealed class ChapterTimeFormatterTests
     {
         var time = new TimeSpan(0, hour, minute, second, millisecond);
 
-        var actual = _formatter.Format(time);
+        var actual = formatter.Format(time);
 
         Assert.Equal(expected, actual);
     }
@@ -26,7 +26,7 @@ public sealed class ChapterTimeFormatterTests
     {
         var time = new TimeSpan(0, 0, 59, 59, 999).Add(TimeSpan.FromTicks(9999));
 
-        var actual = _formatter.Format(time);
+        var actual = formatter.Format(time);
 
         Assert.Equal("00:59:60.000", actual);
     }
@@ -36,7 +36,7 @@ public sealed class ChapterTimeFormatterTests
     {
         var time = TimeSpan.FromTicks(5000);
 
-        var actual = _formatter.Format(time);
+        var actual = formatter.Format(time);
 
         Assert.Equal("00:00:00.000", actual);
     }
@@ -46,7 +46,7 @@ public sealed class ChapterTimeFormatterTests
     {
         var time = TimeSpan.FromDays(1) + new TimeSpan(0, 1, 2, 3, 4);
 
-        var actual = _formatter.Format(time);
+        var actual = formatter.Format(time);
 
         Assert.Equal("01:02:03.004", actual);
     }
@@ -57,7 +57,7 @@ public sealed class ChapterTimeFormatterTests
     [InlineData("25:01:02.003", 1, 1, 1, 2, 3)]
     public void ParseOrZero_accepts_legacy_time_text(string text, int days, int hours, int minutes, int seconds, int milliseconds)
     {
-        var actual = _formatter.ParseOrZero(text);
+        var actual = formatter.ParseOrZero(text);
 
         Assert.Equal(new TimeSpan(days, hours, minutes, seconds, milliseconds), actual);
     }
@@ -70,7 +70,7 @@ public sealed class ChapterTimeFormatterTests
     [InlineData("01:02:03.12")]
     public void ParseOrZero_returns_zero_for_empty_or_malformed_text(string text)
     {
-        var actual = _formatter.ParseOrZero(text);
+        var actual = formatter.ParseOrZero(text);
 
         Assert.Equal(TimeSpan.Zero, actual);
     }
@@ -78,7 +78,7 @@ public sealed class ChapterTimeFormatterTests
     [Fact]
     public void Parse_returns_invalid_time_diagnostic_for_malformed_text()
     {
-        var actual = _formatter.Parse("not a time");
+        var actual = formatter.Parse("not a time");
 
         Assert.Equal(TimeSpan.Zero, actual.Value);
         var diagnostic = Assert.Single(actual.Diagnostics);
@@ -99,7 +99,7 @@ public sealed class ChapterTimeFormatterTests
     {
         var time = new TimeSpan(0, hours, minutes, seconds, milliseconds);
 
-        var actual = _formatter.FormatCue(time);
+        var actual = formatter.FormatCue(time);
 
         Assert.Equal(expected, actual);
     }

@@ -13,11 +13,11 @@ public sealed class SettingsMigrationTests
             legacyPath,
             """
             {
-              "Software\\ChapterTool.SavingPath": "D:\\Output",
+              "Software\\ChapterTool.SavingPath": "D:\\\\Output",
               "Software\\ChapterTool.Language": "en-US",
               "Software\\ChapterTool.Location": "{X=12,Y=34}",
-              "Software\\ChapterTool.mkvToolnixPath": "C:\\Tools\\MKVToolNix",
-              "Software\\ChapterTool.eac3toPath": "C:\\Tools\\eac3to\\eac3to.exe"
+              "Software\\ChapterTool.mkvToolnixPath": "C:\\\\Tools\\MKVToolNix",
+              "Software\\ChapterTool.eac3toPath": "C:\\\\Tools\\eac3to\\eac3to.exe"
             }
             """);
 
@@ -25,11 +25,11 @@ public sealed class SettingsMigrationTests
 
         var settings = await store.LoadAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal("D:\\Output", settings.SavingPath);
+        Assert.Equal(@"D:\\Output", settings.SavingPath);
         Assert.Equal("en-US", settings.Language);
         Assert.Equal(new WindowLocation(12, 34), settings.MainWindowLocation);
-        Assert.Equal("C:\\Tools\\MKVToolNix", settings.MkvToolnixPath);
-        Assert.Equal("C:\\Tools\\eac3to\\eac3to.exe", settings.Eac3toPath);
+        Assert.Equal(@"C:\\Tools\MKVToolNix", settings.MkvToolnixPath);
+        Assert.Equal(@"C:\\Tools\eac3to\eac3to.exe", settings.Eac3toPath);
         Assert.Equal("Txt", settings.DefaultSaveFormat);
         Assert.Equal("und", settings.DefaultXmlLanguage);
     }
@@ -44,13 +44,13 @@ public sealed class SettingsMigrationTests
 
         var store = new AppSettingsStore(root, [root]);
         await store.SaveAsync(
-            new AppSettings(Language: "", SavingPath: "E:\\Saved", DefaultSaveFormat: "Xml", DefaultXmlLanguage: "ja"),
+            new AppSettings(Language: "", SavingPath: @"E:\\Saved", DefaultSaveFormat: "Xml", DefaultXmlLanguage: "ja"),
             TestContext.Current.CancellationToken);
 
         var settings = await store.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("", settings.Language);
-        Assert.Equal("E:\\Saved", settings.SavingPath);
+        Assert.Equal(@"E:\\Saved", settings.SavingPath);
         Assert.Equal("Xml", settings.DefaultSaveFormat);
         Assert.Equal("ja", settings.DefaultXmlLanguage);
     }

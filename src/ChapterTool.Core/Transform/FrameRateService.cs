@@ -6,7 +6,7 @@ namespace ChapterTool.Core.Transform;
 public sealed class FrameRateService : IFrameRateService
 {
     private static readonly FrameRateOption[] FrameRateOptions =
-    {
+    [
         new("Auto", "Auto", 0m, false, 0),
         new("Fps23976", "24000 / 1001", 24000m / 1001m, true, 1),
         new("Fps24", "24000 / 1000", 24m, true, 2),
@@ -14,8 +14,8 @@ public sealed class FrameRateService : IFrameRateService
         new("Fps2997", "30000 / 1001", 30000m / 1001m, true, 4),
         new("Reserved", "RESER / VED", 0m, false, 5),
         new("Fps50", "50000 / 1000", 50m, true, 6),
-        new("Fps5994", "60000 / 1001", 60000m / 1001m, true, 7),
-    };
+        new("Fps5994", "60000 / 1001", 60000m / 1001m, true, 7)
+    ];
 
     public IReadOnlyList<FrameRateOption> Options => FrameRateOptions;
 
@@ -38,7 +38,7 @@ public sealed class FrameRateService : IFrameRateService
             return new FrameRateDetectionResult(defaultOption, 0, 0, 0m, FrameRateConfidence.Low);
         }
 
-        FrameRateOption bestOption = defaultOption;
+        var bestOption = defaultOption;
         var bestDeviation = decimal.MaxValue;
         var bestAccurateCount = -1;
 
@@ -111,7 +111,7 @@ public sealed class FrameRateService : IFrameRateService
             {
                 FramesInfo = FormatFrames(chapter, selectedOption.Value, round, tolerance)
             })
-            .ToArray();
+            .ToList();
 
         var updatedInfo = info with
         {

@@ -3,19 +3,16 @@ using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Infrastructure.Platform;
 
-public sealed class ApplicationLogPanelProvider : IApplicationLogService, ILoggerProvider
+public sealed class ApplicationLogPanelProvider(
+    int capacity = ApplicationLogPanelProvider.DefaultCapacity,
+    LogLevel minimumLevel = LogLevel.Information)
+    : IApplicationLogService, ILoggerProvider
 {
     private const int DefaultCapacity = 500;
-    private readonly object gate = new();
-    private readonly int capacity;
-    private readonly LogLevel minimumLevel;
+    private readonly Lock gate = new();
+    private readonly int capacity = Math.Max(1, capacity);
+    private readonly LogLevel minimumLevel = minimumLevel;
     private readonly List<ApplicationLogEntry> entries = [];
-
-    public ApplicationLogPanelProvider(int capacity = DefaultCapacity, LogLevel minimumLevel = LogLevel.Information)
-    {
-        this.capacity = Math.Max(1, capacity);
-        this.minimumLevel = minimumLevel;
-    }
 
     public IReadOnlyList<ApplicationLogEntry> Entries
     {
@@ -23,7 +20,7 @@ public sealed class ApplicationLogPanelProvider : IApplicationLogService, ILogge
         {
             lock (gate)
             {
-                return entries.ToArray();
+                return entries.ToList();
             }
         }
     }
@@ -32,10 +29,10 @@ public sealed class ApplicationLogPanelProvider : IApplicationLogService, ILogge
 
     public string Format(Func<ApplicationLogEntry, string>? formatter = null)
     {
-        ApplicationLogEntry[] snapshot;
+        IReadOnlyList<ApplicationLogEntry> snapshot;
         lock (gate)
         {
-            snapshot = entries.ToArray();
+            snapshot = entries.ToList();
         }
 
         return string.Join(
@@ -105,7 +102,7 @@ public sealed class ApplicationLogPanelProvider : IApplicationLogService, ILogge
         }
     }
 
-    private static IReadOnlyDictionary<string, object?> StructuredState<TState>(TState state)
+    private static Dictionary<string, object?> StructuredState<TState>(TState state)
     {
         if (state is IEnumerable<KeyValuePair<string, object?>> pairs)
         {
@@ -119,7 +116,7 @@ public sealed class ApplicationLogPanelProvider : IApplicationLogService, ILogge
             : new Dictionary<string, object?>(StringComparer.Ordinal) { ["State"] = state };
     }
 
-    private static IReadOnlyDictionary<string, object?> Arguments(IReadOnlyDictionary<string, object?> structuredState) =>
+    private static Dictionary<string, object?> Arguments(IReadOnlyDictionary<string, object?> structuredState) =>
         structuredState
             .Where(static pair =>
                 !string.Equals(pair.Key, "MessageKey", StringComparison.Ordinal) &&

@@ -140,7 +140,7 @@ public sealed class ExpressionService : IExpressionService
                 throw new InvalidOperationException("Expression did not reduce to one value.");
             }
 
-            return new ExpressionEvaluationResult(true, stack.Pop(), Array.Empty<ChapterDiagnostic>());
+            return new ExpressionEvaluationResult(true, stack.Pop(), []);
         }
         catch (Exception exception) when (exception is InvalidOperationException or DivideByZeroException)
         {
@@ -152,12 +152,11 @@ public sealed class ExpressionService : IExpressionService
         new(
             false,
             fallback,
-            new[]
-            {
+            [
                 new ChapterDiagnostic(DiagnosticSeverity.Warning, "InvalidExpression", message)
-            });
+            ]);
 
-    private static IReadOnlyList<string> Tokenize(string expression)
+    private static List<string> Tokenize(string expression)
     {
         var tokens = new List<string>();
         for (var i = 0; i < expression.Length;)
@@ -218,7 +217,7 @@ public sealed class ExpressionService : IExpressionService
         return tokens;
     }
 
-    private static IReadOnlyList<string> ToPostfix(IReadOnlyList<string> tokens)
+    private static List<string> ToPostfix(IReadOnlyList<string> tokens)
     {
         var output = new List<string>();
         var operators = new Stack<string>();
@@ -454,14 +453,6 @@ public sealed class ExpressionService : IExpressionService
 
     private static void ApplyFunction(string function, Stack<decimal> stack)
     {
-        decimal Unary(Func<double, double> func) => (decimal)func((double)Pop(stack, function));
-        decimal Binary(Func<double, double, double> func)
-        {
-            var rhs = Pop(stack, function);
-            var lhs = Pop(stack, function);
-            return (decimal)func((double)lhs, (double)rhs);
-        }
-
         stack.Push(function switch
         {
             "abs" => Math.Abs(Pop(stack, function)),
@@ -489,6 +480,16 @@ public sealed class ExpressionService : IExpressionService
             "min" => Min(PopPair(stack, function)),
             _ => throw new InvalidOperationException($"Unsupported function '{function}'.")
         });
+        return;
+
+        decimal Binary(Func<double, double, double> func)
+        {
+            var rhs = Pop(stack, function);
+            var lhs = Pop(stack, function);
+            return (decimal)func((double)lhs, (double)rhs);
+        }
+
+        decimal Unary(Func<double, double> func) => (decimal)func((double)Pop(stack, function));
     }
 
     private static decimal Max((decimal Left, decimal Right) pair) => Math.Max(pair.Left, pair.Right);

@@ -33,7 +33,7 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
             return ChapterImportResult.Failed(Error("FlacEmbeddedCueNotFound", "No Vorbis cuesheet comment was found."));
         }
 
-        return parser.Parse(cue, request.Path);
+        return CueSheetParser.Parse(cue, request.Path);
     }
 
     private static string? ReadCue(Stream stream)

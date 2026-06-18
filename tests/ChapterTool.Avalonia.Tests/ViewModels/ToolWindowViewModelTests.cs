@@ -1,3 +1,4 @@
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -8,7 +9,7 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.ViewModels;
 
 public sealed class ToolWindowViewModelTests
 {
@@ -55,9 +56,10 @@ public sealed class ToolWindowViewModelTests
     public void TextToolFormatSelectorUpdatesOwnerAndRefreshesPreviewKind()
     {
         var owner = CreateOwner();
-        var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner) });
-
-        vm.SelectedFormatIndex = (int)ChapterExportFormat.Json;
+        var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner) })
+            {
+                SelectedFormatIndex = (int)ChapterExportFormat.Json
+            };
 
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
         Assert.Equal(TextToolKind.Json, vm.Kind);
@@ -107,7 +109,7 @@ public sealed class ToolWindowViewModelTests
         return new MainWindowViewModel(
             new FakeLoadService(new ChapterImportResult(
                 true,
-                [new ChapterInfoGroup("movie.txt", [new ChapterSourceOption("0", "movie", new ChapterInfo("movie.txt", "movie.txt", 0, "OGM", 24, TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))], 0)],
+                [new ChapterInfoGroup("movie.txt", [new ChapterSourceOption("0", "movie", new ChapterInfo("movie.txt", "movie.txt", 0, "OGM", 24, TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
                 [])),
             new FakeSaveService(),
             new ChapterEditingService(formatter),
@@ -131,12 +133,12 @@ public sealed class ToolWindowViewModelTests
         }
     }
 
-    private sealed class FakeLoadService(ChapterImportResult result) : Services.IChapterLoadService
+    private sealed class FakeLoadService(ChapterImportResult result) : IChapterLoadService
     {
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) => ValueTask.FromResult(result);
     }
 
-    private sealed class FakeSaveService : Services.IChapterSaveService
+    private sealed class FakeSaveService : IChapterSaveService
     {
         public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));

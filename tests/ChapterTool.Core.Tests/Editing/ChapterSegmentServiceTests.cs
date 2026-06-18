@@ -13,10 +13,9 @@ public sealed class ChapterSegmentServiceTests
             [
                 new ChapterSourceOption("a", "a", Info("MPLS", TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A"), new Chapter(2, TimeSpan.FromSeconds(10), "B"))),
                 new ChapterSourceOption("b", "b", Info("MPLS", TimeSpan.FromSeconds(30), new Chapter(1, TimeSpan.Zero, "C"), new Chapter(2, TimeSpan.FromSeconds(5), "D")))
-            ],
-            0);
+            ]);
 
-        var result = new ChapterSegmentService().Combine(group);
+        var result = ChapterSegmentService.Combine(group);
 
         Assert.Empty(result.Diagnostics);
         Assert.Equal("FULL Chapter", result.ChapterInfo.Title);
@@ -28,9 +27,9 @@ public sealed class ChapterSegmentServiceTests
     [Fact]
     public void CombineRejectsUnsupportedSource()
     {
-        var group = new ChapterInfoGroup("x", [new ChapterSourceOption("x", "x", Info("CUE", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "A")))], 0);
+        var group = new ChapterInfoGroup("x", [new ChapterSourceOption("x", "x", Info("CUE", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "A")))]);
 
-        var result = new ChapterSegmentService().Combine(group);
+        var result = ChapterSegmentService.Combine(group);
 
         Assert.NotEmpty(result.Diagnostics);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedCombineSource");
@@ -44,10 +43,9 @@ public sealed class ChapterSegmentServiceTests
             [
                 new ChapterSourceOption("a", "a", Info("MPLS", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "A"))),
                 new ChapterSourceOption("b", "b", Info("DVD", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "B")))
-            ],
-            0);
+            ]);
 
-        var result = new ChapterSegmentService().Combine(group);
+        var result = ChapterSegmentService.Combine(group);
 
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedCombineSource");
     }
@@ -57,12 +55,10 @@ public sealed class ChapterSegmentServiceTests
     {
         var existing = new ChapterInfoGroup(
             "a",
-            [new ChapterSourceOption("a", "a", Info("MPLS", TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A")))],
-            0);
+            [new ChapterSourceOption("a", "a", Info("MPLS", TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A")))]);
         var appended = new ChapterInfoGroup(
             "b",
-            [new ChapterSourceOption("b", "b", Info("MPLS", TimeSpan.FromSeconds(10), new Chapter(1, TimeSpan.Zero, "B")))],
-            0);
+            [new ChapterSourceOption("b", "b", Info("MPLS", TimeSpan.FromSeconds(10), new Chapter(1, TimeSpan.Zero, "B")))]);
 
         var result = new ChapterSegmentService().Append(existing, appended);
 
@@ -76,12 +72,10 @@ public sealed class ChapterSegmentServiceTests
     {
         var existing = new ChapterInfoGroup(
             "a",
-            [new ChapterSourceOption("a", "a", Info("MPLS", TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A")))],
-            0);
+            [new ChapterSourceOption("a", "a", Info("MPLS", TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A")))]);
         var appended = new ChapterInfoGroup(
             "b",
-            [new ChapterSourceOption("b", "b", Info("DVD", TimeSpan.FromSeconds(10), new Chapter(1, TimeSpan.Zero, "B")))],
-            0);
+            [new ChapterSourceOption("b", "b", Info("DVD", TimeSpan.FromSeconds(10), new Chapter(1, TimeSpan.Zero, "B")))]);
 
         var result = new ChapterSegmentService().Append(existing, appended);
 

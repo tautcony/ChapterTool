@@ -47,43 +47,50 @@ public sealed class MplsImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidMpls");
     }
 
-    public static TheoryData<SampleExpectation> SampleExpectations() => new()
-    {
+    public static TheoryData<SampleExpectation> SampleExpectations() =>
+    [
         Sample("00000_HEVC.mpls", [new("00000", 1, 0, Ms(16850), TimeSpan.Zero, TimeSpan.Zero, 1)]),
         Sample("00000_tsMuxer.mpls", [new("00000", 4, 24, Ms(209792), TimeSpan.Zero, TimeSpan.FromMinutes(3), 1)]),
         Sample("00001_fch.mpls",
         [
             new("00001", 9, 24000d / 1001d, Ms(3620826), TimeSpan.Zero, Ms(3613818), 1)
         ]),
+
         Sample("00001_Hidan_no_Aria_AA.mpls",
         [
             new("00002", 6, 24000d / 1001d, Ms(1422087), TimeSpan.Zero, Ms(1406030), 1),
             new("00003", 6, 24000d / 1001d, Ms(1422254), Ms(1001), Ms(1405988), 1)
         ]),
+
         Sample("00001_konobi.mpls",
         [
             new("00001", 14, 24000d / 1001d, Ms(2902900), TimeSpan.Zero, Ms(2871118), 1)
         ]),
+
         Sample("00001_LinkPoint.mpls",
         [
             new("00001", 9, 24000d / 1001d, Ms(3620826), TimeSpan.Zero, Ms(3613818), 1)
         ]),
+
         Sample("00001_MPEG_II.mpls",
         [
             new("00003", 24, 30000d / 1001d, Ms(5576237), TimeSpan.Zero, Ms(5560288), 1),
             new("00018", 6, 30000d / 1001d, Ms(1394059), TimeSpan.Zero, Ms(1378043), 1),
             new("00019", 13, 30000d / 1001d, Ms(2787985), TimeSpan.Zero, Ms(2786984), 1)
         ]),
+
         Sample("00001_tako.mpls",
         [
             new("00002", 15, 24000d / 1001d, Ms(2799630), TimeSpan.Zero, Ms(2798629), 1)
         ]),
+
         Sample("00001_TwoChapter.mpls",
         [
             new("00001", 13, 24000d / 1001d, Ms(1452951), TimeSpan.Zero, Ms(1361860), 1),
             new("00002", 13, 24000d / 1001d, Ms(1452785), TimeSpan.Zero, Ms(1361819), 1),
             new("00003", 1, 24000d / 1001d, Ms(8008), TimeSpan.Zero, TimeSpan.Zero, 1)
         ]),
+
         Sample("00002_issue1.mpls",
         [
             new("00003", 1, 24000d / 1001d, Ms(238238), TimeSpan.Zero, TimeSpan.Zero, 1),
@@ -94,11 +101,13 @@ public sealed class MplsImporterTests
             new("00008", 1, 24000d / 1001d, Ms(905905), TimeSpan.Zero, TimeSpan.Zero, 1),
             new("00009", 1, 24000d / 1001d, Ms(19019), TimeSpan.Zero, TimeSpan.Zero, 1)
         ]),
+
         Sample("00002_Menu.mpls", 166,
         [
             new("00012", 1, 24000d / 1001d, Ms(217634), TimeSpan.Zero, TimeSpan.Zero, 1),
             new("00013", 1, 24000d / 1001d, Ms(217634), TimeSpan.Zero, TimeSpan.Zero, 1)
         ]),
+
         Sample("00002_MultiAngle.mpls",
         [
             new("00005", 1, 24000d / 1001d, Ms(36995), TimeSpan.Zero, TimeSpan.Zero, 1),
@@ -111,6 +120,7 @@ public sealed class MplsImporterTests
             new("00015", 2, 24000d / 1001d, Ms(22814), TimeSpan.Zero, Ms(16808), 1),
             new("00016", 7, 24000d / 1001d, Ms(1421045), TimeSpan.Zero, Ms(1420044), 1)
         ]),
+
         Sample("00002_MultiAngle2.mpls",
         [
             new("00020", 6, 24000d / 1001d, Ms(1421086), TimeSpan.Zero, Ms(1414997), 1),
@@ -118,6 +128,7 @@ public sealed class MplsImporterTests
             new("00022&00023", 1, 24000d / 1001d, Ms(344344), TimeSpan.Zero, TimeSpan.Zero, 2),
             new("00024", 2, 24000d / 1001d, Ms(48048), TimeSpan.Zero, Ms(47047), 1)
         ]),
+
         Sample("00002_tanji.mpls",
         [
             new("00005", 1, 24000d / 1001d, Ms(36995), TimeSpan.Zero, TimeSpan.Zero, 1),
@@ -130,11 +141,13 @@ public sealed class MplsImporterTests
             new("00015", 2, 24000d / 1001d, Ms(22814), TimeSpan.Zero, Ms(16808), 1),
             new("00016", 7, 24000d / 1001d, Ms(1421045), TimeSpan.Zero, Ms(1420044), 1)
         ]),
+
         Sample("00003_Padding_Zero.mpls",
         [
             new("00005", 12, 24000d / 1001d, Ms(2743574), TimeSpan.Zero, Ms(2693983), 1),
             new("00006", 2, 24000d / 1001d, Ms(286703), TimeSpan.Zero, Ms(285285), 1)
         ]),
+
         Sample("00011_24_Eva.mpls", [new("00002", 46, 24, Ms(6356000), TimeSpan.Zero, Ms(6349750), 1)]),
         Sample("00020_Terminator2.mpls",
         [
@@ -168,12 +181,13 @@ public sealed class MplsImporterTests
             new("00026", 1, 24000d / 1001d, Ms(242951), Ms(2127), Ms(2127), 1),
             new("00027", 2, 24000d / 1001d, Ms(43085), Ms(500), Ms(42834), 1)
         ]),
+
         Sample("00800_4Angle.mpls", 37,
         [
             new("00081", 1, 24000d / 1001d, Ms(37120), TimeSpan.Zero, TimeSpan.Zero, 1),
             new("00082&00083&00084&00085", 1, 24000d / 1001d, Ms(27527), TimeSpan.Zero, TimeSpan.Zero, 4)
         ])
-    };
+    ];
 
     public sealed record SampleExpectation(string FileName, int ExpectedOptionCount, OptionExpectation[] ExpectedOptions)
     {

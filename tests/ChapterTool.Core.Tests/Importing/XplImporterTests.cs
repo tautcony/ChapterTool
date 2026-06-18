@@ -96,21 +96,46 @@ public sealed class XplImporterTests
     private static string Diagnostics(ChapterImportResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));
 
-    public static TheoryData<SampleExpectation> SampleExpectations() => new()
-    {
+    public static TheoryData<SampleExpectation> SampleExpectations() =>
+    [
         Sample("VPLST000.XPL",
         [
-            new("MM", "file:///dvddisc/HVDVD_TS/PEVOB2.MAP", 1, Ms(60041), TimeSpan.Zero, string.Empty, TimeSpan.Zero, string.Empty),
-            new("feature", "file:///dvddisc/HVDVD_TS/PEVOB3.MAP", 16, Ms(3486000), TimeSpan.Zero, "Chapter 1", Ms(3226000), "Chapter 16"),
-            new("card", "file:///dvddisc/HVDVD_TS/PEVOB4.MAP", 1, Ms(10000), TimeSpan.Zero, string.Empty, TimeSpan.Zero, string.Empty),
-            new("logo", "file:///dvddisc/HVDVD_TS/PEVOB5.MAP", 1, Ms(20000), TimeSpan.Zero, string.Empty, TimeSpan.Zero, string.Empty)
+            new("MM", "file:///dvddisc/HVDVD_TS/PEVOB2.MAP", 1, Ms(60041), TimeSpan.Zero, string.Empty, TimeSpan.Zero,
+                string.Empty),
+            new("feature", "file:///dvddisc/HVDVD_TS/PEVOB3.MAP", 16, Ms(3486000), TimeSpan.Zero, "Chapter 1",
+                Ms(3226000), "Chapter 16"),
+            new("card", "file:///dvddisc/HVDVD_TS/PEVOB4.MAP", 1, Ms(10000), TimeSpan.Zero, string.Empty, TimeSpan.Zero,
+                string.Empty),
+            new("logo", "file:///dvddisc/HVDVD_TS/PEVOB5.MAP", 1, Ms(20000), TimeSpan.Zero, string.Empty, TimeSpan.Zero,
+                string.Empty)
         ]),
-        Sample("VPLST001.XPL", [new("Feature Presentation", "file:///dvddisc/HVDVD_TS/PEVOB_1.MAP", 29, Ms(6170933), TimeSpan.Zero, "Chapter 1", Ms(6018000), "Chapter 29")]),
-        Sample("VPLST002.XPL", [new("Main Movie", "file:///dvddisc/HVDVD_TS/FEATURE_1.MAP", 10, Ms(6234000), TimeSpan.Zero, "Chapter  1", Ms(5761500), "Chapter 10")]),
-        Sample("VPLST003.XPL", [new("Main Movie", "file:///dvddisc/HVDVD_TS/FEATURE_1.MAP", 19, Ms(7516916), TimeSpan.Zero, "Count To Ten", Ms(7041958), "Mission: Honeymoon")]),
-        Sample("VPLST004.XPL", [new("Feature Presentation", "file:///dvddisc/HVDVD_TS/PEVOB_1.MAP", 29, Ms(9440200), TimeSpan.Zero, "The Riddle House", Ms(8620000), "End Credits")]),
-        Sample("VPLST005.XPL", [new("mainMovie", "file:///dvddisc/HVDVD_TS/L0_mainMovie.MAP", 20, Ms(9012000), TimeSpan.Zero, "mainMovie_ch1", Ms(8197958), "mainMovie_ch20")])
-    };
+
+        Sample("VPLST001.XPL",
+        [
+            new("Feature Presentation", "file:///dvddisc/HVDVD_TS/PEVOB_1.MAP", 29, Ms(6170933), TimeSpan.Zero,
+                "Chapter 1", Ms(6018000), "Chapter 29")
+        ]),
+        Sample("VPLST002.XPL",
+        [
+            new("Main Movie", "file:///dvddisc/HVDVD_TS/FEATURE_1.MAP", 10, Ms(6234000), TimeSpan.Zero, "Chapter  1",
+                Ms(5761500), "Chapter 10")
+        ]),
+        Sample("VPLST003.XPL",
+        [
+            new("Main Movie", "file:///dvddisc/HVDVD_TS/FEATURE_1.MAP", 19, Ms(7516916), TimeSpan.Zero, "Count To Ten",
+                Ms(7041958), "Mission: Honeymoon")
+        ]),
+        Sample("VPLST004.XPL",
+        [
+            new("Feature Presentation", "file:///dvddisc/HVDVD_TS/PEVOB_1.MAP", 29, Ms(9440200), TimeSpan.Zero,
+                "The Riddle House", Ms(8620000), "End Credits")
+        ]),
+        Sample("VPLST005.XPL",
+        [
+            new("mainMovie", "file:///dvddisc/HVDVD_TS/L0_mainMovie.MAP", 20, Ms(9012000), TimeSpan.Zero,
+                "mainMovie_ch1", Ms(8197958), "mainMovie_ch20")
+        ])
+    ];
 
     public sealed record SampleExpectation(string FileName, OptionExpectation[] Options);
 

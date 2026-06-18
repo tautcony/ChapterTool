@@ -1,4 +1,3 @@
-using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Services;

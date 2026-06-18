@@ -136,8 +136,8 @@ public sealed class AvaloniaWindowService : IWindowService
             _ => Placeholder(Title(id))
         };
 
-    private static Control Placeholder(string text) =>
-        new TextBlock
+    private static TextBlock Placeholder(string text) =>
+        new()
         {
             Margin = new Thickness(20),
             Text = text,

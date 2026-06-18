@@ -90,7 +90,7 @@ public sealed partial class ThemeSettingsStore : ISettingsStore<ThemeColorSettin
                 return null;
             }
 
-            var defaults = ThemeColorSettings.Default.OrderedSlots.Select(static slot => slot.Value).ToArray();
+            var defaults = ThemeColorSettings.Default.OrderedSlots.Select(static slot => slot.Value).ToList();
             var colors = new string[6];
             for (var index = 0; index < colors.Length; index++)
             {

@@ -9,5 +9,5 @@ public sealed record CommandResult(
     IReadOnlyList<ChapterDiagnostic> Diagnostics)
 {
     public static CommandResult Ok(string statusText = "", int progress = 100) =>
-        new(true, statusText, progress, Array.Empty<ChapterDiagnostic>());
+        new(true, statusText, progress, []);
 }

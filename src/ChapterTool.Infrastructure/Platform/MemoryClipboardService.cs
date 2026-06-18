@@ -8,9 +8,9 @@ public sealed class MemoryClipboardService : IClipboardService
 
     public ValueTask<string?> GetTextAsync(CancellationToken cancellationToken) => ValueTask.FromResult(text);
 
-    public ValueTask SetTextAsync(string text, CancellationToken cancellationToken)
+    public ValueTask SetTextAsync(string value, CancellationToken cancellationToken)
     {
-        this.text = text;
+        this.text = value;
         return ValueTask.CompletedTask;
     }
 }

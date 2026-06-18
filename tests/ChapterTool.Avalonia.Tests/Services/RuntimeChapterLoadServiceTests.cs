@@ -1,10 +1,10 @@
-using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Composition;
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.Services;
 
 public sealed class RuntimeChapterLoadServiceTests
 {
@@ -126,7 +126,7 @@ public sealed class RuntimeChapterLoadServiceTests
             Assert.True(result.Success, Diagnostics(result));
             Assert.Equal(1, primary.CallCount);
             Assert.Equal(1, fallback.CallCount);
-            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed" && diagnostic.Severity == DiagnosticSeverity.Info);
+            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic is { Code: "ImporterFallbackUsed", Severity: DiagnosticSeverity.Info });
             Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "FfprobeMissingDependency");
         }
         finally
@@ -281,7 +281,7 @@ public sealed class RuntimeChapterLoadServiceTests
     private static ChapterImportResult SuccessfulImport(string path, string sourceType)
     {
         var info = new ChapterInfo(Path.GetFileNameWithoutExtension(path), Path.GetFileName(path), 0, sourceType, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "Intro")]);
-        return new ChapterImportResult(true, [new ChapterInfoGroup(path, [new ChapterSourceOption("default", sourceType, info)], 0)], []);
+        return new ChapterImportResult(true, [new ChapterInfoGroup(path, [new ChapterSourceOption("default", sourceType, info)])], []);
     }
 
     private static string Diagnostics(ChapterImportResult result) =>

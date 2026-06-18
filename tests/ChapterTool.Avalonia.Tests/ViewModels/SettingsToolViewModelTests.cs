@@ -1,7 +1,7 @@
+using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -10,9 +10,8 @@ using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
-using Avalonia.Media;
 
-namespace ChapterTool.Avalonia.Tests;
+namespace ChapterTool.Avalonia.Tests.ViewModels;
 
 public sealed class SettingsToolViewModelTests
 {
@@ -63,9 +62,10 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public void ColorSlotSynchronizesColorAndHexValue()
     {
-        var slot = new ColorSlotViewModel("BackChange", "#010203");
-
-        slot.Color = Color.FromRgb(10, 11, 12);
+        var slot = new ColorSlotViewModel("BackChange", "#010203")
+        {
+            Color = Color.FromRgb(10, 11, 12)
+        };
 
         Assert.Equal("#0A0B0C", slot.Value);
 
@@ -310,8 +310,8 @@ public sealed class SettingsToolViewModelTests
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterImportResult(
                 true,
-                [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, Array.Empty<Chapter>()))], 0)],
-                Array.Empty<ChapterDiagnostic>()));
+                [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, []))])],
+                []));
     }
 
     private static string ToolExecutable(string name) => OperatingSystem.IsWindows() ? $"{name}.exe" : name;
@@ -319,7 +319,7 @@ public sealed class SettingsToolViewModelTests
     private sealed class FakeSaveService : IChapterSaveService
     {
         public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", Array.Empty<ChapterDiagnostic>()));
+            ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 
     private sealed class FakeWindowService : IWindowService
