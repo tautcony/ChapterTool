@@ -573,6 +573,20 @@ public sealed partial class MainWindow : Window
 
     private void ApplyAdvancedOptionsLayout()
     {
+        var layoutWidth = Bounds.Width > 0 ? Bounds.Width : Width;
+        if (layoutWidth <= 760)
+        {
+            AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,*");
+            AdvancedOptionsGrid.RowDefinitions = new RowDefinitions("Auto,Auto,Auto");
+
+            SetGridPosition(FormatOptionsGroup, 0, 0);
+            SetGridPosition(ChapterNameOptionsGroup, 0, 1);
+            SetGridPosition(XmlLanguageOptionsGroup, 1, 0);
+            SetGridPosition(OrderShiftOptionsGroup, 1, 1);
+            SetGridPosition(ExpressionOptionsGroup, 2, 0, 2);
+            return;
+        }
+
         AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,2*,*");
         AdvancedOptionsGrid.RowDefinitions = new RowDefinitions("Auto,Auto");
 
@@ -583,11 +597,11 @@ public sealed partial class MainWindow : Window
         SetGridPosition(ExpressionOptionsGroup, 1, 1);
     }
 
-    private static void SetGridPosition(Control control, int row, int column)
+    private static void SetGridPosition(Control control, int row, int column, int columnSpan = 1)
     {
         Grid.SetRow(control, row);
         Grid.SetColumn(control, column);
-        Grid.SetColumnSpan(control, 1);
+        Grid.SetColumnSpan(control, columnSpan);
     }
 
     private static string SelectedComboText(ComboBox comboBox, string fallback)

@@ -1,6 +1,9 @@
 using Avalonia.Controls;
+using Avalonia.Layout;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.VisualTree;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
@@ -177,9 +180,9 @@ public sealed class MainWindowHeadlessTests
 
         foreach (var (name, width, height) in new[]
         {
-            ("default", 920d, 720d),
-            ("wide", 1180d, 720d),
-            ("narrow", 760d, 720d)
+            ("default", 736d, 576d),
+            ("wide", 944d, 576d),
+            ("narrow", 608d, 576d)
         })
         {
             await host.LayoutAsync(width, height);
@@ -195,6 +198,37 @@ public sealed class MainWindowHeadlessTests
             Assert.True(File.Exists(artifactPath));
             Assert.True(new FileInfo(artifactPath).Length > 0);
         }
+    }
+
+    [AvaloniaFact]
+    public async Task Main_window_grid_keeps_compact_column_alignment()
+    {
+        using var host = CreateMultiOptionHost(
+            "00000.mpls",
+            MainWindowHeadlessTestHost.Option(
+                "MPLS",
+                "00002",
+                "A1",
+                "A2",
+                "A3",
+                "A4",
+                "A5",
+                "A6",
+                "A7",
+                "A8",
+                "A9",
+                "A10"));
+
+        await host.LoadAsync("00000.mpls");
+        await host.LayoutAsync(608, 576);
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+
+        Assert.True(grid.Columns[0].ActualWidth >= 56);
+        Assert.True(grid.Columns[0].ActualWidth < 70);
+        AssertCellTextAlignment(grid, "10", TextAlignment.Center);
+        AssertCellTextAlignment(grid, "00:01:30.000", TextAlignment.Center);
+        AssertCellTextAlignment(grid, "A10", TextAlignment.Left);
+        AssertCellTextAlignment(grid, "2160", TextAlignment.Right);
     }
 
     private static MainWindowHeadlessTestHost CreateMultiOptionHost(
@@ -259,5 +293,17 @@ public sealed class MainWindowHeadlessTests
         Assert.True(
             host.ContainsRenderedText(clipSelector, expectedLabel),
             $"Expected default selected label '{expectedLabel}'. Rendered selector texts:{Environment.NewLine}{host.DescribeRenderedTexts(clipSelector)}");
+    }
+
+    private static void AssertCellTextAlignment(Control scope, string text, TextAlignment expected)
+    {
+        var textBlock = scope
+            .GetVisualDescendants()
+            .OfType<TextBlock>()
+            .FirstOrDefault(block => string.Equals(block.Text, text, StringComparison.Ordinal));
+
+        Assert.NotNull(textBlock);
+        Assert.Equal(expected, textBlock.TextAlignment);
+        Assert.Equal(HorizontalAlignment.Stretch, textBlock.HorizontalAlignment);
     }
 }

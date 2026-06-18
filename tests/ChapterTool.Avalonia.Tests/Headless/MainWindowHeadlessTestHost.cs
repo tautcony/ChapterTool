@@ -73,7 +73,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         await LayoutAsync();
     }
 
-    public async ValueTask LayoutAsync(double width = 920, double height = 720)
+    public async ValueTask LayoutAsync(double width = 736, double height = 576)
     {
         Window.Show();
         Window.Width = width;
