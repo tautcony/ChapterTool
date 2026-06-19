@@ -507,16 +507,18 @@ public sealed class ColorSlotViewModel(string name, string value) : ObservableVi
 public sealed class LanguageToolViewModel : ObservableViewModel
 {
     private readonly MainWindowViewModel owner;
+    private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private string selectedLanguage;
+    private bool isRefreshingLanguages;
 
     public LanguageToolViewModel(MainWindowViewModel owner)
     {
         this.owner = owner;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
-        Languages = BuildLanguages();
+        ReplaceLanguages(BuildLanguages());
         owner.Localizer.CultureChanged += (_, _) =>
         {
-            Languages = BuildLanguages();
+            RefreshLanguages();
         };
         ApplyCommand = new UiCommand(async (parameter, token) =>
         {
@@ -527,7 +529,7 @@ public sealed class LanguageToolViewModel : ObservableViewModel
         });
     }
 
-    public IReadOnlyList<LanguageOptionViewModel> Languages { get; private set; }
+    public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
 
     public string SelectedLanguage
     {
@@ -546,10 +548,15 @@ public sealed class LanguageToolViewModel : ObservableViewModel
         get
         {
             var index = Languages.ToList().FindIndex(option => string.Equals(option.CultureName, SelectedLanguage, StringComparison.OrdinalIgnoreCase));
-            return Math.Max(0, index);
+            return index;
         }
         set
         {
+            if (isRefreshingLanguages)
+            {
+                return;
+            }
+
             if (value >= 0 && value < Languages.Count)
             {
                 SelectedLanguage = Languages[value].CultureName;
@@ -559,16 +566,36 @@ public sealed class LanguageToolViewModel : ObservableViewModel
 
     public UiCommand ApplyCommand { get; }
 
-    private List<LanguageOptionViewModel> BuildLanguages()
+    private void RefreshLanguages()
     {
-        var languages = owner.Localizer.SupportedLanguages
+        isRefreshingLanguages = true;
+        try
+        {
+            ReplaceLanguages(BuildLanguages());
+            OnPropertyChanged(nameof(Languages));
+        }
+        finally
+        {
+            isRefreshingLanguages = false;
+        }
+
+        OnPropertyChanged(nameof(SelectedLanguageIndex));
+    }
+
+    private List<LanguageOptionViewModel> BuildLanguages() =>
+        owner.Localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
                 owner.Localizer.GetString(language.DisplayNameKey)))
             .ToList();
-        OnPropertyChanged(nameof(Languages));
-        OnPropertyChanged(nameof(SelectedLanguageIndex));
-        return languages;
+
+    private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> options)
+    {
+        languages.Clear();
+        foreach (var option in options)
+        {
+            languages.Add(option);
+        }
     }
 }
 

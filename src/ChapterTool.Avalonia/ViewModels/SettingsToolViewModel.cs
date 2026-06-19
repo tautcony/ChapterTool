@@ -29,14 +29,20 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
     private readonly ISettingsStore<ThemeColorSettings>? themeSettingsStore;
     private readonly IAppLocalizer localizer;
+    private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private readonly ISettingsPickerService? picker;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IThemeApplicationService? themeApplicationService;
+    private AppSettings savedAppSettings = new();
     private ThemeColorSettings savedThemeSettings = ThemeColorSettings.Default;
     private string selectedLanguage;
     private int defaultSaveFormatIndex;
     private int defaultXmlLanguageIndex;
     private decimal frameAccuracyTolerance;
+    private double frameAccuracyToleranceSliderValue;
+    private bool liveApplyEnabled;
+    private bool isApplyingSnapshot;
+    private bool isRefreshingLanguages;
 
     public SettingsToolViewModel(
         MainWindowViewModel owner,
@@ -57,8 +63,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Length - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
-        frameAccuracyTolerance = owner.FrameAccuracyTolerance;
-        Languages = BuildLanguages();
+        frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(owner.FrameAccuracyTolerance);
+        frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
+        ReplaceLanguages(BuildLanguageOptions());
         ColorSlots = new ObservableCollection<ColorSlotViewModel>(
             ThemeColorSettings.Default.OrderedSlots.Select(static slot => new ColorSlotViewModel(slot.Name, slot.Value)));
         foreach (var slot in ColorSlots)
@@ -68,6 +75,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
                 if (args.PropertyName == nameof(ColorSlotViewModel.Value))
                 {
                     ApplyCurrentTheme();
+                    NotifyUnsavedChanges();
                 }
             };
         }
@@ -91,7 +99,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ClearFfmpegCommand = ClearCommand(() => FfmpegPath = null);
         this.localizer.CultureChanged += (_, _) =>
         {
-            Languages = BuildLanguages();
+            RefreshLanguages();
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
             {
@@ -101,7 +109,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         _ = InitializeAsync();
     }
 
-    public IReadOnlyList<LanguageOptionViewModel> Languages { get; private set; }
+    public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
 
     public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(ChapterExportFormatDisplay.LabelFor).ToArray();
 
@@ -118,6 +126,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             if (SetProperty(ref selectedLanguage, AppLanguage.Normalize(value)))
             {
                 OnPropertyChanged(nameof(SelectedLanguageIndex));
+                ApplyLiveSettings();
             }
         }
     }
@@ -127,10 +136,15 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         get
         {
             var index = Languages.ToList().FindIndex(option => string.Equals(option.CultureName, SelectedLanguage, StringComparison.OrdinalIgnoreCase));
-            return Math.Max(0, index);
+            return index;
         }
         set
         {
+            if (isRefreshingLanguages)
+            {
+                return;
+            }
+
             if (value >= 0 && value < Languages.Count)
             {
                 SelectedLanguage = Languages[value].CultureName;
@@ -141,7 +155,13 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     public string? SaveDirectory
     {
         get;
-        set => SetProperty(ref field, CleanPath(value));
+        set
+        {
+            if (SetProperty(ref field, CleanPath(value)))
+            {
+                ApplyLiveSettings();
+            }
+        }
     }
 
     public string? MkvToolnixPath
@@ -152,6 +172,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             if (SetProperty(ref field, CleanPath(value)))
             {
                 MkvToolnixStatus = FormatToolStatus(ValidateTool(value, "mkvextract"));
+                NotifyUnsavedChanges();
             }
         }
     }
@@ -164,6 +185,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             if (SetProperty(ref field, CleanPath(value)))
             {
                 Eac3toStatus = FormatToolStatus(ValidateTool(value, "eac3to"));
+                NotifyUnsavedChanges();
             }
         }
     }
@@ -176,6 +198,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             if (SetProperty(ref field, CleanPath(value)))
             {
                 FfprobeStatus = FormatToolStatus(ValidateTool(value, "ffprobe"));
+                NotifyUnsavedChanges();
             }
         }
     }
@@ -188,6 +211,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             if (SetProperty(ref field, CleanPath(value)))
             {
                 FfmpegStatus = FormatToolStatus(ValidateTool(value, "ffprobe"));
+                NotifyUnsavedChanges();
             }
         }
     }
@@ -195,36 +219,50 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     public int DefaultSaveFormatIndex
     {
         get => defaultSaveFormatIndex;
-        set => SetProperty(ref defaultSaveFormatIndex, Math.Clamp(value, 0, SaveFormats.Length - 1));
+        set
+        {
+            if (SetProperty(ref defaultSaveFormatIndex, Math.Clamp(value, 0, SaveFormats.Length - 1)))
+            {
+                ApplyLiveSettings();
+            }
+        }
     }
 
     public int DefaultXmlLanguageIndex
     {
         get => defaultXmlLanguageIndex;
-        set => SetProperty(ref defaultXmlLanguageIndex, Math.Clamp(value, 0, XmlLanguageOptions.Count - 1));
+        set
+        {
+            if (SetProperty(ref defaultXmlLanguageIndex, Math.Clamp(value, 0, XmlLanguageOptions.Count - 1)))
+            {
+                ApplyLiveSettings();
+            }
+        }
     }
 
     public decimal FrameAccuracyTolerance
     {
         get => frameAccuracyTolerance;
-        set
-        {
-            if (SetProperty(ref frameAccuracyTolerance, MainWindowViewModel.NormalizeFrameAccuracyTolerance(value)))
-            {
-                OnPropertyChanged(nameof(FrameAccuracyToleranceSliderValue));
-                OnPropertyChanged(nameof(FrameAccuracyToleranceDisplayText));
-            }
-        }
+        set => SetFrameAccuracyTolerance(value, updateSlider: true);
     }
 
     public double FrameAccuracyToleranceSliderValue
     {
-        get => (double)FrameAccuracyTolerance;
-        set => FrameAccuracyTolerance = (decimal)value;
+        get => frameAccuracyToleranceSliderValue;
+        set
+        {
+            var bounded = Math.Clamp(value, 0.01d, 0.30d);
+            SetProperty(ref frameAccuracyToleranceSliderValue, bounded);
+            SetFrameAccuracyTolerance((decimal)bounded, updateSlider: false);
+        }
     }
 
     public string FrameAccuracyToleranceDisplayText =>
         FrameAccuracyTolerance.ToString("0.###", CultureInfo.InvariantCulture);
+
+    public bool HasUnsavedChanges =>
+        appSettingsStore is not null && CurrentAppSettings() != savedAppSettings
+        || themeSettingsStore is not null && CurrentThemeSettings() != savedThemeSettings;
 
     public string StatusText
     {
@@ -284,18 +322,12 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
+        liveApplyEnabled = false;
         if (appSettingsStore is not null)
         {
             var settings = await appSettingsStore.LoadAsync(cancellationToken);
-            SelectedLanguage = settings.Language;
-            SaveDirectory = settings.SavingPath;
-            MkvToolnixPath = settings.MkvToolnixPath;
-            Eac3toPath = settings.Eac3toPath;
-            FfprobePath = settings.FfprobePath;
-            FfmpegPath = settings.FfmpegPath;
-            DefaultSaveFormatIndex = SaveFormatIndex(settings.DefaultSaveFormat);
-            DefaultXmlLanguageIndex = XmlLanguageIndex(settings.DefaultXmlLanguage);
-            FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
+            ApplyAppSettingsToFields(settings);
+            savedAppSettings = CurrentAppSettings();
         }
 
         if (themeSettingsStore is not null)
@@ -306,7 +338,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             themeApplicationService?.Apply(theme);
         }
 
+        liveApplyEnabled = true;
+        ApplyCurrentAppSettingsToOwner();
         RefreshToolStatuses();
+        NotifyUnsavedChanges();
         StatusText = localizer.GetString("Settings.Status.Ready");
     }
 
@@ -319,21 +354,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     {
         if (appSettingsStore is not null)
         {
-            var current = await appSettingsStore.LoadAsync(cancellationToken);
-            var settings = current with
-            {
-                Language = SelectedLanguage,
-                SavingPath = SaveDirectory,
-                MkvToolnixPath = MkvToolnixPath,
-                Eac3toPath = Eac3toPath,
-                FfprobePath = FfprobePath,
-                FfmpegPath = FfmpegPath,
-                DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
-                DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
-                FrameAccuracyTolerance = FrameAccuracyTolerance
-            };
+            var settings = CurrentAppSettings();
             await appSettingsStore.SaveAsync(settings, cancellationToken);
-            owner.ApplySettings(settings);
+            savedAppSettings = settings;
         }
 
         if (themeSettingsStore is not null)
@@ -346,6 +369,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         }
 
         RefreshToolStatuses();
+        NotifyUnsavedChanges();
         StatusText = localizer.GetString("Settings.Status.Saved");
     }
 
@@ -358,6 +382,26 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
         ApplyColors(savedThemeSettings);
         themeApplicationService?.Apply(savedThemeSettings);
+        NotifyUnsavedChanges();
+    }
+
+    public void DiscardUnsavedChanges()
+    {
+        isApplyingSnapshot = true;
+        try
+        {
+            ApplyAppSettingsToFields(savedAppSettings);
+            ApplyColors(savedThemeSettings);
+        }
+        finally
+        {
+            isApplyingSnapshot = false;
+        }
+
+        ApplyCurrentAppSettingsToOwner();
+        themeApplicationService?.Apply(savedThemeSettings);
+        RefreshToolStatuses();
+        NotifyUnsavedChanges();
     }
 
     private void ApplyDefaults()
@@ -374,6 +418,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         FrameAccuracyTolerance = defaults.FrameAccuracyTolerance;
         ApplyColors(ThemeColorSettings.Default);
         themeApplicationService?.Apply(ThemeColorSettings.Default);
+        ApplyLiveSettings();
         RefreshToolStatuses();
         StatusText = localizer.GetString("Settings.Status.Reset");
     }
@@ -413,16 +458,36 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             return ValueTask.CompletedTask;
         });
 
-    private List<LanguageOptionViewModel> BuildLanguages()
+    private void RefreshLanguages()
     {
-        var languages = localizer.SupportedLanguages
+        isRefreshingLanguages = true;
+        try
+        {
+            ReplaceLanguages(BuildLanguageOptions());
+            OnPropertyChanged(nameof(Languages));
+        }
+        finally
+        {
+            isRefreshingLanguages = false;
+        }
+
+        OnPropertyChanged(nameof(SelectedLanguageIndex));
+    }
+
+    private List<LanguageOptionViewModel> BuildLanguageOptions() =>
+        localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
                 localizer.GetString(language.DisplayNameKey)))
             .ToList();
-        OnPropertyChanged(nameof(Languages));
-        OnPropertyChanged(nameof(SelectedLanguageIndex));
-        return languages;
+
+    private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> options)
+    {
+        languages.Clear();
+        foreach (var option in options)
+        {
+            languages.Add(option);
+        }
     }
 
     private void RefreshToolStatuses()
@@ -509,6 +574,33 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         return new ThemeColorSettings(values[0], values[1], values[2], values[3], values[4], values[5]);
     }
 
+    private AppSettings CurrentAppSettings() =>
+        savedAppSettings with
+        {
+            Language = SelectedLanguage,
+            SavingPath = SaveDirectory,
+            MkvToolnixPath = MkvToolnixPath,
+            Eac3toPath = Eac3toPath,
+            FfprobePath = FfprobePath,
+            FfmpegPath = FfmpegPath,
+            DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
+            DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
+            FrameAccuracyTolerance = FrameAccuracyTolerance
+        };
+
+    private void ApplyAppSettingsToFields(AppSettings settings)
+    {
+        SelectedLanguage = settings.Language;
+        SaveDirectory = settings.SavingPath;
+        MkvToolnixPath = settings.MkvToolnixPath;
+        Eac3toPath = settings.Eac3toPath;
+        FfprobePath = settings.FfprobePath;
+        FfmpegPath = settings.FfmpegPath;
+        DefaultSaveFormatIndex = SaveFormatIndex(settings.DefaultSaveFormat);
+        DefaultXmlLanguageIndex = XmlLanguageIndex(settings.DefaultXmlLanguage);
+        FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
+    }
+
     private static ThemeColorSettings NormalizeThemeSettings(ThemeColorSettings settings)
     {
         var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
@@ -535,6 +627,21 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         themeApplicationService?.Apply(CurrentThemeSettings());
     }
 
+    private void ApplyLiveSettings()
+    {
+        if (!liveApplyEnabled || isApplyingSnapshot)
+        {
+            return;
+        }
+
+        ApplyCurrentAppSettingsToOwner();
+        NotifyUnsavedChanges();
+    }
+
+    private void ApplyCurrentAppSettingsToOwner() => owner.ApplySettings(CurrentAppSettings());
+
+    private void NotifyUnsavedChanges() => OnPropertyChanged(nameof(HasUnsavedChanges));
+
     private static string NormalizeColor(string? value, string fallback)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -549,6 +656,21 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     }
 
     private static string? CleanPath(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private void SetFrameAccuracyTolerance(decimal value, bool updateSlider)
+    {
+        var normalized = MainWindowViewModel.NormalizeFrameAccuracyTolerance(value);
+        if (SetProperty(ref frameAccuracyTolerance, normalized, nameof(FrameAccuracyTolerance)))
+        {
+            OnPropertyChanged(nameof(FrameAccuracyToleranceDisplayText));
+            ApplyLiveSettings();
+        }
+
+        if (updateSlider)
+        {
+            SetProperty(ref frameAccuracyToleranceSliderValue, (double)normalized, nameof(FrameAccuracyToleranceSliderValue));
+        }
+    }
 
     private static int SaveFormatIndex(string? value)
     {

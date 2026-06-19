@@ -69,6 +69,8 @@
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
       <Setter Property="FontSize" Value="11.2" />
       <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="TextTrimming" Value="None" />
     </Style>
     <Style Selector="Grid.optionCell">
       <Setter Property="MinHeight" Value="27.2" />
@@ -427,7 +429,7 @@
               Classes="optionCell"
               Grid.Row="0"
               Grid.Column="0"
-              ColumnDefinitions="57.6,*"
+              ColumnDefinitions="78,*"
               ColumnSpacing="6.4">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.SaveFormat}" />
           <ComboBox x:Name="FormatBox"
@@ -452,18 +454,26 @@
               Classes="optionCell"
               Grid.Row="0"
               Grid.Column="1"
-              ColumnDefinitions="67.2,*,Auto"
+              ColumnDefinitions="94,*,Auto"
               ColumnSpacing="6.4">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.ChapterName}" />
           <ComboBox x:Name="ChapterNameModeBox"
                     Grid.Column="1"
                     MinWidth="96"
                     HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding ChapterNameModeOptions}"
                     SelectedIndex="{Binding ChapterNameModeIndex}"
                     AutomationProperties.AutomationId="ChapterNameMode">
-            <ComboBoxItem Content="{DynamicResource Main.KeepOriginalName}" />
-            <ComboBoxItem Content="{DynamicResource Main.StandardTemplate}" />
-            <ComboBoxItem Content="{DynamicResource Main.TemplateFile}" />
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+            <ComboBox.SelectionBoxItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.SelectionBoxItemTemplate>
           </ComboBox>
           <Button x:Name="ChapterNameTemplateButton"
                   Grid.Column="2"
@@ -481,7 +491,7 @@
               Classes="optionCell"
               Grid.Row="1"
               Grid.Column="1"
-              ColumnDefinitions="67.2,*"
+              ColumnDefinitions="78,*"
               ColumnSpacing="6.4">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.OrderShift}" />
           <NumericUpDown x:Name="OrderShiftBox"
@@ -500,7 +510,7 @@
               Classes="optionCell"
               Grid.Row="1"
               Grid.Column="0"
-              ColumnDefinitions="72,*"
+              ColumnDefinitions="84,*"
               ColumnSpacing="6.4"
               IsEnabled="{Binding IsXmlLanguageEnabled}"
               HorizontalAlignment="Stretch">
@@ -528,7 +538,7 @@
               Classes="optionCell"
               Grid.Row="2"
               Grid.Column="0"
-              ColumnDefinitions="67.2,70.4,*"
+              ColumnDefinitions="78,78,*"
               ColumnSpacing="6.4">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.Expression}" />
           <CheckBox x:Name="ApplyExpressionBox"

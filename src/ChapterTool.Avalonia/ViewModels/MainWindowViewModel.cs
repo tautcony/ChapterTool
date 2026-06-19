@@ -35,6 +35,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private bool currentInfoBelongsToSelectedClip;
     private ChapterInfoGroup? splitClipGroup;
     private ChapterSourceOption? combinedClipOption;
+    private bool isRefreshingChapterNameModeOptions;
     private bool isClipCombineChecked;
     private bool autoGenerateNames;
     private bool useTemplateNames;
@@ -74,6 +75,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         this.appSettingsStore = appSettingsStore;
         chapterNameTemplateStatus = this.Localizer.GetString("Status.TemplateNotSelected");
         statusText = this.Localizer.GetString("Status.Ready");
+        RefreshChapterNameModeOptions();
         this.Localizer.CultureChanged += (_, _) => RefreshLocalizedState();
         selectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
@@ -170,6 +172,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
     public ObservableCollection<ChapterSourceOption> ClipOptions { get; } = [];
 
     public ObservableCollection<SelectorDisplayOption> ClipDisplayOptions { get; } = [];
+
+    public ObservableCollection<SelectorDisplayOption> ChapterNameModeOptions { get; } = [];
 
     public int SelectedClipIndex
     {
@@ -383,6 +387,11 @@ public sealed class MainWindowViewModel : ObservableViewModel
         }
         set
         {
+            if (isRefreshingChapterNameModeOptions)
+            {
+                return;
+            }
+
             AutoGenerateNames = false;
             UseTemplateNames = value is 1 or 2;
             if (value != 2)
@@ -1357,6 +1366,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     private void RefreshLocalizedState()
     {
+        RefreshChapterNameModeOptions();
+
         if (string.IsNullOrEmpty(chapterNameTemplateText))
         {
             ChapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
@@ -1366,6 +1377,42 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             StatusText = Localizer.Format(currentStatusMessage);
         }
+    }
+
+    private void RefreshChapterNameModeOptions()
+    {
+        var options = new[]
+        {
+            new SelectorDisplayOption("keep-original", string.Empty, Localizer.GetString("Main.KeepOriginalName")),
+            new SelectorDisplayOption("standard-template", string.Empty, Localizer.GetString("Main.StandardTemplate")),
+            new SelectorDisplayOption("template-file", string.Empty, Localizer.GetString("Main.TemplateFile"))
+        };
+
+        isRefreshingChapterNameModeOptions = true;
+        try
+        {
+            if (ChapterNameModeOptions.Count != options.Length)
+            {
+                ChapterNameModeOptions.Clear();
+                foreach (var option in options)
+                {
+                    ChapterNameModeOptions.Add(option);
+                }
+            }
+            else
+            {
+                for (var index = 0; index < options.Length; index++)
+                {
+                    ChapterNameModeOptions[index].UpdateFrom(options[index]);
+                }
+            }
+        }
+        finally
+        {
+            isRefreshingChapterNameModeOptions = false;
+        }
+
+        OnPropertyChanged(nameof(ChapterNameModeIndex));
     }
 
     private void LogImportSummary(string operation, ChapterImportResult result)
@@ -1478,7 +1525,36 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
 public sealed record ChapterCellEdit(int Index, string Value);
 
-public sealed record SelectorDisplayOption(string MainText, string RemarkText, string DisplayText)
+public sealed class SelectorDisplayOption(string mainText, string remarkText, string displayText) : ObservableViewModel
 {
+    private string mainText = mainText;
+    private string remarkText = remarkText;
+    private string displayText = displayText;
+
+    public string MainText
+    {
+        get => mainText;
+        private set => SetProperty(ref mainText, value);
+    }
+
+    public string RemarkText
+    {
+        get => remarkText;
+        private set => SetProperty(ref remarkText, value);
+    }
+
+    public string DisplayText
+    {
+        get => displayText;
+        private set => SetProperty(ref displayText, value);
+    }
+
+    public void UpdateFrom(SelectorDisplayOption option)
+    {
+        MainText = option.MainText;
+        RemarkText = option.RemarkText;
+        DisplayText = option.DisplayText;
+    }
+
     public override string ToString() => DisplayText;
 }

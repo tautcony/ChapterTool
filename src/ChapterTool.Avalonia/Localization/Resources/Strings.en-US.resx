@@ -18,6 +18,9 @@
   <data name="Common.Apply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="Common.Clear" xml:space="preserve">
     <value>Clear</value>
   </data>
@@ -269,6 +272,15 @@
   </data>
   <data name="Settings.UiLanguage" xml:space="preserve">
     <value>UI language</value>
+  </data>
+  <data name="Settings.Unsaved.Discard" xml:space="preserve">
+    <value>Discard</value>
+  </data>
+  <data name="Settings.Unsaved.Message" xml:space="preserve">
+    <value>Settings changes are already applied to this session but have not been saved. Save them before closing?</value>
+  </data>
+  <data name="Settings.Unsaved.Title" xml:space="preserve">
+    <value>Unsaved Settings</value>
   </data>
   <data name="Settings.ValidateTools" xml:space="preserve">
     <value>Check Tools</value>

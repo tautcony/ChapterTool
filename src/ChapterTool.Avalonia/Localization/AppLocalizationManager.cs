@@ -101,23 +101,24 @@ public sealed class AppLocalizationManager : IAppLocalizer
             current = AppLocalizationResources.Fallback;
         }
 
-        foreach (var key in appliedKeys)
+        var activeKeys = new HashSet<string>(AppLocalizationResources.Fallback.Keys, StringComparer.Ordinal);
+        activeKeys.UnionWith(current.Keys);
+        foreach (var key in appliedKeys.Where(key => !activeKeys.Contains(key)).ToArray())
         {
             application.Resources.Remove(key);
         }
 
-        appliedKeys.Clear();
-
         foreach (var (key, value) in AppLocalizationResources.Fallback)
         {
             application.Resources[key] = value;
-            appliedKeys.Add(key);
         }
 
         foreach (var (key, value) in current)
         {
             application.Resources[key] = value;
-            appliedKeys.Add(key);
         }
+
+        appliedKeys.Clear();
+        appliedKeys.UnionWith(activeKeys);
     }
 }

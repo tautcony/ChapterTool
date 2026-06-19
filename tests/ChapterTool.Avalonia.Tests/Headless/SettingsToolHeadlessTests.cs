@@ -52,19 +52,14 @@ public sealed class SettingsToolHeadlessTests
     [AvaloniaFact]
     public async Task Settings_panel_renders_and_captures_screenshot_artifact()
     {
-        var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        using var host = new MainWindowHeadlessTestHost();
-        var appStore = new AppSettingsStore(root, [root]);
-        var themeStore = new ThemeSettingsStore(root, [root]);
-        var localizer = new AppLocalizationManager("en-US");
-        var viewModel = new SettingsToolViewModel(host.ViewModel, appStore, themeStore, localizer);
-        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
-
-        var window = new Window();
-
-        try
+        foreach (var culture in new[] { "en-US", "zh-CN", "ja-JP" })
         {
+            using var host = new MainWindowHeadlessTestHost(
+                localizer: new AppLocalizationManager(culture),
+                appSettings: new AppSettings(Language: culture));
+            var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer);
+            await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
             foreach (var (name, width, height) in new[]
             {
                 ("default", 760d, 520d),
@@ -72,32 +67,69 @@ public sealed class SettingsToolHeadlessTests
                 ("narrow", 560d, 640d)
             })
             {
-                window.Content = new SettingsToolView { DataContext = viewModel };
-                window.Width = width;
-                window.Height = height;
-                window.Show();
-                var layoutManager = window.GetLayoutManager()
-                    ?? throw new InvalidOperationException("Settings window layout manager was not available.");
-                layoutManager.ExecuteInitialLayoutPass();
-                layoutManager.ExecuteLayoutPass();
-
-                var artifactPath = Path.Combine(RepositoryRoot(), "artifacts", $"settings-panel-{name}.png");
-                Directory.CreateDirectory(Path.GetDirectoryName(artifactPath)!);
-                var bitmap = window.CaptureRenderedFrame()
-                    ?? throw new InvalidOperationException($"Settings panel frame '{name}' was not rendered.");
-                await using (var stream = File.Create(artifactPath))
+                var window = new Window
                 {
-                    bitmap.Save(stream);
-                }
+                    Content = new SettingsToolView { DataContext = viewModel },
+                    Width = width,
+                    Height = height
+                };
 
-                Assert.True(File.Exists(artifactPath));
-                Assert.True(new FileInfo(artifactPath).Length > 0);
+                try
+                {
+                    window.Show();
+                    var layoutManager = window.GetLayoutManager()
+                        ?? throw new InvalidOperationException("Settings window layout manager was not available.");
+                    layoutManager.ExecuteInitialLayoutPass();
+                    layoutManager.ExecuteLayoutPass();
+                    var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+                    Assert.Equal("Top", tabControl.TabStripPlacement.ToString());
+                    if (culture == "en-US")
+                    {
+                        var tabHeaders = tabControl.GetVisualDescendants()
+                            .OfType<TextBlock>()
+                            .Where(block => block.Classes.Contains("tabHeader"))
+                            .ToArray();
+                        var generalWidth = tabHeaders.Single(block => block.Text == "General").Bounds.Width;
+                        var externalToolsWidth = tabHeaders.Single(block => block.Text == "External Tools").Bounds.Width;
+                        var outputDefaultsWidth = tabHeaders.Single(block => block.Text == "Output Defaults").Bounds.Width;
+                        Assert.True(externalToolsWidth > generalWidth);
+                        Assert.True(outputDefaultsWidth > externalToolsWidth);
+                    }
+
+                    Assert.All(
+                        window.GetVisualDescendants()
+                            .OfType<ScrollViewer>()
+                            .Where(scrollViewer => scrollViewer.Classes.Contains("settingsPageScroller")),
+                        scrollViewer => Assert.Equal("Disabled", scrollViewer.HorizontalScrollBarVisibility.ToString()));
+                    tabControl.SelectedIndex = 2;
+                    layoutManager.ExecuteLayoutPass();
+
+                    var saveFormatCombo = window.GetVisualDescendants()
+                        .OfType<ComboBox>()
+                        .Single(comboBox => comboBox.Name == "DefaultSaveFormatCombo");
+                    var xmlLanguageCombo = window.GetVisualDescendants()
+                        .OfType<ComboBox>()
+                        .Single(comboBox => comboBox.Name == "DefaultXmlLanguageCombo");
+                    Assert.Equal(xmlLanguageCombo.Bounds.Width, saveFormatCombo.Bounds.Width, precision: 1);
+                    Assert.True(saveFormatCombo.Bounds.Width <= 180.5);
+
+                    var artifactPath = Path.Combine(RepositoryRoot(), "artifacts", $"settings-panel-{culture.ToLowerInvariant()}-{name}.png");
+                    Directory.CreateDirectory(Path.GetDirectoryName(artifactPath)!);
+                    var bitmap = window.CaptureRenderedFrame()
+                        ?? throw new InvalidOperationException($"Settings panel frame '{culture}-{name}' was not rendered.");
+                    await using (var stream = File.Create(artifactPath))
+                    {
+                        bitmap.Save(stream);
+                    }
+
+                    Assert.True(File.Exists(artifactPath));
+                    Assert.True(new FileInfo(artifactPath).Length > 0);
+                }
+                finally
+                {
+                    window.Close();
+                }
             }
-        }
-        finally
-        {
-            window.Close();
-            Directory.Delete(root, recursive: true);
         }
     }
 

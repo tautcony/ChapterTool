@@ -61,6 +61,94 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("new-out", owner.SaveDirectory);
         Assert.Equal("ja-JP", owner.UiLanguage);
         Assert.Equal("#010203", themeStore.Current.BackChange);
+        Assert.False(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task RuntimeSafeSettingsApplyImmediatelyWithoutSavingStore()
+    {
+        var appStore = new FakeAppSettingsStore(new AppSettings(
+            SavingPath: "saved",
+            Language: "en-US",
+            DefaultSaveFormat: "Txt",
+            DefaultXmlLanguage: "und",
+            FrameAccuracyTolerance: 0.10m));
+        var owner = CreateOwner(appStore);
+        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        viewModel.SelectedLanguage = "ja-JP";
+        viewModel.SaveDirectory = "live";
+        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("Json");
+        viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
+        viewModel.FrameAccuracyTolerance = 0.20m;
+
+        Assert.Equal("ja-JP", owner.UiLanguage);
+        Assert.Equal("live", owner.SaveDirectory);
+        Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
+        Assert.Equal("jpn", owner.XmlLanguage);
+        Assert.Equal(0.20m, owner.FrameAccuracyTolerance);
+        Assert.Equal("saved", appStore.Current.SavingPath);
+        Assert.Equal("en-US", appStore.Current.Language);
+        Assert.True(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task SavePersistsLiveSettingsAndClearsUnsavedState()
+    {
+        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US", SavingPath: "saved"));
+        var owner = CreateOwner(appStore);
+        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        viewModel.SelectedLanguage = "ja-JP";
+        viewModel.SaveDirectory = "live";
+        Assert.True(viewModel.HasUnsavedChanges);
+
+        await viewModel.SaveCommand.ExecuteAsync();
+
+        Assert.Equal("ja-JP", appStore.Current.Language);
+        Assert.Equal("live", appStore.Current.SavingPath);
+        Assert.False(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task DiscardUnsavedChangesRestoresSavedRuntimeState()
+    {
+        var appStore = new FakeAppSettingsStore(new AppSettings(
+            SavingPath: "saved",
+            Language: "en-US",
+            DefaultSaveFormat: "Txt",
+            DefaultXmlLanguage: "und",
+            FrameAccuracyTolerance: 0.10m));
+        var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
+        var themeApplication = new FakeThemeApplicationService();
+        var owner = CreateOwner(appStore);
+        var viewModel = new SettingsToolViewModel(
+            owner,
+            appStore,
+            themeStore,
+            new AppLocalizationManager("en-US"),
+            themeApplicationService: themeApplication);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        viewModel.SelectedLanguage = "ja-JP";
+        viewModel.SaveDirectory = "live";
+        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("Json");
+        viewModel.FrameAccuracyTolerance = 0.20m;
+        viewModel.ColorSlots[0].Value = "#123456";
+
+        viewModel.DiscardUnsavedChanges();
+
+        Assert.Equal("en-US", owner.UiLanguage);
+        Assert.Equal("saved", owner.SaveDirectory);
+        Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
+        Assert.Equal("und", owner.XmlLanguage);
+        Assert.Equal(0.10m, owner.FrameAccuracyTolerance);
+        Assert.Equal("#010203", themeApplication.LastApplied?.BackChange);
+        Assert.Equal("en-US", appStore.Current.Language);
+        Assert.Equal("#010203", themeStore.Current.BackChange);
+        Assert.False(viewModel.HasUnsavedChanges);
     }
 
     [Fact]
@@ -119,6 +207,30 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
+    public async Task FrameAccuracyToleranceSliderDoesNotRewriteThumbValueWhenSnapping()
+    {
+        var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
+        var owner = CreateOwner(appStore);
+        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var sliderNotifications = 0;
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SettingsToolViewModel.FrameAccuracyToleranceSliderValue))
+            {
+                sliderNotifications++;
+            }
+        };
+
+        viewModel.FrameAccuracyToleranceSliderValue = 0.141;
+
+        Assert.Equal(0.141, viewModel.FrameAccuracyToleranceSliderValue, precision: 3);
+        Assert.Equal(0.15m, viewModel.FrameAccuracyTolerance);
+        Assert.Equal("0.15", viewModel.FrameAccuracyToleranceDisplayText);
+        Assert.Equal(1, sliderNotifications);
+    }
+
+    [Fact]
     public void SaveFormatOptionsExposeSingleQpfileEntry()
     {
         var viewModel = new SettingsToolViewModel(
@@ -166,6 +278,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.ColorSlots[0].Value = "#123456";
 
         Assert.Equal("#123456", themeApplication.LastApplied?.BackChange);
+        Assert.True(viewModel.HasUnsavedChanges);
     }
 
     [Fact]
@@ -189,6 +302,7 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("#010203", viewModel.ColorSlots[0].Value);
         Assert.Equal("#010203", themeApplication.LastApplied?.BackChange);
         Assert.Equal("#010203", themeStore.Current.BackChange);
+        Assert.False(viewModel.HasUnsavedChanges);
     }
 
     [Fact]

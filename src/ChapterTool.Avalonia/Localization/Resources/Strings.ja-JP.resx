@@ -18,6 +18,9 @@
   <data name="Common.Apply" xml:space="preserve">
     <value>適用</value>
   </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
   <data name="Common.Clear" xml:space="preserve">
     <value>クリア</value>
   </data>
@@ -269,6 +272,15 @@
   </data>
   <data name="Settings.UiLanguage" xml:space="preserve">
     <value>UI 言語</value>
+  </data>
+  <data name="Settings.Unsaved.Discard" xml:space="preserve">
+    <value>破棄</value>
+  </data>
+  <data name="Settings.Unsaved.Message" xml:space="preserve">
+    <value>設定の変更は現在のセッションに適用済みですが、まだ保存されていません。閉じる前に保存しますか？</value>
+  </data>
+  <data name="Settings.Unsaved.Title" xml:space="preserve">
+    <value>未保存の設定</value>
   </data>
   <data name="Settings.ValidateTools" xml:space="preserve">
     <value>ツールを確認</value>

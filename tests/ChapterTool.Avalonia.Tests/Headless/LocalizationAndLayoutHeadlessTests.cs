@@ -19,6 +19,7 @@ public sealed class LocalizationAndLayoutHeadlessTests
 
         Assert.True(host.ContainsRenderedText("Load"));
         Assert.True(host.ContainsRenderedText("Save"));
+        Assert.Equal("Keep original", ChapterNameModeSelectionText(host));
         Assert.Equal("Loaded 1 chapters", host.ViewModel.StatusText);
 
         localizer.SetCulture("ja-JP");
@@ -26,18 +27,30 @@ public sealed class LocalizationAndLayoutHeadlessTests
 
         Assert.True(host.ContainsRenderedText("読み込み"));
         Assert.True(host.ContainsRenderedText("保存"));
+        Assert.Equal("元の名前を保持", ChapterNameModeSelectionText(host));
         Assert.Equal("1 個のチャプターを読み込みました", host.ViewModel.StatusText);
+
+        localizer.SetCulture("zh-CN");
+        await host.LayoutAsync();
+
+        Assert.Equal("保留原名", ChapterNameModeSelectionText(host));
 
         var languageWindow = await MainWindowHeadlessTestHost.RenderToolAsync(new LanguageToolView(), new LanguageToolViewModel(host.ViewModel));
         try
         {
-            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(languageWindow, "言語"));
-            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(languageWindow, "適用"));
+            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(languageWindow, "语言"));
+            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(languageWindow, "应用"));
         }
         finally
         {
             languageWindow.Close();
         }
+    }
+
+    private static string ChapterNameModeSelectionText(MainWindowHeadlessTestHost host)
+    {
+        var selectedItem = Assert.IsType<SelectorDisplayOption>(host.RequiredControl<ComboBox>("ChapterNameModeBox").SelectedItem);
+        return selectedItem.DisplayText;
     }
 
     [AvaloniaFact]
@@ -52,6 +65,41 @@ public sealed class LocalizationAndLayoutHeadlessTests
         var rendered = MainWindowHeadlessTestHost.RenderedTexts(host.Window);
         Assert.DoesNotContain(rendered, text => text.StartsWith("Main.", StringComparison.Ordinal) || text.StartsWith("Common.", StringComparison.Ordinal));
         Assert.DoesNotContain(rendered, text => text.Contains("杞藉叆", StringComparison.Ordinal) || text.Contains("淇濆瓨", StringComparison.Ordinal));
+    }
+
+    [AvaloniaFact]
+    public async Task English_main_window_option_labels_have_room_at_default_and_narrow_widths()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        await host.LoadAsync("movie.txt");
+
+        foreach (var size in new[] { UiTestSize.Default, UiTestSize.Narrow })
+        {
+            await host.LayoutAtAsync(size);
+
+            foreach (var groupName in new[]
+            {
+                "FormatOptionsGroup",
+                "ChapterNameOptionsGroup",
+                "OrderShiftOptionsGroup",
+                "XmlLanguageOptionsGroup",
+                "ExpressionOptionsGroup"
+            })
+            {
+                var group = host.RequiredControl<Grid>(groupName);
+                var label = MainWindowHeadlessTestHost.RequiredDescendant<TextBlock>(
+                    group,
+                    block => block.Classes.Contains("optionLabel"),
+                    $"{groupName} label");
+
+                Assert.True(label.Bounds.Width > 0, $"{groupName} label width was {label.Bounds.Width}.");
+                Assert.True(label.Bounds.Height >= 14, $"{groupName} label height was {label.Bounds.Height}.");
+            }
+
+            var artifact = await host.CaptureArtifactAsync($"main-window-en-{size.ToString().ToLowerInvariant()}.png");
+            Assert.True(File.Exists(artifact));
+            Assert.True(new FileInfo(artifact).Length > 0);
+        }
     }
 
     [AvaloniaFact]
@@ -104,7 +152,8 @@ public sealed class LocalizationAndLayoutHeadlessTests
                 Assert.True(File.Exists(artifact));
                 Assert.True(new FileInfo(artifact).Length > 0);
                 Assert.True(MainWindowHeadlessTestHost.Descendants<TabControl>(window).Single().Bounds.Width > 0);
-                Assert.True(MainWindowHeadlessTestHost.Descendants<Button>(window).All(button => button.Bounds.Height == 0 || button.Bounds.Height >= 24));
+                Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.SaveCommand && button.Bounds.Height >= 24);
+                Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.ResetCommand && button.Bounds.Height >= 24);
             }
         }
         finally

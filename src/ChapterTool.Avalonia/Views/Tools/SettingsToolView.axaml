@@ -11,6 +11,10 @@
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Margin" Value="0,0,0,8" />
     </Style>
+    <Style Selector="TextBlock.tabHeader">
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="Margin" Value="2,0" />
+    </Style>
     <Style Selector="TextBlock.label">
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="TextWrapping" Value="Wrap" />
@@ -26,6 +30,10 @@
     <Style Selector="Slider.toleranceSlider">
       <Setter Property="MinHeight" Value="36" />
       <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ComboBox.outputDefaultCombo">
+      <Setter Property="Width" Value="180" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
     <Style Selector="TextBlock.valueBadge">
       <Setter Property="MinWidth" Value="46" />
@@ -48,8 +56,11 @@
 
   <Grid RowDefinitions="*,Auto" Margin="16" RowSpacing="12">
     <TabControl Grid.Row="0">
-      <TabItem Header="{DynamicResource Settings.General}">
-        <ScrollViewer>
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.General}" />
+        </TabItem.Header>
+        <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="4,12,12,4">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.General}" />
             <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="12">
@@ -80,8 +91,11 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="{DynamicResource Settings.ExternalTools}">
-        <ScrollViewer>
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.ExternalTools}" />
+        </TabItem.Header>
+        <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="4,12,12,4">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.ExternalTools}" />
             <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
@@ -151,14 +165,28 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="{DynamicResource Settings.OutputDefaults}">
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.OutputDefaults}" />
+        </TabItem.Header>
+        <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Spacing="12" Margin="4,12,12,4">
           <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.OutputDefaults}" />
           <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DefaultSaveFormat}" />
-            <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding SaveFormatOptions}" SelectedIndex="{Binding DefaultSaveFormatIndex}" />
+            <ComboBox x:Name="DefaultSaveFormatCombo"
+                      Grid.Row="0"
+                      Grid.Column="1"
+                      Classes="outputDefaultCombo"
+                      ItemsSource="{Binding SaveFormatOptions}"
+                      SelectedIndex="{Binding DefaultSaveFormatIndex}" />
             <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DefaultXmlLanguage}" />
-            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding XmlLanguageOptions}" SelectedIndex="{Binding DefaultXmlLanguageIndex}" />
+            <ComboBox x:Name="DefaultXmlLanguageCombo"
+                      Grid.Row="1"
+                      Grid.Column="1"
+                      Classes="outputDefaultCombo"
+                      ItemsSource="{Binding XmlLanguageOptions}"
+                      SelectedIndex="{Binding DefaultXmlLanguageIndex}" />
             <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
             <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
               <Slider Grid.Column="0"
@@ -175,10 +203,14 @@
             </Grid>
           </Grid>
         </StackPanel>
+        </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="{DynamicResource Settings.Appearance}">
-        <ScrollViewer>
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.Appearance}" />
+        </TabItem.Header>
+        <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="4,12,12,4">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.Appearance}" />
             <ItemsControl ItemsSource="{Binding ColorSlots}">
@@ -199,7 +231,10 @@
         </ScrollViewer>
       </TabItem>
 
-      <TabItem Header="{DynamicResource Settings.Platform}">
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.Platform}" />
+        </TabItem.Header>
         <StackPanel Spacing="12" Margin="4,12,12,4">
           <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.Platform}" />
           <TextBlock Text="{DynamicResource Prompt.FileAssociationUnsupported}" TextWrapping="Wrap" />

@@ -14,6 +14,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
     private readonly ISettingsStore<ThemeColorSettings>? themeSettingsStore;
     private readonly IThemeApplicationService? themeApplicationService;
+    private readonly ISettingsCloseConfirmationService settingsCloseConfirmationService;
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
@@ -26,19 +27,30 @@ public sealed class AvaloniaWindowService : IWindowService
         IThemeApplicationService? themeApplicationService = null,
         IAppLocalizer? localizer = null,
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
-        IExternalToolLocator? externalToolLocator = null)
+        IExternalToolLocator? externalToolLocator = null,
+        ISettingsCloseConfirmationService? settingsCloseConfirmationService = null)
     {
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
         this.themeApplicationService = themeApplicationService;
         this.localizer = localizer ?? new AppLocalizationManager();
+        this.settingsCloseConfirmationService = settingsCloseConfirmationService
+            ?? new AvaloniaSettingsCloseConfirmationService(this.localizer);
         this.settingsPickerFactory = settingsPickerFactory;
         this.externalToolLocator = externalToolLocator;
         this.localizer.CultureChanged += (_, _) =>
         {
             foreach (var (id, window) in windows)
             {
-                Refresh(window, id, parameters.GetValueOrDefault(id));
+                window.Title = Title(id);
+                if (window.Content is TextBlock placeholder)
+                {
+                    placeholder.Text = PlaceholderText(id);
+                }
+                else if (window.Content is null)
+                {
+                    Refresh(window, id, parameters.GetValueOrDefault(id));
+                }
             }
         };
     }
@@ -63,16 +75,38 @@ public sealed class AvaloniaWindowService : IWindowService
             MaxWidth = 1100,
             MaxHeight = 840
         };
+        var closeAccepted = false;
         Refresh(window, windowId, parameter);
         parameters[windowId] = parameter;
-        window.Closed += (_, _) =>
+        window.Closing += async (sender, args) =>
         {
-            if (window.Content is SettingsToolView { DataContext: SettingsToolViewModel settings })
+            if (closeAccepted || window.Content is not SettingsToolView { DataContext: SettingsToolViewModel settings } || !settings.HasUnsavedChanges)
             {
-                settings.DiscardUnsavedAppearanceChanges();
+                return;
             }
 
+            args.Cancel = true;
+            var action = await settingsCloseConfirmationService.ConfirmCloseAsync(window, CancellationToken.None);
+            switch (action)
+            {
+                case SettingsCloseAction.Save:
+                    await settings.SaveCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
+                    closeAccepted = true;
+                    ((Window)sender!).Close();
+                    break;
+                case SettingsCloseAction.Discard:
+                    settings.DiscardUnsavedChanges();
+                    closeAccepted = true;
+                    ((Window)sender!).Close();
+                    break;
+                case SettingsCloseAction.Cancel:
+                    break;
+            }
+        };
+        window.Closed += (_, _) =>
+        {
             windows.Remove(windowId);
+            parameters.Remove(windowId);
         };
         windows[windowId] = window;
         window.Show();
@@ -82,9 +116,8 @@ public sealed class AvaloniaWindowService : IWindowService
     public ValueTask HideAsync(string windowId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (windows.Remove(windowId, out var window))
+        if (windows.TryGetValue(windowId, out var window))
         {
-            parameters.Remove(windowId);
             window.Close();
         }
 
@@ -97,7 +130,7 @@ public sealed class AvaloniaWindowService : IWindowService
         parameters[id] = parameter;
         window.Content = parameter is MainWindowViewModel viewModel
             ? CreateContent(window, id, viewModel)
-            : Placeholder(Title(id));
+            : Placeholder(PlaceholderText(id));
     }
 
     private Control CreateContent(Window window, string id, MainWindowViewModel viewModel) =>
@@ -130,10 +163,10 @@ public sealed class AvaloniaWindowService : IWindowService
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
             "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel) },
             "template-names" => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(viewModel) },
-            "file-association" => Placeholder(localizer.GetString("Prompt.FileAssociationUnsupported")),
+            "file-association" => Placeholder(PlaceholderText(id)),
             "zones" => new TextToolView { DataContext = new TextToolViewModel(viewModel.CreateZonesText) },
             "forward-shift" => new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(viewModel) },
-            _ => Placeholder(Title(id))
+            _ => Placeholder(PlaceholderText(id))
         };
 
     private static TextBlock Placeholder(string text) =>
@@ -158,6 +191,12 @@ public sealed class AvaloniaWindowService : IWindowService
         "zones" => localizer.GetString("Tool.Zones.Title"),
         "forward-shift" => localizer.GetString("Tool.ForwardShift.Title"),
         _ => id
+    };
+
+    private string PlaceholderText(string id) => id switch
+    {
+        "file-association" => localizer.GetString("Prompt.FileAssociationUnsupported"),
+        _ => Title(id)
     };
 
 }
