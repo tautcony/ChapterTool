@@ -56,6 +56,21 @@ public sealed class SettingsMigrationTests
     }
 
     [Fact]
+    public async Task App_settings_cache_returns_saved_values_without_stale_reads()
+    {
+        var root = CreateTempDirectory();
+        var store = new AppSettingsStore(root, [root]);
+
+        var initial = await store.LoadAsync(TestContext.Current.CancellationToken);
+        await store.SaveAsync(new AppSettings(Language: "zh-CN", FfprobePath: @"C:\Tools\ffprobe.exe"), TestContext.Current.CancellationToken);
+        var saved = await store.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("", initial.Language);
+        Assert.Equal("zh-CN", saved.Language);
+        Assert.Equal(@"C:\Tools\ffprobe.exe", saved.FfprobePath);
+    }
+
+    [Fact]
     public async Task Theme_settings_loads_legacy_color_config_in_six_slot_order()
     {
         var root = CreateTempDirectory();

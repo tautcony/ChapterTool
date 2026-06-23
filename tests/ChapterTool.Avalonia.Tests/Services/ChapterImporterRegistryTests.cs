@@ -1,4 +1,3 @@
-using ChapterTool.Avalonia.Composition;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
@@ -53,6 +52,21 @@ public sealed class ChapterImporterRegistryTests
 
         Assert.NotNull(importer);
         Assert.Equal(expectedTypeName, importer.GetType().Name);
+    }
+
+    [Theory]
+    [InlineData("movie.txt")]
+    [InlineData("movie.xml")]
+    [InlineData("movie.mkv")]
+    [InlineData("movie.mp4")]
+    public void RuntimeRegistryReusesResolvedImporterInstances(string fileName)
+    {
+        var registry = CreateRealRegistry();
+
+        var first = registry.Resolve(fileName);
+        var second = registry.Resolve(fileName);
+
+        Assert.Same(first, second);
     }
 
     [Theory]
@@ -169,10 +183,7 @@ public sealed class ChapterImporterRegistryTests
     }
 
     private static RuntimeChapterImporterRegistry CreateRealRegistry()
-    {
-        var composition = new AppCompositionRoot(settingsDirectory: Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
-        return (RuntimeChapterImporterRegistry)composition.CreateChapterImporterRegistry();
-    }
+        => RuntimeImportTestFactory.CreateRegistry();
 
     private static RuntimeChapterImporterRegistry CreateFakeRegistry(MediaChapterReadResult ffprobeResult, Mp4ChapterReadResult mp4Result)
     {

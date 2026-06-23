@@ -177,6 +177,76 @@ public sealed class ExternalToolLocatorTests
     }
 
     [Fact]
+    public async Task LocateAsync_uses_updated_settings_after_configured_path_is_cleared_on_existing_locator()
+    {
+        var root = CreateTempDirectory();
+        var configuredDirectory = Path.Combine(root, "configured");
+        Directory.CreateDirectory(configuredDirectory);
+        var configuredToolPath = Path.Combine(configuredDirectory, ToolExecutable("ffprobe"));
+        await File.WriteAllTextAsync(configuredToolPath, "");
+        var searchDirectory = Path.Combine(root, "search");
+        Directory.CreateDirectory(searchDirectory);
+        var searchToolPath = Path.Combine(searchDirectory, ToolExecutable("ffprobe"));
+        await File.WriteAllTextAsync(searchToolPath, "");
+        var settingsStore = new AppSettingsStore(root, [root]);
+        await settingsStore.SaveAsync(new AppSettings(FfprobePath: configuredDirectory), TestContext.Current.CancellationToken);
+        var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [searchDirectory], new FakeMkvToolNixInstallProbe());
+
+        var configuredLocation = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+        await settingsStore.SaveAsync(new AppSettings(FfprobePath: null), TestContext.Current.CancellationToken);
+        var searchLocation = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+
+        Assert.Equal(configuredToolPath, configuredLocation.Path);
+        Assert.Equal(searchToolPath, searchLocation.Path);
+    }
+
+    [Fact]
+    public async Task LocateAsync_reuses_cached_found_location()
+    {
+        var root = CreateTempDirectory();
+        var toolPath = Path.Combine(root, ToolExecutable("ffprobe"));
+        await File.WriteAllTextAsync(toolPath, "");
+        var provider = new CountingDefaultCandidateProvider(toolPath);
+        var locator = new ExternalToolLocator(
+            new AppSettingsStore(root, [root]),
+            [],
+            new FakeMkvToolNixInstallProbe(),
+            provider);
+
+        var first = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+        var second = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+
+        Assert.Equal(toolPath, first.Path);
+        Assert.Equal(toolPath, second.Path);
+        Assert.Equal(1, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task LocateAsync_rescans_when_cached_found_location_disappears()
+    {
+        var root = CreateTempDirectory();
+        var firstDirectory = Path.Combine(root, "first");
+        var secondDirectory = Path.Combine(root, "second");
+        Directory.CreateDirectory(firstDirectory);
+        Directory.CreateDirectory(secondDirectory);
+        var firstToolPath = Path.Combine(firstDirectory, ToolExecutable("ffprobe"));
+        var secondToolPath = Path.Combine(secondDirectory, ToolExecutable("ffprobe"));
+        await File.WriteAllTextAsync(firstToolPath, "");
+        await File.WriteAllTextAsync(secondToolPath, "");
+        var locator = CreateLocatorWithoutDefaultCandidates(
+            new AppSettingsStore(root, [root]),
+            [firstDirectory, secondDirectory],
+            new FakeMkvToolNixInstallProbe());
+
+        var first = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+        File.Delete(firstToolPath);
+        var second = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+
+        Assert.Equal(firstToolPath, first.Path);
+        Assert.Equal(secondToolPath, second.Path);
+    }
+
+    [Fact]
     public async Task LocateAsync_uses_configured_ffprobe_directory()
     {
         var root = CreateTempDirectory();
@@ -298,6 +368,17 @@ public sealed class ExternalToolLocatorTests
     private sealed class NoDefaultCandidateProvider : IExternalToolDefaultCandidateProvider
     {
         public IEnumerable<string> FindCandidates(string toolId, string executableName) => [];
+    }
+
+    private sealed class CountingDefaultCandidateProvider(params string[] candidates) : IExternalToolDefaultCandidateProvider
+    {
+        public int CallCount { get; private set; }
+
+        public IEnumerable<string> FindCandidates(string toolId, string executableName)
+        {
+            CallCount++;
+            return candidates;
+        }
     }
 
     private sealed class FakeWindowsRegistryInstallProbe(IReadOnlyList<string> values) : IWindowsRegistryInstallProbe

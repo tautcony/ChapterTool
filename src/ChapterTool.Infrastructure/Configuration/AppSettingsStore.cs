@@ -12,21 +12,39 @@ public sealed partial class AppSettingsStore(string settingsDirectory, IReadOnly
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     private readonly IReadOnlyList<string> legacyDirectories = legacyDirectories ?? [settingsDirectory];
+    private readonly Lock syncRoot = new();
+    private AppSettings? cachedSettings;
+    private SettingsFileState cachedFileState;
 
     public async ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken)
     {
         var currentPath = Path.Combine(settingsDirectory, CurrentFileName);
+        var fileState = GetFileState(currentPath, legacyDirectories);
+
+        lock (syncRoot)
+        {
+            if (cachedSettings is not null && cachedFileState == fileState)
+            {
+                return cachedSettings;
+            }
+        }
+
+        AppSettings settings;
         if (File.Exists(currentPath))
         {
             try
             {
                 await using var stream = File.OpenRead(currentPath);
-                return await JsonSerializer.DeserializeAsync<AppSettings>(stream, JsonOptions, cancellationToken)
+                settings = await JsonSerializer.DeserializeAsync<AppSettings>(stream, JsonOptions, cancellationToken)
                     ?? new AppSettings();
+                Cache(settings, fileState);
+                return settings;
             }
             catch (JsonException)
             {
-                return new AppSettings();
+                settings = new AppSettings();
+                Cache(settings, fileState);
+                return settings;
             }
         }
 
@@ -41,11 +59,14 @@ public sealed partial class AppSettingsStore(string settingsDirectory, IReadOnly
             var migrated = await TryLoadLegacyAsync(legacyPath, cancellationToken);
             if (migrated is not null)
             {
+                Cache(migrated, fileState);
                 return migrated;
             }
         }
 
-        return new AppSettings();
+        settings = new AppSettings();
+        Cache(settings, fileState);
+        return settings;
     }
 
     public async ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken)
@@ -62,6 +83,7 @@ public sealed partial class AppSettingsStore(string settingsDirectory, IReadOnly
             }
 
             File.Move(tempPath, currentPath, overwrite: true);
+            Cache(settings, GetFileState(currentPath, legacyDirectories));
         }
         catch
         {
@@ -105,6 +127,43 @@ public sealed partial class AppSettingsStore(string settingsDirectory, IReadOnly
 
     private static string? Get(IReadOnlyDictionary<string, string> values, string key) =>
         values.GetValueOrDefault(key);
+
+    private void Cache(AppSettings settings, SettingsFileState fileState)
+    {
+        lock (syncRoot)
+        {
+            cachedSettings = settings;
+            cachedFileState = fileState;
+        }
+    }
+
+    private static SettingsFileState GetFileState(string currentPath, IReadOnlyList<string> legacyDirectories)
+    {
+        var current = GetFileStamp(currentPath);
+        FileStamp legacy = default;
+        foreach (var legacyDirectory in legacyDirectories)
+        {
+            legacy = GetFileStamp(Path.Combine(legacyDirectory, LegacyFileName));
+            if (legacy.Exists)
+            {
+                break;
+            }
+        }
+
+        return new SettingsFileState(current, legacy);
+    }
+
+    private static FileStamp GetFileStamp(string path)
+    {
+        var file = new FileInfo(path);
+        return file.Exists
+            ? new FileStamp(true, file.LastWriteTimeUtc, file.Length)
+            : default;
+    }
+
+    private readonly record struct SettingsFileState(FileStamp Current, FileStamp Legacy);
+
+    private readonly record struct FileStamp(bool Exists, DateTime LastWriteTimeUtc, long Length);
 
     private static WindowLocation? ParseLocation(string? value)
     {

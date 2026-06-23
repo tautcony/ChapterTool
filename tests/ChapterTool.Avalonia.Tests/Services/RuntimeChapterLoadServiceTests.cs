@@ -1,4 +1,3 @@
-using ChapterTool.Avalonia.Composition;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
@@ -309,8 +308,7 @@ public sealed class RuntimeChapterLoadServiceTests
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Severity} {diagnostic.Code}: {diagnostic.Message}"));
 
     private static IChapterLoadService CreateService() =>
-        new AppCompositionRoot(settingsDirectory: Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")))
-            .CreateChapterLoadService();
+        RuntimeImportTestFactory.CreateLoadService();
 
     private sealed class StubRegistry(IChapterImporter primary, IChapterImporter? fallback) : IChapterImporterRegistry
     {

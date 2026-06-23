@@ -10,21 +10,33 @@ public sealed class ExternalToolLocator(
     IExternalToolDefaultCandidateProvider? defaultCandidateProvider = null)
     : IExternalToolLocator
 {
+    private static readonly TimeSpan MissingResultCacheDuration = TimeSpan.FromSeconds(2);
+
     private readonly IMkvToolNixInstallProbe mkvToolNixInstallProbe = mkvToolNixInstallProbe ?? MkvToolNixInstallProbe.CreateDefault();
     private readonly IExternalToolDefaultCandidateProvider defaultCandidateProvider =
         defaultCandidateProvider ?? ExternalToolDefaultCandidateProvider.Instance;
+    private readonly Lock cacheSyncRoot = new();
+    private readonly Dictionary<ToolCacheKey, CachedToolLocation> locationCache = [];
 
     public async ValueTask<ExternalToolLocation> LocateAsync(string toolId, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var settings = await settingsStore.LoadAsync(cancellationToken);
         var configuredPath = GetConfiguredPath(toolId, settings);
+        var cacheKey = new ToolCacheKey(toolId.ToLowerInvariant(), configuredPath);
+        if (TryGetCachedLocation(cacheKey) is { } cached)
+        {
+            return cached;
+        }
+
         var executableName = ExternalToolPathResolver.ExecutableName(toolId);
 
         foreach (var candidate in ExternalToolPathResolver.ExpandConfiguredCandidates(configuredPath, executableName))
         {
             if (File.Exists(candidate))
             {
-                return new ExternalToolLocation(true, candidate);
+                return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
         }
 
@@ -33,7 +45,7 @@ public sealed class ExternalToolLocator(
             var candidate = Path.Combine(directory, executableName);
             if (File.Exists(candidate))
             {
-                return new ExternalToolLocation(true, candidate);
+                return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
         }
 
@@ -42,7 +54,7 @@ public sealed class ExternalToolLocator(
             cancellationToken.ThrowIfCancellationRequested();
             if (File.Exists(candidate))
             {
-                return new ExternalToolLocation(true, candidate);
+                return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
         }
 
@@ -53,16 +65,16 @@ public sealed class ExternalToolLocator(
                 cancellationToken.ThrowIfCancellationRequested();
                 if (File.Exists(candidate))
                 {
-                    return new ExternalToolLocation(true, candidate);
+                    return Cache(cacheKey, new ExternalToolLocation(true, candidate));
                 }
             }
         }
 
-        return new ExternalToolLocation(
+        return Cache(cacheKey, new ExternalToolLocation(
             false,
             null,
             "MissingDependency",
-            $"External tool '{toolId}' was not found.");
+            $"External tool '{toolId}' was not found."));
     }
 
     private static string? GetConfiguredPath(string toolId, AppSettings settings) =>
@@ -74,4 +86,47 @@ public sealed class ExternalToolLocator(
             _ => null
         };
 
+    private ExternalToolLocation? TryGetCachedLocation(ToolCacheKey key)
+    {
+        lock (cacheSyncRoot)
+        {
+            if (!locationCache.TryGetValue(key, out var cached))
+            {
+                return null;
+            }
+
+            if (cached.Location.Found)
+            {
+                if (!string.IsNullOrWhiteSpace(cached.Location.Path) && File.Exists(cached.Location.Path))
+                {
+                    return cached.Location;
+                }
+
+                locationCache.Remove(key);
+                return null;
+            }
+
+            if (DateTime.UtcNow - cached.CachedAtUtc <= MissingResultCacheDuration)
+            {
+                return cached.Location;
+            }
+
+            locationCache.Remove(key);
+            return null;
+        }
+    }
+
+    private ExternalToolLocation Cache(ToolCacheKey key, ExternalToolLocation location)
+    {
+        lock (cacheSyncRoot)
+        {
+            locationCache[key] = new CachedToolLocation(location, DateTime.UtcNow);
+        }
+
+        return location;
+    }
+
+    private readonly record struct ToolCacheKey(string ToolId, string? ConfiguredPath);
+
+    private readonly record struct CachedToolLocation(ExternalToolLocation Location, DateTime CachedAtUtc);
 }
