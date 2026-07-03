@@ -202,3 +202,7 @@ dist/windows/*.config
 dist/windows/*.dll
 dist/windows/en-US/
 dist/windows/LICENSE
+artifacts/
+.idea/
+
+log*.txt

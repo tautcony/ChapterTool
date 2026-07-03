@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ChapterTool icon">
+  <rect width="64" height="64" rx="8" fill="#1f2933"/>
+  <path d="M14 16h36v6H14zM14 29h36v6H14zM14 42h24v6H14z" fill="#f7c948"/>
+  <path d="M44 40l8 5-8 5z" fill="#36b37e"/>
+</svg>

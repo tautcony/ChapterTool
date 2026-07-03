@@ -1,0 +1,46 @@
+{
+  "chapters": [
+    {
+      "id": 0,
+      "time_base": "1/1000",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 5000,
+      "end_time": "5.000000",
+      "tags": {
+        "title": "Has end"
+      }
+    },
+    {
+      "id": 1,
+      "time_base": "1/1000",
+      "start": 5000,
+      "start_time": "5.000000",
+      "tags": {
+        "title": "Missing end"
+      }
+    },
+    {
+      "id": 2,
+      "time_base": "1/1000",
+      "start": 10000,
+      "start_time": "10.000000",
+      "end": 20000,
+      "end_time": "20.000000",
+      "tags": {
+        "title": "Has end again"
+      }
+    },
+    {
+      "id": 3,
+      "time_base": "1/1000",
+      "start": 20000,
+      "start_time": "20.000000",
+      "end": 20000,
+      "end_time": "20.000000",
+      "tags": {
+        "title": "End equals start"
+      }
+    }
+  ]
+}

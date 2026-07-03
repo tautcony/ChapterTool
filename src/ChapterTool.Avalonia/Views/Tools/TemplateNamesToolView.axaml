@@ -1,0 +1,12 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             x:Class="ChapterTool.Avalonia.Views.Tools.TemplateNamesToolView"
+             x:DataType="vm:TemplateNamesToolViewModel"
+             x:CompileBindings="True">
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock Text="{DynamicResource Tool.TemplateNames.Title}" FontSize="18" />
+    <CheckBox Content="{DynamicResource Tool.TemplateNames.UseStandard}" IsChecked="{Binding UseTemplateNames}" />
+    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
+  </StackPanel>
+</UserControl>

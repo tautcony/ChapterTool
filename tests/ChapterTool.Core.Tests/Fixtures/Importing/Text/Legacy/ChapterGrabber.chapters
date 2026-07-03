@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<chapterInfo xml:lang="eng" version="3" extractor="ChapterGrabber 5.4" xmlns="http://jvance.com/2008/ChapterGrabber">
+  <title>Terminator</title>
+  <source>
+    <name>K:\BDMV\PLAYLIST\00019.mpls</name>
+    <type>Blu-Ray</type>
+    <volume>T2_FEATURES</volume>
+    <hash>e52c874e3b271876789123165b2df80b</hash>
+    <fps>23.976023976023978</fps>
+    <duration>02:36:08.1918666</duration>
+  </source>
+  <chapters>
+    <chapter time="00:00:00" name="Prologue" />
+    <chapter time="00:00:52.0936888" name="Future War" />
+    <chapter time="00:03:38.3014000" name="Main Titles" />
+    <chapter time="00:05:36.8364888" name="Termination Arrives" />
+    <chapter time="00:06:48.4080000" name="Biker Bar" />
+    <chapter time="00:09:11.2173333" name="Bad to the Bone" />
+    <chapter time="00:10:35.5515777" name="T-1000 Arrives" />
+    <chapter time="00:12:31.5007333" name="Meet John Connor" />
+    <chapter time="00:13:40.1109555" name="Prologue" />
+    <chapter time="00:15:31.7224444" name="Future War" />
+    <chapter time="00:16:32.4080666" name="Main Titles" />
+    <chapter time="00:17:41.3102222" name="Termination Arrives" />
+    <chapter time="00:19:12.1509777" name="Biker Bar" />
+    <chapter time="00:22:29.2228444" name="Bad to the Bone" />
+    <chapter time="00:25:56.4715555" name="T-1000 Arrives" />
+    <chapter time="00:27:29.9816444" name="Meet John Connor" />
+    <chapter time="00:28:53.1897555" name="Sarah Connor" />
+    <chapter time="00:29:49.1623555" name="T-1000 Visits the Voights" />
+    <chapter time="00:31:23.5483111" name="Easy Money" />
+    <chapter time="00:33:59.5791777" name="Sanity Review" />
+    <chapter time="00:35:12.2350888" name="Cyberdyne Systems" />
+    <chapter time="00:38:50.8284666" name="Model Systems" />
+    <chapter time="00:41:35.4095111" name="Target Acquired" />
+    <chapter time="00:44:16.6539111" name="The Galleria" />
+    <chapter time="00:46:12.7699111" name="Zeroed in the Corridor" />
+    <chapter time="00:47:29.0961333" name="Into the Streets" />
+    <chapter time="00:51:15.1553111" name="Canal Chase" />
+    <chapter time="00:54:27.6392666" name="Time Out" />
+    <chapter time="00:56:11.7015555" name="Never This Nice" />
+    <chapter time="00:57:49.6744222" name="Photos" />
+    <chapter time="00:58:33.2179333" name="Mission Parameters" />
+    <chapter time="00:59:42.7040222" name="Pescadero State Hospital" />
+    <chapter time="01:01:52.0415555" name="Lewis the Guard" />
+    <chapter time="01:03:18.5863555" name="Sarah Breaks Out" />
+    <chapter time="01:07:52.3181333" name="215 Bones" />
+    <chapter time="01:09:28.0804666" name="I Swear" />
+    <chapter time="01:10:08.9963555" name="At Syringe-Point" />
+    <chapter time="01:11:31.3702888" name="&quot;Come With Me if You Want to Live&quot;" />
+    <chapter time="01:14:57.1174888" name="Escape From Pescadero" />
+    <chapter time="01:15:36.5735777" name="Security Car" />
+    <chapter time="01:16:25.4140222" name="Nice Bike" />
+    <chapter time="01:17:54.4195999" name="Night Repairs" />
+    <chapter time="01:20:17.2289111" name="Heading South" />
+    <chapter time="01:22:37.7442888" name="No Problemo" />
+    <chapter time="01:25:07.2269555" name="Detailed Files" />
+    <chapter time="01:27:53.3512222" name="Salceda's Camp" />
+    <chapter time="01:32:12.6102222" name="Weapons Cache" />
+    <chapter time="01:34:29.4969777" name="Fathers and Sons" />
+    <chapter time="01:35:00.8616444" name="Nuclear Nightmare" />
+    <chapter time="01:36:43.4641333" name="Sarah's Decision" />
+    <chapter time="01:43:02.3009333" name="No Fate" />
+    <chapter time="01:45:51.8452888" name="Sarah's Solution" />
+    <chapter time="01:47:52.7577555" name="Changing the Way It Goes" />
+    <chapter time="01:49:52.9611777" name="Target: Cyberdyne" />
+    <chapter time="01:50:34.0438888" name="All the Way" />
+    <chapter time="01:51:24.2189999" name="T-1000 at Dyson's" />
+    <chapter time="01:53:32.3469777" name="Police Arrivals" />
+    <chapter time="01:55:22.0399111" name="Company" />
+    <chapter time="01:55:54.0719111" name="Terminator Serves Notice" />
+    <chapter time="01:58:16.2139111" name="In the Vault" />
+    <chapter time="01:59:45.7199777" name="SWAT Offensive" />
+    <chapter time="02:01:25.5697333" name="Death of Dyson and Cyberdyne" />
+    <chapter time="02:02:39.2683555" name="&quot;I'll Be Back&quot;" />
+    <chapter time="02:03:39.3283555" name="Borrowing the SWAT Van" />
+    <chapter time="02:06:16.7355999" name="T-1000 Acquires a Helicopter" />
+    <chapter time="02:10:20.6042444" name="Freeway Chase" />
+    <chapter time="02:13:50.3971333" name="Tanker Chase" />
+    <chapter time="02:14:32.7310888" name="Fire and Ice" />
+    <chapter time="02:15:02.3857111" name="Sticking Together" />
+    <chapter time="02:16:13.6652444" name="Hand to Hand" />
+    <chapter time="02:16:47.2404666" name="Deeper Into the Steel Mill" />
+    <chapter time="02:18:43.6901333" name="Sarah's Stand" />
+    <chapter time="02:20:44.0186666" name="Terminator Skewered" />
+    <chapter time="02:21:16.1340888" name="Sarah and John" />
+    <chapter time="02:21:53.8801111" name="Alternate Power" />
+    <chapter time="02:23:22.6354444" name="Two Sarahs" />
+    <chapter time="02:25:36.1021111" name="Terminated" />
+    <chapter time="02:27:59.6204888" name="One More Chip" />
+    <chapter time="02:31:24.1164444" name="The Unknown Future" />
+    <chapter time="02:35:25.4408444" name="End Titles" />
+  </chapters>
+</chapterInfo>

@@ -1,55 +1,90 @@
-<div align="center">
+# ChapterTool
 
-# ChapterTool </br> ![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg) [![Build status](https://ci.appveyor.com/api/projects/status/rtc76h5ulveafj5f?svg=true)](https://ci.appveyor.com/project/tautcony/chaptertool) ![](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)
+[![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg)](LICENSE)
+[![.NET 10 CI](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml)
+[![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
 
-A simple tool for extracting chapters from various types of files and editing them.
-</div>
+ChapterTool is a cross-platform Avalonia desktop chapter editor for importing, adjusting, combining, and exporting chapter lists from text, disc playlist, and media container sources.
 
-## Feature
+## Features
 
-- Extract chapter file from different file types
-- Multiple time adjustments (expression in Infix notation or Reverse Polish notation)
-- Move all chapter numbers backwards optionally (for OGM format)
-- Load chapter name from text file as template
-- Calculate frames from chapter time
-- Supported saving formats: `.txt`, `.xml`, `.qpf`, `.json`.
+- Import chapter data from text files, disc playlist formats, BDMV folders, and media containers.
+- Edit chapter names and timestamps in a cross-platform Avalonia UI.
+- Apply time adjustments with infix or Reverse Polish notation expressions.
+- Calculate frame information from chapter times and frame rate settings.
+- Combine supported multi-segment sources such as MPLS and IFO.
+- Export chapters as `.txt`, `.xml`, `.qpf`, `.TimeCodes.txt`, `.TsMuxeR_Meta.txt`, `.cue`, `.json`, `.vtt`, and Celltimes output.
 
-### Supported file type
+## Supported Import Sources
 
-- OGM(`.txt`)
-- XML(`.xml`)
-- MPLS from BluRay(`.mpls`)
-- IFO from DVD(`.ifo`)
-- XPL from HDDVD(`.xpl`)
-- CUE plain text or embedded(`.cue`, `.flac`, `.tak`)
-- Matroska file(`.mkv`, `.mka`)
-- Mp4 file(`.mp4`, `.m4a`, `.m4v`)
-- WebVTT(`.vtt`)
-
-## Thanks to
-
- - [Chapters file time Editor](https://www.nmm-hd.org/newbbs/viewtopic.php?f=16&t=24)
- - [BD Chapters MOD](https://www.nmm-hd.org/newbbs/viewtopic.php?f=16&t=517)
- - [gMKVExtractGUI](http://sourceforge.net/projects/gmkvextractgui/)
- - [Chapter Grabber](http://jvance.com/pages/ChapterGrabber.xhtml)
- - [MKVToolNix](https://www.bunkus.org/videotools/mkvtoolnix/links.html)
- - [libbluray](http://www.videolan.org/developers/libbluray.html)
- - [BDedit](http://pel.hu/bdedit/)
- - [Knuckleball](https://github.com/jimevans/knuckleball)
- - [mp4v2](https://code.google.com/archive/p/mp4v2/)
- - [BluRay](https://github.com/lerks/BluRay)
- - [IfoEdit](http://www.ifoedit.com/index.html)
+- OGM-style text chapters: `.txt`
+- Adobe Premiere Pro chapter marker lists: `.csv`, and detected marker tables in `.txt`
+- Matroska chapter XML: `.xml`
+- WebVTT chapter cues: `.vtt`
+- Cue sheets and embedded cues: `.cue`, `.flac`, `.tak`
+- Blu-ray playlists: `.mpls`
+- Blu-ray `BDMV` folders through `eac3to`
+- DVD IFO files: `.ifo`
+- HD-DVD playlists: `.xpl`
+- Matroska containers through `mkvextract`, with ffprobe fallback when the tool cannot be invoked: `.mkv`, `.mka`, `.mks`, `.webm`
+- MP4/QuickTime/media files through ffprobe: `.mp4`, `.m4a`, `.m4v`, `.mov`, `.qt`, `.3gp`, `.3g2`, `.asf`, `.wmv`, `.wma`, `.mp3`, `.aac`, `.ogg`, `.oga`, `.ogv`, `.opus`, `.wav`, `.nut`, `.aa`, `.aax`, `.ffmetadata`, `.ffmeta`
 
 ## Requirements
 
-- You must have the `.NET Framework 4.8` available from Windows Update.
-- The matroska file support is powered by [`MKVToolNix`](https://mkvtoolnix.download/downloads.html#windows).
-- The mp4 file support is powered by `libmp4v2`, you need to get the dll before using this feature.
+- .NET 10 SDK for building from source.
+- `ffprobe` from FFmpeg for media-container chapter import.
+- `mkvextract` from MKVToolNix for primary Matroska chapter extraction.
+- `eac3to` for importing Blu-ray `BDMV` folders.
+
+External tool paths can be configured in the app settings. ChapterTool also searches common configured paths and platform tool locations where supported.
+
+## Build And Test
+
+Restore, build, and test the current solution:
+
+```powershell
+dotnet restore ChapterTool.Avalonia.slnx
+dotnet build ChapterTool.Avalonia.slnx --no-restore
+dotnet test ChapterTool.Avalonia.slnx --no-restore
+```
+
+The CI workflow is `.github/workflows/dotnet-ci.yml` and runs on Windows with .NET 10, FFmpeg, and MKVToolNix.
+
+## Publish
+
+Use the publish helper for local artifacts:
+
+```powershell
+./scripts/publish.ps1 -Runtime win-x64
+./scripts/publish.ps1 -Runtime win-x64 -SelfContained
+```
+
+Framework-dependent artifacts are written under `artifacts/publish/framework-dependent/<runtime>`. Self-contained artifacts are written under `artifacts/publish/self-contained/<runtime>`.
+
+The GitHub Actions publish job currently builds framework-dependent artifacts for `win-x64`, `linux-x64`, `osx-x64`, and `osx-arm64`.
+
+## Project Layout
+
+- `src/ChapterTool.Core`: chapter models, transformations, import contracts, and exporters.
+- `src/ChapterTool.Infrastructure`: external tool discovery, process execution, settings, and infrastructure-backed importers.
+- `src/ChapterTool.Avalonia`: desktop UI and runtime composition.
+- `tests/`: Core, Infrastructure, and Avalonia test projects.
+- `openspec/specs/`: current behavior specifications.
+- `openspec/changes/`: active and archived OpenSpec changes.
+
+## Thanks
+
+- [Chapters file time Editor](https://www.nmm-hd.org/newbbs/viewtopic.php?f=16&t=24)
+- [BD Chapters MOD](https://www.nmm-hd.org/newbbs/viewtopic.php?f=16&t=517)
+- [gMKVExtractGUI](http://sourceforge.net/projects/gmkvextractgui/)
+- [Chapter Grabber](http://jvance.com/pages/ChapterGrabber.xhtml)
+- [MKVToolNix](https://mkvtoolnix.download/)
+- [libbluray](https://www.videolan.org/developers/libbluray.html)
+- [BDedit](http://pel.hu/bdedit/)
+- [Knuckleball](https://github.com/jimevans/knuckleball)
+- [BluRay](https://github.com/lerks/BluRay)
+- [IfoEdit](http://www.ifoedit.com/index.html)
 
 ## License
 
-Distributed under the GPLv3+ License. See LICENSE for more information.
-
-## Source Code
- - [GitHub](https://github.com/tautcony/ChapterTool)
- - [BitBucket](https://bitbucket.org/TautCony/chaptertool)
+Distributed under the GPLv3+ license. See [LICENSE](LICENSE) for details.

@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             x:Class="ChapterTool.Avalonia.Views.Tools.ExpressionToolView"
+             x:DataType="vm:ExpressionToolViewModel"
+             x:CompileBindings="True">
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock Text="{DynamicResource Tool.Expression.Title}" FontSize="18" />
+    <TextBox Text="{Binding Expression}" PlaceholderText="{DynamicResource Tool.Expression.Placeholder}" />
+    <CheckBox Content="{DynamicResource Tool.Expression.Apply}" IsChecked="{Binding ApplyExpression}" />
+    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
+  </StackPanel>
+</UserControl>

@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App.Title" xml:space="preserve">
+    <value>[VCB-Studio] ChapterTool</value>
+  </data>
+  <data name="Common.Apply" xml:space="preserve">
+    <value>適用</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="Common.Clear" xml:space="preserve">
+    <value>クリア</value>
+  </data>
+  <data name="Common.Copy" xml:space="preserve">
+    <value>コピー</value>
+  </data>
+  <data name="Common.Refresh" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Common.UnsupportedFeature" xml:space="preserve">
+    <value>このビルドでは、このプラットフォーム依存機能は有効化されていません。</value>
+  </data>
+  <data name="Common.Use" xml:space="preserve">
+    <value>使用</value>
+  </data>
+  <data name="Language.ChineseSimplified" xml:space="preserve">
+    <value>簡体字中国語</value>
+  </data>
+  <data name="Language.English" xml:space="preserve">
+    <value>英語</value>
+  </data>
+  <data name="Language.Japanese" xml:space="preserve">
+    <value>日本語</value>
+  </data>
+  <data name="Log.AppendingMpls" xml:space="preserve">
+    <value>MPLS を追加中: path='{path}'</value>
+  </data>
+  <data name="Log.AutoFrameRateDetection" xml:space="preserve">
+    <value>自動フレームレート検出: option={option}, confidence={confidence}, accurate={accurate}/{evaluated}, deviation={deviation}</value>
+  </data>
+  <data name="Log.ChangeFps" xml:space="preserve">
+    <value>FPS を変換: {sourceFps} -&gt; {targetFps}, chapters {before} -&gt; {after}</value>
+  </data>
+  <data name="Log.CreateZones" xml:space="preserve">
+    <value>Zones 生成: selectedRows={selectedRows}, chapters={chapters}</value>
+  </data>
+  <data name="Log.Diagnostic" xml:space="preserve">
+    <value>{operation} diagnostic: severity={severity}, code={code}{location} message='{message}'{details}</value>
+  </data>
+  <data name="Log.EditChapters" xml:space="preserve">
+    <value>{action}: chapters {before} -&gt; {after}</value>
+  </data>
+  <data name="Log.FrameInfoUpdated" xml:space="preserve">
+    <value>フレーム情報を更新: option={option}, fps={fps}, round={round}, chapters={chapters}</value>
+  </data>
+  <data name="Log.ImportGroup" xml:space="preserve">
+    <value>{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultOptionIndex={defaultOptionIndex}, options={options}</value>
+  </data>
+  <data name="Log.ImportOption" xml:space="preserve">
+    <value>{operation} option {optionIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</value>
+  </data>
+  <data name="Log.ImportSummary" xml:space="preserve">
+    <value>{operation} result: success={success}, partial={partial}, groups={groups}, options={options}, chapters={chapters}, diagnostics={diagnostics}</value>
+  </data>
+  <data name="Log.LanguageSet" xml:space="preserve">
+    <value>言語を {language} に設定しました</value>
+  </data>
+  <data name="Log.LoadingSource" xml:space="preserve">
+    <value>ソースを読み込み中: path='{path}'</value>
+  </data>
+  <data name="Log.OpenedPath" xml:space="preserve">
+    <value>{status}: path='{path}'</value>
+  </data>
+  <data name="Log.RelatedMediaNotFound" xml:space="preserve">
+    <value>{status}: reference='{reference}', resolved='{resolved}'</value>
+  </data>
+  <data name="Log.SavingChapters" xml:space="preserve">
+    <value>チャプターを保存中: format={format}, directory='{directory}', source='{source}', chapters={chapters}, applyExpression={applyExpression}, expression='{expression}'</value>
+  </data>
+  <data name="Log.SelectedSourceOption" xml:space="preserve">
+    <value>ソースオプションを選択: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, fps={fps}</value>
+  </data>
+  <data name="Log.SettingsLoaded" xml:space="preserve">
+    <value>設定を読み込みました: savingPath='{savingPath}', language='{language}'</value>
+  </data>
+  <data name="Log.Status" xml:space="preserve">
+    <value>{status}</value>
+  </data>
+  <data name="Log.StatusFromPath" xml:space="preserve">
+    <value>{status}: {path}</value>
+  </data>
+  <data name="Main.AppendMpls" xml:space="preserve">
+    <value>MPLS を追加結合</value>
+  </data>
+  <data name="Main.AutoFrameRate" xml:space="preserve">
+    <value>自動</value>
+  </data>
+  <data name="Main.ChapterName" xml:space="preserve">
+    <value>チャプター名</value>
+  </data>
+  <data name="Main.ChangeFps" xml:space="preserve">
+    <value>FPS を変換</value>
+  </data>
+  <data name="Main.ColumnFrames" xml:space="preserve">
+    <value>フレーム</value>
+  </data>
+  <data name="Main.ColumnName" xml:space="preserve">
+    <value>チャプター名</value>
+  </data>
+  <data name="Main.ColumnNumber" xml:space="preserve">
+    <value>#</value>
+  </data>
+  <data name="Main.ColumnTime" xml:space="preserve">
+    <value>時刻</value>
+  </data>
+  <data name="Main.Combine" xml:space="preserve">
+    <value>結合</value>
+  </data>
+  <data name="Main.CreateZones" xml:space="preserve">
+    <value>Zones を生成</value>
+  </data>
+  <data name="Main.Delete" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="Main.Expression" xml:space="preserve">
+    <value>式</value>
+  </data>
+  <data name="Main.ForwardTranslation" xml:space="preserve">
+    <value>前方シフト</value>
+  </data>
+  <data name="Main.Insert" xml:space="preserve">
+    <value>挿入</value>
+  </data>
+  <data name="Main.KeepOriginalName" xml:space="preserve">
+    <value>元の名前を保持</value>
+  </data>
+  <data name="Main.Load" xml:space="preserve">
+    <value>読み込み</value>
+  </data>
+  <data name="Main.Log" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="Main.OpenRelatedMedia" xml:space="preserve">
+    <value>関連メディアを開く</value>
+  </data>
+  <data name="Main.OrderShift" xml:space="preserve">
+    <value>番号シフト</value>
+  </data>
+  <data name="Main.Preview" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Main.PreviewShort" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Main.Reload" xml:space="preserve">
+    <value>再読み込み</value>
+  </data>
+  <data name="Main.RoundFrames" xml:space="preserve">
+    <value>フレームを丸める</value>
+  </data>
+  <data name="Main.SaveFormat" xml:space="preserve">
+    <value>保存形式</value>
+  </data>
+  <data name="Main.SaveTo" xml:space="preserve">
+    <value>保存先を選択</value>
+  </data>
+  <data name="Main.SettingsShort" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Main.StandardTemplate" xml:space="preserve">
+    <value>標準テンプレート</value>
+  </data>
+  <data name="Main.TemplateFile" xml:space="preserve">
+    <value>テンプレートファイル</value>
+  </data>
+  <data name="Main.XmlLanguage" xml:space="preserve">
+    <value>XML 言語</value>
+  </data>
+  <data name="Prompt.FileAssociationUnsupported" xml:space="preserve">
+    <value>このビルドでは、ファイル関連付け登録は有効化されていません。</value>
+  </data>
+  <data name="Settings.Appearance" xml:space="preserve">
+    <value>外観</value>
+  </data>
+  <data name="Settings.BrowseDirectory" xml:space="preserve">
+    <value>ディレクトリを選択</value>
+  </data>
+  <data name="Settings.BrowseExecutable" xml:space="preserve">
+    <value>実行ファイルを選択</value>
+  </data>
+  <data name="Settings.DefaultSaveFormat" xml:space="preserve">
+    <value>既定の保存形式</value>
+  </data>
+  <data name="Settings.DefaultXmlLanguage" xml:space="preserve">
+    <value>既定の XML 言語</value>
+  </data>
+  <data name="Settings.Eac3toPath" xml:space="preserve">
+    <value>eac3to</value>
+  </data>
+  <data name="Settings.EmptyUsesSource" xml:space="preserve">
+    <value>空の場合はソースの場所を使用</value>
+  </data>
+  <data name="Settings.ExternalTools" xml:space="preserve">
+    <value>外部ツール</value>
+  </data>
+  <data name="Settings.FfmpegPath" xml:space="preserve">
+    <value>FFmpeg ディレクトリ</value>
+  </data>
+  <data name="Settings.FfprobePath" xml:space="preserve">
+    <value>ffprobe</value>
+  </data>
+  <data name="Settings.FrameAccuracyTolerance" xml:space="preserve">
+    <value>フレーム許容誤差</value>
+  </data>
+  <data name="Settings.General" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="Settings.MkvToolnixPath" xml:space="preserve">
+    <value>MKVToolNix / mkvextract</value>
+  </data>
+  <data name="Settings.OutputDefaults" xml:space="preserve">
+    <value>出力の既定値</value>
+  </data>
+  <data name="Settings.Platform" xml:space="preserve">
+    <value>プラットフォーム</value>
+  </data>
+  <data name="Settings.ResetDefaults" xml:space="preserve">
+    <value>既定値に戻す</value>
+  </data>
+  <data name="Settings.SaveDirectory" xml:space="preserve">
+    <value>既定の保存先</value>
+  </data>
+  <data name="Settings.Status.Ready" xml:space="preserve">
+    <value>設定を読み込みました</value>
+  </data>
+  <data name="Settings.Status.Reset" xml:space="preserve">
+    <value>既定値を復元しました</value>
+  </data>
+  <data name="Settings.Status.Saved" xml:space="preserve">
+    <value>設定を保存しました</value>
+  </data>
+  <data name="Settings.ToolStatus.Discovery" xml:space="preserve">
+    <value>未設定です。PATH またはプラットフォーム検出を使用します</value>
+  </data>
+  <data name="Settings.ToolStatus.Found" xml:space="preserve">
+    <value>検出済み: {path}</value>
+  </data>
+  <data name="Settings.ToolStatus.InvalidPath" xml:space="preserve">
+    <value>パスが存在しません</value>
+  </data>
+  <data name="Settings.ToolStatus.Missing" xml:space="preserve">
+    <value>このディレクトリに {name} が見つかりません</value>
+  </data>
+  <data name="Settings.ToolStatus.Unsupported" xml:space="preserve">
+    <value>このプラットフォームでは未対応です</value>
+  </data>
+  <data name="Settings.UiLanguage" xml:space="preserve">
+    <value>UI 言語</value>
+  </data>
+  <data name="Settings.Unsaved.Discard" xml:space="preserve">
+    <value>破棄</value>
+  </data>
+  <data name="Settings.Unsaved.Message" xml:space="preserve">
+    <value>設定の変更は現在のセッションに適用済みですが、まだ保存されていません。閉じる前に保存しますか？</value>
+  </data>
+  <data name="Settings.Unsaved.Title" xml:space="preserve">
+    <value>未保存の設定</value>
+  </data>
+  <data name="Settings.ValidateTools" xml:space="preserve">
+    <value>ツールを確認</value>
+  </data>
+  <data name="Status.AppendedMplsSegments" xml:space="preserve">
+    <value>{count} 個の MPLS セグメントを追加しました</value>
+  </data>
+  <data name="Status.AppendFailed" xml:space="preserve">
+    <value>追加に失敗しました</value>
+  </data>
+  <data name="Status.DetectedFrameRate" xml:space="preserve">
+    <value>{displayName} を検出しました（信頼度: {confidence}）</value>
+  </data>
+  <data name="Status.LoadedChapters" xml:space="preserve">
+    <value>{count} 個のチャプターを読み込みました</value>
+  </data>
+  <data name="Status.LoadingSource" xml:space="preserve">
+    <value>読み込み中...</value>
+  </data>
+  <data name="Status.LoadingSource.Validate" xml:space="preserve">
+    <value>ソースを検証中...</value>
+  </data>
+  <data name="Status.LoadingSource.Discover" xml:space="preserve">
+    <value>eac3to を検索中...</value>
+  </data>
+  <data name="Status.LoadingSource.Export" xml:space="preserve">
+    <value>チャプターを出力中...</value>
+  </data>
+  <data name="Status.LoadingSource.Parse" xml:space="preserve">
+    <value>チャプターを解析中...</value>
+  </data>
+  <data name="Status.LoadFailed" xml:space="preserve">
+    <value>読み込みに失敗しました</value>
+  </data>
+  <data name="Status.NoCurrentMplsGroup" xml:space="preserve">
+    <value>現在の MPLS グループが読み込まれていません</value>
+  </data>
+  <data name="Status.NoSourceSelected" xml:space="preserve">
+    <value>ソースが選択されていません</value>
+  </data>
+  <data name="Status.OpenedFile" xml:space="preserve">
+    <value>{fileName} を開きました</value>
+  </data>
+  <data name="Status.Ready" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="Status.RelatedMediaNotFound" xml:space="preserve">
+    <value>関連メディアファイルが見つかりません</value>
+  </data>
+  <data name="Status.Saved" xml:space="preserve">
+    <value>保存しました</value>
+  </data>
+  <data name="Status.SaveFailed" xml:space="preserve">
+    <value>保存に失敗しました</value>
+  </data>
+  <data name="Status.ShellUnavailable" xml:space="preserve">
+    <value>Shell サービスを利用できません</value>
+  </data>
+  <data name="Status.TemplateNotSelected" xml:space="preserve">
+    <value>未選択</value>
+  </data>
+  <data name="Status.Updated" xml:space="preserve">
+    <value>更新しました</value>
+  </data>
+  <data name="Status.ZonesGenerated" xml:space="preserve">
+    <value>Zones を生成しました</value>
+  </data>
+  <data name="Tool.ColorSettings.Title" xml:space="preserve">
+    <value>色設定</value>
+  </data>
+  <data name="Tool.ColorSlots" xml:space="preserve">
+    <value>旧形式の色スロット</value>
+  </data>
+  <data name="Tool.Expression.Apply" xml:space="preserve">
+    <value>式を適用</value>
+  </data>
+  <data name="Tool.Expression.Placeholder" xml:space="preserve">
+    <value>式、例: t + 1</value>
+  </data>
+  <data name="Tool.Expression.Title" xml:space="preserve">
+    <value>式</value>
+  </data>
+  <data name="Tool.FileAssociation.Title" xml:space="preserve">
+    <value>ファイル関連付け</value>
+  </data>
+  <data name="Tool.ForwardShift.Title" xml:space="preserve">
+    <value>前方シフト</value>
+  </data>
+  <data name="Tool.Language.Title" xml:space="preserve">
+    <value>言語</value>
+  </data>
+  <data name="Tool.Log.Title" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="Tool.Preview.Title" xml:space="preserve">
+    <value>プレビュー</value>
+  </data>
+  <data name="Tool.Settings.Title" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="Tool.TemplateNames.Title" xml:space="preserve">
+    <value>テンプレート名</value>
+  </data>
+  <data name="Tool.TemplateNames.UseStandard" xml:space="preserve">
+    <value>標準テンプレート名を使用</value>
+  </data>
+  <data name="Tool.Zones.Title" xml:space="preserve">
+    <value>Zones</value>
+  </data>
+</root>

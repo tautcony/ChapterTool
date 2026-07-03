@@ -1,0 +1,18 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ChapterTool.Avalonia.App"
+             RequestedThemeVariant="Light">
+  <Application.Resources>
+    <SolidColorBrush x:Key="ChapterTool.BackChangeBrush" Color="#F0F0F0" />
+    <SolidColorBrush x:Key="ChapterTool.TextBackBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ChapterTool.MouseOverBrush" Color="#E5F1FB" />
+    <SolidColorBrush x:Key="ChapterTool.MouseDownBrush" Color="#CCE4F7" />
+    <SolidColorBrush x:Key="ChapterTool.BorderBrush" Color="#ADADAD" />
+    <SolidColorBrush x:Key="ChapterTool.TextFrontBrush" Color="#000000" />
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+  </Application.Styles>
+</Application>

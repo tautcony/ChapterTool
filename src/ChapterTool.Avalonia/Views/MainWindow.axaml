@@ -1,0 +1,557 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
+        xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+        x:Class="ChapterTool.Avalonia.Views.MainWindow"
+        x:Name="RootWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{DynamicResource App.Title}"
+        Width="736"
+        Height="576"
+        MinWidth="608"
+        MinHeight="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ChapterTool.BackChangeBrush}"
+        Opened="OnOpened"
+        KeyDown="OnKeyDown"
+        SizeChanged="OnSizeChanged"
+        DragDrop.AllowDrop="True"
+        DragDrop.Drop="OnDrop"
+        x:CompileBindings="True">
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
+      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="9.6,5.6" />
+      <Setter Property="MinHeight" Value="27.2" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.primaryAction">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.TextBackBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="FontSize" Value="13.6" />
+      <Setter Property="MinWidth" Value="94.4" />
+      <Setter Property="MinHeight" Value="43.2" />
+    </Style>
+    <Style Selector="Button.iconAction">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.TextBackBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="FontSize" Value="12.8" />
+      <Setter Property="Width" Value="35.2" />
+      <Setter Property="Height" Value="35.2" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button.statusAction">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.TextBackBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="FontSize" Value="9.6" />
+      <Setter Property="MinWidth" Value="41.6" />
+      <Setter Property="MinHeight" Value="19.2" />
+      <Setter Property="Padding" Value="8,1.6" />
+    </Style>
+    <Style Selector="ComboBox, TextBox, NumericUpDown">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.TextBackBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="MinHeight" Value="25.6" />
+      <Setter Property="FontSize" Value="11.2" />
+    </Style>
+    <Style Selector="CheckBox">
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
+      <Setter Property="FontSize" Value="11.2" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.optionLabel">
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
+      <Setter Property="FontSize" Value="11.2" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="TextTrimming" Value="None" />
+    </Style>
+    <Style Selector="Grid.optionCell">
+      <Setter Property="MinHeight" Value="27.2" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="DataGrid">
+      <Setter Property="GridLinesVisibility" Value="All" />
+    </Style>
+    <Style Selector="TextBox.gridEditor">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.frameText">
+      <Setter Property="Foreground" Value="#111111" />
+    </Style>
+    <Style Selector="TextBlock.frameText.frameAccurate">
+      <Setter Property="Foreground" Value="#0f7a2f" />
+    </Style>
+    <Style Selector="TextBlock.frameText.frameInexact">
+      <Setter Property="Foreground" Value="#b42318" />
+    </Style>
+    <Style Selector="TextBlock.frameText.frameNeutral">
+      <Setter Property="Foreground" Value="#111111" />
+    </Style>
+    <Style Selector="TextBlock.frameGlow">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="TextBlock.frameGlow.frameAccurate">
+      <Setter Property="Foreground" Value="#35b85a" />
+      <Setter Property="Opacity" Value="0.7" />
+    </Style>
+    <Style Selector="TextBlock.frameGlow.frameInexact">
+      <Setter Property="Foreground" Value="#ef4444" />
+      <Setter Property="Opacity" Value="0.7" />
+    </Style>
+    <Style Selector="TextBlock.frameGlowSoft">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="TextBlock.frameGlowSoft.frameAccurate">
+      <Setter Property="Foreground" Value="#35b85a" />
+      <Setter Property="Opacity" Value="0.34" />
+    </Style>
+    <Style Selector="TextBlock.frameGlowSoft.frameInexact">
+      <Setter Property="Foreground" Value="#ef4444" />
+      <Setter Property="Opacity" Value="0.34" />
+    </Style>
+    <Style Selector="Button:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.MouseOverBrush}" />
+    </Style>
+    <Style Selector="Button:pressed">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.MouseDownBrush}" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel x:Name="RootPanel" LastChildFill="True">
+    <Border DockPanel.Dock="Bottom"
+            Background="{DynamicResource ChapterTool.BackChangeBrush}"
+            BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
+            BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto,Auto" Height="27.2">
+        <TextBlock x:Name="StatusBlock"
+                   Grid.Column="0"
+                   Margin="8,0"
+                   VerticalAlignment="Center"
+                   FontSize="10.4"
+                   Foreground="{DynamicResource ChapterTool.TextFrontBrush}"
+                   Text="{Binding StatusText}" />
+        <ProgressBar x:Name="ProgressBar"
+                     Grid.Column="2"
+                     Width="144"
+                     Height="8"
+                     Margin="9.6,0,12.8,0"
+                     VerticalAlignment="Center"
+                     Minimum="0"
+                     Maximum="1"
+                     Value="{Binding Progress}"
+                     AutomationProperties.AutomationId="ProgressBar" />
+        <Button x:Name="LogButton"
+                Grid.Column="1"
+                Classes="statusAction"
+                VerticalAlignment="Center"
+                AutomationProperties.AutomationId="LogWindow"
+                Content="{DynamicResource Main.Log}"
+                Command="{Binding LogCommand}" />
+      </Grid>
+    </Border>
+
+    <Grid Margin="14.4"
+          RowDefinitions="Auto,*,Auto"
+          RowSpacing="11.2">
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12.8">
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="11.2">
+          <Button x:Name="LoadButton"
+                  Classes="primaryAction"
+                  AutomationProperties.AutomationId="LoadButton"
+                  Content="{DynamicResource Main.Load}"
+                  Command="{Binding #RootWindow.BrowseAndLoadCommand}">
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem x:Name="ReloadMenuItem" Header="{DynamicResource Main.Reload}" Command="{Binding #RootWindow.ReloadCommand}" />
+                <MenuItem x:Name="AppendLoadMenuItem" Header="{DynamicResource Main.AppendMpls}" IsEnabled="{Binding CanAppendMpls}" Command="{Binding #RootWindow.AppendMplsCommand}" />
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+          <Button x:Name="SaveButton"
+                  Classes="primaryAction"
+                  AutomationProperties.AutomationId="SaveButton"
+                  Content="{DynamicResource Common.Save}"
+                  IsEnabled="{Binding CanSave}"
+                  Command="{Binding #RootWindow.SaveCommand}">
+            <Button.ContextMenu>
+              <ContextMenu>
+                <MenuItem x:Name="SaveToMenuItem" Header="{DynamicResource Main.SaveTo}" Command="{Binding #RootWindow.SaveToCommand}" />
+              </ContextMenu>
+            </Button.ContextMenu>
+          </Button>
+        </StackPanel>
+
+        <ComboBox x:Name="ClipBox"
+                  Grid.Column="1"
+                  MinWidth="176"
+                  MaxWidth="288"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Bottom"
+                  ItemsSource="{Binding ClipDisplayOptions}"
+                  SelectedIndex="{Binding SelectedClipIndex, Mode=OneWay}"
+                  IsVisible="{Binding IsClipSelectionVisible}"
+                  SelectionChanged="OnClipSelectionChanged"
+                  AutomationProperties.AutomationId="ClipSelector">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:SelectorDisplayOption">
+              <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+          <ComboBox.SelectionBoxItemTemplate>
+            <DataTemplate x:DataType="vm:SelectorDisplayOption">
+              <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ComboBox.SelectionBoxItemTemplate>
+          <ComboBox.ContextMenu>
+            <ContextMenu>
+              <MenuItem x:Name="ClipCombineMenuItem"
+                        Header="{DynamicResource Main.Combine}"
+                        ToggleType="CheckBox"
+                        IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
+                        IsEnabled="{Binding CanCombine}"
+                        Command="{Binding #RootWindow.CombineCommand}" />
+            </ContextMenu>
+          </ComboBox.ContextMenu>
+        </ComboBox>
+
+        <Grid Grid.Column="2"
+              RowDefinitions="Auto,Auto"
+              RowSpacing="6.4"
+              HorizontalAlignment="Right"
+              MinWidth="208">
+          <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <CheckBox x:Name="RoundFramesBox"
+                      Content="{DynamicResource Main.RoundFrames}"
+                      IsChecked="{Binding RoundFrames}"
+                      IsCheckedChanged="OnFrameOptionsChanged" />
+            <Button x:Name="PreviewButton"
+                    Classes="iconAction"
+                    AutomationProperties.AutomationId="PreviewWindow"
+                    Command="{Binding #RootWindow.PreviewCommand}"
+                    ToolTip.Tip="{DynamicResource Main.Preview}">
+              <i:Icon Value="fa-solid fa-eye" FontSize="13.6" />
+            </Button>
+            <Button x:Name="RefreshButton"
+                    Classes="iconAction"
+                    AutomationProperties.AutomationId="RefreshRows"
+                    IsEnabled="{Binding CanRefreshRows}"
+                    Command="{Binding #RootWindow.RefreshRowsCommand}"
+                    ToolTip.Tip="{DynamicResource Common.Refresh}">
+              <i:Icon Value="fa-solid fa-rotate" FontSize="13.6" />
+            </Button>
+            <Button x:Name="SettingsButton"
+                    Classes="iconAction"
+                    AutomationProperties.AutomationId="SettingsWindow"
+                    Command="{Binding SettingsCommand}"
+                    ToolTip.Tip="{DynamicResource Main.SettingsShort}">
+              <i:Icon Value="fa-solid fa-gear" FontSize="13.6" />
+            </Button>
+          </StackPanel>
+          <ComboBox x:Name="FrameRateBox"
+                    Grid.Row="1"
+                    Width="152"
+                    HorizontalAlignment="Right"
+                    SelectedIndex="{Binding SelectedFrameRateIndex}"
+                    SelectionChanged="OnFrameOptionsChanged">
+            <ComboBox.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="{DynamicResource Main.ChangeFps}" Command="{Binding ChangeFpsCommand}" />
+              </ContextMenu>
+            </ComboBox.ContextMenu>
+            <ComboBoxItem Content="{DynamicResource Main.AutoFrameRate}" />
+            <ComboBoxItem Content="24000 / 1001" />
+            <ComboBoxItem Content="24000 / 1000" />
+            <ComboBoxItem Content="25000 / 1000" />
+            <ComboBoxItem Content="30000 / 1001" />
+            <ComboBoxItem Content="RESER / VED" />
+            <ComboBoxItem Content="50000 / 1000" />
+            <ComboBoxItem Content="60000 / 1001" />
+          </ComboBox>
+        </Grid>
+      </Grid>
+
+      <Grid Grid.Row="1" RowDefinitions="Auto,*" MinHeight="0">
+        <TextBox x:Name="PathBox"
+                 Grid.Row="0"
+                 IsVisible="False"
+                 AutomationProperties.AutomationId="SourcePath" />
+          <DataGrid x:Name="ChapterGrid"
+                  Grid.Row="1"
+                  MinHeight="208"
+                  AutoGenerateColumns="False"
+                  CanUserReorderColumns="False"
+                  CanUserResizeColumns="True"
+                  IsReadOnly="False"
+                  SelectionMode="Extended"
+                  GridLinesVisibility="All"
+                  ItemsSource="{Binding Rows}"
+                  CellEditEnded="OnChapterGridCellEditEnded"
+                  AutomationProperties.AutomationId="ChapterGrid">
+          <DataGrid.ContextMenu>
+            <ContextMenu>
+              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
+              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Main.Delete}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
+              <MenuItem x:Name="GridCombineMenuItem"
+                        Header="{DynamicResource Main.Combine}"
+                        ToggleType="CheckBox"
+                        IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
+                        IsEnabled="{Binding CanCombine}"
+                        Command="{Binding #RootWindow.CombineCommand}" />
+              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
+              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootWindow.OpenZonesCommand}" />
+              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" Command="{Binding #RootWindow.PreviewCommand}" />
+            </ContextMenu>
+          </DataGrid.ContextMenu>
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Header="#" IsReadOnly="True" Width="56" MinWidth="56">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <TextBlock HorizontalAlignment="Stretch"
+                             VerticalAlignment="Center"
+                             TextAlignment="Center"
+                             Text="{Binding Number}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnTime}" Width="136" MinWidth="105.6">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <TextBlock HorizontalAlignment="Stretch"
+                             VerticalAlignment="Center"
+                             TextAlignment="Center"
+                             Text="{Binding TimeText}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellEditingTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <TextBox Classes="gridEditor"
+                           TextAlignment="Center"
+                           Text="{Binding TimeText, Mode=TwoWay}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellEditingTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnName}" Width="*" MinWidth="144">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <TextBlock HorizontalAlignment="Stretch"
+                             VerticalAlignment="Center"
+                             TextAlignment="Center"
+                             Text="{Binding Name}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellEditingTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <TextBox Classes="gridEditor"
+                           TextAlignment="Center"
+                           Text="{Binding Name, Mode=TwoWay}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellEditingTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnFrames}" Width="120" MinWidth="76.8">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <Grid VerticalAlignment="Center">
+                    <TextBlock Classes.frameGlowSoft="True"
+                               Classes.frameAccurate="{Binding IsFrameAccurate}"
+                               Classes.frameInexact="{Binding IsFrameInexact}"
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               Text="{Binding FramesInfo}">
+                      <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="10"
+                                          OffsetX="0"
+                                          OffsetY="0" />
+                      </TextBlock.Effect>
+                    </TextBlock>
+                    <TextBlock Classes.frameGlow="True"
+                               Classes.frameAccurate="{Binding IsFrameAccurate}"
+                               Classes.frameInexact="{Binding IsFrameInexact}"
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               Text="{Binding FramesInfo}">
+                      <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="5"
+                                          OffsetX="0"
+                                          OffsetY="0" />
+                      </TextBlock.Effect>
+                    </TextBlock>
+                    <TextBlock Classes.frameText="True"
+                               Classes.frameAccurate="{Binding IsFrameAccurate}"
+                               Classes.frameInexact="{Binding IsFrameInexact}"
+                               Classes.frameNeutral="{Binding IsFrameNeutral}"
+                               HorizontalAlignment="Stretch"
+                               VerticalAlignment="Center"
+                               TextAlignment="Center"
+                               Text="{Binding FramesInfo}" />
+                  </Grid>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+              <DataGridTemplateColumn.CellEditingTemplate>
+                <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                  <TextBox Classes="gridEditor"
+                           TextAlignment="Center"
+                           Text="{Binding FramesInfo, Mode=TwoWay}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellEditingTemplate>
+            </DataGridTemplateColumn>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Grid>
+
+      <Grid x:Name="AdvancedOptionsGrid"
+            Grid.Row="2"
+            ColumnDefinitions="*,2*,*"
+            RowDefinitions="Auto,Auto"
+            ColumnSpacing="14.4"
+            RowSpacing="8"
+            Margin="0"
+            AutomationProperties.AutomationId="AdvancedOptions">
+        <Grid x:Name="FormatOptionsGroup"
+              Classes="optionCell"
+              Grid.Row="0"
+              Grid.Column="0"
+              ColumnDefinitions="78,*"
+              ColumnSpacing="6.4">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.SaveFormat}" />
+          <ComboBox x:Name="FormatBox"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    SelectedIndex="{Binding SaveFormatIndex}"
+                    AutomationProperties.AutomationId="ExportFormat">
+            <ComboBoxItem Content="TXT" />
+            <ComboBoxItem Content="XML" />
+            <ComboBoxItem Content="QPFile" />
+            <ComboBoxItem Content="TimeCodes" />
+            <ComboBoxItem Content="TsmuxerMeta" />
+            <ComboBoxItem Content="CUE" />
+            <ComboBoxItem Content="JSON" />
+            <ComboBoxItem Content="WebVTT" />
+            <ComboBoxItem Content="Celltimes" />
+            <ComboBoxItem Content="Chapter2Qpfile" />
+          </ComboBox>
+        </Grid>
+
+        <Grid x:Name="ChapterNameOptionsGroup"
+              Classes="optionCell"
+              Grid.Row="0"
+              Grid.Column="1"
+              ColumnDefinitions="94,*,Auto"
+              ColumnSpacing="6.4">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.ChapterName}" />
+          <ComboBox x:Name="ChapterNameModeBox"
+                    Grid.Column="1"
+                    MinWidth="96"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding ChapterNameModeOptions}"
+                    SelectedIndex="{Binding ChapterNameModeIndex}"
+                    AutomationProperties.AutomationId="ChapterNameMode">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+            <ComboBox.SelectionBoxItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.SelectionBoxItemTemplate>
+          </ComboBox>
+          <Button x:Name="ChapterNameTemplateButton"
+                  Grid.Column="2"
+                  MinWidth="35.2"
+                  MinHeight="25.6"
+                  Padding="6.4,3.2"
+                  AutomationProperties.AutomationId="ChapterNameTemplateFile"
+                  Command="{Binding #RootWindow.LoadChapterNameTemplateCommand}"
+                  ToolTip.Tip="{DynamicResource Main.TemplateFile}">
+            <i:Icon Value="fa-solid fa-folder-open" FontSize="11.2" />
+          </Button>
+        </Grid>
+
+        <Grid x:Name="OrderShiftOptionsGroup"
+              Classes="optionCell"
+              Grid.Row="1"
+              Grid.Column="1"
+              ColumnDefinitions="78,*"
+              ColumnSpacing="6.4">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.OrderShift}" />
+          <NumericUpDown x:Name="OrderShiftBox"
+                         Grid.Column="1"
+                         MinWidth="73.6"
+                         HorizontalAlignment="Stretch"
+                         Minimum="-1000"
+                         Maximum="1000"
+                         Increment="1"
+                         Value="{Binding OrderShift}"
+                         ValueChanged="OnOrderShiftValueChanged"
+                         AutomationProperties.AutomationId="OrderShift" />
+        </Grid>
+
+        <Grid x:Name="XmlLanguageOptionsGroup"
+              Classes="optionCell"
+              Grid.Row="1"
+              Grid.Column="0"
+              ColumnDefinitions="84,*"
+              ColumnSpacing="6.4"
+              IsEnabled="{Binding IsXmlLanguageEnabled}"
+              HorizontalAlignment="Stretch">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.XmlLanguage}" />
+          <ComboBox x:Name="XmlLanguageBox"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding XmlLanguageDisplayOptions}"
+                    SelectedIndex="{Binding XmlLanguageIndex}"
+                    AutomationProperties.AutomationId="XmlLanguage">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+            <ComboBox.SelectionBoxItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.SelectionBoxItemTemplate>
+          </ComboBox>
+        </Grid>
+
+        <Grid x:Name="ExpressionOptionsGroup"
+              Classes="optionCell"
+              Grid.Row="2"
+              Grid.Column="0"
+              ColumnDefinitions="78,78,*"
+              ColumnSpacing="6.4">
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.Expression}" />
+          <CheckBox x:Name="ApplyExpressionBox"
+                    Grid.Column="1"
+                    AutomationProperties.AutomationId="ApplyExpression"
+                    IsChecked="{Binding ApplyExpression}"
+                    Content="{DynamicResource Common.Use}" />
+          <TextBox x:Name="ExpressionBox"
+                   Grid.Column="2"
+                   MinWidth="96"
+                   HorizontalAlignment="Stretch"
+                   Text="{Binding Expression, UpdateSourceTrigger=PropertyChanged}"
+                   AutomationProperties.AutomationId="ExpressionText" />
+        </Grid>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>

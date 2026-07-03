@@ -1,0 +1,84 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
+             xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             x:Class="ChapterTool.Avalonia.Views.Tools.TextToolView"
+             x:DataType="vm:TextToolViewModel"
+             x:CompileBindings="True">
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="2" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="MinHeight" Value="32" />
+      <Setter Property="MinWidth" Value="82" />
+      <Setter Property="Background" Value="#ffffff" />
+      <Setter Property="BorderBrush" Value="#0a84ff" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*"
+        RowSpacing="10"
+        Margin="14"
+        MinWidth="0"
+        MinHeight="0">
+    <DockPanel Grid.Row="0" LastChildFill="False">
+      <StackPanel DockPanel.Dock="Left"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  VerticalAlignment="Center">
+        <ComboBox Width="150"
+                  ItemsSource="{Binding FormatOptions}"
+                  SelectedIndex="{Binding SelectedFormatIndex}"
+                  IsVisible="{Binding CanSelectFormat}" />
+        <TextBlock VerticalAlignment="Center"
+                   FontSize="13"
+                   Foreground="#5f6b7a"
+                   Text="{Binding Kind}" />
+      </StackPanel>
+      <StackPanel DockPanel.Dock="Right"
+                  Orientation="Horizontal"
+                  Spacing="8"
+                  HorizontalAlignment="Right">
+        <Button Command="{Binding RefreshCommand}" ToolTip.Tip="{DynamicResource Common.Refresh}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <i:Icon Value="fa-solid fa-rotate" FontSize="14" />
+            <TextBlock Text="{DynamicResource Common.Refresh}" />
+          </StackPanel>
+        </Button>
+        <Button Click="OnCopyClicked" ToolTip.Tip="{DynamicResource Common.Copy}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <i:Icon Value="fa-solid fa-copy" FontSize="14" />
+            <TextBlock Text="{DynamicResource Common.Copy}" />
+          </StackPanel>
+        </Button>
+        <Button IsVisible="{Binding CanClear}"
+                Command="{Binding ClearCommand}"
+                ToolTip.Tip="{DynamicResource Common.Clear}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
+            <TextBlock Text="{DynamicResource Common.Clear}" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+    </DockPanel>
+
+    <Border Grid.Row="1"
+            Background="#ffffff"
+            BorderBrush="#c7ccd1"
+            BorderThickness="1"
+            CornerRadius="2"
+            MinWidth="0"
+            MinHeight="0"
+            ClipToBounds="True">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                    VerticalScrollBarVisibility="Auto"
+                    Padding="0">
+        <StackPanel x:Name="LinesHost"
+                    MinWidth="0" />
+      </ScrollViewer>
+    </Border>
+  </Grid>
+</UserControl>

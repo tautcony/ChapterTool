@@ -1,0 +1,76 @@
+{
+  "chapters": [
+    {
+      "id": 0,
+      "time_base": "1/1000",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 5000,
+      "end_time": "5.000000",
+      "tags": {
+        "title": "Opening",
+        "EDITION_UID": "100"
+      }
+    },
+    {
+      "id": 1,
+      "time_base": "1/1000",
+      "start": 5000,
+      "start_time": "5.000000",
+      "end": 12000,
+      "end_time": "12.000000",
+      "tags": {
+        "title": "Part A",
+        "EDITION_UID": "100"
+      }
+    },
+    {
+      "id": 2,
+      "time_base": "1/1000",
+      "start": 12000,
+      "start_time": "12.000000",
+      "end": 20000,
+      "end_time": "20.000000",
+      "tags": {
+        "title": "Part B",
+        "EDITION_UID": "100"
+      }
+    },
+    {
+      "id": 3,
+      "time_base": "1/1000",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 8000,
+      "end_time": "8.000000",
+      "tags": {
+        "title": "Opening (Director's Cut)",
+        "EDITION_UID": "200"
+      }
+    },
+    {
+      "id": 4,
+      "time_base": "1/1000",
+      "start": 8000,
+      "start_time": "8.000000",
+      "end": 16000,
+      "end_time": "16.000000",
+      "tags": {
+        "title": "Extended Scene",
+        "EDITION_UID": "200"
+      }
+    },
+    {
+      "id": 5,
+      "time_base": "1/1000",
+      "start": 16000,
+      "start_time": "16.000000",
+      "end": 25000,
+      "end_time": "25.000000",
+      "tags": {
+        "title": "Part B (Director's Cut)",
+        "EDITION_UID": "200"
+      }
+    }
+  ]
+}

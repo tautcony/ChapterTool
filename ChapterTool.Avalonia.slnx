@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj" />
+    <Project Path="src/ChapterTool.Core/ChapterTool.Core.csproj" />
+    <Project Path="src/ChapterTool.Infrastructure/ChapterTool.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj" />
+    <Project Path="tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj" />
+    <Project Path="tests/ChapterTool.Infrastructure.Tests/ChapterTool.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

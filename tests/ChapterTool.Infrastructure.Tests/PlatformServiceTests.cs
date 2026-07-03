@@ -1,0 +1,85 @@
+using ChapterTool.Core.Services;
+using ChapterTool.Infrastructure.Platform;
+
+namespace ChapterTool.Infrastructure.Tests;
+
+public sealed class PlatformServiceTests
+{
+    [Fact]
+    public async Task Non_windows_file_association_reports_unsupported()
+    {
+        var service = new UnsupportedFileAssociationService();
+
+        var result = await service.RegisterAsync(
+            ".mpls",
+            "ChapterTool.MPLS",
+            "ChapterTool",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
+    }
+
+    [Fact]
+    public async Task Non_windows_privilege_service_reports_unsupported_elevation()
+    {
+        var service = new UnsupportedPrivilegeService();
+
+        Assert.False(service.IsAdministrator);
+        var result = await service.RequestElevationAsync("register-mpls", TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
+    }
+
+    [Fact]
+    public async Task Native_dependency_service_reports_missing_dependency()
+    {
+        var service = new FileSystemNativeDependencyService([]);
+
+        var result = await service.ResolveAsync("missing-tool", TestContext.Current.CancellationToken);
+
+        Assert.False(result.Found);
+        Assert.Equal("NativeLibraryMissing", result.DiagnosticCode);
+    }
+
+    [Fact]
+    public async Task Memory_clipboard_dialog_localization_and_window_services_are_testable_skeletons()
+    {
+        var clipboard = new MemoryClipboardService();
+        await clipboard.SetTextAsync("copied", TestContext.Current.CancellationToken);
+        Assert.Equal("copied", await clipboard.GetTextAsync(TestContext.Current.CancellationToken));
+
+        var dialogs = new ScriptedDialogService(new DialogResult(true, "accepted"));
+        var dialogResult = await dialogs.ShowMessageAsync(
+            new DialogRequest("title", "message", DialogKind.Confirmation),
+            TestContext.Current.CancellationToken);
+        Assert.True(dialogResult.Accepted);
+        Assert.Equal("accepted", dialogResult.Text);
+
+        var localization = new LocalizationService(
+            new Dictionary<string, IReadOnlyDictionary<string, string>>
+            {
+                [""] = new Dictionary<string, string> { ["Unloaded"] = "Default Unloaded" },
+                ["en-US"] = new Dictionary<string, string> { ["Unloaded"] = "Unloaded" }
+            });
+        Assert.Equal("Default Unloaded", localization.GetString("Unloaded"));
+        await localization.SetLanguageAsync("en-US", TestContext.Current.CancellationToken);
+        Assert.Equal("Unloaded", localization.GetString("Unloaded"));
+
+        var windows = new RecordingWindowService();
+        await windows.ShowAsync("preview", "text", TestContext.Current.CancellationToken);
+        await windows.HideAsync("preview", TestContext.Current.CancellationToken);
+        Assert.Equal(["show:preview", "hide:preview"], windows.Calls);
+    }
+
+    [Fact]
+    public void Platform_feature_service_gates_windows_features()
+    {
+        var features = new PlatformFeatureService();
+
+        Assert.Equal(OperatingSystem.IsWindows(), features.IsWindows);
+        Assert.Equal(OperatingSystem.IsWindows(), features.SupportsFileAssociation);
+        Assert.Equal(OperatingSystem.IsWindows(), features.SupportsPrivilegeElevation);
+    }
+}

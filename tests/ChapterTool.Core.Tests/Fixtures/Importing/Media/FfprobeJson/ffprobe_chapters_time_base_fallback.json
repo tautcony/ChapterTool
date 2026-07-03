@@ -1,0 +1,44 @@
+{
+  "chapters": [
+    {
+      "id": 0,
+      "time_base": "1/44100",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 220500,
+      "end_time": "5.000000",
+      "tags": {
+        "title": "Start with decimals, end with decimals"
+      }
+    },
+    {
+      "id": 1,
+      "time_base": "1/44100",
+      "start": 441000,
+      "end": 661500,
+      "tags": {
+        "title": "Time base fallback only"
+      }
+    },
+    {
+      "id": 2,
+      "time_base": "1/1000",
+      "start": 20000,
+      "start_time": "20.000000",
+      "end": 35000,
+      "end_time": "35.000000",
+      "tags": {
+        "TITLE": "Uppercase TITLE tag"
+      }
+    },
+    {
+      "id": 3,
+      "time_base": "1/1000",
+      "start": 35000,
+      "start_time": "35.000000",
+      "end": 40000,
+      "end_time": "40.000000",
+      "tags": {}
+    }
+  ]
+}

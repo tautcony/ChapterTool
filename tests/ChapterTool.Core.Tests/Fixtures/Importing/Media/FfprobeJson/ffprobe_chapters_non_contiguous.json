@@ -1,0 +1,46 @@
+{
+  "chapters": [
+    {
+      "id": 0,
+      "time_base": "1/1000",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 8000,
+      "end_time": "8.000000",
+      "tags": {
+        "title": "Overlaps next"
+      }
+    },
+    {
+      "id": 1,
+      "time_base": "1/1000",
+      "start": 5000,
+      "start_time": "5.000000",
+      "end": 15000,
+      "end_time": "15.000000",
+      "tags": {
+        "title": "Starts before previous ends"
+      }
+    },
+    {
+      "id": 2,
+      "time_base": "1/1000",
+      "start": 20000,
+      "start_time": "20.000000",
+      "tags": {
+        "title": "Missing end"
+      }
+    },
+    {
+      "id": 3,
+      "time_base": "1/1000",
+      "start": 35000,
+      "start_time": "35.000000",
+      "end": 35000,
+      "end_time": "35.000000",
+      "tags": {
+        "title": "End equals start"
+      }
+    }
+  ]
+}

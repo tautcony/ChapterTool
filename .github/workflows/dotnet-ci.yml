@@ -1,70 +1,72 @@
-# For more information on GitHub Actions, refer to https://github.com/features/actions
-# For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
-# refer to https://github.com/microsoft/github-actions-for-desktop-apps
-
-name: .NET Desktop
+name: .NET 10 CI
 
 on:
   push:
   pull_request:
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        configuration: [Release]
-        targetplatform: [x64]
-
-    runs-on: windows-2022    # For a list of available runner types, refer to
-                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
-
-    env:
-      Solution_Name: Time_Shift.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
+  build-test:
+    runs-on: windows-2025
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        submodules: true
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    # Install the .NET workload
-    - name: Install .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 5.0.x
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1
+      - name: Install external tools
+        run: choco install ffmpeg mkvtoolnix --no-progress -y
 
-    - uses: nuget/setup-nuget@v1
-      with:
-        nuget-version: '5.x'
+      - name: Restore
+        run: dotnet restore ChapterTool.Avalonia.slnx
 
-    - name: Restore Nuget packages
-      run: nuget restore $env:Solution_Name
+      - name: Build
+        run: dotnet build ChapterTool.Avalonia.slnx --configuration Release --no-restore
 
-    # Restore the application to populate the obj folder with RuntimeIdentifiers
-    - name: Restore the application
-      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
-      env:
-        Configuration: ${{ matrix.configuration }}
+      - name: Test
+        run: dotnet test ChapterTool.Avalonia.slnx --configuration Release --no-build
 
-    # Build the Application project
-    - name: Build the Application Project
-      run: msbuild $env:Solution_Name /p:Platform=$env:TargetPlatform /p:Configuration=$env:Configuration /p:UapAppxPackageBuildMode=$env:BuildMode /p:AppxBundle=$env:AppxBundle
-      env:
-        AppxBundle: Never
-        BuildMode: SideloadOnly
-        Configuration: ${{ matrix.configuration }}
-        TargetPlatform: ${{ matrix.targetplatform }}
+  publish:
+    needs: build-test
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime:
+          - win-x64
+          - linux-x64
+          - osx-x64
+          - osx-arm64
 
-    # Upload the package: https://github.com/actions/upload-artifact
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: Package-${{ matrix.configuration }}
-        path: |
-          Time_Shift\bin\${{ matrix.targetplatform }}\${{ matrix.configuration }}\
-          !Time_Shift\bin\${{ matrix.targetplatform }}\${{ matrix.configuration }}\*.xml
-          !Time_Shift\bin\${{ matrix.targetplatform }}\${{ matrix.configuration }}\*.pdb
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
+
+      - name: Publish
+        run: >
+          dotnet publish src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj
+          --configuration Release
+          --runtime ${{ matrix.runtime }}
+          --self-contained false
+          --no-restore
+          --output artifacts/publish/framework-dependent/${{ matrix.runtime }}
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChapterTool-Avalonia-${{ matrix.runtime }}
+          path: artifacts/publish/framework-dependent/${{ matrix.runtime }}
+          if-no-files-found: error

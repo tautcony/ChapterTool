@@ -1,0 +1,50 @@
+{
+  "chapters": [
+    {
+      "id": 0,
+      "time_base": "1/1000",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 10000,
+      "end_time": "10.000000",
+      "tags": {
+        "title": "Tagged Chapter 1",
+        "EDITION_UID": "100"
+      }
+    },
+    {
+      "id": 1,
+      "time_base": "1/1000",
+      "start": 10000,
+      "start_time": "10.000000",
+      "end": 20000,
+      "end_time": "20.000000",
+      "tags": {
+        "title": "Tagged Chapter 2",
+        "EDITION_UID": "100"
+      }
+    },
+    {
+      "id": 2,
+      "time_base": "1/1000",
+      "start": 0,
+      "start_time": "0.000000",
+      "end": 5000,
+      "end_time": "5.000000",
+      "tags": {
+        "title": "Untagged Chapter 1"
+      }
+    },
+    {
+      "id": 3,
+      "time_base": "1/1000",
+      "start": 5000,
+      "start_time": "5.000000",
+      "end": 15000,
+      "end_time": "15.000000",
+      "tags": {
+        "title": "Untagged Chapter 2"
+      }
+    }
+  ]
+}
