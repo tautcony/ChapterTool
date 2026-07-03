@@ -14,6 +14,8 @@ public sealed class ApplicationLogPanelProvider(
     private readonly LogLevel minimumLevel = minimumLevel;
     private readonly List<ApplicationLogEntry> entries = [];
 
+    public event EventHandler<ApplicationLogEntry>? EntryAdded;
+
     public IReadOnlyList<ApplicationLogEntry> Entries
     {
         get
@@ -100,6 +102,8 @@ public sealed class ApplicationLogPanelProvider(
                 entries.RemoveRange(0, entries.Count - capacity);
             }
         }
+
+        EntryAdded?.Invoke(this, entry);
     }
 
     private static Dictionary<string, object?> StructuredState<TState>(TState state)

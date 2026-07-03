@@ -44,10 +44,13 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
         }
 
         var fallbackResult = await fallback.ImportAsync(new ChapterImportRequest(path, Progress: progress), cancellationToken);
+        var fallbackReason = primaryResult.Diagnostics.FirstOrDefault();
         var fallbackDiagnostic = new ChapterDiagnostic(
             DiagnosticSeverity.Info,
             "ImporterFallbackUsed",
-            $"Primary importer '{importer.Id}' could not be invoked; used fallback importer '{fallback.Id}'.");
+            $"Primary importer '{importer.Id}' could not be invoked; used fallback importer '{fallback.Id}'.",
+            path,
+            $"primary={importer.Id}; fallback={fallback.Id}; reason={fallbackReason?.Code ?? "Unknown"}");
         var diagnostics = primaryResult.Diagnostics.Concat([fallbackDiagnostic]).Concat(fallbackResult.Diagnostics).ToList();
         return fallbackResult with { Diagnostics = diagnostics };
     }

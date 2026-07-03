@@ -113,6 +113,47 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task AsyncLoadUpdatesObservableStateThroughViewModel()
+    {
+        var load = new AsyncLoadService(ImportResult(
+            "movie.mpls",
+            Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A")),
+            Info("MPLS", "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
+        var vm = CreateViewModel(load);
+        var rowNotifications = 0;
+        var clipNotifications = 0;
+        var statusNotifications = new List<string>();
+        var progressNotifications = new List<double>();
+        vm.Rows.CollectionChanged += (_, _) => rowNotifications++;
+        vm.ClipOptions.CollectionChanged += (_, _) => clipNotifications++;
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.StatusText))
+            {
+                statusNotifications.Add(vm.StatusText);
+            }
+            else if (args.PropertyName == nameof(MainWindowViewModel.Progress))
+            {
+                progressNotifications.Add(vm.Progress);
+            }
+        };
+
+        await vm.LoadCommand.ExecuteAsync("movie.mpls");
+
+        Assert.True(load.CompletedAfterAwait);
+        Assert.True(rowNotifications > 0);
+        Assert.True(clipNotifications > 0);
+        Assert.Equal(2, vm.ClipOptions.Count);
+        Assert.Equal(0, vm.SelectedClipIndex);
+        Assert.Single(vm.Rows);
+        Assert.Equal("A", vm.Rows[0].Name);
+        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal(1, vm.Progress);
+        Assert.Contains("Parsing chapter text...", statusNotifications);
+        Assert.Contains(progressNotifications, value => value is > 0 and < 1);
+    }
+
+    [Fact]
     public async Task ClipDisplayOptionsExposeMainContentWithRemarksWithoutChangingSourceOptions()
     {
         var firstInfo = Info("MPLS", "00002", new Chapter(1, TimeSpan.Zero, "A"));
@@ -455,6 +496,30 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("00:00:04.004", vm.Rows[0].TimeText);
         Assert.Equal("240", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
+    }
+
+    [Fact]
+    public async Task ChangeFpsCommandLogsSourceAndSelectedTargetFrameRates()
+    {
+        var log = new ApplicationLogPanelProvider();
+        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "A"))));
+        var vm = CreateViewModel(load, logService: log);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var targetIndex = new FrameRateService().Options.Single(option => option.Code == "Fps50").LegacyMplsCode;
+        vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
+        await vm.RefreshCommand.ExecuteAsync();
+        await vm.ChangeFpsCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:04.800", vm.Rows[0].TimeText);
+        Assert.Contains(log.Entries, entry =>
+            entry.MessageKey == "Log.ChangeFps"
+            && entry.Arguments is not null
+            && entry.Arguments.TryGetValue("sourceFps", out var sourceFps)
+            && entry.Arguments.TryGetValue("targetFps", out var targetFps)
+            && string.Equals(sourceFps?.ToString(), "24", StringComparison.Ordinal)
+            && string.Equals(targetFps?.ToString(), "50", StringComparison.Ordinal));
+        Assert.Contains("Convert to current FPS: source=24, target=50", vm.LogText(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -806,7 +871,7 @@ public sealed class MainWindowViewModelTests
     }
 
     private static MainWindowViewModel CreateViewModel(
-        FakeLoadService? loadService = null,
+        IChapterLoadService? loadService = null,
         FakeSaveService? saveService = null,
         FakeWindowService? windowService = null,
         IApplicationLogService? logService = null,
@@ -877,6 +942,24 @@ public sealed class MainWindowViewModelTests
             OnLoad?.Invoke(progress);
             var result = results.Count == 1 ? results.Peek() : results.Dequeue();
             return ValueTask.FromResult(result);
+        }
+    }
+
+    private sealed class AsyncLoadService(ChapterImportResult result) : IChapterLoadService
+    {
+        public bool CompletedAfterAwait { get; private set; }
+
+        public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken)
+        {
+            return LoadAsync(path, progress: null, cancellationToken);
+        }
+
+        public async ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken)
+        {
+            await Task.Yield();
+            progress?.Report(new ChapterLoadProgress(0.25, "Status.LoadingSource.Parse"));
+            CompletedAfterAwait = true;
+            return result;
         }
     }
 

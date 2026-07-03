@@ -32,6 +32,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private ChapterInfoGroup? currentGroup;
     private ChapterInfo? currentInfo;
     private FrameRateOption selectedFrameRateOption;
+    private decimal? configuredFrameRate;
     private bool currentInfoBelongsToSelectedClip;
     private ChapterInfoGroup? splitClipGroup;
     private ChapterSourceOption? combinedClipOption;
@@ -184,6 +185,23 @@ public sealed class MainWindowViewModel : ObservableViewModel
             if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(RelatedMediaReferences));
+                OnPropertyChanged(nameof(SelectedClipDisplayOption));
+            }
+        }
+    }
+
+    public SelectorDisplayOption? SelectedClipDisplayOption
+    {
+        get => SelectedClipIndex < 0 || SelectedClipIndex >= ClipDisplayOptions.Count
+            ? null
+            : ClipDisplayOptions[SelectedClipIndex];
+        set
+        {
+            var index = value is null ? -1 : ClipDisplayOptions.IndexOf(value);
+            if (index >= 0 && index != SelectedClipIndex)
+            {
+                SelectClip(index);
+                NotifyStateChanged();
             }
         }
     }
@@ -591,6 +609,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     public string LogText() => logService.Format(FormatLogEntry);
 
+    public IApplicationLogService LogService => logService;
+
     public void ClearLog() => logService.Clear();
 
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
@@ -737,6 +757,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         SelectedClipIndex = index;
         currentInfo = ClipOptions[index].ChapterInfo;
+        configuredFrameRate = (decimal)currentInfo.FramesPerSecond;
         currentInfoBelongsToSelectedClip = !IsClipCombineChecked;
         Log("Log.SelectedSourceOption",
             ("index", index),
@@ -901,6 +922,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         var result = frameRateService.UpdateFrames(currentInfo, appliedOption, RoundFrames, FrameAccuracyTolerance);
         currentInfo = result.Info;
+        var storedInfo = configuredFrameRate is null
+            ? currentInfo
+            : currentInfo with { FramesPerSecond = (double)configuredFrameRate.Value };
 
         if (detection is not null)
         {
@@ -926,11 +950,11 @@ public sealed class MainWindowViewModel : ObservableViewModel
             ("chapters", currentInfo.Chapters.Count));
         if (currentInfoBelongsToSelectedClip)
         {
-            UpdateCurrentClipOption(currentInfo);
+            UpdateCurrentClipOption(storedInfo);
         }
         else if (IsClipCombineChecked)
         {
-            UpdateCombinedClipOption(currentInfo);
+            UpdateCombinedClipOption(storedInfo);
         }
         RefreshRows();
         NotifyStateChanged();
@@ -943,8 +967,10 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        var sourceFps = (decimal)currentInfo.FramesPerSecond;
-        var result = ChapterFpsTransformService.ChangeFps(currentInfo, sourceFps, selectedFrameRateOption.Value);
+        var sourceFps = configuredFrameRate ?? (decimal)currentInfo.FramesPerSecond;
+        var targetOption = selectedFrameRateOption;
+        var targetFps = targetOption.Value;
+        var result = ChapterFpsTransformService.ChangeFps(currentInfo, sourceFps, targetFps);
         if (!result.Success)
         {
             SetStatus(null, diagnostic: result.Diagnostics.FirstOrDefault());
@@ -955,10 +981,12 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         var beforeCount = currentInfo.Chapters.Count;
         currentInfo = result.Info;
+        configuredFrameRate = targetFps;
         ApplyFrameInfo();
         SetStatus("Status.Updated");
-        Log("Log.EditChapters",
-            ("action", $"Change FPS: {sourceFps:0.###} -> {selectedFrameRateOption.Value:0.###}"),
+        Log("Log.ChangeFps",
+            ("sourceFps", $"{sourceFps:0.###}"),
+            ("targetFps", $"{targetFps:0.###}"),
             ("before", beforeCount),
             ("after", result.Info.Chapters.Count));
         LogStatus();
@@ -1097,6 +1125,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SyncClipDisplayOptions(args);
         OnPropertyChanged(nameof(IsClipSelectionVisible));
         OnPropertyChanged(nameof(RelatedMediaReferences));
+        OnPropertyChanged(nameof(SelectedClipIndex));
+        OnPropertyChanged(nameof(SelectedClipDisplayOption));
         NotifyCommandStates();
     }
 

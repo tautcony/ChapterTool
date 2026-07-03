@@ -55,7 +55,7 @@
     <value>自动帧率检测：option={option}，confidence={confidence}，accurate={accurate}/{evaluated}，deviation={deviation}</value>
   </data>
   <data name="Log.ChangeFps" xml:space="preserve">
-    <value>转换帧率：{sourceFps} -&gt; {targetFps}，章节数 {before} -&gt; {after}</value>
+    <value>转换至当前帧率：源配置={sourceFps}，目标配置={targetFps}，章节数 {before} -&gt; {after}</value>
   </data>
   <data name="Log.CreateZones" xml:space="preserve">
     <value>生成 Zones：选中行={selectedRows}，章节数={chapters}</value>
@@ -115,7 +115,7 @@
     <value>章节名</value>
   </data>
   <data name="Main.ChangeFps" xml:space="preserve">
-    <value>转换帧率</value>
+    <value>转换至当前帧率</value>
   </data>
   <data name="Main.ColumnFrames" xml:space="preserve">
     <value>帧数</value>

@@ -4,6 +4,8 @@ namespace ChapterTool.Core.Services;
 
 public interface IApplicationLogService
 {
+    event EventHandler<ApplicationLogEntry>? EntryAdded;
+
     IReadOnlyList<ApplicationLogEntry> Entries { get; }
 
     string Format(Func<ApplicationLogEntry, string>? formatter = null);

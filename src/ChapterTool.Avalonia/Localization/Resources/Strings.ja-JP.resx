@@ -55,7 +55,7 @@
     <value>自動フレームレート検出: option={option}, confidence={confidence}, accurate={accurate}/{evaluated}, deviation={deviation}</value>
   </data>
   <data name="Log.ChangeFps" xml:space="preserve">
-    <value>FPS を変換: {sourceFps} -&gt; {targetFps}, chapters {before} -&gt; {after}</value>
+    <value>現在の FPS に変換: source={sourceFps}, target={targetFps}, chapters {before} -&gt; {after}</value>
   </data>
   <data name="Log.CreateZones" xml:space="preserve">
     <value>Zones 生成: selectedRows={selectedRows}, chapters={chapters}</value>
@@ -115,7 +115,7 @@
     <value>チャプター名</value>
   </data>
   <data name="Main.ChangeFps" xml:space="preserve">
-    <value>FPS を変換</value>
+    <value>現在の FPS に変換</value>
   </data>
   <data name="Main.ColumnFrames" xml:space="preserve">
     <value>フレーム</value>
