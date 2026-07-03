@@ -125,7 +125,12 @@ public sealed class RuntimeChapterLoadServiceTests
             Assert.True(result.Success, Diagnostics(result));
             Assert.Equal(1, primary.CallCount);
             Assert.Equal(1, fallback.CallCount);
-            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic is { Code: "ImporterFallbackUsed", Severity: DiagnosticSeverity.Info });
+            var fallbackDiagnostic = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed");
+            Assert.Equal(DiagnosticSeverity.Info, fallbackDiagnostic.Severity);
+            Assert.Equal(path, fallbackDiagnostic.Location);
+            Assert.Contains("primary=ffprobe-media", fallbackDiagnostic.Details, StringComparison.Ordinal);
+            Assert.Contains("fallback=mp4", fallbackDiagnostic.Details, StringComparison.Ordinal);
+            Assert.Contains("reason=FfprobeMissingDependency", fallbackDiagnostic.Details, StringComparison.Ordinal);
             Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "FfprobeMissingDependency");
         }
         finally

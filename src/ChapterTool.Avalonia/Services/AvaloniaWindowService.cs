@@ -146,7 +146,11 @@ public sealed class AvaloniaWindowService : IWindowService
             {
                 DataContext = new TextToolViewModel(
                     viewModel.LogText,
-                    new TextToolOptions { ClearAction = viewModel.ClearLog })
+                    new TextToolOptions
+                    {
+                        ClearAction = viewModel.ClearLog,
+                        LiveRefreshService = viewModel.LogService
+                    })
             },
             "settings" => new SettingsToolView
             {

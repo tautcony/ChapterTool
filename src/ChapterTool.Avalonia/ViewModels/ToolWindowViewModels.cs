@@ -38,6 +38,11 @@ public sealed class TextToolViewModel : ObservableViewModel
             Text = string.Empty;
             return ValueTask.CompletedTask;
         }, _ => this.options.ClearAction is not null);
+
+        if (this.options.LiveRefreshService is { } liveRefreshService)
+        {
+            liveRefreshService.EntryAdded += OnEntryAdded;
+        }
     }
 
     public string Text
@@ -98,6 +103,16 @@ public sealed class TextToolViewModel : ObservableViewModel
     public UiCommand RefreshCommand { get; }
 
     public UiCommand ClearCommand { get; }
+
+    private void OnEntryAdded(object? sender, ApplicationLogEntry entry)
+    {
+        RefreshText();
+    }
+
+    private void RefreshText()
+    {
+        Text = Format(refreshText(), Kind);
+    }
 
     private static string Format(string text, TextToolKind kind)
     {
@@ -283,6 +298,8 @@ public sealed class TextToolOptions
     public Action? ClearAction { get; init; }
 
     public TextToolFormatSelector? FormatSelector { get; init; }
+
+    public IApplicationLogService? LiveRefreshService { get; init; }
 }
 
 public sealed class TextToolFormatSelector(MainWindowViewModel owner)

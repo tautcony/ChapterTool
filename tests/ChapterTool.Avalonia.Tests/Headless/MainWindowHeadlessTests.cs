@@ -109,6 +109,25 @@ public sealed class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Clip_combine_binding_updates_when_view_model_command_runs()
+    {
+        using var host = CreateMultiOptionHost(
+            "00000.mpls",
+            MainWindowHeadlessTestHost.Option("MPLS", "00001", "MPLS A1", "MPLS A2"),
+            MainWindowHeadlessTestHost.Option("MPLS", "00002", "MPLS B1", "MPLS B2"));
+
+        await host.LoadAsync("00000.mpls");
+        var clipMenuItem = host.RequiredControl<MenuItem>("ClipCombineMenuItem");
+        var gridMenuItem = host.RequiredControl<MenuItem>("GridCombineMenuItem");
+
+        await host.ViewModel.CombineCommand.ExecuteAsync();
+        await host.LayoutAsync();
+
+        Assert.True(clipMenuItem.IsChecked);
+        Assert.True(gridMenuItem.IsChecked);
+    }
+
+    [AvaloniaFact]
     public async Task Xml_importer_option_labels_render_in_clip_selector()
     {
         var importer = new XmlChapterImporter(new ChapterTimeFormatter());

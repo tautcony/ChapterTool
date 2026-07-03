@@ -59,6 +59,23 @@
       <Setter Property="CornerRadius" Value="2" />
       <Setter Property="MinHeight" Value="25.6" />
       <Setter Property="FontSize" Value="11.2" />
+      <Setter Property="Padding" Value="6.4,0" />
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="NumericUpDown">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="NumericUpDown /template/ TextBox">
+      <Setter Property="Padding" Value="6.4,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+      <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
     <Style Selector="CheckBox">
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
@@ -68,6 +85,7 @@
     <Style Selector="TextBlock.optionLabel">
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.TextFrontBrush}" />
       <Setter Property="FontSize" Value="11.2" />
+      <Setter Property="MinHeight" Value="14" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="TextTrimming" Value="None" />
@@ -202,22 +220,22 @@
                   HorizontalAlignment="Left"
                   VerticalAlignment="Bottom"
                   ItemsSource="{Binding ClipDisplayOptions}"
-                  SelectedIndex="{Binding SelectedClipIndex, Mode=OneWay}"
+                  SelectedItem="{Binding SelectedClipDisplayOption, Mode=TwoWay}"
                   IsVisible="{Binding IsClipSelectionVisible}"
-                  SelectionChanged="OnClipSelectionChanged"
                   AutomationProperties.AutomationId="ClipSelector">
           <ComboBox.ItemTemplate>
             <DataTemplate x:DataType="vm:SelectorDisplayOption">
-              <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
             </DataTemplate>
           </ComboBox.ItemTemplate>
           <ComboBox.SelectionBoxItemTemplate>
             <DataTemplate x:DataType="vm:SelectorDisplayOption">
-              <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
           <ComboBox.ContextMenu>
-            <ContextMenu>
+            <ContextMenu x:DataType="vm:MainWindowViewModel"
+                         DataContext="{Binding #RootWindow.DataContext}">
               <MenuItem x:Name="ClipCombineMenuItem"
                         Header="{DynamicResource Main.Combine}"
                         ToggleType="CheckBox"
@@ -302,7 +320,8 @@
                   CellEditEnded="OnChapterGridCellEditEnded"
                   AutomationProperties.AutomationId="ChapterGrid">
           <DataGrid.ContextMenu>
-            <ContextMenu>
+            <ContextMenu x:DataType="vm:MainWindowViewModel"
+                         DataContext="{Binding #RootWindow.DataContext}">
               <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
               <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Main.Delete}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
               <MenuItem x:Name="GridCombineMenuItem"
@@ -464,12 +483,12 @@
                     AutomationProperties.AutomationId="ChapterNameMode">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="vm:SelectorDisplayOption">
-                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
               </DataTemplate>
             </ComboBox.ItemTemplate>
             <ComboBox.SelectionBoxItemTemplate>
               <DataTemplate x:DataType="vm:SelectorDisplayOption">
-                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
               </DataTemplate>
             </ComboBox.SelectionBoxItemTemplate>
           </ComboBox>
@@ -521,12 +540,12 @@
                     AutomationProperties.AutomationId="XmlLanguage">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="vm:SelectorDisplayOption">
-                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
               </DataTemplate>
             </ComboBox.ItemTemplate>
             <ComboBox.SelectionBoxItemTemplate>
               <DataTemplate x:DataType="vm:SelectorDisplayOption">
-                <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
               </DataTemplate>
             </ComboBox.SelectionBoxItemTemplate>
           </ComboBox>

@@ -45,7 +45,6 @@ public sealed partial class MainWindow : Window
             ReadAdvancedOptions();
             ReadFrameOptions();
             await viewModel.RefreshCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
-            Refresh();
         }, _ => viewModel.RefreshCommand.CanExecute());
         InsertSelectedCommand = new UiCommand(async (_, _) =>
         {
@@ -61,13 +60,13 @@ public sealed partial class MainWindow : Window
         CombineCommand = new UiCommand(async (_, _) =>
         {
             await viewModel.CombineCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
-            Refresh();
         }, _ => viewModel.CombineCommand.CanExecute());
 
         InitializeComponent();
         DataContext = viewModel;
+        SubscribeViewModelCommandState();
         ApplyAdvancedOptionsLayout();
-        Refresh();
+        RaiseCommandStates();
     }
 
     public UiCommand BrowseAndLoadCommand { get; }
@@ -109,7 +108,6 @@ public sealed partial class MainWindow : Window
         {
             isRefreshing = false;
         }
-        Refresh();
     }
 
     private async Task BrowseAndLoadAsync()
@@ -130,7 +128,6 @@ public sealed partial class MainWindow : Window
         {
             isRefreshing = false;
         }
-        Refresh();
     }
 
     private async Task SaveAsync(string? directory)
@@ -139,7 +136,6 @@ public sealed partial class MainWindow : Window
         viewModel.SaveFormat = (ChapterExportFormat)Math.Max(0, FormatBox.SelectedIndex);
         directory ??= string.IsNullOrWhiteSpace(viewModel.CurrentPath) ? null : Path.GetDirectoryName(viewModel.CurrentPath);
         await viewModel.SaveDirectoryCommand.ExecuteAsync(directory);
-        Refresh();
     }
 
     private async Task SaveToAsync()
@@ -171,7 +167,6 @@ public sealed partial class MainWindow : Window
         {
             isRefreshing = false;
         }
-        Refresh();
     }
 
     private async Task LoadChapterNameTemplateAsync()
@@ -186,33 +181,28 @@ public sealed partial class MainWindow : Window
         viewModel.ChapterNameTemplateText = text;
         viewModel.ChapterNameTemplateStatus = Path.GetFileName(path);
         viewModel.ChapterNameModeIndex = 2;
-        Refresh();
     }
 
     private async Task OpenRelatedMediaAsync()
     {
         await viewModel.OpenRelatedMediaCommand.ExecuteAsync();
-        Refresh();
     }
 
     private async Task OpenZonesAsync()
     {
         viewModel.UpdateSelectedRows(SelectedIndexes());
         await viewModel.ZonesCommand.ExecuteAsync();
-        Refresh();
     }
 
     private async Task OpenForwardShiftAsync()
     {
         viewModel.UpdateSelectedRows(SelectedIndexes());
         await viewModel.ForwardShiftCommand.ExecuteAsync();
-        Refresh();
     }
 
     private async void OnOpened(object? sender, EventArgs args)
     {
         await viewModel.LoadSettingsAsync(CancellationToken.None);
-        Refresh();
         if (!string.IsNullOrWhiteSpace(startupPath))
         {
             PathBox.Text = startupPath;
@@ -228,20 +218,6 @@ public sealed partial class MainWindow : Window
     private async void OnFrameOptionsChanged(object? sender, RoutedEventArgs args)
     {
         await ApplyFrameOptionsAndRefreshAsync();
-    }
-
-    private async void OnClipSelectionChanged(object? sender, SelectionChangedEventArgs args)
-    {
-        if (isRefreshing)
-        {
-            return;
-        }
-
-        if (ClipBox.SelectedIndex >= 0)
-        {
-            await viewModel.SelectClipCommand.ExecuteAsync(ClipBox.SelectedIndex);
-            Refresh();
-        }
     }
 
     private async void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args)
@@ -270,7 +246,6 @@ public sealed partial class MainWindow : Window
             {
                 isRefreshing = false;
             }
-            Refresh();
         }
         catch (Exception exception)
         {
@@ -285,7 +260,6 @@ public sealed partial class MainWindow : Window
         {
             args.Handled = true;
             await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
-            Refresh();
             return;
         }
 
@@ -293,7 +267,6 @@ public sealed partial class MainWindow : Window
         {
             args.Handled = true;
             await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
-            Refresh();
             return;
         }
 
@@ -321,7 +294,6 @@ public sealed partial class MainWindow : Window
             if (viewModel.SelectClipCommand.CanExecute(next))
             {
                 await viewModel.SelectClipCommand.ExecuteAsync(next);
-                Refresh();
             }
 
             return;
@@ -334,14 +306,12 @@ public sealed partial class MainWindow : Window
             {
                 FormatBox.SelectedIndex = mapped;
                 viewModel.SaveFormat = (ChapterExportFormat)mapped;
-                Refresh();
             }
 
             return;
         }
 
         await shortcutRouter.RouteAsync(gesture);
-        Refresh();
     }
 
     private static string? Gesture(KeyEventArgs args)
@@ -461,19 +431,16 @@ public sealed partial class MainWindow : Window
             await viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
         }
 
-        Refresh();
     }
 
     private async ValueTask InsertSelectedAsync()
     {
         await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
-        Refresh();
     }
 
     private async ValueTask DeleteSelectedAsync()
     {
         await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
-        Refresh();
     }
 
     private int SelectedRowIndex() =>
@@ -524,27 +491,38 @@ public sealed partial class MainWindow : Window
 
         ReadFrameOptions();
         await viewModel.RefreshCommand.ExecuteAsync();
-        Refresh();
     }
 
-    private void Refresh()
+    private void SubscribeViewModelCommandState()
     {
-        isRefreshing = true;
-        try
+        foreach (var command in ViewModelCommands())
         {
-            if (ClipBox.SelectedIndex != viewModel.SelectedClipIndex)
-            {
-                ClipBox.SelectedIndex = viewModel.SelectedClipIndex;
-            }
+            command.CanExecuteChanged += (_, _) => RaiseCommandStates();
+        }
 
-            ClipCombineMenuItem.IsChecked = viewModel.IsClipCombineChecked;
-            GridCombineMenuItem.IsChecked = viewModel.IsClipCombineChecked;
-            RaiseCommandStates();
-        }
-        finally
-        {
-            isRefreshing = false;
-        }
+        viewModel.Rows.CollectionChanged += (_, _) => RaiseCommandStates();
+    }
+
+    private IEnumerable<UiCommand> ViewModelCommands()
+    {
+        yield return viewModel.ReloadCommand;
+        yield return viewModel.AppendMplsCommand;
+        yield return viewModel.SaveCommand;
+        yield return viewModel.SaveDirectoryCommand;
+        yield return viewModel.RefreshCommand;
+        yield return viewModel.ChangeFpsCommand;
+        yield return viewModel.SelectClipCommand;
+        yield return viewModel.CombineCommand;
+        yield return viewModel.InsertCommand;
+        yield return viewModel.DeleteCommand;
+        yield return viewModel.OpenRelatedMediaCommand;
+        yield return viewModel.PreviewCommand;
+        yield return viewModel.SettingsCommand;
+        yield return viewModel.ColorSettingsCommand;
+        yield return viewModel.ExpressionCommand;
+        yield return viewModel.TemplateNamesCommand;
+        yield return viewModel.ZonesCommand;
+        yield return viewModel.ForwardShiftCommand;
     }
 
     private void RaiseCommandStates()
@@ -561,14 +539,6 @@ public sealed partial class MainWindow : Window
         OpenZonesCommand.RaiseCanExecuteChanged();
         OpenForwardShiftCommand.RaiseCanExecuteChanged();
         CombineCommand.RaiseCanExecuteChanged();
-        viewModel.SaveCommand.RaiseCanExecuteChanged();
-        viewModel.CombineCommand.RaiseCanExecuteChanged();
-        viewModel.OpenRelatedMediaCommand.RaiseCanExecuteChanged();
-        viewModel.PreviewCommand.RaiseCanExecuteChanged();
-        viewModel.SettingsCommand.RaiseCanExecuteChanged();
-        viewModel.ColorSettingsCommand.RaiseCanExecuteChanged();
-        viewModel.ExpressionCommand.RaiseCanExecuteChanged();
-        viewModel.TemplateNamesCommand.RaiseCanExecuteChanged();
     }
 
     private void ApplyAdvancedOptionsLayout()

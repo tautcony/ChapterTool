@@ -8,6 +8,7 @@ using ChapterTool.Core.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -68,6 +69,20 @@ public sealed class ToolWindowViewModelTests
         Assert.Contains("QPFile", vm.FormatOptions);
         Assert.Contains("Chapter2Qpfile", vm.FormatOptions);
         Assert.Equal(10, vm.FormatOptions.Count);
+    }
+
+    [Fact]
+    public void TextToolRefreshesWhenLiveLogServiceAddsEntry()
+    {
+        var logService = new ApplicationLogPanelProvider();
+        var logger = logService.CreateLogger("ChapterTool.Tests");
+        var vm = new TextToolViewModel(
+            () => logService.Format(),
+            new TextToolOptions { LiveRefreshService = logService });
+
+        logger.LogInformation("Live event");
+
+        Assert.Contains("Live event", vm.Text, StringComparison.Ordinal);
     }
 
     [Fact]

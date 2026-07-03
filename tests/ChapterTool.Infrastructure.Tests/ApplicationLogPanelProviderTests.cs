@@ -70,4 +70,58 @@ public sealed class ApplicationLogPanelProviderTests
         logger.LogInformation("Fourth");
         Assert.Equal("Fourth", Assert.Single(service.Entries).Message);
     }
+
+    [Fact]
+    public void NotifiesSubscribersAfterAcceptedEntriesAreStored()
+    {
+        var service = new ApplicationLogPanelProvider(capacity: 2);
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var notifications = new List<ApplicationLogEntrySnapshot>();
+
+        service.EntryAdded += (_, entry) =>
+            notifications.Add(new ApplicationLogEntrySnapshot(entry.Message, service.Entries.Select(static item => item.Message).ToArray()));
+
+        logger.LogInformation("First");
+        logger.LogInformation("Second");
+        logger.LogInformation("Third");
+
+        Assert.Equal(["First", "Second", "Third"], notifications.Select(static notification => notification.Message));
+        Assert.Equal(["Second", "Third"], notifications[^1].CurrentHistory);
+        Assert.Equal(["Second", "Third"], service.Entries.Select(static entry => entry.Message));
+    }
+
+    [Fact]
+    public void DoesNotNotifyForFilteredEntries()
+    {
+        var service = new ApplicationLogPanelProvider(minimumLevel: LogLevel.Warning);
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var notifications = 0;
+
+        service.EntryAdded += (_, _) => notifications++;
+
+        logger.LogInformation("Hidden");
+        logger.LogWarning("Visible");
+
+        Assert.Equal(1, notifications);
+        Assert.Equal("Visible", Assert.Single(service.Entries).Message);
+    }
+
+    [Fact]
+    public void ClearDoesNotDisableFutureNotifications()
+    {
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var messages = new List<string>();
+
+        service.EntryAdded += (_, entry) => messages.Add(entry.Message);
+
+        logger.LogInformation("Before clear");
+        service.Clear();
+        logger.LogInformation("After clear");
+
+        Assert.Equal(["Before clear", "After clear"], messages);
+        Assert.Equal("After clear", Assert.Single(service.Entries).Message);
+    }
+
+    private sealed record ApplicationLogEntrySnapshot(string Message, IReadOnlyList<string> CurrentHistory);
 }

@@ -55,7 +55,7 @@
     <value>Auto frame-rate detection: option={option}, confidence={confidence}, accurate={accurate}/{evaluated}, deviation={deviation}</value>
   </data>
   <data name="Log.ChangeFps" xml:space="preserve">
-    <value>Change FPS: {sourceFps} -&gt; {targetFps}, chapters {before} -&gt; {after}</value>
+    <value>Convert to current FPS: source={sourceFps}, target={targetFps}, chapters {before} -&gt; {after}</value>
   </data>
   <data name="Log.CreateZones" xml:space="preserve">
     <value>Create zones: selectedRows={selectedRows}, chapters={chapters}</value>
@@ -115,7 +115,7 @@
     <value>Chapter name</value>
   </data>
   <data name="Main.ChangeFps" xml:space="preserve">
-    <value>Change FPS</value>
+    <value>Convert to current FPS</value>
   </data>
   <data name="Main.ColumnFrames" xml:space="preserve">
     <value>Frames</value>
