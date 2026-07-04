@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ChapterTool icon">
-  <rect width="64" height="64" rx="8" fill="#1f2933"/>
-  <path d="M14 16h36v6H14zM14 29h36v6H14zM14 42h24v6H14z" fill="#f7c948"/>
-  <path d="M44 40l8 5-8 5z" fill="#36b37e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ChapterTool icon">
+  <rect width="128" height="128" rx="16" fill="#1f2933"/>
+  <g transform="translate(16 16) scale(0.1) translate(0 960)">
+    <path fill="#f7c948" d="M320-160q-117 0-198.5-81.5T40-440q0-107 70.5-186.5T287-718l-63-66 56-56 160 160-160 160-56-57 59-59q-71 14-117 69t-46 127q0 83 58.5 141.5T320-240h120v80H320Z"/>
+    <path fill="#36b37e" d="M520-520v-280h360v280H520Zm0 360v-280h360v280H520Zm80-80h200v-120H600v120Z"/>
+  </g>
 </svg>
