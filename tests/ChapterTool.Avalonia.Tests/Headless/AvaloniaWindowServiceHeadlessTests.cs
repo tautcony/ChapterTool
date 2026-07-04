@@ -11,6 +11,7 @@ using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
+[Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class AvaloniaWindowServiceHeadlessTests
 {
     [AvaloniaFact]

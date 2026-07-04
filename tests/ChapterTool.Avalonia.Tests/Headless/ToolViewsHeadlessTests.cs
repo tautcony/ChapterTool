@@ -6,6 +6,7 @@ using ChapterTool.Avalonia.Views.Tools;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
+[Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class ToolViewsHeadlessTests
 {
     [AvaloniaFact]

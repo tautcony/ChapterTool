@@ -30,7 +30,7 @@ public sealed class SettingsToolViewModelTests
             FrameAccuracyTolerance: 0.02m));
         var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default);
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, themeStore, new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, themeStore, new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -74,7 +74,7 @@ public sealed class SettingsToolViewModelTests
             DefaultXmlLanguage: "und",
             FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -98,7 +98,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US", SavingPath: "saved"));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -124,7 +124,7 @@ public sealed class SettingsToolViewModelTests
         var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(
+        var viewModel = CreateViewModel(
             owner,
             appStore,
             themeStore,
@@ -156,7 +156,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: -1m));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0.15m, viewModel.FrameAccuracyTolerance);
@@ -173,7 +173,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.FrameAccuracyToleranceSliderValue = 0.173;
@@ -192,7 +192,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.15m));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.FrameAccuracyToleranceSliderValue = 0.141;
@@ -211,7 +211,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var sliderNotifications = 0;
         viewModel.PropertyChanged += (_, args) =>
@@ -233,7 +233,7 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public void SaveFormatOptionsExposeSingleQpfileEntry()
     {
-        var viewModel = new SettingsToolViewModel(
+        var viewModel = CreateViewModel(
             CreateOwner(),
             null,
             null,
@@ -267,7 +267,7 @@ public sealed class SettingsToolViewModelTests
         var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default);
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(
+        var viewModel = CreateViewModel(
             owner,
             appStore,
             themeStore,
@@ -288,7 +288,7 @@ public sealed class SettingsToolViewModelTests
         var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(
+        var viewModel = CreateViewModel(
             owner,
             appStore,
             themeStore,
@@ -312,7 +312,7 @@ public sealed class SettingsToolViewModelTests
         var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(
+        var viewModel = CreateViewModel(
             owner,
             appStore,
             themeStore,
@@ -334,7 +334,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FfprobePath: "missing"));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         await viewModel.ClearFfprobeCommand.ExecuteAsync();
@@ -353,7 +353,7 @@ public sealed class SettingsToolViewModelTests
         await File.WriteAllTextAsync(executable, "");
         var appStore = new FakeAppSettingsStore(new AppSettings(FfprobePath: root));
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
 
         try
         {
@@ -386,7 +386,7 @@ public sealed class SettingsToolViewModelTests
             ["eac3to"] = new(true, eac3to),
             ["ffprobe"] = new(true, ffprobe)
         });
-        var viewModel = new SettingsToolViewModel(
+        var viewModel = CreateViewModel(
             owner,
             appStore,
             new FakeThemeSettingsStore(ThemeColorSettings.Default),
@@ -418,7 +418,7 @@ public sealed class SettingsToolViewModelTests
         var appStore = new FakeAppSettingsStore(new AppSettings());
         var picker = new FakeSettingsPicker("picked-directory", "picked-executable");
         var owner = CreateOwner(appStore);
-        var viewModel = new SettingsToolViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"), picker);
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"), picker);
 
         await viewModel.BrowseSaveDirectoryCommand.ExecuteAsync();
         await viewModel.BrowseFfprobeCommand.ExecuteAsync();
@@ -426,6 +426,24 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("picked-directory", viewModel.SaveDirectory);
         Assert.Equal("picked-executable", viewModel.FfprobePath);
     }
+
+    private static SettingsToolViewModel CreateViewModel(
+        MainWindowViewModel owner,
+        ISettingsStore<AppSettings>? appSettingsStore,
+        ISettingsStore<ThemeColorSettings>? themeSettingsStore,
+        IAppLocalizer? localizer = null,
+        ISettingsPickerService? picker = null,
+        IExternalToolLocator? externalToolLocator = null,
+        IThemeApplicationService? themeApplicationService = null) =>
+        new(
+            owner,
+            appSettingsStore,
+            themeSettingsStore,
+            localizer,
+            picker,
+            externalToolLocator,
+            themeApplicationService,
+            autoLoad: false);
 
     private static MainWindowViewModel CreateOwner(ISettingsStore<AppSettings>? appSettingsStore = null)
     {

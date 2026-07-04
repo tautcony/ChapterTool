@@ -5,9 +5,14 @@ using Optris.Icons.Avalonia.FontAwesome;
 
 [assembly: AvaloniaTestApplication(typeof(ChapterTool.Avalonia.Tests.Headless.HeadlessAvaloniaTestApplication))]
 [assembly: AvaloniaTestIsolation(AvaloniaTestIsolationLevel.PerAssembly)]
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace ChapterTool.Avalonia.Tests.Headless;
+
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class AvaloniaHeadlessTestCollection
+{
+    public const string Name = "Avalonia headless tests";
+}
 
 public static class HeadlessAvaloniaTestApplication
 {

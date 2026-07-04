@@ -12,6 +12,7 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
+[Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowHeadlessTests
 {
     [AvaloniaFact]

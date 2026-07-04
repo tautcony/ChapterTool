@@ -4,6 +4,7 @@ using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
+[Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowStateHeadlessTests
 {
     [AvaloniaFact]
