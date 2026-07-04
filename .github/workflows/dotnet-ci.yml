@@ -27,7 +27,7 @@ jobs:
         run: dotnet build ChapterTool.Avalonia.slnx --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test ChapterTool.Avalonia.slnx --configuration Release --no-build --blame-hang --blame-hang-timeout 10m --blame-hang-dump-type Full
+        run: dotnet test ChapterTool.Avalonia.slnx --configuration Release --no-build --blame-hang --blame-hang-timeout 10m --blame-hang-dump-type full
 
   publish:
     needs: build-test
