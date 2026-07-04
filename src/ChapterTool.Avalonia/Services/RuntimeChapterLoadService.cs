@@ -21,7 +21,8 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
         var importer = importerRegistry.Resolve(path);
 
         return importer is null
-            ? ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedSource", $"Unsupported source extension: {extension}.")))
+            ? ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedSource", $"Unsupported source extension: {extension}.",
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["extension"] = extension })))
             : LoadWithFallbackAsync(path, importer, progress, cancellationToken);
     }
 

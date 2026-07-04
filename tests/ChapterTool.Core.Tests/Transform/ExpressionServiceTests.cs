@@ -148,6 +148,6 @@ public sealed class ExpressionServiceTests
 
         Assert.False(result.Success);
         Assert.Equal(10, result.Value);
-        Assert.Equal("InvalidExpression", Assert.Single(result.Diagnostics).Code);
+        Assert.StartsWith("InvalidExpression", Assert.Single(result.Diagnostics).Code);
     }
 }

@@ -62,6 +62,42 @@ public sealed class ToolViewsHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Text_tool_renders_selectable_text_for_copy_operations()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+
+        var textToolViewModel = new TextToolViewModel(
+            () => "CHAPTER01=00:00:00.000\nCHAPTER02=00:00:05.000");
+
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(new TextToolView(), textToolViewModel);
+        try
+        {
+            var selectable = Assert.Single(MainWindowHeadlessTestHost.Descendants<SelectableTextBlock>(window));
+            Assert.NotNull(selectable.Inlines);
+
+            var runTexts = selectable.Inlines!
+                .OfType<global::Avalonia.Controls.Documents.Run>()
+                .Select(static run => run.Text)
+                .Where(static text => !string.IsNullOrEmpty(text))
+                .ToList();
+            var selectableContent = string.Concat(runTexts);
+            Assert.Equal("CHAPTER01=00:00:00.000CHAPTER02=00:00:05.000", selectableContent);
+
+            var numberBlocks = MainWindowHeadlessTestHost.Descendants<TextBlock>(window)
+                .Where(block => !string.IsNullOrWhiteSpace(block.Text))
+                .Select(static block => block.Text)
+                .ToList();
+            Assert.Contains(numberBlocks, text => text!.Trim() == "1");
+            Assert.Contains(numberBlocks, text => text!.Trim() == "2");
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Settings_tool_renders_grouped_configuration_controls()
     {
         using var host = new MainWindowHeadlessTestHost(

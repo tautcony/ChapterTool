@@ -99,7 +99,8 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
                 new ChapterDiagnostic(
                     DiagnosticSeverity.Warning,
                     "OrderShiftNormalized",
-                    $"Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.")
+                    $"Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.",
+                    Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["shift"] = shift })
             ];
         return new ChapterEditResult(info with { Chapters = chapters }, diagnostics);
     }
@@ -200,7 +201,8 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     private static ChapterEditResult InvalidIndex(ChapterInfo info, int index) =>
         new(
             info,
-            [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidChapterIndex", $"Chapter index {index} is out of range.")]);
+            [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidChapterIndex", $"Chapter index {index} is out of range.",
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["index"] = index })]);
 
     [GeneratedRegex(@"\d+")]
     private static partial Regex FirstIntegerRegex();

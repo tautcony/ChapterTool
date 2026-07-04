@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Exporting;
@@ -14,6 +15,7 @@ public sealed partial class MainWindow : Window
     private readonly IFilePickerService filePickerService;
     private readonly string? startupPath;
     private bool isRefreshing;
+    private bool windowCommandRefreshPending;
 
     public MainWindow()
     {
@@ -497,10 +499,10 @@ public sealed partial class MainWindow : Window
     {
         foreach (var command in ViewModelCommands())
         {
-            command.CanExecuteChanged += (_, _) => RaiseCommandStates();
+            command.CanExecuteChanged += ScheduleWindowCommandRefresh;
         }
 
-        viewModel.Rows.CollectionChanged += (_, _) => RaiseCommandStates();
+        viewModel.Rows.CollectionChanged += ScheduleWindowCommandRefresh;
     }
 
     private IEnumerable<UiCommand> ViewModelCommands()
@@ -539,6 +541,23 @@ public sealed partial class MainWindow : Window
         OpenZonesCommand.RaiseCanExecuteChanged();
         OpenForwardShiftCommand.RaiseCanExecuteChanged();
         CombineCommand.RaiseCanExecuteChanged();
+    }
+
+    private void ScheduleWindowCommandRefresh(object? sender, EventArgs e)
+    {
+        if (windowCommandRefreshPending)
+        {
+            return;
+        }
+
+        windowCommandRefreshPending = true;
+        Dispatcher.UIThread.Post(ExecuteWindowCommandRefresh);
+    }
+
+    private void ExecuteWindowCommandRefresh()
+    {
+        windowCommandRefreshPending = false;
+        RaiseCommandStates();
     }
 
     private void ApplyAdvancedOptionsLayout()

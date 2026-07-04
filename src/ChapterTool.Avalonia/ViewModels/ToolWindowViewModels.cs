@@ -16,6 +16,7 @@ public sealed class TextToolViewModel : ObservableViewModel
 
     private readonly Func<string> refreshText;
     private readonly TextToolOptions options;
+    private readonly IApplicationLogService? liveRefreshService;
     private string text;
     private TextToolKind kind;
     private IReadOnlyList<TextToolLineViewModel> lines;
@@ -24,6 +25,7 @@ public sealed class TextToolViewModel : ObservableViewModel
     {
         this.refreshText = refreshText;
         this.options = options ?? TextToolOptions.Default;
+        liveRefreshService = this.options.LiveRefreshService;
         kind = this.options.FormatSelector?.Kind ?? TextToolKind.Plain;
         text = Format(refreshText(), kind);
         lines = BuildLines(text, kind);
@@ -39,9 +41,17 @@ public sealed class TextToolViewModel : ObservableViewModel
             return ValueTask.CompletedTask;
         }, _ => this.options.ClearAction is not null);
 
-        if (this.options.LiveRefreshService is { } liveRefreshService)
+        if (liveRefreshService is { } service)
         {
-            liveRefreshService.EntryAdded += OnEntryAdded;
+            service.EntryAdded += OnEntryAdded;
+        }
+    }
+
+    public void DetachLiveRefresh()
+    {
+        if (liveRefreshService is { } service)
+        {
+            service.EntryAdded -= OnEntryAdded;
         }
     }
 

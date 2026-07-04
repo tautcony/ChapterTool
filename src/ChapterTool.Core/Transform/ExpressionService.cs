@@ -88,7 +88,9 @@ public sealed class ExpressionService : IExpressionService
         }
         catch (Exception exception) when (exception is InvalidOperationException or FormatException or KeyNotFoundException)
         {
-            return Failure(timeSeconds, exception.Message);
+            return exception is ExpressionException ee
+                ? Failure(timeSeconds, ee.Code, ee.Message, ee.Arguments)
+                : Failure(timeSeconds, "InvalidExpression", exception.Message);
         }
     }
 
@@ -127,34 +129,46 @@ public sealed class ExpressionService : IExpressionService
                 }
                 else if (token is "and" or "or" or "xor")
                 {
-                    throw new InvalidOperationException($"Unsupported operator '{token}'.");
+                    throw new ExpressionException("InvalidExpression.UnsupportedOperator", $"Unsupported operator '{token}'.", Args(("token", token)));
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Unknown token '{token}'.");
+                    throw new ExpressionException("InvalidExpression.UnknownToken", $"Unknown token '{token}'.", Args(("token", token)));
                 }
             }
 
             if (stack.Count != 1)
             {
-                throw new InvalidOperationException("Expression did not reduce to one value.");
+                throw new ExpressionException("InvalidExpression.Incomplete", "Expression did not reduce to one value.");
             }
 
             return new ExpressionEvaluationResult(true, stack.Pop(), []);
         }
         catch (Exception exception) when (exception is InvalidOperationException or DivideByZeroException)
         {
-            return Failure(timeSeconds, exception.Message);
+            return exception is ExpressionException ee
+                ? Failure(timeSeconds, ee.Code, ee.Message, ee.Arguments)
+                : Failure(timeSeconds, "InvalidExpression", exception.Message);
         }
     }
 
-    private static ExpressionEvaluationResult Failure(decimal fallback, string message) =>
+    private static ExpressionEvaluationResult Failure(decimal fallback, string code, string message, IReadOnlyDictionary<string, object?>? arguments = null) =>
         new(
             false,
             fallback,
             [
-                new ChapterDiagnostic(DiagnosticSeverity.Warning, "InvalidExpression", message)
+                new ChapterDiagnostic(DiagnosticSeverity.Warning, code, message, Arguments: arguments)
             ]);
+
+    private static IReadOnlyDictionary<string, object?>? Args(params (string Name, object? Value)[] pairs) =>
+        pairs.Length == 0 ? null : pairs.ToDictionary(static pair => pair.Name, static pair => pair.Value, StringComparer.Ordinal);
+
+    private sealed class ExpressionException(string code, string message, IReadOnlyDictionary<string, object?>? arguments = null)
+        : InvalidOperationException(message)
+    {
+        public string Code { get; } = code;
+        public IReadOnlyDictionary<string, object?>? Arguments { get; } = arguments;
+    }
 
     private static List<string> Tokenize(string expression)
     {
@@ -211,7 +225,7 @@ public sealed class ExpressionService : IExpressionService
                 continue;
             }
 
-            throw new InvalidOperationException($"Invalid character '{c}'.");
+            throw new ExpressionException("InvalidExpression.InvalidCharacter", $"Invalid character '{c}'.", Args(("character", c)));
         }
 
         return tokens;
@@ -236,7 +250,7 @@ public sealed class ExpressionService : IExpressionService
                     previous != ":" &&
                     !Precedence.ContainsKey(previous))
                 {
-                    throw new InvalidOperationException($"Missing operator before '{token}'.");
+                    throw new ExpressionException("InvalidExpression.MissingOperator", $"Missing operator before '{token}'.", Args(("token", token)));
                 }
 
                 output.Add(token);
@@ -245,7 +259,7 @@ public sealed class ExpressionService : IExpressionService
             {
                 if (previous is not "" and not "(" and not "," and not "?" and not ":" && !Precedence.ContainsKey(previous))
                 {
-                    throw new InvalidOperationException($"Missing operator before function '{token}'.");
+                    throw new ExpressionException("InvalidExpression.MissingOperatorBeforeFunction", $"Missing operator before function '{token}'.", Args(("token", token)));
                 }
 
                 operators.Push(token);
@@ -258,7 +272,7 @@ public sealed class ExpressionService : IExpressionService
                               Precedence.ContainsKey(previous) ||
                               Functions.ContainsKey(previous) ||
                               previous == "?":
-                    throw new InvalidOperationException("Misplaced comma.");
+                    throw new ExpressionException("InvalidExpression.MisplacedComma", "Misplaced comma.");
                 case ",":
                 {
                     while (operators.Count > 0 && operators.Peek() != "(")
@@ -268,7 +282,7 @@ public sealed class ExpressionService : IExpressionService
 
                     if (operators.Count == 0)
                     {
-                        throw new InvalidOperationException("Misplaced comma.");
+                        throw new ExpressionException("InvalidExpression.MisplacedComma", "Misplaced comma.");
                     }
 
                     break;
@@ -280,7 +294,7 @@ public sealed class ExpressionService : IExpressionService
                               previous != ":" &&
                               !Precedence.ContainsKey(previous) &&
                               !Functions.ContainsKey(previous):
-                    throw new InvalidOperationException("Missing operator before '('.");
+                    throw new ExpressionException("InvalidExpression.MissingOperatorBeforeParen", "Missing operator before '('.");
                 case "(":
                     operators.Push(token);
                     break;
@@ -290,7 +304,7 @@ public sealed class ExpressionService : IExpressionService
                               Precedence.ContainsKey(previous) ||
                               Functions.ContainsKey(previous) ||
                               previous == "?":
-                    throw new InvalidOperationException("Missing operand before ')'.");
+                    throw new ExpressionException("InvalidExpression.MissingOperandBeforeParen", "Missing operand before ')'.");
                 case ")":
                 {
                     while (operators.Count > 0 && operators.Peek() != "(")
@@ -300,7 +314,7 @@ public sealed class ExpressionService : IExpressionService
 
                     if (operators.Count == 0)
                     {
-                        throw new InvalidOperationException("Unbalanced parentheses.");
+                        throw new ExpressionException("InvalidExpression.UnbalancedParentheses", "Unbalanced parentheses.");
                     }
 
                     operators.Pop();
@@ -317,7 +331,7 @@ public sealed class ExpressionService : IExpressionService
                               previous == "?" ||
                               Precedence.ContainsKey(previous) ||
                               Functions.ContainsKey(previous):
-                    throw new InvalidOperationException("Operator '?' requires a condition.");
+                    throw new ExpressionException("InvalidExpression.TernaryMissingCondition", "Operator '?' requires a condition.");
                 case "?":
                 {
                     while (operators.Count > 0 && Precedence.TryGetValue(operators.Peek(), out var lastPrecedence) &&
@@ -335,7 +349,7 @@ public sealed class ExpressionService : IExpressionService
                               previous == "?" ||
                               Precedence.ContainsKey(previous) ||
                               Functions.ContainsKey(previous):
-                    throw new InvalidOperationException("Operator ':' requires a true expression.");
+                    throw new ExpressionException("InvalidExpression.TernaryMissingTrueExpression", "Operator ':' requires a true expression.");
                 case ":":
                 {
                     while (operators.Count > 0 && operators.Peek() != "?" && operators.Peek() != "(")
@@ -345,7 +359,7 @@ public sealed class ExpressionService : IExpressionService
 
                     if (operators.Count == 0 || operators.Peek() != "?")
                     {
-                        throw new InvalidOperationException("Operator ':' requires a matching '?'.");
+                        throw new ExpressionException("InvalidExpression.TernaryUnmatchedColon", "Operator ':' requires a matching '?'.");
                     }
 
                     operators.Pop();
@@ -370,7 +384,7 @@ public sealed class ExpressionService : IExpressionService
                         if (!isUnarySign &&
                             (previous.Length == 0 || previous == "(" || previous == "," || previous == "?" || Precedence.ContainsKey(previous)))
                         {
-                            throw new InvalidOperationException($"Operator '{token}' requires a left operand.");
+                            throw new ExpressionException("InvalidExpression.OperatorRequiresLeftOperand", $"Operator '{token}' requires a left operand.", Args(("token", token)));
                         }
 
                         while (operators.Count > 0 && Precedence.TryGetValue(operators.Peek(), out var lastPrecedence) &&
@@ -383,7 +397,7 @@ public sealed class ExpressionService : IExpressionService
                     }
                     else
                     {
-                        throw new InvalidOperationException($"Unsupported token '{token}'.");
+                        throw new ExpressionException("InvalidExpression.UnsupportedToken", $"Unsupported token '{token}'.", Args(("token", token)));
                     }
 
                     break;
@@ -398,7 +412,9 @@ public sealed class ExpressionService : IExpressionService
             var token = operators.Pop();
             if (token is "(" or "?")
             {
-                throw new InvalidOperationException(token == "(" ? "Unbalanced parentheses." : "Operator '?' requires a matching ':'.");
+                throw token == "("
+                    ? new ExpressionException("InvalidExpression.UnbalancedParentheses", "Unbalanced parentheses.")
+                    : new ExpressionException("InvalidExpression.TernaryUnmatchedQuestion", "Operator '?' requires a matching ':'.");
             }
 
             output.Add(token);
@@ -447,7 +463,7 @@ public sealed class ExpressionService : IExpressionService
             "<" => lhs < rhs ? 1 : 0,
             ">=" => lhs >= rhs ? 1 : 0,
             "<=" => lhs <= rhs ? 1 : 0,
-            _ => throw new InvalidOperationException($"Unsupported operator '{op}'.")
+            _ => throw new ExpressionException("InvalidExpression.UnsupportedOperator", $"Unsupported operator '{op}'.", Args(("token", op)))
         });
     }
 
@@ -478,7 +494,7 @@ public sealed class ExpressionService : IExpressionService
             "pow" => Binary(Math.Pow),
             "max" => Max(PopPair(stack, function)),
             "min" => Min(PopPair(stack, function)),
-            _ => throw new InvalidOperationException($"Unsupported function '{function}'.")
+            _ => throw new ExpressionException("InvalidExpression.UnsupportedFunction", $"Unsupported function '{function}'.", Args(("function", function)))
         });
         return;
 
@@ -507,7 +523,7 @@ public sealed class ExpressionService : IExpressionService
     {
         if (!stack.TryPop(out var value))
         {
-            throw new InvalidOperationException($"Token '{token}' requires more operands.");
+            throw new ExpressionException("InvalidExpression.InsufficientOperands", $"Token '{token}' requires more operands.", Args(("token", token)));
         }
 
         return value;

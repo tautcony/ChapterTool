@@ -12,382 +12,705 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="App.Title" xml:space="preserve">
+  
+  
+<data name="Action.CombineSegments" xml:space="preserve">
+    <value>Combine segments: options={options}, sourceType={sourceType}</value>
+  </data>
+<data name="Action.DeleteRows" xml:space="preserve">
+    <value>Delete rows: indexes={indexes}</value>
+  </data>
+<data name="Action.EditCell" xml:space="preserve">
+    <value>Edit {kind}: row={row}, value='{value}'</value>
+  </data>
+<data name="Action.EditChapters" xml:space="preserve">
+    <value>Edit chapters</value>
+  </data>
+<data name="Action.InsertRow" xml:space="preserve">
+    <value>Insert row: index={index}</value>
+  </data>
+<data name="Action.ShiftFramesForward" xml:space="preserve">
+    <value>Shift frames forward: frames={frames}</value>
+  </data>
+<data name="Action.SplitCombinedSegments" xml:space="preserve">
+    <value>Split combined segments: options={options}, sourceType={sourceType}</value>
+  </data>
+<data name="App.Title" xml:space="preserve">
     <value>[VCB-Studio] ChapterTool</value>
   </data>
-  <data name="Common.Apply" xml:space="preserve">
+<data name="Common.Apply" xml:space="preserve">
     <value>Apply</value>
   </data>
-  <data name="Common.Cancel" xml:space="preserve">
+<data name="Common.Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="Common.Clear" xml:space="preserve">
+<data name="Common.Clear" xml:space="preserve">
     <value>Clear</value>
   </data>
-  <data name="Common.Copy" xml:space="preserve">
+<data name="Common.Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
-  <data name="Common.Refresh" xml:space="preserve">
+<data name="Common.Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>
-  <data name="Common.Save" xml:space="preserve">
+<data name="Common.Save" xml:space="preserve">
     <value>Save</value>
   </data>
-  <data name="Common.UnsupportedFeature" xml:space="preserve">
+<data name="Common.UnsupportedFeature" xml:space="preserve">
     <value>This platform-gated feature is not enabled in this build.</value>
   </data>
-  <data name="Common.Use" xml:space="preserve">
+<data name="Common.Use" xml:space="preserve">
     <value>Use</value>
   </data>
-  <data name="Language.ChineseSimplified" xml:space="preserve">
+<data name="Diagnostic.DependencyExecutionCancelled" xml:space="preserve">
+    <value>The operation was cancelled.</value>
+  </data>
+<data name="Diagnostic.DependencyExecutionFailed" xml:space="preserve">
+    <value>The operation failed: {message}</value>
+  </data>
+<data name="Diagnostic.DependencyExecutionTimedOut" xml:space="preserve">
+    <value>The operation timed out.</value>
+  </data>
+<data name="Diagnostic.DependencyOutputEmpty" xml:space="preserve">
+    <value>The chapter export file was empty.</value>
+  </data>
+<data name="Diagnostic.DependencyOutputMissing" xml:space="preserve">
+    <value>The chapter export file was not created.</value>
+  </data>
+<data name="Diagnostic.DependencyOutputUnrecognized" xml:space="preserve">
+    <value>The playlist output was not recognized.</value>
+  </data>
+<data name="Diagnostic.EmbeddedCueNotFound" xml:space="preserve">
+    <value>No embedded cuesheet was found.</value>
+  </data>
+<data name="Diagnostic.EmptyChapters" xml:space="preserve">
+    <value>No chapters were parsed.</value>
+  </data>
+<data name="Diagnostic.EmptyCueFile" xml:space="preserve">
+    <value>CUE text is empty or no chapters were parsed.</value>
+  </data>
+<data name="Diagnostic.EmptyXml" xml:space="preserve">
+    <value>The XML document has no root element.</value>
+  </data>
+<data name="Diagnostic.FfprobeCannotStart" xml:space="preserve">
+    <value>ffprobe could not be started: {message}</value>
+  </data>
+<data name="Diagnostic.FfprobeEmptyOutput" xml:space="preserve">
+    <value>ffprobe did not return chapter JSON.</value>
+  </data>
+<data name="Diagnostic.FfprobeMissingDependency" xml:space="preserve">
+    <value>ffprobe was not found.</value>
+  </data>
+<data name="Diagnostic.FfprobeParseFailed" xml:space="preserve">
+    <value>ffprobe output could not be parsed: {message}</value>
+  </data>
+<data name="Diagnostic.FfprobeProcessCancelled" xml:space="preserve">
+    <value>ffprobe was cancelled.</value>
+  </data>
+<data name="Diagnostic.FfprobeProcessFailed" xml:space="preserve">
+    <value>ffprobe exited with a non-zero code.</value>
+  </data>
+<data name="Diagnostic.FfprobeProcessTimedOut" xml:space="preserve">
+    <value>ffprobe timed out.</value>
+  </data>
+<data name="Diagnostic.FlacEmbeddedCueNotFound" xml:space="preserve">
+    <value>No Vorbis cuesheet comment was found.</value>
+  </data>
+<data name="Diagnostic.ImporterFallbackUsed" xml:space="preserve">
+    <value>The primary importer was unavailable; a fallback importer was used.</value>
+  </data>
+<data name="Diagnostic.InvalidChapterIndex" xml:space="preserve">
+    <value>Chapter index {index} is out of range.</value>
+  </data>
+<data name="Diagnostic.InvalidChapterPair" xml:space="preserve">
+    <value>A chapter line could not be parsed: {line}</value>
+  </data>
+<data name="Diagnostic.InvalidChapterText" xml:space="preserve">
+    <value>Chapter text is empty or has no valid entries.</value>
+  </data>
+<data name="Diagnostic.InvalidChapterTimestamp" xml:space="preserve">
+    <value>A media chapter had no valid non-negative start timestamp.</value>
+  </data>
+<data name="Diagnostic.InvalidContainerHeader" xml:space="preserve">
+    <value>The file is not a supported container.</value>
+  </data>
+<data name="Diagnostic.InvalidEntryElement" xml:space="preserve">
+    <value>Expected EditionEntry, got {name}.</value>
+  </data>
+<data name="Diagnostic.InvalidExpression" xml:space="preserve">
+    <value>The expression is invalid: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.Incomplete" xml:space="preserve">
+    <value>The expression did not reduce to one value.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.InsufficientOperands" xml:space="preserve">
+    <value>Token '{token}' requires more operands.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.InvalidCharacter" xml:space="preserve">
+    <value>Invalid character '{character}'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.MisplacedComma" xml:space="preserve">
+    <value>Misplaced comma.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.MissingOperandBeforeParen" xml:space="preserve">
+    <value>Missing operand before ')'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.MissingOperator" xml:space="preserve">
+    <value>Missing operator before '{token}'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeFunction" xml:space="preserve">
+    <value>Missing operator before function '{token}'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeParen" xml:space="preserve">
+    <value>Missing operator before '('.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.OperatorRequiresLeftOperand" xml:space="preserve">
+    <value>Operator '{token}' requires a left operand.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.TernaryMissingCondition" xml:space="preserve">
+    <value>Operator '?' requires a condition.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.TernaryMissingTrueExpression" xml:space="preserve">
+    <value>Operator ':' requires a true expression.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedColon" xml:space="preserve">
+    <value>Operator ':' requires a matching '?'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedQuestion" xml:space="preserve">
+    <value>Operator '?' requires a matching ':'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.UnbalancedParentheses" xml:space="preserve">
+    <value>Unbalanced parentheses.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.UnknownToken" xml:space="preserve">
+    <value>Unknown token '{token}'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.UnsupportedFunction" xml:space="preserve">
+    <value>Unsupported function '{function}'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.UnsupportedOperator" xml:space="preserve">
+    <value>Unsupported operator '{token}'.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.UnsupportedToken" xml:space="preserve">
+    <value>Unsupported token '{token}'.</value>
+  </data>
+<data name="Diagnostic.InvalidExpressionTime" xml:space="preserve">
+    <value>The expression time is invalid: {message}</value>
+  </data>
+<data name="Diagnostic.InvalidFrameRate" xml:space="preserve">
+    <value>Frame rate must be greater than zero.</value>
+  </data>
+<data name="Diagnostic.InvalidFrameText" xml:space="preserve">
+    <value>Frame text did not contain a frame number or fps was invalid.</value>
+  </data>
+<data name="Diagnostic.InvalidIfo" xml:space="preserve">
+    <value>The IFO file is invalid: {message}</value>
+  </data>
+<data name="Diagnostic.InvalidMpls" xml:space="preserve">
+    <value>The MPLS file is invalid: {message}</value>
+  </data>
+<data name="Diagnostic.InvalidStructure" xml:space="preserve">
+    <value>The Blu-ray BDMV/PLAYLIST directory was not found.</value>
+  </data>
+<data name="Diagnostic.InvalidTimeText" xml:space="preserve">
+    <value>Time text is empty or does not match the expected format.</value>
+  </data>
+<data name="Diagnostic.InvalidTimecodeText" xml:space="preserve">
+    <value>No valid timecode entries were found.</value>
+  </data>
+<data name="Diagnostic.InvalidXml" xml:space="preserve">
+    <value>The XML could not be parsed: {message}</value>
+  </data>
+<data name="Diagnostic.MalformedCueSyntax" xml:space="preserve">
+    <value>CUE index syntax is unsupported or malformed.</value>
+  </data>
+<data name="Diagnostic.MatroskaCannotStart" xml:space="preserve">
+    <value>mkvextract could not be started: {message}</value>
+  </data>
+<data name="Diagnostic.MatroskaMissingDependency" xml:space="preserve">
+    <value>mkvextract was not found.</value>
+  </data>
+<data name="Diagnostic.MatroskaNoChapters" xml:space="preserve">
+    <value>mkvextract did not return chapter XML.</value>
+  </data>
+<data name="Diagnostic.MatroskaProcessCancelled" xml:space="preserve">
+    <value>mkvextract was cancelled: {message}</value>
+  </data>
+<data name="Diagnostic.MatroskaProcessFailed" xml:space="preserve">
+    <value>mkvextract failed: {message}</value>
+  </data>
+<data name="Diagnostic.MatroskaProcessTimedOut" xml:space="preserve">
+    <value>mkvextract timed out: {message}</value>
+  </data>
+<data name="Diagnostic.MediaReadFailed" xml:space="preserve">
+    <value>Media chapters could not be read: {message}</value>
+  </data>
+<data name="Diagnostic.MissingDependency" xml:space="preserve">
+    <value>eac3to was not found.</value>
+  </data>
+<data name="Diagnostic.Mp4FileInaccessible" xml:space="preserve">
+    <value>The MP4 file could not be accessed: {message}</value>
+  </data>
+<data name="Diagnostic.Mp4FileNotFound" xml:space="preserve">
+    <value>The MP4 file was not found: {message}</value>
+  </data>
+<data name="Diagnostic.Mp4InvalidPath" xml:space="preserve">
+    <value>The MP4 path is empty.</value>
+  </data>
+<data name="Diagnostic.Mp4MalformedMetadata" xml:space="preserve">
+    <value>The MP4 chapter metadata is malformed.</value>
+  </data>
+<data name="Diagnostic.Mp4ReadFailed" xml:space="preserve">
+    <value>The MP4 file could not be read: {message}</value>
+  </data>
+<data name="Diagnostic.Mp4UnsupportedMetadata" xml:space="preserve">
+    <value>The MP4 chapter metadata is unsupported.</value>
+  </data>
+<data name="Diagnostic.NativeLibraryMissing" xml:space="preserve">
+    <value>A native dependency was not found: {message}</value>
+  </data>
+<data name="Diagnostic.NoChapters" xml:space="preserve">
+    <value>No chapters are available for export.</value>
+  </data>
+<data name="Diagnostic.NoChaptersFound" xml:space="preserve">
+    <value>No chapters were found.</value>
+  </data>
+<data name="Diagnostic.NoRowsSelected" xml:space="preserve">
+    <value>Select one or more chapter rows first.</value>
+  </data>
+<data name="Diagnostic.NoSegments" xml:space="preserve">
+    <value>No chapter segments are available.</value>
+  </data>
+<data name="Diagnostic.OgmInvalidFirstLine" xml:space="preserve">
+    <value>The first OGM chapter line is missing or invalid.</value>
+  </data>
+<data name="Diagnostic.OrderShiftNormalized" xml:space="preserve">
+    <value>Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.</value>
+  </data>
+<data name="Diagnostic.PartialParse" xml:space="preserve">
+    <value>Parsing stopped before all input was consumed.</value>
+  </data>
+<data name="Diagnostic.PremiereMarkerListInvalid" xml:space="preserve">
+    <value>Unable to parse the Adobe Premiere Pro chapter marker list.</value>
+  </data>
+<data name="Diagnostic.Saved" xml:space="preserve">
+    <value>Saved: {path}</value>
+  </data>
+<data name="Diagnostic.Stdout" xml:space="preserve">
+    <value>Command output: {output}</value>
+  </data>
+<data name="Diagnostic.UnsupportedAppendSource" xml:space="preserve">
+    <value>Only MPLS chapter groups can be appended.</value>
+  </data>
+<data name="Diagnostic.UnsupportedCombineSource" xml:space="preserve">
+    <value>Only MPLS and DVD chapter groups can be combined.</value>
+  </data>
+<data name="Diagnostic.UnsupportedExportFormat" xml:space="preserve">
+    <value>Unsupported export format.</value>
+  </data>
+<data name="Diagnostic.UnsupportedPlatform" xml:space="preserve">
+    <value>Privilege elevation is not supported on this platform.</value>
+  </data>
+<data name="Diagnostic.UnsupportedSource" xml:space="preserve">
+    <value>Unsupported source extension: {extension}</value>
+  </data>
+<data name="Diagnostic.WebVttInvalidHeader" xml:space="preserve">
+    <value>The WebVTT header is missing.</value>
+  </data>
+<data name="Diagnostic.WebVttMalformedCue" xml:space="preserve">
+    <value>A WebVTT cue could not be parsed.</value>
+  </data>
+<data name="Diagnostic.WebVttUnsupportedTimingSettings" xml:space="preserve">
+    <value>The WebVTT timing settings are unsupported.</value>
+  </data>
+<data name="Diagnostic.XmlInvalidRoot" xml:space="preserve">
+    <value>Expected Chapters root, got {name}.</value>
+  </data>
+<data name="Diagnostic.XmlNoChapters" xml:space="preserve">
+    <value>No Matroska XML chapters were parsed.</value>
+  </data>
+<data name="Diagnostic.XplNoChapters" xml:space="preserve">
+    <value>No HD-DVD chapters were parsed.</value>
+  </data>
+<data name="Diagnostic.XplParseFailed" xml:space="preserve">
+    <value>The XPL playlist could not be parsed: {message}</value>
+  </data>
+<data name="EditKind.Frame" xml:space="preserve">
+    <value>frame</value>
+  </data>
+<data name="EditKind.Name" xml:space="preserve">
+    <value>name</value>
+  </data>
+<data name="EditKind.Time" xml:space="preserve">
+    <value>time</value>
+  </data>
+<data name="Language.ChineseSimplified" xml:space="preserve">
     <value>Simplified Chinese</value>
   </data>
-  <data name="Language.English" xml:space="preserve">
+<data name="Language.English" xml:space="preserve">
     <value>English</value>
   </data>
-  <data name="Language.Japanese" xml:space="preserve">
+<data name="Language.Japanese" xml:space="preserve">
     <value>Japanese</value>
   </data>
-  <data name="Log.AppendingMpls" xml:space="preserve">
+<data name="Log.AppendingMpls" xml:space="preserve">
     <value>Appending MPLS: path='{path}'</value>
   </data>
-  <data name="Log.AutoFrameRateDetection" xml:space="preserve">
+<data name="Log.AutoFrameRateDetection" xml:space="preserve">
     <value>Auto frame-rate detection: option={option}, confidence={confidence}, accurate={accurate}/{evaluated}, deviation={deviation}</value>
   </data>
-  <data name="Log.ChangeFps" xml:space="preserve">
+<data name="Log.ChangeFps" xml:space="preserve">
     <value>Convert to current FPS: source={sourceFps}, target={targetFps}, chapters {before} -&gt; {after}</value>
   </data>
-  <data name="Log.CreateZones" xml:space="preserve">
+<data name="Log.CreateZones" xml:space="preserve">
     <value>Create zones: selectedRows={selectedRows}, chapters={chapters}</value>
   </data>
-  <data name="Log.Diagnostic" xml:space="preserve">
+<data name="Log.Diagnostic" xml:space="preserve">
     <value>{operation} diagnostic: severity={severity}, code={code}{location} message='{message}'{details}</value>
   </data>
-  <data name="Log.EditChapters" xml:space="preserve">
+<data name="Log.EditChapters" xml:space="preserve">
     <value>{action}: chapters {before} -&gt; {after}</value>
   </data>
-  <data name="Log.FrameInfoUpdated" xml:space="preserve">
+<data name="Log.FrameInfoUpdated" xml:space="preserve">
     <value>Frame info updated: option={option}, fps={fps}, round={round}, chapters={chapters}</value>
   </data>
-  <data name="Log.ImportGroup" xml:space="preserve">
+<data name="Log.ImportGroup" xml:space="preserve">
     <value>{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultOptionIndex={defaultOptionIndex}, options={options}</value>
   </data>
-  <data name="Log.ImportOption" xml:space="preserve">
+<data name="Log.ImportOption" xml:space="preserve">
     <value>{operation} option {optionIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</value>
   </data>
-  <data name="Log.ImportSummary" xml:space="preserve">
+<data name="Log.ImportSummary" xml:space="preserve">
     <value>{operation} result: success={success}, partial={partial}, groups={groups}, options={options}, chapters={chapters}, diagnostics={diagnostics}</value>
   </data>
-  <data name="Log.LanguageSet" xml:space="preserve">
+<data name="Log.LanguageSet" xml:space="preserve">
     <value>Language set to {language}</value>
   </data>
-  <data name="Log.LoadingSource" xml:space="preserve">
+<data name="Log.LoadingSource" xml:space="preserve">
     <value>Loading source: path='{path}'</value>
   </data>
-  <data name="Log.OpenedPath" xml:space="preserve">
+<data name="Log.OpenedPath" xml:space="preserve">
     <value>{status}: path='{path}'</value>
   </data>
-  <data name="Log.RelatedMediaNotFound" xml:space="preserve">
+<data name="Log.RelatedMediaNotFound" xml:space="preserve">
     <value>{status}: reference='{reference}', resolved='{resolved}'</value>
   </data>
-  <data name="Log.SavingChapters" xml:space="preserve">
+<data name="Log.SavingChapters" xml:space="preserve">
     <value>Saving chapters: format={format}, directory='{directory}', source='{source}', chapters={chapters}, applyExpression={applyExpression}, expression='{expression}'</value>
   </data>
-  <data name="Log.SelectedSourceOption" xml:space="preserve">
+<data name="Log.SelectedSourceOption" xml:space="preserve">
     <value>Selected source option: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, fps={fps}</value>
   </data>
-  <data name="Log.SettingsLoaded" xml:space="preserve">
+<data name="Log.SettingsLoaded" xml:space="preserve">
     <value>Settings loaded: savingPath='{savingPath}', language='{language}'</value>
   </data>
-  <data name="Log.Status" xml:space="preserve">
+<data name="Log.Status" xml:space="preserve">
     <value>{status}</value>
   </data>
-  <data name="Log.StatusFromPath" xml:space="preserve">
+<data name="Log.StatusFromPath" xml:space="preserve">
     <value>{status} from {path}</value>
   </data>
-  <data name="Main.AppendMpls" xml:space="preserve">
+<data name="Main.AppendMpls" xml:space="preserve">
     <value>Append MPLS</value>
   </data>
-  <data name="Main.AutoFrameRate" xml:space="preserve">
+<data name="Main.AutoFrameRate" xml:space="preserve">
     <value>Auto</value>
   </data>
-  <data name="Main.ChapterName" xml:space="preserve">
-    <value>Chapter name</value>
-  </data>
-  <data name="Main.ChangeFps" xml:space="preserve">
+<data name="Main.ChangeFps" xml:space="preserve">
     <value>Convert to current FPS</value>
   </data>
-  <data name="Main.ColumnFrames" xml:space="preserve">
+<data name="Main.ChapterName" xml:space="preserve">
+    <value>Chapter name</value>
+  </data>
+<data name="Main.ColumnFrames" xml:space="preserve">
     <value>Frames</value>
   </data>
-  <data name="Main.ColumnName" xml:space="preserve">
+<data name="Main.ColumnName" xml:space="preserve">
     <value>Name</value>
   </data>
-  <data name="Main.ColumnNumber" xml:space="preserve">
+<data name="Main.ColumnNumber" xml:space="preserve">
     <value>#</value>
   </data>
-  <data name="Main.ColumnTime" xml:space="preserve">
+<data name="Main.ColumnTime" xml:space="preserve">
     <value>Time</value>
   </data>
-  <data name="Main.Combine" xml:space="preserve">
+<data name="Main.Combine" xml:space="preserve">
     <value>Combine</value>
   </data>
-  <data name="Main.CreateZones" xml:space="preserve">
+<data name="Main.CreateZones" xml:space="preserve">
     <value>Create Zones</value>
   </data>
-  <data name="Main.Delete" xml:space="preserve">
+<data name="Main.Delete" xml:space="preserve">
     <value>Delete</value>
   </data>
-  <data name="Main.Expression" xml:space="preserve">
+<data name="Main.Expression" xml:space="preserve">
     <value>Expression</value>
   </data>
-  <data name="Main.ForwardTranslation" xml:space="preserve">
+<data name="Main.ForwardTranslation" xml:space="preserve">
     <value>Forward Translation</value>
   </data>
-  <data name="Main.Insert" xml:space="preserve">
+<data name="Main.Insert" xml:space="preserve">
     <value>Insert</value>
   </data>
-  <data name="Main.KeepOriginalName" xml:space="preserve">
+<data name="Main.KeepOriginalName" xml:space="preserve">
     <value>Keep original</value>
   </data>
-  <data name="Main.Load" xml:space="preserve">
+<data name="Main.Load" xml:space="preserve">
     <value>Load</value>
   </data>
-  <data name="Main.Log" xml:space="preserve">
+<data name="Main.Log" xml:space="preserve">
     <value>Log</value>
   </data>
-  <data name="Main.OpenRelatedMedia" xml:space="preserve">
+<data name="Main.OpenRelatedMedia" xml:space="preserve">
     <value>Open Related Media</value>
   </data>
-  <data name="Main.OrderShift" xml:space="preserve">
+<data name="Main.OrderShift" xml:space="preserve">
     <value>Order shift</value>
   </data>
-  <data name="Main.Preview" xml:space="preserve">
+<data name="Main.Preview" xml:space="preserve">
     <value>Preview</value>
   </data>
-  <data name="Main.PreviewShort" xml:space="preserve">
+<data name="Main.PreviewShort" xml:space="preserve">
     <value>Preview</value>
   </data>
-  <data name="Main.Reload" xml:space="preserve">
+<data name="Main.Reload" xml:space="preserve">
     <value>Reload</value>
   </data>
-  <data name="Main.RoundFrames" xml:space="preserve">
+<data name="Main.RoundFrames" xml:space="preserve">
     <value>Round frames</value>
   </data>
-  <data name="Main.SaveFormat" xml:space="preserve">
+<data name="Main.SaveFormat" xml:space="preserve">
     <value>Save format</value>
   </data>
-  <data name="Main.SaveTo" xml:space="preserve">
+<data name="Main.SaveTo" xml:space="preserve">
     <value>Choose Save Directory</value>
   </data>
-  <data name="Main.SettingsShort" xml:space="preserve">
+<data name="Main.SettingsShort" xml:space="preserve">
     <value>Settings</value>
   </data>
-  <data name="Main.StandardTemplate" xml:space="preserve">
+<data name="Main.StandardTemplate" xml:space="preserve">
     <value>Standard template</value>
   </data>
-  <data name="Main.TemplateFile" xml:space="preserve">
+<data name="Main.TemplateFile" xml:space="preserve">
     <value>Template file</value>
   </data>
-  <data name="Main.XmlLanguage" xml:space="preserve">
+<data name="Main.XmlLanguage" xml:space="preserve">
     <value>XML language</value>
   </data>
-  <data name="Prompt.FileAssociationUnsupported" xml:space="preserve">
+<data name="Operation.AppendEdit" xml:space="preserve">
+    <value>Append edit</value>
+  </data>
+<data name="Operation.AppendLoad" xml:space="preserve">
+    <value>Append load</value>
+  </data>
+<data name="Operation.CreateZones" xml:space="preserve">
+    <value>Create zones</value>
+  </data>
+<data name="Operation.Load" xml:space="preserve">
+    <value>Load</value>
+  </data>
+<data name="Operation.OutputProjection" xml:space="preserve">
+    <value>Output projection</value>
+  </data>
+<data name="Operation.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+<data name="Prompt.FileAssociationUnsupported" xml:space="preserve">
     <value>File association registration is platform-gated and not enabled in this build.</value>
   </data>
-  <data name="Settings.Appearance" xml:space="preserve">
+<data name="Settings.Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
-  <data name="Settings.BrowseDirectory" xml:space="preserve">
+<data name="Settings.BrowseDirectory" xml:space="preserve">
     <value>Choose Directory</value>
   </data>
-  <data name="Settings.BrowseExecutable" xml:space="preserve">
+<data name="Settings.BrowseExecutable" xml:space="preserve">
     <value>Choose Executable</value>
   </data>
-  <data name="Settings.DefaultSaveFormat" xml:space="preserve">
+<data name="Settings.DefaultSaveFormat" xml:space="preserve">
     <value>Default save format</value>
   </data>
-  <data name="Settings.DefaultXmlLanguage" xml:space="preserve">
+<data name="Settings.DefaultXmlLanguage" xml:space="preserve">
     <value>Default XML language</value>
   </data>
-  <data name="Settings.Eac3toPath" xml:space="preserve">
+<data name="Settings.Eac3toPath" xml:space="preserve">
     <value>eac3to</value>
   </data>
-  <data name="Settings.EmptyUsesSource" xml:space="preserve">
+<data name="Settings.EmptyUsesSource" xml:space="preserve">
     <value>Blank uses the source directory</value>
   </data>
-  <data name="Settings.ExternalTools" xml:space="preserve">
+<data name="Settings.ExternalTools" xml:space="preserve">
     <value>External Tools</value>
   </data>
-  <data name="Settings.FfmpegPath" xml:space="preserve">
+<data name="Settings.FfmpegPath" xml:space="preserve">
     <value>FFmpeg directory</value>
   </data>
-  <data name="Settings.FfprobePath" xml:space="preserve">
+<data name="Settings.FfprobePath" xml:space="preserve">
     <value>ffprobe</value>
   </data>
-  <data name="Settings.FrameAccuracyTolerance" xml:space="preserve">
+<data name="Settings.FrameAccuracyTolerance" xml:space="preserve">
     <value>Frame tolerance</value>
   </data>
-  <data name="Settings.General" xml:space="preserve">
+<data name="Settings.General" xml:space="preserve">
     <value>General</value>
   </data>
-  <data name="Settings.MkvToolnixPath" xml:space="preserve">
+<data name="Settings.MkvToolnixPath" xml:space="preserve">
     <value>MKVToolNix / mkvextract</value>
   </data>
-  <data name="Settings.OutputDefaults" xml:space="preserve">
+<data name="Settings.OutputDefaults" xml:space="preserve">
     <value>Output Defaults</value>
   </data>
-  <data name="Settings.Platform" xml:space="preserve">
+<data name="Settings.Platform" xml:space="preserve">
     <value>Platform</value>
   </data>
-  <data name="Settings.ResetDefaults" xml:space="preserve">
+<data name="Settings.ResetDefaults" xml:space="preserve">
     <value>Reset Defaults</value>
   </data>
-  <data name="Settings.SaveDirectory" xml:space="preserve">
+<data name="Settings.SaveDirectory" xml:space="preserve">
     <value>Default save directory</value>
   </data>
-  <data name="Settings.Status.Ready" xml:space="preserve">
+<data name="Settings.Status.Ready" xml:space="preserve">
     <value>Settings loaded</value>
   </data>
-  <data name="Settings.Status.Reset" xml:space="preserve">
+<data name="Settings.Status.Reset" xml:space="preserve">
     <value>Defaults restored</value>
   </data>
-  <data name="Settings.Status.Saved" xml:space="preserve">
+<data name="Settings.Status.Saved" xml:space="preserve">
     <value>Settings saved</value>
   </data>
-  <data name="Settings.ToolStatus.Discovery" xml:space="preserve">
+<data name="Settings.ToolStatus.Discovery" xml:space="preserve">
     <value>Not configured; PATH or platform discovery will be used</value>
   </data>
-  <data name="Settings.ToolStatus.Found" xml:space="preserve">
+<data name="Settings.ToolStatus.Found" xml:space="preserve">
     <value>Found: {path}</value>
   </data>
-  <data name="Settings.ToolStatus.InvalidPath" xml:space="preserve">
+<data name="Settings.ToolStatus.InvalidPath" xml:space="preserve">
     <value>Path does not exist</value>
   </data>
-  <data name="Settings.ToolStatus.Missing" xml:space="preserve">
+<data name="Settings.ToolStatus.Missing" xml:space="preserve">
     <value>{name} was not found in this directory</value>
   </data>
-  <data name="Settings.ToolStatus.Unsupported" xml:space="preserve">
+<data name="Settings.ToolStatus.Unsupported" xml:space="preserve">
     <value>Unsupported on this platform</value>
   </data>
-  <data name="Settings.UiLanguage" xml:space="preserve">
+<data name="Settings.UiLanguage" xml:space="preserve">
     <value>UI language</value>
   </data>
-  <data name="Settings.Unsaved.Discard" xml:space="preserve">
+<data name="Settings.Unsaved.Discard" xml:space="preserve">
     <value>Discard</value>
   </data>
-  <data name="Settings.Unsaved.Message" xml:space="preserve">
+<data name="Settings.Unsaved.Message" xml:space="preserve">
     <value>Settings changes are already applied to this session but have not been saved. Save them before closing?</value>
   </data>
-  <data name="Settings.Unsaved.Title" xml:space="preserve">
+<data name="Settings.Unsaved.Title" xml:space="preserve">
     <value>Unsaved Settings</value>
   </data>
-  <data name="Settings.ValidateTools" xml:space="preserve">
+<data name="Settings.ValidateTools" xml:space="preserve">
     <value>Check Tools</value>
   </data>
-  <data name="Status.AppendedMplsSegments" xml:space="preserve">
-    <value>Appended {count} MPLS segment(s)</value>
-  </data>
-  <data name="Status.AppendFailed" xml:space="preserve">
+<data name="Status.AppendFailed" xml:space="preserve">
     <value>Append failed</value>
   </data>
-  <data name="Status.DetectedFrameRate" xml:space="preserve">
+<data name="Status.AppendedMplsSegments" xml:space="preserve">
+    <value>Appended {count} MPLS segment(s)</value>
+  </data>
+<data name="Status.DetectedFrameRate" xml:space="preserve">
     <value>Detected {displayName} (confidence: {confidence})</value>
   </data>
-  <data name="Status.LoadedChapters" xml:space="preserve">
-    <value>Loaded {count} chapters</value>
-  </data>
-  <data name="Status.LoadingSource" xml:space="preserve">
-    <value>Loading source...</value>
-  </data>
-  <data name="Status.LoadingSource.Validate" xml:space="preserve">
-    <value>Validating source...</value>
-  </data>
-  <data name="Status.LoadingSource.Discover" xml:space="preserve">
-    <value>Locating eac3to...</value>
-  </data>
-  <data name="Status.LoadingSource.Export" xml:space="preserve">
-    <value>Exporting chapter text...</value>
-  </data>
-  <data name="Status.LoadingSource.Parse" xml:space="preserve">
-    <value>Parsing chapter text...</value>
-  </data>
-  <data name="Status.LoadFailed" xml:space="preserve">
+<data name="Status.LoadFailed" xml:space="preserve">
     <value>Load failed</value>
   </data>
-  <data name="Status.NoCurrentMplsGroup" xml:space="preserve">
+<data name="Status.LoadedChapters" xml:space="preserve">
+    <value>Loaded {count} chapters</value>
+  </data>
+<data name="Status.LoadingSource" xml:space="preserve">
+    <value>Loading source...</value>
+  </data>
+<data name="Status.LoadingSource.Discover" xml:space="preserve">
+    <value>Locating eac3to...</value>
+  </data>
+<data name="Status.LoadingSource.Export" xml:space="preserve">
+    <value>Exporting chapter text...</value>
+  </data>
+<data name="Status.LoadingSource.Parse" xml:space="preserve">
+    <value>Parsing chapter text...</value>
+  </data>
+<data name="Status.LoadingSource.Validate" xml:space="preserve">
+    <value>Validating source...</value>
+  </data>
+<data name="Status.NoCurrentMplsGroup" xml:space="preserve">
     <value>No current MPLS group is loaded</value>
   </data>
-  <data name="Status.NoSourceSelected" xml:space="preserve">
+<data name="Status.NoSourceSelected" xml:space="preserve">
     <value>No source selected</value>
   </data>
-  <data name="Status.OpenedFile" xml:space="preserve">
+<data name="Status.OpenedFile" xml:space="preserve">
     <value>Opened {fileName}</value>
   </data>
-  <data name="Status.Ready" xml:space="preserve">
+<data name="Status.Ready" xml:space="preserve">
     <value>Ready</value>
   </data>
-  <data name="Status.RelatedMediaNotFound" xml:space="preserve">
+<data name="Status.RelatedMediaNotFound" xml:space="preserve">
     <value>Related media file was not found</value>
   </data>
-  <data name="Status.Saved" xml:space="preserve">
-    <value>Saved</value>
-  </data>
-  <data name="Status.SaveFailed" xml:space="preserve">
+<data name="Status.SaveFailed" xml:space="preserve">
     <value>Save failed</value>
   </data>
-  <data name="Status.ShellUnavailable" xml:space="preserve">
+<data name="Status.Saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+<data name="Status.ShellUnavailable" xml:space="preserve">
     <value>Shell service is unavailable</value>
   </data>
-  <data name="Status.TemplateNotSelected" xml:space="preserve">
+<data name="Status.TemplateNotSelected" xml:space="preserve">
     <value>Not selected</value>
   </data>
-  <data name="Status.Updated" xml:space="preserve">
+<data name="Status.Updated" xml:space="preserve">
     <value>Updated</value>
   </data>
-  <data name="Status.ZonesGenerated" xml:space="preserve">
+<data name="Status.ZonesGenerated" xml:space="preserve">
     <value>Zones generated</value>
   </data>
-  <data name="Tool.ColorSettings.Title" xml:space="preserve">
+<data name="Tool.ColorSettings.Title" xml:space="preserve">
     <value>Color Settings</value>
   </data>
-  <data name="Tool.ColorSlots" xml:space="preserve">
+<data name="Tool.ColorSlots" xml:space="preserve">
     <value>Legacy color slots</value>
   </data>
-  <data name="Tool.Expression.Apply" xml:space="preserve">
+<data name="Tool.Expression.Apply" xml:space="preserve">
     <value>Apply expression</value>
   </data>
-  <data name="Tool.Expression.Placeholder" xml:space="preserve">
+<data name="Tool.Expression.Placeholder" xml:space="preserve">
     <value>Expression, e.g. t + 1</value>
   </data>
-  <data name="Tool.Expression.Title" xml:space="preserve">
+<data name="Tool.Expression.Title" xml:space="preserve">
     <value>Expression</value>
   </data>
-  <data name="Tool.FileAssociation.Title" xml:space="preserve">
+<data name="Tool.FileAssociation.Title" xml:space="preserve">
     <value>File Association</value>
   </data>
-  <data name="Tool.ForwardShift.Title" xml:space="preserve">
+<data name="Tool.ForwardShift.Title" xml:space="preserve">
     <value>Forward Shift</value>
   </data>
-  <data name="Tool.Language.Title" xml:space="preserve">
+<data name="Tool.Language.Title" xml:space="preserve">
     <value>Language</value>
   </data>
-  <data name="Tool.Log.Title" xml:space="preserve">
+<data name="Tool.Log.Title" xml:space="preserve">
     <value>Log</value>
   </data>
-  <data name="Tool.Preview.Title" xml:space="preserve">
+<data name="Tool.Preview.Title" xml:space="preserve">
     <value>Preview</value>
   </data>
-  <data name="Tool.Settings.Title" xml:space="preserve">
+<data name="Tool.Settings.Title" xml:space="preserve">
     <value>Settings</value>
   </data>
-  <data name="Tool.TemplateNames.Title" xml:space="preserve">
+<data name="Tool.TemplateNames.Title" xml:space="preserve">
     <value>Template Names</value>
   </data>
-  <data name="Tool.TemplateNames.UseStandard" xml:space="preserve">
+<data name="Tool.TemplateNames.UseStandard" xml:space="preserve">
     <value>Use standard template names</value>
   </data>
-  <data name="Tool.Zones.Title" xml:space="preserve">
+<data name="Tool.Zones.Title" xml:space="preserve">
     <value>Zones</value>
   </data>
 </root>

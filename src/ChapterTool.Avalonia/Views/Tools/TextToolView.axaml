@@ -76,8 +76,15 @@
       <ScrollViewer HorizontalScrollBarVisibility="Auto"
                     VerticalScrollBarVisibility="Auto"
                     Padding="0">
-        <StackPanel x:Name="LinesHost"
-                    MinWidth="0" />
+        <Grid ColumnDefinitions="Auto,*"
+              MinWidth="0">
+          <StackPanel x:Name="LineNumbersHost"
+                      Grid.Column="0"
+                      MinWidth="0" />
+          <SelectableTextBlock x:Name="ContentText"
+                               Grid.Column="1"
+                               MinWidth="0" />
+        </Grid>
       </ScrollViewer>
     </Border>
   </Grid>

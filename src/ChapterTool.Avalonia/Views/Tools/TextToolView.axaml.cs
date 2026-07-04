@@ -37,6 +37,7 @@ public sealed partial class TextToolView : UserControl
         if (subscribedViewModel is not null)
         {
             subscribedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            subscribedViewModel.DetachLiveRefresh();
         }
 
         subscribedViewModel = DataContext as TextToolViewModel;
@@ -58,44 +59,63 @@ public sealed partial class TextToolView : UserControl
 
     private void RebuildLines()
     {
-        LinesHost.Children.Clear();
+        LineNumbersHost.Children.Clear();
+        ContentText.Inlines?.Clear();
         if (DataContext is not TextToolViewModel viewModel)
         {
             return;
         }
 
-        foreach (var line in viewModel.Lines)
+        var lines = viewModel.Lines;
+        if (lines.Count == 0)
         {
-            LinesHost.Children.Add(CreateLine(line));
+            return;
         }
-    }
 
-    private static TextBlock CreateLine(TextToolLineViewModel line)
-    {
-        var text = new TextBlock
-        {
-            FontFamily = FontFamily.Parse("Menlo, Consolas, monospace"),
-            FontSize = 13,
-            LineHeight = 19,
-            TextWrapping = TextWrapping.NoWrap,
-            Padding = new global::Avalonia.Thickness(10, 1, 12, 1)
-        };
+        const string fontFamily = "Menlo, Consolas, monospace";
+        const double fontSize = 13;
+        const double lineHeight = 19;
 
-        text.Inlines ??= [];
-        text.Inlines.Add(new Run($"{line.Number,4}  ")
-        {
-            Foreground = Brush("#8a94a6")
-        });
+        ContentText.FontFamily = FontFamily.Parse(fontFamily);
+        ContentText.FontSize = fontSize;
+        ContentText.LineHeight = lineHeight;
+        ContentText.TextWrapping = TextWrapping.NoWrap;
+        ContentText.Padding = new global::Avalonia.Thickness(8, 0, 12, 0);
+        ContentText.Inlines ??= [];
 
-        foreach (var span in line.Spans)
+        LineNumbersHost.Margin = new global::Avalonia.Thickness(0, 0, 0, 0);
+
+        var inlines = ContentText.Inlines;
+        for (var i = 0; i < lines.Count; i++)
         {
-            text.Inlines.Add(new Run(span.Text)
+            var line = lines[i];
+
+            if (i > 0)
             {
-                Foreground = ForegroundFor(span.Kind)
-            });
-        }
+                inlines.Add(new LineBreak());
+            }
 
-        return text;
+            foreach (var span in line.Spans)
+            {
+                inlines.Add(new Run(span.Text)
+                {
+                    Foreground = ForegroundFor(span.Kind)
+                });
+            }
+
+            var number = new TextBlock
+            {
+                FontFamily = FontFamily.Parse(fontFamily),
+                FontSize = fontSize,
+                LineHeight = lineHeight,
+                Height = lineHeight,
+                TextWrapping = TextWrapping.NoWrap,
+                Padding = new global::Avalonia.Thickness(10, 0, 8, 0),
+                Text = $"{line.Number,4}",
+                Foreground = Brush("#8a94a6")
+            };
+            LineNumbersHost.Children.Add(number);
+        }
     }
 
     private static IBrush ForegroundFor(TextToolSpanKind kind) =>

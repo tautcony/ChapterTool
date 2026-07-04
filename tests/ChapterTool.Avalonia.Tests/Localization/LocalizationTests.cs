@@ -70,6 +70,25 @@ public sealed partial class LocalizationTests
     }
 
     [Fact]
+    public void DiagnosticKeysLocalizeAcrossCultures()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+
+        Assert.True(localizer.TryGetString("Diagnostic.InvalidChapterIndex", out _));
+        Assert.True(localizer.TryGetString("Diagnostic.MissingDependency", out _));
+
+        var arguments = new Dictionary<string, object?> { ["index"] = 7 };
+        Assert.Equal(
+            AppLocalizationResources.All["en-US"]["Diagnostic.InvalidChapterIndex"].Replace("{index}", "7", StringComparison.Ordinal),
+            localizer.Format("Diagnostic.InvalidChapterIndex", arguments));
+
+        localizer.SetCulture("zh-CN");
+        Assert.Equal(
+            AppLocalizationResources.All["zh-CN"]["Diagnostic.InvalidChapterIndex"].Replace("{index}", "7", StringComparison.Ordinal),
+            localizer.Format("Diagnostic.InvalidChapterIndex", arguments));
+    }
+
+    [Fact]
     public void LanguageToolListsAllSupportedLanguages()
     {
         var owner = CreateViewModel(new AppLocalizationManager("en-US"));

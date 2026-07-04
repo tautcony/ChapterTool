@@ -88,7 +88,8 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
     {
         if (chapters.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("InvalidChapterPair", $"Unable to parse OGM chapter line: {line}"));
+            return ChapterImportResult.Failed(Error("InvalidChapterPair", $"Unable to parse OGM chapter line: {line}",
+                new Dictionary<string, object?>(StringComparer.Ordinal) { ["line"] = line }));
         }
 
         diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, "PartialParse", $"Parsing stopped at line: {line}"));
@@ -116,6 +117,9 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
 
     private static ChapterDiagnostic Error(string code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
+
+    private static ChapterDiagnostic Error(string code, string message, IReadOnlyDictionary<string, object?> arguments) =>
+        new(DiagnosticSeverity.Error, code, message, Arguments: arguments);
 
     private enum State
     {

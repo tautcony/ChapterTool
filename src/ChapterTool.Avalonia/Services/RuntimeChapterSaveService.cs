@@ -21,7 +21,8 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
         await File.WriteAllTextAsync(path, result.Content, cancellationToken);
         return result with
         {
-            Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, "Saved", path)]
+            Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, "Saved", path,
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["path"] = path })]
         };
     }
 }

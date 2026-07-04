@@ -128,7 +128,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             if (currentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(editingService.Delete(currentInfo, indexes), $"Delete rows: indexes={string.Join(",", indexes.Order())}");
+                ApplyEdit(editingService.Delete(currentInfo, indexes), Localizer.Format(LocalizedMessage.Create("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order())))));
             }
 
             return ValueTask.CompletedTask;
@@ -138,7 +138,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             if (currentInfo is not null)
             {
                 var index = parameter is int value ? value : Rows.Count;
-                ApplyEdit(editingService.InsertBefore(currentInfo, index), $"Insert row: index={index}");
+                ApplyEdit(editingService.InsertBefore(currentInfo, index), Localizer.Format(LocalizedMessage.Create("Action.InsertRow", ("index", index))));
             }
 
             return ValueTask.CompletedTask;
@@ -632,7 +632,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var result = editingService.CreateZones(currentInfo, indexes, (decimal)currentInfo.FramesPerSecond);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
         Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", currentInfo.Chapters.Count));
-        LogDiagnostics("Create zones", result.Diagnostics);
+        LogDiagnostics(Localizer.GetString("Operation.CreateZones"), result.Diagnostics);
         LogStatus();
         NotifyStateChanged();
         return result.Zones;
@@ -645,7 +645,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        ApplyEdit(editingService.ShiftFramesForward(currentInfo, frames, (decimal)currentInfo.FramesPerSecond), $"Shift frames forward: frames={frames}");
+        ApplyEdit(editingService.ShiftFramesForward(currentInfo, frames, (decimal)currentInfo.FramesPerSecond), Localizer.Format(LocalizedMessage.Create("Action.ShiftFramesForward", ("frames", frames))));
     }
 
     private ChapterExportOptions CurrentExportOptions() =>
@@ -686,7 +686,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             currentProgressMessage = null;
             Progress = 0;
             LogStatus();
-            LogDiagnostics("Load", result.Diagnostics);
+            LogDiagnostics(Localizer.GetString("Operation.Load"), result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -710,7 +710,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         currentProgressMessage = null;
         Progress = 1;
         Log("Log.StatusFromPath", ("status", StatusText), ("path", path));
-        LogDiagnostics("Load", result.Diagnostics);
+        LogDiagnostics(Localizer.GetString("Operation.Load"), result.Diagnostics);
         NotifyStateChanged();
     }
 
@@ -730,7 +730,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             ("chapters", projection.Info.Chapters.Count),
             ("applyExpression", ApplyExpression),
             ("expression", Expression));
-        LogDiagnostics("Output projection", projection.Diagnostics);
+        LogDiagnostics(Localizer.GetString("Operation.OutputProjection"), projection.Diagnostics);
         var result = await saveService.SaveAsync(projection.Info, options, directory, cancellationToken);
         if (!string.IsNullOrWhiteSpace(directory))
         {
@@ -744,7 +744,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
         SetStatus(result.Success ? "Status.Saved" : "Status.SaveFailed", diagnostic: result.Diagnostics.FirstOrDefault());
         LogStatus();
-        LogDiagnostics("Save", result.Diagnostics);
+        LogDiagnostics(Localizer.GetString("Operation.Save"), result.Diagnostics);
         NotifyStateChanged();
     }
 
@@ -785,7 +785,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             EditKind.Frame => editingService.EditFrame(currentInfo, edit.Index, edit.Value, (decimal)currentInfo.FramesPerSecond),
             _ => new ChapterEditResult(currentInfo, [])
         };
-        ApplyEdit(result, $"Edit {kind}: row={edit.Index}, value='{edit.Value}'");
+        ApplyEdit(result, Localizer.Format(LocalizedMessage.Create("Action.EditCell", ("kind", Localizer.GetString($"EditKind.{kind}")), ("row", edit.Index), ("value", edit.Value))));
         return ValueTask.CompletedTask;
     }
 
@@ -806,7 +806,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         var result = ChapterSegmentService.Combine(groupToCombine);
         if (result.Diagnostics.Count > 0)
         {
-            ApplyEdit(result, $"Combine segments: options={groupToCombine.Options.Count}, sourceType={groupToCombine.Options[0].ChapterInfo.SourceType}");
+            ApplyEdit(result, Localizer.Format(LocalizedMessage.Create("Action.CombineSegments", ("options", groupToCombine.Options.Count), ("sourceType", groupToCombine.Options[0].ChapterInfo.SourceType))));
             return;
         }
 
@@ -822,7 +822,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectClip(0);
         SetStatus("Status.Updated");
         Log("Log.EditChapters",
-            ("action", $"Combine segments: options={groupToCombine.Options.Count}, sourceType={groupToCombine.Options[0].ChapterInfo.SourceType}"),
+            ("action", Localizer.Format(LocalizedMessage.Create("Action.CombineSegments", ("options", groupToCombine.Options.Count), ("sourceType", groupToCombine.Options[0].ChapterInfo.SourceType)))),
             ("before", groupToCombine.Options.Sum(static option => option.ChapterInfo.Chapters.Count)),
             ("after", currentInfo?.Chapters.Count ?? 0));
         LogStatus();
@@ -846,7 +846,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             SetStatus("Status.AppendFailed", diagnostic: result.Diagnostics.FirstOrDefault());
             LogStatus();
-            LogDiagnostics("Append load", result.Diagnostics);
+            LogDiagnostics(Localizer.GetString("Operation.AppendLoad"), result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -857,7 +857,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         {
             SetStatus(null, diagnostic: edit.Diagnostics[0]);
             LogStatus();
-            LogDiagnostics("Append edit", edit.Diagnostics);
+            LogDiagnostics(Localizer.GetString("Operation.AppendEdit"), edit.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -883,18 +883,19 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectClip(0);
         SetStatus("Status.AppendedMplsSegments", ("count", result.Groups[0].Options.Count));
         LogStatus();
-        LogDiagnostics("Append load", result.Diagnostics);
+        LogDiagnostics(Localizer.GetString("Operation.AppendLoad"), result.Diagnostics);
         NotifyStateChanged();
     }
 
-    private void ApplyEdit(ChapterEditResult result, string action = "Edit chapters")
+    private void ApplyEdit(ChapterEditResult result, string? action = null)
     {
+        var effectiveAction = action ?? Localizer.GetString("Action.EditChapters");
         var before = currentInfo?.Chapters.Count ?? 0;
         currentInfo = result.ChapterInfo;
         ApplyFrameInfo();
         SetStatus(result.Diagnostics.Count == 0 ? "Status.Updated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log("Log.EditChapters", ("action", action), ("before", before), ("after", currentInfo.Chapters.Count));
-        LogDiagnostics(action, result.Diagnostics);
+        Log("Log.EditChapters", ("action", effectiveAction), ("before", before), ("after", currentInfo.Chapters.Count));
+        LogDiagnostics(effectiveAction, result.Diagnostics);
         LogStatus();
         NotifyStateChanged();
     }
@@ -1066,7 +1067,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         SelectClip(Math.Clamp(currentGroup.DefaultOptionIndex, 0, ClipOptions.Count - 1));
         SetStatus("Status.Updated");
         Log("Log.EditChapters",
-            ("action", $"Split combined segments: options={currentGroup.Options.Count}, sourceType={currentGroup.Options[0].ChapterInfo.SourceType}"),
+            ("action", Localizer.Format(LocalizedMessage.Create("Action.SplitCombinedSegments", ("options", currentGroup.Options.Count), ("sourceType", currentGroup.Options[0].ChapterInfo.SourceType)))),
             ("before", combinedChapterCount),
             ("after", currentInfo?.Chapters.Count ?? 0));
         LogStatus();
@@ -1365,9 +1366,18 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private string LocalizeDiagnostic(ChapterDiagnostic diagnostic)
     {
         var diagnosticKey = $"Diagnostic.{diagnostic.Code}";
-        return Localizer.TryGetString(diagnosticKey, out _)
-            ? Localizer.Format(diagnosticKey)
-            : diagnostic.Message;
+        if (!Localizer.TryGetString(diagnosticKey, out var template))
+        {
+            return diagnostic.Message;
+        }
+
+        var arguments = diagnostic.Arguments;
+        if (arguments is null && template.Contains("{message}", StringComparison.Ordinal))
+        {
+            arguments = new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = diagnostic.Message };
+        }
+
+        return Localizer.Format(diagnosticKey, arguments);
     }
 
     private void LogStatus(LogLevel level = LogLevel.Information) => Log(level, "Log.Status", ("status", StatusText));
@@ -1530,7 +1540,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
                 ("severity", diagnostic.Severity),
                 ("code", diagnostic.Code),
                 ("location", location),
-                ("message", diagnostic.Message),
+                ("message", LocalizeDiagnostic(diagnostic)),
                 ("details", details));
         }
     }

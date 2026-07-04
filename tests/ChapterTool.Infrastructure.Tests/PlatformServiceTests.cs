@@ -57,16 +57,6 @@ public sealed class PlatformServiceTests
         Assert.True(dialogResult.Accepted);
         Assert.Equal("accepted", dialogResult.Text);
 
-        var localization = new LocalizationService(
-            new Dictionary<string, IReadOnlyDictionary<string, string>>
-            {
-                [""] = new Dictionary<string, string> { ["Unloaded"] = "Default Unloaded" },
-                ["en-US"] = new Dictionary<string, string> { ["Unloaded"] = "Unloaded" }
-            });
-        Assert.Equal("Default Unloaded", localization.GetString("Unloaded"));
-        await localization.SetLanguageAsync("en-US", TestContext.Current.CancellationToken);
-        Assert.Equal("Unloaded", localization.GetString("Unloaded"));
-
         var windows = new RecordingWindowService();
         await windows.ShowAsync("preview", "text", TestContext.Current.CancellationToken);
         await windows.HideAsync("preview", TestContext.Current.CancellationToken);

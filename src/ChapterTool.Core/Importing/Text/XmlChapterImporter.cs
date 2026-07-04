@@ -69,7 +69,8 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
         if (root.Name != "Chapters")
         {
-            return ChapterImportResult.Failed(Error("XmlInvalidRoot", $"Expected Chapters root, got {root.Name}."));
+            return ChapterImportResult.Failed(Error("XmlInvalidRoot", $"Expected Chapters root, got {root.Name}.",
+                new Dictionary<string, object?>(StringComparer.Ordinal) { ["name"] = root.Name }));
         }
 
         var groups = new List<ChapterInfoGroup>();
@@ -85,7 +86,8 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
             if (child.Name != "EditionEntry")
             {
-                return ChapterImportResult.Failed(Error("InvalidEntryElement", $"Expected EditionEntry, got {child.Name}."));
+                return ChapterImportResult.Failed(Error("InvalidEntryElement", $"Expected EditionEntry, got {child.Name}.",
+                    new Dictionary<string, object?>(StringComparer.Ordinal) { ["name"] = child.Name }));
             }
 
             var isDefaultEdition = false;
@@ -183,4 +185,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
     private static ChapterDiagnostic Error(string code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
+
+    private static ChapterDiagnostic Error(string code, string message, IReadOnlyDictionary<string, object?> arguments) =>
+        new(DiagnosticSeverity.Error, code, message, Arguments: arguments);
 }

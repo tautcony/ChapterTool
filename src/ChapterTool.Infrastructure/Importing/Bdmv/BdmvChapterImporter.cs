@@ -157,7 +157,8 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             return ChapterImportResult.Failed(Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
         }
 
-        return new ChapterImportResult(true, [], [new ChapterDiagnostic(DiagnosticSeverity.Info, "Stdout", result.StandardOutput)]);
+        return new ChapterImportResult(true, [], [new ChapterDiagnostic(DiagnosticSeverity.Info, "Stdout", result.StandardOutput,
+            Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["output"] = result.StandardOutput })]);
     }
 
     private async ValueTask<ChapterExportResult> ExportChaptersAsync(string executable, string bdmvRoot, int titleIndex, CancellationToken cancellationToken)

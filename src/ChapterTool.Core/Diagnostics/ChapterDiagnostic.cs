@@ -5,4 +5,5 @@ public sealed record ChapterDiagnostic(
     string Code,
     string Message,
     string? Location = null,
-    string? Details = null);
+    string? Details = null,
+    IReadOnlyDictionary<string, object?>? Arguments = null);
