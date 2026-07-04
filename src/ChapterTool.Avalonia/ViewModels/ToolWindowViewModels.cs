@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Xml.Linq;
 using Avalonia.Media;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Exporting;
@@ -116,7 +117,13 @@ public sealed class TextToolViewModel : ObservableViewModel
 
     private void OnEntryAdded(object? sender, ApplicationLogEntry entry)
     {
-        RefreshText();
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            RefreshText();
+            return;
+        }
+
+        Dispatcher.UIThread.Post(RefreshText);
     }
 
     private void RefreshText()

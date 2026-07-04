@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
+[Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed partial class LocalizationAndLayoutHeadlessTests
 {
     [AvaloniaFact]

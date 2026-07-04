@@ -5,6 +5,7 @@ using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
+[Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowInteractionHeadlessTests
 {
     [AvaloniaFact]

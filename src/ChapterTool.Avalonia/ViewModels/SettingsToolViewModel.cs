@@ -51,7 +51,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
-        IThemeApplicationService? themeApplicationService = null)
+        IThemeApplicationService? themeApplicationService = null,
+        bool autoLoad = true)
     {
         this.owner = owner;
         this.appSettingsStore = appSettingsStore;
@@ -106,7 +107,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel
                 StatusText = this.localizer.GetString("Settings.Status.Ready");
             }
         };
-        _ = InitializeAsync();
+        if (autoLoad)
+        {
+            _ = InitializeAsync();
+        }
     }
 
     public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
