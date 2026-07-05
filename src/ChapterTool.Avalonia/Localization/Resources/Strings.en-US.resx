@@ -449,6 +449,63 @@
 <data name="Main.Expression" xml:space="preserve">
     <value>Expression</value>
   </data>
+  <data name="Expression.Suggestion.AddLeftOperand" xml:space="preserve">
+    <value>Add a left operand before this operator.</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperand" xml:space="preserve">
+    <value>Add the missing operand before applying this token.</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperandBeforeParen" xml:space="preserve">
+    <value>Add an operand before the closing parenthesis.</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperator" xml:space="preserve">
+    <value>Add an operator between adjacent values.</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperatorBeforeFunction" xml:space="preserve">
+    <value>Add an operator before the function call.</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperatorBeforeParen" xml:space="preserve">
+    <value>Add an operator before the opening parenthesis.</value>
+  </data>
+  <data name="Expression.Suggestion.AddTernaryCondition" xml:space="preserve">
+    <value>Add a condition before '?'.</value>
+  </data>
+  <data name="Expression.Suggestion.AddTernaryTrueExpression" xml:space="preserve">
+    <value>Add the true expression between '?' and ':'.</value>
+  </data>
+  <data name="Expression.Suggestion.BalanceParentheses" xml:space="preserve">
+    <value>Add or remove parentheses so every '(' has a matching ')'.</value>
+  </data>
+  <data name="Expression.Suggestion.CheckSyntax" xml:space="preserve">
+    <value>Check the expression syntax.</value>
+  </data>
+  <data name="Expression.Suggestion.CompleteExpression" xml:space="preserve">
+    <value>Complete the expression so it produces one value.</value>
+  </data>
+  <data name="Expression.Suggestion.FixComma" xml:space="preserve">
+    <value>Use commas only between function arguments.</value>
+  </data>
+  <data name="Expression.Suggestion.MatchTernaryColon" xml:space="preserve">
+    <value>Add a matching ':' and false expression.</value>
+  </data>
+  <data name="Expression.Suggestion.MatchTernaryQuestion" xml:space="preserve">
+    <value>Add a matching '?' before this ':'.</value>
+  </data>
+  <data name="Expression.Suggestion.RemoveInvalidCharacter" xml:space="preserve">
+    <value>Remove the invalid character or replace it with a supported token.</value>
+  </data>
+  <data name="Expression.Suggestion.UseKnownToken" xml:space="preserve">
+    <value>Use a supported variable, constant, function, or operator.</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedFunction" xml:space="preserve">
+    <value>Replace the function with a supported expression function.</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedOperator" xml:space="preserve">
+    <value>Replace the operator with a supported expression operator.</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedToken" xml:space="preserve">
+    <value>Replace the token with a supported expression token.</value>
+  </data>
 <data name="Main.ForwardTranslation" xml:space="preserve">
     <value>Forward Translation</value>
   </data>

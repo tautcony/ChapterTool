@@ -646,6 +646,8 @@ public sealed record LanguageOptionViewModel(string CultureName, string DisplayN
 
 public sealed class ExpressionToolViewModel(MainWindowViewModel owner) : ObservableViewModel
 {
+    public IAppLocalizer Localizer => owner.Localizer;
+
     public string Expression
     {
         get;

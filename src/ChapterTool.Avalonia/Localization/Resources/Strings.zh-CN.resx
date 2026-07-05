@@ -449,6 +449,63 @@
 <data name="Main.Expression" xml:space="preserve">
     <value>表达式</value>
   </data>
+  <data name="Expression.Suggestion.AddLeftOperand" xml:space="preserve">
+    <value>在此运算符前添加左侧操作数。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperand" xml:space="preserve">
+    <value>在应用此记号前补充缺失的操作数。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperandBeforeParen" xml:space="preserve">
+    <value>在右括号前添加操作数。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperator" xml:space="preserve">
+    <value>在相邻的值之间添加运算符。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperatorBeforeFunction" xml:space="preserve">
+    <value>在函数调用前添加运算符。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperatorBeforeParen" xml:space="preserve">
+    <value>在左括号前添加运算符。</value>
+  </data>
+  <data name="Expression.Suggestion.AddTernaryCondition" xml:space="preserve">
+    <value>在 '?' 前添加条件表达式。</value>
+  </data>
+  <data name="Expression.Suggestion.AddTernaryTrueExpression" xml:space="preserve">
+    <value>在 '?' 与 ':' 之间添加真值表达式。</value>
+  </data>
+  <data name="Expression.Suggestion.BalanceParentheses" xml:space="preserve">
+    <value>添加或移除括号，使每个 '(' 都有匹配的 ')'。</value>
+  </data>
+  <data name="Expression.Suggestion.CheckSyntax" xml:space="preserve">
+    <value>检查表达式语法。</value>
+  </data>
+  <data name="Expression.Suggestion.CompleteExpression" xml:space="preserve">
+    <value>补全表达式，使其能生成一个值。</value>
+  </data>
+  <data name="Expression.Suggestion.FixComma" xml:space="preserve">
+    <value>逗号只能用于分隔函数参数。</value>
+  </data>
+  <data name="Expression.Suggestion.MatchTernaryColon" xml:space="preserve">
+    <value>添加匹配的 ':' 和假值表达式。</value>
+  </data>
+  <data name="Expression.Suggestion.MatchTernaryQuestion" xml:space="preserve">
+    <value>在此 ':' 前添加匹配的 '?'。</value>
+  </data>
+  <data name="Expression.Suggestion.RemoveInvalidCharacter" xml:space="preserve">
+    <value>移除无效字符，或替换为支持的记号。</value>
+  </data>
+  <data name="Expression.Suggestion.UseKnownToken" xml:space="preserve">
+    <value>使用受支持的变量、常量、函数或运算符。</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedFunction" xml:space="preserve">
+    <value>替换为受支持的表达式函数。</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedOperator" xml:space="preserve">
+    <value>替换为受支持的表达式运算符。</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedToken" xml:space="preserve">
+    <value>替换为受支持的表达式记号。</value>
+  </data>
 <data name="Main.ForwardTranslation" xml:space="preserve">
     <value>前移帧</value>
   </data>

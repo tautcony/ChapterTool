@@ -449,6 +449,63 @@
 <data name="Main.Expression" xml:space="preserve">
     <value>式</value>
   </data>
+  <data name="Expression.Suggestion.AddLeftOperand" xml:space="preserve">
+    <value>この演算子の前に左辺の値を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperand" xml:space="preserve">
+    <value>このトークンを適用する前に不足している値を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperandBeforeParen" xml:space="preserve">
+    <value>閉じ括弧の前に値を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperator" xml:space="preserve">
+    <value>隣接する値の間に演算子を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperatorBeforeFunction" xml:space="preserve">
+    <value>関数呼び出しの前に演算子を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddOperatorBeforeParen" xml:space="preserve">
+    <value>開き括弧の前に演算子を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddTernaryCondition" xml:space="preserve">
+    <value>'?' の前に条件式を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.AddTernaryTrueExpression" xml:space="preserve">
+    <value>'?' と ':' の間に真の場合の式を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.BalanceParentheses" xml:space="preserve">
+    <value>すべての '(' に対応する ')' があるように括弧を調整してください。</value>
+  </data>
+  <data name="Expression.Suggestion.CheckSyntax" xml:space="preserve">
+    <value>式の構文を確認してください。</value>
+  </data>
+  <data name="Expression.Suggestion.CompleteExpression" xml:space="preserve">
+    <value>1つの値になるように式を補完してください。</value>
+  </data>
+  <data name="Expression.Suggestion.FixComma" xml:space="preserve">
+    <value>カンマは関数引数の区切りにのみ使用してください。</value>
+  </data>
+  <data name="Expression.Suggestion.MatchTernaryColon" xml:space="preserve">
+    <value>対応する ':' と偽の場合の式を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.MatchTernaryQuestion" xml:space="preserve">
+    <value>この ':' の前に対応する '?' を追加してください。</value>
+  </data>
+  <data name="Expression.Suggestion.RemoveInvalidCharacter" xml:space="preserve">
+    <value>無効な文字を削除するか、対応しているトークンに置き換えてください。</value>
+  </data>
+  <data name="Expression.Suggestion.UseKnownToken" xml:space="preserve">
+    <value>対応している変数、定数、関数、または演算子を使用してください。</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedFunction" xml:space="preserve">
+    <value>対応している式関数に置き換えてください。</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedOperator" xml:space="preserve">
+    <value>対応している式演算子に置き換えてください。</value>
+  </data>
+  <data name="Expression.Suggestion.UseSupportedToken" xml:space="preserve">
+    <value>対応している式トークンに置き換えてください。</value>
+  </data>
 <data name="Main.ForwardTranslation" xml:space="preserve">
     <value>前方シフト</value>
   </data>

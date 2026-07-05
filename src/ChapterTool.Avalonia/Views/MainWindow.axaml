@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:i="https://github.com/projektanker/icons.avalonia"
         xmlns:svg="clr-namespace:Avalonia.Svg;assembly=Svg.Controls.Avalonia"
+        xmlns:controls="using:ChapterTool.Avalonia.Views.Controls"
         xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:Name="RootWindow"
@@ -573,12 +574,13 @@
                     AutomationProperties.AutomationId="ApplyExpression"
                     IsChecked="{Binding ApplyExpression}"
                     Content="{DynamicResource Common.Use}" />
-          <TextBox x:Name="ExpressionBox"
-                   Grid.Column="2"
-                   MinWidth="96"
-                   HorizontalAlignment="Stretch"
-                   Text="{Binding Expression, UpdateSourceTrigger=PropertyChanged}"
-                   AutomationProperties.AutomationId="ExpressionText" />
+          <controls:ExpressionEditor x:Name="ExpressionBox"
+                                     Grid.Column="2"
+                                     MinWidth="128"
+                                     HorizontalAlignment="Stretch"
+                                     Text="{Binding Expression}"
+                                     Localizer="{Binding Localizer}"
+                                     AutomationProperties.AutomationId="ExpressionText" />
         </Grid>
       </Grid>
     </Grid>

@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:transform="clr-namespace:ChapterTool.Core.Transform;assembly=ChapterTool.Core"
+             x:Class="ChapterTool.Avalonia.Views.Controls.ExpressionEditor"
+             MinHeight="25.6"
+             Focusable="True"
+             GotFocus="OnWrapperGotFocus"
+             PointerPressed="OnPointerPressed">
+  <Grid x:Name="RootGrid"
+        ClipToBounds="False">
+    <Border x:Name="EditorBorder"
+            Background="{DynamicResource ChapterTool.TextBackBrush}"
+            BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="2">
+      <ContentControl x:Name="EditorHost" />
+    </Border>
+
+    <Popup x:Name="CompletionPopup"
+           Placement="AnchorAndGravity"
+           PlacementAnchor="TopLeft"
+           PlacementGravity="BottomLeft"
+           PlacementConstraintAdjustment="None"
+           IsLightDismissEnabled="False">
+      <Border x:Name="CompletionPanel"
+              MinWidth="180"
+              MaxWidth="320"
+              MaxHeight="220"
+              Background="{DynamicResource ChapterTool.TextBackBrush}"
+              BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
+              BorderThickness="1"
+              CornerRadius="4"
+              BoxShadow="0 6 18 0 #22000000">
+        <ListBox x:Name="CompletionList"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 SelectionChanged="OnCompletionSelectionChanged"
+                 DoubleTapped="OnCompletionListDoubleTapped">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="transform:ExpressionCompletion">
+              <Grid ColumnDefinitions="Auto,*" Margin="8,6">
+                <TextBlock Text="{Binding Text}"
+                           FontWeight="SemiBold"
+                           Margin="0,0,8,0" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Description}"
+                           Opacity="0.75"
+                           TextWrapping="Wrap" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Border>
+    </Popup>
+
+    <Popup x:Name="DiagnosticPopup"
+           Placement="BottomEdgeAlignedLeft"
+           IsLightDismissEnabled="False">
+      <Border x:Name="DiagnosticPanel"
+              MaxWidth="360"
+              Background="{DynamicResource ChapterTool.TextBackBrush}"
+              BorderBrush="#b42318"
+              BorderThickness="1"
+              CornerRadius="4"
+              Padding="10,8"
+              BoxShadow="0 6 18 0 #22000000"
+              PointerEntered="OnDiagnosticPanelPointerEntered"
+              PointerExited="OnDiagnosticPanelPointerExited">
+        <TextBlock x:Name="DiagnosticTextBlock"
+                   Foreground="#b42318"
+                   TextWrapping="Wrap" />
+      </Border>
+    </Popup>
+  </Grid>
+</UserControl>
