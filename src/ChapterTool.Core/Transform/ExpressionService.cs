@@ -413,6 +413,21 @@ public sealed class ExpressionService : IExpressionService
             previous = token;
         }
 
+        if (previous == ",")
+        {
+            throw new ExpressionException("InvalidExpression.MisplacedComma", "Misplaced comma.");
+        }
+
+        if (previous == ":")
+        {
+            throw new ExpressionException("InvalidExpression.InsufficientOperands", "Operator ':' requires a false expression.", Args(("token", previous)));
+        }
+
+        if (Precedence.ContainsKey(previous))
+        {
+            throw new ExpressionException("InvalidExpression.InsufficientOperands", $"Token '{previous}' requires more operands.", Args(("token", previous)));
+        }
+
         while (operators.Count > 0)
         {
             var token = operators.Pop();

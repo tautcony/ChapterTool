@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Avalonia.Views.Tools;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
@@ -49,7 +50,7 @@ public sealed class ToolViewsHeadlessTests
             Assert.Equal("CHAPTER01=00:00:00.000", Assert.Single(textToolViewModel.Lines).Spans.Single().Text);
 
             var expressionWindow = rendered.Single(window => MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "Expression"));
-            Assert.NotNull(MainWindowHeadlessTestHost.RequiredDescendant<TextBox>(expressionWindow, _ => true, "expression text box"));
+            Assert.NotNull(MainWindowHeadlessTestHost.RequiredDescendant<ExpressionEditor>(expressionWindow, _ => true, "expression editor"));
             Assert.NotNull(MainWindowHeadlessTestHost.RequiredDescendant<CheckBox>(expressionWindow, _ => true, "expression apply checkbox"));
             Assert.NotNull(MainWindowHeadlessTestHost.RequiredDescendant<Button>(expressionWindow, button => button.Command is not null, "expression apply button"));
         }
@@ -59,6 +60,164 @@ public sealed class ToolViewsHeadlessTests
             {
                 window.Close();
             }
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_shows_diagnostics_and_accepts_tab_completion()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = "t +"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            Assert.Contains("Add the missing operand before applying this token.", editor.DiagnosticTooltipText, StringComparison.Ordinal);
+
+            editor.Text = "flo";
+            editor.MoveCaretToEnd();
+            editor.AcceptFirstCompletion();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal("floor()", editor.EditorText);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_accepts_text_input_after_focus()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = string.Empty
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.InsertTextForTesting("t");
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal("t", editor.EditorText);
+            Assert.Equal("t", editor.Text);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_keeps_case_insensitive_prefix_completions_without_unknown_token_diagnostic()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = "S"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.MoveCaretToEnd();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Contains(editor.CurrentCompletions, item => item.Text == "sin");
+            Assert.Contains(editor.CurrentCompletions, item => item.Text == "sqrt");
+            Assert.False(editor.HasDiagnostic);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_opens_completion_popup_for_prefix_input_without_auto_showing_diagnostic_popup()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = "si"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.MoveCaretToEnd();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Contains(editor.CurrentCompletions, item => item.Text == "sin");
+            Assert.False(editor.IsDiagnosticOpen);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_reports_trailing_binary_operator()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = "2^"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.MoveCaretToEnd();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(editor.HasDiagnostic);
+            Assert.Contains("requires more operands", editor.DiagnosticTooltipText, StringComparison.Ordinal);
+            Assert.Contains("Add the missing operand", editor.DiagnosticTooltipText, StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaTheory]
+    [InlineData("2+", "requires more operands", "Add the missing operand")]
+    [InlineData("2^", "requires more operands", "Add the missing operand")]
+    [InlineData("2?", "matching ':'", "Add a matching ':'")]
+    [InlineData("floor(", "Unbalanced parentheses", "every '(' has a matching ')'")]
+    [InlineData("floor()", "Missing operand before ')'", "Add an operand before the closing parenthesis")]
+    public async Task Expression_editor_tooltip_reports_incomplete_expression_errors(
+        string expression,
+        string expectedDiagnostic,
+        string expectedSuggestion)
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = expression
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.MoveCaretToEnd();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(editor.HasDiagnostic);
+            Assert.Contains(expectedDiagnostic, editor.DiagnosticTooltipText, StringComparison.Ordinal);
+            Assert.Contains(expectedSuggestion, editor.DiagnosticTooltipText, StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
         }
     }
 

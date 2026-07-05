@@ -150,4 +150,33 @@ public sealed class ExpressionServiceTests
         Assert.Equal(10, result.Value);
         Assert.StartsWith("InvalidExpression", Assert.Single(result.Diagnostics).Code);
     }
+
+    [Theory]
+    [InlineData("2+", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2-", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2*", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2/", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2%", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2^", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2>", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2<", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2>=", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2<=", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2?", "InvalidExpression.TernaryUnmatchedQuestion")]
+    [InlineData("2?3:", "InvalidExpression.InsufficientOperands")]
+    [InlineData("2?3", "InvalidExpression.TernaryUnmatchedQuestion")]
+    [InlineData("floor(", "InvalidExpression.UnbalancedParentheses")]
+    [InlineData("floor()", "InvalidExpression.MissingOperandBeforeParen")]
+    [InlineData("floor(2,", "InvalidExpression.MisplacedComma")]
+    [InlineData("(2+", "InvalidExpression.InsufficientOperands")]
+    [InlineData("+", "InvalidExpression.InsufficientOperands")]
+    [InlineData("-", "InvalidExpression.InsufficientOperands")]
+    public void Incomplete_expression_reports_specific_warning_code(string expression, string expectedCode)
+    {
+        var result = service.EvaluateInfix(expression, 10, 24);
+
+        Assert.False(result.Success);
+        Assert.Equal(10, result.Value);
+        Assert.Equal(expectedCode, Assert.Single(result.Diagnostics).Code);
+    }
 }

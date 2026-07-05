@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
@@ -77,7 +78,7 @@ public sealed class MainWindowStateHeadlessTests
         var chapterNameModeBox = host.RequiredControl<ComboBox>("ChapterNameModeBox");
         var orderShiftBox = host.RequiredControl<NumericUpDown>("OrderShiftBox");
         var expressionCheckBox = host.RequiredControl<CheckBox>("ApplyExpressionBox");
-        var expressionBox = host.RequiredControl<TextBox>("ExpressionBox");
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
         var frameRateBox = host.RequiredControl<ComboBox>("FrameRateBox");
         var roundFramesBox = host.RequiredControl<CheckBox>("RoundFramesBox");
 
@@ -90,6 +91,7 @@ public sealed class MainWindowStateHeadlessTests
         orderShiftBox.Value = 2;
         expressionCheckBox.IsChecked = true;
         expressionBox.Text = "t + 1";
+        Assert.True(expressionBox.Bounds.Height <= 34);
         frameRateBox.SelectedIndex = 3;
         roundFramesBox.IsChecked = false;
         host.FilePickerService.SaveDirectoryPath = "out";
