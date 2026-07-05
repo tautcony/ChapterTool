@@ -86,7 +86,7 @@ public sealed class ExpressionService : IExpressionService
             var postfix = ToPostfix(Tokenize(expression));
             return EvaluatePostfix(postfix, timeSeconds, framesPerSecond);
         }
-        catch (Exception exception) when (exception is InvalidOperationException or FormatException or KeyNotFoundException)
+        catch (Exception exception) when (exception is InvalidOperationException or FormatException or KeyNotFoundException or OverflowException)
         {
             return exception is ExpressionException ee
                 ? Failure(timeSeconds, ee.Code, ee.Message, ee.Arguments)
@@ -144,7 +144,7 @@ public sealed class ExpressionService : IExpressionService
 
             return new ExpressionEvaluationResult(true, stack.Pop(), []);
         }
-        catch (Exception exception) when (exception is InvalidOperationException or DivideByZeroException)
+        catch (Exception exception) when (exception is InvalidOperationException or DivideByZeroException or OverflowException)
         {
             return exception is ExpressionException ee
                 ? Failure(timeSeconds, ee.Code, ee.Message, ee.Arguments)
@@ -163,11 +163,17 @@ public sealed class ExpressionService : IExpressionService
     private static IReadOnlyDictionary<string, object?>? Args(params (string Name, object? Value)[] pairs) =>
         pairs.Length == 0 ? null : pairs.ToDictionary(static pair => pair.Name, static pair => pair.Value, StringComparer.Ordinal);
 
-    private sealed class ExpressionException(string code, string message, IReadOnlyDictionary<string, object?>? arguments = null)
-        : InvalidOperationException(message)
+    private sealed class ExpressionException : InvalidOperationException
     {
-        public string Code { get; } = code;
-        public IReadOnlyDictionary<string, object?>? Arguments { get; } = arguments;
+        public ExpressionException(string code, string message, IReadOnlyDictionary<string, object?>? arguments = null, Exception? innerException = null)
+            : base(message, innerException)
+        {
+            Code = code;
+            Arguments = arguments;
+        }
+
+        public string Code { get; }
+        public IReadOnlyDictionary<string, object?>? Arguments { get; }
     }
 
     private static List<string> Tokenize(string expression)

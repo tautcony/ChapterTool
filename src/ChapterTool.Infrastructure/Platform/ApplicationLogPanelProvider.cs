@@ -103,7 +103,8 @@ public sealed class ApplicationLogPanelProvider(
             }
         }
 
-        EntryAdded?.Invoke(this, entry);
+        var handler = EntryAdded;
+        handler?.Invoke(this, entry);
     }
 
     private static Dictionary<string, object?> StructuredState<TState>(TState state)

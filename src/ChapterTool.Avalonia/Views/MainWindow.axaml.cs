@@ -505,6 +505,22 @@ public sealed partial class MainWindow : Window
         viewModel.Rows.CollectionChanged += ScheduleWindowCommandRefresh;
     }
 
+    private void UnsubscribeViewModelCommandState()
+    {
+        foreach (var command in ViewModelCommands())
+        {
+            command.CanExecuteChanged -= ScheduleWindowCommandRefresh;
+        }
+
+        viewModel.Rows.CollectionChanged -= ScheduleWindowCommandRefresh;
+    }
+
+    protected override void OnClosed(EventArgs args)
+    {
+        UnsubscribeViewModelCommandState();
+        base.OnClosed(args);
+    }
+
     private IEnumerable<UiCommand> ViewModelCommands()
     {
         yield return viewModel.ReloadCommand;

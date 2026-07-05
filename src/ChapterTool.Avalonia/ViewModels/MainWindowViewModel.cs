@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
@@ -14,7 +15,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed class MainWindowViewModel : ObservableViewModel
+public sealed partial class MainWindowViewModel : ObservableViewModel
 {
     private readonly IChapterLoadService loadService;
     private readonly IChapterSaveService saveService;
@@ -1390,8 +1391,14 @@ public sealed class MainWindowViewModel : ObservableViewModel
             arguments = new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = diagnostic.Message };
         }
 
-        return Localizer.Format(diagnosticKey, arguments);
+        var formatted = Localizer.Format(diagnosticKey, arguments);
+        // Strip any unresolved {token} placeholders that may remain when
+        // the Arguments dictionary is missing keys expected by the template.
+        return UnresolvedPlaceholderPattern().Replace(formatted, "[?]");
     }
+
+    [GeneratedRegex(@"\{[^}]+\}")]
+    private static partial Regex UnresolvedPlaceholderPattern();
 
     private void LogStatus(LogLevel level = LogLevel.Information) => Log(level, "Log.Status", ("status", StatusText));
 

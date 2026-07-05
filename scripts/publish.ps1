@@ -30,33 +30,46 @@ if ($Runtime -like "osx-*" -and [System.Runtime.InteropServices.RuntimeInformati
     $resourcesDir = Join-Path $contentsDir "Resources"
 
     if (Test-Path $appBundle) { Remove-Item -Recurse -Force $appBundle }
-    New-Item -ItemType Directory -Force -Path $macosDir, $resourcesDir | Out-Null
 
-    # Move everything dotnet emitted into Contents/MacOS/.
-    Get-ChildItem -Path $output -Exclude "$appName.app" |
-        Where-Object { $_.Name -ne "$appName.app" } |
-        Move-Item -Destination $macosDir -Force
+    try {
+        New-Item -ItemType Directory -Force -Path $macosDir, $resourcesDir | Out-Null
 
-    # Stage bundle metadata.
-    $infoPlistSrc = Join-Path $repoRoot "src/ChapterTool.Avalonia/Assets/MacOS/Info.plist"
-    $icnsSrc = Join-Path $repoRoot "src/ChapterTool.Avalonia/Assets/Icons/app-icon.icns"
-    Copy-Item $infoPlistSrc (Join-Path $contentsDir "Info.plist") -Force
-    Copy-Item $icnsSrc (Join-Path $resourcesDir "app-icon.icns") -Force
+        # Move everything dotnet emitted into Contents/MacOS/.
+        $publishItems = Get-ChildItem -Path $output -Exclude "$appName.app" |
+            Where-Object { $_.Name -ne "$appName.app" }
+        if (-not $publishItems) {
+            throw "No publish output found in '$output'"
+        }
+        $publishItems | Move-Item -Destination $macosDir -Force
 
-    # PkgInfo: 8 bytes, "APPL????" — required by LaunchServices.
-    [System.IO.File]::WriteAllBytes((Join-Path $contentsDir "PkgInfo"), [System.Text.Encoding]::ASCII.GetBytes("APPL????"))
+        # Stage bundle metadata.
+        $infoPlistSrc = Join-Path $repoRoot "src/ChapterTool.Avalonia/Assets/MacOS/Info.plist"
+        $icnsSrc = Join-Path $repoRoot "src/ChapterTool.Avalonia/Assets/Icons/app-icon.icns"
+        Copy-Item $infoPlistSrc (Join-Path $contentsDir "Info.plist") -Force
+        Copy-Item $icnsSrc (Join-Path $resourcesDir "app-icon.icns") -Force
 
-    # Mark the executable +applet so the bundle is double-clickable.
-    $exePath = Join-Path $macosDir $appName
-    if (Test-Path $exePath) { chmod +x $exePath }
+        # PkgInfo: 8 bytes, "APPL????" — required by LaunchServices.
+        [System.IO.File]::WriteAllBytes((Join-Path $contentsDir "PkgInfo"), [System.Text.Encoding]::ASCII.GetBytes("APPL????"))
 
-    # Refresh icon cache so Dock picks up the new art immediately during dev.
-    touch $appBundle
-    if (Get-Command rebuild_icon_cache -ErrorAction SilentlyContinue) {
-        rebuild_icon_cache 2>$null
+        # Mark the executable so the bundle is double-clickable.
+        $exePath = Join-Path $macosDir $appName
+        if (-not (Test-Path $exePath)) {
+            throw "Expected executable '$exePath' not found"
+        }
+        chmod +x $exePath
+
+        # Refresh icon cache so Dock picks up the new art immediately during dev.
+        touch $appBundle
+        if (Get-Command rebuild_icon_cache -ErrorAction SilentlyContinue) {
+            rebuild_icon_cache 2>$null
+        }
+
+        Write-Host "Created macOS app bundle at $appBundle"
     }
-
-    Write-Host "Created macOS app bundle at $appBundle"
+    catch {
+        if (Test-Path $appBundle) { Remove-Item -Recurse -Force $appBundle }
+        throw
+    }
 }
 elseif ($Runtime -like "osx-*") {
     Write-Warning "Runtime is $Runtime but host is not macOS; skipped .app bundling. Run on macOS to produce the .app bundle."

@@ -16,11 +16,11 @@ SelfContained="false"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -Configuration)
-      Configuration="$2"; shift 2 ;;
+      [[ $# -ge 2 ]] || { echo "ERROR: -Configuration requires a value" >&2; exit 2; }; Configuration="$2"; shift 2 ;;
     -Configuration=*)
       Configuration="${1#*=}"; shift ;;
     -Runtime)
-      Runtime="$2"; shift 2 ;;
+      [[ $# -ge 2 ]] || { echo "ERROR: -Runtime requires a value" >&2; exit 2; }; Runtime="$2"; shift 2 ;;
     -Runtime=*)
       Runtime="${1#*=}"; shift ;;
     -SelfContained)
@@ -75,8 +75,18 @@ case "$Runtime" in
     rm -rf "$app_bundle"
     mkdir -p "$macos_dir" "$resources_dir"
 
+    # Trap for interrupt-safe bundle restructuring.
+    trap 'rm -rf "$app_bundle"' INT TERM
+
     # Move everything dotnet emitted into Contents/MacOS/.
-    for item in "$output"/*; do
+    shopt -s nullglob
+    items=("$output"/*)
+    shopt -u nullglob
+    if (( ${#items[@]} == 0 )); then
+      echo "ERROR: no publish output found in '$output'" >&2
+      exit 1
+    fi
+    for item in "${items[@]}"; do
       name="$(basename "$item")"
       [[ "$name" == "$app_name.app" ]] && continue
       mv "$item" "$macos_dir/"
@@ -93,7 +103,13 @@ case "$Runtime" in
 
     # Mark the executable so the bundle is double-clickable.
     exe_path="$macos_dir/$app_name"
-    [[ -f "$exe_path" ]] && chmod +x "$exe_path"
+    if [[ ! -f "$exe_path" ]]; then
+      echo "ERROR: expected executable '$exe_path' not found" >&2
+      exit 1
+    fi
+    chmod +x "$exe_path"
+
+    trap - INT TERM
 
     # Refresh icon cache so Dock picks up the new art immediately during dev.
     touch "$app_bundle"

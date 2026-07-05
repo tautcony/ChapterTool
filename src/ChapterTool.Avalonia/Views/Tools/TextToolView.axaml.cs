@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input.Platform;
@@ -16,6 +17,7 @@ public sealed partial class TextToolView : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        DetachedFromVisualTree += OnDetachedFromVisualTree;
     }
 
     private async void OnCopyClicked(object? sender, RoutedEventArgs args)
@@ -47,6 +49,19 @@ public sealed partial class TextToolView : UserControl
         }
 
         RebuildLines();
+    }
+
+    private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs args)
+    {
+        DetachedFromVisualTree -= OnDetachedFromVisualTree;
+        DataContextChanged -= OnDataContextChanged;
+
+        if (subscribedViewModel is not null)
+        {
+            subscribedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            subscribedViewModel.DetachLiveRefresh();
+            subscribedViewModel = null;
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
