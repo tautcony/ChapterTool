@@ -46,6 +46,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private LocalizedMessage? currentStatusMessage;
     private LocalizedMessage? currentProgressMessage;
     private decimal frameAccuracyTolerance = 0.15m;
+    private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     public MainWindowViewModel(
         IChapterLoadService loadService,
@@ -77,6 +78,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
         this.appSettingsStore = appSettingsStore;
         chapterNameTemplateStatus = this.Localizer.GetString("Status.TemplateNotSelected");
         statusText = this.Localizer.GetString("Status.Ready");
+        RefreshXmlLanguageDisplayOptions(notify: false);
         RefreshChapterNameModeOptions();
         this.Localizer.CultureChanged += (_, _) => RefreshLocalizedState();
         selectedFrameRateOption = this.frameRateService.Options[0];
@@ -170,6 +172,8 @@ public sealed class MainWindowViewModel : ObservableViewModel
     } = string.Empty;
 
     public ObservableCollection<ChapterRowViewModel> Rows { get; } = [];
+
+    public bool IsChapterGridEmpty => Rows.Count == 0;
 
     public ObservableCollection<ChapterSourceOption> ClipOptions { get; } = [];
 
@@ -282,13 +286,29 @@ public sealed class MainWindowViewModel : ObservableViewModel
 
     private IReadOnlyDictionary<string, int>? xmlLanguageIndexes;
 
-    public IReadOnlyList<SelectorDisplayOption> XmlLanguageDisplayOptions { get; } =
-        XmlChapterLanguageCatalog.Languages
-            .Select(static language => new SelectorDisplayOption(
-                language.Code,
-                LanguageDisplayName(language),
-                $"{language.Code}（{LanguageDisplayName(language)}）"))
-            .ToArray();
+    public IReadOnlyList<SelectorDisplayOption> XmlLanguageDisplayOptions => xmlLanguageDisplayOptions;
+
+    public SelectorDisplayOption? SelectedXmlLanguageDisplayOption
+    {
+        get
+        {
+            var options = XmlLanguageDisplayOptions;
+            return XmlLanguageIndex < 0 || XmlLanguageIndex >= options.Count
+                ? null
+                : options[XmlLanguageIndex];
+        }
+        set
+        {
+            var index = value is null
+                ? -1
+                : XmlLanguageDisplayOptions.ToList().FindIndex(option =>
+                    string.Equals(option.MainText, value.MainText, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+            {
+                XmlLanguageIndex = index;
+            }
+        }
+    }
 
     public string XmlLanguage
     {
@@ -299,6 +319,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
             if (SetProperty(ref field, normalized))
             {
                 OnPropertyChanged(nameof(XmlLanguageIndex));
+                OnPropertyChanged(nameof(SelectedXmlLanguageDisplayOption));
             }
         }
     } = "und";
@@ -1209,17 +1230,9 @@ public sealed class MainWindowViewModel : ObservableViewModel
         return new SelectorDisplayOption(mainText, remarkText, displayText);
     }
 
-    private static string LanguageDisplayName(XmlChapterLanguage language)
-    {
-        const string separator = " - ";
-        var separatorIndex = language.DisplayName.IndexOf(separator, StringComparison.Ordinal);
-        return separatorIndex >= 0
-            ? language.DisplayName[(separatorIndex + separator.Length)..]
-            : language.DisplayName;
-    }
-
     private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
+        OnPropertyChanged(nameof(IsChapterGridEmpty));
         NotifyCommandStates();
     }
 
@@ -1428,6 +1441,7 @@ public sealed class MainWindowViewModel : ObservableViewModel
     private void RefreshLocalizedState()
     {
         RefreshChapterNameModeOptions();
+        RefreshXmlLanguageDisplayOptions(notify: true);
 
         if (string.IsNullOrEmpty(chapterNameTemplateText))
         {
@@ -1443,6 +1457,32 @@ public sealed class MainWindowViewModel : ObservableViewModel
         if (currentProgressMessage is not null)
         {
             StatusText = Localizer.Format(currentProgressMessage);
+        }
+    }
+
+    private void RefreshXmlLanguageDisplayOptions(bool notify)
+    {
+        var options = XmlLanguageDisplay.Options(Localizer);
+        if (xmlLanguageDisplayOptions.Count != options.Count)
+        {
+            xmlLanguageDisplayOptions.Clear();
+            foreach (var option in options)
+            {
+                xmlLanguageDisplayOptions.Add(option);
+            }
+        }
+        else
+        {
+            for (var index = 0; index < options.Count; index++)
+            {
+                xmlLanguageDisplayOptions[index].UpdateFrom(options[index]);
+            }
+        }
+
+        if (notify)
+        {
+            OnPropertyChanged(nameof(XmlLanguageDisplayOptions));
+            OnPropertyChanged(nameof(SelectedXmlLanguageDisplayOption));
         }
     }
 

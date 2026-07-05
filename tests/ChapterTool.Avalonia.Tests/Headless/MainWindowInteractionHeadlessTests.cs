@@ -9,6 +9,26 @@ namespace ChapterTool.Avalonia.Tests.Headless;
 public sealed class MainWindowInteractionHeadlessTests
 {
     [AvaloniaFact]
+    public async Task Chapter_grid_empty_image_is_visible_until_rows_load()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+
+        var emptyImage = host.RequiredControl<Control>("ChapterGridEmptyImage");
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+
+        Assert.True(host.ViewModel.IsChapterGridEmpty);
+        Assert.True(emptyImage.IsVisible);
+        Assert.True(grid.IsVisible);
+
+        await host.LoadAsync("movie.txt");
+
+        Assert.False(host.ViewModel.IsChapterGridEmpty);
+        Assert.False(emptyImage.IsVisible);
+        Assert.NotEmpty(host.ViewModel.Rows);
+    }
+
+    [AvaloniaFact]
     public async Task Row_context_commands_are_exposed_from_visible_grid_surface()
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(

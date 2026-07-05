@@ -39,7 +39,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.Eac3toPath = "new-eac3to";
         viewModel.FfprobePath = "new-ffprobe";
         viewModel.FfmpegPath = "new-ffmpeg";
-        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("Json");
+        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         viewModel.FrameAccuracyTolerance = 0.2m;
         viewModel.ColorSlots[0].Value = "#010203";
@@ -79,7 +79,7 @@ public sealed class SettingsToolViewModelTests
 
         viewModel.SelectedLanguage = "ja-JP";
         viewModel.SaveDirectory = "live";
-        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("Json");
+        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         viewModel.FrameAccuracyTolerance = 0.20m;
 
@@ -134,7 +134,7 @@ public sealed class SettingsToolViewModelTests
 
         viewModel.SelectedLanguage = "ja-JP";
         viewModel.SaveDirectory = "live";
-        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("Json");
+        viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.FrameAccuracyTolerance = 0.20m;
         viewModel.ColorSlots[0].Value = "#123456";
 
@@ -239,10 +239,49 @@ public sealed class SettingsToolViewModelTests
             null,
             new AppLocalizationManager("en-US"));
 
+        Assert.Contains("TXT", viewModel.SaveFormatOptions);
+        Assert.Contains("XML", viewModel.SaveFormatOptions);
         Assert.Contains("QPFile", viewModel.SaveFormatOptions);
+        Assert.Contains("TsmuxerMeta", viewModel.SaveFormatOptions);
+        Assert.Contains("CUE", viewModel.SaveFormatOptions);
+        Assert.Contains("JSON", viewModel.SaveFormatOptions);
         Assert.DoesNotContain("Qpf", viewModel.SaveFormatOptions);
         Assert.Contains("Chapter2Qpfile", viewModel.SaveFormatOptions);
         Assert.Equal(10, viewModel.SaveFormatOptions.Count);
+    }
+
+    [Fact]
+    public void XmlLanguageDisplayOptionsMatchMainWindowFormat()
+    {
+        var viewModel = CreateViewModel(
+            CreateOwner(),
+            null,
+            null,
+            new AppLocalizationManager("en-US"));
+
+        var index = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
+        var option = viewModel.XmlLanguageDisplayOptions[index];
+
+        Assert.Equal("jpn", option.MainText);
+        Assert.Equal("Japanese", option.RemarkText);
+        Assert.Equal("jpn（Japanese）", option.DisplayText);
+    }
+
+    [Fact]
+    public void XmlLanguageDisplayOptionsRefreshAfterUiLanguageSwitch()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var owner = CreateOwner(localizer: localizer);
+        var viewModel = CreateViewModel(owner, null, null, localizer);
+        var notifications = new List<string?>();
+        viewModel.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
+
+        localizer.SetCulture("zh-CN");
+        var option = viewModel.XmlLanguageDisplayOptions[viewModel.XmlLanguageOptions.ToList().IndexOf("und")];
+
+        Assert.Contains(nameof(SettingsToolViewModel.XmlLanguageDisplayOptions), notifications);
+        Assert.Equal("未确定", option.RemarkText);
+        Assert.Equal("und（未确定）", option.DisplayText);
     }
 
     [Fact]
@@ -445,7 +484,9 @@ public sealed class SettingsToolViewModelTests
             themeApplicationService,
             autoLoad: false);
 
-    private static MainWindowViewModel CreateOwner(ISettingsStore<AppSettings>? appSettingsStore = null)
+    private static MainWindowViewModel CreateOwner(
+        ISettingsStore<AppSettings>? appSettingsStore = null,
+        IAppLocalizer? localizer = null)
     {
         var logService = new ApplicationLogPanelProvider();
 
@@ -459,7 +500,7 @@ public sealed class SettingsToolViewModelTests
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
             appSettingsStore: appSettingsStore,
-            localizer: new AppLocalizationManager("en-US"));
+            localizer: localizer ?? new AppLocalizationManager("en-US"));
     }
 
     private sealed class FakeAppSettingsStore(AppSettings initial) : ISettingsStore<AppSettings>

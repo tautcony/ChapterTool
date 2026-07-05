@@ -353,6 +353,9 @@
 <data name="Language.Japanese" xml:space="preserve">
     <value>日本語</value>
   </data>
+<data name="XmlLanguage.Undetermined" xml:space="preserve">
+    <value>未定義</value>
+  </data>
 <data name="Log.AppendingMpls" xml:space="preserve">
     <value>MPLS を追加中: path='{path}'</value>
   </data>

@@ -367,7 +367,16 @@ public sealed class TextToolFormatSelector(MainWindowViewModel owner)
 internal static class ChapterExportFormatDisplay
 {
     public static string LabelFor(ChapterExportFormat format) =>
-        format == ChapterExportFormat.Qpfile ? "QPFile" : format.ToString();
+        format switch
+        {
+            ChapterExportFormat.Txt => "TXT",
+            ChapterExportFormat.Xml => "XML",
+            ChapterExportFormat.Qpfile => "QPFile",
+            ChapterExportFormat.TsMuxerMeta => "TsmuxerMeta",
+            ChapterExportFormat.Cue => "CUE",
+            ChapterExportFormat.Json => "JSON",
+            _ => format.ToString()
+        };
 }
 
 public sealed class ColorSettingsViewModel : ObservableViewModel

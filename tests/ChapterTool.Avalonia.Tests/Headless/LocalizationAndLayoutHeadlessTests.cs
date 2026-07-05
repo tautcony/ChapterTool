@@ -23,6 +23,11 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
         Assert.True(host.ContainsRenderedText("Save"));
         Assert.Equal("Keep original", ChapterNameModeSelectionText(host));
         Assert.Equal("Loaded 1 chapters", host.ViewModel.StatusText);
+        var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
+        host.ViewModel.SaveFormat = ChapterTool.Core.Exporting.ChapterExportFormat.Xml;
+        xmlLanguageBox.SelectedIndex = host.ViewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
+        await host.LayoutAsync();
+        Assert.Equal("jpn（Japanese）", xmlLanguageBox.SelectionBoxItem?.ToString());
 
         localizer.SetCulture("ja-JP");
         await host.LayoutAsync();
@@ -31,11 +36,15 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
         Assert.True(host.ContainsRenderedText("保存"));
         Assert.Equal("元の名前を保持", ChapterNameModeSelectionText(host));
         Assert.Equal("1 個のチャプターを読み込みました", host.ViewModel.StatusText);
+        Assert.False(string.IsNullOrWhiteSpace(xmlLanguageBox.SelectionBoxItem?.ToString()));
+        Assert.StartsWith("jpn（", xmlLanguageBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
 
         localizer.SetCulture("zh-CN");
         await host.LayoutAsync();
 
         Assert.Equal("保留原名", ChapterNameModeSelectionText(host));
+        Assert.False(string.IsNullOrWhiteSpace(xmlLanguageBox.SelectionBoxItem?.ToString()));
+        Assert.StartsWith("jpn（", xmlLanguageBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
 
         var languageWindow = await MainWindowHeadlessTestHost.RenderToolAsync(new LanguageToolView(), new LanguageToolViewModel(host.ViewModel));
         try

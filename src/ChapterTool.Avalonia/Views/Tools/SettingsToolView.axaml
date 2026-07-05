@@ -185,8 +185,19 @@
                       Grid.Row="1"
                       Grid.Column="1"
                       Classes="outputDefaultCombo"
-                      ItemsSource="{Binding XmlLanguageOptions}"
-                      SelectedIndex="{Binding DefaultXmlLanguageIndex}" />
+                      ItemsSource="{Binding XmlLanguageDisplayOptions}"
+                      SelectedItem="{Binding SelectedDefaultXmlLanguageDisplayOption, Mode=TwoWay}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                  <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+              <ComboBox.SelectionBoxItemTemplate>
+                <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                  <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+                </DataTemplate>
+              </ComboBox.SelectionBoxItemTemplate>
+            </ComboBox>
             <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
             <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
               <Slider Grid.Column="0"

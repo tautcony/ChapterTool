@@ -43,6 +43,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     private bool liveApplyEnabled;
     private bool isApplyingSnapshot;
     private bool isRefreshingLanguages;
+    private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     public SettingsToolViewModel(
         MainWindowViewModel owner,
@@ -67,6 +68,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(owner.FrameAccuracyTolerance);
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
+        RefreshXmlLanguageDisplayOptions(notify: false);
         ColorSlots = new ObservableCollection<ColorSlotViewModel>(
             ThemeColorSettings.Default.OrderedSlots.Select(static slot => new ColorSlotViewModel(slot.Name, slot.Value)));
         foreach (var slot in ColorSlots)
@@ -101,6 +103,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         this.localizer.CultureChanged += (_, _) =>
         {
             RefreshLanguages();
+            RefreshXmlLanguageDisplayOptions(notify: true);
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
             {
@@ -119,6 +122,30 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
         XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
+
+    public IReadOnlyList<SelectorDisplayOption> XmlLanguageDisplayOptions => xmlLanguageDisplayOptions;
+
+    public SelectorDisplayOption? SelectedDefaultXmlLanguageDisplayOption
+    {
+        get
+        {
+            var options = XmlLanguageDisplayOptions;
+            return DefaultXmlLanguageIndex < 0 || DefaultXmlLanguageIndex >= options.Count
+                ? null
+                : options[DefaultXmlLanguageIndex];
+        }
+        set
+        {
+            var index = value is null
+                ? -1
+                : XmlLanguageDisplayOptions.ToList().FindIndex(option =>
+                    string.Equals(option.MainText, value.MainText, StringComparison.OrdinalIgnoreCase));
+            if (index >= 0)
+            {
+                DefaultXmlLanguageIndex = index;
+            }
+        }
+    }
 
     public ObservableCollection<ColorSlotViewModel> ColorSlots { get; }
 
@@ -239,6 +266,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         {
             if (SetProperty(ref defaultXmlLanguageIndex, Math.Clamp(value, 0, XmlLanguageOptions.Count - 1)))
             {
+                OnPropertyChanged(nameof(SelectedDefaultXmlLanguageDisplayOption));
                 ApplyLiveSettings();
             }
         }
@@ -476,6 +504,32 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         }
 
         OnPropertyChanged(nameof(SelectedLanguageIndex));
+    }
+
+    private void RefreshXmlLanguageDisplayOptions(bool notify)
+    {
+        var options = XmlLanguageDisplay.Options(localizer);
+        if (xmlLanguageDisplayOptions.Count != options.Count)
+        {
+            xmlLanguageDisplayOptions.Clear();
+            foreach (var option in options)
+            {
+                xmlLanguageDisplayOptions.Add(option);
+            }
+        }
+        else
+        {
+            for (var index = 0; index < options.Count; index++)
+            {
+                xmlLanguageDisplayOptions[index].UpdateFrom(options[index]);
+            }
+        }
+
+        if (notify)
+        {
+            OnPropertyChanged(nameof(XmlLanguageDisplayOptions));
+            OnPropertyChanged(nameof(SelectedDefaultXmlLanguageDisplayOption));
+        }
     }
 
     private List<LanguageOptionViewModel> BuildLanguageOptions() =>

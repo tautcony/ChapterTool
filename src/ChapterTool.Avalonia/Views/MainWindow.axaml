@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:i="https://github.com/projektanker/icons.avalonia"
+        xmlns:svg="clr-namespace:Avalonia.Svg;assembly=Svg.Controls.Avalonia"
         xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:Name="RootWindow"
@@ -307,131 +308,140 @@
                  Grid.Row="0"
                  IsVisible="False"
                  AutomationProperties.AutomationId="SourcePath" />
+        <Grid Grid.Row="1" MinHeight="208">
           <DataGrid x:Name="ChapterGrid"
-                  Grid.Row="1"
-                  MinHeight="208"
-                  AutoGenerateColumns="False"
-                  CanUserReorderColumns="False"
-                  CanUserResizeColumns="True"
-                  IsReadOnly="False"
-                  SelectionMode="Extended"
-                  GridLinesVisibility="All"
-                  ItemsSource="{Binding Rows}"
-                  CellEditEnded="OnChapterGridCellEditEnded"
-                  AutomationProperties.AutomationId="ChapterGrid">
-          <DataGrid.ContextMenu>
-            <ContextMenu x:DataType="vm:MainWindowViewModel"
-                         DataContext="{Binding #RootWindow.DataContext}">
-              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
-              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Main.Delete}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
-              <MenuItem x:Name="GridCombineMenuItem"
-                        Header="{DynamicResource Main.Combine}"
-                        ToggleType="CheckBox"
-                        IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
-                        IsEnabled="{Binding CanCombine}"
-                        Command="{Binding #RootWindow.CombineCommand}" />
-              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
-              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootWindow.OpenZonesCommand}" />
-              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
-              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" Command="{Binding #RootWindow.PreviewCommand}" />
-            </ContextMenu>
-          </DataGrid.ContextMenu>
-          <DataGrid.Columns>
-            <DataGridTemplateColumn Header="#" IsReadOnly="True" Width="56" MinWidth="56">
-              <DataGridTemplateColumn.CellTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding Number}" />
-                </DataTemplate>
-              </DataGridTemplateColumn.CellTemplate>
-            </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnTime}" Width="136" MinWidth="105.6">
-              <DataGridTemplateColumn.CellTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding TimeText}" />
-                </DataTemplate>
-              </DataGridTemplateColumn.CellTemplate>
-              <DataGridTemplateColumn.CellEditingTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBox Classes="gridEditor"
-                           TextAlignment="Center"
-                           Text="{Binding TimeText, Mode=TwoWay}" />
-                </DataTemplate>
-              </DataGridTemplateColumn.CellEditingTemplate>
-            </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnName}" Width="*" MinWidth="144">
-              <DataGridTemplateColumn.CellTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding Name}" />
-                </DataTemplate>
-              </DataGridTemplateColumn.CellTemplate>
-              <DataGridTemplateColumn.CellEditingTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBox Classes="gridEditor"
-                           TextAlignment="Center"
-                           Text="{Binding Name, Mode=TwoWay}" />
-                </DataTemplate>
-              </DataGridTemplateColumn.CellEditingTemplate>
-            </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnFrames}" Width="120" MinWidth="76.8">
-              <DataGridTemplateColumn.CellTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <Grid VerticalAlignment="Center">
-                    <TextBlock Classes.frameGlowSoft="True"
-                               Classes.frameAccurate="{Binding IsFrameAccurate}"
-                               Classes.frameInexact="{Binding IsFrameInexact}"
-                               HorizontalAlignment="Stretch"
+                    AutoGenerateColumns="False"
+                    CanUserReorderColumns="False"
+                    CanUserResizeColumns="True"
+                    IsReadOnly="False"
+                    SelectionMode="Extended"
+                    GridLinesVisibility="All"
+                    ItemsSource="{Binding Rows}"
+                    CellEditEnded="OnChapterGridCellEditEnded"
+                    AutomationProperties.AutomationId="ChapterGrid">
+            <DataGrid.ContextMenu>
+              <ContextMenu x:DataType="vm:MainWindowViewModel"
+                           DataContext="{Binding #RootWindow.DataContext}">
+                <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.InsertSelectedCommand}" />
+                <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Main.Delete}" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootWindow.DeleteSelectedCommand}" />
+                <MenuItem x:Name="GridCombineMenuItem"
+                          Header="{DynamicResource Main.Combine}"
+                          ToggleType="CheckBox"
+                          IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
+                          IsEnabled="{Binding CanCombine}"
+                          Command="{Binding #RootWindow.CombineCommand}" />
+                <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
+                <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootWindow.OpenZonesCommand}" />
+                <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
+                <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" Command="{Binding #RootWindow.PreviewCommand}" />
+              </ContextMenu>
+            </DataGrid.ContextMenu>
+            <DataGrid.Columns>
+              <DataGridTemplateColumn Header="#" IsReadOnly="True" Width="56" MinWidth="56">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <TextBlock HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               Text="{Binding FramesInfo}">
-                      <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="10"
-                                          OffsetX="0"
-                                          OffsetY="0" />
-                      </TextBlock.Effect>
-                    </TextBlock>
-                    <TextBlock Classes.frameGlow="True"
-                               Classes.frameAccurate="{Binding IsFrameAccurate}"
-                               Classes.frameInexact="{Binding IsFrameInexact}"
-                               HorizontalAlignment="Stretch"
+                               Text="{Binding Number}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnTime}" Width="136" MinWidth="105.6">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <TextBlock HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               Text="{Binding FramesInfo}">
-                      <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="5"
-                                          OffsetX="0"
-                                          OffsetY="0" />
-                      </TextBlock.Effect>
-                    </TextBlock>
-                    <TextBlock Classes.frameText="True"
-                               Classes.frameAccurate="{Binding IsFrameAccurate}"
-                               Classes.frameInexact="{Binding IsFrameInexact}"
-                               Classes.frameNeutral="{Binding IsFrameNeutral}"
-                               HorizontalAlignment="Stretch"
+                               Text="{Binding TimeText}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+                <DataGridTemplateColumn.CellEditingTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <TextBox Classes="gridEditor"
+                             TextAlignment="Center"
+                             Text="{Binding TimeText, Mode=TwoWay}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellEditingTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnName}" Width="*" MinWidth="144">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <TextBlock HorizontalAlignment="Stretch"
                                VerticalAlignment="Center"
                                TextAlignment="Center"
-                               Text="{Binding FramesInfo}" />
-                  </Grid>
-                </DataTemplate>
-              </DataGridTemplateColumn.CellTemplate>
-              <DataGridTemplateColumn.CellEditingTemplate>
-                <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBox Classes="gridEditor"
-                           TextAlignment="Center"
-                           Text="{Binding FramesInfo, Mode=TwoWay}" />
-                </DataTemplate>
-              </DataGridTemplateColumn.CellEditingTemplate>
-            </DataGridTemplateColumn>
-          </DataGrid.Columns>
-        </DataGrid>
+                               Text="{Binding Name}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+                <DataGridTemplateColumn.CellEditingTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <TextBox Classes="gridEditor"
+                             TextAlignment="Center"
+                             Text="{Binding Name, Mode=TwoWay}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellEditingTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnFrames}" Width="120" MinWidth="76.8">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <Grid VerticalAlignment="Center">
+                      <TextBlock Classes.frameGlowSoft="True"
+                                 Classes.frameAccurate="{Binding IsFrameAccurate}"
+                                 Classes.frameInexact="{Binding IsFrameInexact}"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center"
+                                 TextAlignment="Center"
+                                 Text="{Binding FramesInfo}">
+                        <TextBlock.Effect>
+                          <DropShadowEffect BlurRadius="10"
+                                            OffsetX="0"
+                                            OffsetY="0" />
+                        </TextBlock.Effect>
+                      </TextBlock>
+                      <TextBlock Classes.frameGlow="True"
+                                 Classes.frameAccurate="{Binding IsFrameAccurate}"
+                                 Classes.frameInexact="{Binding IsFrameInexact}"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center"
+                                 TextAlignment="Center"
+                                 Text="{Binding FramesInfo}">
+                        <TextBlock.Effect>
+                          <DropShadowEffect BlurRadius="5"
+                                            OffsetX="0"
+                                            OffsetY="0" />
+                        </TextBlock.Effect>
+                      </TextBlock>
+                      <TextBlock Classes.frameText="True"
+                                 Classes.frameAccurate="{Binding IsFrameAccurate}"
+                                 Classes.frameInexact="{Binding IsFrameInexact}"
+                                 Classes.frameNeutral="{Binding IsFrameNeutral}"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center"
+                                 TextAlignment="Center"
+                                 Text="{Binding FramesInfo}" />
+                    </Grid>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+                <DataGridTemplateColumn.CellEditingTemplate>
+                  <DataTemplate x:DataType="vm:ChapterRowViewModel">
+                    <TextBox Classes="gridEditor"
+                             TextAlignment="Center"
+                             Text="{Binding FramesInfo, Mode=TwoWay}" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellEditingTemplate>
+              </DataGridTemplateColumn>
+            </DataGrid.Columns>
+          </DataGrid>
+          <svg:Svg x:Name="ChapterGridEmptyImage"
+                   Width="160"
+                   Height="96"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   IsHitTestVisible="False"
+                   IsVisible="{Binding IsChapterGridEmpty}"
+                   Path="/Assets/Images/chapter-empty.svg"
+                   AutomationProperties.AutomationId="ChapterGridEmptyImage" />
+        </Grid>
       </Grid>
 
       <Grid x:Name="AdvancedOptionsGrid"
@@ -536,7 +546,7 @@
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
                     ItemsSource="{Binding XmlLanguageDisplayOptions}"
-                    SelectedIndex="{Binding XmlLanguageIndex}"
+                    SelectedItem="{Binding SelectedXmlLanguageDisplayOption, Mode=TwoWay}"
                     AutomationProperties.AutomationId="XmlLanguage">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="vm:SelectorDisplayOption">

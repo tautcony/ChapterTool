@@ -134,6 +134,50 @@ public sealed class SettingsToolHeadlessTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task Xml_language_selection_remains_visible_after_runtime_language_switch()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        using var host = new MainWindowHeadlessTestHost(
+            localizer: localizer,
+            appSettings: new AppSettings(Language: "en-US", DefaultXmlLanguage: "jpn"));
+        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 760,
+            Height = 520
+        };
+
+        try
+        {
+            window.Show();
+            var layoutManager = window.GetLayoutManager()
+                ?? throw new InvalidOperationException("Settings window layout manager was not available.");
+            layoutManager.ExecuteInitialLayoutPass();
+            var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+            tabControl.SelectedIndex = 2;
+            layoutManager.ExecuteLayoutPass();
+
+            var xmlLanguageCombo = window.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(comboBox => comboBox.Name == "DefaultXmlLanguageCombo");
+            Assert.Equal("jpn（Japanese）", xmlLanguageCombo.SelectionBoxItem?.ToString());
+
+            localizer.SetCulture("zh-CN");
+            layoutManager.ExecuteLayoutPass();
+
+            Assert.Equal(viewModel.DefaultXmlLanguageIndex, xmlLanguageCombo.SelectedIndex);
+            Assert.False(string.IsNullOrWhiteSpace(xmlLanguageCombo.SelectionBoxItem?.ToString()));
+            Assert.StartsWith("jpn（", xmlLanguageCombo.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
