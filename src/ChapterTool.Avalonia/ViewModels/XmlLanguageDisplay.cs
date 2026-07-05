@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Exporting;
@@ -6,6 +7,8 @@ namespace ChapterTool.Avalonia.ViewModels;
 
 internal static class XmlLanguageDisplay
 {
+    private static readonly ConcurrentDictionary<(string CultureName, string LanguageCode), string> DisplayNameCache = new();
+
     public static IReadOnlyList<SelectorDisplayOption> Options(IAppLocalizer localizer) =>
         XmlChapterLanguageCatalog.Languages
             .Select(language =>
@@ -24,11 +27,14 @@ internal static class XmlLanguageDisplay
 
         try
         {
-            using var _ = new TemporaryCurrentUiCulture(localizer.CurrentCultureName);
             var culture = CultureForCode(language.Code);
-            return culture is null
-                ? EnglishDisplayName(language)
-                : culture.DisplayName;
+            if (culture is null)
+            {
+                return EnglishDisplayName(language);
+            }
+
+            var cacheKey = (localizer.CurrentCultureName, language.Code);
+            return DisplayNameCache.GetOrAdd(cacheKey, _ => culture.DisplayName);
         }
         catch (CultureNotFoundException)
         {
@@ -58,27 +64,5 @@ internal static class XmlLanguageDisplay
         return separatorIndex >= 0
             ? language.DisplayName[(separatorIndex + separator.Length)..]
             : language.DisplayName;
-    }
-
-    private sealed class TemporaryCurrentUiCulture : IDisposable
-    {
-        private readonly CultureInfo previousCulture;
-        private readonly CultureInfo previousUiCulture;
-
-        public TemporaryCurrentUiCulture(string cultureName)
-        {
-            previousCulture = CultureInfo.CurrentCulture;
-            previousUiCulture = CultureInfo.CurrentUICulture;
-
-            var culture = CultureInfo.GetCultureInfo(cultureName);
-            CultureInfo.CurrentCulture = culture;
-            CultureInfo.CurrentUICulture = culture;
-        }
-
-        public void Dispose()
-        {
-            CultureInfo.CurrentCulture = previousCulture;
-            CultureInfo.CurrentUICulture = previousUiCulture;
-        }
     }
 }

@@ -4,7 +4,11 @@ namespace ChapterTool.Core.Services;
 
 public interface IApplicationLogService
 {
-    event EventHandler<ApplicationLogEntry>? EntryAdded;
+    event EventHandler<ApplicationLogEntry>? EntryAdded
+    {
+        add { }
+        remove { }
+    }
 
     IReadOnlyList<ApplicationLogEntry> Entries { get; }
 
