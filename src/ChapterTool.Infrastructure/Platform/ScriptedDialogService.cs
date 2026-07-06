@@ -2,7 +2,7 @@ using ChapterTool.Core.Services;
 
 namespace ChapterTool.Infrastructure.Platform;
 
-public sealed class ScriptedDialogService(params DialogResult[] results) : IDialogService
+internal sealed class ScriptedDialogService(params DialogResult[] results) : IDialogService
 {
     private readonly Queue<DialogResult> results = new(results);
 

@@ -32,7 +32,7 @@ Source report: `docs/code-review-2026-07-06.md`
 
 ## Low Priority
 
-- [ ] Move production test-double services out of Infrastructure or mark them test-only.
+- [x] Move production test-double services out of Infrastructure or mark them test-only.
 - [x] Replace fixed `Task.Delay` in `UiCommandTests`.
 - [x] Remove sync-over-async from Matroska integration setup.
 - [ ] Strengthen screenshot tests with layout/content assertions.
