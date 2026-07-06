@@ -53,6 +53,7 @@ public sealed class BdmvChapterImporterTests
         Assert.Equal(2, runner.Requests.Count);
         Assert.False(File.Exists(runner.ExportedPaths.Single()));
         Assert.Contains(progressValues, value => value is > 0 and < 1);
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "Stdout");
     }
 
     [Fact]

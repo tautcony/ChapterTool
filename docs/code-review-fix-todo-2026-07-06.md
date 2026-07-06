@@ -28,7 +28,7 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Clarify whether `FfmpegPath` means ffmpeg or ffprobe directory and validate accordingly.
 - [x] Localize native file picker titles and file type labels.
 - [x] Add accessible names for icon-only buttons.
-- [ ] Refactor BDMV parsing so stdout is not passed through diagnostics.
+- [x] Refactor BDMV parsing so stdout is not passed through diagnostics.
 
 ## Low Priority
 
