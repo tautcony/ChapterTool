@@ -75,15 +75,19 @@ public sealed class WindowsMkvToolNixInstallProbe(
                 continue;
             }
 
-            var directory = Directory.Exists(value)
-                ? value
-                : Path.GetDirectoryName(TrimDisplayIconSuffix(value));
+            var normalizedValue = NormalizeRegistryPath(value);
+            var directory = Directory.Exists(normalizedValue)
+                ? normalizedValue
+                : Path.GetDirectoryName(normalizedValue);
             if (!string.IsNullOrWhiteSpace(directory))
             {
                 yield return Path.Combine(directory, executableName);
             }
         }
     }
+
+    private static string NormalizeRegistryPath(string value) =>
+        TrimDisplayIconSuffix(value).Trim().Trim('"');
 
     private static string TrimDisplayIconSuffix(string value)
     {
