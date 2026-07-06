@@ -23,7 +23,7 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Remove fake async behavior from `IfoChapterImporter` and handle `request.Content` consistently.
 - [x] Remove the Infrastructure dependency from Core tests.
 - [x] Validate external tools as executables, not just existing files.
-- [ ] Preserve and surface corrupt settings files instead of silently resetting.
+- [x] Preserve and surface corrupt settings files instead of silently resetting.
 - [ ] Return or log shell service failures instead of swallowing them.
 - [ ] Clarify whether `FfmpegPath` means ffmpeg or ffprobe directory and validate accordingly.
 - [ ] Localize native file picker titles and file type labels.

@@ -26,9 +26,9 @@ public sealed partial class ThemeSettingsStore(
                 return await JsonSerializer.DeserializeAsync<ThemeColorSettings>(stream, JsonOptions, cancellationToken)
                     ?? ThemeColorSettings.Default;
             }
-            catch (JsonException)
+            catch (JsonException exception)
             {
-                return ThemeColorSettings.Default;
+                throw CorruptSettingsFile.Preserve(currentPath, exception);
             }
         }
 
