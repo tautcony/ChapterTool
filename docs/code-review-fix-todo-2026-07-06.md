@@ -35,6 +35,6 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Move production test-double services out of Infrastructure or mark them test-only.
 - [x] Replace fixed `Task.Delay` in `UiCommandTests`.
 - [x] Remove sync-over-async from Matroska integration setup.
-- [ ] Strengthen screenshot tests with layout/content assertions.
+- [x] Strengthen screenshot tests with layout/content assertions.
 - [x] Handle quoted MKVToolNix `DisplayIcon` registry values.
 - [x] Hide eac3to export process windows unless visibility is required.
