@@ -40,11 +40,9 @@ public sealed partial class AppSettingsStore(string settingsDirectory, IReadOnly
                 Cache(settings, fileState);
                 return settings;
             }
-            catch (JsonException)
+            catch (JsonException exception)
             {
-                settings = new AppSettings();
-                Cache(settings, fileState);
-                return settings;
+                throw CorruptSettingsFile.Preserve(currentPath, exception);
             }
         }
 
