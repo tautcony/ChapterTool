@@ -8,6 +8,7 @@ using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Services;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Avalonia.ViewModels;
@@ -37,6 +38,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IThemeApplicationService? themeApplicationService;
     private readonly IShellService? shellService;
+    private readonly IFileAssociationService? fileAssociationService;
     private AppSettings savedAppSettings = new();
     private ThemeColorSettings savedThemeSettings = ThemeColorSettings.Default;
     private string selectedLanguage;
@@ -58,6 +60,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         IExternalToolLocator? externalToolLocator = null,
         IThemeApplicationService? themeApplicationService = null,
         IShellService? shellService = null,
+        IFileAssociationService? fileAssociationService = null,
         bool autoLoad = true)
     {
         this.owner = owner;
@@ -68,6 +71,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         this.externalToolLocator = externalToolLocator;
         this.themeApplicationService = themeApplicationService;
         this.shellService = shellService;
+        this.fileAssociationService = fileAssociationService;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Length - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
@@ -107,6 +111,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ClearFfprobeCommand = ClearCommand(() => FfprobePath = null);
         ClearFfmpegCommand = ClearCommand(() => FfmpegPath = null);
         OpenRepositoryCommand = new UiCommand(async (_, token) => await OpenRepositoryAsync(token), _ => shellService is not null);
+        RegisterFileAssociationCommand = new UiCommand(async (_, token) => await RegisterFileAssociationAsync(token), _ => fileAssociationService is not null);
+        UnregisterFileAssociationCommand = new UiCommand(async (_, token) => await UnregisterFileAssociationAsync(token), _ => fileAssociationService is not null);
+        RefreshFileAssociationCommand = new UiCommand(async (_, token) => await RefreshFileAssociationStatusAsync(token), _ => fileAssociationService is not null);
         this.localizer.CultureChanged += (_, _) =>
         {
             RefreshLanguages();
@@ -365,6 +372,18 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     public UiCommand OpenRepositoryCommand { get; }
 
+    public UiCommand RegisterFileAssociationCommand { get; }
+
+    public UiCommand UnregisterFileAssociationCommand { get; }
+
+    public UiCommand RefreshFileAssociationCommand { get; }
+
+    public string FileAssociationStatus
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = string.Empty;
+
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
         liveApplyEnabled = false;
@@ -386,6 +405,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         liveApplyEnabled = true;
         ApplyCurrentAppSettingsToOwner();
         RefreshToolStatuses();
+        await RefreshFileAssociationStatusAsync(cancellationToken);
         NotifyUnsavedChanges();
         StatusText = localizer.GetString("Settings.Status.Ready");
     }
@@ -416,6 +436,75 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         RefreshToolStatuses();
         NotifyUnsavedChanges();
         StatusText = localizer.GetString("Settings.Status.Saved");
+    }
+
+    private async ValueTask RegisterFileAssociationAsync(CancellationToken cancellationToken)
+    {
+        if (fileAssociationService is null)
+        {
+            FileAssociationStatus = localizer.GetString("Settings.FileAssociation.Status.Unsupported");
+            return;
+        }
+
+        var result = await fileAssociationService.RegisterAsync(
+            ".mpls",
+            "ChapterTool.MPLS",
+            "ChapterTool MPLS Playlist",
+            cancellationToken);
+        await ApplyFileAssociationCommandResultAsync(result, cancellationToken);
+    }
+
+    private async ValueTask UnregisterFileAssociationAsync(CancellationToken cancellationToken)
+    {
+        if (fileAssociationService is null)
+        {
+            FileAssociationStatus = localizer.GetString("Settings.FileAssociation.Status.Unsupported");
+            return;
+        }
+
+        var result = await fileAssociationService.UnregisterAsync(".mpls", "ChapterTool.MPLS", cancellationToken);
+        await ApplyFileAssociationCommandResultAsync(result, cancellationToken);
+    }
+
+    private async ValueTask ApplyFileAssociationCommandResultAsync(FileAssociationResult result, CancellationToken cancellationToken)
+    {
+        if (!result.Success)
+        {
+            FileAssociationStatus = FormatFileAssociationStatus(result);
+            return;
+        }
+
+        await RefreshFileAssociationStatusAsync(cancellationToken);
+    }
+
+    private async ValueTask RefreshFileAssociationStatusAsync(CancellationToken cancellationToken)
+    {
+        if (fileAssociationService is null)
+        {
+            FileAssociationStatus = localizer.GetString("Settings.FileAssociation.Status.Unsupported");
+            return;
+        }
+
+        var result = await fileAssociationService.IsRegisteredAsync(".mpls", "ChapterTool.MPLS", cancellationToken);
+        FileAssociationStatus = FormatFileAssociationStatus(result);
+    }
+
+    private string FormatFileAssociationStatus(FileAssociationResult result)
+    {
+        var diagnostic = result.Diagnostics.FirstOrDefault();
+        if (diagnostic?.Code == "UnsupportedPlatform")
+        {
+            return localizer.GetString("Settings.FileAssociation.Status.Unsupported");
+        }
+
+        if (diagnostic is not null)
+        {
+            return diagnostic.Message;
+        }
+
+        return result.Success
+            ? localizer.GetString("Settings.FileAssociation.Status.Registered")
+            : localizer.GetString("Settings.FileAssociation.Status.NotRegistered");
     }
 
     public void DiscardUnsavedAppearanceChanges()

@@ -6,6 +6,7 @@ using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Core.Services;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Platform;
 
 namespace ChapterTool.Avalonia.Services;
 
@@ -18,6 +19,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IShellService? shellService;
+    private readonly IFileAssociationService? fileAssociationService;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
@@ -30,7 +32,8 @@ public sealed class AvaloniaWindowService : IWindowService
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
         IExternalToolLocator? externalToolLocator = null,
         ISettingsCloseConfirmationService? settingsCloseConfirmationService = null,
-        IShellService? shellService = null)
+        IShellService? shellService = null,
+        IFileAssociationService? fileAssociationService = null)
     {
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
@@ -41,6 +44,7 @@ public sealed class AvaloniaWindowService : IWindowService
         this.settingsPickerFactory = settingsPickerFactory;
         this.externalToolLocator = externalToolLocator;
         this.shellService = shellService;
+        this.fileAssociationService = fileAssociationService;
         this.localizer.CultureChanged += (_, _) =>
         {
             foreach (var (id, window) in windows)
@@ -165,7 +169,8 @@ public sealed class AvaloniaWindowService : IWindowService
                     settingsPickerFactory?.Invoke(window),
                     externalToolLocator,
                     themeApplicationService,
-                    shellService)
+                    shellService,
+                    fileAssociationService)
             },
             "color-settings" => new ColorSettingsView { DataContext = new ColorSettingsViewModel(themeSettingsStore, themeApplicationService) },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
