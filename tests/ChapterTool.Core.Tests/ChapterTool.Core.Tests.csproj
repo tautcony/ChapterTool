@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ChapterTool.Core\ChapterTool.Core.csproj" />
-    <ProjectReference Include="..\..\src\ChapterTool.Infrastructure\ChapterTool.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
