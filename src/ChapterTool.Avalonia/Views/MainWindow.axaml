@@ -7,7 +7,6 @@
         x:Class="ChapterTool.Avalonia.Views.MainWindow"
         x:Name="RootWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="{DynamicResource App.Title}"
         Width="736"
         Height="576"
         MinWidth="608"

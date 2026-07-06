@@ -6,8 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <Authors>ChapterTool contributors</Authors>
+    <VersionPrefix>3.0.0</VersionPrefix>
+    <Authors>TautCony</Authors>
     <Product>ChapterTool</Product>
     <RepositoryUrl>https://github.com/tautcony/ChapterTool</RepositoryUrl>
   </PropertyGroup>
