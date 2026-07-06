@@ -217,6 +217,14 @@ public sealed class MainWindowHeadlessTests
 
             Assert.True(File.Exists(artifactPath));
             Assert.True(new FileInfo(artifactPath).Length > 0);
+            var clipBox = host.RequiredControl<ComboBox>("ClipBox");
+            var chapterNameModeBox = host.RequiredControl<ComboBox>("ChapterNameModeBox");
+            var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
+            Assert.True(clipBox.IsVisible);
+            Assert.True(clipBox.Bounds.Width > 0);
+            Assert.Contains("00002", clipBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
+            Assert.False(string.IsNullOrWhiteSpace(chapterNameModeBox.SelectionBoxItem?.ToString()));
+            Assert.Contains("jpn", xmlLanguageBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
         }
     }
 
