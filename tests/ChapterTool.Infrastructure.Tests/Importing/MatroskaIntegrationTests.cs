@@ -13,7 +13,7 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
     private ExternalToolLocation? mkvextractLocation;
     private string? skipReason;
 
-    public ValueTask InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
@@ -24,14 +24,12 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
             .ToArray();
 
         var locator = new ExternalToolLocator(new AppSettingsStore(root, [root]), pathDirs);
-        mkvextractLocation = locator.LocateAsync("mkvextract", TestContext.Current.CancellationToken).AsTask().Result;
+        mkvextractLocation = await locator.LocateAsync("mkvextract", TestContext.Current.CancellationToken);
 
         if (!mkvextractLocation.Found)
         {
             skipReason = "mkvextract not found. Install MKVToolNix to run this integration test.";
         }
-
-        return ValueTask.CompletedTask;
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
