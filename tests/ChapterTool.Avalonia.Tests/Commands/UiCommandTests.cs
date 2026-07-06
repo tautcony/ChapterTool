@@ -42,10 +42,18 @@ public sealed class UiCommandTests
     {
         var expected = new InvalidOperationException("boom");
         var command = new UiCommand((_, _) => throw expected);
+        var observedError = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        command.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(UiCommand.ExecutionError))
+            {
+                observedError.TrySetResult(command.ExecutionError);
+            }
+        };
 
         command.Execute(null);
-        await Task.Delay(50);
+        var actual = await observedError.Task.WaitAsync(TimeSpan.FromSeconds(1));
 
-        Assert.Same(expected, command.ExecutionError);
+        Assert.Same(expected, actual);
     }
 }
