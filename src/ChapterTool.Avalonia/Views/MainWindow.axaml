@@ -260,6 +260,7 @@
             <Button x:Name="PreviewButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="PreviewWindow"
+                    AutomationProperties.Name="{DynamicResource Main.Preview}"
                     Command="{Binding #RootWindow.PreviewCommand}"
                     ToolTip.Tip="{DynamicResource Main.Preview}">
               <i:Icon Value="fa-solid fa-eye" FontSize="13.6" />
@@ -267,6 +268,7 @@
             <Button x:Name="RefreshButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="RefreshRows"
+                    AutomationProperties.Name="{DynamicResource Common.Refresh}"
                     IsEnabled="{Binding CanRefreshRows}"
                     Command="{Binding #RootWindow.RefreshRowsCommand}"
                     ToolTip.Tip="{DynamicResource Common.Refresh}">
@@ -275,6 +277,7 @@
             <Button x:Name="SettingsButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="SettingsWindow"
+                    AutomationProperties.Name="{DynamicResource Main.SettingsShort}"
                     Command="{Binding SettingsCommand}"
                     ToolTip.Tip="{DynamicResource Main.SettingsShort}">
               <i:Icon Value="fa-solid fa-gear" FontSize="13.6" />
@@ -508,6 +511,7 @@
                   MinHeight="25.6"
                   Padding="6.4,3.2"
                   AutomationProperties.AutomationId="ChapterNameTemplateFile"
+                  AutomationProperties.Name="{DynamicResource Main.TemplateFile}"
                   Command="{Binding #RootWindow.LoadChapterNameTemplateCommand}"
                   ToolTip.Tip="{DynamicResource Main.TemplateFile}">
             <i:Icon Value="fa-solid fa-folder-open" FontSize="11.2" />

@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -141,5 +142,17 @@ public sealed class MainWindowInteractionHeadlessTests
 
         Assert.Equal(["preview"], host.WindowService.Opened);
         Assert.Same(host.ViewModel, host.WindowService.Parameters.Single());
+    }
+
+    [AvaloniaFact]
+    public async Task Icon_only_main_window_buttons_have_accessible_names()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+
+        Assert.Equal("Preview", AutomationProperties.GetName(host.RequiredControl<Button>("PreviewButton")));
+        Assert.Equal("Refresh", AutomationProperties.GetName(host.RequiredControl<Button>("RefreshButton")));
+        Assert.Equal("Settings", AutomationProperties.GetName(host.RequiredControl<Button>("SettingsButton")));
+        Assert.Equal("Template file", AutomationProperties.GetName(host.RequiredControl<Button>("ChapterNameTemplateButton")));
     }
 }
