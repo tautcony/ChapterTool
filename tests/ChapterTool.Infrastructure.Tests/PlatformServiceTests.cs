@@ -90,4 +90,13 @@ public sealed class PlatformServiceTests
         Assert.Equal(directory, startInfo.WorkingDirectory);
         Assert.Equal(["/k"], startInfo.ArgumentList);
     }
+
+    [Fact]
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    public void Windows_file_association_builds_open_command_with_file_placeholder()
+    {
+        var command = WindowsFileAssociationService.BuildOpenCommand(@"C:\Program Files\ChapterTool\ChapterTool.exe");
+
+        Assert.Equal("\"C:\\Program Files\\ChapterTool\\ChapterTool.exe\" \"%1\"", command);
+    }
 }
