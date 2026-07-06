@@ -1,14 +1,30 @@
 using System.Diagnostics;
 using ChapterTool.Core.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ChapterTool.Infrastructure.Platform;
 
 public sealed class ShellService : IShellService
 {
+    private readonly ILogger<ShellService> logger;
+    private readonly Func<ProcessStartInfo, Process?> startProcess;
+
+    public ShellService(ILogger<ShellService>? logger = null)
+        : this(logger, Process.Start)
+    {
+    }
+
+    internal ShellService(ILogger<ShellService>? logger, Func<ProcessStartInfo, Process?> startProcess)
+    {
+        this.logger = logger ?? NullLogger<ShellService>.Instance;
+        this.startProcess = startProcess;
+    }
+
     public ValueTask OpenAsync(string target, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        using var _ = Process.Start(new ProcessStartInfo
+        using var _ = Start(new ProcessStartInfo
         {
             FileName = target,
             UseShellExecute = true
@@ -38,9 +54,9 @@ public sealed class ShellService : IShellService
                 Run("xdg-open", dir);
             }
         }
-        catch
+        catch (Exception exception)
         {
-            // Best-effort: silently ignore failures when platform tool is unavailable.
+            logger.LogWarning(exception, "Unable to reveal '{FilePath}' in the platform file manager.", filePath);
         }
 
         return ValueTask.CompletedTask;
@@ -54,7 +70,7 @@ public sealed class ShellService : IShellService
             if (OperatingSystem.IsWindows())
             {
                 // Prefer Windows Terminal, fall back to cmd
-                if (TryRun("wt", "-d", directoryPath))
+                if (TryRun("wt", out _, "-d", directoryPath))
                 {
                     return ValueTask.CompletedTask;
                 }
@@ -68,18 +84,21 @@ public sealed class ShellService : IShellService
             else
             {
                 // Try common terminal emulators
-                TryRun("x-terminal-emulator", "--working-directory", directoryPath);
+                if (!TryRun("x-terminal-emulator", out var exception, "--working-directory", directoryPath))
+                {
+                    logger.LogWarning(exception, "Unable to open a terminal in '{DirectoryPath}'.", directoryPath);
+                }
             }
         }
-        catch
+        catch (Exception exception)
         {
-            // Best-effort: silently ignore failures when platform tool is unavailable.
+            logger.LogWarning(exception, "Unable to open a terminal in '{DirectoryPath}'.", directoryPath);
         }
 
         return ValueTask.CompletedTask;
     }
 
-    private static void Run(string fileName, params string[] arguments)
+    private void Run(string fileName, params string[] arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -95,23 +114,28 @@ public sealed class ShellService : IShellService
         Run(startInfo);
     }
 
-    private static void Run(ProcessStartInfo startInfo)
+    private void Run(ProcessStartInfo startInfo)
     {
-        using var process = Process.Start(startInfo);
+        using var process = Start(startInfo);
     }
 
-    private static bool TryRun(string fileName, params string[] arguments)
+    private bool TryRun(string fileName, out Exception? exception, params string[] arguments)
     {
         try
         {
             Run(fileName, arguments);
+            exception = null;
             return true;
         }
-        catch
+        catch (Exception caught)
         {
+            exception = caught;
             return false;
         }
     }
+
+    private Process Start(ProcessStartInfo startInfo) =>
+        startProcess(startInfo) ?? throw new InvalidOperationException($"Unable to start process '{startInfo.FileName}'.");
 
     internal static ProcessStartInfo CreateWindowsCommandPromptStartInfo(string directoryPath)
     {
