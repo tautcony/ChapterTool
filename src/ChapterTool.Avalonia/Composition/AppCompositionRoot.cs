@@ -109,7 +109,8 @@ public sealed class AppCompositionRoot : IDisposable
             owner => new AvaloniaSettingsPickerService(owner, localizationManager),
             CreateExternalToolLocator(),
             new AvaloniaSettingsCloseConfirmationService(localizationManager),
-            shellService: CreateShellService());
+            shellService: CreateShellService(),
+            fileAssociationService: CreateFileAssociationService());
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 
