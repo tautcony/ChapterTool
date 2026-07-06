@@ -2,7 +2,7 @@ using ChapterTool.Core.Services;
 
 namespace ChapterTool.Infrastructure.Platform;
 
-public sealed class MemoryClipboardService : IClipboardService
+internal sealed class MemoryClipboardService : IClipboardService
 {
     private string? text;
 

@@ -2,7 +2,7 @@ using ChapterTool.Core.Services;
 
 namespace ChapterTool.Infrastructure.Platform;
 
-public sealed class RecordingWindowService : IWindowService
+internal sealed class RecordingWindowService : IWindowService
 {
     private readonly List<string> calls = [];
 
