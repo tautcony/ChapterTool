@@ -12,7 +12,7 @@ Source report: `docs/code-review-2026-07-06.md`
 ## High Priority
 
 - [x] Fix WebVTT import so cue end times and duration are preserved.
-- [ ] Remove command-string path interpolation from `ShellService.OpenTerminalAsync`.
+- [x] Remove command-string path interpolation from `ShellService.OpenTerminalAsync`.
 - [ ] Complete or safely hide the file association service/command surface.
 - [ ] Prevent preview from opening as an empty stub when no chapters are loaded.
 

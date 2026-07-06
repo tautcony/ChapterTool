@@ -78,4 +78,16 @@ public sealed class PlatformServiceTests
         await windows.HideAsync("preview", TestContext.Current.CancellationToken);
         Assert.Equal(["show:preview", "hide:preview"], windows.Calls);
     }
+
+    [Fact]
+    public void Windows_terminal_fallback_keeps_directory_out_of_command_arguments()
+    {
+        const string directory = "C:\\Temp & calc \"quoted\"";
+
+        var startInfo = ShellService.CreateWindowsCommandPromptStartInfo(directory);
+
+        Assert.Equal("cmd.exe", startInfo.FileName);
+        Assert.Equal(directory, startInfo.WorkingDirectory);
+        Assert.Equal(["/k"], startInfo.ArgumentList);
+    }
 }
