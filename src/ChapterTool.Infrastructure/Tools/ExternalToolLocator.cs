@@ -82,7 +82,9 @@ public sealed class ExternalToolLocator(
         {
             "mkvextract" => settings.MkvToolnixPath,
             "eac3to" => settings.Eac3toPath,
-            "ffprobe" => !string.IsNullOrWhiteSpace(settings.FfprobePath) ? settings.FfprobePath : settings.FfmpegPath,
+            "ffprobe" => !string.IsNullOrWhiteSpace(settings.FfprobePath)
+                ? settings.FfprobePath
+                : Directory.Exists(settings.FfmpegPath) ? settings.FfmpegPath : null,
             _ => null
         };
 

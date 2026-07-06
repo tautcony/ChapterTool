@@ -612,7 +612,7 @@
     <value>外部工具</value>
   </data>
 <data name="Settings.FfmpegPath" xml:space="preserve">
-    <value>FFmpeg 目录</value>
+    <value>FFmpeg bin 目录（包含 ffprobe）</value>
   </data>
 <data name="Settings.FfprobePath" xml:space="preserve">
     <value>ffprobe</value>
@@ -655,6 +655,9 @@
   </data>
 <data name="Settings.ToolStatus.Missing" xml:space="preserve">
     <value>目录中未找到 {name}</value>
+  </data>
+<data name="Settings.ToolStatus.NotDirectory" xml:space="preserve">
+    <value>路径必须是目录</value>
   </data>
 <data name="Settings.ToolStatus.Unsupported" xml:space="preserve">
     <value>当前平台不支持</value>

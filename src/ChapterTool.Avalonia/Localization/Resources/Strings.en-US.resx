@@ -612,7 +612,7 @@
     <value>External Tools</value>
   </data>
 <data name="Settings.FfmpegPath" xml:space="preserve">
-    <value>FFmpeg directory</value>
+    <value>FFmpeg bin directory (contains ffprobe)</value>
   </data>
 <data name="Settings.FfprobePath" xml:space="preserve">
     <value>ffprobe</value>
@@ -655,6 +655,9 @@
   </data>
 <data name="Settings.ToolStatus.Missing" xml:space="preserve">
     <value>{name} was not found in this directory</value>
+  </data>
+<data name="Settings.ToolStatus.NotDirectory" xml:space="preserve">
+    <value>Path must be a directory</value>
   </data>
 <data name="Settings.ToolStatus.Unsupported" xml:space="preserve">
     <value>Unsupported on this platform</value>
