@@ -273,6 +273,14 @@
               <TextBlock Classes="status" Text="{Binding DotNetRuntimeDisplay}" />
             </StackPanel>
             <TextBlock Classes="status" Text="{DynamicResource Settings.About.License}" />
+            <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.FileAssociation}" />
+            <TextBlock Classes="aboutBody" Text="{DynamicResource Settings.FileAssociation.Description}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Content="{DynamicResource Settings.FileAssociation.Register}" Command="{Binding RegisterFileAssociationCommand}" />
+              <Button Content="{DynamicResource Settings.FileAssociation.Unregister}" Command="{Binding UnregisterFileAssociationCommand}" />
+              <Button Content="{DynamicResource Common.Refresh}" Command="{Binding RefreshFileAssociationCommand}" />
+            </StackPanel>
+            <TextBlock Classes="status" Text="{Binding FileAssociationStatus}" />
             <Button Classes="linkButton"
                     Command="{Binding OpenRepositoryCommand}"
                     ToolTip.Tip="{DynamicResource Settings.About.OpenRepository}">

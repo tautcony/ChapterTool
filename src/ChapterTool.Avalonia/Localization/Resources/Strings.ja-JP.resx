@@ -635,6 +635,27 @@
 <data name="Settings.ExternalTools" xml:space="preserve">
     <value>外部ツール</value>
   </data>
+<data name="Settings.FileAssociation" xml:space="preserve">
+    <value>ファイル関連付け</value>
+  </data>
+<data name="Settings.FileAssociation.Description" xml:space="preserve">
+    <value>.mpls プレイリストを ChapterTool で開くように登録します。これはプラットフォーム連携のため、主要なワークフロー操作には表示しません。</value>
+  </data>
+<data name="Settings.FileAssociation.Register" xml:space="preserve">
+    <value>.mpls を登録</value>
+  </data>
+<data name="Settings.FileAssociation.Status.NotRegistered" xml:space="preserve">
+    <value>.mpls は ChapterTool に登録されていません</value>
+  </data>
+<data name="Settings.FileAssociation.Status.Registered" xml:space="preserve">
+    <value>.mpls は ChapterTool に登録されています</value>
+  </data>
+<data name="Settings.FileAssociation.Status.Unsupported" xml:space="preserve">
+    <value>このプラットフォームではファイル関連付けはサポートされていません</value>
+  </data>
+<data name="Settings.FileAssociation.Unregister" xml:space="preserve">
+    <value>登録解除</value>
+  </data>
 <data name="Settings.FfmpegPath" xml:space="preserve">
     <value>FFmpeg bin ディレクトリ（ffprobe を含む）</value>
   </data>
