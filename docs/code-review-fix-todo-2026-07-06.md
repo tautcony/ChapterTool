@@ -20,7 +20,7 @@ Source report: `docs/code-review-2026-07-06.md`
 ## Medium Priority
 
 - [x] Remove the fake injectable parser from `CueChapterImporter`.
-- [ ] Remove fake async behavior from `IfoChapterImporter` and handle `request.Content` consistently.
+- [x] Remove fake async behavior from `IfoChapterImporter` and handle `request.Content` consistently.
 - [ ] Remove the Infrastructure dependency from Core tests.
 - [ ] Validate external tools as executables, not just existing files.
 - [ ] Preserve and surface corrupt settings files instead of silently resetting.

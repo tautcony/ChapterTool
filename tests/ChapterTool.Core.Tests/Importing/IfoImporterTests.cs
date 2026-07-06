@@ -58,6 +58,23 @@ public sealed class IfoImporterTests
         Assert.Equal(["VTS_33_1", "VTS_33_2", "VTS_33_3"], infos.Select(static info => info.SourceName));
     }
 
+    [Fact]
+    public async Task ImportAsyncReadsRequestContentStream()
+    {
+        var importer = new IfoChapterImporter();
+        var path = FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_05_0.IFO");
+        await using var content = File.OpenRead(path);
+
+        var result = await importer.ImportAsync(
+            new ChapterImportRequest(path, content),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        var info = result.Groups.Single().Options.Select(static option => option.ChapterInfo).First();
+        Assert.Equal("VTS_05_1", info.SourceName);
+        Assert.Equal(7, info.Chapters.Count);
+    }
+
     [Theory]
     [InlineData("NULL.IFO", "NoChaptersFound")]
     [InlineData("OUT_OF_RANGE.IFO", "InvalidIfo")]
