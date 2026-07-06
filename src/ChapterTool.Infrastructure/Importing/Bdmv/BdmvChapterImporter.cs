@@ -167,7 +167,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         {
             var arguments = new[] { bdmvRoot, $"{titleIndex})", $"1:{tempPath}", "-showall" };
             var result = await processRunner.RunAsync(
-                new ProcessRunRequest(executable, arguments, Path.GetTempPath(), TimeSpan.FromSeconds(60), RedirectOutput: false, CreateNoWindow: false),
+                new ProcessRunRequest(executable, arguments, Path.GetTempPath(), TimeSpan.FromSeconds(60), RedirectOutput: false, CreateNoWindow: true),
                 cancellationToken);
 
             if (!File.Exists(tempPath))
