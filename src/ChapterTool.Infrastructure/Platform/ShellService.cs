@@ -59,7 +59,7 @@ public sealed class ShellService : IShellService
                     return ValueTask.CompletedTask;
                 }
 
-                Run("cmd", "/c", $"start cmd /k \"cd /d {directoryPath}\"");
+                Run(CreateWindowsCommandPromptStartInfo(directoryPath));
             }
             else if (OperatingSystem.IsMacOS())
             {
@@ -92,6 +92,11 @@ public sealed class ShellService : IShellService
             startInfo.ArgumentList.Add(arg);
         }
 
+        Run(startInfo);
+    }
+
+    private static void Run(ProcessStartInfo startInfo)
+    {
         using var process = Process.Start(startInfo);
     }
 
@@ -106,5 +111,18 @@ public sealed class ShellService : IShellService
         {
             return false;
         }
+    }
+
+    internal static ProcessStartInfo CreateWindowsCommandPromptStartInfo(string directoryPath)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "cmd.exe",
+            WorkingDirectory = directoryPath,
+            UseShellExecute = false,
+            CreateNoWindow = false
+        };
+        startInfo.ArgumentList.Add("/k");
+        return startInfo;
     }
 }
