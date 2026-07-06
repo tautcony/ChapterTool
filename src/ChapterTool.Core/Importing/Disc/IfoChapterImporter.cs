@@ -15,10 +15,12 @@ public sealed partial class IfoChapterImporter : IChapterImporter
 
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
+        Stream? ownedStream = null;
         try
         {
-            var options = GetStreams(request.Path)
+            var stream = await OpenImportStreamAsync(request, cancellationToken);
+            ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
+            var options = GetStreams(request.Path, stream)
                 .Select((info, index) => new ChapterSourceOption(
                     $"pgc-{index}",
                     $"{info.SourceName}__{info.Chapters.Count}",
@@ -37,15 +39,25 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         {
             return ChapterImportResult.Failed(Error("InvalidIfo", exception.Message));
         }
+        finally
+        {
+            ownedStream?.Dispose();
+        }
     }
 
     public static IReadOnlyList<ChapterInfo> GetStreams(string path)
     {
-        var count = GetPgcCount(path);
+        using var stream = File.OpenRead(path);
+        return GetStreams(path, stream);
+    }
+
+    private static IReadOnlyList<ChapterInfo> GetStreams(string path, Stream stream)
+    {
+        var count = GetPgcCount(stream);
         var streams = new List<ChapterInfo>();
         for (var i = 1; i <= count; i++)
         {
-            var info = GetChapterInfo(path, i);
+            var info = GetChapterInfo(path, stream, i);
             if (info is not null)
             {
                 streams.Add(info);
@@ -68,9 +80,9 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         return TimeSpan.FromSeconds(totalFrames / rate);
     }
 
-    private static ChapterInfo? GetChapterInfo(string path, int programChain)
+    private static ChapterInfo? GetChapterInfo(string path, Stream stream, int programChain)
     {
-        var chapters = GetChapters(path, programChain, out var duration, out var isNtsc);
+        var chapters = GetChapters(stream, programChain, out var duration, out var isNtsc);
         if (duration.TotalSeconds < 10)
         {
             return null;
@@ -93,11 +105,10 @@ public sealed partial class IfoChapterImporter : IChapterImporter
             chapters);
     }
 
-    private static List<Chapter> GetChapters(string path, int programChain, out TimeSpan duration, out bool isNtsc)
+    private static List<Chapter> GetChapters(Stream stream, int programChain, out TimeSpan duration, out bool isNtsc)
     {
         duration = TimeSpan.Zero;
         isNtsc = true;
-        using var stream = File.OpenRead(path);
         var pcgit = GetPcgitPosition(stream);
         var chainOffset = GetChainOffset(stream, pcgit, programChain);
         var programCount = GetNumberOfPrograms(stream, pcgit, chainOffset);
@@ -137,12 +148,30 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         return chapters;
     }
 
-    private static int GetPgcCount(string path)
+    private static int GetPgcCount(Stream stream)
     {
-        using var stream = File.OpenRead(path);
         var offset = ToInt32(ReadBlock(stream, 0xCC, 4));
         stream.Position = 2048 * offset + 0x01;
         return stream.ReadByte();
+    }
+
+    private static async ValueTask<Stream> OpenImportStreamAsync(ChapterImportRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Content is null)
+        {
+            return File.OpenRead(request.Path);
+        }
+
+        if (request.Content.CanSeek)
+        {
+            request.Content.Position = 0;
+            return request.Content;
+        }
+
+        var memory = new MemoryStream();
+        await request.Content.CopyToAsync(memory, cancellationToken);
+        memory.Position = 0;
+        return memory;
     }
 
     private static long GetPcgitPosition(Stream stream) => ToInt32(ReadBlock(stream, 0xCC, 4)) * 0x800L;
