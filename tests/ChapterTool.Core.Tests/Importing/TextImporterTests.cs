@@ -251,6 +251,9 @@ public sealed class TextImporterTests
         Assert.Equal(7, chapters.Count);
         Assert.Equal("Introduction", chapters[0].Name);
         Assert.Equal(TimeSpan.FromMilliseconds(28206), chapters[1].Time);
+        Assert.Equal(TimeSpan.FromSeconds(26), chapters[0].End);
+        Assert.Equal(TimeSpan.FromMilliseconds(547500), chapters[^1].End);
+        Assert.Equal(TimeSpan.FromMilliseconds(547500), result.Groups.Single().Options.Single().ChapterInfo.Duration);
     }
 
     [Fact]

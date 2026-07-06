@@ -11,7 +11,7 @@ Source report: `docs/code-review-2026-07-06.md`
 
 ## High Priority
 
-- [ ] Fix WebVTT import so cue end times and duration are preserved.
+- [x] Fix WebVTT import so cue end times and duration are preserved.
 - [ ] Remove command-string path interpolation from `ShellService.OpenTerminalAsync`.
 - [ ] Complete or safely hide the file association service/command surface.
 - [ ] Prevent preview from opening as an empty stub when no chapters are loaded.
@@ -37,4 +37,3 @@ Source report: `docs/code-review-2026-07-06.md`
 - [ ] Strengthen screenshot tests with layout/content assertions.
 - [ ] Handle quoted MKVToolNix `DisplayIcon` registry values.
 - [ ] Hide eac3to export process windows unless visibility is required.
-
