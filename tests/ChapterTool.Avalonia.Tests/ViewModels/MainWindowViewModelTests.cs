@@ -723,6 +723,7 @@ public sealed class MainWindowViewModelTests
         var windows = new FakeWindowService();
         var vm = CreateViewModel(windowService: windows);
 
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
         await vm.PreviewCommand.ExecuteAsync();
         await vm.LogCommand.ExecuteAsync();
 
@@ -746,6 +747,23 @@ public sealed class MainWindowViewModelTests
 
         vm.ClearLog();
         Assert.Equal(string.Empty, vm.LogText());
+    }
+
+    [Fact]
+    public async Task PreviewCommandRequiresLoadedChapterState()
+    {
+        var windows = new FakeWindowService();
+        var vm = CreateViewModel(windowService: windows);
+
+        Assert.False(vm.PreviewCommand.CanExecute());
+        await vm.PreviewCommand.ExecuteAsync();
+        Assert.Empty(windows.Opened);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        Assert.True(vm.PreviewCommand.CanExecute());
+        await vm.PreviewCommand.ExecuteAsync();
+        Assert.Equal(["preview"], windows.Opened);
     }
 
     [Fact]
