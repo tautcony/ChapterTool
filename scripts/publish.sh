@@ -1,34 +1,66 @@
 #!/usr/bin/env bash
-# Publish ChapterTool.Avalonia. Bash parity with publish.ps1.
-# Tested on macOS (bash 3.2) and Linux (bash 4+/5).
+# Publish ChapterTool.Avalonia from bash.
+# Tested on macOS (bash 3.2), Linux (bash 4+/5), and Git Bash on Windows.
 # Usage:
-#   ./scripts/publish.sh                            # win-x64, framework-dependent
+#   ./scripts/publish.sh                                      # win-x64, framework-dependent
 #   ./scripts/publish.sh -Runtime osx-arm64
 #   ./scripts/publish.sh -Runtime linux-x64 -SelfContained
+#   ./scripts/publish.sh -Runtime osx-arm64 -NoRestore -PublishSingleFile
 set -euo pipefail
 
 # ---- defaults ----
 Configuration="Release"
 Runtime="win-x64"
 SelfContained="false"
+NoRestore="false"
+PublishSingleFile="false"
+
+usage() {
+  sed -n '2,8p' "$0"
+}
+
+normalize_bool() {
+  case "$1" in
+    true|True|TRUE|1|yes|Yes|YES|on|On|ON) printf 'true' ;;
+    false|False|FALSE|0|no|No|NO|off|Off|OFF) printf 'false' ;;
+    *) echo "ERROR: expected boolean value but got '$1'" >&2; exit 2 ;;
+  esac
+}
+
+require_value() {
+  local option="$1"
+  local value="${2-}"
+  if [[ -z "$value" || "$value" == -* ]]; then
+    echo "ERROR: $option requires a value" >&2
+    exit 2
+  fi
+}
 
 # ---- arg parse ----
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -Configuration)
-      [[ $# -ge 2 ]] || { echo "ERROR: -Configuration requires a value" >&2; exit 2; }; Configuration="$2"; shift 2 ;;
+      require_value "$1" "${2-}"; Configuration="$2"; shift 2 ;;
     -Configuration=*)
       Configuration="${1#*=}"; shift ;;
     -Runtime)
-      [[ $# -ge 2 ]] || { echo "ERROR: -Runtime requires a value" >&2; exit 2; }; Runtime="$2"; shift 2 ;;
+      require_value "$1" "${2-}"; Runtime="$2"; shift 2 ;;
     -Runtime=*)
       Runtime="${1#*=}"; shift ;;
     -SelfContained)
       SelfContained="true"; shift ;;
     -SelfContained=*)
-      SelfContained="${1#*=}"; shift ;;
+      SelfContained="$(normalize_bool "${1#*=}")"; shift ;;
+    -NoRestore)
+      NoRestore="true"; shift ;;
+    -NoRestore=*)
+      NoRestore="$(normalize_bool "${1#*=}")"; shift ;;
+    -PublishSingleFile)
+      PublishSingleFile="true"; shift ;;
+    -PublishSingleFile=*)
+      PublishSingleFile="$(normalize_bool "${1#*=}")"; shift ;;
     -h|--help)
-      sed -n '2,8p' "$0"; exit 0 ;;
+      usage; exit 0 ;;
     *)
       echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
@@ -37,6 +69,7 @@ done
 # ---- paths ----
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
+project="$repo_root/src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj"
 
 if [[ "$SelfContained" == "true" ]]; then
   publish_kind="self-contained"
@@ -44,51 +77,77 @@ else
   publish_kind="framework-dependent"
 fi
 output="$repo_root/artifacts/publish/$publish_kind/$Runtime"
+dotnet_output="$output"
+should_bundle_macos="false"
+
+case "$Runtime" in
+  osx-*)
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+      should_bundle_macos="true"
+      dotnet_output="$output/.publish-raw"
+    fi
+    ;;
+esac
 
 # ---- publish ----
-dotnet restore "$repo_root/ChapterTool.Avalonia.slnx"
-dotnet publish "$repo_root/src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj" \
-    --configuration "$Configuration" \
-    --runtime "$Runtime" \
-    --self-contained:"$SelfContained" \
-    --output "$output" \
-    -p:PublishSingleFile=false
+rm -rf "$output"
+mkdir -p "$dotnet_output"
 
-echo "Published ChapterTool Avalonia to $output"
+if [[ "$NoRestore" != "true" ]]; then
+  dotnet restore "$project" --runtime "$Runtime"
+fi
+
+publish_args=(
+  publish "$project"
+  --configuration "$Configuration"
+  --runtime "$Runtime"
+  --self-contained:"$SelfContained"
+  --output "$dotnet_output"
+  -p:PublishSingleFile="$PublishSingleFile"
+)
+
+if [[ "$PublishSingleFile" == "true" ]]; then
+  publish_args+=(-p:IncludeNativeLibrariesForSelfExtract=true)
+fi
+
+if [[ "$NoRestore" == "true" ]]; then
+  publish_args+=(--no-restore)
+fi
+
+dotnet "${publish_args[@]}"
 
 # ---- macOS .app bundle ----
 # Build a proper .app bundle on macOS so the Dock/Finder show the real icon.
 # Runs only for osx RIDs and only when invoked on a macOS host.
 case "$Runtime" in
   osx-*)
-    if [[ "$(uname -s)" != "Darwin" ]]; then
+    if [[ "$should_bundle_macos" != "true" ]]; then
       echo "warning: Runtime is $Runtime but host is not macOS; skipped .app bundling. Run on macOS to produce the .app bundle." >&2
+      echo "Published ChapterTool Avalonia to $output"
       exit 0
     fi
 
     app_name="ChapterTool.Avalonia"
     app_bundle="$output/$app_name.app"
-    contents_dir="$app_bundle/Contents"
+    app_bundle_tmp="$output/.$app_name.app.tmp"
+    contents_dir="$app_bundle_tmp/Contents"
     macos_dir="$contents_dir/MacOS"
     resources_dir="$contents_dir/Resources"
 
-    rm -rf "$app_bundle"
+    rm -rf "$app_bundle" "$app_bundle_tmp"
     mkdir -p "$macos_dir" "$resources_dir"
 
-    # Trap for interrupt-safe bundle restructuring.
-    trap 'rm -rf "$app_bundle"' INT TERM
+    trap 'rm -rf "$app_bundle_tmp"' EXIT INT TERM
 
     # Move everything dotnet emitted into Contents/MacOS/.
     shopt -s nullglob
-    items=("$output"/*)
+    items=("$dotnet_output"/*)
     shopt -u nullglob
     if (( ${#items[@]} == 0 )); then
-      echo "ERROR: no publish output found in '$output'" >&2
+      echo "ERROR: no publish output found in '$dotnet_output'" >&2
       exit 1
     fi
     for item in "${items[@]}"; do
-      name="$(basename "$item")"
-      [[ "$name" == "$app_name.app" ]] && continue
       mv "$item" "$macos_dir/"
     done
 
@@ -111,9 +170,16 @@ case "$Runtime" in
 
     trap - INT TERM
 
+    rm -rf "$dotnet_output"
+    mv "$app_bundle_tmp" "$app_bundle"
+    trap - EXIT INT TERM
+
     # Refresh icon cache so Dock picks up the new art immediately during dev.
     touch "$app_bundle"
 
     echo "Created macOS app bundle at $app_bundle"
+    ;;
+  *)
+    echo "Published ChapterTool Avalonia to $output"
     ;;
 esac

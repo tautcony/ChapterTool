@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-test:
-    runs-on: windows-2025
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -18,7 +18,9 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Install external tools
-        run: choco install ffmpeg mkvtoolnix --no-progress -y
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg mkvtoolnix
 
       - name: Restore
         run: dotnet restore ChapterTool.Avalonia.slnx
@@ -31,14 +33,14 @@ jobs:
 
   publish:
     needs: build-test
-    runs-on: windows-2025
+    name: Publish (${{ matrix.runtime }})
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         runtime:
           - win-x64
           - linux-x64
-          - osx-x64
           - osx-arm64
 
     steps:
@@ -54,15 +56,7 @@ jobs:
         run: dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
 
       - name: Publish
-        run: >
-          dotnet publish src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj
-          --configuration Release
-          --runtime ${{ matrix.runtime }}
-          --self-contained false
-          --no-restore
-          --output artifacts/publish/framework-dependent/${{ matrix.runtime }}
-          -p:PublishSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true
+        run: ./scripts/publish.sh -Runtime ${{ matrix.runtime }} -NoRestore -PublishSingleFile
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

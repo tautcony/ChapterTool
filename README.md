@@ -48,11 +48,19 @@ dotnet build ChapterTool.Avalonia.slnx --no-restore
 dotnet test ChapterTool.Avalonia.slnx --no-restore
 ```
 
-The CI workflow is `.github/workflows/dotnet-ci.yml` and runs on Windows with .NET 10, FFmpeg, and MKVToolNix.
+The CI workflow is `.github/workflows/dotnet-ci.yml` and runs on Linux with .NET 10, FFmpeg, and MKVToolNix.
 
 ## Publish
 
 Use the publish helper for local artifacts:
+
+```bash
+./scripts/publish.sh -Runtime linux-x64
+./scripts/publish.sh -Runtime osx-arm64
+./scripts/publish.sh -Runtime win-x64 -SelfContained
+```
+
+`scripts/publish.ps1` is available for Windows publishing only:
 
 ```powershell
 ./scripts/publish.ps1 -Runtime win-x64
@@ -61,7 +69,7 @@ Use the publish helper for local artifacts:
 
 Framework-dependent artifacts are written under `artifacts/publish/framework-dependent/<runtime>`. Self-contained artifacts are written under `artifacts/publish/self-contained/<runtime>`.
 
-The GitHub Actions publish job currently builds framework-dependent artifacts for `win-x64`, `linux-x64`, `osx-x64`, and `osx-arm64`.
+The GitHub Actions publish job currently builds framework-dependent artifacts for `win-x64`, `linux-x64`, and `osx-arm64`.
 
 ## Project Layout
 
