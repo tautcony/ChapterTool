@@ -407,6 +407,29 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
+    public async Task FfmpegPathRequiresDirectoryContainingFfprobe()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
+        await File.WriteAllTextAsync(ffprobe, "");
+        var appStore = new FakeAppSettingsStore(new AppSettings(FfmpegPath: ffprobe));
+        var owner = CreateOwner(appStore);
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+
+        try
+        {
+            await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+            Assert.Equal("Path must be a directory", viewModel.FfmpegStatus);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task ValidateToolsDiscoversAndFillsExternalToolPaths()
     {
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));

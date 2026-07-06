@@ -306,6 +306,26 @@ public sealed class ExternalToolLocatorTests
     }
 
     [Fact]
+    public async Task LocateAsync_does_not_treat_ffmpeg_path_as_ffprobe_executable()
+    {
+        var root = CreateTempDirectory();
+        var ffprobePath = Path.Combine(root, ToolExecutable("ffprobe"));
+        await CreateToolFileAsync(ffprobePath);
+
+        var settingsStore = new AppSettingsStore(root, [root]);
+        await settingsStore.SaveAsync(
+            new AppSettings(FfmpegPath: ffprobePath),
+            TestContext.Current.CancellationToken);
+        var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [], new FakeMkvToolNixInstallProbe());
+
+        var location = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
+
+        Assert.False(location.Found);
+        Assert.Null(location.Path);
+        Assert.Equal("MissingDependency", location.DiagnosticCode);
+    }
+
+    [Fact]
     public async Task LocateAsync_uses_search_directory_for_ffprobe_when_unconfigured()
     {
         var root = CreateTempDirectory();

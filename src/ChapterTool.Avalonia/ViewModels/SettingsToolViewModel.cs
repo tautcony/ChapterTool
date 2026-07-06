@@ -252,7 +252,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         {
             if (SetProperty(ref field, CleanPath(value)))
             {
-                FfmpegStatus = FormatToolStatus(ValidateTool(value, "ffprobe"));
+                FfmpegStatus = FormatToolStatus(ValidateToolDirectory(value, "ffprobe"));
                 NotifyUnsavedChanges();
             }
         }
@@ -574,7 +574,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         MkvToolnixStatus = FormatToolStatus(ValidateTool(MkvToolnixPath, "mkvextract"));
         Eac3toStatus = FormatToolStatus(ValidateTool(Eac3toPath, "eac3to"));
         FfprobeStatus = FormatToolStatus(ValidateTool(FfprobePath, "ffprobe"));
-        FfmpegStatus = FormatToolStatus(ValidateTool(FfmpegPath, "ffprobe"));
+        FfmpegStatus = FormatToolStatus(ValidateToolDirectory(FfmpegPath, "ffprobe"));
     }
 
     private async ValueTask DiscoverAndFillToolPathsAsync(CancellationToken cancellationToken)
@@ -590,7 +590,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         var ffprobe = await DiscoverExecutableAsync("ffprobe", FfprobePath, cancellationToken);
         FfprobePath = ffprobe;
 
-        if (string.IsNullOrWhiteSpace(FfmpegPath) || ValidateTool(FfmpegPath, "ffprobe").Kind != SettingsToolStatusKind.Found)
+        if (string.IsNullOrWhiteSpace(FfmpegPath) || ValidateToolDirectory(FfmpegPath, "ffprobe").Kind != SettingsToolStatusKind.Found)
         {
             var ffprobeDirectory = string.IsNullOrWhiteSpace(ffprobe) ? null : Path.GetDirectoryName(ffprobe);
             FfmpegPath = string.IsNullOrWhiteSpace(ffprobeDirectory) ? FfmpegPath : ffprobeDirectory;
@@ -618,6 +618,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             SettingsToolStatusKind.Found => localizer.Format("Settings.ToolStatus.Found", new Dictionary<string, object?> { ["path"] = status.ResolvedPath }),
             SettingsToolStatusKind.Missing => localizer.Format("Settings.ToolStatus.Missing", new Dictionary<string, object?> { ["name"] = status.ExpectedExecutable }),
             SettingsToolStatusKind.InvalidPath => localizer.GetString("Settings.ToolStatus.InvalidPath"),
+            SettingsToolStatusKind.NotDirectory => localizer.GetString("Settings.ToolStatus.NotDirectory"),
             _ => localizer.GetString("Settings.ToolStatus.Unsupported")
         };
 
@@ -644,6 +645,31 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         return File.Exists(text)
             ? new SettingsToolStatus(SettingsToolStatusKind.Found, text, executableName)
             : new SettingsToolStatus(SettingsToolStatusKind.InvalidPath, text, executableName);
+    }
+
+    private static SettingsToolStatus ValidateToolDirectory(string? configuredPath, string toolId)
+    {
+        if (string.IsNullOrWhiteSpace(configuredPath))
+        {
+            return new SettingsToolStatus(
+                SettingsToolStatusKind.Discovery,
+                null,
+                ExternalToolPathResolver.ExecutableName(toolId));
+        }
+
+        var text = configuredPath.Trim();
+        var executableName = ExternalToolPathResolver.ExecutableName(toolId);
+        if (!Directory.Exists(text))
+        {
+            return File.Exists(text)
+                ? new SettingsToolStatus(SettingsToolStatusKind.NotDirectory, text, executableName)
+                : new SettingsToolStatus(SettingsToolStatusKind.InvalidPath, text, executableName);
+        }
+
+        var candidate = Path.Combine(text, executableName);
+        return File.Exists(candidate)
+            ? new SettingsToolStatus(SettingsToolStatusKind.Found, candidate, executableName)
+            : new SettingsToolStatus(SettingsToolStatusKind.Missing, candidate, executableName);
     }
 
     private ThemeColorSettings CurrentThemeSettings()
@@ -792,5 +818,6 @@ public enum SettingsToolStatusKind
     Found,
     Missing,
     InvalidPath,
+    NotDirectory,
     Unsupported
 }
