@@ -1,7 +1,5 @@
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
-using ChapterTool.Core.Services;
-using ChapterTool.Infrastructure.Importing.Media;
 
 namespace ChapterTool.Core.Tests.Importing;
 
@@ -10,7 +8,11 @@ public sealed class MediaChapterImporterTests
     [Fact]
     public async Task ImportAsyncMapsOrderedStartsEndsDurationAndUnicodeTitles()
     {
-        var importer = CreateImporter("ffprobe_chapters_single_edition.json");
+        var importer = CreateImporter(
+            Entry(0, 0, "1/1000", 0, 5000, "0.000000", "5.000000", ("title", "Chapter 01")),
+            Entry(1, 1, "1/1000", 5000, 12000, "5.000000", "12.000000", ("title", "Chapter 02")),
+            Entry(2, 2, "1/1000", 12000, 20000, "12.000000", "20.000000", ("title", "章节 03")),
+            Entry(3, 3, "1/1000", 20000, 30000, "20.000000", "30.000000", ("title", "Chapter 04")));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mp4"), TestContext.Current.CancellationToken);
 
@@ -27,7 +29,11 @@ public sealed class MediaChapterImporterTests
     [Fact]
     public async Task ImportAsyncFallsBackToTimeBaseAndTitleFallbacks()
     {
-        var importer = CreateImporter("ffprobe_chapters_time_base_fallback.json");
+        var importer = CreateImporter(
+            Entry(0, 0, "1/44100", 0, 220500, "0.000000", "5.000000", ("title", "Start with decimals, end with decimals")),
+            Entry(1, 1, "1/44100", 441000, 661500, null, null, ("title", "Time base fallback only")),
+            Entry(2, 2, "1/1000", 20000, 35000, "20.000000", "35.000000", ("TITLE", "Uppercase TITLE tag")),
+            Entry(3, 3, "1/1000", 35000, 40000, "35.000000", "40.000000"));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("audio.ogg"), TestContext.Current.CancellationToken);
 
@@ -40,7 +46,11 @@ public sealed class MediaChapterImporterTests
     [Fact]
     public async Task ImportAsyncPreservesMissingAndNonContiguousEnds()
     {
-        var importer = CreateImporter("ffprobe_chapters_non_contiguous.json");
+        var importer = CreateImporter(
+            Entry(0, 0, "1/1000", 0, 8000, "0.000000", "8.000000", ("title", "Overlaps next")),
+            Entry(1, 1, "1/1000", 5000, 15000, "5.000000", "15.000000", ("title", "Starts before previous ends")),
+            Entry(2, 2, "1/1000", 20000, null, "20.000000", null, ("title", "Missing end")),
+            Entry(3, 3, "1/1000", 35000, 35000, "35.000000", "35.000000", ("title", "End equals start")));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.nut"), TestContext.Current.CancellationToken);
 
@@ -56,7 +66,7 @@ public sealed class MediaChapterImporterTests
     [Fact]
     public async Task ImportAsyncFailsEmptyChapterOutput()
     {
-        var importer = CreateImporter("ffprobe_chapters_empty.json");
+        var importer = CreateImporter();
 
         var result = await importer.ImportAsync(new ChapterImportRequest("empty.wav"), TestContext.Current.CancellationToken);
 
@@ -67,7 +77,9 @@ public sealed class MediaChapterImporterTests
     [Fact]
     public async Task ImportAsyncSkipsInvalidStartsAndFailsWhenNoneRemain()
     {
-        var importer = CreateImporter("ffprobe_chapters_invalid_timestamps.json");
+        var importer = CreateImporter(
+            Entry(0, 0, "1/1000", -1000, 1000, "-1.000000", "1.000000", ("title", "Negative")),
+            Entry(1, 1, "bad", 10, 20, null, null, ("title", "Bad time base")));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("bad.mp3"), TestContext.Current.CancellationToken);
 
@@ -78,7 +90,11 @@ public sealed class MediaChapterImporterTests
     [Fact]
     public async Task ImportAsyncGroupsEditionsByEditionUidWithUntaggedLast()
     {
-        var importer = CreateImporter("ffprobe_chapters_mixed_edition.json");
+        var importer = CreateImporter(
+            Entry(0, 0, "1/1000", 0, 10000, "0.000000", "10.000000", ("title", "Tagged Chapter 1"), ("EDITION_UID", "100")),
+            Entry(1, 1, "1/1000", 10000, 20000, "10.000000", "20.000000", ("title", "Tagged Chapter 2"), ("EDITION_UID", "100")),
+            Entry(2, 2, "1/1000", 0, 5000, "0.000000", "5.000000", ("title", "Untagged Chapter 1")),
+            Entry(3, 3, "1/1000", 5000, 15000, "5.000000", "15.000000", ("title", "Untagged Chapter 2")));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 
@@ -91,45 +107,26 @@ public sealed class MediaChapterImporterTests
         Assert.Equal(["Untagged Chapter 1", "Untagged Chapter 2"], options[1].ChapterInfo.Chapters.Select(static chapter => chapter.Name));
     }
 
-    private static MediaChapterImporter CreateImporter(string jsonFixtureFileName)
-    {
-        var fixtureDirectory = Path.Combine(RepositoryRoot(), "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Media", "FfprobeJson");
-        var jsonPath = Path.Combine(fixtureDirectory, jsonFixtureFileName);
-        var json = File.ReadAllText(jsonPath);
-        var reader = new FfprobeMediaChapterReader(
-            new FakeToolLocator(new ExternalToolLocation(true, "ffprobe")),
-            new FakeProcessRunner(new ProcessRunResult(0, json, "", false, false, "ffprobe", [], null)));
-        return new MediaChapterImporter(reader);
-    }
-
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
-    }
+    private static MediaChapterImporter CreateImporter(params MediaChapterEntry[] entries) =>
+        new(new FakeMediaChapterReader(MediaChapterReadResult.Succeeded(entries)));
 
     private static string Diagnostics(ChapterImportResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Severity} {diagnostic.Code}: {diagnostic.Message}"));
 
-    private sealed class FakeToolLocator(ExternalToolLocation location) : IExternalToolLocator
-    {
-        public ValueTask<ExternalToolLocation> LocateAsync(string toolId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(location);
-    }
+    private static MediaChapterEntry Entry(
+        int sourceOrder,
+        int? id,
+        string? timeBase,
+        long? start,
+        long? end,
+        string? startTime,
+        string? endTime,
+        params (string Key, string Value)[] tags) =>
+        new(id, timeBase, start, end, startTime, endTime, tags.ToDictionary(static tag => tag.Key, static tag => tag.Value, StringComparer.Ordinal), sourceOrder);
 
-    private sealed class FakeProcessRunner(ProcessRunResult result) : IProcessRunner
+    private sealed class FakeMediaChapterReader(MediaChapterReadResult result) : IMediaChapterReader
     {
-        public ValueTask<ProcessRunResult> RunAsync(ProcessRunRequest request, CancellationToken cancellationToken) =>
+        public ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cancellationToken) =>
             ValueTask.FromResult(result);
     }
 }
