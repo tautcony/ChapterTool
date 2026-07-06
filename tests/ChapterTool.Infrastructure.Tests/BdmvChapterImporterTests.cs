@@ -49,7 +49,7 @@ public sealed class BdmvChapterImporterTests
         Assert.Equal([root, "1)", $"1:{runner.ExportedPaths.Single()}", "-showall"], runner.Requests[1].Arguments);
         Assert.Equal(Path.GetTempPath(), runner.Requests[1].WorkingDirectory);
         Assert.False(runner.Requests[1].RedirectOutput);
-        Assert.False(runner.Requests[1].CreateNoWindow);
+        Assert.True(runner.Requests[1].CreateNoWindow);
         Assert.Equal(2, runner.Requests.Count);
         Assert.False(File.Exists(runner.ExportedPaths.Single()));
         Assert.Contains(progressValues, value => value is > 0 and < 1);

@@ -37,4 +37,4 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Remove sync-over-async from Matroska integration setup.
 - [ ] Strengthen screenshot tests with layout/content assertions.
 - [x] Handle quoted MKVToolNix `DisplayIcon` registry values.
-- [ ] Hide eac3to export process windows unless visibility is required.
+- [x] Hide eac3to export process windows unless visibility is required.
