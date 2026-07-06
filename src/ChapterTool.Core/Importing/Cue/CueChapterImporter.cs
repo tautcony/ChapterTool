@@ -1,9 +1,7 @@
 namespace ChapterTool.Core.Importing.Cue;
 
-public sealed class CueChapterImporter(CueSheetParser? parser = null) : IChapterImporter
+public sealed class CueChapterImporter : IChapterImporter
 {
-    private readonly CueSheetParser parser = parser ?? new CueSheetParser();
-
     public string Id => "cue";
 
     public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
