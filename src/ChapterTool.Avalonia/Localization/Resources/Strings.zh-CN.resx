@@ -575,6 +575,21 @@
 <data name="Settings.Appearance" xml:space="preserve">
     <value>外观</value>
   </data>
+<data name="Settings.About" xml:space="preserve">
+    <value>关于</value>
+  </data>
+<data name="Settings.About.Description" xml:space="preserve">
+    <value>ChapterTool 是一个基于 Avalonia 的跨平台章节编辑器，用于从文本、光盘播放列表和媒体容器来源导入、调整、合并并导出章节列表。</value>
+  </data>
+<data name="Settings.About.License" xml:space="preserve">
+    <value>许可证：GPLv3+。详见仓库中的 LICENSE。</value>
+  </data>
+<data name="Settings.About.OpenRepository" xml:space="preserve">
+    <value>打开项目仓库</value>
+  </data>
+<data name="Settings.About.RepositoryUrl" xml:space="preserve">
+    <value>https://github.com/tautcony/ChapterTool</value>
+  </data>
 <data name="Settings.BrowseDirectory" xml:space="preserve">
     <value>选择目录</value>
   </data>

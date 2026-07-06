@@ -575,6 +575,21 @@
 <data name="Settings.Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
+<data name="Settings.About" xml:space="preserve">
+    <value>About</value>
+  </data>
+<data name="Settings.About.Description" xml:space="preserve">
+    <value>ChapterTool is an Avalonia-based cross-platform chapter editor for importing, adjusting, combining, and exporting chapter lists from text, disc playlist, and media container sources.</value>
+  </data>
+<data name="Settings.About.License" xml:space="preserve">
+    <value>License: GPLv3+. See LICENSE in the repository.</value>
+  </data>
+<data name="Settings.About.OpenRepository" xml:space="preserve">
+    <value>Open project repository</value>
+  </data>
+<data name="Settings.About.RepositoryUrl" xml:space="preserve">
+    <value>https://github.com/tautcony/ChapterTool</value>
+  </data>
 <data name="Settings.BrowseDirectory" xml:space="preserve">
     <value>Choose Directory</value>
   </data>

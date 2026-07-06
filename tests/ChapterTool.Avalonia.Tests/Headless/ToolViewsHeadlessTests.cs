@@ -268,6 +268,7 @@ public sealed class ToolViewsHeadlessTests
             host.ThemeSettingsStore,
             host.Localizer,
             host.SettingsPickerService,
+            shellService: host.ShellService,
             autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
@@ -279,9 +280,23 @@ public sealed class ToolViewsHeadlessTests
 
             Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "Output Defaults"));
             Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "Appearance"));
+            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "About"));
             Assert.Contains(MainWindowHeadlessTestHost.Descendants<TextBox>(window), textBox => textBox.Text == viewModel.SaveDirectory);
             Assert.Contains(MainWindowHeadlessTestHost.Descendants<ComboBox>(window), comboBox => Equals(comboBox.ItemsSource, viewModel.Languages));
             Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.SaveCommand);
+
+            var tabControl = MainWindowHeadlessTestHost.Descendants<TabControl>(window).Single();
+            tabControl.SelectedIndex = 4;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, viewModel.AvaloniaRuntimeDisplay));
+            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, viewModel.DotNetRuntimeDisplay));
+            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "https://github.com/tautcony/ChapterTool"));
+
+            await viewModel.OpenRepositoryCommand.ExecuteAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            var shellService = Assert.IsType<MainWindowHeadlessTestHost.FakeShellService>(host.ShellService);
+            Assert.Equal(["https://github.com/tautcony/ChapterTool"], shellService.Opened);
         }
         finally
         {

@@ -1,5 +1,8 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using Avalonia;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Exporting;
@@ -33,6 +36,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     private readonly ISettingsPickerService? picker;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IThemeApplicationService? themeApplicationService;
+    private readonly IShellService? shellService;
     private AppSettings savedAppSettings = new();
     private ThemeColorSettings savedThemeSettings = ThemeColorSettings.Default;
     private string selectedLanguage;
@@ -53,6 +57,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
         IThemeApplicationService? themeApplicationService = null,
+        IShellService? shellService = null,
         bool autoLoad = true)
     {
         this.owner = owner;
@@ -62,6 +67,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         this.picker = picker;
         this.externalToolLocator = externalToolLocator;
         this.themeApplicationService = themeApplicationService;
+        this.shellService = shellService;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Length - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
@@ -100,6 +106,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ClearEac3toCommand = ClearCommand(() => Eac3toPath = null);
         ClearFfprobeCommand = ClearCommand(() => FfprobePath = null);
         ClearFfmpegCommand = ClearCommand(() => FfmpegPath = null);
+        OpenRepositoryCommand = new UiCommand(async (_, token) => await OpenRepositoryAsync(token), _ => shellService is not null);
         this.localizer.CultureChanged += (_, _) =>
         {
             RefreshLanguages();
@@ -124,6 +131,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
 
     public IReadOnlyList<SelectorDisplayOption> XmlLanguageDisplayOptions => xmlLanguageDisplayOptions;
+
+    public string AvaloniaRuntimeDisplay { get; } = $"Avalonia v{InformationalVersion(typeof(Application))}";
+
+    public string DotNetRuntimeDisplay { get; } = $"{RuntimeInformation.FrameworkDescription} {RuntimeInformation.ProcessArchitecture}";
 
     public SelectorDisplayOption? SelectedDefaultXmlLanguageDisplayOption
     {
@@ -352,6 +363,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     public UiCommand ClearFfmpegCommand { get; }
 
+    public UiCommand OpenRepositoryCommand { get; }
+
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
         liveApplyEnabled = false;
@@ -489,6 +502,14 @@ public sealed class SettingsToolViewModel : ObservableViewModel
             clear();
             return ValueTask.CompletedTask;
         });
+
+    private async ValueTask OpenRepositoryAsync(CancellationToken cancellationToken)
+    {
+        if (shellService is not null)
+        {
+            await shellService.OpenAsync("https://github.com/tautcony/ChapterTool", cancellationToken);
+        }
+    }
 
     private void RefreshLanguages()
     {
@@ -714,6 +735,17 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     }
 
     private static string? CleanPath(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string InformationalVersion(Type type)
+    {
+        var version = type.Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (!string.IsNullOrWhiteSpace(version))
+        {
+            return version.Split('+', 2)[0];
+        }
+
+        return type.Assembly.GetName().Version?.ToString(3) ?? "unknown";
+    }
 
     private void SetFrameAccuracyTolerance(decimal value, bool updateSlider)
     {

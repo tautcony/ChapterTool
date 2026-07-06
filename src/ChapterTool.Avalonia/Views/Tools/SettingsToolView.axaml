@@ -24,6 +24,25 @@
       <Setter Property="Foreground" Value="#586069" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <Style Selector="TextBlock.aboutBody">
+      <Setter Property="MaxWidth" Value="680" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="LineHeight" Value="22" />
+    </Style>
+    <Style Selector="TextBlock.repoAddress">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="FontFamily" Value="Consolas, Menlo, Monaco, monospace" />
+      <Setter Property="Foreground" Value="#2F6FED" />
+    </Style>
+    <Style Selector="Button.linkButton">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Foreground" Value="#2F6FED" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
     <Style Selector="TextBox, ComboBox">
       <Setter Property="MinHeight" Value="32" />
     </Style>
@@ -238,6 +257,27 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.About}" />
+        </TabItem.Header>
+        <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="14" Margin="4,12,12,4">
+            <TextBlock Classes="aboutBody" Text="{DynamicResource Settings.About.Description}" />
+            <StackPanel Spacing="4">
+              <TextBlock Classes="status" Text="{Binding AvaloniaRuntimeDisplay}" />
+              <TextBlock Classes="status" Text="{Binding DotNetRuntimeDisplay}" />
+            </StackPanel>
+            <TextBlock Classes="status" Text="{DynamicResource Settings.About.License}" />
+            <Button Classes="linkButton"
+                    Command="{Binding OpenRepositoryCommand}"
+                    ToolTip.Tip="{DynamicResource Settings.About.OpenRepository}">
+              <TextBlock Classes="repoAddress" Text="{DynamicResource Settings.About.RepositoryUrl}" />
+            </Button>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

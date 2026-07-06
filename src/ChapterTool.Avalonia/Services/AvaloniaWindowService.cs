@@ -17,6 +17,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly ISettingsCloseConfirmationService settingsCloseConfirmationService;
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
     private readonly IExternalToolLocator? externalToolLocator;
+    private readonly IShellService? shellService;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
@@ -28,7 +29,8 @@ public sealed class AvaloniaWindowService : IWindowService
         IAppLocalizer? localizer = null,
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
         IExternalToolLocator? externalToolLocator = null,
-        ISettingsCloseConfirmationService? settingsCloseConfirmationService = null)
+        ISettingsCloseConfirmationService? settingsCloseConfirmationService = null,
+        IShellService? shellService = null)
     {
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
@@ -38,6 +40,7 @@ public sealed class AvaloniaWindowService : IWindowService
             ?? new AvaloniaSettingsCloseConfirmationService(this.localizer);
         this.settingsPickerFactory = settingsPickerFactory;
         this.externalToolLocator = externalToolLocator;
+        this.shellService = shellService;
         this.localizer.CultureChanged += (_, _) =>
         {
             foreach (var (id, window) in windows)
@@ -161,7 +164,8 @@ public sealed class AvaloniaWindowService : IWindowService
                     localizer,
                     settingsPickerFactory?.Invoke(window),
                     externalToolLocator,
-                    themeApplicationService)
+                    themeApplicationService,
+                    shellService)
             },
             "color-settings" => new ColorSettingsView { DataContext = new ColorSettingsViewModel(themeSettingsStore, themeApplicationService) },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },

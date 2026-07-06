@@ -575,6 +575,21 @@
 <data name="Settings.Appearance" xml:space="preserve">
     <value>外観</value>
   </data>
+<data name="Settings.About" xml:space="preserve">
+    <value>このアプリについて</value>
+  </data>
+<data name="Settings.About.Description" xml:space="preserve">
+    <value>ChapterTool は Avalonia ベースのクロスプラットフォーム チャプターエディターで、テキスト、ディスクプレイリスト、メディアコンテナ由来のチャプター一覧の読み込み、調整、結合、書き出しに対応します。</value>
+  </data>
+<data name="Settings.About.License" xml:space="preserve">
+    <value>ライセンス: GPLv3+。詳細はリポジトリの LICENSE を参照してください。</value>
+  </data>
+<data name="Settings.About.OpenRepository" xml:space="preserve">
+    <value>プロジェクトリポジトリを開く</value>
+  </data>
+<data name="Settings.About.RepositoryUrl" xml:space="preserve">
+    <value>https://github.com/tautcony/ChapterTool</value>
+  </data>
 <data name="Settings.BrowseDirectory" xml:space="preserve">
     <value>ディレクトリを選択</value>
   </data>
