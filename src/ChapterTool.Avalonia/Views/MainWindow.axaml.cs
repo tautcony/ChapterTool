@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -66,6 +67,8 @@ public sealed partial class MainWindow : Window
 
         InitializeComponent();
         DataContext = viewModel;
+        UpdateTitle();
+        viewModel.Localizer.CultureChanged += (_, _) => UpdateTitle();
         SubscribeViewModelCommandState();
         ApplyAdvancedOptionsLayout();
         RaiseCommandStates();
@@ -200,6 +203,13 @@ public sealed partial class MainWindow : Window
     {
         viewModel.UpdateSelectedRows(SelectedIndexes());
         await viewModel.ForwardShiftCommand.ExecuteAsync();
+    }
+
+    private void UpdateTitle()
+    {
+        var baseTitle = viewModel.Localizer.GetString("App.Title");
+        var version = typeof(MainWindow).Assembly.GetName().Version;
+        Title = $"{baseTitle} v{version?.ToString(3) ?? "0.0.0"}";
     }
 
     private async void OnOpened(object? sender, EventArgs args)
