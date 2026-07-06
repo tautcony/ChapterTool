@@ -140,7 +140,7 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
     public async Task Settings_tool_layout_captures_default_wide_and_narrow_artifacts()
     {
         using var host = new MainWindowHeadlessTestHost();
-        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer);
+        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer, autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var window = new Window();
         try

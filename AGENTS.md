@@ -35,6 +35,8 @@
 
 - Run the focused Avalonia tests after XAML or UI shell changes:
   - `dotnet test tests\ChapterTool.Avalonia.Tests\ChapterTool.Avalonia.Tests.csproj --no-restore`
+- Keep Avalonia Headless tests isolated without serializing the entire Avalonia test assembly. Do not reintroduce assembly-level `CollectionBehavior(DisableTestParallelization = true)` for this project; instead put every class containing `[AvaloniaFact]` or `[AvaloniaTheory]` in `AvaloniaHeadlessTestCollection`. The guard test `HeadlessTestCollectionGuardTests` exists to catch missed classes.
+- When a test constructs `SettingsToolViewModel` and then calls `LoadAsync` explicitly, pass `autoLoad: false`. Otherwise the constructor starts a background load and the test performs the same initialization twice, which slows Headless runs and can introduce races.
 - Do not test source/configuration files by reading them as text and asserting strings. This includes `.cs`, `.axaml`, `.csproj`, scripts, CI YAML, README, and docs. Prefer compiled coverage, behavior tests, runtime verification, structured public APIs, or integration checks.
 - Run the full solution tests before finalizing broader changes:
   - `dotnet test ChapterTool.Avalonia.slnx --no-restore`

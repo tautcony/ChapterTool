@@ -267,7 +267,8 @@ public sealed class ToolViewsHeadlessTests
             host.AppSettingsStore,
             host.ThemeSettingsStore,
             host.Localizer,
-            host.SettingsPickerService);
+            host.SettingsPickerService,
+            autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(new SettingsToolView(), viewModel);

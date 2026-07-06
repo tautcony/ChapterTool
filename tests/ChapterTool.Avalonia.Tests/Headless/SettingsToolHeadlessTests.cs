@@ -20,7 +20,8 @@ public sealed class SettingsToolHeadlessTests
             host.ViewModel,
             host.AppSettingsStore,
             host.ThemeSettingsStore,
-            host.Localizer);
+            host.Localizer,
+            autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var view = new SettingsToolView { DataContext = viewModel };
         var window = new Window
@@ -58,7 +59,7 @@ public sealed class SettingsToolHeadlessTests
             using var host = new MainWindowHeadlessTestHost(
                 localizer: new AppLocalizationManager(culture),
                 appSettings: new AppSettings(Language: culture));
-            var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer);
+            var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer, autoLoad: false);
             await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
             foreach (var (name, width, height) in new[]
@@ -141,7 +142,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost(
             localizer: localizer,
             appSettings: new AppSettings(Language: "en-US", DefaultXmlLanguage: "jpn"));
-        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer);
+        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer, autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var window = new Window
         {

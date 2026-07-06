@@ -18,8 +18,7 @@ public sealed class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var startupPath = Program.StartupArgs.FirstOrDefault(static arg => !arg.StartsWith("--", StringComparison.Ordinal));
-            composition = new AppCompositionRoot(startupPath);
+            composition = new AppCompositionRoot(Program.GuiStartupPath);
             desktop.Exit += (_, _) => composition.Dispose();
             desktop.MainWindow = composition.CreateMainWindow();
         }

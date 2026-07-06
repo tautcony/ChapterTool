@@ -50,6 +50,11 @@ The rewrite SHALL migrate and strengthen existing MSTest coverage into .NET 10 t
 - **WHEN** tests are organized
 - **THEN** Core behavior SHALL live in Core tests, process/native/filesystem behavior SHALL live in Infrastructure tests, and ViewModel commands SHALL live in Avalonia or ViewModel tests
 
+#### Scenario: CLI workflows are covered without launching desktop UI
+- **WHEN** CLI tests run
+- **THEN** they SHALL cover CLI token detection, startup-path routing, formats output, inspect output, file conversion, stdout conversion, and representative CLI validation failures
+- **AND** they SHALL invoke CLI services or command definitions without starting the Avalonia desktop lifetime
+
 #### Scenario: xUnit v3 test suite runs through dotnet test
 - **WHEN** `dotnet test ChapterTool.Avalonia.slnx --no-restore` runs after restore
 - **THEN** Core, Infrastructure, and Avalonia test assemblies SHALL execute under xUnit v3 without framework discovery failures

@@ -195,4 +195,6 @@ public sealed class AppCompositionRoot : IDisposable
             yield return part;
         }
     }
+
+    internal static IEnumerable<string> PathSearchDirectoriesForTests() => PathSearchDirectories();
 }
