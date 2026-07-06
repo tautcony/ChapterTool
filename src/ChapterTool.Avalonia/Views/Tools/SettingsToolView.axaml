@@ -98,10 +98,10 @@
               <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.SaveDirectory}" />
               <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                 <TextBox Grid.Column="0" Text="{Binding SaveDirectory, Mode=TwoWay}" PlaceholderText="{DynamicResource Settings.EmptyUsesSource}" />
-                <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseSaveDirectoryCommand}" ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
+                <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseSaveDirectoryCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseDirectory}" ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
                   <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
                 </Button>
-                <Button Grid.Column="2" Classes="compact" Command="{Binding ClearSaveDirectoryCommand}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                <Button Grid.Column="2" Classes="compact" Command="{Binding ClearSaveDirectoryCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
                   <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
                 </Button>
               </Grid>
@@ -122,10 +122,10 @@
               <Grid Grid.Row="0" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                   <TextBox Grid.Column="0" Text="{Binding MkvToolnixPath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseMkvToolnixCommand}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
+                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
                     <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
                   </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearMkvToolnixCommand}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
                     <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
                   </Button>
                 </Grid>
@@ -136,10 +136,10 @@
               <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                   <TextBox Grid.Column="0" Text="{Binding Eac3toPath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseEac3toCommand}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
+                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseEac3toCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
                     <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
                   </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearEac3toCommand}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearEac3toCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
                     <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
                   </Button>
                 </Grid>
@@ -150,10 +150,10 @@
               <Grid Grid.Row="2" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                   <TextBox Grid.Column="0" Text="{Binding FfprobePath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseFfprobeCommand}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
+                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseFfprobeCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
                     <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
                   </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearFfprobeCommand}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearFfprobeCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
                     <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
                   </Button>
                 </Grid>
@@ -164,10 +164,10 @@
               <Grid Grid.Row="3" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                   <TextBox Grid.Column="0" Text="{Binding FfmpegPath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseFfmpegCommand}" ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
+                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseFfmpegCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseDirectory}" ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
                     <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
                   </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearFfmpegCommand}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearFfmpegCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
                     <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
                   </Button>
                 </Grid>

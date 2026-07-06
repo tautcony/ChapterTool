@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -172,6 +173,48 @@ public sealed class SettingsToolHeadlessTests
             Assert.Equal(viewModel.DefaultXmlLanguageIndex, xmlLanguageCombo.SelectedIndex);
             Assert.False(string.IsNullOrWhiteSpace(xmlLanguageCombo.SelectionBoxItem?.ToString()));
             Assert.StartsWith("jpn（", xmlLanguageCombo.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Icon_only_settings_buttons_have_accessible_names()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        var viewModel = new SettingsToolViewModel(
+            host.ViewModel,
+            host.AppSettingsStore,
+            host.ThemeSettingsStore,
+            host.Localizer,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 760,
+            Height = 520
+        };
+
+        try
+        {
+            window.Show();
+            var layoutManager = window.GetLayoutManager()
+                ?? throw new InvalidOperationException("Settings window layout manager was not available.");
+            layoutManager.ExecuteInitialLayoutPass();
+            var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+            tabControl.SelectedIndex = 1;
+            layoutManager.ExecuteLayoutPass();
+
+            var iconButtons = window.GetVisualDescendants()
+                .OfType<Button>()
+                .Where(button => button.Classes.Contains("compact"))
+                .ToArray();
+
+            Assert.NotEmpty(iconButtons);
+            Assert.All(iconButtons, button => Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(button))));
         }
         finally
         {
