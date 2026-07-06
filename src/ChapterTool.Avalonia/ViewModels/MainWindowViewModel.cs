@@ -145,7 +145,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             return ValueTask.CompletedTask;
         }, _ => currentInfo is not null);
 
-        PreviewCommand = WindowCommand("preview");
+        PreviewCommand = WindowCommand("preview", () => currentInfo is not null);
         LogCommand = WindowCommand("log");
         SettingsCommand = WindowCommand("settings");
         ColorSettingsCommand = WindowCommand("color-settings");
@@ -1301,8 +1301,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         return frameRateService.Options.FirstOrDefault(option => option.LegacyMplsCode == legacyCode);
     }
 
-    private UiCommand WindowCommand(string id) =>
-        new(async (_, token) => await windowService.ShowAsync(id, this, token));
+    private UiCommand WindowCommand(string id, Func<bool>? canExecute = null) =>
+        new(async (_, token) => await windowService.ShowAsync(id, this, token), _ => canExecute?.Invoke() ?? true);
 
     private async ValueTask OpenRelatedMediaAsync(object? parameter, CancellationToken cancellationToken)
     {

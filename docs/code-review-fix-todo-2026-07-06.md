@@ -15,7 +15,7 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Remove command-string path interpolation from `ShellService.OpenTerminalAsync`.
 - [x] Complete Windows file association registry behavior so registration writes an open command and unregistration protects existing associations.
 - [ ] Add or explicitly defer a non-primary settings/command surface for file association.
-- [ ] Prevent preview from opening as an empty stub when no chapters are loaded.
+- [x] Prevent preview from opening as an empty stub when no chapters are loaded.
 
 ## Medium Priority
 
