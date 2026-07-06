@@ -13,6 +13,7 @@ namespace ChapterTool.Infrastructure.Platform;
 public sealed class WindowsFileAssociationService : IFileAssociationService
 {
     private const string ClassesRoot = @"Software\Classes";
+    private const string OwnerValueName = "ChapterToolOwner";
 
     public ValueTask<FileAssociationResult> RegisterAsync(
         string extension,
@@ -23,18 +24,32 @@ public sealed class WindowsFileAssociationService : IFileAssociationService
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            // Register ProgId: HKCU\Software\Classes\<progId>
+            var normalizedExtension = NormalizeExtension(extension);
+            var applicationPath = CurrentApplicationPath();
+
             using (var progIdKey = Registry.CurrentUser.CreateSubKey($@"{ClassesRoot}\{progId}"))
             {
                 progIdKey.SetValue(string.Empty, description);
+                progIdKey.SetValue(OwnerValueName, progId);
             }
 
-            // Map extension to ProgId: HKCU\Software\Classes\<extension>
-            using (var extKey = Registry.CurrentUser.CreateSubKey($@"{ClassesRoot}\{extension}"))
+            using (var iconKey = Registry.CurrentUser.CreateSubKey($@"{ClassesRoot}\{progId}\DefaultIcon"))
+            {
+                iconKey.SetValue(string.Empty, $"{applicationPath},0");
+            }
+
+            using (var commandKey = Registry.CurrentUser.CreateSubKey($@"{ClassesRoot}\{progId}\shell\open\command"))
+            {
+                commandKey.SetValue(string.Empty, BuildOpenCommand(applicationPath));
+            }
+
+            using (var extKey = Registry.CurrentUser.CreateSubKey($@"{ClassesRoot}\{normalizedExtension}"))
             {
                 extKey.SetValue(string.Empty, progId);
+                extKey.SetValue(OwnerValueName, progId);
             }
 
+            NotifyShellAssociationChanged();
             return ValueTask.FromResult(new FileAssociationResult(true, []));
         }
         catch (Exception ex)
@@ -44,7 +59,7 @@ public sealed class WindowsFileAssociationService : IFileAssociationService
                 [new ChapterDiagnostic(
                     DiagnosticSeverity.Error,
                     "FileAssociationRegistrationFailed",
-                    $"Failed to register file association for {extension}: {ex.Message}")]));
+                    $"Failed to register file association for {NormalizeExtension(extension)}: {ex.Message}")]));
         }
     }
 
@@ -56,12 +71,22 @@ public sealed class WindowsFileAssociationService : IFileAssociationService
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            // Remove extension mapping
-            Registry.CurrentUser.DeleteSubKey($@"{ClassesRoot}\{extension}", throwOnMissingSubKey: false);
+            var normalizedExtension = NormalizeExtension(extension);
+            using (var extKey = Registry.CurrentUser.OpenSubKey($@"{ClassesRoot}\{normalizedExtension}", writable: true))
+            {
+                if (ExtensionBelongsToProgId(extKey, progId))
+                {
+                    Registry.CurrentUser.DeleteSubKeyTree($@"{ClassesRoot}\{normalizedExtension}", throwOnMissingSubKey: false);
+                }
+                else if (extKey?.GetValue(OwnerValueName) is not null)
+                {
+                    extKey.DeleteValue(OwnerValueName, throwOnMissingValue: false);
+                }
+            }
 
-            // Remove ProgId
             Registry.CurrentUser.DeleteSubKeyTree($@"{ClassesRoot}\{progId}", throwOnMissingSubKey: false);
 
+            NotifyShellAssociationChanged();
             return ValueTask.FromResult(new FileAssociationResult(true, []));
         }
         catch (Exception ex)
@@ -71,7 +96,7 @@ public sealed class WindowsFileAssociationService : IFileAssociationService
                 [new ChapterDiagnostic(
                     DiagnosticSeverity.Error,
                     "FileAssociationUnregistrationFailed",
-                    $"Failed to unregister file association for {extension}: {ex.Message}")]));
+                    $"Failed to unregister file association for {NormalizeExtension(extension)}: {ex.Message}")]));
         }
     }
 
@@ -83,9 +108,13 @@ public sealed class WindowsFileAssociationService : IFileAssociationService
         cancellationToken.ThrowIfCancellationRequested();
         try
         {
-            using var extKey = Registry.CurrentUser.OpenSubKey($@"{ClassesRoot}\{extension}");
+            var normalizedExtension = NormalizeExtension(extension);
+            using var extKey = Registry.CurrentUser.OpenSubKey($@"{ClassesRoot}\{normalizedExtension}");
+            using var commandKey = Registry.CurrentUser.OpenSubKey($@"{ClassesRoot}\{progId}\shell\open\command");
             if (extKey?.GetValue(string.Empty) is string registeredProgId
-                && string.Equals(registeredProgId, progId, StringComparison.OrdinalIgnoreCase))
+                && string.Equals(registeredProgId, progId, StringComparison.OrdinalIgnoreCase)
+                && commandKey?.GetValue(string.Empty) is string command
+                && !string.IsNullOrWhiteSpace(command))
             {
                 return ValueTask.FromResult(new FileAssociationResult(true, []));
             }
@@ -99,7 +128,27 @@ public sealed class WindowsFileAssociationService : IFileAssociationService
                 [new ChapterDiagnostic(
                     DiagnosticSeverity.Warning,
                     "FileAssociationCheckFailed",
-                    $"Failed to check file association for {extension}: {ex.Message}")]));
+                    $"Failed to check file association for {NormalizeExtension(extension)}: {ex.Message}")]));
         }
     }
+
+    internal static string BuildOpenCommand(string applicationPath) => $"\"{applicationPath}\" \"%1\"";
+
+    internal static bool ExtensionBelongsToProgId(RegistryKey? extensionKey, string progId) =>
+        extensionKey?.GetValue(string.Empty) is string registeredProgId
+            && string.Equals(registeredProgId, progId, StringComparison.OrdinalIgnoreCase);
+
+    private static string NormalizeExtension(string extension) =>
+        extension.StartsWith(".", StringComparison.Ordinal) ? extension : $".{extension}";
+
+    private static string CurrentApplicationPath() =>
+        Environment.ProcessPath
+        ?? System.Reflection.Assembly.GetEntryAssembly()?.Location
+        ?? AppContext.BaseDirectory;
+
+    private static void NotifyShellAssociationChanged() =>
+        SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
+
+    [System.Runtime.InteropServices.DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }
