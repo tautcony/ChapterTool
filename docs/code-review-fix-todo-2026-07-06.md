@@ -36,5 +36,5 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Replace fixed `Task.Delay` in `UiCommandTests`.
 - [x] Remove sync-over-async from Matroska integration setup.
 - [ ] Strengthen screenshot tests with layout/content assertions.
-- [ ] Handle quoted MKVToolNix `DisplayIcon` registry values.
+- [x] Handle quoted MKVToolNix `DisplayIcon` registry values.
 - [ ] Hide eac3to export process windows unless visibility is required.
