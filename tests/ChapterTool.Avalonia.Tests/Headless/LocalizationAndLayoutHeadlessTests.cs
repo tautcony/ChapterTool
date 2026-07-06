@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Tools;
@@ -162,7 +163,14 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
 
                 Assert.True(File.Exists(artifact));
                 Assert.True(new FileInfo(artifact).Length > 0);
-                Assert.True(MainWindowHeadlessTestHost.Descendants<TabControl>(window).Single().Bounds.Width > 0);
+                var tabControl = MainWindowHeadlessTestHost.Descendants<TabControl>(window).Single();
+                Assert.True(tabControl.Bounds.Width > 0);
+                Assert.Contains(
+                    tabControl.GetVisualDescendants().OfType<TextBlock>(),
+                    block => string.Equals(block.Text, host.Localizer.GetString("Settings.General"), StringComparison.Ordinal));
+                Assert.Contains(
+                    window.GetVisualDescendants().OfType<TextBlock>(),
+                    block => string.Equals(block.Text, host.Localizer.GetString("Settings.SaveDirectory"), StringComparison.Ordinal));
                 Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.SaveCommand && button.Bounds.Height >= 24);
                 Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.ResetCommand && button.Bounds.Height >= 24);
             }
