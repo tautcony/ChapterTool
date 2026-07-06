@@ -37,7 +37,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
             }
 
             var parts = lines[0].Split("-->", StringSplitOptions.TrimEntries);
-            if (parts.Length != 2 || !TimeSpan.TryParse(parts[0], out var start) || !TimeSpan.TryParse(parts[1], out _))
+            if (parts.Length != 2 || !TimeSpan.TryParse(parts[0], out var start) || !TimeSpan.TryParse(parts[1], out var end))
             {
                 var code = parts.Length == 2 && parts[1].Contains(' ', StringComparison.Ordinal)
                     ? "WebVttUnsupportedTimingSettings"
@@ -45,7 +45,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
                 return ChapterImportResult.Failed(Error(code, $"Unable to parse WebVTT timing line: {lines[0]}"));
             }
 
-            chapters.Add(new Chapter(chapters.Count + 1, start, lines[1]));
+            chapters.Add(new Chapter(chapters.Count + 1, start, lines[1], End: end));
         }
 
         if (chapters.Count == 0)
@@ -59,7 +59,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
             0,
             "WebVTT",
             0,
-            chapters.Count == 0 ? TimeSpan.Zero : chapters[^1].Time,
+            chapters[^1].End ?? chapters[^1].Time,
             chapters);
         return TextImportUtilities.SingleGroup(path, info);
     }
