@@ -71,6 +71,23 @@ public sealed class SettingsMigrationTests
     }
 
     [Fact]
+    public async Task App_settings_preserves_corrupt_current_file_and_surfaces_error()
+    {
+        var root = CreateTempDirectory();
+        var settingsPath = Path.Combine(root, "appsettings.json");
+        await File.WriteAllTextAsync(settingsPath, "{");
+        var store = new AppSettingsStore(root, [root]);
+
+        var exception = await Assert.ThrowsAsync<CorruptSettingsFileException>(
+            async () => await store.LoadAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(settingsPath, exception.SettingsPath);
+        Assert.Equal(settingsPath + ".corrupt", exception.BackupPath);
+        Assert.False(File.Exists(settingsPath));
+        Assert.Equal("{", await File.ReadAllTextAsync(exception.BackupPath));
+    }
+
+    [Fact]
     public async Task Theme_settings_loads_legacy_color_config_in_six_slot_order()
     {
         var root = CreateTempDirectory();
@@ -107,6 +124,23 @@ public sealed class SettingsMigrationTests
 
         Assert.Equal(ThemeColorSettings.Default.TextBack, theme.TextBack);
         Assert.Equal("#212223", theme.MouseOverColor);
+    }
+
+    [Fact]
+    public async Task Theme_settings_preserves_corrupt_current_file_and_surfaces_error()
+    {
+        var root = CreateTempDirectory();
+        var settingsPath = Path.Combine(root, "theme-colors.json");
+        await File.WriteAllTextAsync(settingsPath, "{");
+        var store = new ThemeSettingsStore(root, [root]);
+
+        var exception = await Assert.ThrowsAsync<CorruptSettingsFileException>(
+            async () => await store.LoadAsync(TestContext.Current.CancellationToken));
+
+        Assert.Equal(settingsPath, exception.SettingsPath);
+        Assert.Equal(settingsPath + ".corrupt", exception.BackupPath);
+        Assert.False(File.Exists(settingsPath));
+        Assert.Equal("{", await File.ReadAllTextAsync(exception.BackupPath));
     }
 
     private static string CreateTempDirectory()
