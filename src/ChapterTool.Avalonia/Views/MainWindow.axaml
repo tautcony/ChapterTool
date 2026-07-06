@@ -448,7 +448,7 @@
       <Grid x:Name="AdvancedOptionsGrid"
             Grid.Row="2"
             ColumnDefinitions="*,2*,*"
-            RowDefinitions="Auto,Auto"
+            RowDefinitions="Auto,Auto,*"
             ColumnSpacing="14.4"
             RowSpacing="8"
             Margin="0"

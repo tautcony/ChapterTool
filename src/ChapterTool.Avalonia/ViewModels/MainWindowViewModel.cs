@@ -38,7 +38,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private ChapterInfoGroup? splitClipGroup;
     private ChapterSourceOption? combinedClipOption;
     private bool isRefreshingChapterNameModeOptions;
-    private bool isClipCombineChecked;
     private bool autoGenerateNames;
     private bool useTemplateNames;
     private string chapterNameTemplateText = string.Empty;
@@ -46,7 +45,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private string statusText;
     private LocalizedMessage? currentStatusMessage;
     private LocalizedMessage? currentProgressMessage;
-    private decimal frameAccuracyTolerance = 0.15m;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     public MainWindowViewModel(
@@ -225,16 +223,16 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public decimal FrameAccuracyTolerance
     {
-        get => frameAccuracyTolerance;
+        get;
         set
         {
             var normalized = NormalizeFrameAccuracyTolerance(value);
-            if (SetProperty(ref frameAccuracyTolerance, normalized))
+            if (SetProperty(ref field, normalized))
             {
                 RefreshRows();
             }
         }
-    }
+    } = 0.15m;
 
     public int SelectedFrameRateIndex
     {
@@ -246,10 +244,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public bool IsClipCombineChecked
     {
-        get => isClipCombineChecked;
+        get;
         private set
         {
-            if (SetProperty(ref isClipCombineChecked, value))
+            if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(IsClipSelectionVisible));
                 OnPropertyChanged(nameof(CanCombine));
@@ -874,7 +872,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
 
         var baseGroup = splitClipGroup ?? currentGroup;
-        var edit = segmentService.Append(baseGroup, result.Groups[0]);
+        var edit = ChapterSegmentService.Append(baseGroup, result.Groups[0]);
         if (edit.Diagnostics.Count > 0)
         {
             SetStatus(null, diagnostic: edit.Diagnostics[0]);
@@ -1190,7 +1188,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
                 break;
             case NotifyCollectionChangedAction.Move:
-                if (args.OldStartingIndex >= 0 && args.NewStartingIndex >= 0)
+                if (args is { OldStartingIndex: >= 0, NewStartingIndex: >= 0 })
                 {
                     ClipDisplayOptions.Move(args.OldStartingIndex, args.NewStartingIndex);
                 }

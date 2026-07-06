@@ -1,4 +1,3 @@
-using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.Services;

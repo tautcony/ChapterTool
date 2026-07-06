@@ -16,7 +16,6 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using ILogger = Serilog.ILogger;
 
 namespace ChapterTool.Avalonia.Composition;
 
@@ -120,7 +119,7 @@ public sealed class AppCompositionRoot : IDisposable
     public IExternalToolLocator CreateExternalToolLocator() =>
         new ExternalToolLocator(appSettingsStore, PathSearchDirectories().ToList());
 
-    public IProcessRunner CreateProcessRunner() => new ProcessRunner();
+    public static IProcessRunner CreateProcessRunner() => new ProcessRunner();
 
     public static INativeDependencyService CreateNativeDependencyService() =>
         new FileSystemNativeDependencyService(PathSearchDirectories().Prepend(AppContext.BaseDirectory).ToList());

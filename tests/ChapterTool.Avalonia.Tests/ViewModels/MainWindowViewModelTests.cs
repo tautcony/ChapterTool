@@ -513,8 +513,7 @@ public sealed class MainWindowViewModelTests
 
         Assert.Equal("00:00:04.800", vm.Rows[0].TimeText);
         Assert.Contains(log.Entries, entry =>
-            entry.MessageKey == "Log.ChangeFps"
-            && entry.Arguments is not null
+            entry is { MessageKey: "Log.ChangeFps", Arguments: not null }
             && entry.Arguments.TryGetValue("sourceFps", out var sourceFps)
             && entry.Arguments.TryGetValue("targetFps", out var targetFps)
             && string.Equals(sourceFps?.ToString(), "24", StringComparison.Ordinal)

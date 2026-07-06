@@ -1,9 +1,7 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Tools;
@@ -126,7 +124,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.True(host.ContainsRenderedText("チャプター名"));
         Assert.Contains(
             settings.Languages,
-            language => language.CultureName == "en-US" && language.DisplayName == "英語");
+            language => language is { CultureName: "en-US", DisplayName: "英語" });
         Assert.Equal("en-US", host.AppSettingsStore.Current.Language);
     }
 

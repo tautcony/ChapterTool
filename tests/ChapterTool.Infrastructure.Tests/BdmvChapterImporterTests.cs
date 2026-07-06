@@ -52,7 +52,7 @@ public sealed class BdmvChapterImporterTests
         Assert.False(runner.Requests[1].CreateNoWindow);
         Assert.Equal(2, runner.Requests.Count);
         Assert.False(File.Exists(runner.ExportedPaths.Single()));
-        Assert.Contains(progressValues, value => value > 0 && value < 1);
+        Assert.Contains(progressValues, value => value is > 0 and < 1);
     }
 
     [Fact]

@@ -24,7 +24,7 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
         Assert.Equal("Keep original", ChapterNameModeSelectionText(host));
         Assert.Equal("Loaded 1 chapters", host.ViewModel.StatusText);
         var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
-        host.ViewModel.SaveFormat = ChapterTool.Core.Exporting.ChapterExportFormat.Xml;
+        host.ViewModel.SaveFormat = Core.Exporting.ChapterExportFormat.Xml;
         xmlLanguageBox.SelectedIndex = host.ViewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         await host.LayoutAsync();
         Assert.Equal("jpn（Japanese）", xmlLanguageBox.SelectionBoxItem?.ToString());

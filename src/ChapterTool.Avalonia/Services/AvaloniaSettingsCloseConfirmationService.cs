@@ -75,7 +75,7 @@ public sealed class AvaloniaSettingsCloseConfirmationService(IAppLocalizer local
             }
         };
         Grid.SetRow(message, 0);
-        Grid.SetRow((Control)((Grid)dialog.Content).Children[1], 1);
+        Grid.SetRow(((Grid)dialog.Content).Children[1], 1);
 
         var result = await dialog.ShowDialog<SettingsCloseAction?>(owner);
         cancellationToken.ThrowIfCancellationRequested();

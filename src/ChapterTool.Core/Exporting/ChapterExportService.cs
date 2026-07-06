@@ -112,7 +112,7 @@ public sealed class ChapterExportService(
                     .ToString(CultureInfo.InvariantCulture) + " I"));
     }
 
-    private ChapterExportResult Celltimes(ChapterInfo info)
+    private static ChapterExportResult Celltimes(ChapterInfo info)
     {
         var conversion = ChapterConversionService.ToCelltimes(info, (decimal)info.FramesPerSecond);
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);

@@ -95,10 +95,10 @@ public sealed partial class TextToolView : UserControl
         ContentText.FontSize = fontSize;
         ContentText.LineHeight = lineHeight;
         ContentText.TextWrapping = TextWrapping.NoWrap;
-        ContentText.Padding = new global::Avalonia.Thickness(8, 0, 12, 0);
+        ContentText.Padding = new Thickness(8, 0, 12, 0);
         ContentText.Inlines ??= [];
 
-        LineNumbersHost.Margin = new global::Avalonia.Thickness(0, 0, 0, 0);
+        LineNumbersHost.Margin = new Thickness(0, 0, 0, 0);
 
         var inlines = ContentText.Inlines;
         for (var i = 0; i < lines.Count; i++)
@@ -125,7 +125,7 @@ public sealed partial class TextToolView : UserControl
                 LineHeight = lineHeight,
                 Height = lineHeight,
                 TextWrapping = TextWrapping.NoWrap,
-                Padding = new global::Avalonia.Thickness(10, 0, 8, 0),
+                Padding = new Thickness(10, 0, 8, 0),
                 Text = $"{line.Number,4}",
                 Foreground = Brush("#8a94a6")
             };

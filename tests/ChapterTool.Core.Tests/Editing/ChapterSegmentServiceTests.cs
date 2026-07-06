@@ -60,7 +60,7 @@ public sealed class ChapterSegmentServiceTests
             "b",
             [new ChapterSourceOption("b", "b", Info("MPLS", TimeSpan.FromSeconds(10), new Chapter(1, TimeSpan.Zero, "B")))]);
 
-        var result = new ChapterSegmentService().Append(existing, appended);
+        var result = ChapterSegmentService.Append(existing, appended);
 
         Assert.Empty(result.Diagnostics);
         Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(20)], result.ChapterInfo.Chapters.Select(chapter => chapter.Time));
@@ -77,7 +77,7 @@ public sealed class ChapterSegmentServiceTests
             "b",
             [new ChapterSourceOption("b", "b", Info("DVD", TimeSpan.FromSeconds(10), new Chapter(1, TimeSpan.Zero, "B")))]);
 
-        var result = new ChapterSegmentService().Append(existing, appended);
+        var result = ChapterSegmentService.Append(existing, appended);
 
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedAppendSource");
     }

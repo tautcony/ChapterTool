@@ -41,7 +41,7 @@ public sealed class ChapterSegmentService
         return new ChapterEditResult(info, []);
     }
 
-    public ChapterEditResult Append(ChapterInfoGroup existing, ChapterInfoGroup appended)
+    public static ChapterEditResult Append(ChapterInfoGroup existing, ChapterInfoGroup appended)
     {
         if (existing.Options.Count == 0 || appended.Options.Count == 0)
         {
@@ -53,10 +53,7 @@ public sealed class ChapterSegmentService
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedAppendSource", "Only MPLS chapter groups can be appended.")]);
         }
 
-        var combined = new ChapterInfoGroup(
-            existing.SourcePath,
-            existing.Options.Concat(appended.Options).ToList(),
-            existing.DefaultOptionIndex);
+        var combined = existing with { Options = existing.Options.Concat(appended.Options).ToList() };
         return Combine(combined);
     }
 

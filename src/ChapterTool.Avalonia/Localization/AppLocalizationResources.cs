@@ -27,7 +27,7 @@ public static class AppLocalizationResources
         var values = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (DictionaryEntry entry in resourceSet)
         {
-            if (entry.Key is string key && entry.Value is string value)
+            if (entry is { Key: string key, Value: string value })
             {
                 values[key] = value;
             }

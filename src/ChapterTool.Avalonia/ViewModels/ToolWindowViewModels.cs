@@ -335,17 +335,15 @@ public sealed class TextToolFormatSelector(MainWindowViewModel owner)
         ChapterExportFormat.Chapter2Qpfile
     ];
 
-    private int selectedIndex = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Length - 1);
-
     private MainWindowViewModel Owner { get; } = owner;
 
     public IReadOnlyList<string> Labels { get; } = Formats.Select(ChapterExportFormatDisplay.LabelFor).ToArray();
 
     public int SelectedIndex
     {
-        get => selectedIndex;
-        set => selectedIndex = Math.Clamp(value, 0, Formats.Length - 1);
-    }
+        get;
+        set => field = Math.Clamp(value, 0, Formats.Length - 1);
+    } = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Length - 1);
 
     public TextToolKind Kind => KindFor(Formats[SelectedIndex]);
 
@@ -532,7 +530,7 @@ public sealed class ColorSlotViewModel(string name, string value) : ObservableVi
         if (!string.IsNullOrWhiteSpace(value))
         {
             var text = value.Trim();
-            if (text.Length == 7 && text[0] == '#' && text.Skip(1).All(Uri.IsHexDigit))
+            if (text is ['#', _, _, _, _, _, _] && text.Skip(1).All(Uri.IsHexDigit))
             {
                 color = Color.Parse(text);
                 return true;
