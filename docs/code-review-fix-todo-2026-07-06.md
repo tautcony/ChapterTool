@@ -24,7 +24,7 @@ Source report: `docs/code-review-2026-07-06.md`
 - [x] Remove the Infrastructure dependency from Core tests.
 - [x] Validate external tools as executables, not just existing files.
 - [x] Preserve and surface corrupt settings files instead of silently resetting.
-- [ ] Return or log shell service failures instead of swallowing them.
+- [x] Return or log shell service failures instead of swallowing them.
 - [ ] Clarify whether `FfmpegPath` means ffmpeg or ffprobe directory and validate accordingly.
 - [ ] Localize native file picker titles and file type labels.
 - [ ] Add accessible names for icon-only buttons.

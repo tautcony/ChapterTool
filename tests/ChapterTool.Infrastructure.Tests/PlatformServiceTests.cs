@@ -1,5 +1,6 @@
 using ChapterTool.Core.Services;
 using ChapterTool.Infrastructure.Platform;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Infrastructure.Tests;
 
@@ -92,6 +93,20 @@ public sealed class PlatformServiceTests
     }
 
     [Fact]
+    public async Task Shell_service_logs_reveal_failures()
+    {
+        var logger = new RecordingLogger<ShellService>();
+        var service = new ShellService(logger, _ => throw new InvalidOperationException("launcher unavailable"));
+
+        await service.RevealInFolderAsync("missing.mkv", TestContext.Current.CancellationToken);
+
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.IsType<InvalidOperationException>(entry.Exception);
+        Assert.Contains("missing.mkv", entry.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public void Windows_file_association_builds_open_command_with_file_placeholder()
     {
@@ -99,4 +114,27 @@ public sealed class PlatformServiceTests
 
         Assert.Equal("\"C:\\Program Files\\ChapterTool\\ChapterTool.exe\" \"%1\"", command);
     }
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull =>
+            null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Add(new LogEntry(logLevel, formatter(state, exception), exception));
+        }
+    }
+
+    private sealed record LogEntry(LogLevel Level, string Message, Exception? Exception);
 }
