@@ -106,7 +106,7 @@ public sealed class AppCompositionRoot : IDisposable
             themeSettingsStore,
             themeApplicationService,
             localizationManager,
-            owner => new AvaloniaSettingsPickerService(owner),
+            owner => new AvaloniaSettingsPickerService(owner, localizationManager),
             CreateExternalToolLocator(),
             new AvaloniaSettingsCloseConfirmationService(localizationManager),
             shellService: CreateShellService());
@@ -125,7 +125,7 @@ public sealed class AppCompositionRoot : IDisposable
         return new UnsupportedFileAssociationService();
     }
 
-    public static IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner);
+    public IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner, localizationManager);
 
     public IExternalToolLocator CreateExternalToolLocator() =>
         new ExternalToolLocator(appSettingsStore, PathSearchDirectories().ToList());
