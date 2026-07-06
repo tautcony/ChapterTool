@@ -1,0 +1,40 @@
+# Code Review Fix TODO - 2026-07-06
+
+Source report: `docs/code-review-2026-07-06.md`
+
+## Rules
+
+- Fix one issue at a time.
+- Run focused tests after each fix.
+- Commit each completed fix separately.
+- Do not include unrelated working tree changes, especially the pre-existing `scripts/publish.sh` modification.
+
+## High Priority
+
+- [ ] Fix WebVTT import so cue end times and duration are preserved.
+- [ ] Remove command-string path interpolation from `ShellService.OpenTerminalAsync`.
+- [ ] Complete or safely hide the file association service/command surface.
+- [ ] Prevent preview from opening as an empty stub when no chapters are loaded.
+
+## Medium Priority
+
+- [ ] Remove the fake injectable parser from `CueChapterImporter`.
+- [ ] Remove fake async behavior from `IfoChapterImporter` and handle `request.Content` consistently.
+- [ ] Remove the Infrastructure dependency from Core tests.
+- [ ] Validate external tools as executables, not just existing files.
+- [ ] Preserve and surface corrupt settings files instead of silently resetting.
+- [ ] Return or log shell service failures instead of swallowing them.
+- [ ] Clarify whether `FfmpegPath` means ffmpeg or ffprobe directory and validate accordingly.
+- [ ] Localize native file picker titles and file type labels.
+- [ ] Add accessible names for icon-only buttons.
+- [ ] Refactor BDMV parsing so stdout is not passed through diagnostics.
+
+## Low Priority
+
+- [ ] Move production test-double services out of Infrastructure or mark them test-only.
+- [ ] Replace fixed `Task.Delay` in `UiCommandTests`.
+- [ ] Remove sync-over-async from Matroska integration setup.
+- [ ] Strengthen screenshot tests with layout/content assertions.
+- [ ] Handle quoted MKVToolNix `DisplayIcon` registry values.
+- [ ] Hide eac3to export process windows unless visibility is required.
+
