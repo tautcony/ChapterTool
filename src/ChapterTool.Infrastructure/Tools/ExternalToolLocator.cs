@@ -34,7 +34,7 @@ public sealed class ExternalToolLocator(
 
         foreach (var candidate in ExternalToolPathResolver.ExpandConfiguredCandidates(configuredPath, executableName))
         {
-            if (File.Exists(candidate))
+            if (IsExecutableCandidate(candidate, executableName))
             {
                 return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
@@ -43,7 +43,7 @@ public sealed class ExternalToolLocator(
         foreach (var directory in searchDirectories ?? [])
         {
             var candidate = Path.Combine(directory, executableName);
-            if (File.Exists(candidate))
+            if (IsExecutableCandidate(candidate, executableName))
             {
                 return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
@@ -52,7 +52,7 @@ public sealed class ExternalToolLocator(
         foreach (var candidate in defaultCandidateProvider.FindCandidates(toolId, executableName))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (File.Exists(candidate))
+            if (IsExecutableCandidate(candidate, executableName))
             {
                 return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
@@ -63,7 +63,7 @@ public sealed class ExternalToolLocator(
             foreach (var candidate in mkvToolNixInstallProbe.FindMkvExtractCandidates(executableName))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (File.Exists(candidate))
+                if (IsExecutableCandidate(candidate, executableName))
                 {
                     return Cache(cacheKey, new ExternalToolLocation(true, candidate));
                 }
@@ -86,6 +86,39 @@ public sealed class ExternalToolLocator(
             _ => null
         };
 
+    private static bool IsExecutableCandidate(string path, string executableName)
+    {
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            return Path.GetFileName(path).Equals(executableName, StringComparison.OrdinalIgnoreCase)
+                || Path.GetExtension(path).Equals(".exe", StringComparison.OrdinalIgnoreCase);
+        }
+
+        try
+        {
+            var mode = File.GetUnixFileMode(path);
+            const UnixFileMode executeBits = UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+            return (mode & executeBits) != 0;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (PlatformNotSupportedException)
+        {
+            return true;
+        }
+    }
+
     private ExternalToolLocation? TryGetCachedLocation(ToolCacheKey key)
     {
         lock (cacheSyncRoot)
@@ -97,7 +130,8 @@ public sealed class ExternalToolLocator(
 
             if (cached.Location.Found)
             {
-                if (!string.IsNullOrWhiteSpace(cached.Location.Path) && File.Exists(cached.Location.Path))
+                var executableName = ExternalToolPathResolver.ExecutableName(key.ToolId);
+                if (!string.IsNullOrWhiteSpace(cached.Location.Path) && IsExecutableCandidate(cached.Location.Path, executableName))
                 {
                     return cached.Location;
                 }
