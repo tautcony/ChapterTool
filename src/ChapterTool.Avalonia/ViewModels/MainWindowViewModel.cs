@@ -152,7 +152,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         LanguageCommand = WindowCommand("language");
         ExpressionCommand = WindowCommand("expression");
         TemplateNamesCommand = WindowCommand("template-names");
-        FileAssociationCommand = WindowCommand("file-association");
         ZonesCommand = WindowCommand("zones");
         ForwardShiftCommand = WindowCommand("forward-shift");
         OpenRelatedMediaCommand = new UiCommand(async (parameter, token) => await OpenRelatedMediaAsync(parameter, token), _ => RelatedMediaReferences.Count > 0);
@@ -540,7 +539,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public UiCommand LanguageCommand { get; }
     public UiCommand ExpressionCommand { get; }
     public UiCommand TemplateNamesCommand { get; }
-    public UiCommand FileAssociationCommand { get; }
     public UiCommand ZonesCommand { get; }
     public UiCommand ForwardShiftCommand { get; }
     public UiCommand OpenRelatedMediaCommand { get; }
@@ -1268,7 +1266,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         LanguageCommand.RaiseCanExecuteChanged();
         ExpressionCommand.RaiseCanExecuteChanged();
         TemplateNamesCommand.RaiseCanExecuteChanged();
-        FileAssociationCommand.RaiseCanExecuteChanged();
         ZonesCommand.RaiseCanExecuteChanged();
         ForwardShiftCommand.RaiseCanExecuteChanged();
     }

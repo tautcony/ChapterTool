@@ -308,9 +308,6 @@
 <data name="Diagnostic.UnsupportedExportFormat" xml:space="preserve">
     <value>不受支持的导出格式。</value>
   </data>
-<data name="Diagnostic.UnsupportedPlatform" xml:space="preserve">
-    <value>此平台不支持提权操作。</value>
-  </data>
 <data name="Diagnostic.UnsupportedSource" xml:space="preserve">
     <value>不受支持的来源扩展名：{extension}</value>
   </data>
@@ -575,9 +572,6 @@
 <data name="Operation.Save" xml:space="preserve">
     <value>保存</value>
   </data>
-<data name="Prompt.FileAssociationUnsupported" xml:space="preserve">
-    <value>此构建未启用文件关联注册。</value>
-  </data>
 <data name="Settings.Appearance" xml:space="preserve">
     <value>外观</value>
   </data>
@@ -619,9 +613,6 @@
   </data>
 <data name="Settings.OutputDefaults" xml:space="preserve">
     <value>输出默认值</value>
-  </data>
-<data name="Settings.Platform" xml:space="preserve">
-    <value>平台集成</value>
   </data>
 <data name="Settings.ResetDefaults" xml:space="preserve">
     <value>恢复默认</value>
@@ -745,9 +736,6 @@
   </data>
 <data name="Tool.Expression.Title" xml:space="preserve">
     <value>表达式</value>
-  </data>
-<data name="Tool.FileAssociation.Title" xml:space="preserve">
-    <value>文件关联</value>
   </data>
 <data name="Tool.ForwardShift.Title" xml:space="preserve">
     <value>前移帧</value>

@@ -114,6 +114,16 @@ public sealed class AppCompositionRoot : IDisposable
 
     public static IShellService CreateShellService() => new ShellService();
 
+    public static IFileAssociationService CreateFileAssociationService()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new WindowsFileAssociationService();
+        }
+
+        return new UnsupportedFileAssociationService();
+    }
+
     public static IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner);
 
     public IExternalToolLocator CreateExternalToolLocator() =>

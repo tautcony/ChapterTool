@@ -21,12 +21,28 @@ public sealed class PlatformServiceTests
     }
 
     [Fact]
-    public async Task Non_windows_privilege_service_reports_unsupported_elevation()
+    public async Task Non_windows_file_association_unregister_reports_unsupported()
     {
-        var service = new UnsupportedPrivilegeService();
+        var service = new UnsupportedFileAssociationService();
 
-        Assert.False(service.IsAdministrator);
-        var result = await service.RequestElevationAsync("register-mpls", TestContext.Current.CancellationToken);
+        var result = await service.UnregisterAsync(
+            ".mpls",
+            "ChapterTool.MPLS",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
+    }
+
+    [Fact]
+    public async Task Non_windows_file_association_is_registered_reports_unsupported()
+    {
+        var service = new UnsupportedFileAssociationService();
+
+        var result = await service.IsRegisteredAsync(
+            ".mpls",
+            "ChapterTool.MPLS",
+            TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
         Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
@@ -61,15 +77,5 @@ public sealed class PlatformServiceTests
         await windows.ShowAsync("preview", "text", TestContext.Current.CancellationToken);
         await windows.HideAsync("preview", TestContext.Current.CancellationToken);
         Assert.Equal(["show:preview", "hide:preview"], windows.Calls);
-    }
-
-    [Fact]
-    public void Platform_feature_service_gates_windows_features()
-    {
-        var features = new PlatformFeatureService();
-
-        Assert.Equal(OperatingSystem.IsWindows(), features.IsWindows);
-        Assert.Equal(OperatingSystem.IsWindows(), features.SupportsFileAssociation);
-        Assert.Equal(OperatingSystem.IsWindows(), features.SupportsPrivilegeElevation);
     }
 }

@@ -7,4 +7,14 @@ public interface IFileAssociationService
         string progId,
         string description,
         CancellationToken cancellationToken);
+
+    ValueTask<FileAssociationResult> UnregisterAsync(
+        string extension,
+        string progId,
+        CancellationToken cancellationToken);
+
+    ValueTask<FileAssociationResult> IsRegisteredAsync(
+        string extension,
+        string progId,
+        CancellationToken cancellationToken);
 }

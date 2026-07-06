@@ -167,7 +167,6 @@ public sealed class AvaloniaWindowService : IWindowService
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
             "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel) },
             "template-names" => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(viewModel) },
-            "file-association" => Placeholder(PlaceholderText(id)),
             "zones" => new TextToolView { DataContext = new TextToolViewModel(viewModel.CreateZonesText) },
             "forward-shift" => new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(viewModel) },
             _ => Placeholder(PlaceholderText(id))
@@ -191,16 +190,11 @@ public sealed class AvaloniaWindowService : IWindowService
         "language" => localizer.GetString("Tool.Language.Title"),
         "expression" => localizer.GetString("Tool.Expression.Title"),
         "template-names" => localizer.GetString("Tool.TemplateNames.Title"),
-        "file-association" => localizer.GetString("Tool.FileAssociation.Title"),
         "zones" => localizer.GetString("Tool.Zones.Title"),
         "forward-shift" => localizer.GetString("Tool.ForwardShift.Title"),
         _ => id
     };
 
-    private string PlaceholderText(string id) => id switch
-    {
-        "file-association" => localizer.GetString("Prompt.FileAssociationUnsupported"),
-        _ => Title(id)
-    };
+    private string PlaceholderText(string id) => Title(id);
 
 }

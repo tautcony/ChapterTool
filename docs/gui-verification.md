@@ -14,7 +14,7 @@ Stable automation ids currently exposed by `MainWindow.axaml`:
 - `ClipSelectionPanel`, `ClipSelector`, `CombineButton`, `AppendMplsButton`
 - `AdvancedOptions`, `XmlLanguage`, `AutoNames`, `ExpressionText`, `ApplyExpression`, `OrderShift`, `TemplateNames`, `RefreshRows`
 - `ChapterGrid`
-- `PreviewWindow`, `LogWindow`, `ColorSettingsWindow`, `LanguageWindow`, `ExpressionWindow`, `TemplateNamesWindow`, `FileAssociationWindow`, `ZonesWindow`, `ForwardShiftWindow`
+- `PreviewWindow`, `LogWindow`, `ColorSettingsWindow`, `LanguageWindow`, `ExpressionWindow`, `TemplateNamesWindow`, `ZonesWindow`, `ForwardShiftWindow`
 
 Run:
 

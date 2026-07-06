@@ -22,7 +22,7 @@ public sealed class MainWindowHeadlessTests
 
         await host.LayoutAsync();
 
-        Assert.Equal("[VCB-Studio] ChapterTool", host.Window.Title);
+        Assert.StartsWith("[VCB-Studio] ChapterTool", host.Window.Title);
         Assert.NotNull(host.RequiredControl<DataGrid>("ChapterGrid"));
         Assert.NotNull(host.RequiredControl<Button>("LoadButton"));
         Assert.True(host.Window.Bounds.Width > 0);

@@ -389,10 +389,24 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeShellService : IShellService
     {
         public List<string> Opened { get; } = [];
+        public List<string> RevealedInFolder { get; } = [];
+        public List<string> TerminalsOpened { get; } = [];
 
         public ValueTask OpenAsync(string target, CancellationToken cancellationToken)
         {
             Opened.Add(target);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask RevealInFolderAsync(string filePath, CancellationToken cancellationToken)
+        {
+            RevealedInFolder.Add(filePath);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask OpenTerminalAsync(string directoryPath, CancellationToken cancellationToken)
+        {
+            TerminalsOpened.Add(directoryPath);
             return ValueTask.CompletedTask;
         }
     }

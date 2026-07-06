@@ -278,7 +278,6 @@ public sealed class ToolViewsHeadlessTests
 
             Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "Output Defaults"));
             Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "Appearance"));
-            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(window, "Platform"));
             Assert.Contains(MainWindowHeadlessTestHost.Descendants<TextBox>(window), textBox => textBox.Text == viewModel.SaveDirectory);
             Assert.Contains(MainWindowHeadlessTestHost.Descendants<ComboBox>(window), comboBox => Equals(comboBox.ItemsSource, viewModel.Languages));
             Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.SaveCommand);

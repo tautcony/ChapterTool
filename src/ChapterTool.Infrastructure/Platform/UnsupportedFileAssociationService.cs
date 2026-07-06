@@ -12,9 +12,30 @@ public sealed class UnsupportedFileAssociationService : IFileAssociationService
     {
         return ValueTask.FromResult(new FileAssociationResult(
             false,
-            [Unsupported("File association is not supported on this platform.")]));
+            [Unsupported()]));
     }
 
-    private static ChapterDiagnostic Unsupported(string message) =>
-        new(DiagnosticSeverity.Warning, "UnsupportedPlatform", message);
+    public ValueTask<FileAssociationResult> UnregisterAsync(
+        string extension,
+        string progId,
+        CancellationToken cancellationToken)
+    {
+        return ValueTask.FromResult(new FileAssociationResult(
+            false,
+            [Unsupported()]));
+    }
+
+    public ValueTask<FileAssociationResult> IsRegisteredAsync(
+        string extension,
+        string progId,
+        CancellationToken cancellationToken)
+    {
+        return ValueTask.FromResult(new FileAssociationResult(
+            false,
+            [Unsupported()]));
+    }
+
+    private static ChapterDiagnostic Unsupported() =>
+        new(DiagnosticSeverity.Warning, "UnsupportedPlatform",
+            "File association is not supported on this platform.");
 }

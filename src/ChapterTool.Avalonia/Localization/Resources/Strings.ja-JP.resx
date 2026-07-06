@@ -308,9 +308,6 @@
 <data name="Diagnostic.UnsupportedExportFormat" xml:space="preserve">
     <value>サポート対象外のエクスポート形式です。</value>
   </data>
-<data name="Diagnostic.UnsupportedPlatform" xml:space="preserve">
-    <value>このプラットフォームでは権限昇格はサポートされていません。</value>
-  </data>
 <data name="Diagnostic.UnsupportedSource" xml:space="preserve">
     <value>サポート対象外のソース拡張子です: {extension}</value>
   </data>
@@ -575,9 +572,6 @@
 <data name="Operation.Save" xml:space="preserve">
     <value>保存</value>
   </data>
-<data name="Prompt.FileAssociationUnsupported" xml:space="preserve">
-    <value>このビルドでは、ファイル関連付け登録は有効化されていません。</value>
-  </data>
 <data name="Settings.Appearance" xml:space="preserve">
     <value>外観</value>
   </data>
@@ -619,9 +613,6 @@
   </data>
 <data name="Settings.OutputDefaults" xml:space="preserve">
     <value>出力の既定値</value>
-  </data>
-<data name="Settings.Platform" xml:space="preserve">
-    <value>プラットフォーム</value>
   </data>
 <data name="Settings.ResetDefaults" xml:space="preserve">
     <value>既定値に戻す</value>
@@ -745,9 +736,6 @@
   </data>
 <data name="Tool.Expression.Title" xml:space="preserve">
     <value>式</value>
-  </data>
-<data name="Tool.FileAssociation.Title" xml:space="preserve">
-    <value>ファイル関連付け</value>
   </data>
 <data name="Tool.ForwardShift.Title" xml:space="preserve">
     <value>前方シフト</value>
