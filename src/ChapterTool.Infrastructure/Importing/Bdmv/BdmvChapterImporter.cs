@@ -49,10 +49,10 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         var listResult = await RunAsync(location.Path, ToolWorkingDirectory(location.Path), [request.Path, "-showall"], cancellationToken);
         if (!listResult.Success)
         {
-            return listResult;
+            return ChapterImportResult.Failed([.. listResult.Diagnostics]);
         }
 
-        var candidates = ParsePlaylistList(listResult.Diagnostics.SingleOrDefault()?.Message ?? string.Empty);
+        var candidates = ParsePlaylistList(listResult.Text ?? string.Empty);
         if (candidates.Count == 0)
         {
             return ChapterImportResult.Failed(Error("DependencyOutputUnrecognized", "eac3to playlist output was not recognized."));
@@ -139,26 +139,25 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
     private static void Report(IProgress<ChapterLoadProgress>? progress, double value, string message) =>
         progress?.Report(new ChapterLoadProgress(value, message));
 
-    private async ValueTask<ChapterImportResult> RunAsync(string executable, string? workingDirectory, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
+    private async ValueTask<ProcessTextResult> RunAsync(string executable, string? workingDirectory, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
         var result = await processRunner.RunAsync(new ProcessRunRequest(executable, arguments, workingDirectory, TimeSpan.FromSeconds(60)), cancellationToken);
         if (result.Cancelled)
         {
-            return ChapterImportResult.Failed(Error("DependencyExecutionCancelled", "eac3to was cancelled."));
+            return ProcessTextResult.Failed(Error("DependencyExecutionCancelled", "eac3to was cancelled."));
         }
 
         if (result.TimedOut)
         {
-            return ChapterImportResult.Failed(Error("DependencyExecutionTimedOut", "eac3to timed out."));
+            return ProcessTextResult.Failed(Error("DependencyExecutionTimedOut", "eac3to timed out."));
         }
 
         if (result.ExitCode is not 0 || (string.IsNullOrWhiteSpace(result.StandardOutput) && !string.IsNullOrWhiteSpace(result.StandardError)))
         {
-            return ChapterImportResult.Failed(Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
+            return ProcessTextResult.Failed(Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
         }
 
-        return new ChapterImportResult(true, [], [new ChapterDiagnostic(DiagnosticSeverity.Info, "Stdout", result.StandardOutput,
-            Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["output"] = result.StandardOutput })]);
+        return ProcessTextResult.Succeeded(result.StandardOutput);
     }
 
     private async ValueTask<ChapterExportResult> ExportChaptersAsync(string executable, string bdmvRoot, int titleIndex, CancellationToken cancellationToken)
@@ -337,6 +336,13 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
     private sealed record PlaylistCandidate(int Index, string MplsName, string SourceName, TimeSpan Duration, bool HasChapters);
 
     private sealed record ChapterExportResult(bool Success, string? Text, IReadOnlyList<ChapterDiagnostic> Diagnostics);
+
+    private sealed record ProcessTextResult(bool Success, string? Text, IReadOnlyList<ChapterDiagnostic> Diagnostics)
+    {
+        public static ProcessTextResult Succeeded(string text) => new(true, text, []);
+
+        public static ProcessTextResult Failed(params ChapterDiagnostic[] diagnostics) => new(false, null, diagnostics);
+    }
 
     [GeneratedRegex(@"^\s*\d+\)\s+")]
     private static partial Regex PlaylistHeaderRegex();
