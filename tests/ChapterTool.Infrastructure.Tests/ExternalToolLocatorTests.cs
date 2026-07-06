@@ -351,13 +351,15 @@ public sealed class ExternalToolLocatorTests
         var expectedToolPath = Path.Combine(installDirectory, ToolExecutable("mkvextract"));
         CreateToolFile(expectedToolPath);
         var displayIcon = Path.Combine(installDirectory, OperatingSystem.IsWindows() ? "mkvtoolnix-gui.exe,0" : "mkvtoolnix-gui,0");
+        var quotedDisplayIcon = $"\"{Path.Combine(installDirectory, "mkvtoolnix-gui.exe")}\",0";
         var probe = new WindowsMkvToolNixInstallProbe(
-            new FakeWindowsRegistryInstallProbe([installDirectory, displayIcon]),
+            new FakeWindowsRegistryInstallProbe([installDirectory, displayIcon, quotedDisplayIcon]),
             enabled: true);
 
         var candidates = probe.FindMkvExtractCandidates(ToolExecutable("mkvextract")).ToArray();
 
         Assert.Contains(expectedToolPath, candidates);
+        Assert.Equal(3, candidates.Count(candidate => string.Equals(candidate, expectedToolPath, StringComparison.OrdinalIgnoreCase)));
     }
 
     [Fact]
