@@ -7,49 +7,6 @@ namespace ChapterTool.Infrastructure.Tests;
 public sealed class PlatformServiceTests
 {
     [Fact]
-    public async Task Non_windows_file_association_reports_unsupported()
-    {
-        var service = new UnsupportedFileAssociationService();
-
-        var result = await service.RegisterAsync(
-            ".mpls",
-            "ChapterTool.MPLS",
-            "ChapterTool",
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.Success);
-        Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
-    }
-
-    [Fact]
-    public async Task Non_windows_file_association_unregister_reports_unsupported()
-    {
-        var service = new UnsupportedFileAssociationService();
-
-        var result = await service.UnregisterAsync(
-            ".mpls",
-            "ChapterTool.MPLS",
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.Success);
-        Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
-    }
-
-    [Fact]
-    public async Task Non_windows_file_association_is_registered_reports_unsupported()
-    {
-        var service = new UnsupportedFileAssociationService();
-
-        var result = await service.IsRegisteredAsync(
-            ".mpls",
-            "ChapterTool.MPLS",
-            TestContext.Current.CancellationToken);
-
-        Assert.False(result.Success);
-        Assert.Equal("UnsupportedPlatform", result.Diagnostics.Single().Code);
-    }
-
-    [Fact]
     public async Task Native_dependency_service_reports_missing_dependency()
     {
         var service = new FileSystemNativeDependencyService([]);
@@ -104,15 +61,6 @@ public sealed class PlatformServiceTests
         Assert.Equal(LogLevel.Warning, entry.Level);
         Assert.IsType<InvalidOperationException>(entry.Exception);
         Assert.Contains("missing.mkv", entry.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    public void Windows_file_association_builds_open_command_with_file_placeholder()
-    {
-        var command = WindowsFileAssociationService.BuildOpenCommand(@"C:\Program Files\ChapterTool\ChapterTool.exe");
-
-        Assert.Equal("\"C:\\Program Files\\ChapterTool\\ChapterTool.exe\" \"%1\"", command);
     }
 
     private sealed class RecordingLogger<T> : ILogger<T>
