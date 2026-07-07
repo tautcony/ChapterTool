@@ -489,36 +489,6 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("picked-executable", viewModel.FfprobePath);
     }
 
-    [Fact]
-    public async Task FileAssociationCommandsUpdateNonPrimarySettingsStatus()
-    {
-        var appStore = new FakeAppSettingsStore(new AppSettings());
-        var association = new FakeFileAssociationService();
-        var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(
-            owner,
-            appStore,
-            new FakeThemeSettingsStore(ThemeColorSettings.Default),
-            new AppLocalizationManager("en-US"),
-            fileAssociationService: association);
-
-        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
-
-        Assert.Equal(".mpls is not registered to ChapterTool", viewModel.FileAssociationStatus);
-
-        await viewModel.RegisterFileAssociationCommand.ExecuteAsync();
-
-        Assert.True(association.Registered);
-        Assert.Equal(".mpls", association.LastExtension);
-        Assert.Equal("ChapterTool.MPLS", association.LastProgId);
-        Assert.Equal(".mpls is registered to ChapterTool", viewModel.FileAssociationStatus);
-
-        await viewModel.UnregisterFileAssociationCommand.ExecuteAsync();
-
-        Assert.False(association.Registered);
-        Assert.Equal(".mpls is not registered to ChapterTool", viewModel.FileAssociationStatus);
-    }
-
     private static SettingsToolViewModel CreateViewModel(
         MainWindowViewModel owner,
         ISettingsStore<AppSettings>? appSettingsStore,
@@ -526,8 +496,7 @@ public sealed class SettingsToolViewModelTests
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
-        IThemeApplicationService? themeApplicationService = null,
-        IFileAssociationService? fileAssociationService = null) =>
+        IThemeApplicationService? themeApplicationService = null) =>
         new(
             owner,
             appSettingsStore,
@@ -536,7 +505,6 @@ public sealed class SettingsToolViewModelTests
             picker,
             externalToolLocator,
             themeApplicationService,
-            fileAssociationService: fileAssociationService,
             autoLoad: false);
 
     private static MainWindowViewModel CreateOwner(
@@ -605,42 +573,6 @@ public sealed class SettingsToolViewModelTests
                 locations.TryGetValue(toolId, out var location)
                     ? location
                     : new ExternalToolLocation(false, null, "MissingDependency", toolId));
-    }
-
-    private sealed class FakeFileAssociationService : IFileAssociationService
-    {
-        public bool Registered { get; private set; }
-
-        public string? LastExtension { get; private set; }
-
-        public string? LastProgId { get; private set; }
-
-        public ValueTask<FileAssociationResult> RegisterAsync(
-            string extension,
-            string progId,
-            string description,
-            CancellationToken cancellationToken)
-        {
-            LastExtension = extension;
-            LastProgId = progId;
-            Registered = true;
-            return ValueTask.FromResult(new FileAssociationResult(true, []));
-        }
-
-        public ValueTask<FileAssociationResult> UnregisterAsync(string extension, string progId, CancellationToken cancellationToken)
-        {
-            LastExtension = extension;
-            LastProgId = progId;
-            Registered = false;
-            return ValueTask.FromResult(new FileAssociationResult(true, []));
-        }
-
-        public ValueTask<FileAssociationResult> IsRegisteredAsync(string extension, string progId, CancellationToken cancellationToken)
-        {
-            LastExtension = extension;
-            LastProgId = progId;
-            return ValueTask.FromResult(new FileAssociationResult(Registered, []));
-        }
     }
 
     private sealed class FakeLoadService : IChapterLoadService

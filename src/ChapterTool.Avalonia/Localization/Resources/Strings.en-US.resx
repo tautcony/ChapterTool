@@ -635,27 +635,6 @@
 <data name="Settings.ExternalTools" xml:space="preserve">
     <value>External Tools</value>
   </data>
-<data name="Settings.FileAssociation" xml:space="preserve">
-    <value>File Association</value>
-  </data>
-<data name="Settings.FileAssociation.Description" xml:space="preserve">
-    <value>Register .mpls playlists to open with ChapterTool. This is a platform integration and is kept out of the primary workflow controls.</value>
-  </data>
-<data name="Settings.FileAssociation.Register" xml:space="preserve">
-    <value>Register .mpls</value>
-  </data>
-<data name="Settings.FileAssociation.Status.NotRegistered" xml:space="preserve">
-    <value>.mpls is not registered to ChapterTool</value>
-  </data>
-<data name="Settings.FileAssociation.Status.Registered" xml:space="preserve">
-    <value>.mpls is registered to ChapterTool</value>
-  </data>
-<data name="Settings.FileAssociation.Status.Unsupported" xml:space="preserve">
-    <value>File association is not supported on this platform</value>
-  </data>
-<data name="Settings.FileAssociation.Unregister" xml:space="preserve">
-    <value>Unregister</value>
-  </data>
 <data name="Settings.FfmpegPath" xml:space="preserve">
     <value>FFmpeg bin directory (contains ffprobe)</value>
   </data>
