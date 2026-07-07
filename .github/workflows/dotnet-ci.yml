@@ -34,14 +34,20 @@ jobs:
   publish:
     needs: build-test
     name: Publish (${{ matrix.runtime }})
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        runtime:
-          - win-x64
-          - linux-x64
-          - osx-arm64
+        include:
+          - runtime: win-x64
+            os: ubuntu-24.04
+            artifact-path: artifacts/publish/framework-dependent/win-x64
+          - runtime: linux-x64
+            os: ubuntu-24.04
+            artifact-path: artifacts/publish/framework-dependent/linux-x64
+          - runtime: osx-arm64
+            os: macos-latest
+            artifact-path: artifacts/publish/framework-dependent/osx-arm64/*.dmg
 
     steps:
       - name: Checkout
@@ -62,5 +68,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ChapterTool-Avalonia-${{ matrix.runtime }}
-          path: artifacts/publish/framework-dependent/${{ matrix.runtime }}
+          path: ${{ matrix.artifact-path }}
           if-no-files-found: error

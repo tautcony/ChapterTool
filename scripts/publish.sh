@@ -5,7 +5,7 @@
 #   ./scripts/publish.sh                                      # win-x64, framework-dependent
 #   ./scripts/publish.sh -Runtime osx-arm64
 #   ./scripts/publish.sh -Runtime linux-x64 -SelfContained
-#   ./scripts/publish.sh -Runtime osx-arm64 -NoRestore -PublishSingleFile
+#   ./scripts/publish.sh -Runtime osx-arm64 -NoRestore -PublishSingleFile  # creates .app and .dmg on macOS
 set -euo pipefail
 
 # ---- defaults ----
@@ -127,9 +127,10 @@ case "$Runtime" in
       exit 0
     fi
 
-    app_name="ChapterTool.Avalonia"
-    app_bundle="$output/$app_name.app"
-    app_bundle_tmp="$output/.$app_name.app.tmp"
+    executable_name="ChapterTool.Avalonia"
+    app_display_name="ChapterTool"
+    app_bundle="$output/$app_display_name.app"
+    app_bundle_tmp="$output/.$app_display_name.app.tmp"
     contents_dir="$app_bundle_tmp/Contents"
     macos_dir="$contents_dir/MacOS"
     resources_dir="$contents_dir/Resources"
@@ -161,7 +162,7 @@ case "$Runtime" in
     printf 'APPL????' > "$contents_dir/PkgInfo"
 
     # Mark the executable so the bundle is double-clickable.
-    exe_path="$macos_dir/$app_name"
+    exe_path="$macos_dir/$executable_name"
     if [[ ! -f "$exe_path" ]]; then
       echo "ERROR: expected executable '$exe_path' not found" >&2
       exit 1
@@ -177,7 +178,25 @@ case "$Runtime" in
     # Refresh icon cache so Dock picks up the new art immediately during dev.
     touch "$app_bundle"
 
+    dmg_staging="$output/.dmg-staging"
+    dmg_output="$output/$app_display_name-$Runtime.dmg"
+
+    rm -rf "$dmg_staging" "$dmg_output"
+    mkdir -p "$dmg_staging"
+    cp -R "$app_bundle" "$dmg_staging/"
+    ln -s /Applications "$dmg_staging/Applications"
+
+    hdiutil create \
+      -volname "$app_display_name" \
+      -srcfolder "$dmg_staging" \
+      -ov \
+      -format UDZO \
+      "$dmg_output" >/dev/null
+
+    rm -rf "$dmg_staging"
+
     echo "Created macOS app bundle at $app_bundle"
+    echo "Created macOS DMG at $dmg_output"
     ;;
   *)
     echo "Published ChapterTool Avalonia to $output"
