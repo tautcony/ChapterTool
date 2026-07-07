@@ -10,5 +10,7 @@ public sealed record ChapterExportOptions(
     int OrderShift = 0,
     bool ApplyExpression = false,
     string Expression = "t",
+    string LuaExpressionPresetId = "",
+    string LuaExpressionSourceName = "",
     bool EmitBom = true,
     bool ProjectOutput = true);

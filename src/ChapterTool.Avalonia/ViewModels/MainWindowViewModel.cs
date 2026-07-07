@@ -68,7 +68,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         this.windowService = windowService;
         this.formatter = formatter;
         this.frameRateService = frameRateService ?? new FrameRateService();
-        outputProjectionService = new ChapterOutputProjectionService(new ExpressionService());
+        outputProjectionService = new ChapterOutputProjectionService();
         this.logService = logService;
         this.logger = logger;
 
@@ -497,6 +497,18 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
     } = "t";
 
+    public string LuaExpressionPresetId
+    {
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    public string LuaExpressionSourceName
+    {
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
+
     public string? SaveDirectory
     {
         get;
@@ -635,7 +647,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         var projection = CurrentOutputProjection();
         var options = CurrentExportOptionsForProjectedInfo();
-        var result = new ChapterExportService(formatter, new ExpressionService()).Export(projection.Info, options);
+        var result = new ChapterExportService(formatter).Export(projection.Info, options);
         if (!result.Success)
         {
             return string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
@@ -695,7 +707,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             ChapterNameTemplateText: ChapterNameTemplateText,
             OrderShift: OrderShift,
             ApplyExpression: ApplyExpression,
-            Expression: Expression);
+            Expression: Expression,
+            LuaExpressionPresetId: LuaExpressionPresetId,
+            LuaExpressionSourceName: LuaExpressionSourceName);
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {

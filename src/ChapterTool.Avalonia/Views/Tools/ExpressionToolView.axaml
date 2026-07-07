@@ -1,14 +1,58 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:ChapterTool.Avalonia.Views.Controls"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              x:Class="ChapterTool.Avalonia.Views.Tools.ExpressionToolView"
              x:DataType="vm:ExpressionToolViewModel"
              x:CompileBindings="True">
-  <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="{DynamicResource Tool.Expression.Title}" FontSize="18" />
-    <controls:ExpressionEditor Text="{Binding Expression}" Localizer="{Binding Localizer}" />
-    <CheckBox Content="{DynamicResource Tool.Expression.Apply}" IsChecked="{Binding ApplyExpression}" />
-    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
-  </StackPanel>
+  <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="10">
+    <TextBlock Grid.Row="0" Text="{DynamicResource Tool.Expression.Title}" FontSize="18" />
+
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+      <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource Tool.Expression.Preset}" />
+      <ComboBox Grid.Column="1"
+                MinWidth="220"
+                ItemsSource="{Binding Presets}"
+                SelectedIndex="{Binding SelectedPresetIndex}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:LuaExpressionPresetViewModel">
+            <StackPanel>
+              <TextBlock Text="{Binding DisplayName}" />
+              <TextBlock Text="{Binding Description}" FontSize="11" Opacity="0.72" TextWrapping="Wrap" />
+            </StackPanel>
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+    </Grid>
+
+    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <controls:ExpressionEditor Grid.Column="0"
+                                 EditorHeight="112"
+                                 Text="{Binding Expression}"
+                                 Localizer="{Binding Localizer}" />
+      <Button Grid.Column="1"
+              Width="32"
+              Height="28"
+              MinWidth="32"
+              Padding="0"
+              VerticalAlignment="Top"
+              HorizontalContentAlignment="Center"
+              VerticalContentAlignment="Center"
+              ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"
+              IsVisible="{Binding CanBrowseScript}"
+              Command="{Binding BrowseScriptCommand}"
+              i:Attached.Icon="fa-solid fa-file-code" />
+    </Grid>
+
+    <Grid Grid.Row="3" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+      <CheckBox Grid.Column="0" Content="{DynamicResource Tool.Expression.Apply}" IsChecked="{Binding ApplyExpression}" />
+      <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding LuaExpressionSourceName}" TextTrimming="CharacterEllipsis" />
+    </Grid>
+
+    <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">
+      <Button Content="{DynamicResource Common.Apply}" MinWidth="80" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
+      <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
+    </StackPanel>
+  </Grid>
 </UserControl>

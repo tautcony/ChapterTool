@@ -803,4 +803,55 @@
 <data name="Tool.Zones.Title" xml:space="preserve">
     <value>Zones</value>
   </data>
+  <data name="FilePicker.OpenLuaExpressionScript.Title" xml:space="preserve">
+    <value>Lua 式スクリプトを開く</value>
+  </data>
+  <data name="FilePicker.LuaScriptFiles" xml:space="preserve">
+    <value>Lua スクリプト ファイル</value>
+  </data>
+  <data name="Tool.Expression.Preset" xml:space="preserve">
+    <value>プリセット</value>
+  </data>
+  <data name="Tool.Expression.BrowseLuaScript" xml:space="preserve">
+    <value>Lua を参照...</value>
+  </data>
+  <data name="Status.LuaExpressionPresetSelected" xml:space="preserve">
+    <value>Lua プリセットを選択しました: {preset}</value>
+  </data>
+  <data name="Status.LuaExpressionScriptLoaded" xml:space="preserve">
+    <value>Lua スクリプトを読み込みました: {path}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.Lua" xml:space="preserve">
+    <value>Lua 式に失敗しました: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaCompile" xml:space="preserve">
+    <value>Lua 式の構文エラー: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaRuntime" xml:space="preserve">
+    <value>Lua 式の実行時エラー: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaInvalidReturn" xml:space="preserve">
+    <value>Lua 式は有限の数値を返す必要があります。</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaMissingReturn" xml:space="preserve">
+    <value>Lua 式が値を返しませんでした。</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaUnknownToken" xml:space="preserve">
+    <value>不明な Lua トークン: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaCanceled" xml:space="preserve">
+    <value>Lua 式はキャンセルされました。</value>
+  </data>
+  <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
+    <value>Lua 式の構文を確認してください。</value>
+  </data>
+  <data name="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">
+    <value>参照している Lua 変数と関数が存在するか確認してください。</value>
+  </data>
+  <data name="Expression.Suggestion.ReturnNumber" xml:space="preserve">
+    <value>有限の秒数を返してください。</value>
+  </data>
+  <data name="Tool.Expression.LoadLuaScript" xml:space="preserve">
+    <value>Lua 読み込み...</value>
+  </data>
 </root>

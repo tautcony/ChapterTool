@@ -803,4 +803,55 @@
 <data name="Tool.Zones.Title" xml:space="preserve">
     <value>Zones</value>
   </data>
+  <data name="FilePicker.OpenLuaExpressionScript.Title" xml:space="preserve">
+    <value>Open Lua expression script</value>
+  </data>
+  <data name="FilePicker.LuaScriptFiles" xml:space="preserve">
+    <value>Lua script files</value>
+  </data>
+  <data name="Tool.Expression.Preset" xml:space="preserve">
+    <value>Preset</value>
+  </data>
+  <data name="Tool.Expression.BrowseLuaScript" xml:space="preserve">
+    <value>Browse Lua...</value>
+  </data>
+  <data name="Status.LuaExpressionPresetSelected" xml:space="preserve">
+    <value>Lua preset selected: {preset}</value>
+  </data>
+  <data name="Status.LuaExpressionScriptLoaded" xml:space="preserve">
+    <value>Lua script loaded: {path}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.Lua" xml:space="preserve">
+    <value>Lua expression failed: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaCompile" xml:space="preserve">
+    <value>Lua expression syntax error: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaRuntime" xml:space="preserve">
+    <value>Lua expression runtime error: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaInvalidReturn" xml:space="preserve">
+    <value>Lua expression must return a finite number.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaMissingReturn" xml:space="preserve">
+    <value>Lua expression did not return a value.</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaUnknownToken" xml:space="preserve">
+    <value>Unknown Lua token: {message}</value>
+  </data>
+  <data name="Diagnostic.InvalidExpression.LuaCanceled" xml:space="preserve">
+    <value>Lua expression was canceled.</value>
+  </data>
+  <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
+    <value>Check the Lua expression syntax.</value>
+  </data>
+  <data name="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">
+    <value>Check that referenced Lua variables and functions exist.</value>
+  </data>
+  <data name="Expression.Suggestion.ReturnNumber" xml:space="preserve">
+    <value>Return a finite number of seconds.</value>
+  </data>
+  <data name="Tool.Expression.LoadLuaScript" xml:space="preserve">
+    <value>Load Lua...</value>
+  </data>
 </root>

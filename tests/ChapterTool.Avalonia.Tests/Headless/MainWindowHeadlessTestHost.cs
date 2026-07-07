@@ -340,6 +340,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         public string? MplsPath { get; set; }
         public string? ChapterNameTemplatePath { get; set; }
         public string? SaveDirectoryPath { get; set; }
+        public string? LuaExpressionScriptPath { get; set; }
 
         public int SourcePickCount { get; private set; }
         public int SaveDirectoryPickCount { get; private set; }
@@ -353,6 +354,8 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         public ValueTask<string?> PickMplsAsync(CancellationToken cancellationToken) => ValueTask.FromResult(MplsPath);
 
         public ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken) => ValueTask.FromResult(ChapterNameTemplatePath);
+
+        public ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken) => ValueTask.FromResult(LuaExpressionScriptPath);
 
         public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken)
         {

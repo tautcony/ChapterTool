@@ -7,70 +7,98 @@ public sealed class ExpressionAuthoringServiceTests
     private readonly ExpressionAuthoringService service = new();
 
     [Fact]
-    public void Symbols_include_variables_constants_functions_and_operators()
+    public void Symbols_include_lua_globals_helpers_keywords_and_presets()
     {
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "t", Kind: ExpressionTokenKind.Variable });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "fps", Kind: ExpressionTokenKind.Variable });
-        Assert.Contains(service.Symbols, symbol => symbol is { Text: "M_PI", Kind: ExpressionTokenKind.Constant });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "index", Kind: ExpressionTokenKind.Variable });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "count", Kind: ExpressionTokenKind.Variable });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "chapter.time", Kind: ExpressionTokenKind.Variable });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "math.floor", Kind: ExpressionTokenKind.Function, Arity: 1 });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "floor", Kind: ExpressionTokenKind.Function, Arity: 1 });
-        Assert.Contains(service.Symbols, symbol => symbol is { Text: "+", Kind: ExpressionTokenKind.Operator });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "return", Kind: ExpressionTokenKind.Keyword });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "preset", Kind: ExpressionTokenKind.Snippet });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "preset.identity", Kind: ExpressionTokenKind.Snippet });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "preset.round-to-frame", Kind: ExpressionTokenKind.Snippet });
     }
 
     [Fact]
-    public void Analyze_classifies_valid_expression_without_diagnostics()
+    public void Analyze_classifies_valid_lua_shorthand_without_diagnostics()
     {
-        var result = service.Analyze("t + floor(fps / 2)", 4);
+        var result = service.Analyze("t + math.floor(fps / 2)", 10);
 
         Assert.Empty(result.Diagnostics);
         Assert.Contains(result.Spans, span => span is { Text: "t", Kind: ExpressionTokenKind.Variable });
         Assert.Contains(result.Spans, span => span is { Text: "+", Kind: ExpressionTokenKind.Operator });
-        Assert.Contains(result.Spans, span => span is { Text: "floor", Kind: ExpressionTokenKind.Function });
+        Assert.Contains(result.Spans, span => span is { Text: "math.floor", Kind: ExpressionTokenKind.Function });
         Assert.Contains(result.Spans, span => span is { Text: "(", Kind: ExpressionTokenKind.Punctuation });
         Assert.Contains(result.Spans, span => span is { Text: "2", Kind: ExpressionTokenKind.Number });
     }
 
     [Fact]
-    public void Analyze_returns_completion_for_current_prefix()
+    public void Analyze_classifies_transform_function_script()
     {
-        var result = service.Analyze("flo", 3);
-        var completion = Assert.Single(result.Completions, item => item.Text == "floor");
+        var result = service.Analyze("function transform(chapter)\n  return chapter.time + index\nend", 8);
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Contains(result.Spans, span => span is { Text: "function", Kind: ExpressionTokenKind.Keyword });
+        Assert.Contains(result.Spans, span => span is { Text: "chapter", Kind: ExpressionTokenKind.Variable });
+        Assert.Contains(result.Spans, span => span is { Text: "return", Kind: ExpressionTokenKind.Keyword });
+        Assert.Contains(result.Spans, span => span is { Text: "chapter.time", Kind: ExpressionTokenKind.Variable });
+    }
+
+    [Fact]
+    public void Analyze_returns_completion_for_math_member_prefix()
+    {
+        var result = service.Analyze("math.flo", 8);
+        var completion = Assert.Single(result.Completions, item => item.Text == "math.floor");
 
         Assert.Equal(0, completion.ReplacementStart);
-        Assert.Equal(3, completion.ReplacementLength);
-        Assert.Equal("floor()", completion.InsertText);
+        Assert.Equal(8, completion.ReplacementLength);
+        Assert.Equal("math.floor()", completion.InsertText);
         Assert.Empty(result.Diagnostics);
     }
 
     [Fact]
-    public void Analyze_treats_case_insensitive_prefix_as_completion_instead_of_unknown_token()
+    public void Analyze_returns_completion_for_lua_global_prefix()
     {
-        var result = service.Analyze("S", 1);
+        var result = service.Analyze("cha", 3);
 
-        Assert.Contains(result.Completions, item => item.Text == "sin");
-        Assert.Contains(result.Completions, item => item.Text == "sqrt");
-        Assert.Contains(result.Completions, item => item.Text == "sign");
+        Assert.Contains(result.Completions, item => item.Text == "chapter");
+        Assert.Contains(result.Completions, item => item.Text == "chapter.time");
         Assert.Empty(result.Diagnostics);
-        Assert.Contains(result.Spans, span => span is { Text: "S", Kind: ExpressionTokenKind.Function });
     }
 
     [Fact]
-    public void Analyze_sorts_functions_before_variables_and_constants()
+    public void Analyze_returns_preset_snippet_completion()
     {
-        var result = service.Analyze("M_", 2);
+        var result = service.Analyze("preset.", 7);
+        var completion = Assert.Single(result.Completions, item => item.Text == "preset.round-to-frame");
 
-        Assert.All(result.Completions, completion => Assert.Equal(ExpressionTokenKind.Constant, completion.Kind));
+        Assert.Equal(ExpressionTokenKind.Snippet, completion.Kind);
+        Assert.Equal("PRESET", completion.KindLabel);
+        Assert.Contains("fps", completion.InsertText, StringComparison.Ordinal);
+    }
 
-        var mixed = service.Analyze("s", 1).Completions.Take(4).ToList();
-        Assert.All(mixed, completion => Assert.Equal(ExpressionTokenKind.Function, completion.Kind));
+
+    [Fact]
+    public void Analyze_returns_discoverable_preset_namespace_completion()
+    {
+        var result = service.Analyze("pre", 3);
+        var completion = Assert.Single(result.Completions, item => item.Text == "preset");
+
+        Assert.Equal(ExpressionTokenKind.Snippet, completion.Kind);
+        Assert.Equal("preset.", completion.InsertText);
+        Assert.Contains("presets", completion.Description, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Analyze_returns_diagnostic_with_suggestion_for_invalid_expression()
+    public void Analyze_reports_lua_diagnostic_with_suggestion_for_invalid_shorthand()
     {
         var result = service.Analyze("t +", 3);
         var diagnostic = Assert.Single(result.Diagnostics);
 
-        Assert.StartsWith("InvalidExpression.", diagnostic.Diagnostic.Code, StringComparison.Ordinal);
+        Assert.StartsWith("InvalidExpression.Lua", diagnostic.Diagnostic.Code, StringComparison.Ordinal);
         Assert.Equal("Expression.Suggestion.AddOperand", diagnostic.Suggestion.Code);
         Assert.False(string.IsNullOrWhiteSpace(diagnostic.Suggestion.Message));
         Assert.Equal(2, diagnostic.Start);
@@ -78,44 +106,22 @@ public sealed class ExpressionAuthoringServiceTests
     }
 
     [Fact]
-    public void Analyze_reports_missing_right_operand_for_trailing_binary_operator()
+    public void Analyze_reports_lua_runtime_suggestion_for_unknown_function()
     {
-        var result = service.Analyze("2^", 2);
+        var result = service.Analyze("missing(t)", 10);
         var diagnostic = Assert.Single(result.Diagnostics);
 
-        Assert.Equal("InvalidExpression.InsufficientOperands", diagnostic.Diagnostic.Code);
-        Assert.Equal("Expression.Suggestion.AddOperand", diagnostic.Suggestion.Code);
+        Assert.Equal("InvalidExpression.LuaRuntime", diagnostic.Diagnostic.Code);
+        Assert.Equal("Expression.Suggestion.CheckLuaRuntime", diagnostic.Suggestion.Code);
     }
 
-    [Theory]
-    [InlineData("2+", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2-", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2*", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2/", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2%", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2^", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2>", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2<", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2>=", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2<=", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("+", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("-", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2?", "InvalidExpression.TernaryUnmatchedQuestion", "Expression.Suggestion.MatchTernaryColon")]
-    [InlineData("2?3:", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    [InlineData("2?3", "InvalidExpression.TernaryUnmatchedQuestion", "Expression.Suggestion.MatchTernaryColon")]
-    [InlineData("floor(", "InvalidExpression.UnbalancedParentheses", "Expression.Suggestion.BalanceParentheses")]
-    [InlineData("floor()", "InvalidExpression.MissingOperandBeforeParen", "Expression.Suggestion.AddOperandBeforeParen")]
-    [InlineData("floor(2,", "InvalidExpression.MisplacedComma", "Expression.Suggestion.FixComma")]
-    [InlineData("(2+", "InvalidExpression.InsufficientOperands", "Expression.Suggestion.AddOperand")]
-    public void Analyze_reports_specific_suggestion_for_incomplete_expressions(
-        string expression,
-        string expectedCode,
-        string expectedSuggestionCode)
+    [Fact]
+    public void Analyze_reports_return_number_suggestion_for_invalid_return_type()
     {
-        var result = service.Analyze(expression, expression.Length);
+        var result = service.Analyze("return 'bad'", 12);
         var diagnostic = Assert.Single(result.Diagnostics);
 
-        Assert.Equal(expectedCode, diagnostic.Diagnostic.Code);
-        Assert.Equal(expectedSuggestionCode, diagnostic.Suggestion.Code);
+        Assert.Equal("InvalidExpression.LuaInvalidReturn", diagnostic.Diagnostic.Code);
+        Assert.Equal("Expression.Suggestion.ReturnNumber", diagnostic.Suggestion.Code);
     }
 }

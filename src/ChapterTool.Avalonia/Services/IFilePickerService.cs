@@ -8,5 +8,7 @@ public interface IFilePickerService
 
     ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken);
 
+    ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken);
+
     ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken);
 }

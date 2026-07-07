@@ -1,7 +1,9 @@
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
@@ -70,6 +72,26 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.True(host.SaveService.Calls >= 2);
         Assert.Contains("log", host.WindowService.Opened);
         Assert.Contains("preview", host.WindowService.Opened);
+    }
+
+    [AvaloniaFact]
+    public async Task Delete_key_in_expression_editor_does_not_delete_selected_chapter_rows()
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Option("OGM", "movie.txt", "Intro", "Ending")));
+        await host.LoadAsync("movie.txt");
+        host.SelectRows(1);
+
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Text = "time";
+        expressionBox.MoveCaretToEnd();
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        host.Window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, string.Empty);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        Assert.Equal(2, host.ViewModel.Rows.Count);
     }
 
     [AvaloniaFact]

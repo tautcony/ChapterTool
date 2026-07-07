@@ -3,267 +3,258 @@ using ChapterTool.Core.Diagnostics;
 
 namespace ChapterTool.Core.Transform;
 
-public sealed class ExpressionAuthoringService(IExpressionService? expressionService = null) : IExpressionAuthoringService
+public sealed class ExpressionAuthoringService(ILuaExpressionScriptService? luaExpressionService = null) : IExpressionAuthoringService
 {
-    private readonly IExpressionService expressionService = expressionService ?? new ExpressionService();
+    private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
+    {
+        "and", "break", "do", "else", "elseif", "end", "false", "for", "function", "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true", "until", "while"
+    };
 
-    public IReadOnlyList<ExpressionSymbol> Symbols { get; } =
-    [
-        new("t", ExpressionTokenKind.Variable, "Current chapter time in seconds."),
-        new("fps", ExpressionTokenKind.Variable, "Current frame rate."),
-        new("M_E", ExpressionTokenKind.Constant, "Euler's number."),
-        new("M_LOG2E", ExpressionTokenKind.Constant, "Log2(e)."),
-        new("M_LOG10E", ExpressionTokenKind.Constant, "Log10(e)."),
-        new("M_PI", ExpressionTokenKind.Constant, "Pi."),
-        new("M_PI_2", ExpressionTokenKind.Constant, "Pi divided by 2."),
-        new("M_PI_4", ExpressionTokenKind.Constant, "Pi divided by 4."),
-        new("M_1_PI", ExpressionTokenKind.Constant, "1 divided by pi."),
-        new("M_2_PI", ExpressionTokenKind.Constant, "2 divided by pi."),
-        new("M_2_SQRTPI", ExpressionTokenKind.Constant, "2 divided by sqrt(pi)."),
-        new("M_LN2", ExpressionTokenKind.Constant, "Natural log of 2."),
-        new("M_LN10", ExpressionTokenKind.Constant, "Natural log of 10."),
-        new("M_SQRT2", ExpressionTokenKind.Constant, "Square root of 2."),
-        new("M_SQRT1_2", ExpressionTokenKind.Constant, "1 divided by square root of 2."),
-        new("abs", ExpressionTokenKind.Function, "Absolute value.", 1, "abs()"),
-        new("acos", ExpressionTokenKind.Function, "Arc cosine.", 1, "acos()"),
-        new("asin", ExpressionTokenKind.Function, "Arc sine.", 1, "asin()"),
-        new("atan", ExpressionTokenKind.Function, "Arc tangent.", 1, "atan()"),
-        new("atan2", ExpressionTokenKind.Function, "Arc tangent of two values.", 2, "atan2(, )"),
-        new("cos", ExpressionTokenKind.Function, "Cosine.", 1, "cos()"),
-        new("sin", ExpressionTokenKind.Function, "Sine.", 1, "sin()"),
-        new("tan", ExpressionTokenKind.Function, "Tangent.", 1, "tan()"),
-        new("cosh", ExpressionTokenKind.Function, "Hyperbolic cosine.", 1, "cosh()"),
-        new("sinh", ExpressionTokenKind.Function, "Hyperbolic sine.", 1, "sinh()"),
-        new("tanh", ExpressionTokenKind.Function, "Hyperbolic tangent.", 1, "tanh()"),
-        new("exp", ExpressionTokenKind.Function, "e raised to a power.", 1, "exp()"),
-        new("log", ExpressionTokenKind.Function, "Natural logarithm.", 1, "log()"),
-        new("log10", ExpressionTokenKind.Function, "Base-10 logarithm.", 1, "log10()"),
-        new("sqrt", ExpressionTokenKind.Function, "Square root.", 1, "sqrt()"),
-        new("ceil", ExpressionTokenKind.Function, "Round up.", 1, "ceil()"),
-        new("floor", ExpressionTokenKind.Function, "Round down.", 1, "floor()"),
-        new("round", ExpressionTokenKind.Function, "Round to nearest integer.", 1, "round()"),
-        new("int", ExpressionTokenKind.Function, "Truncate to integer.", 1, "int()"),
-        new("sign", ExpressionTokenKind.Function, "Sign of the value.", 1, "sign()"),
-        new("pow", ExpressionTokenKind.Function, "Raise a value to a power.", 2, "pow(, )"),
-        new("max", ExpressionTokenKind.Function, "Larger of two values.", 2, "max(, )"),
-        new("min", ExpressionTokenKind.Function, "Smaller of two values.", 2, "min(, )"),
-        new("+", ExpressionTokenKind.Operator, "Add."),
-        new("-", ExpressionTokenKind.Operator, "Subtract or negate."),
-        new("*", ExpressionTokenKind.Operator, "Multiply."),
-        new("/", ExpressionTokenKind.Operator, "Divide."),
-        new("%", ExpressionTokenKind.Operator, "Modulo."),
-        new("^", ExpressionTokenKind.Operator, "Power."),
-        new(">", ExpressionTokenKind.Operator, "Greater than."),
-        new("<", ExpressionTokenKind.Operator, "Less than."),
-        new(">=", ExpressionTokenKind.Operator, "Greater than or equal."),
-        new("<=", ExpressionTokenKind.Operator, "Less than or equal."),
-        new("?", ExpressionTokenKind.Operator, "Ternary condition."),
-        new(":", ExpressionTokenKind.Operator, "Ternary separator.")
-    ];
+    private static readonly HashSet<string> Operators = new(StringComparer.Ordinal)
+    {
+        "+", "-", "*", "/", "%", "^", "#", "==", "~=", "<=", ">=", "<", ">", "=", ".."
+    };
 
-    public ExpressionAnalysisResult Analyze(string? expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24)
+    private readonly ILuaExpressionScriptService luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+
+    public IReadOnlyList<ExpressionSymbol> Symbols { get; } = BuildSymbols(luaExpressionService ?? new LuaExpressionScriptService());
+
+    public ExpressionAnalysisResult Analyze(string expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24)
     {
         expression ??= string.Empty;
         caretIndex = Math.Clamp(caretIndex, 0, expression.Length);
-
-        var spans = Classify(expression);
-        var token = CurrentToken(expression, caretIndex);
-        var completions = Complete(token);
-        var diagnostics = Validate(expression, timeSeconds, framesPerSecond);
-        if (ShouldSuppressPrefixDiagnostic(expression, caretIndex, token, completions, diagnostics))
-        {
-            diagnostics = [];
-        }
-
+        var spans = Tokenize(expression);
+        var completions = Complete(expression, caretIndex).ToList();
+        var diagnostics = completions.Count > 0 && IsCompletionOnly(expression, caretIndex)
+            ? []
+            : Diagnostics(expression, spans, timeSeconds, framesPerSecond);
         return new ExpressionAnalysisResult(spans, completions, diagnostics);
     }
 
-    private IReadOnlyList<ExpressionCompletion> Complete((int Start, int Length, string Prefix) token)
+    private static IReadOnlyList<ExpressionSymbol> BuildSymbols(ILuaExpressionScriptService luaExpressionService)
     {
-        var (start, length, prefix) = token;
-        if (prefix.Length == 0)
+        var symbols = new List<ExpressionSymbol>
+        {
+            new("t", ExpressionTokenKind.Variable, "Current chapter time in seconds."),
+            new("fps", ExpressionTokenKind.Variable, "Current frame rate."),
+            new("index", ExpressionTokenKind.Variable, "One-based index of the current non-separator chapter."),
+            new("count", ExpressionTokenKind.Variable, "Total non-separator chapter count."),
+            new("chapter", ExpressionTokenKind.Variable, "Current chapter context table."),
+            new("chapter.time", ExpressionTokenKind.Variable, "Current chapter time in seconds."),
+            new("chapter.name", ExpressionTokenKind.Variable, "Current chapter name."),
+            new("chapter.number", ExpressionTokenKind.Variable, "Current chapter number."),
+            new("math.floor", ExpressionTokenKind.Function, "Round down.", 1, "math.floor()"),
+            new("math.ceil", ExpressionTokenKind.Function, "Round up.", 1, "math.ceil()"),
+            new("math.abs", ExpressionTokenKind.Function, "Absolute value.", 1, "math.abs()"),
+            new("math.min", ExpressionTokenKind.Function, "Smaller of values.", null, "math.min()"),
+            new("math.max", ExpressionTokenKind.Function, "Larger of values.", null, "math.max()"),
+            new("math.sqrt", ExpressionTokenKind.Function, "Square root.", 1, "math.sqrt()"),
+            new("math.sin", ExpressionTokenKind.Function, "Sine.", 1, "math.sin()"),
+            new("math.cos", ExpressionTokenKind.Function, "Cosine.", 1, "math.cos()"),
+            new("math.tan", ExpressionTokenKind.Function, "Tangent.", 1, "math.tan()"),
+            new("floor", ExpressionTokenKind.Function, "Alias for math.floor.", 1, "floor()"),
+            new("ceil", ExpressionTokenKind.Function, "Alias for math.ceil.", 1, "ceil()"),
+            new("round", ExpressionTokenKind.Function, "Round to nearest integer.", 1, "round()"),
+            new("sin", ExpressionTokenKind.Function, "Alias for math.sin.", 1, "sin()"),
+            new("sqrt", ExpressionTokenKind.Function, "Alias for math.sqrt.", 1, "sqrt()"),
+            new("sign", ExpressionTokenKind.Function, "Sign of the value.", 1, "sign()"),
+            new("return", ExpressionTokenKind.Keyword, "Return the transformed time."),
+            new("preset", ExpressionTokenKind.Snippet, "Built-in Lua expression presets. Type preset. to browse them.", null, "preset."),
+            new("function transform(chapter)\n  return t\nend", ExpressionTokenKind.Snippet, "Reusable transform function snippet.", null, "function transform(chapter)\n  return t\nend")
+        };
+
+        symbols.AddRange(luaExpressionService.Presets.Select(static preset => new ExpressionSymbol(
+            $"preset.{preset.Id}",
+            ExpressionTokenKind.Snippet,
+            preset.Description,
+            InsertText: preset.ScriptText)));
+
+        return symbols;
+    }
+
+    private List<ExpressionCompletion> Complete(string expression, int caretIndex)
+    {
+        var token = CurrentToken(expression, caretIndex);
+        if (token.Prefix.Length == 0)
         {
             return [];
         }
 
-        return Symbols
-            .Where(symbol => symbol.Kind is ExpressionTokenKind.Variable or ExpressionTokenKind.Constant or ExpressionTokenKind.Function)
-            .Where(symbol => symbol.Text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .OrderBy(SymbolSortOrder)
-            .ThenBy(symbol => symbol.Text.Length)
-            .ThenBy(symbol => symbol.Text, StringComparer.Ordinal)
+        var candidates = Symbols
+            .Where(symbol => symbol.Text.StartsWith(token.Prefix, StringComparison.OrdinalIgnoreCase) ||
+                             symbol.InsertText.StartsWith(token.Prefix, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(static symbol => CompletionRank(symbol.Kind))
+            .ThenBy(static symbol => symbol.Text, StringComparer.OrdinalIgnoreCase)
             .Select(symbol => new ExpressionCompletion(
                 symbol.Text,
                 symbol.Kind,
                 symbol.Description,
-                start,
-                length,
+                token.Start,
+                token.Length,
                 string.IsNullOrEmpty(symbol.InsertText) ? symbol.Text : symbol.InsertText))
             .ToList();
+
+        if (token.Prefix.Contains('.', StringComparison.Ordinal) && candidates.Count == 0)
+        {
+            var suffix = token.Prefix[(token.Prefix.LastIndexOf('.') + 1)..];
+            candidates = Symbols
+                .Where(symbol => symbol.Text.Contains('.', StringComparison.Ordinal) && symbol.Text[(symbol.Text.LastIndexOf('.') + 1)..].StartsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(static symbol => symbol.Text, StringComparer.OrdinalIgnoreCase)
+                .Select(symbol => new ExpressionCompletion(
+                    symbol.Text,
+                    symbol.Kind,
+                    symbol.Description,
+                    token.Start,
+                    token.Length,
+                    string.IsNullOrEmpty(symbol.InsertText) ? symbol.Text : symbol.InsertText))
+                .ToList();
+        }
+
+        return candidates;
     }
 
-    private static int SymbolSortOrder(ExpressionSymbol symbol) =>
-        symbol.Kind switch
-        {
-            ExpressionTokenKind.Function => 0,
-            ExpressionTokenKind.Variable => 1,
-            ExpressionTokenKind.Constant => 2,
-            _ => 3
-        };
-
-    private static bool ShouldSuppressPrefixDiagnostic(
-        string expression,
-        int caretIndex,
-        (int Start, int Length, string Prefix) token,
-        IReadOnlyList<ExpressionCompletion> completions,
-        IReadOnlyList<ExpressionAuthoringDiagnostic> diagnostics)
+    private static bool IsCompletionOnly(string expression, int caretIndex)
     {
-        if (diagnostics.Count == 0 || completions.Count == 0 || token.Prefix.Length == 0)
-        {
-            return false;
-        }
-
-        if (caretIndex != token.Start + token.Length)
-        {
-            return false;
-        }
-
-        var currentToken = expression.Substring(token.Start, token.Length);
-        if (currentToken.Length == 0 || string.Equals(currentToken, completions[0].Text, StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return diagnostics.All(static diagnostic => diagnostic.Diagnostic.Code is "InvalidExpression.UnknownToken" or "InvalidExpression.UnsupportedFunction" or "InvalidExpression.UnsupportedToken");
+        var token = CurrentToken(expression, caretIndex);
+        return token.Prefix.Length > 0 &&
+               expression[..token.Start].Trim().Length == 0 &&
+               expression[(token.Start + token.Length)..].Trim().Length == 0;
     }
 
-    private IReadOnlyList<ExpressionAuthoringDiagnostic> Validate(string expression, decimal timeSeconds, decimal framesPerSecond)
+    private List<ExpressionAuthoringDiagnostic> Diagnostics(string expression, IReadOnlyList<ExpressionTokenSpan> spans, decimal timeSeconds, decimal framesPerSecond)
     {
-        if (string.IsNullOrWhiteSpace(expression))
+        if (spans.Any(static span => span.Kind == ExpressionTokenKind.Unknown))
         {
-            return [];
+            var unknown = spans.First(static span => span.Kind == ExpressionTokenKind.Unknown);
+            return [Diagnostic("InvalidExpression.LuaUnknownToken", $"Unsupported Lua token '{unknown.Text}'.", "Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.", unknown.Start, unknown.Length)];
         }
 
-        var result = expressionService.EvaluateInfix(expression, timeSeconds, framesPerSecond);
+        var result = luaExpressionService.Evaluate(
+            expression,
+            new LuaExpressionContext(new Models.Chapter(1, TimeSpan.FromSeconds((double)timeSeconds), "Chapter"), 1, 1, timeSeconds, framesPerSecond));
         if (result.Success)
         {
             return [];
         }
 
-        return result.Diagnostics
-            .Select(diagnostic => new ExpressionAuthoringDiagnostic(
-                diagnostic,
-                Suggest(diagnostic.Code),
-                DiagnosticStart(expression, diagnostic),
-                DiagnosticLength(expression, diagnostic)))
-            .ToList();
-    }
-
-    private static int DiagnosticStart(string expression, ChapterDiagnostic diagnostic)
-    {
-        var token = TokenArgument(diagnostic);
-        if (string.IsNullOrEmpty(token))
+        var diagnostic = result.Diagnostics.FirstOrDefault();
+        if (diagnostic is null)
         {
-            return Math.Max(0, expression.Length - 1);
+            return [];
         }
 
-        var index = expression.LastIndexOf(token, StringComparison.Ordinal);
-        return index >= 0 ? index : Math.Max(0, expression.Length - token.Length);
+        var target = LastMeaningfulSpan(spans) ?? new ExpressionTokenSpan(Math.Max(0, expression.Length - 1), expression.Length > 0 ? 1 : 0, string.Empty, ExpressionTokenKind.Unknown);
+        var suggestion = SuggestionFor(diagnostic.Code, expression);
+        return [new ExpressionAuthoringDiagnostic(diagnostic, suggestion, target.Start, Math.Max(1, target.Length))];
     }
 
-    private static int DiagnosticLength(string expression, ChapterDiagnostic diagnostic)
-    {
-        var token = TokenArgument(diagnostic);
-        if (!string.IsNullOrEmpty(token))
+    private static ExpressionDiagnosticSuggestion SuggestionFor(string diagnosticCode, string expression) =>
+        diagnosticCode switch
         {
-            return token.Length;
-        }
-
-        return expression.Length == 0 ? 0 : 1;
-    }
-
-    private static string? TokenArgument(ChapterDiagnostic diagnostic)
-    {
-        if (diagnostic.Arguments is null)
-        {
-            return null;
-        }
-
-        return diagnostic.Arguments.TryGetValue("token", out var token) ? token as string : null;
-    }
-
-    private static ExpressionDiagnosticSuggestion Suggest(string code) =>
-        code switch
-        {
-            "InvalidExpression.Incomplete" => new("Expression.Suggestion.CompleteExpression", "Complete the expression so it produces one value."),
-            "InvalidExpression.InsufficientOperands" => new("Expression.Suggestion.AddOperand", "Add the missing operand before applying this token."),
-            "InvalidExpression.InvalidCharacter" => new("Expression.Suggestion.RemoveInvalidCharacter", "Remove the invalid character or replace it with a supported token."),
-            "InvalidExpression.MisplacedComma" => new("Expression.Suggestion.FixComma", "Use commas only between function arguments."),
-            "InvalidExpression.MissingOperandBeforeParen" => new("Expression.Suggestion.AddOperandBeforeParen", "Add an operand before the closing parenthesis."),
-            "InvalidExpression.MissingOperator" => new("Expression.Suggestion.AddOperator", "Add an operator between adjacent values."),
-            "InvalidExpression.MissingOperatorBeforeFunction" => new("Expression.Suggestion.AddOperatorBeforeFunction", "Add an operator before the function call."),
-            "InvalidExpression.MissingOperatorBeforeParen" => new("Expression.Suggestion.AddOperatorBeforeParen", "Add an operator before the opening parenthesis."),
-            "InvalidExpression.OperatorRequiresLeftOperand" => new("Expression.Suggestion.AddLeftOperand", "Add a left operand before this operator."),
-            "InvalidExpression.TernaryMissingCondition" => new("Expression.Suggestion.AddTernaryCondition", "Add a condition before '?'."),
-            "InvalidExpression.TernaryMissingTrueExpression" => new("Expression.Suggestion.AddTernaryTrueExpression", "Add the true expression between '?' and ':'."),
-            "InvalidExpression.TernaryUnmatchedColon" => new("Expression.Suggestion.MatchTernaryQuestion", "Add a matching '?' before this ':'."),
-            "InvalidExpression.TernaryUnmatchedQuestion" => new("Expression.Suggestion.MatchTernaryColon", "Add a matching ':' and false expression."),
-            "InvalidExpression.UnbalancedParentheses" => new("Expression.Suggestion.BalanceParentheses", "Add or remove parentheses so every '(' has a matching ')'."),
-            "InvalidExpression.UnknownToken" => new("Expression.Suggestion.UseKnownToken", "Use a supported variable, constant, function, or operator."),
-            "InvalidExpression.UnsupportedFunction" => new("Expression.Suggestion.UseSupportedFunction", "Replace the function with a supported expression function."),
-            "InvalidExpression.UnsupportedOperator" => new("Expression.Suggestion.UseSupportedOperator", "Replace the operator with a supported expression operator."),
-            "InvalidExpression.UnsupportedToken" => new("Expression.Suggestion.UseSupportedToken", "Replace the token with a supported expression token."),
-            _ => new("Expression.Suggestion.CheckSyntax", "Check the expression syntax.")
+            "InvalidExpression.LuaCompile" when EndsWithOperator(expression) => new("Expression.Suggestion.AddOperand", "Add the missing operand before applying this token."),
+            "InvalidExpression.LuaCompile" => new("Expression.Suggestion.CheckLuaSyntax", "Check the Lua syntax or complete the expression."),
+            "InvalidExpression.LuaRuntime" => new("Expression.Suggestion.CheckLuaRuntime", "Check that referenced Lua variables and functions exist."),
+            "InvalidExpression.LuaInvalidReturn" => new("Expression.Suggestion.ReturnNumber", "Return a finite number of seconds."),
+            _ => new("Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.")
         };
 
-    private IReadOnlyList<ExpressionTokenSpan> Classify(string expression)
+    private static bool EndsWithOperator(string expression)
+    {
+        var trimmed = expression.TrimEnd();
+        return trimmed.EndsWith('+') || trimmed.EndsWith('-') || trimmed.EndsWith('*') || trimmed.EndsWith('/') || trimmed.EndsWith('%') || trimmed.EndsWith('^') || trimmed.EndsWith('.');
+    }
+
+    private static ExpressionAuthoringDiagnostic Diagnostic(string code, string message, string suggestionCode, string suggestion, int start, int length) =>
+        new(new ChapterDiagnostic(DiagnosticSeverity.Warning, code, message, Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = message }), new ExpressionDiagnosticSuggestion(suggestionCode, suggestion), start, length);
+
+    private static ExpressionTokenSpan? LastMeaningfulSpan(IReadOnlyList<ExpressionTokenSpan> spans) =>
+        spans.LastOrDefault(static span => span.Kind != ExpressionTokenKind.Comment);
+
+    private static int CompletionRank(ExpressionTokenKind kind) => kind switch
+    {
+        ExpressionTokenKind.Function => 0,
+        ExpressionTokenKind.Variable => 1,
+        ExpressionTokenKind.Keyword => 2,
+        ExpressionTokenKind.Snippet => 3,
+        _ => 4
+    };
+
+    private static List<ExpressionTokenSpan> Tokenize(string expression)
     {
         var spans = new List<ExpressionTokenSpan>();
         for (var i = 0; i < expression.Length;)
         {
-            var span = TryReadComment(expression, ref i)
-                ?? TryReadNumber(expression, ref i)
-                ?? TryReadIdentifier(expression, ref i)
-                ?? TryReadTwoCharOperator(expression, ref i)
-                ?? TryReadSingleCharOperator(expression, ref i)
-                ?? TryReadPunctuation(expression, ref i)
-                ?? TryReadUnknown(expression, ref i);
-
-            if (span is not null)
+            var c = expression[i];
+            if (char.IsWhiteSpace(c))
             {
-                spans.Add(span);
+                i++;
+                continue;
             }
+
+            if (c == '-' && i + 1 < expression.Length && expression[i + 1] == '-')
+            {
+                spans.Add(new ExpressionTokenSpan(i, expression.Length - i, expression[i..], ExpressionTokenKind.Comment));
+                break;
+            }
+
+            if (char.IsDigit(c) || c == '.')
+            {
+                var number = TryReadNumberOrDot(expression, ref i);
+                spans.Add(number);
+                continue;
+            }
+
+            if (char.IsLetter(c) || c == '_')
+            {
+                spans.Add(ReadIdentifierChain(expression, ref i));
+                continue;
+            }
+
+            var two = i + 1 < expression.Length ? expression.Substring(i, 2) : string.Empty;
+            if (Operators.Contains(two))
+            {
+                spans.Add(new ExpressionTokenSpan(i, 2, two, ExpressionTokenKind.Operator));
+                i += 2;
+                continue;
+            }
+
+            if (Operators.Contains(c.ToString(CultureInfo.InvariantCulture)))
+            {
+                spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Operator));
+                i++;
+                continue;
+            }
+
+            if (c is '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']')
+            {
+                spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation));
+                i++;
+                continue;
+            }
+
+            if (c is '\'' or '"')
+            {
+                spans.Add(ReadString(expression, ref i));
+                continue;
+            }
+
+            spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown));
+            i++;
         }
 
         return spans;
     }
 
-    private static ExpressionTokenSpan? TryReadComment(string expression, ref int i)
+    private static ExpressionTokenSpan TryReadNumberOrDot(string expression, ref int i)
     {
-        if (i >= expression.Length || expression[i] != '/' || i + 1 >= expression.Length || expression[i + 1] != '/')
+        var start = i;
+        if (expression[i] == '.' && (i + 1 >= expression.Length || !char.IsDigit(expression[i + 1])))
         {
-            return null;
+            i++;
+            return new ExpressionTokenSpan(start, 1, ".", ExpressionTokenKind.Punctuation);
         }
 
-        var span = new ExpressionTokenSpan(i, expression.Length - i, expression[i..], ExpressionTokenKind.Comment);
-        i = expression.Length;
-        return span;
-    }
-
-    private static ExpressionTokenSpan? TryReadNumber(string expression, ref int i)
-    {
-        if (i >= expression.Length)
-        {
-            return null;
-        }
-
-        var c = expression[i];
-        if (!char.IsDigit(c) && c != '.')
-        {
-            return null;
-        }
-
-        var start = i++;
+        i++;
         while (i < expression.Length && (char.IsDigit(expression[i]) || expression[i] == '.'))
         {
             i++;
@@ -272,135 +263,83 @@ public sealed class ExpressionAuthoringService(IExpressionService? expressionSer
         return new ExpressionTokenSpan(start, i - start, expression[start..i], ExpressionTokenKind.Number);
     }
 
-    private ExpressionTokenSpan? TryReadIdentifier(string expression, ref int i)
+    private static ExpressionTokenSpan ReadIdentifierChain(string expression, ref int i)
     {
-        if (i >= expression.Length)
+        var start = i;
+        i++;
+        while (i < expression.Length)
         {
-            return null;
-        }
+            if (char.IsLetterOrDigit(expression[i]) || expression[i] == '_')
+            {
+                i++;
+                continue;
+            }
 
-        var c = expression[i];
-        if (!char.IsLetter(c) && c != '_')
-        {
-            return null;
-        }
+            if (expression[i] == '.' && i + 1 < expression.Length && (char.IsLetter(expression[i + 1]) || expression[i + 1] == '_'))
+            {
+                i += 2;
+                while (i < expression.Length && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_'))
+                {
+                    i++;
+                }
+                continue;
+            }
 
-        var start = i++;
-        while (i < expression.Length && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_'))
-        {
-            i++;
+            break;
         }
 
         var text = expression[start..i];
-        return new ExpressionTokenSpan(start, i - start, text, KindForSymbol(text));
+        return new ExpressionTokenSpan(start, i - start, text, KindForIdentifier(text));
     }
 
-    private static ExpressionTokenSpan? TryReadTwoCharOperator(string expression, ref int i)
+    private static ExpressionTokenSpan ReadString(string expression, ref int i)
     {
-        if (i >= expression.Length)
+        var start = i;
+        var quote = expression[i++];
+        while (i < expression.Length)
         {
-            return null;
-        }
+            if (expression[i] == quote && expression[i - 1] != '\\')
+            {
+                i++;
+                break;
+            }
 
-        var c = expression[i];
-        if (c is not ('>' or '<') || i + 1 >= expression.Length || expression[i + 1] != '=')
-        {
-            return null;
-        }
-
-        var span = new ExpressionTokenSpan(i, 2, expression.Substring(i, 2), ExpressionTokenKind.Operator);
-        i += 2;
-        return span;
-    }
-
-    private static ExpressionTokenSpan? TryReadSingleCharOperator(string expression, ref int i)
-    {
-        if (i >= expression.Length)
-        {
-            return null;
-        }
-
-        var c = expression[i];
-        if (!"+-*/%^<>?:".Contains(c, StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        var span = new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Operator);
-        i++;
-        return span;
-    }
-
-    private static ExpressionTokenSpan? TryReadPunctuation(string expression, ref int i)
-    {
-        if (i >= expression.Length)
-        {
-            return null;
-        }
-
-        var c = expression[i];
-        if (!"(),".Contains(c, StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        var span = new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation);
-        i++;
-        return span;
-    }
-
-    private static ExpressionTokenSpan? TryReadUnknown(string expression, ref int i)
-    {
-        if (i >= expression.Length)
-        {
-            return null;
-        }
-
-        var c = expression[i];
-        if (char.IsWhiteSpace(c))
-        {
             i++;
-            return null;
         }
 
-        var span = new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown);
-        i++;
-        return span;
+        return new ExpressionTokenSpan(start, i - start, expression[start..i], ExpressionTokenKind.String);
     }
 
-    private ExpressionTokenKind KindForSymbol(string text)
+    private static ExpressionTokenKind KindForIdentifier(string text)
     {
-        var symbol = Symbols.FirstOrDefault(symbol => string.Equals(symbol.Text, text, StringComparison.Ordinal));
-        if (symbol?.Kind is ExpressionTokenKind.Variable or ExpressionTokenKind.Constant or ExpressionTokenKind.Function)
+        if (Keywords.Contains(text))
         {
-            return symbol.Kind;
+            return ExpressionTokenKind.Keyword;
         }
 
-        var matchingKinds = Symbols
-            .Where(symbol => symbol.Kind is ExpressionTokenKind.Variable or ExpressionTokenKind.Constant or ExpressionTokenKind.Function)
-            .Where(symbol => symbol.Text.StartsWith(text, StringComparison.OrdinalIgnoreCase))
-            .Select(static symbol => symbol.Kind)
-            .Distinct()
-            .ToList();
-
-        return matchingKinds.Count switch
+        if (text is "t" or "fps" or "index" or "count" or "chapter" || text.StartsWith("chapter.", StringComparison.Ordinal))
         {
-            1 => matchingKinds[0],
-            > 1 when matchingKinds.Contains(ExpressionTokenKind.Function) => ExpressionTokenKind.Function,
-            _ => ExpressionTokenKind.Unknown
-        };
+            return ExpressionTokenKind.Variable;
+        }
+
+        if (text.StartsWith("math.", StringComparison.Ordinal) || text is "floor" or "ceil" or "round" or "abs" or "min" or "max" or "sqrt" or "sin" or "cos" or "tan" or "sign")
+        {
+            return ExpressionTokenKind.Function;
+        }
+
+        return ExpressionTokenKind.Variable;
     }
 
     private static (int Start, int Length, string Prefix) CurrentToken(string expression, int caretIndex)
     {
         var start = caretIndex;
-        while (start > 0 && IsIdentifierPart(expression[start - 1]))
+        while (start > 0 && IsCompletionPart(expression[start - 1]))
         {
             start--;
         }
 
         var end = caretIndex;
-        while (end < expression.Length && IsIdentifierPart(expression[end]))
+        while (end < expression.Length && IsCompletionPart(expression[end]))
         {
             end++;
         }
@@ -408,5 +347,5 @@ public sealed class ExpressionAuthoringService(IExpressionService? expressionSer
         return (start, end - start, expression[start..caretIndex]);
     }
 
-    private static bool IsIdentifierPart(char c) => char.IsLetterOrDigit(c) || c == '_';
+    private static bool IsCompletionPart(char c) => char.IsLetterOrDigit(c) || c is '_' or '.' or '-';
 }

@@ -543,6 +543,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(0, save.LastOptions.OrderShift);
         Assert.False(save.LastOptions.ApplyExpression);
         Assert.Equal("t + 1", save.LastOptions.Expression);
+        Assert.Equal(string.Empty, save.LastOptions.LuaExpressionPresetId);
+        Assert.Equal(string.Empty, save.LastOptions.LuaExpressionSourceName);
         Assert.NotNull(save.LastInfo);
         Assert.Equal(3, save.LastInfo.Chapters[0].Number);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
@@ -560,6 +562,7 @@ public sealed class MainWindowViewModelTests
 
         vm.ApplyExpression = true;
         vm.Expression = "t + 1";
+        vm.LuaExpressionSourceName = "inline";
 
         Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
         Assert.Equal("24", vm.Rows[0].FramesInfo);
@@ -574,6 +577,32 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
         Assert.NotNull(save.LastOptions);
         Assert.False(save.LastOptions.ApplyExpression);
+        Assert.Equal("t + 1", save.LastOptions.Expression);
+        Assert.Equal("inline", save.LastOptions.LuaExpressionSourceName);
+    }
+
+
+    [Fact]
+    public async Task PreviewAndSaveUseSameLuaProjectionForTimesNamesAndNumbers()
+    {
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Txt;
+        vm.ApplyExpression = true;
+        vm.Expression = "t + 2";
+        vm.AutoGenerateNames = true;
+        vm.OrderShift = 3;
+
+        var preview = vm.BuildPreview();
+        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+
+        Assert.Contains("CHAPTER04=00:00:02.000", preview, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER04NAME=Chapter 01", preview, StringComparison.Ordinal);
+        Assert.NotNull(save.LastInfo);
+        Assert.Equal(4, save.LastInfo.Chapters[0].Number);
+        Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
+        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo.Chapters[0].Time);
     }
 
     [Fact]

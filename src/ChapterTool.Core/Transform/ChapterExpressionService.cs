@@ -4,8 +4,20 @@ using System.Globalization;
 
 namespace ChapterTool.Core.Transform;
 
-public sealed class ChapterExpressionService(IExpressionService expressionService)
+public sealed class ChapterExpressionService
 {
+    private readonly ILuaExpressionScriptService luaExpressionService;
+
+    public ChapterExpressionService(ILuaExpressionScriptService? luaExpressionService = null)
+    {
+        this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+    }
+
+    public ChapterExpressionService(IExpressionService _)
+        : this(new LuaExpressionScriptService())
+    {
+    }
+
     public ChapterExpressionResult Apply(ChapterInfo info, bool applyExpression, string expression)
     {
         if (!applyExpression)
@@ -14,6 +26,9 @@ public sealed class ChapterExpressionService(IExpressionService expressionServic
         }
 
         var diagnostics = new List<ChapterDiagnostic>();
+        var nonSeparatorCount = info.Chapters.Count(static chapter => !chapter.IsSeparator);
+        var nonSeparatorIndex = 0;
+        var framesPerSecond = (decimal)info.FramesPerSecond;
         var chapters = info.Chapters.Select(chapter =>
         {
             if (chapter.IsSeparator)
@@ -21,7 +36,11 @@ public sealed class ChapterExpressionService(IExpressionService expressionServic
                 return chapter;
             }
 
-            var evaluated = expressionService.EvaluateInfix(expression, (decimal)chapter.Time.TotalSeconds, (decimal)info.FramesPerSecond);
+            nonSeparatorIndex++;
+            var originalSeconds = (decimal)chapter.Time.TotalSeconds;
+            var evaluated = luaExpressionService.Evaluate(
+                expression,
+                new LuaExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond));
             diagnostics.AddRange(evaluated.Diagnostics);
             if (!evaluated.Success)
             {
@@ -34,7 +53,7 @@ public sealed class ChapterExpressionService(IExpressionService expressionServic
                 diagnostics.Add(diagnostic);
             }
 
-            var frameDisplay = FormatFrames(normalized, (decimal)info.FramesPerSecond);
+            var frameDisplay = FormatFrames(normalized, framesPerSecond);
             return chapter with
             {
                 Time = TimeSpan.FromSeconds((double)normalized),

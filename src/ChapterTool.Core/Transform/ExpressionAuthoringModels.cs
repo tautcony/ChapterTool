@@ -9,6 +9,9 @@ public enum ExpressionTokenKind
     Variable,
     Constant,
     Function,
+    Keyword,
+    Snippet,
+    String,
     Operator,
     Punctuation,
     Comment
@@ -33,7 +36,21 @@ public sealed record ExpressionCompletion(
     string Description,
     int ReplacementStart,
     int ReplacementLength,
-    string InsertText);
+    string InsertText)
+{
+    public string KindLabel => Kind switch
+    {
+        ExpressionTokenKind.Variable => "VAR",
+        ExpressionTokenKind.Constant => "CONST",
+        ExpressionTokenKind.Function => "FUNC",
+        ExpressionTokenKind.Keyword => "KEY",
+        ExpressionTokenKind.Snippet => "PRESET",
+        ExpressionTokenKind.String => "STR",
+        ExpressionTokenKind.Number => "NUM",
+        _ => Kind.ToString().ToUpperInvariant()
+    };
+}
+
 
 public sealed record ExpressionDiagnosticSuggestion(
     string Code,

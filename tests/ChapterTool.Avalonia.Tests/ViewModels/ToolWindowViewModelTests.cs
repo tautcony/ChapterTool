@@ -105,6 +105,40 @@ public sealed class ToolWindowViewModelTests
         Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
 
+
+    [Fact]
+    public async Task ExpressionToolAppliesLuaPresetAndExternalScriptToOwner()
+    {
+        var owner = CreateOwner();
+        await owner.LoadCommand.ExecuteAsync("movie.txt");
+        var scriptPath = Path.Combine(Path.GetTempPath(), $"chaptertool-{Guid.NewGuid():N}.lua");
+        await File.WriteAllTextAsync(scriptPath, "t + 2");
+        try
+        {
+            var picker = new FakeFilePicker(scriptPath);
+            var expression = new ExpressionToolViewModel(owner, picker) { ApplyExpression = true };
+
+            expression.SelectedPresetIndex = expression.Presets.ToList().FindIndex(preset => preset.Id == "round-to-frame");
+
+            Assert.Equal("round-to-frame", expression.SelectedPreset?.Id);
+            Assert.Contains("fps", expression.Expression, StringComparison.Ordinal);
+            Assert.Equal("Round to nearest frame", expression.LuaExpressionSourceName);
+
+            await expression.BrowseScriptCommand.ExecuteAsync();
+            await expression.ApplyCommand.ExecuteAsync(expression);
+
+            Assert.Equal("t + 2", owner.Expression);
+            Assert.True(owner.ApplyExpression);
+            Assert.Equal(string.Empty, owner.LuaExpressionPresetId);
+            Assert.Equal(Path.GetFileName(scriptPath), owner.LuaExpressionSourceName);
+            Assert.Equal("00:00:07.000", owner.Rows[0].TimeText);
+        }
+        finally
+        {
+            File.Delete(scriptPath);
+        }
+    }
+
     private static MainWindowViewModel CreateOwner()
     {
         var formatter = new ChapterTimeFormatter();
@@ -145,6 +179,19 @@ public sealed class ToolWindowViewModelTests
     {
         public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));
+    }
+
+    private sealed class FakeFilePicker(string luaScriptPath) : IFilePickerService
+    {
+        public ValueTask<string?> PickSourceAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+
+        public ValueTask<string?> PickMplsAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+
+        public ValueTask<string?> PickChapterNameTemplateAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+
+        public ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(luaScriptPath);
+
+        public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
     }
 
     private sealed class FakeWindowService : IWindowService

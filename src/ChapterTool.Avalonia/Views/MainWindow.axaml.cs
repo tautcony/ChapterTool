@@ -1,8 +1,10 @@
-using System.Reflection;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using AvaloniaEdit;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Exporting;
@@ -36,6 +38,7 @@ public sealed partial class MainWindow : Window
         ReloadCommand = new UiCommand(async (_, _) => await LoadAsync(), _ => viewModel.ReloadCommand.CanExecute());
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
         LoadChapterNameTemplateCommand = new UiCommand(async (_, _) => await LoadChapterNameTemplateAsync());
+        LoadLuaExpressionScriptCommand = new UiCommand(async (_, _) => await LoadLuaExpressionScriptAsync());
         SaveCommand = new UiCommand(async (_, _) => await SaveAsync(null), _ => viewModel.SaveCommand.CanExecute());
         SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
         PreviewCommand = new UiCommand(async (_, _) =>
@@ -81,6 +84,8 @@ public sealed partial class MainWindow : Window
     public UiCommand AppendMplsCommand { get; }
 
     public UiCommand LoadChapterNameTemplateCommand { get; }
+
+    public UiCommand LoadLuaExpressionScriptCommand { get; }
 
     public UiCommand SaveCommand { get; }
 
@@ -188,6 +193,21 @@ public sealed partial class MainWindow : Window
         viewModel.ChapterNameModeIndex = 2;
     }
 
+    private async Task LoadLuaExpressionScriptAsync()
+    {
+        var path = await filePickerService.PickLuaExpressionScriptAsync(CancellationToken.None);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var text = await File.ReadAllTextAsync(path, CancellationToken.None);
+        viewModel.Expression = string.IsNullOrWhiteSpace(text) ? "t" : text;
+        viewModel.LuaExpressionSourceName = Path.GetFileName(path);
+        viewModel.LuaExpressionPresetId = string.Empty;
+        viewModel.ApplyExpression = true;
+    }
+
     private async Task OpenRelatedMediaAsync()
     {
         await viewModel.OpenRelatedMediaCommand.ExecuteAsync();
@@ -267,6 +287,11 @@ public sealed partial class MainWindow : Window
 
     private async void OnKeyDown(object? sender, KeyEventArgs args)
     {
+        if (IsTextInputKeyScope(args.Source as Visual))
+        {
+            return;
+        }
+
         var gesture = Gesture(args);
         if (args.Key == Key.Insert)
         {
@@ -324,6 +349,14 @@ public sealed partial class MainWindow : Window
         }
 
         await shortcutRouter.RouteAsync(gesture);
+    }
+
+    private static bool IsTextInputKeyScope(Visual? source)
+    {
+        return source is TextBox or NumericUpDown or TextEditor
+            || source?.FindAncestorOfType<TextBox>() is not null
+            || source?.FindAncestorOfType<NumericUpDown>() is not null
+            || source?.FindAncestorOfType<TextEditor>() is not null;
     }
 
     private static string? Gesture(KeyEventArgs args)

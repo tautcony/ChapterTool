@@ -23,7 +23,7 @@ public sealed class AppCompositionRoot : IDisposable
 {
     private readonly string? startupPath;
     private readonly ChapterTimeFormatter formatter = new();
-    private readonly ExpressionService expressionService = new();
+    private readonly LuaExpressionScriptService expressionService = new();
     private readonly FrameRateService frameRateService = new();
     private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
     private readonly AppLocalizationManager localizationManager = new();

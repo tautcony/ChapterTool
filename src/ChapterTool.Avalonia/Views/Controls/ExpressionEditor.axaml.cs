@@ -1,11 +1,14 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
+using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
@@ -15,6 +18,46 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Views.Controls;
 
+public sealed class ExpressionCompletionKindBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var kind = value is ExpressionTokenKind tokenKind ? tokenKind : ExpressionTokenKind.Unknown;
+        return string.Equals(parameter?.ToString(), "icon", StringComparison.OrdinalIgnoreCase)
+            ? Icon(kind)
+            : Foreground(kind);
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
+
+    private static string Icon(ExpressionTokenKind kind) => kind switch
+    {
+        ExpressionTokenKind.Variable => "◈",
+        ExpressionTokenKind.Constant => "◆",
+        ExpressionTokenKind.Function => "ƒ",
+        ExpressionTokenKind.Keyword => "K",
+        ExpressionTokenKind.Snippet => "◇",
+        ExpressionTokenKind.String => "S",
+        ExpressionTokenKind.Number => "#",
+        _ => "•"
+    };
+
+    private static IBrush Foreground(ExpressionTokenKind kind) => kind switch
+    {
+        ExpressionTokenKind.Variable => Brush("#0550ae"),
+        ExpressionTokenKind.Constant => Brush("#8250df"),
+        ExpressionTokenKind.Function => Brush("#953800"),
+        ExpressionTokenKind.Keyword => Brush("#cf222e"),
+        ExpressionTokenKind.Snippet => Brush("#6f42c1"),
+        ExpressionTokenKind.String => Brush("#0a3069"),
+        ExpressionTokenKind.Number => Brush("#116329"),
+        _ => Brush("#57606a")
+    };
+
+    private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
+}
+
+
 public sealed partial class ExpressionEditor : UserControl
 {
     public static readonly StyledProperty<string> TextProperty =
@@ -22,6 +65,9 @@ public sealed partial class ExpressionEditor : UserControl
 
     public static readonly StyledProperty<IAppLocalizer?> LocalizerProperty =
         AvaloniaProperty.Register<ExpressionEditor, IAppLocalizer?>(nameof(Localizer));
+
+    public static readonly StyledProperty<double> EditorHeightProperty =
+        AvaloniaProperty.Register<ExpressionEditor, double>(nameof(EditorHeight), 25.6);
 
     private readonly IExpressionAuthoringService authoringService = new ExpressionAuthoringService();
     private readonly TextEditor editor;
@@ -54,8 +100,8 @@ public sealed partial class ExpressionEditor : UserControl
             Background = Brushes.Transparent,
             Foreground = Brush("#24292f"),
             Padding = new Thickness(6, 3),
-            MinHeight = 25.6,
-            Height = 25.6,
+            MinHeight = EditorHeight,
+            Height = EditorHeight,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Document = new TextDocument(Text)
@@ -88,6 +134,12 @@ public sealed partial class ExpressionEditor : UserControl
     {
         get => GetValue(LocalizerProperty);
         set => SetValue(LocalizerProperty, value);
+    }
+
+    public double EditorHeight
+    {
+        get => GetValue(EditorHeightProperty);
+        set => SetValue(EditorHeightProperty, value);
     }
 
     public IReadOnlyList<ExpressionCompletion> CurrentCompletions { get; private set; } = [];
@@ -140,6 +192,12 @@ public sealed partial class ExpressionEditor : UserControl
         else if (change.Property == LocalizerProperty)
         {
             AnalyzeAndRender();
+        }
+        else if (change.Property == EditorHeightProperty && editor is not null)
+        {
+            var height = Math.Max(25.6, change.GetNewValue<double>());
+            editor.MinHeight = height;
+            editor.Height = height;
         }
     }
 
@@ -228,19 +286,31 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs args)
     {
+        if ((args.Source as Visual)?.FindAncestorOfType<TextEditor>() is not null)
+        {
+            return;
+        }
+
         Dispatcher.UIThread.Post(FocusInnerEditor);
     }
 
     private void OnWrapperGotFocus(object? sender, RoutedEventArgs args)
     {
-        FocusInnerEditor();
+        if (!editor.IsKeyboardFocusWithin)
+        {
+            FocusInnerEditor();
+        }
     }
 
     private void FocusInnerEditor()
     {
         editor.Focus();
         editor.TextArea.Focus();
-        editor.CaretOffset = Math.Clamp(editor.CaretOffset, 0, editor.Document.TextLength);
+        var caretOffset = Math.Clamp(editor.CaretOffset, 0, editor.Document.TextLength);
+        if (editor.CaretOffset != caretOffset)
+        {
+            editor.CaretOffset = caretOffset;
+        }
     }
 
     private void AnalyzeAndRender()
@@ -270,7 +340,7 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void RenderCompletionPopup()
     {
-        if (!shouldShowCompletion || !editor.IsKeyboardFocusWithin || CurrentCompletions.Count == 0)
+        if (!shouldShowCompletion || (!editor.IsKeyboardFocusWithin && !IsCompletionPopupInteractionActive()) || CurrentCompletions.Count == 0)
         {
             CloseCompletionPopup();
             return;
@@ -288,6 +358,12 @@ public sealed partial class ExpressionEditor : UserControl
         CompletionPopup.VerticalOffset = RootGrid.Bounds.Height + 4;
         CompletionPopup.IsOpen = true;
         CloseDiagnosticPopup();
+    }
+
+    private bool IsCompletionPopupInteractionActive()
+    {
+        return CompletionPopup.IsOpen
+            && CompletionPanel.IsPointerOver;
     }
 
     private void InsertCompletion(ExpressionCompletion completion)
@@ -466,8 +542,32 @@ public sealed partial class ExpressionEditor : UserControl
         shouldShowCompletion = CurrentCompletions.Count > 0;
     }
 
+    private void OnCompletionListPointerPressed(object? sender, PointerPressedEventArgs args)
+    {
+        if (!CompletionPopup.IsOpen || !args.GetCurrentPoint(CompletionList).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        var item = (args.Source as Visual)?.FindAncestorOfType<ListBoxItem>();
+        if (item?.DataContext is not ExpressionCompletion completion)
+        {
+            return;
+        }
+
+        args.Handled = true;
+        CompletionList.SelectedItem = completion;
+        InsertCompletion(completion);
+    }
+
     private void OnCompletionListDoubleTapped(object? sender, RoutedEventArgs args)
     {
+        if (!CompletionPopup.IsOpen)
+        {
+            return;
+        }
+
+        args.Handled = true;
         AcceptSelectedCompletion();
     }
 
@@ -529,6 +629,9 @@ public sealed partial class ExpressionEditor : UserControl
                 ExpressionTokenKind.Variable => Brush("#0550ae"),
                 ExpressionTokenKind.Constant => Brush("#8250df"),
                 ExpressionTokenKind.Function => Brush("#953800"),
+                ExpressionTokenKind.Keyword => Brush("#cf222e"),
+                ExpressionTokenKind.Snippet => Brush("#8250df"),
+                ExpressionTokenKind.String => Brush("#0a3069"),
                 ExpressionTokenKind.Operator => Brush("#cf222e"),
                 ExpressionTokenKind.Punctuation => Brush("#57606a"),
                 ExpressionTokenKind.Number => Brush("#116329"),

@@ -7,6 +7,7 @@ using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Services;
+using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Avalonia.ViewModels;
@@ -642,33 +643,116 @@ public sealed class LanguageToolViewModel : ObservableViewModel
 
 public sealed record LanguageOptionViewModel(string CultureName, string DisplayName);
 
-public sealed class ExpressionToolViewModel(MainWindowViewModel owner) : ObservableViewModel
+public sealed class ExpressionToolViewModel : ObservableViewModel
 {
+    private readonly MainWindowViewModel owner;
+    private readonly IFilePickerService? filePicker;
+
+    public ExpressionToolViewModel(MainWindowViewModel owner, IFilePickerService? filePicker = null)
+    {
+        this.owner = owner;
+        this.filePicker = filePicker;
+        Expression = owner.Expression;
+        ApplyExpression = owner.ApplyExpression;
+        LuaExpressionSourceName = owner.LuaExpressionSourceName;
+        Presets = new LuaExpressionScriptService().Presets
+            .Select(static preset => new LuaExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
+            .ToList();
+        SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, owner.LuaExpressionPresetId, StringComparison.Ordinal));
+        BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null);
+        ApplyCommand = new UiCommand((parameter, _) =>
+        {
+            if (parameter is ExpressionToolViewModel viewModel)
+            {
+                owner.Expression = string.IsNullOrWhiteSpace(viewModel.Expression) ? "t" : viewModel.Expression;
+                owner.ApplyExpression = viewModel.ApplyExpression;
+                owner.LuaExpressionPresetId = viewModel.SelectedPreset?.Id ?? string.Empty;
+                owner.LuaExpressionSourceName = viewModel.LuaExpressionSourceName;
+            }
+
+            return ValueTask.CompletedTask;
+        });
+    }
+
     public IAppLocalizer Localizer => owner.Localizer;
+
+    public IReadOnlyList<LuaExpressionPresetViewModel> Presets { get; }
+
+    public LuaExpressionPresetViewModel? SelectedPreset =>
+        SelectedPresetIndex >= 0 && SelectedPresetIndex < Presets.Count ? Presets[SelectedPresetIndex] : null;
+
+    public int SelectedPresetIndex
+    {
+        get;
+        set
+        {
+            if (!SetProperty(ref field, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(SelectedPreset));
+            if (SelectedPreset is { } preset)
+            {
+                Expression = preset.ScriptText;
+                LuaExpressionSourceName = preset.DisplayName;
+                StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
+            }
+        }
+    } = -1;
 
     public string Expression
     {
         get;
         set => SetProperty(ref field, value);
-    } = owner.Expression;
+    } = "t";
 
     public bool ApplyExpression
     {
         get;
         set => SetProperty(ref field, value);
-    } = owner.ApplyExpression;
+    }
 
-    public UiCommand ApplyCommand { get; } = new((parameter, _) =>
+    public string LuaExpressionSourceName
     {
-        if (parameter is ExpressionToolViewModel viewModel)
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    public string StatusText
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    public bool CanBrowseScript => filePicker is not null;
+
+    public UiCommand BrowseScriptCommand { get; }
+
+    public UiCommand ApplyCommand { get; }
+
+    private async ValueTask BrowseScriptAsync(CancellationToken cancellationToken)
+    {
+        if (filePicker is null)
         {
-            owner.Expression = string.IsNullOrWhiteSpace(viewModel.Expression) ? "t" : viewModel.Expression;
-            owner.ApplyExpression = viewModel.ApplyExpression;
+            return;
         }
 
-        return ValueTask.CompletedTask;
-    });
+        var path = await filePicker.PickLuaExpressionScriptAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var text = await File.ReadAllTextAsync(path, cancellationToken);
+        Expression = text;
+        LuaExpressionSourceName = Path.GetFileName(path);
+        SelectedPresetIndex = -1;
+        StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", LuaExpressionSourceName)));
+    }
 }
+
+public sealed record LuaExpressionPresetViewModel(string Id, string DisplayName, string Description, string ScriptText);
 
 public sealed class TemplateNamesToolViewModel(MainWindowViewModel owner) : ObservableViewModel
 {

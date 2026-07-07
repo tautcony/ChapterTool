@@ -207,3 +207,4 @@ artifacts/
 
 log*.txt
 .omo/
+.omx/

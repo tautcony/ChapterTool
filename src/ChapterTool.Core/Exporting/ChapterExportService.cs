@@ -11,16 +11,28 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Exporting;
 
-public sealed class ChapterExportService(
-    IChapterTimeFormatter timeFormatter,
-    IExpressionService expressionService)
+public sealed class ChapterExportService
 {
-    private readonly ChapterConversionService chapterConversionService = new(timeFormatter);
+    private readonly IChapterTimeFormatter timeFormatter;
+    private readonly ILuaExpressionScriptService luaExpressionService;
+    private readonly ChapterConversionService chapterConversionService;
+
+    public ChapterExportService(IChapterTimeFormatter timeFormatter, ILuaExpressionScriptService? luaExpressionService = null)
+    {
+        this.timeFormatter = timeFormatter;
+        this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+        chapterConversionService = new ChapterConversionService(timeFormatter);
+    }
+
+    public ChapterExportService(IChapterTimeFormatter timeFormatter, IExpressionService _)
+        : this(timeFormatter, new LuaExpressionScriptService())
+    {
+    }
 
     public ChapterExportResult Export(ChapterInfo info, ChapterExportOptions options)
     {
         var projection = options.ProjectOutput
-            ? new ChapterOutputProjectionService(expressionService).Project(info, options)
+            ? new ChapterOutputProjectionService(luaExpressionService).Project(info, options)
             : new ChapterOutputProjectionResult(info, []);
         info = projection.Info;
         var outputInfo = info with { Chapters = projection.OutputChapters };

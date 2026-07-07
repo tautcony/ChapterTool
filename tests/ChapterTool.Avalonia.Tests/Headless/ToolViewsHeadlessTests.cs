@@ -4,6 +4,7 @@ using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Avalonia.Views.Tools;
+using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Tests.Headless;
 
@@ -163,6 +164,33 @@ public sealed class ToolViewsHeadlessTests
         }
     }
 
+
+    [AvaloniaFact]
+    public async Task Expression_editor_exposes_colored_preset_completion_namespace()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = "preset."
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.MoveCaretToEnd();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            var completion = Assert.Single(editor.CurrentCompletions, item => item.Text == "preset.round-to-frame");
+            Assert.Equal(ExpressionTokenKind.Snippet, completion.Kind);
+            Assert.Equal("PRESET", completion.KindLabel);
+            Assert.Contains("fps", completion.InsertText, StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     [AvaloniaFact]
     public async Task Expression_editor_reports_trailing_binary_operator()
     {
@@ -179,7 +207,7 @@ public sealed class ToolViewsHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
             Assert.True(editor.HasDiagnostic);
-            Assert.Contains("requires more operands", editor.DiagnosticTooltipText, StringComparison.Ordinal);
+            Assert.Contains("Lua expression syntax error", editor.DiagnosticTooltipText, StringComparison.Ordinal);
             Assert.Contains("Add the missing operand", editor.DiagnosticTooltipText, StringComparison.Ordinal);
         }
         finally
@@ -189,11 +217,11 @@ public sealed class ToolViewsHeadlessTests
     }
 
     [AvaloniaTheory]
-    [InlineData("2+", "requires more operands", "Add the missing operand")]
-    [InlineData("2^", "requires more operands", "Add the missing operand")]
-    [InlineData("2?", "matching ':'", "Add a matching ':'")]
-    [InlineData("floor(", "Unbalanced parentheses", "every '(' has a matching ')'")]
-    [InlineData("floor()", "Missing operand before ')'", "Add an operand before the closing parenthesis")]
+    [InlineData("2+", "Lua expression syntax error", "Add the missing operand")]
+    [InlineData("2^", "Lua expression syntax error", "Add the missing operand")]
+    [InlineData("2?", "Unknown Lua token", "Check the Lua expression syntax")]
+    [InlineData("floor(", "Lua expression syntax error", "Check the Lua expression syntax")]
+    [InlineData("floor()", "Lua expression runtime error", "Check that referenced Lua variables and functions exist")]
     public async Task Expression_editor_tooltip_reports_incomplete_expression_errors(
         string expression,
         string expectedDiagnostic,

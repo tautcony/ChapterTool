@@ -1,11 +1,15 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:ChapterTool.Avalonia.Views.Controls"
              xmlns:transform="clr-namespace:ChapterTool.Core.Transform;assembly=ChapterTool.Core"
              x:Class="ChapterTool.Avalonia.Views.Controls.ExpressionEditor"
              MinHeight="25.6"
              Focusable="True"
              GotFocus="OnWrapperGotFocus"
              PointerPressed="OnPointerPressed">
+  <UserControl.Resources>
+    <controls:ExpressionCompletionKindBrushConverter x:Key="CompletionKindBrushConverter" />
+  </UserControl.Resources>
   <Grid x:Name="RootGrid"
         ClipToBounds="False">
     <Border x:Name="EditorBorder"
@@ -23,9 +27,9 @@
            PlacementConstraintAdjustment="None"
            IsLightDismissEnabled="False">
       <Border x:Name="CompletionPanel"
-              MinWidth="180"
-              MaxWidth="320"
-              MaxHeight="220"
+              MinWidth="300"
+              MaxWidth="520"
+              MaxHeight="260"
               Background="{DynamicResource ChapterTool.TextBackBrush}"
               BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
               BorderThickness="1"
@@ -34,18 +38,43 @@
         <ListBox x:Name="CompletionList"
                  Background="Transparent"
                  BorderThickness="0"
+                 Focusable="False"
+                 PointerPressed="OnCompletionListPointerPressed"
                  SelectionChanged="OnCompletionSelectionChanged"
                  DoubleTapped="OnCompletionListDoubleTapped">
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Focusable" Value="False" />
+            </Style>
+          </ListBox.Styles>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="transform:ExpressionCompletion">
-              <Grid ColumnDefinitions="Auto,*" Margin="8,6">
-                <TextBlock Text="{Binding Text}"
+              <Grid ColumnDefinitions="22,210,*,56" Margin="8,5" ColumnSpacing="8">
+                <TextBlock Grid.Column="0"
+                           Text="{Binding Kind, Converter={StaticResource CompletionKindBrushConverter}, ConverterParameter=icon}"
+                           FontSize="15"
                            FontWeight="SemiBold"
-                           Margin="0,0,8,0" />
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="{Binding Kind, Converter={StaticResource CompletionKindBrushConverter}}" />
                 <TextBlock Grid.Column="1"
+                           Text="{Binding Text}"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2"
                            Text="{Binding Description}"
-                           Opacity="0.75"
-                           TextWrapping="Wrap" />
+                           Opacity="0.72"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3"
+                           Text="{Binding KindLabel}"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Opacity="0.68"
+                           Foreground="{Binding Kind, Converter={StaticResource CompletionKindBrushConverter}}" />
               </Grid>
             </DataTemplate>
           </ListBox.ItemTemplate>

@@ -4,12 +4,24 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Exporting;
 
-public sealed class ChapterOutputProjectionService(IExpressionService expressionService)
+public sealed class ChapterOutputProjectionService
 {
+    private readonly ILuaExpressionScriptService luaExpressionService;
+
+    public ChapterOutputProjectionService(ILuaExpressionScriptService? luaExpressionService = null)
+    {
+        this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+    }
+
+    public ChapterOutputProjectionService(IExpressionService _)
+        : this(new LuaExpressionScriptService())
+    {
+    }
+
     public ChapterOutputProjectionResult Project(ChapterInfo info, ChapterExportOptions options)
     {
         var diagnostics = new List<ChapterDiagnostic>();
-        var expressionResult = new ChapterExpressionService(expressionService).Apply(info, options.ApplyExpression, options.Expression);
+        var expressionResult = new ChapterExpressionService(luaExpressionService).Apply(info, options.ApplyExpression, options.Expression);
         diagnostics.AddRange(expressionResult.Diagnostics);
 
         var effectiveShift = NormalizeOrderShift(options.OrderShift, diagnostics);

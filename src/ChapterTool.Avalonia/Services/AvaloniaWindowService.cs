@@ -169,7 +169,7 @@ public sealed class AvaloniaWindowService : IWindowService
             },
             "color-settings" => new ColorSettingsView { DataContext = new ColorSettingsViewModel(themeSettingsStore, themeApplicationService) },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
-            "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel) },
+            "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel, new AvaloniaFilePickerService(window, localizer)) },
             "template-names" => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(viewModel) },
             "zones" => new TextToolView { DataContext = new TextToolViewModel(viewModel.CreateZonesText) },
             "forward-shift" => new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(viewModel) },
