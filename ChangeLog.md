@@ -381,3 +381,10 @@
 - 更新依赖版本
 - 增加对playitem无marks的mpls文件的处理
 - 增加github action
+
+## [23.0.0] - 2026.07.06
+- 迁移到 .NET 10 与跨平台 Avalonia 桌面架构，保留章节载入、编辑、组合、预览、导出等核心工作流。
+- 新增正式命令行入口，支持 `formats`、`inspect`、`convert` 和 `load`。
+- 增强表达式编辑体验，加入语法高亮、补全、诊断信息。
+- 扩展并整理导入导出能力，覆盖文本、XML、WebVTT、CUE、MPLS、BDMV、IFO、XPL、Matroska 与常见媒体容器；导出支持 TXT、XML、QPF、TimeCodes、tsMuxeR meta、CUE、JSON、WebVTT、Celltimes 和 Chapter2QPF。
+- 改进外部工具发现、ffprobe/mkvextract/eac3to 诊断与回退路径，提升无章节、无效文件、多 edition/clip/title 等场景下的提示稳定性。
