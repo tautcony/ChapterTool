@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Services;
+using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Infrastructure.Importing.Media;
 
@@ -65,31 +67,26 @@ public sealed class FfprobeMediaChapterReader(
     {
         try
         {
-            using var document = JsonDocument.Parse(json);
-            if (document.RootElement.ValueKind != JsonValueKind.Object
-                || !document.RootElement.TryGetProperty("chapters", out var chaptersElement)
-                || chaptersElement.ValueKind != JsonValueKind.Array)
+            var output = JsonSerializer.Deserialize(json, AppJsonSerializerContext.Default.FfprobeChapterOutput);
+            var rawChapters = output?.Chapters;
+            if (rawChapters is null || rawChapters.Length == 0)
             {
                 return MediaChapterReadResult.Failed("FfprobeParseFailed", "ffprobe JSON did not contain a chapters array.", ProcessDetails(result));
             }
 
             var chapters = new List<MediaChapterEntry>();
             var sourceOrder = 0;
-            foreach (var chapterElement in chaptersElement.EnumerateArray())
+            foreach (var chapter in rawChapters)
             {
-                if (chapterElement.ValueKind != JsonValueKind.Object)
-                {
-                    return MediaChapterReadResult.Failed("FfprobeParseFailed", "ffprobe chapter entry was not an object.", ProcessDetails(result));
-                }
-
+                var id = chapter.Id is >= int.MinValue and <= int.MaxValue ? (int?)chapter.Id : null;
                 chapters.Add(new MediaChapterEntry(
-                    Int32Property(chapterElement, "id"),
-                    StringProperty(chapterElement, "time_base"),
-                    Int64Property(chapterElement, "start"),
-                    Int64Property(chapterElement, "end"),
-                    StringProperty(chapterElement, "start_time"),
-                    StringProperty(chapterElement, "end_time"),
-                    Tags(chapterElement),
+                    id,
+                    chapter.TimeBase,
+                    chapter.Start,
+                    chapter.End,
+                    chapter.StartTime,
+                    chapter.EndTime,
+                    chapter.Tags ?? new Dictionary<string, string>(StringComparer.Ordinal),
                     sourceOrder++));
             }
 
@@ -101,70 +98,6 @@ public sealed class FfprobeMediaChapterReader(
         }
     }
 
-    private static int? Int32Property(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt32(out var number))
-        {
-            return number;
-        }
-
-        if (property.ValueKind == JsonValueKind.String && int.TryParse(property.GetString(), out number))
-        {
-            return number;
-        }
-
-        return null;
-    }
-
-    private static long? Int64Property(JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var property))
-        {
-            return null;
-        }
-
-        if (property.ValueKind == JsonValueKind.Number && property.TryGetInt64(out var number))
-        {
-            return number;
-        }
-
-        if (property.ValueKind == JsonValueKind.String && long.TryParse(property.GetString(), out number))
-        {
-            return number;
-        }
-
-        return null;
-    }
-
-    private static string? StringProperty(JsonElement element, string propertyName) =>
-        element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.String
-            ? property.GetString()
-            : null;
-
-    private static Dictionary<string, string> Tags(JsonElement element)
-    {
-        if (!element.TryGetProperty("tags", out var tagsElement) || tagsElement.ValueKind != JsonValueKind.Object)
-        {
-            return new Dictionary<string, string>();
-        }
-
-        var tags = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var property in tagsElement.EnumerateObject())
-        {
-            if (property.Value.ValueKind == JsonValueKind.String)
-            {
-                tags[property.Name] = property.Value.GetString() ?? string.Empty;
-            }
-        }
-
-        return tags;
-    }
-
     private static string ProcessDetails(ProcessRunResult result)
     {
         var stderr = string.IsNullOrWhiteSpace(result.StandardError)
@@ -173,3 +106,14 @@ public sealed class FfprobeMediaChapterReader(
         return $"Command: {result.FileName} {string.Join(" ", result.Arguments)} ExitCode: {result.ExitCode?.ToString() ?? "<none>"}{stderr}";
     }
 }
+
+internal sealed record FfprobeChapterOutput(FfprobeChapter[]? Chapters);
+
+internal sealed record FfprobeChapter(
+    long? Id,
+    [property: JsonPropertyName("time_base")] string? TimeBase,
+    long? Start,
+    long? End,
+    [property: JsonPropertyName("start_time")] string? StartTime,
+    [property: JsonPropertyName("end_time")] string? EndTime,
+    Dictionary<string, string>? Tags);

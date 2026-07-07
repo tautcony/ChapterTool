@@ -2,8 +2,8 @@ using System.Buffers.Binary;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
@@ -11,7 +11,7 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Exporting;
 
-public sealed class ChapterExportService
+public sealed partial class ChapterExportService
 {
     private readonly IChapterTimeFormatter timeFormatter;
     private readonly ILuaExpressionScriptService luaExpressionService;
@@ -209,7 +209,7 @@ public sealed class ChapterExportService
         }
 
         var payload = new JsonPayload(info.SourceType == "MPLS" ? $"{info.SourceName}.m2ts" : null, entries);
-        return Success(JsonSerializer.Serialize(payload, JsonOptions), ".json");
+        return Success(JsonSerializer.Serialize(payload, ExportJsonSerializerContext.Default.JsonPayload), ".json");
     }
 
     private static ChapterExportResult Lines(string extension, IEnumerable<string> lines) =>
@@ -236,13 +236,14 @@ public sealed class ChapterExportService
     private static ChapterExportResult Failure(string code, string message) =>
         new(false, string.Empty, string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-    };
-
     private sealed record JsonPayload(string? SourceName, IReadOnlyList<JsonChapter> Chapter);
 
     private sealed record JsonChapter(string Name, double Time);
+
+    [JsonSourceGenerationOptions(
+        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+    [JsonSerializable(typeof(JsonPayload))]
+    private sealed partial class ExportJsonSerializerContext : JsonSerializerContext
+    {
+    }
 }
