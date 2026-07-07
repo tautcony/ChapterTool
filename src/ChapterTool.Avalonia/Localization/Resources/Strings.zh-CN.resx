@@ -635,27 +635,6 @@
 <data name="Settings.ExternalTools" xml:space="preserve">
     <value>外部工具</value>
   </data>
-<data name="Settings.FileAssociation" xml:space="preserve">
-    <value>文件关联</value>
-  </data>
-<data name="Settings.FileAssociation.Description" xml:space="preserve">
-    <value>将 .mpls 播放列表注册为使用 ChapterTool 打开。此项属于平台集成，因此不放在主工作流控件中。</value>
-  </data>
-<data name="Settings.FileAssociation.Register" xml:space="preserve">
-    <value>注册 .mpls</value>
-  </data>
-<data name="Settings.FileAssociation.Status.NotRegistered" xml:space="preserve">
-    <value>.mpls 未注册到 ChapterTool</value>
-  </data>
-<data name="Settings.FileAssociation.Status.Registered" xml:space="preserve">
-    <value>.mpls 已注册到 ChapterTool</value>
-  </data>
-<data name="Settings.FileAssociation.Status.Unsupported" xml:space="preserve">
-    <value>当前平台不支持文件关联</value>
-  </data>
-<data name="Settings.FileAssociation.Unregister" xml:space="preserve">
-    <value>取消注册</value>
-  </data>
 <data name="Settings.FfmpegPath" xml:space="preserve">
     <value>FFmpeg bin 目录（包含 ffprobe）</value>
   </data>
