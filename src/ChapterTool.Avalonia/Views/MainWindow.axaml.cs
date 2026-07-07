@@ -442,7 +442,6 @@ public sealed partial class MainWindow : Window
         {
             await viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
         }
-
     }
 
     private async ValueTask InsertSelectedAsync()

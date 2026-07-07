@@ -9,21 +9,14 @@ using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Cli;
 
-public sealed class ChapterToolCliApplication
+public sealed class ChapterToolCliApplication(
+    ICliConsole? console = null,
+    RuntimeChapterImporterRegistry? importerRegistry = null,
+    ChapterExportService? exporter = null)
 {
-    private readonly ICliConsole console;
-    private readonly RuntimeChapterImporterRegistry importerRegistry;
-    private readonly ChapterExportService exporter;
-
-    public ChapterToolCliApplication(
-        ICliConsole? console = null,
-        RuntimeChapterImporterRegistry? importerRegistry = null,
-        ChapterExportService? exporter = null)
-    {
-        this.console = console ?? new SystemCliConsole();
-        this.importerRegistry = importerRegistry ?? CreateImporterRegistry();
-        this.exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter(), new Core.Transform.ExpressionService());
-    }
+    private readonly ICliConsole console = console ?? new SystemCliConsole();
+    private readonly RuntimeChapterImporterRegistry importerRegistry = importerRegistry ?? CreateImporterRegistry();
+    private readonly ChapterExportService exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter(), new Core.Transform.ExpressionService());
 
     public int ShowFormats()
     {
@@ -86,23 +79,9 @@ public sealed class ChapterToolCliApplication
 
     public async Task<int> ConvertAsync(CliConvertRequest request, CancellationToken cancellationToken)
     {
-        if (request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath))
+        if (!TryValidateRequest(request, out var format, out var errorCode))
         {
-            console.WriteErrorLine("Options --stdout and --output cannot be used together.");
-            return 1;
-        }
-
-        if (request.FrameRate is <= 0)
-        {
-            console.WriteErrorLine("Frame rate must be greater than zero when --frame-rate is specified.");
-            return 1;
-        }
-
-        if (!ChapterToolCliSupport.TryParseFormat(request.Format, out var format))
-        {
-            console.WriteErrorLine($"Unsupported output format '{request.Format}'.");
-            console.WriteErrorLine("Run `formats` to see the supported CLI conversion targets.");
-            return 1;
+            return errorCode;
         }
 
         var import = await ImportAsync(request.InputPath, cancellationToken);
@@ -113,9 +92,9 @@ public sealed class ChapterToolCliApplication
         }
 
         var selection = SelectOption(import.Result.Groups, request);
-        if (!selection.IsSuccess)
+        if (selection is not { IsSuccess: true })
         {
-            RenderFailure(selection.Message, selection.Diagnostics);
+            RenderFailure(selection?.Message ?? "Selection failed.", selection?.Diagnostics ?? Array.Empty<ChapterDiagnostic>());
             return 1;
         }
 
@@ -138,6 +117,46 @@ public sealed class ChapterToolCliApplication
             return 1;
         }
 
+        return await WriteExportOutputAsync(request, format, info, export, cancellationToken);
+    }
+
+    private bool TryValidateRequest(CliConvertRequest request, out CliOutputFormatDefinition format, out int errorCode)
+    {
+        if (request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath))
+        {
+            console.WriteErrorLine("Options --stdout and --output cannot be used together.");
+            format = null!;
+            errorCode = 1;
+            return false;
+        }
+
+        if (request.FrameRate is <= 0)
+        {
+            console.WriteErrorLine("Frame rate must be greater than zero when --frame-rate is specified.");
+            format = null!;
+            errorCode = 1;
+            return false;
+        }
+
+        if (!ChapterToolCliSupport.TryParseFormat(request.Format, out format))
+        {
+            console.WriteErrorLine($"Unsupported output format '{request.Format}'.");
+            console.WriteErrorLine("Run `formats` to see the supported CLI conversion targets.");
+            errorCode = 1;
+            return false;
+        }
+
+        errorCode = 0;
+        return true;
+    }
+
+    private async Task<int> WriteExportOutputAsync(
+        CliConvertRequest request,
+        CliOutputFormatDefinition format,
+        ChapterInfo info,
+        ChapterExportResult export,
+        CancellationToken cancellationToken)
+    {
         if (request.Stdout)
         {
             console.Write(export.Content);
@@ -207,65 +226,98 @@ public sealed class ChapterToolCliApplication
         return new CliImportExecution(result.Success, importer, result);
     }
 
-    private CliSelectionResult SelectOption(IReadOnlyList<ChapterInfoGroup> groups, CliConvertRequest request)
+    private CliSelectionResult? SelectOption(IReadOnlyList<ChapterInfoGroup> groups, CliConvertRequest request)
     {
         if (groups.Count == 0)
         {
             return CliSelectionResult.Failure("No chapter groups were imported.", []);
         }
 
+        if (!TryResolveGroupIndex(groups, request, out var group, out var failure))
+        {
+            return failure;
+        }
+
+        if (group is null || group.Options.Count == 0)
+        {
+            return CliSelectionResult.Failure($"Group {request.GroupIndex ?? 0} contains no selectable chapter options.", []);
+        }
+
+        return ResolveOptionFromGroup(group, request);
+    }
+
+    private bool TryResolveGroupIndex(
+        IReadOnlyList<ChapterInfoGroup> groups,
+        CliConvertRequest request,
+        out ChapterInfoGroup? group,
+        out CliSelectionResult? failure)
+    {
         var groupIndex = request.GroupIndex ?? (groups.Count == 1 ? 0 : null);
         if (groupIndex is null || groupIndex < 0 || groupIndex >= groups.Count)
         {
-            return CliSelectionResult.Failure(
+            group = null;
+            failure = CliSelectionResult.Failure(
                 "Multiple groups are available. Specify --group-index to select one.",
                 AmbiguousSelectionDiagnostics(groups));
+            return false;
         }
 
-        var group = groups[groupIndex.Value];
-        if (group.Options.Count == 0)
-        {
-            return CliSelectionResult.Failure($"Group {groupIndex.Value} contains no selectable chapter options.", []);
-        }
+        group = groups[groupIndex.Value];
+        failure = null;
+        return true;
+    }
 
-        ChapterSourceOption? option = null;
+    private CliSelectionResult ResolveOptionFromGroup(ChapterInfoGroup group, CliConvertRequest request)
+    {
+        var groupIndex = request.GroupIndex ?? 0;
+
         if (!string.IsNullOrWhiteSpace(request.OptionId))
         {
-            option = group.Options.FirstOrDefault(candidate => string.Equals(candidate.Id, request.OptionId, StringComparison.OrdinalIgnoreCase));
-            if (option is null)
-            {
-                return CliSelectionResult.Failure(
-                    $"Option id '{request.OptionId}' was not found in group {groupIndex.Value}.",
-                    AmbiguousSelectionDiagnostics([group], groupIndex.Value));
-            }
-        }
-        else if (request.OptionIndex is not null)
-        {
-            if (request.OptionIndex < 0 || request.OptionIndex >= group.Options.Count)
-            {
-                return CliSelectionResult.Failure(
-                    $"Option index {request.OptionIndex.Value} is out of range for group {groupIndex.Value}.",
-                    AmbiguousSelectionDiagnostics([group], groupIndex.Value));
-            }
-
-            option = group.Options[request.OptionIndex.Value];
-        }
-        else if (group.Options.Count == 1)
-        {
-            option = group.Options[0];
+            return ResolveOptionById(group, request.OptionId, groupIndex);
         }
 
+        if (request.OptionIndex is not null)
+        {
+            return ResolveOptionByIndex(group, request.OptionIndex.Value, groupIndex);
+        }
+
+        if (group.Options.Count == 1)
+        {
+            return CliSelectionResult.Success(group.Options[0]);
+        }
+
+        return CliSelectionResult.Failure(
+            $"Group {groupIndex} has multiple options. Specify --option-id or --option-index.",
+            AmbiguousSelectionDiagnostics([group], groupIndex));
+    }
+
+    private CliSelectionResult ResolveOptionById(ChapterInfoGroup group, string optionId, int groupIndex)
+    {
+        var option = group.Options.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, optionId, StringComparison.OrdinalIgnoreCase));
         if (option is null)
         {
             return CliSelectionResult.Failure(
-                $"Group {groupIndex.Value} has multiple options. Specify --option-id or --option-index.",
-                AmbiguousSelectionDiagnostics([group], groupIndex.Value));
+                $"Option id '{optionId}' was not found in group {groupIndex}.",
+                AmbiguousSelectionDiagnostics([group], groupIndex));
         }
 
         return CliSelectionResult.Success(option);
     }
 
-    private string ResolveOutputPath(CliConvertRequest request, CliOutputFormatDefinition format, ChapterInfo info)
+    private CliSelectionResult ResolveOptionByIndex(ChapterInfoGroup group, int optionIndex, int groupIndex)
+    {
+        if (optionIndex < 0 || optionIndex >= group.Options.Count)
+        {
+            return CliSelectionResult.Failure(
+                $"Option index {optionIndex} is out of range for group {groupIndex}.",
+                AmbiguousSelectionDiagnostics([group], groupIndex));
+        }
+
+        return CliSelectionResult.Success(group.Options[optionIndex]);
+    }
+
+    private static string ResolveOutputPath(CliConvertRequest request, CliOutputFormatDefinition format, ChapterInfo info)
     {
         if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
@@ -278,7 +330,7 @@ public sealed class ChapterToolCliApplication
         return Path.Combine(directory, baseName + format.FileExtension);
     }
 
-    private IEnumerable<string> DescribeGroup(ChapterInfoGroup group)
+    private static IEnumerable<string> DescribeGroup(ChapterInfoGroup group)
     {
         for (var optionIndex = 0; optionIndex < group.Options.Count; optionIndex++)
         {

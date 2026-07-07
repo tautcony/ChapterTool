@@ -84,6 +84,18 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
         Rows.CollectionChanged += OnRowsChanged;
 
+        InitializeCommands();
+    }
+
+    private void InitializeCommands()
+    {
+        InitializeFileCommands();
+        InitializeEditCommands();
+        InitializeWindowCommands();
+    }
+
+    private void InitializeFileCommands()
+    {
         LoadCommand = new UiCommand(async (parameter, token) =>
         {
             if (parameter is string path)
@@ -102,6 +114,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         DropPathLoadCommand = new UiCommand(async (parameter, token) => await LoadPathAsync(parameter?.ToString() ?? string.Empty, token));
         SaveCommand = new UiCommand(async (_, token) => await SaveAsync(null, token), _ => currentInfo is not null);
         SaveDirectoryCommand = new UiCommand(async (parameter, token) => await SaveAsync(parameter?.ToString() ?? SaveDirectory, token), _ => currentInfo is not null);
+    }
+
+    private void InitializeEditCommands()
+    {
         RefreshCommand = new UiCommand((_, _) =>
         {
             ApplyFrameInfo();
@@ -144,7 +160,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
             return ValueTask.CompletedTask;
         }, _ => currentInfo is not null);
+    }
 
+    private void InitializeWindowCommands()
+    {
         PreviewCommand = WindowCommand("preview", () => currentInfo is not null);
         LogCommand = WindowCommand("log");
         SettingsCommand = WindowCommand("settings");
@@ -517,31 +536,31 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public bool CanOpenRelatedMedia => RelatedMediaReferences.Count > 0;
 
-    public UiCommand LoadCommand { get; }
-    public UiCommand ReloadCommand { get; }
-    public UiCommand AppendMplsCommand { get; }
-    public UiCommand DropPathLoadCommand { get; }
-    public UiCommand SaveCommand { get; }
-    public UiCommand SaveDirectoryCommand { get; }
-    public UiCommand RefreshCommand { get; }
-    public UiCommand ChangeFpsCommand { get; }
-    public UiCommand SelectClipCommand { get; }
-    public UiCommand CombineCommand { get; }
-    public UiCommand EditTimeCommand { get; }
-    public UiCommand EditNameCommand { get; }
-    public UiCommand EditFrameCommand { get; }
-    public UiCommand DeleteCommand { get; }
-    public UiCommand InsertCommand { get; }
-    public UiCommand PreviewCommand { get; }
-    public UiCommand LogCommand { get; }
-    public UiCommand SettingsCommand { get; }
-    public UiCommand ColorSettingsCommand { get; }
-    public UiCommand LanguageCommand { get; }
-    public UiCommand ExpressionCommand { get; }
-    public UiCommand TemplateNamesCommand { get; }
-    public UiCommand ZonesCommand { get; }
-    public UiCommand ForwardShiftCommand { get; }
-    public UiCommand OpenRelatedMediaCommand { get; }
+    public UiCommand LoadCommand { get; private set; } = null!;
+    public UiCommand ReloadCommand { get; private set; } = null!;
+    public UiCommand AppendMplsCommand { get; private set; } = null!;
+    public UiCommand DropPathLoadCommand { get; private set; } = null!;
+    public UiCommand SaveCommand { get; private set; } = null!;
+    public UiCommand SaveDirectoryCommand { get; private set; } = null!;
+    public UiCommand RefreshCommand { get; private set; } = null!;
+    public UiCommand ChangeFpsCommand { get; private set; } = null!;
+    public UiCommand SelectClipCommand { get; private set; } = null!;
+    public UiCommand CombineCommand { get; private set; } = null!;
+    public UiCommand EditTimeCommand { get; private set; } = null!;
+    public UiCommand EditNameCommand { get; private set; } = null!;
+    public UiCommand EditFrameCommand { get; private set; } = null!;
+    public UiCommand DeleteCommand { get; private set; } = null!;
+    public UiCommand InsertCommand { get; private set; } = null!;
+    public UiCommand PreviewCommand { get; private set; } = null!;
+    public UiCommand LogCommand { get; private set; } = null!;
+    public UiCommand SettingsCommand { get; private set; } = null!;
+    public UiCommand ColorSettingsCommand { get; private set; } = null!;
+    public UiCommand LanguageCommand { get; private set; } = null!;
+    public UiCommand ExpressionCommand { get; private set; } = null!;
+    public UiCommand TemplateNamesCommand { get; private set; } = null!;
+    public UiCommand ZonesCommand { get; private set; } = null!;
+    public UiCommand ForwardShiftCommand { get; private set; } = null!;
+    public UiCommand OpenRelatedMediaCommand { get; private set; } = null!;
 
     public void SetFrameOptions(int frameRateIndex, bool roundFrames)
     {

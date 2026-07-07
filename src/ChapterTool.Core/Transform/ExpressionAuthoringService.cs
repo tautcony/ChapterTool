@@ -221,70 +221,151 @@ public sealed class ExpressionAuthoringService(IExpressionService? expressionSer
         var spans = new List<ExpressionTokenSpan>();
         for (var i = 0; i < expression.Length;)
         {
-            var c = expression[i];
-            if (char.IsWhiteSpace(c))
+            var span = TryReadComment(expression, ref i)
+                ?? TryReadNumber(expression, ref i)
+                ?? TryReadIdentifier(expression, ref i)
+                ?? TryReadTwoCharOperator(expression, ref i)
+                ?? TryReadSingleCharOperator(expression, ref i)
+                ?? TryReadPunctuation(expression, ref i)
+                ?? TryReadUnknown(expression, ref i);
+
+            if (span is not null)
             {
-                i++;
-                continue;
+                spans.Add(span);
             }
-
-            if (c == '/' && i + 1 < expression.Length && expression[i + 1] == '/')
-            {
-                spans.Add(new ExpressionTokenSpan(i, expression.Length - i, expression[i..], ExpressionTokenKind.Comment));
-                break;
-            }
-
-            if (char.IsDigit(c) || c == '.')
-            {
-                var start = i++;
-                while (i < expression.Length && (char.IsDigit(expression[i]) || expression[i] == '.'))
-                {
-                    i++;
-                }
-
-                spans.Add(new ExpressionTokenSpan(start, i - start, expression[start..i], ExpressionTokenKind.Number));
-                continue;
-            }
-
-            if (char.IsLetter(c) || c == '_')
-            {
-                var start = i++;
-                while (i < expression.Length && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_'))
-                {
-                    i++;
-                }
-
-                var text = expression[start..i];
-                spans.Add(new ExpressionTokenSpan(start, i - start, text, KindForSymbol(text)));
-                continue;
-            }
-
-            if (c is '>' or '<' && i + 1 < expression.Length && expression[i + 1] == '=')
-            {
-                spans.Add(new ExpressionTokenSpan(i, 2, expression.Substring(i, 2), ExpressionTokenKind.Operator));
-                i += 2;
-                continue;
-            }
-
-            if ("+-*/%^<>\u003f:".Contains(c, StringComparison.Ordinal))
-            {
-                spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Operator));
-                i++;
-                continue;
-            }
-
-            if ("(),".Contains(c, StringComparison.Ordinal))
-            {
-                spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation));
-                i++;
-                continue;
-            }
-
-            spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown));
-            i++;
         }
 
         return spans;
+    }
+
+    private static ExpressionTokenSpan? TryReadComment(string expression, ref int i)
+    {
+        if (i >= expression.Length || expression[i] != '/' || i + 1 >= expression.Length || expression[i + 1] != '/')
+        {
+            return null;
+        }
+
+        var span = new ExpressionTokenSpan(i, expression.Length - i, expression[i..], ExpressionTokenKind.Comment);
+        i = expression.Length;
+        return span;
+    }
+
+    private static ExpressionTokenSpan? TryReadNumber(string expression, ref int i)
+    {
+        if (i >= expression.Length)
+        {
+            return null;
+        }
+
+        var c = expression[i];
+        if (!char.IsDigit(c) && c != '.')
+        {
+            return null;
+        }
+
+        var start = i++;
+        while (i < expression.Length && (char.IsDigit(expression[i]) || expression[i] == '.'))
+        {
+            i++;
+        }
+
+        return new ExpressionTokenSpan(start, i - start, expression[start..i], ExpressionTokenKind.Number);
+    }
+
+    private ExpressionTokenSpan? TryReadIdentifier(string expression, ref int i)
+    {
+        if (i >= expression.Length)
+        {
+            return null;
+        }
+
+        var c = expression[i];
+        if (!char.IsLetter(c) && c != '_')
+        {
+            return null;
+        }
+
+        var start = i++;
+        while (i < expression.Length && (char.IsLetterOrDigit(expression[i]) || expression[i] == '_'))
+        {
+            i++;
+        }
+
+        var text = expression[start..i];
+        return new ExpressionTokenSpan(start, i - start, text, KindForSymbol(text));
+    }
+
+    private static ExpressionTokenSpan? TryReadTwoCharOperator(string expression, ref int i)
+    {
+        if (i >= expression.Length)
+        {
+            return null;
+        }
+
+        var c = expression[i];
+        if (c is not ('>' or '<') || i + 1 >= expression.Length || expression[i + 1] != '=')
+        {
+            return null;
+        }
+
+        var span = new ExpressionTokenSpan(i, 2, expression.Substring(i, 2), ExpressionTokenKind.Operator);
+        i += 2;
+        return span;
+    }
+
+    private static ExpressionTokenSpan? TryReadSingleCharOperator(string expression, ref int i)
+    {
+        if (i >= expression.Length)
+        {
+            return null;
+        }
+
+        var c = expression[i];
+        if (!"+-*/%^<>?:".Contains(c, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var span = new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Operator);
+        i++;
+        return span;
+    }
+
+    private static ExpressionTokenSpan? TryReadPunctuation(string expression, ref int i)
+    {
+        if (i >= expression.Length)
+        {
+            return null;
+        }
+
+        var c = expression[i];
+        if (!"(),".Contains(c, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var span = new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation);
+        i++;
+        return span;
+    }
+
+    private static ExpressionTokenSpan? TryReadUnknown(string expression, ref int i)
+    {
+        if (i >= expression.Length)
+        {
+            return null;
+        }
+
+        var c = expression[i];
+        if (char.IsWhiteSpace(c))
+        {
+            i++;
+            return null;
+        }
+
+        var span = new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown);
+        i++;
+        return span;
     }
 
     private ExpressionTokenKind KindForSymbol(string text)

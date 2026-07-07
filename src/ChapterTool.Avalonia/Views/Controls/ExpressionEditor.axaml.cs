@@ -320,11 +320,11 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void AcceptSelectedCompletion()
     {
-        var selected = CompletionList.SelectedItem as ExpressionCompletion ?? CurrentCompletions.FirstOrDefault();
-        if (selected is null)
+        if (CurrentCompletions.Count == 0)
         {
             return;
         }
+        var selected = CompletionList.SelectedItem as ExpressionCompletion ?? CurrentCompletions[0];
 
         InsertCompletion(selected);
     }
