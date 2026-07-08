@@ -12,6 +12,27 @@ namespace ChapterTool.Core.Transform;
 public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptService
 {
     private static readonly Regex ReturnOrTransformPattern = ReturnOrTransformRegex();
+    private static readonly TimeSpan DefaultExecutionTimeout = TimeSpan.FromMilliseconds(500);
+    private readonly TimeSpan executionTimeout;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LuaExpressionScriptService"/> class.
+    /// </summary>
+    public LuaExpressionScriptService()
+        : this(DefaultExecutionTimeout)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LuaExpressionScriptService"/> class.
+    /// </summary>
+    /// <param name="executionTimeout">The maximum time allowed for one Lua evaluation.</param>
+    public LuaExpressionScriptService(TimeSpan executionTimeout)
+    {
+        this.executionTimeout = executionTimeout <= TimeSpan.Zero
+            ? DefaultExecutionTimeout
+            : executionTimeout;
+    }
 
     /// <summary>
     /// Gets the built-in Lua expression presets.
@@ -53,9 +74,10 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
         {
             var source = NormalizeSource(scriptText);
             using var state = LuaState.Create();
+            using var timeout = new CancellationTokenSource(executionTimeout);
             ConfigureState(state, context);
 
-            var results = state.DoStringAsync(source, "chapter-expression.lua", CancellationToken.None)
+            var results = state.DoStringAsync(source, "chapter-expression.lua", timeout.Token)
                 .GetAwaiter()
                 .GetResult();
 
@@ -67,7 +89,7 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
             var transform = state.Environment["transform"];
             if (transform.TryRead<LuaFunction>(out _))
             {
-                var callResults = state.CallAsync(transform, [state.Environment["chapter"]], CancellationToken.None)
+                var callResults = state.CallAsync(transform, [state.Environment["chapter"]], timeout.Token)
                     .GetAwaiter()
                     .GetResult();
                 return callResults.Length == 0

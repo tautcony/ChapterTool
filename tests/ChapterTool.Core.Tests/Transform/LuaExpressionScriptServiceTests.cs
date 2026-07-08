@@ -136,6 +136,18 @@ public sealed class LuaExpressionScriptServiceTests
         Assert.Equal(expectedCode, Assert.Single(result.Diagnostics).Code);
     }
 
+    [Fact(Timeout = 2000)]
+    public void Infinite_loop_is_cancelled_with_structured_diagnostic()
+    {
+        var result = service.Evaluate(
+            "function transform(chapter) while true do end end",
+            Context(timeSeconds: 10, fps: 24));
+
+        Assert.False(result.Success);
+        Assert.Equal(10, result.Value);
+        Assert.Equal("InvalidExpression.LuaCanceled", Assert.Single(result.Diagnostics).Code);
+    }
+
     [Fact]
     public void Script_cannot_use_io_library()
     {
