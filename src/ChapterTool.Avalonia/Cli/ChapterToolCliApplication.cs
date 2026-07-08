@@ -16,7 +16,7 @@ public sealed class ChapterToolCliApplication(
 {
     private readonly ICliConsole console = console ?? new SystemCliConsole();
     private readonly RuntimeChapterImporterRegistry importerRegistry = importerRegistry ?? CreateImporterRegistry();
-    private readonly ChapterExportService exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter(), new Core.Transform.ExpressionService());
+    private readonly ChapterExportService exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter());
 
     public int ShowFormats()
     {

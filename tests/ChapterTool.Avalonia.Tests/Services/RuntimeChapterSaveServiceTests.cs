@@ -21,7 +21,7 @@ public sealed class RuntimeChapterSaveServiceTests
             75,
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Intro")]);
-        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter(), new ExpressionService()));
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
 
         try
         {
@@ -54,7 +54,7 @@ public sealed class RuntimeChapterSaveServiceTests
                 new Chapter(1, TimeSpan.Zero, "Chapter 01"),
                 new Chapter(2, TimeSpan.FromSeconds(30), "Chapter 02")
             ]);
-        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter(), new ExpressionService()));
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
 
         try
         {

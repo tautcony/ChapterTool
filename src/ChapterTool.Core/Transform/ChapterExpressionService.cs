@@ -21,15 +21,6 @@ public sealed class ChapterExpressionService
     }
 
     /// <summary>
-    /// Applies expression-based time transforms to chapter data.
-    /// </summary>
-    /// <param name="_">The _ value.</param>
-    public ChapterExpressionService(IExpressionService _)
-        : this(new LuaExpressionScriptService())
-    {
-    }
-
-    /// <summary>
     /// Executes the Apply operation.
     /// </summary>
     /// <param name="info">The chapter data to process.</param>

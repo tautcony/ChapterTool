@@ -21,15 +21,6 @@ public sealed class ChapterOutputProjectionService
     }
 
     /// <summary>
-    /// Projects chapter output data before export by applying expressions, ordering, and naming options.
-    /// </summary>
-    /// <param name="_">The _ value.</param>
-    public ChapterOutputProjectionService(IExpressionService _)
-        : this(new LuaExpressionScriptService())
-    {
-    }
-
-    /// <summary>
     /// Executes the Project operation.
     /// </summary>
     /// <param name="info">The chapter data to process.</param>

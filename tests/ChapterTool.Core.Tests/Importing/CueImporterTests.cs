@@ -239,7 +239,7 @@ public sealed class CueImporterTests
                 new Chapter(-1, Chapter.SeparatorTime, ""),
                 new Chapter(3, TimeSpan.FromSeconds(65.5), "B")
             ]);
-        var exporter = new ChapterExportService(new ChapterTimeFormatter(), new ExpressionService());
+        var exporter = new ChapterExportService(new ChapterTimeFormatter());
 
         var result = exporter.Export(info, new ChapterExportOptions(ChapterExportFormat.Cue, SourceFileName: "source.wav"));
 
@@ -267,7 +267,7 @@ public sealed class CueImporterTests
                 new Chapter(2, TimeSpan.FromSeconds(30), "Main Content"),
                 new Chapter(3, TimeSpan.FromSeconds(90), "Conclusion")
             ]);
-        var exporter = new ChapterExportService(new ChapterTimeFormatter(), new ExpressionService());
+        var exporter = new ChapterExportService(new ChapterTimeFormatter());
 
         var result = exporter.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
@@ -23,6 +24,30 @@ public sealed class LuaExpressionScriptServiceTests
 
         Assert.True(result.Success, DiagnosticText(result));
         Assert.Equal(11, result.Value);
+    }
+
+    [Theory]
+    [InlineData("t + 1", 11)]
+    [InlineData("fps / 2", 12)]
+    [InlineData("math.floor(1.9) + math.ceil(1.1)", 3)]
+    [InlineData("math.max(1, 3) + math.min(2, 4)", 5)]
+    [InlineData("math.pi > 3 and 1 or 0", 1)]
+    [InlineData("1 + (2 * 3)", 7)]
+    [InlineData("(1 + 2) * 3", 9)]
+    [InlineData("2 ^ 3 ^ 2", 512)]
+    [InlineData("2 + 3 * 4 ^ 2", 50)]
+    [InlineData("-t + 2", -8)]
+    [InlineData("1 + -2 * 3", -5)]
+    [InlineData("10 % 3", 1)]
+    [InlineData("math.pow(2, 5)", 32)]
+    [InlineData("t > 5 and t + 1 or fps / 2", 11)]
+    [InlineData("t < 5 and t + 1 or fps / 2", 12)]
+    public void Evaluates_lua_arithmetic_and_context_tokens(string expression, decimal expected)
+    {
+        var result = service.Evaluate(expression, Context(timeSeconds: 10, fps: 24));
+
+        Assert.True(result.Success, DiagnosticText(result));
+        Assert.Equal(expected, Math.Round(result.Value, 6));
     }
 
     [Fact]
@@ -52,6 +77,37 @@ public sealed class LuaExpressionScriptServiceTests
 
         Assert.True(result.Success, DiagnosticText(result));
         Assert.Equal(10.5m, result.Value);
+    }
+
+    [Theory]
+    [InlineData("math.sin(math.asin(1))", 1)]
+    [InlineData("math.cos(math.acos(1))", 1)]
+    [InlineData("math.tan(math.atan(1))", 1)]
+    [InlineData("math.log(1000, 10)", 3)]
+    [InlineData("math.sqrt(81)", 9)]
+    public void Evaluates_lua_math_library_functions(string expression, decimal expected)
+    {
+        var result = service.Evaluate(expression, Context(timeSeconds: 0, fps: 24));
+
+        Assert.True(result.Success, DiagnosticText(result));
+        Assert.InRange(result.Value, expected - 0.0000000001m, expected + 0.0000000001m);
+    }
+
+    [Fact]
+    public void Evaluates_uva_12803_expression_fixture_cases_with_lua()
+    {
+        var input = File.ReadAllLines(FixtureResolver.Fixture("Transform", "UVa-12803.in"));
+        var output = File.ReadAllLines(FixtureResolver.Fixture("Transform", "UVa-12803.out"));
+
+        Assert.Equal(input.Length, output.Length);
+
+        for (var i = 0; i < input.Length; i++)
+        {
+            var result = service.Evaluate(input[i], Context(timeSeconds: 0, fps: 24));
+
+            Assert.True(result.Success, $"Expression #{i + 1} failed: {input[i]}{Environment.NewLine}{DiagnosticText(result)}");
+            Assert.Equal(output[i], result.Value.ToString("0.00", CultureInfo.InvariantCulture));
+        }
     }
 
     [Theory]

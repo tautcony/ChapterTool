@@ -33,16 +33,6 @@ public sealed partial class ChapterExportService
     }
 
     /// <summary>
-    /// Exports ChapterTool chapter data to supported chapter formats.
-    /// </summary>
-    /// <param name="timeFormatter">The chapter time formatter.</param>
-    /// <param name="_">The _ value.</param>
-    public ChapterExportService(IChapterTimeFormatter timeFormatter, IExpressionService _)
-        : this(timeFormatter, new LuaExpressionScriptService())
-    {
-    }
-
-    /// <summary>
     /// Executes the Export operation.
     /// </summary>
     /// <param name="info">The chapter data to process.</param>

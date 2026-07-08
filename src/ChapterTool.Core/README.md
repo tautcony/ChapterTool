@@ -13,8 +13,8 @@ dotnet add package ChapterTool.Core
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers
 - **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes, Chapter→QPFile
 - **Edit** chapter data: time edit, frame edit, rename, delete, insert, reorder, shift, apply name templates
-- **Transform** chapter times: infix math expression engine, Lua scripting engine, frame rate detection and conversion
-- **Combine & append** chapter segments from multi-part sources (MPLS/DVD)
+- **Transform** chapter times: Lua expression scripting, frame rate detection and conversion
+- **Combine & append** chapter segments from multipart sources (MPLS/DVD)
 
 ## Quick Start
 
@@ -22,15 +22,15 @@ dotnet add package ChapterTool.Core
 
 ```csharp
 using ChapterTool.Core.Importing;
-using ChapterTool.Core.Importing.Cue;
+using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 var formatter = new ChapterTimeFormatter();
 
-// CUE files don't require extra dependencies
-IChapterImporter importer = new CueChapterImporter();
-var request = new ChapterImportRequest("/path/to/chapters.cue");
+// MPLS playlists can expose one option per play item/angle.
+IChapterImporter importer = new MplsChapterImporter();
+var request = new ChapterImportRequest("/path/to/BDMV/PLAYLIST/00001.mpls");
 var result = await importer.ImportAsync(request, CancellationToken.None);
 
 if (result.Success)
@@ -99,34 +99,29 @@ var detected = fpsService.Detect(info, tolerance: 0.001m);
 // Change frame rate
 var fpsResult = ChapterFpsTransformService.ChangeFps(info, sourceFps: 23.976m, targetFps: 25m);
 
-// Evaluate a mathematical expression against chapter times
-var exprService = new ExpressionService();
-var eval = exprService.EvaluateInfix("t + 1.0", timeSeconds: 60m, framesPerSecond: 23.976m);
-
-// Use Lua scripting for advanced transforms
 var luaService = new LuaExpressionScriptService();
 var context = new LuaExpressionContext(chapter, index: 1, count: 10, timeSeconds: 60m, framesPerSecond: 23.976m);
-var luaResult = luaService.Evaluate("return t + 1", context);
+var luaResult = luaService.Evaluate("t + 1.0", context);
 ```
 
 ## Supported Formats
 
 ### Import
 
-| Format | Importer | Extensions |
-|--------|----------|------------|
-| CUE Sheet | `CueChapterImporter` | `.cue` |
-| FLAC CUE | `FlacCueImporter` | `.flac` |
-| TAK CUE | `TakCueImporter` | `.tak` |
-| DVD IFO | `IfoChapterImporter` | `.ifo` |
-| Blu-ray MPLS | `MplsChapterImporter` | `.mpls` |
-| Blu-ray XPL | `XplChapterImporter` | `.xpl` |
+| Format                           | Importer                                                          | Extensions   |
+|----------------------------------|-------------------------------------------------------------------|--------------|
+| CUE Sheet                        | `CueChapterImporter`                                              | `.cue`       |
+| FLAC CUE                         | `FlacCueImporter`                                                 | `.flac`      |
+| TAK CUE                          | `TakCueImporter`                                                  | `.tak`       |
+| DVD IFO                          | `IfoChapterImporter`                                              | `.ifo`       |
+| Blu-ray MPLS                     | `MplsChapterImporter`                                             | `.mpls`      |
+| Blu-ray XPL                      | `XplChapterImporter`                                              | `.xpl`       |
 | Media files, including MP4 / M4V | `MediaChapterImporter` with caller-supplied `IMediaChapterReader` | configurable |
-| OGM Text | `OgmChapterImporter` | `.txt` |
-| Matroska XML | `XmlChapterImporter` | `.xml` |
-| WebVTT | `WebVttChapterImporter` | `.vtt` |
-| Plain Text | `TextChapterImporter` | `.txt` |
-| Premiere Markers | `PremiereMarkerListImporter` | `.csv` |
+| OGM Text                         | `OgmChapterImporter`                                              | `.txt`       |
+| Matroska XML                     | `XmlChapterImporter`                                              | `.xml`       |
+| WebVTT                           | `WebVttChapterImporter`                                           | `.vtt`       |
+| Plain Text                       | `TextChapterImporter`                                             | `.txt`       |
+| Premiere Markers                 | `PremiereMarkerListImporter`                                      | `.csv`       |
 
 ### Media Reader Adapters
 
@@ -163,29 +158,28 @@ ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cance
 
 ### Export
 
-| Format | `ChapterExportFormat` |
-|--------|----------------------|
-| OGM Text | `Txt` |
-| Matroska XML | `Xml` |
-| QPFile | `Qpfile` |
-| TimeCodes | `TimeCodes` |
-| tsMuxeR Meta | `TsMuxerMeta` |
-| CUE Sheet | `Cue` |
-| JSON | `Json` |
-| WebVTT | `WebVtt` |
-| Celltimes | `Celltimes` |
-| Chapter → QPFile | `Chapter2Qpfile` |
+| Format           | `ChapterExportFormat` |
+|------------------|-----------------------|
+| OGM Text         | `Txt`                 |
+| Matroska XML     | `Xml`                 |
+| QPFile           | `Qpfile`              |
+| TimeCodes        | `TimeCodes`           |
+| tsMuxeR Meta     | `TsMuxerMeta`         |
+| CUE Sheet        | `Cue`                 |
+| JSON             | `Json`                |
+| WebVTT           | `WebVtt`              |
+| Celltimes        | `Celltimes`           |
+| Chapter → QPFile | `Chapter2Qpfile`      |
 
 ## Expression Engine
 
-`ExpressionService` supports infix mathematical expressions with:
+`LuaExpressionScriptService` evaluates Lua expression scripts for chapter time transforms.
+Simple arithmetic can be entered without `return`, while full scripts may use `return` or define `transform(chapter)`.
 
-- **Variables**: `t` (time in seconds), `fps` (frames per second)
-- **Operators**: `+`, `-`, `*`, `/`, `%`, `^`, `>`, `<`, `>=`, `<=`, ternary `?:`
-- **Functions**: `abs`, `acos`, `asin`, `atan`, `atan2`, `cos`, `sin`, `tan`, `cosh`, `sinh`, `tanh`, `exp`, `log`, `log10`, `sqrt`, `ceil`, `floor`, `round`, `int`, `sign`, `pow`, `max`, `min`
-- **Constants**: `M_E`, `M_PI`, `M_LN2`, `M_LN10`, `M_SQRT2`, etc.
-
-For advanced transforms, `LuaExpressionScriptService` provides full Lua scripting with access to chapter properties (`t`, `fps`, `index`, `count`) and the `math` standard library. Built-in presets include identity, time offset, frame rounding, and half-frame shift.
+- **Globals**: `t` (time in seconds), `fps` (frames per second), `index`, `count`, and `chapter`
+- **Libraries**: safe Lua `math`, `string`, and `table` libraries
+- **Aliases**: common math helpers such as `floor`, `ceil`, `round`, `sin`, `sqrt`, and `sign`
+- **Presets**: identity, time offset, frame rounding, and half-frame shift
 
 ## Diagnostic System
 

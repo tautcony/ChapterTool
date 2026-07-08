@@ -8,7 +8,7 @@ namespace ChapterTool.Core.Tests.Exporting;
 
 public sealed class ChapterExportServiceTests
 {
-    private readonly ChapterExportService service = new(new ChapterTimeFormatter(), new ExpressionService());
+    private readonly ChapterExportService service = new(new ChapterTimeFormatter());
 
     [Fact]
     public void Txt_export_writes_ogm_pairs()
