@@ -9,6 +9,7 @@
 Startup and main shell entry points:
 
 - `src/ChapterTool.Avalonia/Program.cs`
+- `src/ChapterTool.Avalonia/Diagnostics/SentryStartupConfiguration.cs`
 - `src/ChapterTool.Avalonia/App.axaml`
 - `src/ChapterTool.Avalonia/App.axaml.cs`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
