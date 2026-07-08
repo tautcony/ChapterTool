@@ -106,14 +106,15 @@ public sealed class ChapterImporterRegistryTests
     {
         var registry = CreateFakeRegistry(
             ffprobeResult: MediaChapterReadResult.Failed("FfprobeMissingDependency", "missing"),
-            mp4Result: Mp4ChapterReadResult.Succeeded(new Mp4ChapterClip("Fallback", TimeSpan.FromSeconds(1))));
+            mp4Result: MediaChapterReadResult.Succeeded(MediaEntry("Fallback", 0, 1000)));
 
         var primary = registry.Resolve("movie.mp4")!;
         var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeMissingDependency", "missing"));
         var fallback = registry.ResolveFallback("movie.mp4", primary, primaryResult);
 
         Assert.NotNull(fallback);
-        Assert.Equal("Mp4ChapterImporter", fallback.GetType().Name);
+        Assert.Equal("MediaChapterImporter", fallback.GetType().Name);
+        Assert.NotSame(primary, fallback);
     }
 
     [Fact]
@@ -123,7 +124,7 @@ public sealed class ChapterImporterRegistryTests
             ffprobeResult: MediaChapterReadResult.Succeeded(new MediaChapterEntry(
                 0, "1/1000", 0, 1000, "0.000000", "1.000000",
                 new Dictionary<string, string> { ["title"] = "Intro" }, 0)),
-            mp4Result: Mp4ChapterReadResult.Failed("Mp4ReadFailed", "failed"));
+            mp4Result: MediaChapterReadResult.Failed("Mp4ReadFailed", "failed"));
 
         var primary = registry.Resolve("movie.mkv")!;
         var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "MatroskaMissingDependency", "missing"));
@@ -140,7 +141,7 @@ public sealed class ChapterImporterRegistryTests
             ffprobeResult: MediaChapterReadResult.Succeeded(new MediaChapterEntry(
                 0, "1/1000", 0, 1000, "0.000000", "1.000000",
                 new Dictionary<string, string> { ["title"] = "Intro" }, 0)),
-            mp4Result: Mp4ChapterReadResult.Failed("Mp4ReadFailed", "failed"));
+            mp4Result: MediaChapterReadResult.Failed("Mp4ReadFailed", "failed"));
 
         var primary = registry.Resolve("music.flac")!;
         var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FlacEmbeddedCueNotFound", "missing"));
@@ -155,7 +156,7 @@ public sealed class ChapterImporterRegistryTests
     {
         var registry = CreateFakeRegistry(
             ffprobeResult: MediaChapterReadResult.Failed("FfprobeProcessFailed", "failed"),
-            mp4Result: Mp4ChapterReadResult.Succeeded(new Mp4ChapterClip("Fallback", TimeSpan.FromSeconds(1))));
+            mp4Result: MediaChapterReadResult.Succeeded(MediaEntry("Fallback", 0, 1000)));
 
         var mp4Primary = registry.Resolve("movie.mp4")!;
         var invokedFailure = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeProcessFailed", "failed"));
@@ -185,15 +186,18 @@ public sealed class ChapterImporterRegistryTests
     private static RuntimeChapterImporterRegistry CreateRealRegistry()
         => RuntimeImportTestFactory.CreateRegistry();
 
-    private static RuntimeChapterImporterRegistry CreateFakeRegistry(MediaChapterReadResult ffprobeResult, Mp4ChapterReadResult mp4Result)
+    private static RuntimeChapterImporterRegistry CreateFakeRegistry(MediaChapterReadResult ffprobeResult, MediaChapterReadResult mp4Result)
     {
         return new RuntimeChapterImporterRegistry(
             new ChapterTimeFormatter(),
             new FakeExternalToolLocator(),
             new FakeProcessRunner(),
             new FakeMediaChapterReader(ffprobeResult),
-            new FakeMp4ChapterReader(mp4Result));
+            new FakeMediaChapterReader(mp4Result));
     }
+
+    private static MediaChapterEntry MediaEntry(string title, long start, long end) =>
+        new(0, "1/1000", start, end, null, null, new Dictionary<string, string> { ["title"] = title }, 0);
 
     private sealed class FakeRegistry(IChapterImporter importer) : IChapterImporterRegistry
     {
@@ -248,17 +252,4 @@ public sealed class ChapterImporterRegistryTests
         }
     }
 
-    private sealed class FakeMp4ChapterReader(Mp4ChapterReadResult result) : IMp4ChapterReader
-    {
-        public string? LastPath { get; private set; }
-
-        public ValueTask<Mp4ChapterReadResult> ReadAsync(string path, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(Read(path));
-
-        private Mp4ChapterReadResult Read(string path)
-        {
-            LastPath = path;
-            return result;
-        }
-    }
 }

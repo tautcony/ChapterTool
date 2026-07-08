@@ -19,16 +19,19 @@ public sealed class Mp4IntegrationTests
         Assert.Equal(3, result.Chapters.Count);
         Assert.Equal(
             ["Chapter 01", "Chapter 02", "Chapter 03"],
-            result.Chapters.Select(static chapter => chapter.Title));
+            result.Chapters.Select(static chapter => chapter.Tags["title"]));
         Assert.Equal(
-            [TimeSpan.FromMilliseconds(10000), TimeSpan.FromMilliseconds(10000), TimeSpan.FromMilliseconds(9150)],
-            result.Chapters.Select(static chapter => chapter.Duration));
+            [0L, 10000L, 20000L],
+            result.Chapters.Select(static chapter => chapter.Start));
+        Assert.Equal(
+            [10000L, 20000L, 29150L],
+            result.Chapters.Select(static chapter => chapter.End));
     }
 
     [Fact]
     public async Task Importer_with_real_reader_converts_durations_to_cumulative_starts()
     {
-        var importer = new Mp4ChapterImporter(new AtlMp4ChapterReader());
+        var importer = new MediaChapterImporter(new AtlMp4ChapterReader(), [".mp4", ".m4a", ".m4v"]);
 
         var result = await importer.ImportAsync(new ChapterImportRequest(FixturePath), TestContext.Current.CancellationToken);
 

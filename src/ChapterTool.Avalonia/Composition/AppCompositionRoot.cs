@@ -5,6 +5,7 @@ using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Importing.Media;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
@@ -88,7 +89,7 @@ public sealed class AppCompositionRoot : IDisposable
             CreateMediaChapterReader(),
             CreateMp4ChapterReader());
 
-    public static AtlMp4ChapterReader CreateMp4ChapterReader() => new();
+    public static IMediaChapterReader CreateMp4ChapterReader() => new AtlMp4ChapterReader();
 
     public FfprobeMediaChapterReader CreateMediaChapterReader() =>
         new(CreateExternalToolLocator(), CreateProcessRunner());

@@ -3,7 +3,7 @@ using ChapterTool.Core.Importing.Media;
 
 namespace ChapterTool.Infrastructure.Importing.Media;
 
-public sealed class AtlMp4ChapterReader() : IMp4ChapterReader
+public sealed class AtlMp4ChapterReader() : IMediaChapterReader
 {
     private readonly IAtlTrackChapterSource source = new AtlTrackChapterSource();
 
@@ -13,13 +13,13 @@ public sealed class AtlMp4ChapterReader() : IMp4ChapterReader
         this.source = source;
     }
 
-    public ValueTask<Mp4ChapterReadResult> ReadAsync(string path, CancellationToken cancellationToken)
+    public ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrWhiteSpace(path))
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4InvalidPath", "MP4 path is empty."));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4InvalidPath", "MP4 path is empty."));
         }
 
         try
@@ -29,57 +29,65 @@ public sealed class AtlMp4ChapterReader() : IMp4ChapterReader
         }
         catch (FileNotFoundException ex)
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4FileNotFound", ex.Message));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4FileNotFound", ex.Message));
         }
         catch (DirectoryNotFoundException ex)
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4FileNotFound", ex.Message));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4FileNotFound", ex.Message));
         }
         catch (UnauthorizedAccessException ex)
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4FileInaccessible", ex.Message));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4FileInaccessible", ex.Message));
         }
         catch (IOException ex)
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4ReadFailed", ex.Message));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4ReadFailed", ex.Message));
         }
         catch (InvalidDataException ex)
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4MalformedMetadata", ex.Message));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4MalformedMetadata", ex.Message));
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException)
         {
-            return ValueTask.FromResult(Mp4ChapterReadResult.Failed("Mp4UnsupportedMetadata", ex.Message));
+            return ValueTask.FromResult(MediaChapterReadResult.Failed("Mp4UnsupportedMetadata", ex.Message));
         }
     }
 
-    private static Mp4ChapterReadResult Normalize(IReadOnlyList<AtlChapterEntry> chapters)
+    private static MediaChapterReadResult Normalize(IReadOnlyList<AtlChapterEntry> chapters)
     {
         if (chapters.Count == 0)
         {
-            return Mp4ChapterReadResult.Succeeded();
+            return MediaChapterReadResult.Succeeded();
         }
 
-        var clips = new List<Mp4ChapterClip>(chapters.Count);
+        var entries = new List<MediaChapterEntry>(chapters.Count);
         foreach (var chapter in chapters.OrderBy(static chapter => chapter.StartTime))
         {
             if (chapter.UseOffset)
             {
-                return Mp4ChapterReadResult.Failed("Mp4UnsupportedMetadata", "Offset-based MP4 chapters are not supported.");
+                return MediaChapterReadResult.Failed("Mp4UnsupportedMetadata", "Offset-based MP4 chapters are not supported.");
             }
 
             if (chapter.EndTime <= chapter.StartTime)
             {
-                return Mp4ChapterReadResult.Failed("Mp4MalformedMetadata", "MP4 chapter end time must be greater than start time.");
+                return MediaChapterReadResult.Failed("Mp4MalformedMetadata", "MP4 chapter end time must be greater than start time.");
             }
 
             var title = string.IsNullOrWhiteSpace(chapter.Title)
-                ? $"Chapter {clips.Count + 1:D2}"
+                ? $"Chapter {entries.Count + 1:D2}"
                 : chapter.Title;
-            clips.Add(new Mp4ChapterClip(title, TimeSpan.FromMilliseconds(chapter.EndTime - chapter.StartTime)));
+            entries.Add(new MediaChapterEntry(
+                entries.Count,
+                "1/1000",
+                chapter.StartTime,
+                chapter.EndTime,
+                null,
+                null,
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["title"] = title },
+                entries.Count));
         }
 
-        return Mp4ChapterReadResult.Succeeded(clips.ToArray());
+        return MediaChapterReadResult.Succeeded(entries.ToArray());
     }
 }
 

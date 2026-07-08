@@ -15,7 +15,7 @@ public sealed class RuntimeChapterImporterRegistry(
     IExternalToolLocator toolLocator,
     IProcessRunner processRunner,
     IMediaChapterReader mediaChapterReader,
-    IMp4ChapterReader mp4ChapterReader) : IChapterImporterRegistry
+    IMediaChapterReader mp4FallbackChapterReader) : IChapterImporterRegistry
 {
     private readonly BdmvChapterImporter bdmvImporter = new(toolLocator, processRunner, formatter);
     private readonly TextChapterImporter textImporter = new(formatter);
@@ -30,7 +30,7 @@ public sealed class RuntimeChapterImporterRegistry(
     private readonly XplChapterImporter xplImporter = new();
     private readonly MatroskaChapterImporter matroskaImporter = new(toolLocator, processRunner, formatter);
     private readonly MediaChapterImporter mediaImporter = new(mediaChapterReader);
-    private readonly Mp4ChapterImporter mp4Importer = new(mp4ChapterReader);
+    private readonly MediaChapterImporter mp4FallbackImporter = new(mp4FallbackChapterReader, [".mp4", ".m4a", ".m4v"]);
 
     public IChapterImporter? Resolve(string path)
     {
@@ -63,8 +63,8 @@ public sealed class RuntimeChapterImporterRegistry(
         var extension = Path.GetExtension(path).ToLowerInvariant();
         return extension switch
         {
-            ".mp4" or ".m4a" or ".m4v" when primaryImporter is MediaChapterImporter && HasDiagnostic(primaryResult, "FfprobeMissingDependency", "FfprobeCannotStart")
-                => mp4Importer,
+            ".mp4" or ".m4a" or ".m4v" when ReferenceEquals(primaryImporter, mediaImporter) && HasDiagnostic(primaryResult, "FfprobeMissingDependency", "FfprobeCannotStart")
+                => mp4FallbackImporter,
             ".mkv" or ".mka" or ".mks" or ".webm" when primaryImporter is MatroskaChapterImporter && HasDiagnostic(primaryResult, "MatroskaMissingDependency", "MatroskaCannotStart")
                 => mediaImporter,
             ".flac" when primaryImporter is FlacCueImporter && HasDiagnostic(primaryResult, "FlacEmbeddedCueNotFound")

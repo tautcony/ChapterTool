@@ -5,7 +5,7 @@ namespace ChapterTool.Infrastructure.Tests;
 public sealed class AtlMp4ChapterReaderTests
 {
     [Fact]
-    public async Task ReaderNormalizesStartEndTimesIntoOrderedDurations()
+    public async Task ReaderNormalizesStartEndTimesIntoOrderedMediaEntries()
     {
         var reader = new AtlMp4ChapterReader(new FakeAtlTrackChapterSource(
             new AtlChapterEntry("Second", 1500, 4500, UseOffset: false),
@@ -14,8 +14,9 @@ public sealed class AtlMp4ChapterReaderTests
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal(["Intro", "Second"], result.Chapters.Select(static chapter => chapter.Title));
-        Assert.Equal([TimeSpan.FromMilliseconds(1500), TimeSpan.FromMilliseconds(3000)], result.Chapters.Select(static chapter => chapter.Duration));
+        Assert.Equal(["Intro", "Second"], result.Chapters.Select(static chapter => chapter.Tags["title"]));
+        Assert.Equal([0L, 1500L], result.Chapters.Select(static chapter => chapter.Start));
+        Assert.Equal([1500L, 4500L], result.Chapters.Select(static chapter => chapter.End));
     }
 
     [Fact]
@@ -28,8 +29,9 @@ public sealed class AtlMp4ChapterReaderTests
         var result = await reader.ReadAsync("movie.m4a", TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal(["序章", "Épilogue"], result.Chapters.Select(static chapter => chapter.Title));
-        Assert.Equal([TimeSpan.FromMilliseconds(1234), TimeSpan.FromMilliseconds(1266)], result.Chapters.Select(static chapter => chapter.Duration));
+        Assert.Equal(["序章", "Épilogue"], result.Chapters.Select(static chapter => chapter.Tags["title"]));
+        Assert.Equal([0L, 1234L], result.Chapters.Select(static chapter => chapter.Start));
+        Assert.Equal([1234L, 2500L], result.Chapters.Select(static chapter => chapter.End));
     }
 
     [Fact]
