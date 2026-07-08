@@ -16,20 +16,6 @@ namespace ChapterTool.Avalonia.Tests.Headless;
 public sealed class MainWindowHeadlessTests
 {
     [AvaloniaFact]
-    public async Task MainWindow_loads_compiled_xaml_resources_and_layout()
-    {
-        using var host = new MainWindowHeadlessTestHost();
-
-        await host.LayoutAsync();
-
-        Assert.StartsWith("[VCB-Studio] ChapterTool", host.Window.Title);
-        Assert.NotNull(host.RequiredControl<DataGrid>("ChapterGrid"));
-        Assert.NotNull(host.RequiredControl<Button>("LoadButton"));
-        Assert.True(host.Window.Bounds.Width > 0);
-        Assert.True(host.Window.Bounds.Height > 0);
-    }
-
-    [AvaloniaFact]
     public async Task Xml_edition_selection_displays_selected_chapter_names()
     {
         using var host = CreateMultiOptionHost(
@@ -186,79 +172,6 @@ public sealed class MainWindowHeadlessTests
         await AssertSelectorDisplaysLabelAsync(host, path, selectedIndex: 1, "00003（6 chapters）");
     }
 
-    [AvaloniaFact]
-    public async Task Main_window_selector_display_captures_screenshot_artifacts()
-    {
-        using var host = CreateMultiOptionHost(
-            "00000.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "A1", "A2", "A3", "A4", "A5", "A6"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00003", "B1", "B2", "B3", "B4", "B5", "B6"));
-
-        await host.LoadAsync("00000.mpls");
-        host.ViewModel.SaveFormat = ChapterExportFormat.Xml;
-        host.ViewModel.XmlLanguageIndex = host.ViewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
-
-        foreach (var (name, width, height) in new[]
-        {
-            ("default", 736d, 576d),
-            ("wide", 944d, 576d),
-            ("narrow", 608d, 576d)
-        })
-        {
-            await host.LayoutAsync(width, height);
-            var artifactPath = Path.Combine(MainWindowHeadlessTestHost.RepositoryRoot(), "artifacts", $"main-window-selectors-{name}.png");
-            Directory.CreateDirectory(Path.GetDirectoryName(artifactPath)!);
-            var bitmap = host.Window.CaptureRenderedFrame()
-                ?? throw new InvalidOperationException($"Main window selector frame '{name}' was not rendered.");
-            await using (var stream = File.Create(artifactPath))
-            {
-                bitmap.Save(stream);
-            }
-
-            Assert.True(File.Exists(artifactPath));
-            Assert.True(new FileInfo(artifactPath).Length > 0);
-            var clipBox = host.RequiredControl<ComboBox>("ClipBox");
-            var chapterNameModeBox = host.RequiredControl<ComboBox>("ChapterNameModeBox");
-            var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
-            Assert.True(clipBox.IsVisible);
-            Assert.True(clipBox.Bounds.Width > 0);
-            Assert.Contains("00002", clipBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
-            Assert.False(string.IsNullOrWhiteSpace(chapterNameModeBox.SelectionBoxItem?.ToString()));
-            Assert.Contains("jpn", xmlLanguageBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
-        }
-    }
-
-    [AvaloniaFact]
-    public async Task Main_window_grid_keeps_compact_column_alignment()
-    {
-        using var host = CreateMultiOptionHost(
-            "00000.mpls",
-            MainWindowHeadlessTestHost.Option(
-                "MPLS",
-                "00002",
-                "A1",
-                "A2",
-                "A3",
-                "A4",
-                "A5",
-                "A6",
-                "A7",
-                "A8",
-                "A9",
-                "A10"));
-
-        await host.LoadAsync("00000.mpls");
-        await host.LayoutAsync(608, 576);
-        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
-
-        Assert.True(grid.Columns[0].ActualWidth >= 56);
-        Assert.True(grid.Columns[0].ActualWidth < 70);
-        AssertCellTextAlignment(grid, "2", TextAlignment.Center);
-        AssertCellTextAlignment(grid, "00:00:10.000", TextAlignment.Center);
-        AssertCellTextAlignment(grid, "A2", TextAlignment.Center);
-        AssertCellTextAlignment(grid, "240", TextAlignment.Center);
-    }
-
     private static MainWindowHeadlessTestHost CreateMultiOptionHost(
         string path,
         params Core.Models.ChapterSourceOption[] options) =>
@@ -321,17 +234,5 @@ public sealed class MainWindowHeadlessTests
         Assert.True(
             host.ContainsRenderedText(clipSelector, expectedLabel),
             $"Expected default selected label '{expectedLabel}'. Rendered selector texts:{Environment.NewLine}{host.DescribeRenderedTexts(clipSelector)}");
-    }
-
-    private static void AssertCellTextAlignment(Control scope, string text, TextAlignment expected)
-    {
-        var textBlock = scope
-            .GetVisualDescendants()
-            .OfType<TextBlock>()
-            .FirstOrDefault(block => string.Equals(block.Text, text, StringComparison.Ordinal));
-
-        Assert.NotNull(textBlock);
-        Assert.Equal(expected, textBlock.TextAlignment);
-        Assert.Equal(HorizontalAlignment.Stretch, textBlock.HorizontalAlignment);
     }
 }

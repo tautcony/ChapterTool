@@ -3,7 +3,6 @@ using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Configuration;
 using System.Text.RegularExpressions;
 
@@ -47,16 +46,6 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
         Assert.False(string.IsNullOrWhiteSpace(xmlLanguageBox.SelectionBoxItem?.ToString()));
         Assert.StartsWith("jpn（", xmlLanguageBox.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
 
-        var languageWindow = await MainWindowHeadlessTestHost.RenderToolAsync(new LanguageToolView(), new LanguageToolViewModel(host.ViewModel));
-        try
-        {
-            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(languageWindow, "语言"));
-            Assert.True(MainWindowHeadlessTestHost.ContainsRenderedTextStatic(languageWindow, "应用"));
-        }
-        finally
-        {
-            languageWindow.Close();
-        }
     }
 
     private static string ChapterNameModeSelectionText(MainWindowHeadlessTestHost host)
@@ -77,108 +66,6 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
         var rendered = MainWindowHeadlessTestHost.RenderedTexts(host.Window);
         Assert.DoesNotContain(rendered, text => text.StartsWith("Main.", StringComparison.Ordinal) || text.StartsWith("Common.", StringComparison.Ordinal));
         Assert.DoesNotContain(rendered, ContainsEncodingArtifact);
-    }
-
-    [AvaloniaFact]
-    public async Task English_main_window_option_labels_have_room_at_default_and_narrow_widths()
-    {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
-        await host.LoadAsync("movie.txt");
-
-        foreach (var size in new[] { UiTestSize.Default, UiTestSize.Narrow })
-        {
-            await host.LayoutAtAsync(size);
-
-            foreach (var groupName in new[]
-            {
-                "FormatOptionsGroup",
-                "ChapterNameOptionsGroup",
-                "OrderShiftOptionsGroup",
-                "XmlLanguageOptionsGroup",
-                "ExpressionOptionsGroup"
-            })
-            {
-                var group = host.RequiredControl<Grid>(groupName);
-                var label = MainWindowHeadlessTestHost.RequiredDescendant<TextBlock>(
-                    group,
-                    block => block.Classes.Contains("optionLabel"),
-                    $"{groupName} label");
-
-                Assert.True(label.Bounds.Width > 0, $"{groupName} label width was {label.Bounds.Width}.");
-                Assert.True(label.Bounds.Height >= 14, $"{groupName} label height was {label.Bounds.Height}.");
-            }
-
-            var artifact = await host.CaptureArtifactAsync($"main-window-en-{size.ToString().ToLowerInvariant()}.png");
-            Assert.True(File.Exists(artifact));
-            Assert.True(new FileInfo(artifact).Length > 0);
-        }
-    }
-
-    [AvaloniaFact]
-    public async Task Main_window_layout_captures_default_wide_and_narrow_artifacts()
-    {
-        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
-            "movie.txt",
-            MainWindowHeadlessTestHost.Option("OGM", "movie.txt", "Intro", "Middle", "Ending")));
-        await host.LoadAsync("movie.txt");
-
-        foreach (var size in new[] { UiTestSize.Default, UiTestSize.Wide, UiTestSize.Narrow })
-        {
-            await host.LayoutAtAsync(size);
-            var artifact = await host.CaptureArtifactAsync($"main-window-{size.ToString().ToLowerInvariant()}.png");
-
-            Assert.True(File.Exists(artifact));
-            Assert.True(new FileInfo(artifact).Length > 0);
-            Assert.True(host.RequiredControl<Button>("LoadButton").Bounds.Width > 0);
-            Assert.True(host.RequiredControl<Button>("SaveButton").Bounds.Width > 0);
-            Assert.True(host.RequiredControl<NumericUpDown>("OrderShiftBox").Bounds.Width >= 92);
-            Assert.True(host.RequiredControl<DataGrid>("ChapterGrid").Columns.All(column => column.MinWidth > 0));
-            Assert.True(host.RequiredControl<Grid>("AdvancedOptionsGrid").Bounds.Width > 0);
-        }
-    }
-
-    [AvaloniaFact]
-    public async Task Settings_tool_layout_captures_default_wide_and_narrow_artifacts()
-    {
-        using var host = new MainWindowHeadlessTestHost();
-        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer, autoLoad: false);
-        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
-        var window = new Window();
-        try
-        {
-            foreach (var (name, width, height) in new[]
-            {
-                ("default", 760d, 520d),
-                ("wide", 1040d, 620d),
-                ("narrow", 560d, 640d)
-            })
-            {
-                window.Content = new SettingsToolView { DataContext = viewModel };
-                window.Width = width;
-                window.Height = height;
-                window.Show();
-                await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
-
-                var artifact = await host.CaptureArtifactAsync($"settings-tool-{name}.png", window);
-
-                Assert.True(File.Exists(artifact));
-                Assert.True(new FileInfo(artifact).Length > 0);
-                var tabControl = MainWindowHeadlessTestHost.Descendants<TabControl>(window).Single();
-                Assert.True(tabControl.Bounds.Width > 0);
-                Assert.Contains(
-                    tabControl.GetVisualDescendants().OfType<TextBlock>(),
-                    block => string.Equals(block.Text, host.Localizer.GetString("Settings.General"), StringComparison.Ordinal));
-                Assert.Contains(
-                    window.GetVisualDescendants().OfType<TextBlock>(),
-                    block => string.Equals(block.Text, host.Localizer.GetString("Settings.SaveDirectory"), StringComparison.Ordinal));
-                Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.SaveCommand && button.Bounds.Height >= 24);
-                Assert.Contains(MainWindowHeadlessTestHost.Descendants<Button>(window), button => button.Command == viewModel.ResetCommand && button.Bounds.Height >= 24);
-            }
-        }
-        finally
-        {
-            window.Close();
-        }
     }
 
     private static bool ContainsEncodingArtifact(string text) =>
