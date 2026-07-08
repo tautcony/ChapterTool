@@ -52,6 +52,8 @@
   - `Get-Process ChapterTool.Avalonia -ErrorAction SilentlyContinue | Stop-Process`
 - Do not run multiple `dotnet test` commands for projects in this solution in parallel. The test projects share referenced project `obj/` outputs, and parallel external test processes can fail with locked files such as `src/ChapterTool.Core/obj/Debug/net10.0/ChapterTool.Core.dll`. Prefer the full solution test command above, or run individual test projects sequentially.
 - Keep Avalonia Headless tests isolated without serializing the entire Avalonia test assembly. Do not reintroduce assembly-level `CollectionBehavior(DisableTestParallelization = true)` for this project; instead put every class containing `[AvaloniaFact]` or `[AvaloniaTheory]` in `AvaloniaHeadlessTestCollection`. The guard test `HeadlessTestCollectionGuardTests` exists to catch missed classes.
+- Keep Avalonia Headless tests focused on UI behavior and workflow outcomes. Prefer tests that drive user actions or state changes and then verify the resulting UI state, command routing, localization refresh, selection changes, or persisted behavior.
+- Do not add Headless tests that only assert a control exists, a static label renders, a window opens, a screenshot file was written, or a layout has non-zero size unless that assertion is part of a broader user-facing behavior change being verified.
 - When a test constructs `SettingsToolViewModel` and then calls `LoadAsync` explicitly, pass `autoLoad: false`. Otherwise the constructor starts a background load and the test performs the same initialization twice, which slows Headless runs and can introduce races.
 - Do not test source/configuration files by reading them as text and asserting strings. This includes `.cs`, `.axaml`, `.csproj`, scripts, CI YAML, README, and docs. Prefer compiled coverage, behavior tests, runtime verification, structured public APIs, or integration checks.
 - Add or update tests for changed behavior, especially UI layout constraints, UTF-8 labels, import/export behavior, and platform-service boundaries.
@@ -70,7 +72,7 @@
 - Keep DataGrid columns protected with sensible `MinWidth` values so headers and content do not overlap when resized.
 - Buttons should center content horizontally and vertically.
 - Do not expose Windows registry-dependent actions, such as file association, as always-visible primary UI.
-- When verifying visual layout changes, capture screenshots at default, wide, and narrow sizes and store them under `artifacts/`.
+- When verifying visual layout changes manually, capture screenshots at default, wide, and narrow sizes and store them under `artifacts/`. Do not treat screenshot generation by itself as an automated test assertion.
 - Preserve accessible names, keyboard navigation, focus behavior, and localization boundaries when changing controls.
 
 ## Change And PR Expectations

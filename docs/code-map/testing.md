@@ -79,7 +79,7 @@ Fixtures:
 
 ## Avalonia Test Map
 
-Use `tests/ChapterTool.Avalonia.Tests` when changing UI shell, view models, runtime UI services, localization, headless layout, or CLI behavior.
+Use `tests/ChapterTool.Avalonia.Tests` when changing UI shell, view models, runtime UI services, localization, headless interaction flows, or CLI behavior.
 
 High-signal test files:
 
@@ -94,7 +94,7 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
 - localization
   - `tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs`
-- headless shell/layout/integration
+- headless shell/interaction/integration
   - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowInteractionHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowStateHeadlessTests.cs`

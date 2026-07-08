@@ -140,33 +140,6 @@ public sealed class MainWindowInteractionHeadlessTests
     }
 
     [AvaloniaFact]
-    public async Task Auxiliary_command_surfaces_are_visible_and_bound()
-    {
-        using var host = new MainWindowHeadlessTestHost();
-        await host.LoadAsync("movie.txt");
-
-        var previewButton = host.RequiredControl<Button>("PreviewButton");
-        var settingsButton = host.RequiredControl<Button>("SettingsButton");
-        var logButton = host.RequiredControl<Button>("LogButton");
-        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
-
-        Assert.True(previewButton.IsVisible);
-        Assert.True(settingsButton.IsVisible);
-        Assert.True(logButton.IsVisible);
-        Assert.NotNull(previewButton.Command);
-        Assert.NotNull(settingsButton.Command);
-        Assert.NotNull(logButton.Command);
-        Assert.NotNull(host.RequiredMenuItem(grid, "PreviewMenuItem").Command);
-        Assert.NotNull(host.RequiredMenuItem(grid, "ZonesMenuItem").Command);
-        Assert.NotNull(host.RequiredMenuItem(grid, "ForwardShiftMenuItem").Command);
-
-        await host.Window.PreviewCommand.ExecuteAsync();
-
-        Assert.Equal(["preview"], host.WindowService.Opened);
-        Assert.Same(host.ViewModel, host.WindowService.Parameters.Single());
-    }
-
-    [AvaloniaFact]
     public async Task Icon_only_main_window_buttons_have_accessible_names()
     {
         using var host = new MainWindowHeadlessTestHost();

@@ -138,17 +138,6 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         await ExecuteLayoutAsync(Window);
     }
 
-    public async ValueTask LayoutAtAsync(UiTestSize size)
-    {
-        var (width, height) = size switch
-        {
-            UiTestSize.Narrow => (760d, 640d),
-            UiTestSize.Wide => (1180d, 780d),
-            _ => (920d, 720d)
-        };
-        await LayoutAsync(width, height);
-    }
-
     public static async ValueTask ExecuteLayoutAsync(Window window)
     {
         Dispatcher.UIThread.RunJobs();
@@ -246,19 +235,6 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         }
 
         ViewModel.UpdateSelectedRows(indexes.ToHashSet());
-    }
-
-    public async ValueTask<string> CaptureArtifactAsync(string name, Window? window = null)
-    {
-        var target = window ?? Window;
-        await ExecuteLayoutAsync(target);
-        var artifactPath = Path.Combine(RepositoryRoot(), "artifacts", name);
-        Directory.CreateDirectory(Path.GetDirectoryName(artifactPath)!);
-        var bitmap = target.CaptureRenderedFrame()
-            ?? throw new InvalidOperationException($"Frame '{name}' was not rendered.");
-        await using var stream = File.Create(artifactPath);
-        bitmap.Save(stream);
-        return artifactPath;
     }
 
     public static string RepositoryRoot()
