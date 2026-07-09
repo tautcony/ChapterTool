@@ -1,6 +1,7 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using System.Globalization;
+using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Core.Transform;
 
@@ -9,15 +10,15 @@ namespace ChapterTool.Core.Transform;
 /// </summary>
 public sealed class ChapterExpressionService
 {
-    private readonly ILuaExpressionScriptService luaExpressionService;
+    private readonly IChapterExpressionEngine expressionEngine;
 
     /// <summary>
     /// Applies expression-based time transforms to chapter data.
     /// </summary>
-    /// <param name="luaExpressionService">The Lua expression service.</param>
-    public ChapterExpressionService(ILuaExpressionScriptService? luaExpressionService = null)
+    /// <param name="expressionEngine">The chapter expression engine.</param>
+    public ChapterExpressionService(IChapterExpressionEngine? expressionEngine = null)
     {
-        this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+        this.expressionEngine = expressionEngine ?? new Expressions.Lua.LuaExpressionScriptService();
     }
 
     /// <summary>
@@ -51,9 +52,9 @@ public sealed class ChapterExpressionService
 
             nonSeparatorIndex++;
             var originalSeconds = (decimal)chapter.StartTime.TotalSeconds;
-            var evaluated = luaExpressionService.Evaluate(
+            var evaluated = expressionEngine.Evaluate(
                 expression,
-                new LuaExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond));
+                new ChapterExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond));
             diagnostics.AddRange(evaluated.Diagnostics);
             if (!evaluated.Success)
             {

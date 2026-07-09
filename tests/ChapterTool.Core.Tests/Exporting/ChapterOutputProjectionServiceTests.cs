@@ -1,6 +1,7 @@
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using LuaExpressionScriptService = ChapterTool.Core.Transform.Expressions.Lua.LuaExpressionScriptService;
 
 namespace ChapterTool.Core.Tests.Exporting;
 

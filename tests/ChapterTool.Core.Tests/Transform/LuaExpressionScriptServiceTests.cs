@@ -1,6 +1,8 @@
 using System.Globalization;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using LuaExpressionScriptService = ChapterTool.Core.Transform.Expressions.Lua.LuaExpressionScriptService;
 
 namespace ChapterTool.Core.Tests.Transform;
 
@@ -157,9 +159,9 @@ public sealed class LuaExpressionScriptServiceTests
         Assert.Equal("InvalidExpression.LuaRuntime", Assert.Single(result.Diagnostics).Code);
     }
 
-    private static LuaExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1) =>
+    private static ChapterExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1) =>
         new(new Chapter(number, TimeSpan.FromSeconds((double)timeSeconds), "Intro", ""), index, count, timeSeconds, fps);
 
-    private static string DiagnosticText(LuaExpressionEvaluationResult result) =>
+    private static string DiagnosticText(ChapterExpressionEvaluationResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));
 }

@@ -8,6 +8,8 @@ using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using LuaExpressionScriptService = ChapterTool.Core.Transform.Expressions.Lua.LuaExpressionScriptService;
 
 namespace ChapterTool.Core.Exporting;
 
@@ -17,17 +19,17 @@ namespace ChapterTool.Core.Exporting;
 public sealed partial class ChapterExportService
 {
     private readonly IChapterTimeFormatter timeFormatter;
-    private readonly ILuaExpressionScriptService luaExpressionService;
+    private readonly IChapterExpressionEngine expressionEngine;
 
     /// <summary>
     /// Exports ChapterTool chapter data to supported chapter formats.
     /// </summary>
     /// <param name="timeFormatter">The chapter time formatter.</param>
-    /// <param name="luaExpressionService">The Lua expression service.</param>
-    public ChapterExportService(IChapterTimeFormatter timeFormatter, ILuaExpressionScriptService? luaExpressionService = null)
+    /// <param name="expressionEngine">The chapter expression engine.</param>
+    public ChapterExportService(IChapterTimeFormatter timeFormatter, IChapterExpressionEngine? expressionEngine = null)
     {
         this.timeFormatter = timeFormatter;
-        this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
     }
 
     /// <summary>
@@ -39,7 +41,7 @@ public sealed partial class ChapterExportService
     public ChapterExportResult Export(ChapterSet info, ChapterExportOptions options)
     {
         var projection = options.ProjectOutput
-            ? new ChapterOutputProjectionService(luaExpressionService).Project(info, options)
+            ? new ChapterOutputProjectionService(expressionEngine).Project(info, options)
             : new ChapterOutputProjectionResult(info, []);
         info = projection.Info;
         var outputInfo = info with { Chapters = projection.OutputChapters };

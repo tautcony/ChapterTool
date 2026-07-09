@@ -158,15 +158,15 @@ public sealed class ToolWindowViewModelTests
 
             Assert.Equal("round-to-frame", expression.SelectedPreset?.Id);
             Assert.Contains("fps", expression.Expression, StringComparison.Ordinal);
-            Assert.Equal("Round to nearest frame", expression.LuaExpressionSourceName);
+            Assert.Equal("Round to nearest frame", expression.ExpressionSourceName);
 
             await expression.BrowseScriptCommand.ExecuteAsync();
             await expression.ApplyCommand.ExecuteAsync(expression);
 
             Assert.Equal("t + 2", owner.Expression);
             Assert.True(owner.ApplyExpression);
-            Assert.Equal(string.Empty, owner.LuaExpressionPresetId);
-            Assert.Equal(Path.GetFileName(scriptPath), owner.LuaExpressionSourceName);
+            Assert.Equal(string.Empty, owner.ExpressionPresetId);
+            Assert.Equal(Path.GetFileName(scriptPath), owner.ExpressionSourceName);
             Assert.Equal("00:00:07.000", owner.Rows[0].TimeText);
         }
         finally

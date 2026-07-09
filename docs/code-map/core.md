@@ -64,7 +64,8 @@ Frame/time and expression logic:
 - `src/ChapterTool.Core/Transform/FrameRateService.cs`
 - `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs`
 - `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
-- `src/ChapterTool.Core/Transform/LuaExpressionScriptService.cs`
+- `src/ChapterTool.Core/Transform/Expressions/ChapterExpressionEngine.cs`
+- `src/ChapterTool.Core/Transform/Expressions/Lua/LuaExpressionScriptService.cs`
 - `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
 - `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 - `src/ChapterTool.Core/Transform/ChapterRounding.cs`
@@ -110,7 +111,8 @@ Start with:
 - detection: `src/ChapterTool.Core/Transform/FrameRateService.cs`
 - FPS conversion: `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs`
 - expression-driven rewrites: `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
-- Lua evaluation: `src/ChapterTool.Core/Transform/LuaExpressionScriptService.cs`
+- expression engine contract: `src/ChapterTool.Core/Transform/Expressions/ChapterExpressionEngine.cs`
+- Lua expression engine: `src/ChapterTool.Core/Transform/Expressions/Lua/LuaExpressionScriptService.cs`
 - time parse/format bugs: `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 
 ### Export behavior

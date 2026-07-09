@@ -695,11 +695,11 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         this.filePicker = filePicker;
         Expression = owner.Expression;
         ApplyExpression = owner.ApplyExpression;
-        LuaExpressionSourceName = owner.LuaExpressionSourceName;
-        Presets = new LuaExpressionScriptService().Presets
-            .Select(static preset => new LuaExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
+        ExpressionSourceName = owner.ExpressionSourceName;
+        Presets = owner.ExpressionPresets
+            .Select(static preset => new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
             .ToList();
-        SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, owner.LuaExpressionPresetId, StringComparison.Ordinal));
+        SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, owner.ExpressionPresetId, StringComparison.Ordinal));
         BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null);
         ApplyCommand = new UiCommand((parameter, _) =>
         {
@@ -707,8 +707,8 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
             {
                 owner.Expression = string.IsNullOrWhiteSpace(viewModel.Expression) ? "t" : viewModel.Expression;
                 owner.ApplyExpression = viewModel.ApplyExpression;
-                owner.LuaExpressionPresetId = viewModel.SelectedPreset?.Id ?? string.Empty;
-                owner.LuaExpressionSourceName = viewModel.LuaExpressionSourceName;
+                owner.ExpressionPresetId = viewModel.SelectedPreset?.Id ?? string.Empty;
+                owner.ExpressionSourceName = viewModel.ExpressionSourceName;
             }
 
             return ValueTask.CompletedTask;
@@ -717,9 +717,9 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
 
     public IAppLocalizer Localizer => owner.Localizer;
 
-    public IReadOnlyList<LuaExpressionPresetViewModel> Presets { get; }
+    public IReadOnlyList<ExpressionPresetViewModel> Presets { get; }
 
-    public LuaExpressionPresetViewModel? SelectedPreset =>
+    public ExpressionPresetViewModel? SelectedPreset =>
         SelectedPresetIndex >= 0 && SelectedPresetIndex < Presets.Count ? Presets[SelectedPresetIndex] : null;
 
     public int SelectedPresetIndex
@@ -736,7 +736,7 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
             if (SelectedPreset is { } preset)
             {
                 Expression = preset.ScriptText;
-                LuaExpressionSourceName = preset.DisplayName;
+                ExpressionSourceName = preset.DisplayName;
                 StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
             }
         }
@@ -754,7 +754,7 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         set => SetProperty(ref field, value);
     }
 
-    public string LuaExpressionSourceName
+    public string ExpressionSourceName
     {
         get;
         set => SetProperty(ref field, value);
@@ -787,13 +787,13 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
 
         var text = await File.ReadAllTextAsync(path, cancellationToken);
         Expression = text;
-        LuaExpressionSourceName = Path.GetFileName(path);
+        ExpressionSourceName = Path.GetFileName(path);
         SelectedPresetIndex = -1;
-        StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", LuaExpressionSourceName)));
+        StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)));
     }
 }
 
-public sealed record LuaExpressionPresetViewModel(string Id, string DisplayName, string Description, string ScriptText);
+public sealed record ExpressionPresetViewModel(string Id, string DisplayName, string Description, string ScriptText);
 
 public sealed class TemplateNamesToolViewModel(MainWindowViewModel owner) : ObservableViewModel
 {

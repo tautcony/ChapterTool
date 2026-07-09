@@ -10,6 +10,8 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -24,6 +26,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private readonly IWindowService windowService;
     private readonly IChapterTimeFormatter formatter;
     private readonly IFrameRateService frameRateService;
+    private readonly IChapterExpressionEngine expressionEngine;
     private readonly ChapterOutputProjectionService outputProjectionService;
     private readonly IApplicationLogService logService;
     private readonly ILogger<MainWindowViewModel> logger;
@@ -60,7 +63,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         IShellService? shellService = null,
         ISettingsStore<AppSettings>? appSettingsStore = null,
         IFrameRateService? frameRateService = null,
-        IAppLocalizer? localizer = null)
+        IAppLocalizer? localizer = null,
+        IChapterExpressionEngine? expressionEngine = null)
     {
         this.loadService = loadService;
         this.saveService = saveService;
@@ -69,7 +73,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         this.windowService = windowService;
         this.formatter = formatter;
         this.frameRateService = frameRateService ?? new FrameRateService();
-        outputProjectionService = new ChapterOutputProjectionService();
+        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
+        outputProjectionService = new ChapterOutputProjectionService(this.expressionEngine);
         this.logService = logService;
         this.logger = logger;
 
@@ -374,6 +379,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public IAppLocalizer Localizer { get; }
 
+    public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => expressionEngine.Presets;
+
     public bool AutoGenerateNames
     {
         get => autoGenerateNames;
@@ -502,13 +509,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
     } = "t";
 
-    public string LuaExpressionPresetId
+    public string ExpressionPresetId
     {
         get;
         set => SetProperty(ref field, value);
     } = string.Empty;
 
-    public string LuaExpressionSourceName
+    public string ExpressionSourceName
     {
         get;
         set => SetProperty(ref field, value);
@@ -720,8 +727,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             OrderShift: OrderShift,
             ApplyExpression: ApplyExpression,
             Expression: Expression,
-            LuaExpressionPresetId: LuaExpressionPresetId,
-            LuaExpressionSourceName: LuaExpressionSourceName,
+            ExpressionPresetId: ExpressionPresetId,
+            ExpressionSourceName: ExpressionSourceName,
             EmitBom: EmitBom);
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)

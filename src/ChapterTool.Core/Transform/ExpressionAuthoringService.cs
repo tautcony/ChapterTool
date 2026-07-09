@@ -1,13 +1,14 @@
 using System.Globalization;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Core.Transform;
 
 /// <summary>
 /// Provides tokenization, diagnostics, and completions for expression authoring.
 /// </summary>
-/// <param name="luaExpressionService">The Lua expression service.</param>
-public sealed class ExpressionAuthoringService(ILuaExpressionScriptService? luaExpressionService = null) : IExpressionAuthoringService
+/// <param name="expressionEngine">The chapter expression engine.</param>
+public sealed class ExpressionAuthoringService(IChapterExpressionEngine? expressionEngine = null) : IExpressionAuthoringService
 {
     private static readonly HashSet<string> Keywords = new(StringComparer.Ordinal)
     {
@@ -19,12 +20,12 @@ public sealed class ExpressionAuthoringService(ILuaExpressionScriptService? luaE
         "+", "-", "*", "/", "%", "^", "#", "==", "~=", "<=", ">=", "<", ">", "=", ".."
     };
 
-    private readonly ILuaExpressionScriptService luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+    private readonly IChapterExpressionEngine expressionEngine = expressionEngine ?? new Expressions.Lua.LuaExpressionScriptService();
 
     /// <summary>
     /// Gets symbols available to expression authoring.
     /// </summary>
-    public IReadOnlyList<ExpressionSymbol> Symbols { get; } = BuildSymbols(luaExpressionService ?? new LuaExpressionScriptService());
+    public IReadOnlyList<ExpressionSymbol> Symbols { get; } = BuildSymbols(expressionEngine ?? new Expressions.Lua.LuaExpressionScriptService());
 
     /// <summary>
     /// Executes the Analyze operation.
@@ -46,7 +47,7 @@ public sealed class ExpressionAuthoringService(ILuaExpressionScriptService? luaE
         return new ExpressionAnalysisResult(spans, completions, diagnostics);
     }
 
-    private static IReadOnlyList<ExpressionSymbol> BuildSymbols(ILuaExpressionScriptService luaExpressionService)
+    private static IReadOnlyList<ExpressionSymbol> BuildSymbols(IChapterExpressionEngine expressionEngine)
     {
         var symbols = new List<ExpressionSymbol>
         {
@@ -78,7 +79,7 @@ public sealed class ExpressionAuthoringService(ILuaExpressionScriptService? luaE
             new("function transform(chapter)\n  return t\nend", ExpressionTokenKind.Snippet, "Reusable transform function snippet.", null, "function transform(chapter)\n  return t\nend")
         };
 
-        symbols.AddRange(luaExpressionService.Presets.Select(static preset => new ExpressionSymbol(
+        symbols.AddRange(expressionEngine.Presets.Select(static preset => new ExpressionSymbol(
             $"preset.{preset.Id}",
             ExpressionTokenKind.Snippet,
             preset.Description,
@@ -144,9 +145,9 @@ public sealed class ExpressionAuthoringService(ILuaExpressionScriptService? luaE
             return [Diagnostic("InvalidExpression.LuaUnknownToken", $"Unsupported Lua token '{unknown.Text}'.", "Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.", unknown.Start, unknown.Length)];
         }
 
-        var result = luaExpressionService.Evaluate(
+        var result = expressionEngine.Evaluate(
             expression,
-            new LuaExpressionContext(new Models.Chapter(1, TimeSpan.FromSeconds((double)timeSeconds), "Chapter"), 1, 1, timeSeconds, framesPerSecond));
+            new ChapterExpressionContext(new Models.Chapter(1, TimeSpan.FromSeconds((double)timeSeconds), "Chapter"), 1, 1, timeSeconds, framesPerSecond));
         if (result.Success)
         {
             return [];

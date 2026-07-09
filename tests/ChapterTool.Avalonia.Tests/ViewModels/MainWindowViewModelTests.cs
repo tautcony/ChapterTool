@@ -604,8 +604,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(0, save.LastOptions.OrderShift);
         Assert.False(save.LastOptions.ApplyExpression);
         Assert.Equal("t + 1", save.LastOptions.Expression);
-        Assert.Equal(string.Empty, save.LastOptions.LuaExpressionPresetId);
-        Assert.Equal(string.Empty, save.LastOptions.LuaExpressionSourceName);
+        Assert.Equal(string.Empty, save.LastOptions.ExpressionPresetId);
+        Assert.Equal(string.Empty, save.LastOptions.ExpressionSourceName);
         Assert.NotNull(save.LastInfo);
         Assert.Equal(3, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
@@ -623,7 +623,7 @@ public sealed class MainWindowViewModelTests
 
         vm.ApplyExpression = true;
         vm.Expression = "t + 1";
-        vm.LuaExpressionSourceName = "inline";
+        vm.ExpressionSourceName = "inline";
 
         Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
         Assert.Equal("24", vm.Rows[0].FramesInfo);
@@ -639,7 +639,7 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastOptions);
         Assert.False(save.LastOptions.ApplyExpression);
         Assert.Equal("t + 1", save.LastOptions.Expression);
-        Assert.Equal("inline", save.LastOptions.LuaExpressionSourceName);
+        Assert.Equal("inline", save.LastOptions.ExpressionSourceName);
     }
 
 
