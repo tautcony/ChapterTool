@@ -97,11 +97,11 @@ public sealed partial class IfoChapterImporter : IChapterImporter
     /// <summary>
     /// Executes the ConvertDvdPlaybackTime operation.
     /// </summary>
-    /// <param name="hour">The hour value.</param>
-    /// <param name="minute">The minute value.</param>
-    /// <param name="second">The second value.</param>
-    /// <param name="frameByte">The frameByte value.</param>
-    /// <param name="isNtsc">The isNtsc value.</param>
+    /// <param name="hour">The BCD-encoded DVD playback hour.</param>
+    /// <param name="minute">The BCD-encoded DVD playback minute.</param>
+    /// <param name="second">The BCD-encoded DVD playback second.</param>
+    /// <param name="frameByte">The DVD frame byte containing frame count and frame-rate flags.</param>
+    /// <param name="isNtsc">Returns whether the playback time uses the NTSC frame-rate flag.</param>
     /// <returns>The operation result.</returns>
     public static TimeSpan ConvertDvdPlaybackTime(byte hour, byte minute, byte second, byte frameByte, out bool isNtsc)
     {

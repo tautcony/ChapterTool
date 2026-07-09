@@ -56,10 +56,10 @@ public enum ExpressionTokenKind
 /// <summary>
 /// Describes one token span in an expression.
 /// </summary>
-/// <param name="Start">The Start value.</param>
-/// <param name="Length">The Length value.</param>
-/// <param name="Text">The Text value.</param>
-/// <param name="Kind">The Kind value.</param>
+/// <param name="Start">The zero-based start position of the token in the expression text.</param>
+/// <param name="Length">The token length in characters.</param>
+/// <param name="Text">The token text.</param>
+/// <param name="Kind">The token classification.</param>
 public sealed record ExpressionTokenSpan(
     int Start,
     int Length,
@@ -69,11 +69,11 @@ public sealed record ExpressionTokenSpan(
 /// <summary>
 /// Describes an expression symbol available to authoring tools.
 /// </summary>
-/// <param name="Text">The Text value.</param>
-/// <param name="Kind">The Kind value.</param>
-/// <param name="Description">The Description value.</param>
-/// <param name="Arity">The Arity value.</param>
-/// <param name="InsertText">The InsertText value.</param>
+/// <param name="Text">The symbol text shown in authoring tools.</param>
+/// <param name="Kind">The symbol classification.</param>
+/// <param name="Description">The symbol description shown to users.</param>
+/// <param name="Arity">The number of arguments accepted by a function symbol, when applicable.</param>
+/// <param name="InsertText">The text inserted when the symbol is selected.</param>
 public sealed record ExpressionSymbol(
     string Text,
     ExpressionTokenKind Kind,
@@ -84,12 +84,12 @@ public sealed record ExpressionSymbol(
 /// <summary>
 /// Describes a completion item for expression authoring.
 /// </summary>
-/// <param name="Text">The Text value.</param>
-/// <param name="Kind">The Kind value.</param>
-/// <param name="Description">The Description value.</param>
-/// <param name="ReplacementStart">The ReplacementStart value.</param>
-/// <param name="ReplacementLength">The ReplacementLength value.</param>
-/// <param name="InsertText">The InsertText value.</param>
+/// <param name="Text">The completion text shown in the completion list.</param>
+/// <param name="Kind">The completion classification.</param>
+/// <param name="Description">The completion description shown to users.</param>
+/// <param name="ReplacementStart">The zero-based start position of the text replaced by the completion.</param>
+/// <param name="ReplacementLength">The number of characters replaced by the completion.</param>
+/// <param name="InsertText">The text inserted when the completion is accepted.</param>
 public sealed record ExpressionCompletion(
     string Text,
     ExpressionTokenKind Kind,
@@ -118,8 +118,8 @@ public sealed record ExpressionCompletion(
 /// <summary>
 /// Describes a suggested fix for an expression diagnostic.
 /// </summary>
-/// <param name="Code">The Code value.</param>
-/// <param name="Message">The Message value.</param>
+/// <param name="Code">The stable suggestion code.</param>
+/// <param name="Message">The suggestion message shown to users.</param>
 public sealed record ExpressionDiagnosticSuggestion(
     string Code,
     string Message);
@@ -127,10 +127,10 @@ public sealed record ExpressionDiagnosticSuggestion(
 /// <summary>
 /// Describes an expression diagnostic and its source span.
 /// </summary>
-/// <param name="Diagnostic">The Diagnostic value.</param>
-/// <param name="Suggestion">The Suggestion value.</param>
-/// <param name="Start">The Start value.</param>
-/// <param name="Length">The Length value.</param>
+/// <param name="Diagnostic">The diagnostic raised for the expression.</param>
+/// <param name="Suggestion">The suggested fix associated with the diagnostic.</param>
+/// <param name="Start">The zero-based start position of the diagnostic span.</param>
+/// <param name="Length">The diagnostic span length in characters.</param>
 public sealed record ExpressionAuthoringDiagnostic(
     ChapterDiagnostic Diagnostic,
     ExpressionDiagnosticSuggestion Suggestion,
@@ -140,9 +140,9 @@ public sealed record ExpressionAuthoringDiagnostic(
 /// <summary>
 /// Represents token, completion, and diagnostic analysis for an expression.
 /// </summary>
-/// <param name="Spans">The Spans value.</param>
-/// <param name="Completions">The Completions value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
+/// <param name="Spans">The token spans recognized in the expression.</param>
+/// <param name="Completions">The completion items available at the caret position.</param>
+/// <param name="Diagnostics">Expression diagnostics and suggested fixes.</param>
 public sealed record ExpressionAnalysisResult(
     IReadOnlyList<ExpressionTokenSpan> Spans,
     IReadOnlyList<ExpressionCompletion> Completions,

@@ -41,7 +41,7 @@ public sealed class FrameRateService : IFrameRateService
     /// Executes the Detect operation.
     /// </summary>
     /// <param name="info">The chapter data to process.</param>
-    /// <param name="tolerance">The tolerance value.</param>
+    /// <param name="tolerance">The maximum frame deviation treated as accurate.</param>
     /// <returns>The operation result.</returns>
     public FrameRateOption Detect(ChapterSet info, decimal tolerance) =>
         DetectDetailed(info, tolerance).Option;
@@ -50,7 +50,7 @@ public sealed class FrameRateService : IFrameRateService
     /// Executes the DetectDetailed operation.
     /// </summary>
     /// <param name="info">The chapter data to process.</param>
-    /// <param name="tolerance">The tolerance value.</param>
+    /// <param name="tolerance">The maximum frame deviation treated as accurate.</param>
     /// <returns>The operation result.</returns>
     public FrameRateDetectionResult DetectDetailed(ChapterSet info, decimal tolerance)
     {
@@ -118,9 +118,9 @@ public sealed class FrameRateService : IFrameRateService
     /// Executes the UpdateFrames operation.
     /// </summary>
     /// <param name="info">The chapter data to process.</param>
-    /// <param name="option">The option value.</param>
-    /// <param name="round">The round value.</param>
-    /// <param name="tolerance">The tolerance value.</param>
+    /// <param name="option">The requested frame rate option.</param>
+    /// <param name="round">Whether frame values should be rounded for display.</param>
+    /// <param name="tolerance">The maximum frame deviation treated as accurate.</param>
     /// <returns>The operation result.</returns>
     public FrameInfoResult UpdateFrames(
         ChapterSet info,

@@ -103,9 +103,9 @@ public sealed class ChapterOutputProjectionService
 /// <summary>
 /// Represents projected chapter output and diagnostics.
 /// </summary>
-/// <param name="Info">The Info value.</param>
-/// <param name="OutputChapters">The OutputChapters value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
+/// <param name="Info">The projected chapter set used for export.</param>
+/// <param name="OutputChapters">The non-separator chapters included in the exported output.</param>
+/// <param name="Diagnostics">Diagnostics produced while projecting export output.</param>
 public sealed record ChapterOutputProjectionResult(
     ChapterSet Info,
     IReadOnlyList<Chapter> OutputChapters,

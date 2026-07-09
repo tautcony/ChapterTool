@@ -89,8 +89,8 @@ public interface IChapterEditingService
 /// <summary>
 /// Represents zone text generated from selected chapters.
 /// </summary>
-/// <param name="Zones">The Zones value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
+/// <param name="Zones">The generated zone text for the selected chapters.</param>
+/// <param name="Diagnostics">Diagnostics produced while creating zone text.</param>
 public sealed record ChapterZonesResult(
     string Zones,
     IReadOnlyList<Diagnostics.ChapterDiagnostic> Diagnostics);
