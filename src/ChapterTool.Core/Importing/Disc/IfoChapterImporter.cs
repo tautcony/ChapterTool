@@ -35,20 +35,20 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         {
             var stream = await OpenImportStreamAsync(request, cancellationToken);
             ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
-            var options = GetStreams(request.Path, stream)
-                .Select((info, index) => new ChapterSourceOption(
+            var entries = GetStreams(request.Path, stream)
+                .Select((info, index) => new ChapterImportEntry(
                     $"pgc-{index}",
                     $"{info.SourceName}__{info.Chapters.Count}",
                     info,
                     CanCombine: true,
-                    MediaReferences: [new SourceMediaReference($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))
+                    MediaReferences: [new MediaFileReference($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))
                 .ToList();
-            if (options.Count == 0)
+            if (entries.Count == 0)
             {
                 return ChapterImportResult.Failed(Error("NoChaptersFound", "No DVD chapters were parsed."));
             }
 
-            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], []);
+            return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or EndOfStreamException)
         {
@@ -65,19 +65,19 @@ public sealed partial class IfoChapterImporter : IChapterImporter
     /// </summary>
     /// <param name="path">The source path.</param>
     /// <returns>The operation result.</returns>
-    public static IReadOnlyList<ChapterInfo> GetStreams(string path)
+    public static IReadOnlyList<ChapterSet> GetStreams(string path)
     {
         using var stream = File.OpenRead(path);
         return GetStreams(path, stream);
     }
 
-    private static IReadOnlyList<ChapterInfo> GetStreams(string path, Stream stream)
+    private static IReadOnlyList<ChapterSet> GetStreams(string path, Stream stream)
     {
         var count = GetPgcCount(stream);
-        var streams = new List<ChapterInfo>();
+        var streams = new List<ChapterSet>();
         for (var i = 1; i <= count; i++)
         {
-            var info = GetChapterInfo(path, stream, i);
+            var info = GetChapterSet(path, stream, i);
             if (info is not null)
             {
                 streams.Add(info);
@@ -114,7 +114,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         return TimeSpan.FromSeconds(totalFrames / rate);
     }
 
-    private static ChapterInfo? GetChapterInfo(string path, Stream stream, int programChain)
+    private static ChapterSet? GetChapterSet(string path, Stream stream, int programChain)
     {
         var chapters = GetChapters(stream, programChain, out var duration, out var isNtsc);
         if (duration.TotalSeconds < 10)
@@ -129,11 +129,10 @@ public sealed partial class IfoChapterImporter : IChapterImporter
             sourceName = $"{sourceName[..last]}_{programChain}";
         }
 
-        return new ChapterInfo(
+        return new ChapterSet(
             sourceName,
             sourceName,
-            programChain,
-            "DVD",
+            ChapterImportFormat.DvdIfo,
             isNtsc ? 30000d / 1001d : 25d,
             duration,
             chapters);

@@ -36,7 +36,7 @@ public sealed class MainWindowInteractionHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
-            MainWindowHeadlessTestHost.Option("OGM", "movie.txt", "Intro", "Ending")));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro", "Ending")));
         await host.LoadAsync("movie.txt");
 
         host.SelectRows(1);
@@ -54,8 +54,8 @@ public sealed class MainWindowInteractionHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00001", "A"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "B")));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "A"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "B")));
         host.FilePickerService.SourcePath = "movie.mpls";
         host.FilePickerService.SaveDirectoryPath = "out";
 
@@ -79,7 +79,7 @@ public sealed class MainWindowInteractionHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
-            MainWindowHeadlessTestHost.Option("OGM", "movie.txt", "Intro", "Ending")));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro", "Ending")));
         await host.LoadAsync("movie.txt");
         host.SelectRows(1);
 
@@ -106,11 +106,11 @@ public sealed class MainWindowInteractionHeadlessTests
             using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
                 Path.Combine(root, "movie.mpls"),
                 MainWindowHeadlessTestHost.OptionWithMedia(
-                    "MPLS",
+                    ChapterImportFormat.Mpls,
                     "00001",
-                    new SourceMediaReference("clip.m2ts", "clip.m2ts"),
+                    new MediaFileReference("clip.m2ts", "clip.m2ts"),
                     "A"),
-                MainWindowHeadlessTestHost.Option("MPLS", "00002", "B")));
+                MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "B")));
             await host.LoadAsync(Path.Combine(root, "movie.mpls"));
 
             var loadButton = host.RequiredControl<Button>("LoadButton");

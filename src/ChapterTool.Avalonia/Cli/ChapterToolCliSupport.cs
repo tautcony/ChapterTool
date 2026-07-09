@@ -41,18 +41,13 @@ internal static class ChapterToolCliSupport
     private static bool IsExistingPath(string value) => File.Exists(value) || Directory.Exists(value);
 
     public static IReadOnlyList<CliOutputFormatDefinition> OutputFormats { get; } =
-    [
-        new("txt", ChapterExportFormat.Txt, ".txt", "OGM chapter pairs"),
-        new("xml", ChapterExportFormat.Xml, ".xml", "Matroska chapter XML"),
-        new("qpf", ChapterExportFormat.Qpfile, ".qpf", "QPFile keyframe list"),
-        new("timecodes", ChapterExportFormat.TimeCodes, ".TimeCodes.txt", "Chapter start times only"),
-        new("tsmuxer", ChapterExportFormat.TsMuxerMeta, ".TsMuxeR_Meta.txt", "tsMuxeR meta chapter list"),
-        new("cue", ChapterExportFormat.Cue, ".cue", "CUE sheet"),
-        new("json", ChapterExportFormat.Json, ".json", "Structured JSON chapter payload"),
-        new("vtt", ChapterExportFormat.WebVtt, ".vtt", "WebVTT cue list"),
-        new("celltimes", ChapterExportFormat.Celltimes, ".txt", "Celltimes frame list"),
-        new("chapter2qpf", ChapterExportFormat.Chapter2Qpfile, ".qpf", "OGM-to-QPFile conversion")
-    ];
+        ChapterExportFormats.All
+            .Select(static format => new CliOutputFormatDefinition(
+                ChapterExportFormats.Code(format),
+                format,
+                ChapterExportFormats.Extension(format),
+                ChapterExportFormats.Description(format)))
+            .ToArray();
 
     public static bool TryParseFormat(string value, out CliOutputFormatDefinition definition)
     {

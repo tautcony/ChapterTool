@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 
@@ -16,13 +17,13 @@ public sealed class XplImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(sample.Options.Length, options.Count);
-        for (var i = 0; i < sample.Options.Length; i++)
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(sample.Entries.Length, entries.Count);
+        for (var i = 0; i < sample.Entries.Length; i++)
         {
-            var expected = sample.Options[i];
-            var actual = options[i].ChapterInfo;
-            Assert.Equal("HD-DVD", actual.SourceType);
+            var expected = sample.Entries[i];
+            var actual = entries[i].ChapterSet;
+            Assert.Equal(ChapterImportFormat.HdDvdXpl, actual.ImportFormat);
             Assert.Equal(expected.Title, actual.Title);
             Assert.Equal(expected.SourceName, actual.SourceName);
             Assert.Equal(24, actual.FramesPerSecond);
@@ -64,8 +65,8 @@ public sealed class XplImporterTests
             TimeSpan.FromSeconds(3028),
             TimeSpan.FromSeconds(3226)
         };
-        var actual = xplResult.Groups.Single().Options.Single(option => option.ChapterInfo.Chapters.Count == expectedTimes.Length);
-        Assert.Equal(expectedTimes, actual.ChapterInfo.Chapters.Select(static chapter => chapter.Time));
+        var actual = xplResult.Groups.Single().Entries.Single(entry => entry.ChapterSet.Chapters.Count == expectedTimes.Length);
+        Assert.Equal(expectedTimes, actual.ChapterSet.Chapters.Select(static chapter => chapter.Time));
     }
 
     [Fact]
@@ -137,7 +138,7 @@ public sealed class XplImporterTests
         ])
     ];
 
-    public sealed record SampleExpectation(string FileName, OptionExpectation[] Options);
+    public sealed record SampleExpectation(string FileName, OptionExpectation[] Entries);
 
     public sealed record OptionExpectation(
         string Title,
@@ -149,8 +150,8 @@ public sealed class XplImporterTests
         TimeSpan LastTime,
         string LastName);
 
-    private static SampleExpectation Sample(string fileName, OptionExpectation[] options) =>
-        new(fileName, options);
+    private static SampleExpectation Sample(string fileName, OptionExpectation[] entries) =>
+        new(fileName, entries);
 
     private static TimeSpan Ms(int milliseconds) => TimeSpan.FromMilliseconds(milliseconds);
 

@@ -5,14 +5,14 @@ using ChapterTool.Core.Transform;
 namespace ChapterTool.Core.Exporting;
 
 /// <summary>
-/// Projects chapter output data before export by applying expressions, ordering, and naming options.
+/// Projects chapter output data before export by applying expressions, ordering, and naming entries.
 /// </summary>
 public sealed class ChapterOutputProjectionService
 {
     private readonly ILuaExpressionScriptService luaExpressionService;
 
     /// <summary>
-    /// Projects chapter output data before export by applying expressions, ordering, and naming options.
+    /// Projects chapter output data before export by applying expressions, ordering, and naming entries.
     /// </summary>
     /// <param name="luaExpressionService">The Lua expression service.</param>
     public ChapterOutputProjectionService(ILuaExpressionScriptService? luaExpressionService = null)
@@ -26,7 +26,7 @@ public sealed class ChapterOutputProjectionService
     /// <param name="info">The chapter data to process.</param>
     /// <param name="options">The export options.</param>
     /// <returns>The operation result.</returns>
-    public ChapterOutputProjectionResult Project(ChapterInfo info, ChapterExportOptions options)
+    public ChapterOutputProjectionResult Project(ChapterSet info, ChapterExportOptions options)
     {
         var diagnostics = new List<ChapterDiagnostic>();
         var expressionResult = new ChapterExpressionService(luaExpressionService).Apply(info, options.ApplyExpression, options.Expression);
@@ -107,7 +107,7 @@ public sealed class ChapterOutputProjectionService
 /// <param name="OutputChapters">The OutputChapters value.</param>
 /// <param name="Diagnostics">The Diagnostics value.</param>
 public sealed record ChapterOutputProjectionResult(
-    ChapterInfo Info,
+    ChapterSet Info,
     IReadOnlyList<Chapter> OutputChapters,
     IReadOnlyList<ChapterDiagnostic> Diagnostics)
 {
@@ -116,7 +116,7 @@ public sealed record ChapterOutputProjectionResult(
     /// </summary>
     /// <param name="info">The chapter data to process.</param>
     /// <param name="diagnostics">The diagnostics for the operation.</param>
-    public ChapterOutputProjectionResult(ChapterInfo info, IReadOnlyList<ChapterDiagnostic> diagnostics)
+    public ChapterOutputProjectionResult(ChapterSet info, IReadOnlyList<ChapterDiagnostic> diagnostics)
         : this(info, info.Chapters.Where(static chapter => !chapter.IsSeparator).ToList(), diagnostics)
     {
     }

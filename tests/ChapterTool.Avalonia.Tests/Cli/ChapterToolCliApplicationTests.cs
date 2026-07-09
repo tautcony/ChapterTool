@@ -56,7 +56,7 @@ public sealed class ChapterToolCliApplicationTests
                 outputPath,
                 "--group-index",
                 "0",
-                "--option-index",
+                "--entry-index",
                 "0"
             ]);
 
@@ -87,7 +87,7 @@ public sealed class ChapterToolCliApplicationTests
             outputPath,
             "--group-index",
             "0",
-            "--option-index",
+            "--entry-index",
             "0"
         ]);
 
@@ -171,8 +171,8 @@ public sealed class ChapterToolCliApplicationTests
                 OutputPath: null,
                 Stdout: true,
                 GroupIndex: 0,
-                OptionIndex: 0,
-                OptionId: null,
+                EntryIndex: 0,
+                EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
                 FrameRate: null),
@@ -200,8 +200,8 @@ public sealed class ChapterToolCliApplicationTests
                     outputPath,
                     Stdout: false,
                     GroupIndex: 0,
-                    OptionIndex: 0,
-                    OptionId: null,
+                    EntryIndex: 0,
+                    EntryId: null,
                     XmlLanguage: "eng",
                     SourceFileName: null,
                     FrameRate: null),
@@ -237,15 +237,15 @@ public sealed class ChapterToolCliApplicationTests
                 OutputPath: null,
                 Stdout: true,
                 GroupIndex: null,
-                OptionIndex: null,
-                OptionId: null,
+                EntryIndex: null,
+                EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
                 FrameRate: null),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(1, exitCode);
-        Assert.Contains("Group 0 has multiple options", console.Stderr, StringComparison.Ordinal);
+        Assert.Contains("Group 0 has multiple entries", console.Stderr, StringComparison.Ordinal);
         Assert.Contains("AvailableGroup", console.Stderr, StringComparison.Ordinal);
     }
 
@@ -262,8 +262,8 @@ public sealed class ChapterToolCliApplicationTests
                 OutputPath: null,
                 Stdout: true,
                 GroupIndex: 0,
-                OptionIndex: 0,
-                OptionId: null,
+                EntryIndex: 0,
+                EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
                 FrameRate: null),

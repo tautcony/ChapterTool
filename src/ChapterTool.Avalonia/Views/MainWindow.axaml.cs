@@ -143,7 +143,7 @@ public sealed partial class MainWindow : Window
     private async Task SaveAsync(string? directory)
     {
         ReadAdvancedOptions();
-        viewModel.SaveFormat = (ChapterExportFormat)Math.Max(0, FormatBox.SelectedIndex);
+        viewModel.SaveFormatIndex = Math.Max(0, FormatBox.SelectedIndex);
         directory ??= string.IsNullOrWhiteSpace(viewModel.CurrentPath) ? null : Path.GetDirectoryName(viewModel.CurrentPath);
         await viewModel.SaveDirectoryCommand.ExecuteAsync(directory);
     }
@@ -342,7 +342,7 @@ public sealed partial class MainWindow : Window
             if (mapped >= 0 && mapped < FormatBox.ItemCount)
             {
                 FormatBox.SelectedIndex = mapped;
-                viewModel.SaveFormat = (ChapterExportFormat)mapped;
+                viewModel.SaveFormatIndex = mapped;
             }
 
             return;
@@ -660,5 +660,4 @@ public sealed partial class MainWindow : Window
             _ => fallback
         };
     }
-
 }

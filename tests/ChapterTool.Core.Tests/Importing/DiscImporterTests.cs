@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Media;
@@ -85,9 +86,9 @@ public sealed class DiscImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        var option = result.Groups.Single().Options.Single();
-        var info = option.ChapterInfo;
-        Assert.Equal("MPLS", info.SourceType);
+        var entry = result.Groups.Single().Entries.Single();
+        var info = entry.ChapterSet;
+        Assert.Equal(ChapterImportFormat.Mpls, info.ImportFormat);
         Assert.Equal("00002", info.SourceName);
         Assert.Equal(24, info.FramesPerSecond);
         Assert.Equal(46, info.Chapters.Count);
@@ -100,7 +101,7 @@ public sealed class DiscImporterTests
             163599375, 170810625, 178768125, 186941250, 191786250, 192165000, 202076250, 213168750, 222028125,
             228003750, 236915625, 244306875, 253316250, 260053125, 271863750, 284366250, 285738750),
             info.Chapters.Select(chapter => chapter.Time));
-        Assert.Contains(option.MediaReferences ?? [], reference => reference.RelativePath == Path.Combine("..", "STREAM", "00002.m2ts"));
+        Assert.Contains(entry.MediaReferences ?? [], reference => reference.RelativePath == Path.Combine("..", "STREAM", "00002.m2ts"));
     }
 
     [Fact]
@@ -112,7 +113,7 @@ public sealed class DiscImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal("00001", info.SourceName);
         Assert.Equal(24000d / 1001d, info.FramesPerSecond);
         Assert.Equal(MplsChapterImporter.PtsToTime(163027149 - 90000), info.Duration);
@@ -128,7 +129,7 @@ public sealed class DiscImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        var infos = result.Groups.Single().Options.Select(option => option.ChapterInfo).ToArray();
+        var infos = result.Groups.Single().Entries.Select(entry => entry.ChapterSet).ToArray();
         Assert.Equal(9, infos.Length);
         Assert.Equal(["00005", "00006&00007", "00008", "00009&00010", "00011", "00012", "00013&00014", "00015", "00016"], infos.Select(info => info.SourceName));
         Assert.All(infos, info => Assert.Equal(24000d / 1001d, info.FramesPerSecond));
@@ -158,14 +159,14 @@ public sealed class DiscImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        var option = result.Groups.Single().Options.Single();
-        var info = option.ChapterInfo;
-        Assert.Equal("DVD", info.SourceType);
+        var entry = result.Groups.Single().Entries.Single();
+        var info = entry.ChapterSet;
+        Assert.Equal(ChapterImportFormat.DvdIfo, info.ImportFormat);
         Assert.Equal("VTS_05_1", info.SourceName);
         Assert.Equal(7, info.Chapters.Count);
         Assert.Equal("Chapter 07", info.Chapters[6].Name);
         Assert.Equal("01:49:12.679", new ChapterTimeFormatter().Format(info.Chapters[6].Time));
-        Assert.Contains(option.MediaReferences ?? [], reference => reference.RelativePath == "VTS_05_1.VOB");
+        Assert.Contains(entry.MediaReferences ?? [], reference => reference.RelativePath == "VTS_05_1.VOB");
     }
 
     [Fact]
@@ -270,12 +271,12 @@ public sealed class DiscImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.xpl", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("HD-DVD", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.HdDvdXpl, info.ImportFormat);
         Assert.Equal("Main", info.Title);
         Assert.Equal("ADV_OBJ/main.evo", info.SourceName);
         Assert.Equal(TimeSpan.FromSeconds(60.5), info.Chapters[1].Time);
-        Assert.Contains(result.Groups.Single().Options.Single().MediaReferences ?? [], reference => reference.RelativePath == Path.Combine("..", "HVDVD_TS", "main.evo"));
+        Assert.Contains(result.Groups.Single().Entries.Single().MediaReferences ?? [], reference => reference.RelativePath == Path.Combine("..", "HVDVD_TS", "main.evo"));
     }
 
     [Fact]
@@ -303,7 +304,7 @@ public sealed class DiscImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.xpl", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        var infos = result.Groups.Single().Options.Select(option => option.ChapterInfo).ToArray();
+        var infos = result.Groups.Single().Entries.Select(entry => entry.ChapterSet).ToArray();
         Assert.Equal(2, infos.Length);
         Assert.Equal("Display Title", infos[0].Title);
         Assert.Equal("Display Chapter", infos[0].Chapters.Single().Name);

@@ -322,29 +322,17 @@ public sealed class TextToolOptions
 
 public sealed class TextToolFormatSelector(MainWindowViewModel owner)
 {
-    private static readonly ChapterExportFormat[] Formats =
-    [
-        ChapterExportFormat.Txt,
-        ChapterExportFormat.Xml,
-        ChapterExportFormat.Qpfile,
-        ChapterExportFormat.TimeCodes,
-        ChapterExportFormat.TsMuxerMeta,
-        ChapterExportFormat.Cue,
-        ChapterExportFormat.Json,
-        ChapterExportFormat.WebVtt,
-        ChapterExportFormat.Celltimes,
-        ChapterExportFormat.Chapter2Qpfile
-    ];
+    private static IReadOnlyList<ChapterExportFormat> Formats => ChapterExportFormats.All;
 
     private MainWindowViewModel Owner { get; } = owner;
 
-    public IReadOnlyList<string> Labels { get; } = Formats.Select(ChapterExportFormatDisplay.LabelFor).ToArray();
+    public IReadOnlyList<string> Labels { get; } = Formats.Select(ChapterExportFormats.DisplayName).ToArray();
 
     public int SelectedIndex
     {
         get;
-        set => field = Math.Clamp(value, 0, Formats.Length - 1);
-    } = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Length - 1);
+        set => field = Math.Clamp(value, 0, Formats.Count - 1);
+    } = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Count - 1);
 
     public TextToolKind Kind => KindFor(Formats[SelectedIndex]);
 
@@ -360,21 +348,6 @@ public sealed class TextToolFormatSelector(MainWindowViewModel owner)
             ChapterExportFormat.Xml => TextToolKind.Xml,
             ChapterExportFormat.Json => TextToolKind.Json,
             _ => TextToolKind.Plain
-        };
-}
-
-internal static class ChapterExportFormatDisplay
-{
-    public static string LabelFor(ChapterExportFormat format) =>
-        format switch
-        {
-            ChapterExportFormat.Txt => "TXT",
-            ChapterExportFormat.Xml => "XML",
-            ChapterExportFormat.Qpfile => "QPFile",
-            ChapterExportFormat.TsMuxerMeta => "TsmuxerMeta",
-            ChapterExportFormat.Cue => "CUE",
-            ChapterExportFormat.Json => "JSON",
-            _ => format.ToString()
         };
 }
 

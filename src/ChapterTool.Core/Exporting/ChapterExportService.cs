@@ -18,7 +18,6 @@ public sealed partial class ChapterExportService
 {
     private readonly IChapterTimeFormatter timeFormatter;
     private readonly ILuaExpressionScriptService luaExpressionService;
-    private readonly ChapterConversionService chapterConversionService;
 
     /// <summary>
     /// Exports ChapterTool chapter data to supported chapter formats.
@@ -29,7 +28,6 @@ public sealed partial class ChapterExportService
     {
         this.timeFormatter = timeFormatter;
         this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
-        chapterConversionService = new ChapterConversionService(timeFormatter);
     }
 
     /// <summary>
@@ -38,7 +36,7 @@ public sealed partial class ChapterExportService
     /// <param name="info">The chapter data to process.</param>
     /// <param name="options">The export options.</param>
     /// <returns>The operation result.</returns>
-    public ChapterExportResult Export(ChapterInfo info, ChapterExportOptions options)
+    public ChapterExportResult Export(ChapterSet info, ChapterExportOptions options)
     {
         var projection = options.ProjectOutput
             ? new ChapterOutputProjectionService(luaExpressionService).Project(info, options)
@@ -56,7 +54,6 @@ public sealed partial class ChapterExportService
             ChapterExportFormat.Json => Json(info, options),
             ChapterExportFormat.WebVtt => WebVtt(outputInfo, options),
             ChapterExportFormat.Celltimes => Celltimes(outputInfo),
-            ChapterExportFormat.Chapter2Qpfile => Chapter2Qpfile(outputInfo, options),
             _ => Failure("UnsupportedExportFormat", "Unsupported export format.")
         };
 
@@ -66,7 +63,7 @@ public sealed partial class ChapterExportService
         };
     }
 
-    private ChapterExportResult Text(ChapterInfo info, ChapterExportOptions options)
+    private ChapterExportResult Text(ChapterSet info, ChapterExportOptions options)
     {
         var builder = new StringBuilder();
         foreach (var chapter in info.Chapters.Where(NotSeparator))
@@ -78,10 +75,10 @@ public sealed partial class ChapterExportService
         return Success(builder.ToString(), ".txt");
     }
 
-    private ChapterExportResult Xml(ChapterInfo info, ChapterExportOptions options)
+    private ChapterExportResult Xml(ChapterSet info, ChapterExportOptions options)
     {
         var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
-        var uidSeed = StableHashCode(info.Title, info.SourceName, info.SourceType, info.Chapters.Count.ToString(CultureInfo.InvariantCulture));
+        var uidSeed = StableHashCode(info.Title, info.SourceName, ChapterImportFormats.DisplayName(info.ImportFormat), info.Chapters.Count.ToString(CultureInfo.InvariantCulture));
         var random = new Random(uidSeed);
         var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
             new XElement(
@@ -105,7 +102,7 @@ public sealed partial class ChapterExportService
         return Success(document.Declaration + Environment.NewLine + document.ToString(SaveOptions.None), ".xml");
     }
 
-    private ChapterExportResult TsMuxer(ChapterInfo info, ChapterExportOptions options)
+    private ChapterExportResult TsMuxer(ChapterSet info, ChapterExportOptions options)
     {
         var chapters = info.Chapters.Where(NotSeparator).Select(FormatTime).ToList();
         if (chapters.Count == 0)
@@ -116,7 +113,7 @@ public sealed partial class ChapterExportService
         return Success($"--custom-{Environment.NewLine}chapters={string.Join(';', chapters)}", ".TsMuxeR_Meta.txt");
     }
 
-    private static ChapterExportResult Qpfile(ChapterInfo info)
+    private static ChapterExportResult Qpfile(ChapterSet info)
     {
         if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
         {
@@ -132,7 +129,7 @@ public sealed partial class ChapterExportService
                     .ToString(CultureInfo.InvariantCulture) + " I"));
     }
 
-    private static ChapterExportResult Celltimes(ChapterInfo info)
+    private static ChapterExportResult Celltimes(ChapterSet info)
     {
         if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
         {
@@ -143,19 +140,7 @@ public sealed partial class ChapterExportService
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
-    private ChapterExportResult Chapter2Qpfile(ChapterInfo info, ChapterExportOptions options)
-    {
-        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
-        {
-            return Failure(diagnostic!);
-        }
-
-        var text = Text(info, options);
-        var conversion = chapterConversionService.ChapterTextToQpfile(text.Content, framesPerSecond);
-        return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
-    }
-
-    private ChapterExportResult Cue(ChapterInfo info, ChapterExportOptions options)
+    private ChapterExportResult Cue(ChapterSet info, ChapterExportOptions options)
     {
         var builder = new StringBuilder();
         builder.AppendLine("REM Generate By ChapterTool");
@@ -172,7 +157,7 @@ public sealed partial class ChapterExportService
         return Success(builder.ToString(), ".cue");
     }
 
-    private static ChapterExportResult WebVtt(ChapterInfo info, ChapterExportOptions options)
+    private static ChapterExportResult WebVtt(ChapterSet info, ChapterExportOptions options)
     {
         var builder = new StringBuilder();
         builder.AppendLine("WEBVTT");
@@ -216,7 +201,7 @@ public sealed partial class ChapterExportService
         && !value.Contains('\n')
         && !value.Contains("-->", StringComparison.Ordinal);
 
-    private static ChapterExportResult Json(ChapterInfo info, ChapterExportOptions options)
+    private static ChapterExportResult Json(ChapterSet info, ChapterExportOptions options)
     {
         var entries = new List<JsonChapter>();
         var baseTime = TimeSpan.Zero;
@@ -238,7 +223,7 @@ public sealed partial class ChapterExportService
             previous = chapter;
         }
 
-        var payload = new JsonPayload(info.SourceType == "MPLS" ? $"{info.SourceName}.m2ts" : null, entries);
+        var payload = new JsonPayload(info.ImportFormat == ChapterImportFormat.Mpls ? $"{info.SourceName}.m2ts" : null, entries);
         return Success(JsonSerializer.Serialize(payload, ExportJsonSerializerContext.Default.JsonPayload), ".json");
     }
 

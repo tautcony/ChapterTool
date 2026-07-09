@@ -14,7 +14,7 @@ public interface IChapterEditingService
     /// <param name="index">The zero-based chapter index.</param>
     /// <param name="text">The formatted time text.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult EditTime(ChapterInfo info, int index, string text);
+    ChapterEditResult EditTime(ChapterSet info, int index, string text);
 
     /// <summary>
     /// Edits a chapter frame number from text.
@@ -24,7 +24,7 @@ public interface IChapterEditingService
     /// <param name="text">The frame text.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult EditFrame(ChapterInfo info, int index, string text, decimal framesPerSecond);
+    ChapterEditResult EditFrame(ChapterSet info, int index, string text, decimal framesPerSecond);
 
     /// <summary>
     /// Renames a chapter.
@@ -33,7 +33,7 @@ public interface IChapterEditingService
     /// <param name="index">The zero-based chapter index.</param>
     /// <param name="name">The new chapter name.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult Rename(ChapterInfo info, int index, string name);
+    ChapterEditResult Rename(ChapterSet info, int index, string name);
 
     /// <summary>
     /// Deletes chapters by index.
@@ -41,7 +41,7 @@ public interface IChapterEditingService
     /// <param name="info">The chapter data to edit.</param>
     /// <param name="indexes">The zero-based chapter indexes to delete.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult Delete(ChapterInfo info, IReadOnlySet<int> indexes);
+    ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes);
 
     /// <summary>
     /// Inserts a chapter before the specified index.
@@ -49,7 +49,7 @@ public interface IChapterEditingService
     /// <param name="info">The chapter data to edit.</param>
     /// <param name="index">The zero-based insertion index.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult InsertBefore(ChapterInfo info, int index);
+    ChapterEditResult InsertBefore(ChapterSet info, int index);
 
     /// <summary>
     /// Shifts chapter order numbers by the specified amount.
@@ -57,7 +57,7 @@ public interface IChapterEditingService
     /// <param name="info">The chapter data to edit.</param>
     /// <param name="shift">The order shift.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult ApplyOrderShift(ChapterInfo info, int shift);
+    ChapterEditResult ApplyOrderShift(ChapterSet info, int shift);
 
     /// <summary>
     /// Applies chapter names from newline-delimited template text.
@@ -65,7 +65,7 @@ public interface IChapterEditingService
     /// <param name="info">The chapter data to edit.</param>
     /// <param name="templateText">The template text.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult ApplyTemplate(ChapterInfo info, string templateText);
+    ChapterEditResult ApplyTemplate(ChapterSet info, string templateText);
 
     /// <summary>
     /// Shifts all chapter times forward by a number of frames.
@@ -74,7 +74,7 @@ public interface IChapterEditingService
     /// <param name="frames">The frame count.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult ShiftFramesForward(ChapterInfo info, int frames, decimal framesPerSecond);
+    ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, decimal framesPerSecond);
 
     /// <summary>
     /// Creates zone text from selected chapters.
@@ -83,7 +83,7 @@ public interface IChapterEditingService
     /// <param name="indexes">The selected zero-based chapter indexes.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The generated zone text and diagnostics.</returns>
-    ChapterZonesResult CreateZones(ChapterInfo info, IReadOnlySet<int> indexes, decimal framesPerSecond);
+    ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, decimal framesPerSecond);
 }
 
 /// <summary>

@@ -213,7 +213,7 @@ public sealed class ChapterExportServiceTests
     [Fact]
     public void Json_export_uses_mpls_source_name_and_separator_base_time()
     {
-        var info = Sample("MPLS") with
+        var info = Sample(ChapterImportFormat.Mpls) with
         {
             SourceName = "00001",
             Chapters =
@@ -280,7 +280,6 @@ public sealed class ChapterExportServiceTests
     [Theory]
     [InlineData(ChapterExportFormat.Qpfile)]
     [InlineData(ChapterExportFormat.Celltimes)]
-    [InlineData(ChapterExportFormat.Chapter2Qpfile)]
     public void Frame_based_exports_return_diagnostic_for_non_finite_frame_rate(ChapterExportFormat format)
     {
         var result = service.Export(
@@ -302,11 +301,10 @@ public sealed class ChapterExportServiceTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
     }
 
-    private static ChapterInfo Sample(string sourceType = "OGM") =>
+    private static ChapterSet Sample(ChapterImportFormat sourceType = ChapterImportFormat.Ogm) =>
         new(
             "Title",
             "source",
-            0,
             sourceType,
             24,
             TimeSpan.FromSeconds(30),

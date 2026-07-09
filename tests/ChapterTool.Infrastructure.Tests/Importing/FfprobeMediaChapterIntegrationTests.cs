@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Infrastructure.Services;
@@ -27,10 +28,10 @@ public sealed class FfprobeMediaChapterIntegrationTests
         var result = await importer.ImportAsync(new ChapterImportRequest(fixturePath), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var option = result.Groups.Single().Options.Single();
-        var info = option.ChapterInfo;
-        Assert.Equal("MEDIA", info.SourceType);
-        Assert.Equal("FFprobe Chapters", option.DisplayName);
+        var entry = result.Groups.Single().Entries.Single();
+        var info = entry.ChapterSet;
+        Assert.Equal(ChapterImportFormat.Media, info.ImportFormat);
+        Assert.Equal("FFprobe Chapters", entry.DisplayName);
         Assert.Equal(expectedDuration, info.Duration);
         Assert.Equal(expectedNames, info.Chapters.Select(static chapter => chapter.Name));
         Assert.Equal(expectedStarts, info.Chapters.Select(static chapter => chapter.Time));

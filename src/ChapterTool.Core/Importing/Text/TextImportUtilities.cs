@@ -28,10 +28,10 @@ internal static class TextImportUtilities
     /// <param name="path">The source path.</param>
     /// <param name="info">The chapter data to process.</param>
     /// <returns>The operation result.</returns>
-    public static ChapterImportResult SingleGroup(string path, ChapterInfo info)
+    public static ChapterImportResult SingleGroup(string path, ChapterSet info)
     {
-        var option = new ChapterSourceOption("default", info.Title, info);
-        var group = new ChapterInfoGroup(path, [option]);
+        var entry = new ChapterImportEntry("default", info.Title, info);
+        var group = new ChapterImportSource(path, [entry]);
         return ChapterImportResult.Succeeded(group);
     }
 }

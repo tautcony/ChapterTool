@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Headless;
@@ -20,8 +21,8 @@ public sealed class MainWindowHeadlessTests
     {
         using var host = CreateMultiOptionHost(
             "movie.xml",
-            MainWindowHeadlessTestHost.Option("XML", "edition-1", "XML A1", "XML A2"),
-            MainWindowHeadlessTestHost.Option("XML", "edition-2", "XML B1", "XML B2"));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.MatroskaXml, "edition-1", "XML A1", "XML A2"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.MatroskaXml, "edition-2", "XML B1", "XML B2"));
 
         await AssertSelectingOptionDisplaysNamesAsync(host, "movie.xml", selectedIndex: 1, "XML B1", "XML B2");
     }
@@ -31,8 +32,8 @@ public sealed class MainWindowHeadlessTests
     {
         using var host = CreateMultiOptionHost(
             "VIDEO_TS.IFO",
-            MainWindowHeadlessTestHost.Option("DVD", "pgc-1", "IFO A1", "IFO A2"),
-            MainWindowHeadlessTestHost.Option("DVD", "pgc-2", "IFO B1", "IFO B2"));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.DvdIfo, "pgc-1", "IFO A1", "IFO A2"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.DvdIfo, "pgc-2", "IFO B1", "IFO B2"));
 
         await AssertSelectingOptionDisplaysNamesAsync(host, "VIDEO_TS.IFO", selectedIndex: 1, "IFO B1", "IFO B2");
     }
@@ -42,8 +43,8 @@ public sealed class MainWindowHeadlessTests
     {
         using var host = CreateMultiOptionHost(
             "00000.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00001", "MPLS A1", "MPLS A2"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "MPLS B1", "MPLS B2"));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "MPLS A1", "MPLS A2"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "MPLS B1", "MPLS B2"));
 
         await AssertSelectingOptionDisplaysNamesAsync(host, "00000.mpls", selectedIndex: 1, "MPLS B1", "MPLS B2");
     }
@@ -53,8 +54,8 @@ public sealed class MainWindowHeadlessTests
     {
         using var host = CreateMultiOptionHost(
             "00000.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00001", "MPLS A1", "MPLS A2"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "MPLS B1", "MPLS B2"));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "MPLS A1", "MPLS A2"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "MPLS B1", "MPLS B2"));
 
         await host.LoadAsync("00000.mpls");
         var clipSelector = host.RequiredControl<ComboBox>("ClipBox");
@@ -74,8 +75,8 @@ public sealed class MainWindowHeadlessTests
     {
         using var host = CreateMultiOptionHost(
             "00000.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00001", "MPLS A1", "MPLS A2"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "MPLS B1", "MPLS B2"));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "MPLS A1", "MPLS A2"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "MPLS B1", "MPLS B2"));
 
         await host.LoadAsync("00000.mpls");
         var menuItem = host.RequiredControl<MenuItem>("ClipCombineMenuItem");
@@ -100,8 +101,8 @@ public sealed class MainWindowHeadlessTests
     {
         using var host = CreateMultiOptionHost(
             "00000.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00001", "MPLS A1", "MPLS A2"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "MPLS B1", "MPLS B2"));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "MPLS A1", "MPLS A2"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "MPLS B1", "MPLS B2"));
 
         await host.LoadAsync("00000.mpls");
         var clipMenuItem = host.RequiredControl<MenuItem>("ClipCombineMenuItem");
@@ -174,8 +175,8 @@ public sealed class MainWindowHeadlessTests
 
     private static MainWindowHeadlessTestHost CreateMultiOptionHost(
         string path,
-        params Core.Models.ChapterSourceOption[] options) =>
-        new(MainWindowHeadlessTestHost.ImportResult(path, options));
+        params Core.Models.ChapterImportEntry[] entries) =>
+        new(MainWindowHeadlessTestHost.ImportResult(path, entries));
 
     private static async Task AssertSelectingOptionDisplaysNamesAsync(
         MainWindowHeadlessTestHost host,

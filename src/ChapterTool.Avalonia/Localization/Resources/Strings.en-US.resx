@@ -15,7 +15,7 @@
   
   
 <data name="Action.CombineSegments" xml:space="preserve">
-    <value>Combine segments: options={options}, sourceType={sourceType}</value>
+    <value>Combine segments: entries={entries}, sourceType={sourceType}</value>
   </data>
 <data name="Action.DeleteRows" xml:space="preserve">
     <value>Delete rows: indexes={indexes}</value>
@@ -33,7 +33,7 @@
     <value>Shift frames forward: frames={frames}</value>
   </data>
 <data name="Action.SplitCombinedSegments" xml:space="preserve">
-    <value>Split combined segments: options={options}, sourceType={sourceType}</value>
+    <value>Split combined segments: entries={entries}, sourceType={sourceType}</value>
   </data>
 <data name="App.Title" xml:space="preserve">
     <value>[VCB-Studio] ChapterTool</value>
@@ -399,13 +399,13 @@
     <value>Frame info updated: option={option}, fps={fps}, round={round}, chapters={chapters}</value>
   </data>
 <data name="Log.ImportGroup" xml:space="preserve">
-    <value>{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultOptionIndex={defaultOptionIndex}, options={options}</value>
+    <value>{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultEntryIndex={defaultEntryIndex}, entries={entries}</value>
   </data>
-<data name="Log.ImportOption" xml:space="preserve">
-    <value>{operation} option {optionIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</value>
+<data name="Log.ImportEntry" xml:space="preserve">
+    <value>{operation} entry {entryIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</value>
   </data>
 <data name="Log.ImportSummary" xml:space="preserve">
-    <value>{operation} result: success={success}, partial={partial}, groups={groups}, options={options}, chapters={chapters}, diagnostics={diagnostics}</value>
+    <value>{operation} result: success={success}, partial={partial}, groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</value>
   </data>
 <data name="Log.LanguageSet" xml:space="preserve">
     <value>Language set to {language}</value>
@@ -625,6 +625,9 @@
   </data>
 <data name="Settings.DefaultXmlLanguage" xml:space="preserve">
     <value>Default XML language</value>
+  </data>
+<data name="Settings.EmitBom" xml:space="preserve">
+    <value>Write UTF-8 BOM</value>
   </data>
 <data name="Settings.Eac3toPath" xml:space="preserve">
     <value>eac3to</value>

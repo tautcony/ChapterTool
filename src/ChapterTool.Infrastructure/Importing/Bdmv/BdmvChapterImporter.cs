@@ -58,7 +58,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             return ChapterImportResult.Failed(Error("DependencyOutputUnrecognized", "eac3to playlist output was not recognized."));
         }
 
-        var options = new List<ChapterSourceOption>();
+        var entries = new List<ChapterImportEntry>();
         var diagnostics = new List<ChapterDiagnostic>();
         var discTitle = ReadDiscTitle(request.Path);
         var chapterCandidates = candidates.Where(static candidate => candidate.HasChapters).ToArray();
@@ -74,15 +74,14 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 continue;
             }
 
-            ChapterInfo info;
+            ChapterSet info;
             try
             {
                 info = MplsChapterImporter.ReadPlaylistInfo(
                     playlistPath,
                     discTitle,
                     candidate.SourceName,
-                    candidate.Index,
-                    "BDMV",
+                    ChapterImportFormat.Bdmv,
                     candidate.Duration);
             }
             catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
@@ -106,8 +105,8 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             }
 
             var chapterInfo = parsed.Groups
-                .SelectMany(static group => group.Options)
-                .Select(static option => option.ChapterInfo)
+                .SelectMany(static group => group.Entries)
+                .Select(static entry => entry.ChapterSet)
                 .FirstOrDefault();
             if (chapterInfo is null || chapterInfo.Chapters.Count == 0)
             {
@@ -121,19 +120,19 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 Duration = candidate.Duration == TimeSpan.Zero ? info.Duration : candidate.Duration
             };
 
-            options.Add(new ChapterSourceOption(
+            entries.Add(new ChapterImportEntry(
                 $"playlist-{candidate.Index}",
                 $"{candidate.SourceName}__{bdmvInfo.Chapters.Count}",
                 bdmvInfo,
                 MediaReferences: MediaReferences(candidate.SourceName)));
         }
 
-        if (options.Count == 0)
+        if (entries.Count == 0)
         {
             return ChapterImportResult.Failed(FailureDiagnostics(diagnostics));
         }
 
-        return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], diagnostics);
+        return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
     }
 
     private static void Report(IProgress<ChapterLoadProgress>? progress, double value, string message) =>
@@ -345,11 +344,11 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         }
     }
 
-    private static IReadOnlyList<SourceMediaReference> MediaReferences(string sourceName) =>
+    private static IReadOnlyList<MediaFileReference> MediaReferences(string sourceName) =>
         sourceName
             .Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(static part => part.EndsWith(".m2ts", StringComparison.OrdinalIgnoreCase))
-            .Select(static part => new SourceMediaReference(part, Path.Combine("..", "STREAM", part)))
+            .Select(static part => new MediaFileReference(part, Path.Combine("..", "STREAM", part)))
             .ToList();
 
     private static string? ToolWorkingDirectory(string executable)

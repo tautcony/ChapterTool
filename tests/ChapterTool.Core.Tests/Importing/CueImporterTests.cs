@@ -45,8 +45,8 @@ public sealed class CueImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("ARCHIVES 2.cue", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("CUE", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.Cue, info.ImportFormat);
         Assert.Equal("ARCHIVES 2.flac", info.SourceName);
         Assert.Equal("とある科学の超電磁砲 ARCHIVES 2", info.Title);
         Assert.Equal(4, info.Chapters.Count);
@@ -63,7 +63,7 @@ public sealed class CueImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Contains("のんのんバイオリン", result.Groups.Single().Options.Single().ChapterInfo.Chapters[0].Name, StringComparison.Ordinal);
+        Assert.Contains("のんのんバイオリン", result.Groups.Single().Entries.Single().ChapterSet.Chapters[0].Name, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class CueImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal("Back To Mine", info.Title);
         Assert.Equal("Orbital - Back To Mine.mp3", info.SourceName);
         Assert.Equal(19, info.Chapters.Count);
@@ -94,7 +94,7 @@ public sealed class CueImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("encoded.cue", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class CueImporterTests
             """);
 
         Assert.True(result.Success);
-        Assert.Equal(["Track 1", "Track 2"], result.Groups.Single().Options.Single().ChapterInfo.Chapters.Select(chapter => chapter.Name));
+        Assert.Equal(["Track 1", "Track 2"], result.Groups.Single().Entries.Single().ChapterSet.Chapters.Select(chapter => chapter.Name));
     }
 
     [Theory]
@@ -149,7 +149,7 @@ public sealed class CueImporterTests
         var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public sealed class CueImporterTests
         var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -209,7 +209,7 @@ public sealed class CueImporterTests
         var result = await new TakCueImporter().ImportAsync(new ChapterImportRequest("music.tak", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public sealed class CueImporterTests
         var result = await new TakCueImporter().ImportAsync(new ChapterImportRequest("music.tak", stream), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal("Track 1", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -240,11 +240,10 @@ public sealed class CueImporterTests
     [Fact]
     public void CueExporterWritesHeaderSkipsSeparatorsAndUsesOutputOrder()
     {
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "Album",
             "fallback.flac",
-            0,
-            "CUE",
+            ChapterImportFormat.Cue,
             0,
             TimeSpan.FromSeconds(90),
             [
@@ -268,11 +267,10 @@ public sealed class CueImporterTests
     [Fact]
     public void WebVttExporterWritesHeaderAndCuesWithEndTimes()
     {
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "WebVTT",
             "video.mp4",
-            0,
-            "WebVTT",
+            ChapterImportFormat.WebVtt,
             0,
             TimeSpan.FromMinutes(2),
             [

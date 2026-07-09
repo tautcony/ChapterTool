@@ -11,7 +11,8 @@ dotnet add package ChapterTool.Core
 ## Features
 
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers
-- **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes, Chapter→QPFile
+- **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes
+- **Convert** OGM chapter text to QPFile output, optionally using timecode mappings
 - **Edit** chapter data: time edit, frame edit, rename, delete, insert, reorder, shift, apply name templates
 - **Transform** chapter times: Lua expression scripting, frame rate detection and conversion
 - **Combine & append** chapter segments from multipart sources (MPLS/DVD)
@@ -23,12 +24,8 @@ dotnet add package ChapterTool.Core
 ```csharp
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
-using ChapterTool.Core.Models;
-using ChapterTool.Core.Transform;
 
-var formatter = new ChapterTimeFormatter();
-
-// MPLS playlists can expose one option per play item/angle.
+// MPLS playlists can expose one entry per play item/angle.
 IChapterImporter importer = new MplsChapterImporter();
 var request = new ChapterImportRequest("/path/to/BDMV/PLAYLIST/00001.mpls");
 var result = await importer.ImportAsync(request, CancellationToken.None);
@@ -38,9 +35,9 @@ if (result.Success)
     foreach (var group in result.Groups)
     {
         Console.WriteLine($"Source: {group.SourcePath}");
-        foreach (var option in group.Options)
+        foreach (var entry in group.Entries)
         {
-            Console.WriteLine($"  {option.DisplayName}: {option.ChapterInfo.Chapters.Count} chapters");
+            Console.WriteLine($"  {entry.DisplayName}: {entry.ChapterSet.Chapters.Count} chapters");
         }
     }
 }
@@ -55,12 +52,12 @@ using ChapterTool.Core.Transform;
 var formatter = new ChapterTimeFormatter();
 var exportService = new ChapterExportService(formatter);
 
-var options = new ChapterExportOptions(
+var entries = new ChapterExportOptions(
     Format: ChapterExportFormat.Xml,
     XmlLanguage: "eng"
 );
 
-var result = exportService.Export(chapterInfo, options);
+var result = exportService.Export(chapterInfo, entries);
 if (result.Success)
 {
     File.WriteAllText($"output{result.FileExtension}", result.Content);
@@ -71,6 +68,7 @@ if (result.Success)
 
 ```csharp
 using ChapterTool.Core.Editing;
+using ChapterTool.Core.Transform;
 
 var editor = new ChapterEditingService(new ChapterTimeFormatter());
 
@@ -100,7 +98,7 @@ var detected = fpsService.Detect(info, tolerance: 0.001m);
 var fpsResult = ChapterFpsTransformService.ChangeFps(info, sourceFps: 23.976m, targetFps: 25m);
 
 var luaService = new LuaExpressionScriptService();
-var context = new LuaExpressionContext(chapter, index: 1, count: 10, timeSeconds: 60m, framesPerSecond: 23.976m);
+var context = new LuaExpressionContext(chapter, Index: 1, Count: 10, TimeSeconds: 60m, FramesPerSecond: 23.976m);
 var luaResult = luaService.Evaluate("t + 1.0", context);
 ```
 
@@ -169,7 +167,6 @@ ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cance
 | JSON             | `Json`                |
 | WebVTT           | `WebVtt`              |
 | Celltimes        | `Celltimes`           |
-| Chapter → QPFile | `Chapter2Qpfile`      |
 
 ## Expression Engine
 

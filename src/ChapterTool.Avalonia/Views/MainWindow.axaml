@@ -476,7 +476,6 @@
             <ComboBoxItem Content="JSON" />
             <ComboBoxItem Content="WebVTT" />
             <ComboBoxItem Content="Celltimes" />
-            <ComboBoxItem Content="Chapter2Qpfile" />
           </ComboBox>
         </Grid>
 

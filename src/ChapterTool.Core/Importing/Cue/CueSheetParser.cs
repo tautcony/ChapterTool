@@ -112,18 +112,15 @@ public sealed partial class CueSheetParser
         }
 
         var ordered = chapters.OrderBy(static chapter => chapter.Number).ToList();
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             title,
             sourceName.Length == 0 ? Path.GetFileName(path) : sourceName,
-            0,
-            "CUE",
+            ChapterImportFormat.Cue,
             0,
             ordered[^1].Time,
-            ordered,
-            Tag: text,
-            TagType: typeof(string).FullName);
-        var option = new ChapterSourceOption("default", "CUE Chapters", info);
-        return new ChapterImportResult(true, [new ChapterInfoGroup(path, [option])], []);
+            ordered);
+        var entry = new ChapterImportEntry("default", "CUE Chapters", info);
+        return new ChapterImportResult(true, [new ChapterImportSource(path, [entry])], []);
     }
 
     private static TimeSpan ParseCueTime(Match match)

@@ -23,15 +23,14 @@ public sealed class SampleChapterNameTemplateTests
 
         Assert.Equal(
             ["Avant", "OP", "A Part", "B Part", "ED", "C Part"],
-            result.ChapterInfo.Chapters.Select(static chapter => chapter.Name));
+            result.ChapterSet.Chapters.Select(static chapter => chapter.Name));
     }
 
-    private static ChapterInfo Sample() =>
+    private static ChapterSet Sample() =>
         new(
             "Title",
             "source",
-            0,
-            "OGM",
+            ChapterImportFormat.Ogm,
             24,
             TimeSpan.FromMinutes(6),
             Enumerable.Range(1, 6)

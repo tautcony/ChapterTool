@@ -14,19 +14,7 @@ namespace ChapterTool.Avalonia.ViewModels;
 
 public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
-    private static readonly ChapterExportFormat[] SaveFormats =
-    [
-        ChapterExportFormat.Txt,
-        ChapterExportFormat.Xml,
-        ChapterExportFormat.Qpfile,
-        ChapterExportFormat.TimeCodes,
-        ChapterExportFormat.TsMuxerMeta,
-        ChapterExportFormat.Cue,
-        ChapterExportFormat.Json,
-        ChapterExportFormat.WebVtt,
-        ChapterExportFormat.Celltimes,
-        ChapterExportFormat.Chapter2Qpfile
-    ];
+    private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
 
     private readonly MainWindowViewModel owner;
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
@@ -70,7 +58,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         this.themeApplicationService = themeApplicationService;
         this.shellService = shellService;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
-        defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Length - 1);
+        defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Count - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(owner.FrameAccuracyTolerance);
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
@@ -138,7 +126,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
 
-    public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(ChapterExportFormatDisplay.LabelFor).ToArray();
+    public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(ChapterExportFormats.DisplayName).ToArray();
 
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
         XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
@@ -153,17 +141,17 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     {
         get
         {
-            var options = XmlLanguageDisplayOptions;
-            return DefaultXmlLanguageIndex < 0 || DefaultXmlLanguageIndex >= options.Count
+            var entries = XmlLanguageDisplayOptions;
+            return DefaultXmlLanguageIndex < 0 || DefaultXmlLanguageIndex >= entries.Count
                 ? null
-                : options[DefaultXmlLanguageIndex];
+                : entries[DefaultXmlLanguageIndex];
         }
         set
         {
             var index = value is null
                 ? -1
-                : XmlLanguageDisplayOptions.ToList().FindIndex(option =>
-                    string.Equals(option.MainText, value.MainText, StringComparison.OrdinalIgnoreCase));
+                : XmlLanguageDisplayOptions.ToList().FindIndex(entry =>
+                    string.Equals(entry.MainText, value.MainText, StringComparison.OrdinalIgnoreCase));
             if (index >= 0)
             {
                 DefaultXmlLanguageIndex = index;
@@ -190,7 +178,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     {
         get
         {
-            var index = Languages.ToList().FindIndex(option => string.Equals(option.CultureName, SelectedLanguage, StringComparison.OrdinalIgnoreCase));
+            var index = Languages.ToList().FindIndex(entry => string.Equals(entry.CultureName, SelectedLanguage, StringComparison.OrdinalIgnoreCase));
             return index;
         }
         set
@@ -276,7 +264,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         get => defaultSaveFormatIndex;
         set
         {
-            if (SetProperty(ref defaultSaveFormatIndex, Math.Clamp(value, 0, SaveFormats.Length - 1)))
+            if (SetProperty(ref defaultSaveFormatIndex, Math.Clamp(value, 0, SaveFormats.Count - 1)))
             {
                 ApplyLiveSettings();
             }
@@ -295,6 +283,18 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             }
         }
     }
+
+    public bool EmitBom
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                ApplyLiveSettings();
+            }
+        }
+    } = true;
 
     public decimal FrameAccuracyTolerance
     {
@@ -539,6 +539,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FfmpegPath = defaults.FfmpegPath;
         DefaultSaveFormatIndex = SaveFormatIndex(defaults.DefaultSaveFormat);
         DefaultXmlLanguageIndex = XmlLanguageIndex(defaults.DefaultXmlLanguage);
+        EmitBom = defaults.EmitBom;
         FrameAccuracyTolerance = defaults.FrameAccuracyTolerance;
         ApplyColors(ThemeColorSettings.Default);
         themeApplicationService?.Apply(ThemeColorSettings.Default);
@@ -612,20 +613,20 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     private void RefreshXmlLanguageDisplayOptions(bool notify)
     {
-        var options = XmlLanguageDisplay.Options(localizer);
-        if (xmlLanguageDisplayOptions.Count != options.Count)
+        var entries = XmlLanguageDisplay.Options(localizer);
+        if (xmlLanguageDisplayOptions.Count != entries.Count)
         {
             xmlLanguageDisplayOptions.Clear();
-            foreach (var option in options)
+            foreach (var entry in entries)
             {
-                xmlLanguageDisplayOptions.Add(option);
+                xmlLanguageDisplayOptions.Add(entry);
             }
         }
         else
         {
-            for (var index = 0; index < options.Count; index++)
+            for (var index = 0; index < entries.Count; index++)
             {
-                xmlLanguageDisplayOptions[index].UpdateFrom(options[index]);
+                xmlLanguageDisplayOptions[index].UpdateFrom(entries[index]);
             }
         }
 
@@ -643,12 +644,12 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
                 localizer.GetString(language.DisplayNameKey)))
             .ToList();
 
-    private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> options)
+    private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> entries)
     {
         languages.Clear();
-        foreach (var option in options)
+        foreach (var entry in entries)
         {
-            languages.Add(option);
+            languages.Add(entry);
         }
     }
 
@@ -773,6 +774,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             FfmpegPath = FfmpegPath,
             DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
             DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
+            EmitBom = EmitBom,
             FrameAccuracyTolerance = FrameAccuracyTolerance
         };
 
@@ -786,6 +788,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FfmpegPath = settings.FfmpegPath;
         DefaultSaveFormatIndex = SaveFormatIndex(settings.DefaultSaveFormat);
         DefaultXmlLanguageIndex = XmlLanguageIndex(settings.DefaultXmlLanguage);
+        EmitBom = settings.EmitBom;
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
     }
 
@@ -875,7 +878,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     {
         if (Enum.TryParse<ChapterExportFormat>(value, ignoreCase: true, out var format))
         {
-            var index = Array.IndexOf(SaveFormats, format);
+            var index = ChapterExportFormats.IndexOf(format);
             return Math.Max(0, index);
         }
 
@@ -884,10 +887,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     private int XmlLanguageIndex(string? value)
     {
-        var index = XmlLanguageOptions.ToList().FindIndex(option => string.Equals(option, value, StringComparison.OrdinalIgnoreCase));
+        var index = XmlLanguageOptions.ToList().FindIndex(entry => string.Equals(entry, value, StringComparison.OrdinalIgnoreCase));
         return Math.Max(0, index);
     }
-
 }
 
 public sealed record SettingsToolStatus(

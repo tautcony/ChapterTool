@@ -15,7 +15,7 @@
   
   
 <data name="Action.CombineSegments" xml:space="preserve">
-    <value>合并段落：选项数={options}，源类型={sourceType}</value>
+    <value>合并段落：选项数={entries}，源类型={sourceType}</value>
   </data>
 <data name="Action.DeleteRows" xml:space="preserve">
     <value>删除行：索引={indexes}</value>
@@ -33,7 +33,7 @@
     <value>帧数前移：帧数={frames}</value>
   </data>
 <data name="Action.SplitCombinedSegments" xml:space="preserve">
-    <value>拆分已合并段落：选项数={options}，源类型={sourceType}</value>
+    <value>拆分已合并段落：选项数={entries}，源类型={sourceType}</value>
   </data>
 <data name="App.Title" xml:space="preserve">
     <value>[VCB-Studio] ChapterTool</value>
@@ -399,13 +399,13 @@
     <value>帧信息已更新：option={option}，fps={fps}，round={round}，chapters={chapters}</value>
   </data>
 <data name="Log.ImportGroup" xml:space="preserve">
-    <value>{operation} 分组 {groupIndex}：sourcePath='{sourcePath}'，defaultOptionIndex={defaultOptionIndex}，options={options}</value>
+    <value>{operation} 分组 {groupIndex}：sourcePath='{sourcePath}'，defaultEntryIndex={defaultEntryIndex}，entries={entries}</value>
   </data>
-<data name="Log.ImportOption" xml:space="preserve">
-    <value>{operation} 选项 {optionIndex}：id='{id}'，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，duration={duration}，fps={fps}</value>
+<data name="Log.ImportEntry" xml:space="preserve">
+    <value>{operation} 条目 {entryIndex}：id='{id}'，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，duration={duration}，fps={fps}</value>
   </data>
 <data name="Log.ImportSummary" xml:space="preserve">
-    <value>{operation} 结果：success={success}，partial={partial}，groups={groups}，options={options}，chapters={chapters}，diagnostics={diagnostics}</value>
+    <value>{operation} 结果：success={success}，partial={partial}，groups={groups}，entries={entries}，chapters={chapters}，diagnostics={diagnostics}</value>
   </data>
 <data name="Log.LanguageSet" xml:space="preserve">
     <value>语言已设置为 {language}</value>
@@ -625,6 +625,9 @@
   </data>
 <data name="Settings.DefaultXmlLanguage" xml:space="preserve">
     <value>默认 XML 语言</value>
+  </data>
+<data name="Settings.EmitBom" xml:space="preserve">
+    <value>写入 UTF-8 BOM</value>
   </data>
 <data name="Settings.Eac3toPath" xml:space="preserve">
     <value>eac3to</value>

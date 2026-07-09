@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Text;
@@ -40,7 +41,7 @@ public sealed class TextImporterTests
         Assert.True(result.Success);
         Assert.True(result.IsPartial);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PartialParse");
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(6, chapters.Count);
         Assert.Equal(TimeSpan.Zero, chapters[0].Time);
         Assert.Equal("Chapter 06", chapters[5].Name);
@@ -58,7 +59,7 @@ public sealed class TextImporterTests
             CHAPTER02NAME=Middle
             """);
 
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(TimeSpan.Zero, chapters[0].Time);
         Assert.Equal(TimeSpan.FromSeconds(30), chapters[1].Time);
     }
@@ -86,7 +87,7 @@ public sealed class TextImporterTests
 
         Assert.True(result.Success);
         Assert.True(result.IsPartial);
-        Assert.Single(result.Groups.Single().Options.Single().ChapterInfo.Chapters);
+        Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Warning);
     }
 
@@ -103,8 +104,8 @@ public sealed class TextImporterTests
             """);
 
         Assert.True(result.Success, Diagnostics(result));
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("OGM", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.Ogm, info.ImportFormat);
         Assert.Equal(["Intro", "Main"], info.Chapters.Select(static chapter => chapter.Name));
     }
 
@@ -121,8 +122,8 @@ public sealed class TextImporterTests
         var result = importer.ImportText(content, "markers.txt");
 
         Assert.True(result.Success, Diagnostics(result));
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("Adobe Premiere Pro", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.PremiereMarkers, info.ImportFormat);
         Assert.Equal("markers.txt", info.SourceName);
         Assert.Equal(2, info.Chapters.Count);
         Assert.Equal("Intro", info.Chapters[0].Name);
@@ -142,7 +143,7 @@ public sealed class TextImporterTests
         var result = importer.ImportText(content);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapter = result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single();
+        var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
         Assert.Equal("Scene 02", chapter.Name);
         Assert.Equal(TimeSpan.FromMilliseconds(12345), chapter.Time);
     }
@@ -158,7 +159,7 @@ public sealed class TextImporterTests
         var result = importer.ImportText(content);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapter = result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single();
+        var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
         Assert.Equal("Act \"One, Start\"", chapter.Name);
         Assert.Equal(TimeSpan.FromSeconds(10) + TimeSpan.FromTicks((long)Math.Round(12 * TimeSpan.TicksPerSecond / 23.976M)), chapter.Time);
     }
@@ -174,8 +175,8 @@ public sealed class TextImporterTests
         var result = importer.ImportText(content, "markers.txt");
 
         Assert.True(result.Success, Diagnostics(result));
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("Adobe Premiere Pro", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.PremiereMarkers, info.ImportFormat);
         Assert.Equal("Intro", info.Chapters.Single().Name);
     }
 
@@ -206,7 +207,7 @@ public sealed class TextImporterTests
         Assert.True(result.Success);
         Assert.True(result.IsPartial);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PartialParse");
-        Assert.Single(result.Groups.Single().Options.Single().ChapterInfo.Chapters);
+        Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
     }
 
     [Fact]
@@ -247,13 +248,13 @@ public sealed class TextImporterTests
         var result = WebVttChapterImporter.ImportText(vttText);
 
         Assert.True(result.Success);
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(7, chapters.Count);
         Assert.Equal("Introduction", chapters[0].Name);
         Assert.Equal(TimeSpan.FromMilliseconds(28206), chapters[1].Time);
         Assert.Equal(TimeSpan.FromSeconds(26), chapters[0].End);
         Assert.Equal(TimeSpan.FromMilliseconds(547500), chapters[^1].End);
-        Assert.Equal(TimeSpan.FromMilliseconds(547500), result.Groups.Single().Options.Single().ChapterInfo.Duration);
+        Assert.Equal(TimeSpan.FromMilliseconds(547500), result.Groups.Single().Entries.Single().ChapterSet.Duration);
     }
 
     [Fact]
@@ -269,7 +270,7 @@ public sealed class TextImporterTests
             """);
 
         Assert.True(result.Success);
-        Assert.Equal("Intro", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("Intro", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Theory]
@@ -309,9 +310,9 @@ public sealed class TextImporterTests
             """);
 
         Assert.True(result.Success);
-        Assert.Equal(2, result.Groups.Single().Options.Count);
-        Assert.Equal("Edition 1", result.Groups.Single().Options[0].ChapterInfo.Chapters.Single().Name);
-        Assert.Equal("Edition 2", result.Groups.Single().Options[1].ChapterInfo.Chapters.Single().Name);
+        Assert.Equal(2, result.Groups.Single().Entries.Count);
+        Assert.Equal("Edition 1", result.Groups.Single().Entries[0].ChapterSet.Chapters.Single().Name);
+        Assert.Equal("Edition 2", result.Groups.Single().Entries[1].ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -336,7 +337,7 @@ public sealed class TextImporterTests
             """);
 
         Assert.True(result.Success);
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(["Parent", "Child"], chapters.Select(chapter => chapter.Name));
         Assert.Equal(TimeSpan.FromSeconds(30), chapters[0].End);
         Assert.Null(chapters[1].End);
@@ -362,7 +363,7 @@ public sealed class TextImporterTests
             </Chapters>
             """);
 
-        var chapter = result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single();
+        var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
         Assert.Equal("Kept", chapter.Name);
         Assert.Equal(1, chapter.Number);
     }
@@ -389,7 +390,7 @@ public sealed class TextImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(30, chapters.Count);
         Assert.Equal("01 High-energy Particle", chapters[0].Name);
         Assert.Contains(chapters, chapter => chapter.Name.Contains("カゲロウデイズ", StringComparison.Ordinal));
@@ -406,7 +407,7 @@ public sealed class TextImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(17, chapters.Count);
         Assert.Equal("Chapter 01", chapters[0].Name.Trim());
         Assert.Equal(TimeSpan.FromMilliseconds(267080), chapters[1].Time);
@@ -472,12 +473,12 @@ public sealed class TextImporterTests
         var result = importer.ImportText(xmlText);
 
         Assert.True(result.Success, Diagnostics(result));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(2, options.Count);
-        Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], options[0].ChapterInfo.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal(TimeSpan.FromMinutes(2), options[1].ChapterInfo.Chapters.Single().Time);
-        Assert.Equal(TimeSpan.FromMinutes(4), options[1].ChapterInfo.Chapters.Single().End);
-        Assert.Equal("A hidden and not enabled chapter.", options[1].ChapterInfo.Chapters.Single().Name);
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(2, entries.Count);
+        Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], entries[0].ChapterSet.Chapters.Select(static chapter => chapter.Name));
+        Assert.Equal(TimeSpan.FromMinutes(2), entries[1].ChapterSet.Chapters.Single().Time);
+        Assert.Equal(TimeSpan.FromMinutes(4), entries[1].ChapterSet.Chapters.Single().End);
+        Assert.Equal("A hidden and not enabled chapter.", entries[1].ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -490,7 +491,7 @@ public sealed class TextImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(6, chapters.Count);
         Assert.Equal("Ouvertüre", chapters[0].Name);
         Assert.Equal(TimeSpan.Zero, chapters[0].Time);
@@ -509,12 +510,12 @@ public sealed class TextImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Contains(chapters, c => c.Name.Contains("Schätzchen", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task XmlImporterSetsDefaultOptionIndexFromEditionFlagDefault()
+    public async Task XmlImporterSetsDefaultEntryIndexFromEditionFlagDefault()
     {
         var importer = new XmlChapterImporter(formatter);
         var xml = """
@@ -541,9 +542,9 @@ public sealed class TextImporterTests
 
         Assert.True(result.Success, Diagnostics(result));
         var group = result.Groups.Single();
-        Assert.Equal(2, group.Options.Count);
-        Assert.Equal(1, group.DefaultOptionIndex);
-        Assert.Equal("Default Edition", group.Options[1].ChapterInfo.Chapters.Single().Name);
+        Assert.Equal(2, group.Entries.Count);
+        Assert.Equal(1, group.DefaultEntryIndex);
+        Assert.Equal("Default Edition", group.Entries[1].ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -574,8 +575,8 @@ public sealed class TextImporterTests
 
         Assert.True(result.Success, Diagnostics(result));
         var group = result.Groups.Single();
-        Assert.Equal(0, group.DefaultOptionIndex);
-        Assert.Equal("First Default", group.Options[group.DefaultOptionIndex].ChapterInfo.Chapters.Single().Name);
+        Assert.Equal(0, group.DefaultEntryIndex);
+        Assert.Equal("First Default", group.Entries[group.DefaultEntryIndex].ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -588,10 +589,10 @@ public sealed class TextImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(4, options.Count);
-        Assert.All(options, option => Assert.NotEmpty(option.ChapterInfo.Chapters));
-        Assert.Equal("Prologue", options[0].ChapterInfo.Chapters[0].Name);
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(4, entries.Count);
+        Assert.All(entries, entry => Assert.NotEmpty(entry.ChapterSet.Chapters));
+        Assert.Equal("Prologue", entries[0].ChapterSet.Chapters[0].Name);
     }
 
     [Theory]
@@ -605,14 +606,14 @@ public sealed class TextImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(sample.Options.Length, options.Count);
-        for (var i = 0; i < sample.Options.Length; i++)
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(sample.Entries.Length, entries.Count);
+        for (var i = 0; i < sample.Entries.Length; i++)
         {
-            var expected = sample.Options[i];
-            var chapters = options[i].ChapterInfo.Chapters;
+            var expected = sample.Entries[i];
+            var chapters = entries[i].ChapterSet.Chapters;
             Assert.Equal(expected.ChapterCount, chapters.Count);
-            Assert.Equal(expected.Duration, options[i].ChapterInfo.Duration);
+            Assert.Equal(expected.Duration, entries[i].ChapterSet.Duration);
             Assert.Equal(expected.FirstName, chapters[0].Name);
             Assert.Equal(expected.FirstTime, chapters[0].Time);
             Assert.Equal(expected.LastName, chapters[^1].Name);
@@ -630,7 +631,7 @@ public sealed class TextImporterTests
         XmlSample("Angel Beats! - NCOP_Ordered_Chapter.xml", AngelBeatsEditions())
     ];
 
-    public sealed record XmlSampleExpectation(string FileName, XmlOptionExpectation[] Options);
+    public sealed record XmlSampleExpectation(string FileName, XmlOptionExpectation[] Entries);
 
     public sealed record XmlOptionExpectation(
         int ChapterCount,
@@ -645,8 +646,8 @@ public sealed class TextImporterTests
             .Select(static _ => new XmlOptionExpectation(3, Ms(59601), "Part A", TimeSpan.Zero, "Part C", Ms(59601)))
             .ToArray();
 
-    private static XmlSampleExpectation XmlSample(string fileName, XmlOptionExpectation[] options) =>
-        new(fileName, options);
+    private static XmlSampleExpectation XmlSample(string fileName, XmlOptionExpectation[] entries) =>
+        new(fileName, entries);
 
     private static TimeSpan Ms(int milliseconds) => TimeSpan.FromMilliseconds(milliseconds);
 

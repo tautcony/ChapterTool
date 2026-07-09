@@ -32,8 +32,8 @@ public sealed class FrameRateService : IFrameRateService
     /// <returns>The operation result.</returns>
     public FrameRateOption FindByValue(decimal framesPerSecond)
     {
-        return FrameRateOptions.FirstOrDefault(option =>
-            option.IsValid && Math.Abs(option.Value - framesPerSecond) < 0.00001m)
+        return FrameRateOptions.FirstOrDefault(entry =>
+            entry.IsValid && Math.Abs(entry.Value - framesPerSecond) < 0.00001m)
             ?? FrameRateOptions[0];
     }
 
@@ -43,7 +43,7 @@ public sealed class FrameRateService : IFrameRateService
     /// <param name="info">The chapter data to process.</param>
     /// <param name="tolerance">The tolerance value.</param>
     /// <returns>The operation result.</returns>
-    public FrameRateOption Detect(ChapterInfo info, decimal tolerance) =>
+    public FrameRateOption Detect(ChapterSet info, decimal tolerance) =>
         DetectDetailed(info, tolerance).Option;
 
     /// <summary>
@@ -52,7 +52,7 @@ public sealed class FrameRateService : IFrameRateService
     /// <param name="info">The chapter data to process.</param>
     /// <param name="tolerance">The tolerance value.</param>
     /// <returns>The operation result.</returns>
-    public FrameRateDetectionResult DetectDetailed(ChapterInfo info, decimal tolerance)
+    public FrameRateDetectionResult DetectDetailed(ChapterSet info, decimal tolerance)
     {
         var defaultOption = FrameRateOptions[1];
         var evaluated = info.Chapters.Count(static chapter => !chapter.IsSeparator);
@@ -65,13 +65,13 @@ public sealed class FrameRateService : IFrameRateService
         var bestDeviation = decimal.MaxValue;
         var bestAccurateCount = -1;
 
-        foreach (var option in FrameRateOptions.Where(static option => option.IsValid))
+        foreach (var entry in FrameRateOptions.Where(static entry => entry.IsValid))
         {
             var deviation = 0m;
             var accurateCount = 0;
             foreach (var chapter in info.Chapters.Where(static chapter => !chapter.IsSeparator))
             {
-                var frames = CalculateFrames(chapter, option.Value);
+                var frames = CalculateFrames(chapter, entry.Value);
                 var rounded = ChapterRounding.RoundToInt64(frames);
                 var delta = Math.Abs(frames - rounded);
                 deviation += Math.Min(delta, tolerance);
@@ -86,7 +86,7 @@ public sealed class FrameRateService : IFrameRateService
             {
                 bestDeviation = deviation;
                 bestAccurateCount = accurateCount;
-                bestOption = option;
+                bestOption = entry;
             }
         }
 
@@ -123,7 +123,7 @@ public sealed class FrameRateService : IFrameRateService
     /// <param name="tolerance">The tolerance value.</param>
     /// <returns>The operation result.</returns>
     public FrameInfoResult UpdateFrames(
-        ChapterInfo info,
+        ChapterSet info,
         FrameRateOption option,
         bool round,
         decimal tolerance)

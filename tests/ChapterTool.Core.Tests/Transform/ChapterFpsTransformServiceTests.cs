@@ -49,12 +49,11 @@ public sealed class ChapterFpsTransformServiceTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
     }
 
-    private static ChapterInfo Sample() =>
+    private static ChapterSet Sample() =>
         new(
             "Title",
             "source",
-            0,
-            "OGM",
+            ChapterImportFormat.Ogm,
             24,
             TimeSpan.FromSeconds(20),
             [

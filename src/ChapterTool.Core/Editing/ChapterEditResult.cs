@@ -6,8 +6,8 @@ namespace ChapterTool.Core.Editing;
 /// <summary>
 /// Represents the result of a chapter edit operation.
 /// </summary>
-/// <param name="ChapterInfo">The ChapterInfo value.</param>
+/// <param name="ChapterSet">The ChapterSet value.</param>
 /// <param name="Diagnostics">The Diagnostics value.</param>
 public sealed record ChapterEditResult(
-    ChapterInfo ChapterInfo,
+    ChapterSet ChapterSet,
     IReadOnlyList<ChapterDiagnostic> Diagnostics);

@@ -124,16 +124,15 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
         IReadOnlyList<ChapterDiagnostic> diagnostics,
         bool isPartial)
     {
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "OGM Chapters",
             Path.GetFileName(path),
-            0,
-            "OGM",
+            ChapterImportFormat.Ogm,
             0,
             chapters[^1].Time,
             chapters);
-        var option = new ChapterSourceOption("default", "OGM Chapters", info);
-        var group = new ChapterInfoGroup(path, [option]);
+        var entry = new ChapterImportEntry("default", "OGM Chapters", info);
+        var group = new ChapterImportSource(path, [entry]);
         return new ChapterImportResult(true, [group], diagnostics, isPartial);
     }
 

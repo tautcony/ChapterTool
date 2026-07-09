@@ -13,7 +13,7 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.EditTime(Sample(), 1, "25:00:00.000");
 
-        Assert.Equal(TimeSpan.Zero, result.ChapterInfo.Chapters[1].Time);
+        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[1].Time);
     }
 
     [Fact]
@@ -21,9 +21,9 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.EditFrame(Sample(), 1, "240 frames", 24);
 
-        Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterInfo.Chapters[1].Time);
-        Assert.Equal("240", result.ChapterInfo.Chapters[1].FramesInfo);
-        Assert.Equal(FrameAccuracy.Accurate, result.ChapterInfo.Chapters[1].FrameAccuracy);
+        Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].Time);
+        Assert.Equal("240", result.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Equal(FrameAccuracy.Accurate, result.ChapterSet.Chapters[1].FrameAccuracy);
     }
 
     [Theory]
@@ -35,7 +35,7 @@ public sealed class ChapterEditingServiceTests
 
         var result = service.EditFrame(sample, 1, text, framesPerSecond);
 
-        Assert.Equal(sample.Chapters[1].Time, result.ChapterInfo.Chapters[1].Time);
+        Assert.Equal(sample.Chapters[1].Time, result.ChapterSet.Chapters[1].Time);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameText");
     }
 
@@ -44,8 +44,8 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.Delete(Sample(), new HashSet<int> { 0 });
 
-        Assert.Equal(TimeSpan.Zero, result.ChapterInfo.Chapters[0].Time);
-        Assert.Equal(1, result.ChapterInfo.Chapters[0].Number);
+        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[0].Time);
+        Assert.Equal(1, result.ChapterSet.Chapters[0].Number);
     }
 
     [Fact]
@@ -53,8 +53,8 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.InsertBefore(Sample(), 1);
 
-        Assert.Equal("New Chapter", result.ChapterInfo.Chapters[1].Name);
-        Assert.Equal([1, 2, 3, 4], result.ChapterInfo.Chapters.Select(static c => c.Number).ToArray());
+        Assert.Equal("New Chapter", result.ChapterSet.Chapters[1].Name);
+        Assert.Equal([1, 2, 3, 4], result.ChapterSet.Chapters.Select(static c => c.Number).ToArray());
     }
 
     [Fact]
@@ -62,9 +62,9 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.ApplyTemplate(Sample(), "One\nTwo");
 
-        Assert.Equal("One", result.ChapterInfo.Chapters[0].Name);
-        Assert.Equal("Two", result.ChapterInfo.Chapters[1].Name);
-        Assert.Equal("End", result.ChapterInfo.Chapters[2].Name);
+        Assert.Equal("One", result.ChapterSet.Chapters[0].Name);
+        Assert.Equal("Two", result.ChapterSet.Chapters[1].Name);
+        Assert.Equal("End", result.ChapterSet.Chapters[2].Name);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.ApplyOrderShift(Sample(), -2);
 
-        Assert.Equal([1, 2, 3], result.ChapterInfo.Chapters.Select(static chapter => chapter.Number).ToArray());
+        Assert.Equal([1, 2, 3], result.ChapterSet.Chapters.Select(static chapter => chapter.Number).ToArray());
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OrderShiftNormalized");
     }
 
@@ -91,7 +91,7 @@ public sealed class ChapterEditingServiceTests
 
         var result = service.ApplyOrderShift(info, 2);
 
-        Assert.Equal([3, 0, 4], result.ChapterInfo.Chapters.Select(static chapter => chapter.Number).ToArray());
+        Assert.Equal([3, 0, 4], result.ChapterSet.Chapters.Select(static chapter => chapter.Number).ToArray());
         Assert.Empty(result.Diagnostics);
     }
 
@@ -100,9 +100,9 @@ public sealed class ChapterEditingServiceTests
     {
         var result = service.ShiftFramesForward(Sample(), 240, 24);
 
-        Assert.Equal(TimeSpan.Zero, result.ChapterInfo.Chapters[0].Time);
-        Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterInfo.Chapters[1].Time);
-        Assert.Equal([1, 2], result.ChapterInfo.Chapters.Select(static chapter => chapter.Number).ToArray());
+        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[0].Time);
+        Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].Time);
+        Assert.Equal([1, 2], result.ChapterSet.Chapters.Select(static chapter => chapter.Number).ToArray());
     }
 
     [Fact]
@@ -124,12 +124,11 @@ public sealed class ChapterEditingServiceTests
         Assert.Empty(result.Diagnostics);
     }
 
-    private static ChapterInfo Sample() =>
+    private static ChapterSet Sample() =>
         new(
             "Title",
             "source",
-            0,
-            "OGM",
+            ChapterImportFormat.Ogm,
             24,
             TimeSpan.FromSeconds(30),
             [

@@ -20,5 +20,4 @@ public sealed class FileSystemNativeDependencyService(IReadOnlyList<string> sear
             "NativeLibraryMissing",
             $"Native dependency '{dependencyId}' was not found."));
     }
-
 }

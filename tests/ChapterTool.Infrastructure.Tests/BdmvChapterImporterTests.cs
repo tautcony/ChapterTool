@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
@@ -34,16 +35,16 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(root, Progress: progress), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal("Disc Title", info.Title);
-        Assert.Equal("BDMV", info.SourceType);
+        Assert.Equal(ChapterImportFormat.Bdmv, info.ImportFormat);
         Assert.Equal("00001.m2ts", info.SourceName);
         Assert.Equal(2, info.Chapters.Count);
         Assert.Equal(["Opening", "Middle"], info.Chapters.Select(static chapter => chapter.Name));
         Assert.Equal(TimeSpan.FromMilliseconds(754567), info.Chapters[1].Time);
         Assert.Equal(TimeSpan.FromHours(1).Add(TimeSpan.FromSeconds(20)), info.Duration);
-        Assert.Equal("00001.m2ts", result.Groups.Single().Options.Single().MediaReferences!.Single().DisplayName);
-        Assert.Equal(Path.Combine("..", "STREAM", "00001.m2ts"), result.Groups.Single().Options.Single().MediaReferences!.Single().RelativePath);
+        Assert.Equal("00001.m2ts", result.Groups.Single().Entries.Single().MediaReferences!.Single().DisplayName);
+        Assert.Equal(Path.Combine("..", "STREAM", "00001.m2ts"), result.Groups.Single().Entries.Single().MediaReferences!.Single().RelativePath);
         Assert.Equal([root, "-showall"], runner.Requests[0].Arguments);
         Assert.Null(runner.Requests[0].WorkingDirectory);
         Assert.Equal([root, "1)", $"1:{runner.ExportedPaths.Single()}", "-showall"], runner.Requests[1].Arguments);
@@ -87,7 +88,7 @@ public sealed class BdmvChapterImporterTests
             var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message)));
-            Assert.Equal(string.Empty, result.Groups.Single().Options.Single().ChapterInfo.Title);
+            Assert.Equal(string.Empty, result.Groups.Single().Entries.Single().ChapterSet.Title);
         }
         finally
         {

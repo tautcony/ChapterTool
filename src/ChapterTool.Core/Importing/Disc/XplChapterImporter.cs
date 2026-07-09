@@ -46,13 +46,13 @@ public sealed class XplChapterImporter : IChapterImporter
                 document = await XDocument.LoadAsync(request.Content, LoadOptions.None, cancellationToken);
             }
 
-            var options = Parse(document, request.Path).ToList();
-            if (options.Count == 0)
+            var entries = Parse(document, request.Path).ToList();
+            if (entries.Count == 0)
             {
                 return ChapterImportResult.Failed(Error("XplNoChapters", "No HD-DVD chapters were parsed."));
             }
 
-            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], []);
+            return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
         }
         catch (Exception exception) when (exception is FormatException or InvalidDataException or InvalidOperationException or System.Xml.XmlException)
         {
@@ -60,7 +60,7 @@ public sealed class XplChapterImporter : IChapterImporter
         }
     }
 
-    private static IEnumerable<ChapterSourceOption> Parse(XDocument document, string path)
+    private static IEnumerable<ChapterImportEntry> Parse(XDocument document, string path)
     {
         var playlist = document.Element(Namespace + "Playlist") ?? throw new InvalidDataException("Missing XPL Playlist root.");
         var optionIndex = 0;
@@ -90,18 +90,17 @@ public sealed class XplChapterImporter : IChapterImporter
                 }
 
                 var sourceName = (string?)title.Element(Namespace + "PrimaryAudioVideoClip")?.Attribute("src") ?? string.Empty;
-                var info = new ChapterInfo(
+                var info = new ChapterSet(
                     titleName,
                     sourceName,
-                    optionIndex,
-                    "HD-DVD",
+                    ChapterImportFormat.HdDvdXpl,
                     24,
                     ParseTime(durationText, timeBase, tickBase, tickBaseDivisor),
                     chapters);
-                IReadOnlyList<SourceMediaReference> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
+                IReadOnlyList<MediaFileReference> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
                     ? []
-                    : [new SourceMediaReference(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
-                yield return new ChapterSourceOption($"title-{optionIndex}", $"{info.Title}__{chapters.Count}", info, MediaReferences: mediaReferences);
+                    : [new MediaFileReference(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
+                yield return new ChapterImportEntry($"title-{optionIndex}", $"{info.Title}__{chapters.Count}", info, MediaReferences: mediaReferences);
                 optionIndex++;
             }
         }

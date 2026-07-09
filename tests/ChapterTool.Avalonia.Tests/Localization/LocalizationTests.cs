@@ -138,13 +138,13 @@ public sealed partial class LocalizationTests
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterImportResult(
                 true,
-                [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, []))])],
+                [new ChapterImportSource(path, [new ChapterImportEntry("default", "default", new ChapterSet(path, path, ChapterImportFormat.Ogm, 24, TimeSpan.Zero, []))])],
                 []));
     }
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 

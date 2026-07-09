@@ -98,7 +98,7 @@ public sealed class ChapterToolCliApplication(
             return 1;
         }
 
-        var info = selection.Option!.ChapterInfo;
+        var info = selection.Entry!.ChapterSet;
         var export = exporter.Export(
             info with
             {
@@ -124,7 +124,7 @@ public sealed class ChapterToolCliApplication(
     {
         if (request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath))
         {
-            console.WriteErrorLine("Options --stdout and --output cannot be used together.");
+            console.WriteErrorLine("Entries --stdout and --output cannot be used together.");
             format = null!;
             errorCode = 1;
             return false;
@@ -153,7 +153,7 @@ public sealed class ChapterToolCliApplication(
     private async Task<int> WriteExportOutputAsync(
         CliConvertRequest request,
         CliOutputFormatDefinition format,
-        ChapterInfo info,
+        ChapterSet info,
         ChapterExportResult export,
         CancellationToken cancellationToken)
     {
@@ -226,7 +226,7 @@ public sealed class ChapterToolCliApplication(
         return new CliImportExecution(result.Success, importer, result);
     }
 
-    private CliSelectionResult? SelectOption(IReadOnlyList<ChapterInfoGroup> groups, CliConvertRequest request)
+    private CliSelectionResult? SelectOption(IReadOnlyList<ChapterImportSource> groups, CliConvertRequest request)
     {
         if (groups.Count == 0)
         {
@@ -238,18 +238,18 @@ public sealed class ChapterToolCliApplication(
             return failure;
         }
 
-        if (group is null || group.Options.Count == 0)
+        if (group is null || group.Entries.Count == 0)
         {
-            return CliSelectionResult.Failure($"Group {request.GroupIndex ?? 0} contains no selectable chapter options.", []);
+            return CliSelectionResult.Failure($"Group {request.GroupIndex ?? 0} contains no selectable chapter entries.", []);
         }
 
-        return ResolveOptionFromGroup(group, request);
+        return ResolveEntryFromGroup(group, request);
     }
 
     private bool TryResolveGroupIndex(
-        IReadOnlyList<ChapterInfoGroup> groups,
+        IReadOnlyList<ChapterImportSource> groups,
         CliConvertRequest request,
-        out ChapterInfoGroup? group,
+        out ChapterImportSource? group,
         out CliSelectionResult? failure)
     {
         var groupIndex = request.GroupIndex ?? (groups.Count == 1 ? 0 : null);
@@ -267,57 +267,57 @@ public sealed class ChapterToolCliApplication(
         return true;
     }
 
-    private CliSelectionResult ResolveOptionFromGroup(ChapterInfoGroup group, CliConvertRequest request)
+    private CliSelectionResult ResolveEntryFromGroup(ChapterImportSource group, CliConvertRequest request)
     {
         var groupIndex = request.GroupIndex ?? 0;
 
-        if (!string.IsNullOrWhiteSpace(request.OptionId))
+        if (!string.IsNullOrWhiteSpace(request.EntryId))
         {
-            return ResolveOptionById(group, request.OptionId, groupIndex);
+            return ResolveEntryById(group, request.EntryId, groupIndex);
         }
 
-        if (request.OptionIndex is not null)
+        if (request.EntryIndex is not null)
         {
-            return ResolveOptionByIndex(group, request.OptionIndex.Value, groupIndex);
+            return ResolveEntryByIndex(group, request.EntryIndex.Value, groupIndex);
         }
 
-        if (group.Options.Count == 1)
+        if (group.Entries.Count == 1)
         {
-            return CliSelectionResult.Success(group.Options[0]);
+            return CliSelectionResult.Success(group.Entries[0]);
         }
 
         return CliSelectionResult.Failure(
-            $"Group {groupIndex} has multiple options. Specify --option-id or --option-index.",
+            $"Group {groupIndex} has multiple entries. Specify --entry-id or --entry-index.",
             AmbiguousSelectionDiagnostics([group], groupIndex));
     }
 
-    private CliSelectionResult ResolveOptionById(ChapterInfoGroup group, string optionId, int groupIndex)
+    private CliSelectionResult ResolveEntryById(ChapterImportSource group, string entryId, int groupIndex)
     {
-        var option = group.Options.FirstOrDefault(candidate =>
-            string.Equals(candidate.Id, optionId, StringComparison.OrdinalIgnoreCase));
-        if (option is null)
+        var entry = group.Entries.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, entryId, StringComparison.OrdinalIgnoreCase));
+        if (entry is null)
         {
             return CliSelectionResult.Failure(
-                $"Option id '{optionId}' was not found in group {groupIndex}.",
+                $"Entry id '{entryId}' was not found in group {groupIndex}.",
                 AmbiguousSelectionDiagnostics([group], groupIndex));
         }
 
-        return CliSelectionResult.Success(option);
+        return CliSelectionResult.Success(entry);
     }
 
-    private CliSelectionResult ResolveOptionByIndex(ChapterInfoGroup group, int optionIndex, int groupIndex)
+    private CliSelectionResult ResolveEntryByIndex(ChapterImportSource group, int entryIndex, int groupIndex)
     {
-        if (optionIndex < 0 || optionIndex >= group.Options.Count)
+        if (entryIndex < 0 || entryIndex >= group.Entries.Count)
         {
             return CliSelectionResult.Failure(
-                $"Option index {optionIndex} is out of range for group {groupIndex}.",
+                $"Entry index {entryIndex} is out of range for group {groupIndex}.",
                 AmbiguousSelectionDiagnostics([group], groupIndex));
         }
 
-        return CliSelectionResult.Success(group.Options[optionIndex]);
+        return CliSelectionResult.Success(group.Entries[entryIndex]);
     }
 
-    private static string ResolveOutputPath(CliConvertRequest request, CliOutputFormatDefinition format, ChapterInfo info)
+    private static string ResolveOutputPath(CliConvertRequest request, CliOutputFormatDefinition format, ChapterSet info)
     {
         if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
@@ -330,15 +330,15 @@ public sealed class ChapterToolCliApplication(
         return Path.Combine(directory, baseName + format.FileExtension);
     }
 
-    private static IEnumerable<string> DescribeGroup(ChapterInfoGroup group)
+    private static IEnumerable<string> DescribeGroup(ChapterImportSource group)
     {
-        for (var optionIndex = 0; optionIndex < group.Options.Count; optionIndex++)
+        for (var entryIndex = 0; entryIndex < group.Entries.Count; entryIndex++)
         {
-            var option = group.Options[optionIndex];
-            var defaultMarker = optionIndex == group.DefaultOptionIndex ? " default" : string.Empty;
+            var entry = group.Entries[entryIndex];
+            var defaultMarker = entryIndex == group.DefaultEntryIndex ? " default" : string.Empty;
             yield return string.Create(
                 CultureInfo.InvariantCulture,
-                $"  ({optionIndex}) id={option.Id} name=\"{option.DisplayName}\" chapters={option.ChapterInfo.Chapters.Count(static chapter => !chapter.IsSeparator)} fps={option.ChapterInfo.FramesPerSecond:0.###}{defaultMarker}");
+                $"  ({entryIndex}) id={entry.Id} name=\"{entry.DisplayName}\" chapters={entry.ChapterSet.Chapters.Count(static chapter => !chapter.IsSeparator)} fps={entry.ChapterSet.FramesPerSecond:0.###}{defaultMarker}");
         }
     }
 
@@ -372,7 +372,7 @@ public sealed class ChapterToolCliApplication(
         yield return "bdmv-directory       BDMV/PLAYLIST directory";
     }
 
-    private IReadOnlyList<ChapterDiagnostic> AmbiguousSelectionDiagnostics(IReadOnlyList<ChapterInfoGroup> groups, int groupOffset = 0)
+    private IReadOnlyList<ChapterDiagnostic> AmbiguousSelectionDiagnostics(IReadOnlyList<ChapterImportSource> groups, int groupOffset = 0)
     {
         var diagnostics = new List<ChapterDiagnostic>();
         for (var localGroupIndex = 0; localGroupIndex < groups.Count; localGroupIndex++)
@@ -382,14 +382,14 @@ public sealed class ChapterToolCliApplication(
             diagnostics.Add(new ChapterDiagnostic(
                 DiagnosticSeverity.Info,
                 "AvailableGroup",
-                $"group={groupIndex} default-option-index={group.DefaultOptionIndex} source={group.SourcePath}"));
-            for (var optionIndex = 0; optionIndex < group.Options.Count; optionIndex++)
+                $"group={groupIndex} default-entry-index={group.DefaultEntryIndex} source={group.SourcePath}"));
+            for (var entryIndex = 0; entryIndex < group.Entries.Count; entryIndex++)
             {
-                var option = group.Options[optionIndex];
+                var entry = group.Entries[entryIndex];
                 diagnostics.Add(new ChapterDiagnostic(
                     DiagnosticSeverity.Info,
                     "AvailableOption",
-                    $"group={groupIndex} option-index={optionIndex} option-id={option.Id} name={option.DisplayName}"));
+                    $"group={groupIndex} entry-index={entryIndex} entry-id={entry.Id} name={entry.DisplayName}"));
             }
         }
 
@@ -448,15 +448,15 @@ public sealed record CliConvertRequest(
     string? OutputPath,
     bool Stdout,
     int? GroupIndex,
-    int? OptionIndex,
-    string? OptionId,
+    int? EntryIndex,
+    string? EntryId,
     string? XmlLanguage,
     string? SourceFileName,
     double? FrameRate);
 
-public sealed record CliSelectionResult(bool IsSuccess, ChapterSourceOption? Option, string Message, IReadOnlyList<ChapterDiagnostic> Diagnostics)
+public sealed record CliSelectionResult(bool IsSuccess, ChapterImportEntry? Entry, string Message, IReadOnlyList<ChapterDiagnostic> Diagnostics)
 {
-    public static CliSelectionResult Success(ChapterSourceOption option) => new(true, option, string.Empty, []);
+    public static CliSelectionResult Success(ChapterImportEntry entry) => new(true, entry, string.Empty, []);
 
     public static CliSelectionResult Failure(string message, IReadOnlyList<ChapterDiagnostic> diagnostics) => new(false, null, message, diagnostics);
 }

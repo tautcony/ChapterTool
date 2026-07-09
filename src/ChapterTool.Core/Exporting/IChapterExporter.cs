@@ -15,8 +15,8 @@ public interface IChapterExporter
     /// <summary>
     /// Exports chapter data with the supplied options.
     /// </summary>
-    /// <param name="chapterInfo">The chapter data to export.</param>
+    /// <param name="chapterSet">The chapter data to export.</param>
     /// <param name="options">The export options.</param>
     /// <returns>The export result.</returns>
-    ChapterExportResult Export(ChapterInfo chapterInfo, ChapterExportOptions options);
+    ChapterExportResult Export(ChapterSet chapterSet, ChapterExportOptions options);
 }

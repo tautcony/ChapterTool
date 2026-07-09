@@ -85,14 +85,14 @@ public sealed class MediaChapterImporter(
             return new ChapterImportResult(false, [], diagnostics);
         }
 
-        var options = CreateOptions(request.Path, normalized);
+        var entries = CreateOptions(request.Path, normalized);
         return new ChapterImportResult(
             true,
-            [new ChapterInfoGroup(request.Path, options)],
+            [new ChapterImportSource(request.Path, entries)],
             diagnostics);
     }
 
-    private static IReadOnlyList<ChapterSourceOption> CreateOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
+    private static IReadOnlyList<ChapterImportEntry> CreateOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
     {
         if (chapters.Any(static chapter => !string.IsNullOrWhiteSpace(EditionUid(chapter.Entry))))
         {
@@ -102,13 +102,12 @@ public sealed class MediaChapterImporter(
         var info = CreateInfo(
             Path.GetFileNameWithoutExtension(path),
             Path.GetFileName(path),
-            0,
             chapters,
             renumberFallbacks: true);
-        return [new ChapterSourceOption("default", "FFprobe Chapters", info, MediaReferences: [CreateReference(path)])];
+        return [new ChapterImportEntry("default", "FFprobe Chapters", info, MediaReferences: [CreateReference(path)])];
     }
 
-    private static List<ChapterSourceOption> CreateEditionOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
+    private static List<ChapterImportEntry> CreateEditionOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
     {
         var editionKeys = new List<string>();
         foreach (var chapter in chapters)
@@ -121,32 +120,31 @@ public sealed class MediaChapterImporter(
         }
 
         var hasUntagged = chapters.Any(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry)));
-        var options = new List<ChapterSourceOption>(editionKeys.Count + (hasUntagged ? 1 : 0));
+        var entries = new List<ChapterImportEntry>(editionKeys.Count + (hasUntagged ? 1 : 0));
         var editionIndex = 0;
         foreach (var key in editionKeys)
         {
-            options.Add(CreateEditionOption(path, editionIndex++, chapters.Where(chapter => EditionUid(chapter.Entry) == key).ToList()));
+            entries.Add(CreateEditionOption(path, editionIndex++, chapters.Where(chapter => EditionUid(chapter.Entry) == key).ToList()));
         }
 
         if (hasUntagged)
         {
-            options.Add(CreateEditionOption(path, editionIndex, chapters.Where(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry))).ToList()));
+            entries.Add(CreateEditionOption(path, editionIndex, chapters.Where(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry))).ToList()));
         }
 
-        return options;
+        return entries;
     }
 
-    private static ChapterSourceOption CreateEditionOption(string path, int editionIndex, IReadOnlyList<NormalizedMediaChapter> chapters)
+    private static ChapterImportEntry CreateEditionOption(string path, int editionIndex, IReadOnlyList<NormalizedMediaChapter> chapters)
     {
         var title = $"Edition {editionIndex + 1:D2}";
-        var info = CreateInfo(title, Path.GetFileName(path), editionIndex, chapters, renumberFallbacks: true);
-        return new ChapterSourceOption($"edition-{editionIndex}", title, info, CanCombine: false, MediaReferences: [CreateReference(path)]);
+        var info = CreateInfo(title, Path.GetFileName(path), chapters, renumberFallbacks: true);
+        return new ChapterImportEntry($"edition-{editionIndex}", title, info, CanCombine: false, MediaReferences: [CreateReference(path)]);
     }
 
-    private static ChapterInfo CreateInfo(
+    private static ChapterSet CreateInfo(
         string title,
         string? sourceName,
-        int sourceIndex,
         IReadOnlyList<NormalizedMediaChapter> chapters,
         bool renumberFallbacks)
     {
@@ -169,7 +167,7 @@ public sealed class MediaChapterImporter(
             .DefaultIfEmpty(TimeSpan.Zero)
             .Max();
 
-        return new ChapterInfo(title, sourceName, sourceIndex, "MEDIA", 0, duration, modelChapters);
+        return new ChapterSet(title, sourceName, ChapterImportFormat.Media, 0, duration, modelChapters);
     }
 
     private static List<NormalizedMediaChapter> NormalizeEntries(
@@ -273,7 +271,7 @@ public sealed class MediaChapterImporter(
     private static string? TagValue(MediaChapterEntry entry, string key) =>
         entry.Tags.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;
 
-    private static SourceMediaReference CreateReference(string path) =>
+    private static MediaFileReference CreateReference(string path) =>
         new(Path.GetFileName(path), Path.GetFileName(path), path);
 
     private static ChapterDiagnostic Error(string code, string message) =>

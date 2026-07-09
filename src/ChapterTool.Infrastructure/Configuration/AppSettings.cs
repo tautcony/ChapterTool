@@ -10,6 +10,7 @@ public sealed record AppSettings(
     string? FfmpegPath = null,
     string DefaultSaveFormat = "Txt",
     string DefaultXmlLanguage = "und",
+    bool EmitBom = true,
     decimal FrameAccuracyTolerance = 0.15m);
 
 public sealed record WindowLocation(int X, int Y);

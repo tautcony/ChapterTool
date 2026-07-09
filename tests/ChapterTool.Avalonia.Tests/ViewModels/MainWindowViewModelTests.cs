@@ -65,7 +65,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task LoadUpdatesStateAndClipSelection()
     {
-        var load = new FakeLoadService(ImportResult("movie.mpls", Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A")), Info("MPLS", "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
+        var load = new FakeLoadService(ImportResult("movie.mpls", Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")), Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
@@ -84,7 +84,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task LoadAppliesProgressUpdatesBeforeCompletion()
     {
-        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))))
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))))
         {
             OnLoad = progress => progress?.Report(new ChapterLoadProgress(0.42, "Status.LoadingSource.Export"))
         };
@@ -116,8 +116,8 @@ public sealed class MainWindowViewModelTests
     {
         var load = new AsyncLoadService(ImportResult(
             "movie.mpls",
-            Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A")),
-            Info("MPLS", "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
+            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")),
+            Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
         var vm = CreateViewModel(load);
         var rowNotifications = 0;
         var clipNotifications = 0;
@@ -157,8 +157,8 @@ public sealed class MainWindowViewModelTests
     {
         var load = new ControlledLoadService(new Dictionary<string, ChapterImportResult>(StringComparer.Ordinal)
         {
-            ["slow.txt"] = ImportResult("slow.txt", Info("OGM", "slow.txt", new Chapter(1, TimeSpan.Zero, "Slow"))),
-            ["fast.txt"] = ImportResult("fast.txt", Info("OGM", "fast.txt", new Chapter(1, TimeSpan.Zero, "Fast")))
+            ["slow.txt"] = ImportResult("slow.txt", Info(ChapterImportFormat.Ogm, "slow.txt", new Chapter(1, TimeSpan.Zero, "Slow"))),
+            ["fast.txt"] = ImportResult("fast.txt", Info(ChapterImportFormat.Ogm, "fast.txt", new Chapter(1, TimeSpan.Zero, "Fast")))
         });
         var vm = CreateViewModel(load);
 
@@ -184,9 +184,9 @@ public sealed class MainWindowViewModelTests
     {
         var load = new ControlledLoadService(new Dictionary<string, ChapterImportResult>(StringComparer.Ordinal)
         {
-            ["base.mpls"] = ImportResult("base.mpls", Info("MPLS", "base", new Chapter(1, TimeSpan.Zero, "Base"))),
-            ["append.mpls"] = ImportResult("append.mpls", Info("MPLS", "append", new Chapter(1, TimeSpan.Zero, "Append"))),
-            ["new.txt"] = ImportResult("new.txt", Info("OGM", "new.txt", new Chapter(1, TimeSpan.Zero, "New")))
+            ["base.mpls"] = ImportResult("base.mpls", Info(ChapterImportFormat.Mpls, "base", new Chapter(1, TimeSpan.Zero, "Base"))),
+            ["append.mpls"] = ImportResult("append.mpls", Info(ChapterImportFormat.Mpls, "append", new Chapter(1, TimeSpan.Zero, "Append"))),
+            ["new.txt"] = ImportResult("new.txt", Info(ChapterImportFormat.Ogm, "new.txt", new Chapter(1, TimeSpan.Zero, "New")))
         });
         var vm = CreateViewModel(load);
 
@@ -216,12 +216,12 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task ClipDisplayOptionsExposeMainContentWithRemarksWithoutChangingSourceOptions()
     {
-        var firstInfo = Info("MPLS", "00002", new Chapter(1, TimeSpan.Zero, "A"));
-        var secondInfo = Info("MPLS", "00003", new Chapter(1, TimeSpan.Zero, "B"));
+        var firstInfo = Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.Zero, "A"));
+        var secondInfo = Info(ChapterImportFormat.Mpls, "00003", new Chapter(1, TimeSpan.Zero, "B"));
         var load = new FakeLoadService(new ChapterImportResult(true, [
-            new ChapterInfoGroup("movie.mpls", [
-                new ChapterSourceOption("clip-0", "00002__6", firstInfo),
-                new ChapterSourceOption("clip-1", "00003__8", secondInfo)
+            new ChapterImportSource("movie.mpls", [
+                new ChapterImportEntry("clip-0", "00002__6", firstInfo),
+                new ChapterImportEntry("clip-1", "00003__8", secondInfo)
             ])
         ], []));
         var vm = CreateViewModel(load);
@@ -244,8 +244,8 @@ public sealed class MainWindowViewModelTests
     {
         var load = new FakeLoadService(ImportResult(
             "movie.mpls",
-            Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A"), new Chapter(2, TimeSpan.FromSeconds(10), "B")),
-            Info("MPLS", "00002", new Chapter(1, TimeSpan.Zero, "C"), new Chapter(2, TimeSpan.FromSeconds(5), "D"))));
+            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A"), new Chapter(2, TimeSpan.FromSeconds(10), "B")),
+            Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.Zero, "C"), new Chapter(2, TimeSpan.FromSeconds(5), "D"))));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
@@ -272,8 +272,8 @@ public sealed class MainWindowViewModelTests
     {
         var load = new FakeLoadService(ImportResult(
             "movie.mpls",
-            Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A")),
-            Info("MPLS", "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
+            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")),
+            Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
         var vm = CreateViewModel(load);
         var indexNotifications = new List<int>();
         ((INotifyPropertyChanged)vm).PropertyChanged += (_, args) =>
@@ -297,13 +297,13 @@ public sealed class MainWindowViewModelTests
     {
         var firstLoad = ImportResult(
             "first.mpls",
-            Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A")),
-            Info("MPLS", "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B")));
+            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")),
+            Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B")));
         var secondLoad = ImportResult(
             "second.mpls",
-            Info("MPLS", "00010", new Chapter(1, TimeSpan.Zero, "X")),
-            Info("MPLS", "00020", new Chapter(1, TimeSpan.FromSeconds(2), "Y")),
-            Info("MPLS", "00030", new Chapter(1, TimeSpan.FromSeconds(4), "Z")));
+            Info(ChapterImportFormat.Mpls, "00010", new Chapter(1, TimeSpan.Zero, "X")),
+            Info(ChapterImportFormat.Mpls, "00020", new Chapter(1, TimeSpan.FromSeconds(2), "Y")),
+            Info(ChapterImportFormat.Mpls, "00030", new Chapter(1, TimeSpan.FromSeconds(4), "Z")));
         var load = new FakeLoadService(firstLoad, secondLoad);
         var vm = CreateViewModel(load);
 
@@ -386,11 +386,11 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel();
 
         var index = vm.XmlLanguageOptions.ToList().IndexOf("jpn");
-        var option = vm.XmlLanguageDisplayOptions[index];
+        var entry = vm.XmlLanguageDisplayOptions[index];
 
-        Assert.Equal("jpn", option.MainText);
-        Assert.Equal("Japanese", option.RemarkText);
-        Assert.Equal("jpn（Japanese）", option.DisplayText);
+        Assert.Equal("jpn", entry.MainText);
+        Assert.Equal("Japanese", entry.RemarkText);
+        Assert.Equal("jpn（Japanese）", entry.DisplayText);
 
         vm.XmlLanguageIndex = index;
 
@@ -462,7 +462,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task RefreshCommandRecalculatesFramesFromSelectedFrameOptions()
     {
-        var info = Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(0.5), "Intro"));
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(0.5), "Intro"));
         var load = new FakeLoadService(ImportResult("movie.txt", info));
         var save = new FakeSaveService();
         var vm = CreateViewModel(load, save);
@@ -484,7 +484,7 @@ public sealed class MainWindowViewModelTests
     public async Task ConfiguredFrameAccuracyToleranceControlsFrameStylingState()
     {
         var store = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.001m));
-        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(1.004), "Intro"))));
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(1.004), "Intro"))));
         var vm = CreateViewModel(load, appSettingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
@@ -506,7 +506,7 @@ public sealed class MainWindowViewModelTests
     public async Task AutoFrameRateRunsDetectionAndUpdatesStatusText()
     {
         var info = Info(
-            "OGM",
+            ChapterImportFormat.Ogm,
             "movie.txt",
             new Chapter(1, TimeSpan.Zero, "A"),
             new Chapter(2, TimeSpan.FromMilliseconds(40), "B"),
@@ -527,7 +527,7 @@ public sealed class MainWindowViewModelTests
     public async Task ManualFrameRateChoiceDoesNotEmitDetectedStatusText()
     {
         var info = Info(
-            "OGM",
+            ChapterImportFormat.Ogm,
             "movie.txt",
             new Chapter(1, TimeSpan.Zero, "A"),
             new Chapter(2, TimeSpan.FromMilliseconds(40), "B"));
@@ -545,11 +545,11 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task ChangeFpsCommandPreservesFramesWhenApplyingSelectedFrameRate()
     {
-        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "A"))));
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "A"))));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(option => option.Code == "Fps5994").LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps5994").LegacyMplsCode;
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.ChangeFpsCommand.ExecuteAsync();
 
@@ -562,11 +562,11 @@ public sealed class MainWindowViewModelTests
     public async Task ChangeFpsCommandLogsSourceAndSelectedTargetFrameRates()
     {
         var log = new ApplicationLogPanelProvider();
-        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "A"))));
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "A"))));
         var vm = CreateViewModel(load, logService: log);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(option => option.Code == "Fps50").LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps50").LegacyMplsCode;
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.RefreshCommand.ExecuteAsync();
         await vm.ChangeFpsCommand.ExecuteAsync();
@@ -722,7 +722,7 @@ public sealed class MainWindowViewModelTests
         var load = new FakeLoadService(ImportResult(
             "album.cue",
             Info(
-                "CUE",
+                ChapterImportFormat.Cue,
                 "album.cue",
                 new Chapter(1, TimeSpan.Zero, "A", "0"),
                 new Chapter(-1, Chapter.SeparatorTime, ""),
@@ -758,7 +758,7 @@ public sealed class MainWindowViewModelTests
     public async Task NegativeExpressionResultNormalizesRowsAndSavedInfoToZero()
     {
         var save = new FakeSaveService();
-        var load = new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "Intro", "240"))));
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "Intro", "240"))));
         var vm = CreateViewModel(load, save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
@@ -780,7 +780,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task ShortcutsRouteToCommandsAndClipSelection()
     {
-        var load = new FakeLoadService(ImportResult("movie.mpls", Info("MPLS", "00001", new Chapter(1, TimeSpan.Zero, "A")), Info("MPLS", "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
+        var load = new FakeLoadService(ImportResult("movie.mpls", Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")), Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B"))));
         var save = new FakeSaveService();
         var vm = CreateViewModel(load, save);
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
@@ -864,9 +864,9 @@ public sealed class MainWindowViewModelTests
         var media = Path.Combine(root, "movie.m2ts");
         await File.WriteAllBytesAsync(media, [0]);
         var shell = new FakeShellService();
-        var info = Info("MPLS", "movie", new Chapter(1, TimeSpan.Zero, "A"));
-        var option = new ChapterSourceOption("clip-0", "movie__1", info, MediaReferences: [new SourceMediaReference("movie.m2ts", "movie.m2ts")]);
-        var load = new FakeLoadService(new ChapterImportResult(true, [new ChapterInfoGroup(Path.Combine(root, "movie.mpls"), [option])], []));
+        var info = Info(ChapterImportFormat.Mpls, "movie", new Chapter(1, TimeSpan.Zero, "A"));
+        var entry = new ChapterImportEntry("clip-0", "movie__1", info, MediaReferences: [new MediaFileReference("movie.m2ts", "movie.m2ts")]);
+        var load = new FakeLoadService(new ChapterImportResult(true, [new ChapterImportSource(Path.Combine(root, "movie.mpls"), [entry])], []));
         var vm = CreateViewModel(load, shellService: shell);
 
         try
@@ -978,7 +978,7 @@ public sealed class MainWindowViewModelTests
     {
         var diagnostic = new ChapterDiagnostic(DiagnosticSeverity.Warning, "PartialParse", "stopped", "line 5", "tail");
         var log = new ApplicationLogPanelProvider();
-        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))) with
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))) with
         {
             Diagnostics = [diagnostic]
         }), logService: log);
@@ -1004,7 +1004,7 @@ public sealed class MainWindowViewModelTests
         logService ??= new ApplicationLogPanelProvider();
 
         return new MainWindowViewModel(
-            loadService ?? new FakeLoadService(ImportResult("movie.txt", Info("OGM", "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro")))),
+            loadService ?? new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro")))),
             saveService ?? new FakeSaveService(),
             new ChapterEditingService(new ChapterTimeFormatter()),
             new ChapterSegmentService(),
@@ -1018,13 +1018,13 @@ public sealed class MainWindowViewModelTests
             localizer ?? new AppLocalizationManager("en-US"));
     }
 
-    private static ChapterInfo Info(string sourceType, string sourceName, params Chapter[] chapters) =>
-        new(sourceName, sourceName, 0, sourceType, 24, chapters.Last().Time, chapters);
+    private static ChapterSet Info(ChapterImportFormat sourceType,  string sourceName, params Chapter[] chapters) =>
+        new(sourceName, sourceName, sourceType, 24, chapters.Last().Time, chapters);
 
-    private static ChapterImportResult ImportResult(string path, params ChapterInfo[] infos)
+    private static ChapterImportResult ImportResult(string path, params ChapterSet[] infos)
     {
-        var options = infos.Select((info, index) => new ChapterSourceOption($"option-{index}", info.SourceName ?? info.Title, info)).ToArray();
-        return new ChapterImportResult(true, [new ChapterInfoGroup(path, options)], []);
+        var entries = infos.Select((info, index) => new ChapterImportEntry($"entry-{index}", info.SourceName ?? info.Title, info)).ToArray();
+        return new ChapterImportResult(true, [new ChapterImportSource(path, entries)], []);
     }
 
     private static string RepositoryRoot()
@@ -1137,12 +1137,12 @@ public sealed class MainWindowViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ChapterInfo? LastInfo { get; private set; }
+        public ChapterSet? LastInfo { get; private set; }
         public ChapterExportOptions? LastOptions { get; private set; }
         public string? LastDirectory { get; private set; }
         public ChapterExportResult Result { get; init; } = new(true, "ok", ".txt", []);
 
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken)
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken)
         {
             LastInfo = info;
             LastOptions = options;

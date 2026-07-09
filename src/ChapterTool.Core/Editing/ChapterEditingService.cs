@@ -19,7 +19,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="index">The zero-based chapter index.</param>
     /// <param name="text">The text to parse.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult EditTime(ChapterInfo info, int index, string text)
+    public ChapterEditResult EditTime(ChapterSet info, int index, string text)
     {
         var chapters = info.Chapters.ToList();
         if (!TryGetChapter(chapters, index, out var chapter))
@@ -41,7 +41,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="text">The text to parse.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult EditFrame(ChapterInfo info, int index, string text, decimal framesPerSecond)
+    public ChapterEditResult EditFrame(ChapterSet info, int index, string text, decimal framesPerSecond)
     {
         var chapters = info.Chapters.ToList();
         if (!TryGetChapter(chapters, index, out var chapter))
@@ -72,7 +72,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
 
-    private static ChapterEditResult InvalidFrameText(ChapterInfo info) =>
+    private static ChapterEditResult InvalidFrameText(ChapterSet info) =>
         new(
             info,
             [new ChapterDiagnostic(DiagnosticSeverity.Warning, "InvalidFrameText", "Frame text did not contain a frame number or fps was invalid.")]);
@@ -84,7 +84,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="index">The zero-based chapter index.</param>
     /// <param name="name">The chapter name.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult Rename(ChapterInfo info, int index, string name)
+    public ChapterEditResult Rename(ChapterSet info, int index, string name)
     {
         var chapters = info.Chapters.ToList();
         if (!TryGetChapter(chapters, index, out var chapter))
@@ -102,7 +102,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="info">The chapter data to process.</param>
     /// <param name="indexes">The zero-based chapter indexes.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult Delete(ChapterInfo info, IReadOnlySet<int> indexes)
+    public ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes)
     {
         var chapters = info.Chapters.Where((_, index) => !indexes.Contains(index)).ToList();
         if (chapters.Count > 0 && indexes.Contains(0))
@@ -120,7 +120,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="info">The chapter data to process.</param>
     /// <param name="index">The zero-based chapter index.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult InsertBefore(ChapterInfo info, int index)
+    public ChapterEditResult InsertBefore(ChapterSet info, int index)
     {
         if (index < 0 || index > info.Chapters.Count)
         {
@@ -138,7 +138,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="info">The chapter data to process.</param>
     /// <param name="shift">The order shift.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult ApplyOrderShift(ChapterInfo info, int shift)
+    public ChapterEditResult ApplyOrderShift(ChapterSet info, int shift)
     {
         var effectiveShift = Math.Max(0, shift);
         var number = 0;
@@ -164,7 +164,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="info">The chapter data to process.</param>
     /// <param name="templateText">The template text.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult ApplyTemplate(ChapterInfo info, string templateText)
+    public ChapterEditResult ApplyTemplate(ChapterSet info, string templateText)
     {
         var names = templateText
             .Trim(' ', '\r', '\n')
@@ -184,7 +184,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="frames">The frame count.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult ShiftFramesForward(ChapterInfo info, int frames, decimal framesPerSecond)
+    public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, decimal framesPerSecond)
     {
         if (framesPerSecond <= 0)
         {
@@ -208,7 +208,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// <param name="indexes">The zero-based chapter indexes.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The operation result.</returns>
-    public ChapterZonesResult CreateZones(ChapterInfo info, IReadOnlySet<int> indexes, decimal framesPerSecond)
+    public ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, decimal framesPerSecond)
     {
         if (framesPerSecond <= 0)
         {
@@ -271,7 +271,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         return false;
     }
 
-    private static ChapterEditResult InvalidIndex(ChapterInfo info, int index) =>
+    private static ChapterEditResult InvalidIndex(ChapterSet info, int index) =>
         new(
             info,
             [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidChapterIndex", $"Chapter index {index} is out of range.",

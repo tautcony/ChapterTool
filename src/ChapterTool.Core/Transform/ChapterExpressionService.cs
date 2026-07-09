@@ -27,7 +27,7 @@ public sealed class ChapterExpressionService
     /// <param name="applyExpression">Whether to apply the expression.</param>
     /// <param name="expression">The expression text.</param>
     /// <returns>The operation result.</returns>
-    public ChapterExpressionResult Apply(ChapterInfo info, bool applyExpression, string expression)
+    public ChapterExpressionResult Apply(ChapterSet info, bool applyExpression, string expression)
     {
         if (!applyExpression)
         {
@@ -116,5 +116,5 @@ public sealed class ChapterExpressionService
 /// <param name="Info">The Info value.</param>
 /// <param name="Diagnostics">The Diagnostics value.</param>
 public sealed record ChapterExpressionResult(
-    ChapterInfo Info,
+    ChapterSet Info,
     IReadOnlyList<ChapterDiagnostic> Diagnostics);

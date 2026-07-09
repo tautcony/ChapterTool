@@ -74,11 +74,10 @@ public sealed class WebVttChapterImporter : IChapterImporter
             return ChapterImportResult.Failed(Error("WebVttMalformedCue", "No WebVTT cues were parsed."));
         }
 
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "WebVTT Chapters",
             Path.GetFileName(path),
-            0,
-            "WebVTT",
+            ChapterImportFormat.WebVtt,
             0,
             chapters[^1].End ?? chapters[^1].Time,
             chapters);

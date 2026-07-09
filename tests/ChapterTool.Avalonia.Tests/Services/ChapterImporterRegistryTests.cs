@@ -93,7 +93,7 @@ public sealed class ChapterImporterRegistryTests
             var result = await importer!.ImportAsync(new ChapterImportRequest(testPath), TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-            Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], result.Groups.Single().Options.Single().ChapterInfo.Chapters.Select(static chapter => chapter.Name));
+            Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], result.Groups.Single().Entries.Single().ChapterSet.Chapters.Select(static chapter => chapter.Name));
         }
         finally
         {
@@ -223,9 +223,9 @@ public sealed class ChapterImporterRegistryTests
         public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
         {
             LastRequest = request;
-            var info = new ChapterInfo("title", request.Path, 0, "TEST", 24, TimeSpan.Zero, []);
-            var option = new ChapterSourceOption("0", "test", info);
-            return ValueTask.FromResult(new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, [option])], []));
+            var info = new ChapterSet("title", request.Path, ChapterImportFormat.Unknown, 24, TimeSpan.Zero, []);
+            var entry = new ChapterImportEntry("0", "test", info);
+            return ValueTask.FromResult(new ChapterImportResult(true, [new ChapterImportSource(request.Path, [entry])], []));
         }
     }
 
@@ -251,5 +251,4 @@ public sealed class ChapterImporterRegistryTests
             return ValueTask.FromResult(result);
         }
     }
-
 }

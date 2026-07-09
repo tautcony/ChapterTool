@@ -148,12 +148,11 @@ public sealed class ChapterConversionServiceTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidChapterText");
     }
 
-    private static ChapterInfo Sample() =>
+    private static ChapterSet Sample() =>
         new(
             "Title",
             "source",
-            0,
-            "OGM",
+            ChapterImportFormat.Ogm,
             24,
             TimeSpan.FromSeconds(30),
             [

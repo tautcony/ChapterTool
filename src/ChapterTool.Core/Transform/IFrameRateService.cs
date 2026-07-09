@@ -25,7 +25,7 @@ public interface IFrameRateService
     /// <param name="info">The chapter data to inspect.</param>
     /// <param name="tolerance">The acceptable frame deviation tolerance.</param>
     /// <returns>The detected frame rate option.</returns>
-    FrameRateOption Detect(ChapterInfo info, decimal tolerance);
+    FrameRateOption Detect(ChapterSet info, decimal tolerance);
 
     /// <summary>
     /// Detects the most likely frame rate and returns confidence details.
@@ -33,7 +33,7 @@ public interface IFrameRateService
     /// <param name="info">The chapter data to inspect.</param>
     /// <param name="tolerance">The acceptable frame deviation tolerance.</param>
     /// <returns>The detailed frame rate detection result.</returns>
-    FrameRateDetectionResult DetectDetailed(ChapterInfo info, decimal tolerance);
+    FrameRateDetectionResult DetectDetailed(ChapterSet info, decimal tolerance);
 
     /// <summary>
     /// Calculates frame numbers and accuracy for chapter data.
@@ -44,7 +44,7 @@ public interface IFrameRateService
     /// <param name="tolerance">The acceptable frame deviation tolerance.</param>
     /// <returns>The calculated frame information.</returns>
     FrameInfoResult UpdateFrames(
-        ChapterInfo info,
+        ChapterSet info,
         FrameRateOption option,
         bool round,
         decimal tolerance);

@@ -21,7 +21,7 @@ public sealed class RuntimeChapterLoadServiceTests
             var result = await CreateService().LoadAsync(path, TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-            Assert.Single(result.Groups.Single().Options.Single().ChapterInfo.Chapters);
+            Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
         }
         finally
         {
@@ -51,7 +51,7 @@ public sealed class RuntimeChapterLoadServiceTests
             var result = await CreateService().LoadAsync(path, TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-            Assert.Single(result.Groups.Single().Options.Single().ChapterInfo.Chapters);
+            Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
         }
         finally
         {
@@ -81,7 +81,7 @@ public sealed class RuntimeChapterLoadServiceTests
             var result = await CreateService().LoadAsync(path, TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-            var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
             Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], chapters.Select(static chapter => chapter.Name));
             Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(30)], chapters.Select(static chapter => chapter.Time));
         }
@@ -115,7 +115,7 @@ public sealed class RuntimeChapterLoadServiceTests
     {
         var path = await CreateTempFileAsync(".mp4");
         var primary = new StubImporter("ffprobe-media", ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeMissingDependency", "missing")));
-        var fallback = new StubImporter("mp4", SuccessfulImport(path, "MP4"));
+        var fallback = new StubImporter("mp4", SuccessfulImport(path, ChapterImportFormat.Media));
         var registry = new StubRegistry(primary, fallback);
         var service = new RuntimeChapterLoadService(registry);
         try
@@ -143,7 +143,7 @@ public sealed class RuntimeChapterLoadServiceTests
     public async Task RuntimePassesProgressToImporter()
     {
         var path = await CreateTempFileAsync(".txt");
-        var importer = new StubImporter("stub", SuccessfulImport(path, "TXT"));
+        var importer = new StubImporter("stub", SuccessfulImport(path, ChapterImportFormat.Ogm));
         var registry = new StubRegistry(importer, fallback: null);
         var service = new RuntimeChapterLoadService(registry);
         var progress = new StubProgress();
@@ -165,7 +165,7 @@ public sealed class RuntimeChapterLoadServiceTests
     {
         var path = await CreateTempFileAsync(".mp4");
         var primary = new StubImporter("ffprobe-media", ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeProcessFailed", "process failed")));
-        var fallback = new StubImporter("mp4", SuccessfulImport(path, "MP4"));
+        var fallback = new StubImporter("mp4", SuccessfulImport(path, ChapterImportFormat.Media));
         var registry = new StubRegistry(primary, fallback);
         var service = new RuntimeChapterLoadService(registry);
         try
@@ -198,8 +198,8 @@ public sealed class RuntimeChapterLoadServiceTests
 
             if (result.Success)
             {
-                var options = result.Groups.Single().Options;
-                var chapters = options[0].ChapterInfo.Chapters;
+                var entries = result.Groups.Single().Entries;
+                var chapters = entries[0].ChapterSet.Chapters;
                 Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], chapters.Select(static chapter => chapter.Name));
                 Assert.Equal(
                     [TimeSpan.Zero, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(330), TimeSpan.FromSeconds(740)],
@@ -207,20 +207,20 @@ public sealed class RuntimeChapterLoadServiceTests
 
                 if (result.Diagnostics.Any(static diagnostic => diagnostic.Code == "MatroskaMissingDependency"))
                 {
-                    Assert.Single(options);
+                    Assert.Single(entries);
                     Assert.Equal(
                         [TimeSpan.FromSeconds(29.15), null, null, TimeSpan.FromSeconds(775)],
                         chapters.Select(static chapter => chapter.End));
                     Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed");
-                    Assert.Equal("MEDIA", options.Single().ChapterInfo.SourceType);
+                    Assert.Equal(ChapterImportFormat.Media, entries.Single().ChapterSet.ImportFormat);
                 }
                 else
                 {
-                    Assert.Equal(2, options.Count);
+                    Assert.Equal(2, entries.Count);
                     Assert.Equal(
                         [null, null, null, TimeSpan.FromSeconds(775)],
                         chapters.Select(static chapter => chapter.End));
-                    Assert.Equal("XML", options[0].ChapterInfo.SourceType);
+                    Assert.Equal(ChapterImportFormat.MatroskaXml, entries[0].ChapterSet.ImportFormat);
                 }
             }
             else
@@ -264,8 +264,8 @@ public sealed class RuntimeChapterLoadServiceTests
         var result = await CreateService().LoadAsync(path, TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("DVD", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.DvdIfo, info.ImportFormat);
         Assert.Equal(7, info.Chapters.Count);
     }
 
@@ -303,10 +303,10 @@ public sealed class RuntimeChapterLoadServiceTests
         return path;
     }
 
-    private static ChapterImportResult SuccessfulImport(string path, string sourceType)
+    private static ChapterImportResult SuccessfulImport(string path, ChapterImportFormat sourceType)
     {
-        var info = new ChapterInfo(Path.GetFileNameWithoutExtension(path), Path.GetFileName(path), 0, sourceType, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "Intro")]);
-        return new ChapterImportResult(true, [new ChapterInfoGroup(path, [new ChapterSourceOption("default", sourceType, info)])], []);
+        var info = new ChapterSet(Path.GetFileNameWithoutExtension(path), Path.GetFileName(path), sourceType, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "Intro")]);
+        return new ChapterImportResult(true, [new ChapterImportSource(path, [new ChapterImportEntry("default", ChapterImportFormats.DisplayName(sourceType), info)])], []);
     }
 
     private static string Diagnostics(ChapterImportResult result) =>

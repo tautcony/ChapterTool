@@ -44,7 +44,7 @@ public sealed class ConvertCliCommand
     [CliOption(
         Description = "Output format. Run `formats` to see the supported values.",
         Required = false,
-        AllowedValues = ["txt", "xml", "qpf", "timecodes", "tsmuxer", "cue", "json", "vtt", "celltimes", "chapter2qpf"])]
+        AllowedValues = ["txt", "xml", "qpf", "timecodes", "tsmuxer", "cue", "json", "vtt", "celltimes"])]
     public string Format { get; set; } = "txt";
 
     [CliOption(Description = "Output file path. If omitted, ChapterTool writes next to the input file.", Required = false)]
@@ -56,11 +56,11 @@ public sealed class ConvertCliCommand
     [CliOption(Description = "Imported group index to use when the source exposes multiple groups.", Required = false)]
     public int? GroupIndex { get; set; }
 
-    [CliOption(Description = "Imported option index to use inside the selected group.", Required = false)]
-    public int? OptionIndex { get; set; }
+    [CliOption(Description = "Imported entry index to use inside the selected group.", Required = false)]
+    public int? EntryIndex { get; set; }
 
-    [CliOption(Description = "Imported option id to use inside the selected group.", Required = false)]
-    public string? OptionId { get; set; }
+    [CliOption(Description = "Imported entry id to use inside the selected group.", Required = false)]
+    public string? EntryId { get; set; }
 
     [CliOption(Description = "Chapter language code for XML export.", Required = false)]
     public string? XmlLanguage { get; set; }
@@ -81,8 +81,8 @@ public sealed class ConvertCliCommand
                 Output,
                 Stdout,
                 GroupIndex,
-                OptionIndex,
-                OptionId,
+                EntryIndex,
+                EntryId,
                 XmlLanguage,
                 SourceFileName,
                 FrameRate),
@@ -90,7 +90,7 @@ public sealed class ConvertCliCommand
     }
 }
 
-[CliCommand(Parent = typeof(ChapterToolRootCliCommand), Description = "Inspect available chapter groups, options, and diagnostics")]
+[CliCommand(Parent = typeof(ChapterToolRootCliCommand), Description = "Inspect available chapter groups, entries, and diagnostics")]
 public sealed class InspectCliCommand
 {
     [CliArgument(Description = "Input file or supported source path", Required = false)]

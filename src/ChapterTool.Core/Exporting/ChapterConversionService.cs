@@ -17,7 +17,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
     /// <param name="info">The chapter data to process.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The operation result.</returns>
-    public static ChapterConversionResult ToCelltimes(ChapterInfo info, decimal framesPerSecond)
+    public static ChapterConversionResult ToCelltimes(ChapterSet info, decimal framesPerSecond)
     {
         ArgumentNullException.ThrowIfNull(info);
 

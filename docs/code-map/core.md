@@ -11,12 +11,14 @@ This layer is where import normalization, chapter editing, frame/time transforms
 Canonical data contracts shared across the pipeline:
 
 - `src/ChapterTool.Core/Models/Chapter.cs`
-- `src/ChapterTool.Core/Models/ChapterInfo.cs`
-- `src/ChapterTool.Core/Models/ChapterInfoGroup.cs`
-- `src/ChapterTool.Core/Models/ChapterSourceOption.cs`
-- `src/ChapterTool.Core/Models/SourceMediaReference.cs`
+- `src/ChapterTool.Core/Models/ChapterSet.cs`
+- `src/ChapterTool.Core/Models/ChapterImportFormat.cs`
+- `src/ChapterTool.Core/Models/ChapterImportFormats.cs`
+- `src/ChapterTool.Core/Models/ChapterImportSource.cs`
+- `src/ChapterTool.Core/Models/ChapterImportEntry.cs`
+- `src/ChapterTool.Core/Models/MediaFileReference.cs`
 
-`ChapterInfo` is the main unit passed between import, edit, transform, and export flows.
+`ChapterSet` is the main unit passed between import, edit, transform, and export flows.
 
 ### Diagnostics
 
@@ -74,6 +76,7 @@ Output projection and format serialization:
 - `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
+- `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs`
 - `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`

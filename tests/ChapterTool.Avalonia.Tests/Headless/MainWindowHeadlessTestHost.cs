@@ -30,7 +30,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         IShellService? shellService = null)
         : this(
             loadResult is null
-                ? [ImportResult("movie.txt", Option("OGM", "movie.txt", "Intro"))]
+                ? [ImportResult("movie.txt", Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro"))]
                 : [loadResult],
             localizer,
             appSettings,
@@ -48,7 +48,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     {
         Localizer = localizer ?? new AppLocalizationManager("en-US");
         LoadService = new FakeLoadService(loadResults.Count == 0
-            ? [ImportResult("movie.txt", Option("OGM", "movie.txt", "Intro"))]
+            ? [ImportResult("movie.txt", Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro"))]
             : loadResults);
         SaveService = new FakeSaveService();
         WindowService = new FakeWindowService();
@@ -98,13 +98,13 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public IApplicationLogService LogService => logService;
 
-    public static ChapterImportResult ImportResult(string path, params ChapterSourceOption[] options) =>
-        new(true, [new ChapterInfoGroup(path, options)], []);
+    public static ChapterImportResult ImportResult(string path, params ChapterImportEntry[] entries) =>
+        new(true, [new ChapterImportSource(path, entries)], []);
 
-    public static ChapterImportResult ImportResult(string path, int defaultOptionIndex, params ChapterSourceOption[] options) =>
-        new(true, [new ChapterInfoGroup(path, options, defaultOptionIndex)], []);
+    public static ChapterImportResult ImportResult(string path, int defaultEntryIndex, params ChapterImportEntry[] entries) =>
+        new(true, [new ChapterImportSource(path, entries, defaultEntryIndex)], []);
 
-    public static ChapterSourceOption Option(string sourceType, string sourceName, params string[] chapterNames)
+    public static ChapterImportEntry Entry(ChapterImportFormat sourceType,  string sourceName, params string[] chapterNames)
     {
         var chapters = chapterNames.Length == 0
             ? [new Chapter(1, TimeSpan.Zero, "Intro")]
@@ -112,14 +112,14 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
                 .Select((name, index) => new Chapter(index + 1, TimeSpan.FromSeconds(index * 10), name))
                 .ToArray();
         var duration = chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].Time;
-        var info = new ChapterInfo(sourceName, sourceName, 0, sourceType, 24, duration, chapters);
-        return new ChapterSourceOption(sourceName, sourceName, info);
+        var info = new ChapterSet(sourceName, sourceName, sourceType, 24, duration, chapters);
+        return new ChapterImportEntry(sourceName, sourceName, info);
     }
 
-    public static ChapterSourceOption OptionWithMedia(string sourceType, string sourceName, SourceMediaReference media, params string[] chapterNames)
+    public static ChapterImportEntry OptionWithMedia(ChapterImportFormat sourceType,  string sourceName, MediaFileReference media, params string[] chapterNames)
     {
-        var option = Option(sourceType, sourceName, chapterNames);
-        return option with { MediaReferences = [media] };
+        var entry = Entry(sourceType, sourceName, chapterNames);
+        return entry with { MediaReferences = [media] };
     }
 
     public async ValueTask LoadAsync(string path)
@@ -276,13 +276,13 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     internal sealed class FakeSaveService : IChapterSaveService
     {
-        public ChapterInfo? LastInfo { get; private set; }
+        public ChapterSet? LastInfo { get; private set; }
         public ChapterExportOptions? LastOptions { get; private set; }
         public string? LastDirectory { get; private set; }
         public int Calls { get; private set; }
 
         public ValueTask<ChapterExportResult> SaveAsync(
-            ChapterInfo info,
+            ChapterSet info,
             ChapterExportOptions options,
             string? directory,
             CancellationToken cancellationToken)

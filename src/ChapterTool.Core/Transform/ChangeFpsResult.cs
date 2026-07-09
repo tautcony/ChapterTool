@@ -11,5 +11,5 @@ namespace ChapterTool.Core.Transform;
 /// <param name="Diagnostics">The Diagnostics value.</param>
 public sealed record ChangeFpsResult(
     bool Success,
-    ChapterInfo Info,
+    ChapterSet Info,
     IReadOnlyList<ChapterDiagnostic> Diagnostics);

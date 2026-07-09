@@ -13,37 +13,35 @@ public sealed class ChapterSegmentService
     /// </summary>
     /// <param name="group">The group value.</param>
     /// <returns>The operation result.</returns>
-    public static ChapterEditResult Combine(ChapterInfoGroup group)
+    public static ChapterEditResult Combine(ChapterImportSource group)
     {
-        if (group.Options.Count == 0)
+        if (group.Entries.Count == 0)
         {
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "NoSegments", "No chapter segments are available.")]);
         }
 
-        var sourceType = group.Options[0].ChapterInfo.SourceType;
-        if (sourceType is not ("MPLS" or "DVD") || group.Options.Any(option => option.ChapterInfo.SourceType != sourceType))
+        var sourceType = group.Entries[0].ChapterSet.ImportFormat;
+        if (sourceType is not (ChapterImportFormat.Mpls or ChapterImportFormat.DvdIfo) || group.Entries.Any(entry => entry.ChapterSet.ImportFormat != sourceType))
         {
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedCombineSource", "Only MPLS and DVD chapter groups can be combined.")]);
         }
 
         var offset = TimeSpan.Zero;
         var chapters = new List<Chapter>();
-        foreach (var option in group.Options)
+        foreach (var entry in group.Entries)
         {
-            foreach (var chapter in option.ChapterInfo.Chapters.Where(static chapter => !chapter.IsSeparator))
+            foreach (var chapter in entry.ChapterSet.Chapters.Where(static chapter => !chapter.IsSeparator))
             {
                 chapters.Add(new Chapter(chapters.Count + 1, offset + chapter.Time, $"Chapter {chapters.Count + 1:D2}"));
             }
 
-            offset += option.ChapterInfo.Duration;
+            offset += entry.ChapterSet.Duration;
         }
 
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "FULL Chapter",
-            null,
-            0,
-            sourceType,
-            group.Options[0].ChapterInfo.FramesPerSecond,
+            null, sourceType,
+            group.Entries[0].ChapterSet.FramesPerSecond,
             offset,
             chapters);
         return new ChapterEditResult(info, []);
@@ -55,22 +53,22 @@ public sealed class ChapterSegmentService
     /// <param name="existing">The existing value.</param>
     /// <param name="appended">The appended value.</param>
     /// <returns>The operation result.</returns>
-    public static ChapterEditResult Append(ChapterInfoGroup existing, ChapterInfoGroup appended)
+    public static ChapterEditResult Append(ChapterImportSource existing, ChapterImportSource appended)
     {
-        if (existing.Options.Count == 0 || appended.Options.Count == 0)
+        if (existing.Entries.Count == 0 || appended.Entries.Count == 0)
         {
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "NoSegments", "No chapter segments are available.")]);
         }
 
-        if (existing.Options.Concat(appended.Options).Any(static option => option.ChapterInfo.SourceType != "MPLS"))
+        if (existing.Entries.Concat(appended.Entries).Any(static entry => entry.ChapterSet.ImportFormat != ChapterImportFormat.Mpls))
         {
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedAppendSource", "Only MPLS chapter groups can be appended.")]);
         }
 
-        var combined = existing with { Options = existing.Options.Concat(appended.Options).ToList() };
+        var combined = existing with { Entries = existing.Entries.Concat(appended.Entries).ToList() };
         return Combine(combined);
     }
 
-    private static ChapterInfo Empty() =>
-        new(string.Empty, null, 0, string.Empty, 0, TimeSpan.Zero, []);
+    private static ChapterSet Empty() =>
+        new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
 }

@@ -137,16 +137,13 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
             return false;
         }
 
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "Adobe Premiere Pro Markers",
             Path.GetFileName(path),
-            0,
-            "Adobe Premiere Pro",
+            ChapterImportFormat.PremiereMarkers,
             0,
             chapters[^1].Time,
-            chapters,
-            Tag: text,
-            TagType: typeof(string).FullName);
+            chapters);
         result = TextImportUtilities.SingleGroup(path, info);
         return true;
     }

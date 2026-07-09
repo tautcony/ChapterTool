@@ -231,5 +231,4 @@ public sealed class ToolViewsHeadlessTests
             window.Close();
         }
     }
-
 }

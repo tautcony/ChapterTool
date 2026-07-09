@@ -10,18 +10,18 @@ public sealed class FrameRateServiceTests
     [Fact]
     public void Options_expose_legacy_mpls_frame_rate_codes_without_combo_box_indexes()
     {
-        var options = service.Options;
+        var entries = service.Options;
 
         Assert.Collection(
-            options,
-            option => AssertFrameRate(option, "Auto", "Auto", 0m, false, 0),
-            option => AssertFrameRate(option, "Fps23976", "24000 / 1001", 24000m / 1001m, true, 1),
-            option => AssertFrameRate(option, "Fps24", "24000 / 1000", 24m, true, 2),
-            option => AssertFrameRate(option, "Fps25", "25000 / 1000", 25m, true, 3),
-            option => AssertFrameRate(option, "Fps2997", "30000 / 1001", 30000m / 1001m, true, 4),
-            option => AssertFrameRate(option, "Reserved", "RESER / VED", 0m, false, 5),
-            option => AssertFrameRate(option, "Fps50", "50000 / 1000", 50m, true, 6),
-            option => AssertFrameRate(option, "Fps5994", "60000 / 1001", 60000m / 1001m, true, 7));
+            entries,
+            entry => AssertFrameRate(entry, "Auto", "Auto", 0m, false, 0),
+            entry => AssertFrameRate(entry, "Fps23976", "24000 / 1001", 24000m / 1001m, true, 1),
+            entry => AssertFrameRate(entry, "Fps24", "24000 / 1000", 24m, true, 2),
+            entry => AssertFrameRate(entry, "Fps25", "25000 / 1000", 25m, true, 3),
+            entry => AssertFrameRate(entry, "Fps2997", "30000 / 1001", 30000m / 1001m, true, 4),
+            entry => AssertFrameRate(entry, "Reserved", "RESER / VED", 0m, false, 5),
+            entry => AssertFrameRate(entry, "Fps50", "50000 / 1000", 50m, true, 6),
+            entry => AssertFrameRate(entry, "Fps5994", "60000 / 1001", 60000m / 1001m, true, 7));
     }
 
     [Fact]
@@ -229,30 +229,29 @@ public sealed class FrameRateServiceTests
         Assert.Equal(FrameAccuracy.Neutral, actual.Chapters.Single().FrameAccuracy);
     }
 
-    private static ChapterInfo NewInfo(decimal fps, IReadOnlyList<Chapter> chapters)
+    private static ChapterSet NewInfo(decimal fps, IReadOnlyList<Chapter> chapters)
     {
-        return new ChapterInfo(
+        return new ChapterSet(
             Title: "Title",
             SourceName: null,
-            SourceIndex: 0,
-            SourceType: "OGM",
+            ImportFormat: ChapterImportFormat.Ogm,
             FramesPerSecond: (double)fps,
             Duration: TimeSpan.Zero,
             Chapters: chapters);
     }
 
     private static void AssertFrameRate(
-        FrameRateOption option,
+        FrameRateOption entry,
         string code,
         string displayName,
         decimal value,
         bool isValid,
         int legacyMplsCode)
     {
-        Assert.Equal(code, option.Code);
-        Assert.Equal(displayName, option.DisplayName);
-        Assert.Equal(value, option.Value);
-        Assert.Equal(isValid, option.IsValid);
-        Assert.Equal(legacyMplsCode, option.LegacyMplsCode);
+        Assert.Equal(code, entry.Code);
+        Assert.Equal(displayName, entry.DisplayName);
+        Assert.Equal(value, entry.Value);
+        Assert.Equal(isValid, entry.IsValid);
+        Assert.Equal(legacyMplsCode, entry.LegacyMplsCode);
     }
 }

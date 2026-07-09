@@ -43,6 +43,8 @@
 - JSON source generation:
   - `src/ChapterTool.Infrastructure/Configuration/AppJsonSerializerContext.cs`
 
+`AppSettings` stores runtime-safe output defaults including save format, XML language, UTF-8 BOM emission, and frame-accuracy tolerance; the Avalonia settings tool applies these live and persists them through `AppSettingsStore`.
+
 ### Platform services
 
 - shell/OS launch behavior:

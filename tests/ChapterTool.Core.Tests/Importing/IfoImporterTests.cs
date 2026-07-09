@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Transform;
@@ -18,8 +19,8 @@ public sealed class IfoImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var info = result.Groups.Single().Options.Select(static option => option.ChapterInfo).First();
-        Assert.Equal("DVD", info.SourceType);
+        var info = result.Groups.Single().Entries.Select(static entry => entry.ChapterSet).First();
+        Assert.Equal(ChapterImportFormat.DvdIfo, info.ImportFormat);
         Assert.Equal("VTS_05_1", info.SourceName);
         Assert.Equal(
             [
@@ -44,7 +45,7 @@ public sealed class IfoImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var infos = result.Groups.Single().Options.Select(static option => option.ChapterInfo).ToArray();
+        var infos = result.Groups.Single().Entries.Select(static entry => entry.ChapterSet).ToArray();
         Assert.Equal(3, infos.Length);
         Assert.All(infos, info =>
         {
@@ -70,7 +71,7 @@ public sealed class IfoImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var info = result.Groups.Single().Options.Select(static option => option.ChapterInfo).First();
+        var info = result.Groups.Single().Entries.Select(static entry => entry.ChapterSet).First();
         Assert.Equal("VTS_05_1", info.SourceName);
         Assert.Equal(7, info.Chapters.Count);
     }

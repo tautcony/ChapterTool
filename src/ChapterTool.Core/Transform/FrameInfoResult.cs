@@ -11,7 +11,7 @@ namespace ChapterTool.Core.Transform;
 /// <param name="FramesPerSecond">The FramesPerSecond value.</param>
 /// <param name="Accuracy">The Accuracy value.</param>
 public sealed record FrameInfoResult(
-    ChapterInfo Info,
+    ChapterSet Info,
     IReadOnlyList<Chapter> Chapters,
     FrameRateOption SelectedOption,
     decimal FramesPerSecond,

@@ -8,41 +8,37 @@ public enum ChapterExportFormat
     /// <summary>
     /// Exports OGM-style chapter text.
     /// </summary>
-    Txt,
+    Txt = 10,
     /// <summary>
     /// Exports Matroska XML chapters.
     /// </summary>
-    Xml,
+    Xml = 20,
     /// <summary>
     /// Exports QPFile frame markers.
     /// </summary>
-    Qpfile,
+    Qpfile = 30,
     /// <summary>
     /// Exports timestamp lines.
     /// </summary>
-    TimeCodes,
+    TimeCodes = 40,
     /// <summary>
     /// Exports tsMuxeR metadata.
     /// </summary>
-    TsMuxerMeta,
+    TsMuxerMeta = 50,
     /// <summary>
     /// Exports a CUE sheet.
     /// </summary>
-    Cue,
+    Cue = 60,
     /// <summary>
     /// Exports JSON chapter data.
     /// </summary>
-    Json,
+    Json = 70,
     /// <summary>
     /// Exports WebVTT cues.
     /// </summary>
-    WebVtt,
+    WebVtt = 80,
     /// <summary>
     /// Exports celltimes frame numbers.
     /// </summary>
-    Celltimes,
-    /// <summary>
-    /// Converts chapter text to QPFile output.
-    /// </summary>
-    Chapter2Qpfile
+    Celltimes = 90
 }

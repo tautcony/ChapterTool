@@ -60,7 +60,7 @@ public sealed class ToolWindowViewModelTests
         var owner = CreateOwner();
         var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner) })
             {
-                SelectedFormatIndex = (int)ChapterExportFormat.Json
+                SelectedFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Json)
             };
 
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
@@ -68,8 +68,8 @@ public sealed class ToolWindowViewModelTests
         Assert.True(vm.CanSelectFormat);
         Assert.False(vm.CanClear);
         Assert.Contains("QPFile", vm.FormatOptions);
-        Assert.Contains("Chapter2Qpfile", vm.FormatOptions);
-        Assert.Equal(10, vm.FormatOptions.Count);
+        Assert.DoesNotContain("Chapter2Qpfile", vm.FormatOptions);
+        Assert.Equal(9, vm.FormatOptions.Count);
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public sealed class ToolWindowViewModelTests
         return new MainWindowViewModel(
             new FakeLoadService(new ChapterImportResult(
                 true,
-                [new ChapterInfoGroup("movie.txt", [new ChapterSourceOption("0", "movie", new ChapterInfo("movie.txt", "movie.txt", 0, "OGM", 24, TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
+                [new ChapterImportSource("movie.txt", [new ChapterImportEntry("0", "movie", new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24, TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
                 [])),
             new FakeSaveService(),
             new ChapterEditingService(formatter),
@@ -229,7 +229,7 @@ public sealed class ToolWindowViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));
     }
 

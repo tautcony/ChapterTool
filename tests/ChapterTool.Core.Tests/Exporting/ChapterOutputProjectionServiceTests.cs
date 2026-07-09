@@ -82,12 +82,11 @@ public sealed class ChapterOutputProjectionServiceTests
         Assert.All(result.OutputChapters, chapter => Assert.Equal(TimeSpan.Zero, chapter.Time));
     }
 
-    private static ChapterInfo Sample() =>
+    private static ChapterSet Sample() =>
         new(
             "Movie",
             "movie.mkv",
-            0,
-            "Text",
+            ChapterImportFormat.Ogm,
             24,
             TimeSpan.FromMinutes(1),
             [

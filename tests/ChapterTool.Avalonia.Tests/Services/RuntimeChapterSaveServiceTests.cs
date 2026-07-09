@@ -13,11 +13,10 @@ public sealed class RuntimeChapterSaveServiceTests
     {
         var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "audio",
             "audio.flac",
-            0,
-            "CUE",
+            ChapterImportFormat.Cue,
             75,
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Intro")]);
@@ -43,11 +42,10 @@ public sealed class RuntimeChapterSaveServiceTests
     {
         var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "test",
             "test.xml",
-            0,
-            "XML",
+            ChapterImportFormat.MatroskaXml,
             24,
             TimeSpan.FromMinutes(1),
             [
@@ -79,13 +77,52 @@ public sealed class RuntimeChapterSaveServiceTests
     }
 
     [Fact]
+    public async Task RuntimeSaveHonorsUtf8BomOption()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var info = new ChapterSet(
+            "test",
+            "test.txt",
+            ChapterImportFormat.Ogm,
+            24,
+            TimeSpan.FromMinutes(1),
+            [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
+
+        try
+        {
+            await service.SaveAsync(
+                info,
+                new ChapterExportOptions(ChapterExportFormat.Txt, EmitBom: true),
+                directory,
+                TestContext.Current.CancellationToken);
+            var withBom = await File.ReadAllBytesAsync(Path.Combine(directory, "test.txt"), TestContext.Current.CancellationToken);
+
+            await service.SaveAsync(
+                info,
+                new ChapterExportOptions(ChapterExportFormat.Txt, EmitBom: false),
+                directory,
+                TestContext.Current.CancellationToken);
+            var withoutBom = await File.ReadAllBytesAsync(Path.Combine(directory, "test.txt"), TestContext.Current.CancellationToken);
+
+            byte[] utf8Bom = [0xEF, 0xBB, 0xBF];
+            Assert.True(withBom.Take(3).SequenceEqual(utf8Bom));
+            Assert.False(withoutBom.Take(3).SequenceEqual(utf8Bom));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RuntimeSaveReturnsDiagnosticWhenFileSystemWriteFails()
     {
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             "test",
             "test.xml",
-            0,
-            "XML",
+            ChapterImportFormat.MatroskaXml,
             24,
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);

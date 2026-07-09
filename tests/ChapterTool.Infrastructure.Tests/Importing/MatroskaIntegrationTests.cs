@@ -48,10 +48,10 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
         var result = await importer.ImportAsync(new ChapterImportRequest(fixturePath), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(2, options.Count);
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(2, entries.Count);
 
-        var chapters = options[0].ChapterInfo.Chapters;
+        var chapters = entries[0].ChapterSet.Chapters;
         Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], chapters.Select(static chapter => chapter.Name));
         Assert.Equal(
             [TimeSpan.Zero, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(330), TimeSpan.FromSeconds(740)],
@@ -60,7 +60,7 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
             [null, null, null, TimeSpan.FromSeconds(775)],
             chapters.Select(static chapter => chapter.End));
 
-        var hiddenEditionChapters = options[1].ChapterInfo.Chapters;
+        var hiddenEditionChapters = entries[1].ChapterSet.Chapters;
         var hiddenChapter = Assert.Single(hiddenEditionChapters);
         Assert.Equal("A hidden and not enabled chapter.", hiddenChapter.Name);
         Assert.Equal(TimeSpan.FromSeconds(120), hiddenChapter.Time);

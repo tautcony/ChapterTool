@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 
@@ -17,8 +18,8 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mp4"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var info = result.Groups.Single().Options.Single().ChapterInfo;
-        Assert.Equal("MEDIA", info.SourceType);
+        var info = result.Groups.Single().Entries.Single().ChapterSet;
+        Assert.Equal(ChapterImportFormat.Media, info.ImportFormat);
         Assert.Equal(0, info.FramesPerSecond);
         Assert.Equal(TimeSpan.FromSeconds(30), info.Duration);
         Assert.Equal(["Chapter 01", "Chapter 02", "章节 03", "Chapter 04"], info.Chapters.Select(static chapter => chapter.Name));
@@ -38,7 +39,7 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("audio.ogg"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(35)], chapters.Select(static chapter => chapter.Time));
         Assert.Equal(["Start with decimals, end with decimals", "Time base fallback only", "Uppercase TITLE tag", "Chapter 04"], chapters.Select(static chapter => chapter.Name));
     }
@@ -55,12 +56,12 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.nut"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Options.Single().ChapterInfo.Chapters;
+        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(TimeSpan.FromSeconds(8), chapters[0].End);
         Assert.Equal(TimeSpan.FromSeconds(15), chapters[1].End);
         Assert.Null(chapters[2].End);
         Assert.Null(chapters[3].End);
-        Assert.Equal(TimeSpan.FromSeconds(15), result.Groups.Single().Options.Single().ChapterInfo.Duration);
+        Assert.Equal(TimeSpan.FromSeconds(15), result.Groups.Single().Entries.Single().ChapterSet.Duration);
     }
 
     [Fact]
@@ -112,12 +113,12 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(["edition-0", "edition-1"], options.Select(static option => option.Id));
-        Assert.Equal(["Edition 01", "Edition 02"], options.Select(static option => option.DisplayName));
-        Assert.All(options, static option => Assert.False(option.CanCombine));
-        Assert.Equal(["Tagged Chapter 1", "Tagged Chapter 2"], options[0].ChapterInfo.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal(["Untagged Chapter 1", "Untagged Chapter 2"], options[1].ChapterInfo.Chapters.Select(static chapter => chapter.Name));
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(["edition-0", "edition-1"], entries.Select(static entry => entry.Id));
+        Assert.Equal(["Edition 01", "Edition 02"], entries.Select(static entry => entry.DisplayName));
+        Assert.All(entries, static entry => Assert.False(entry.CanCombine));
+        Assert.Equal(["Tagged Chapter 1", "Tagged Chapter 2"], entries[0].ChapterSet.Chapters.Select(static chapter => chapter.Name));
+        Assert.Equal(["Untagged Chapter 1", "Untagged Chapter 2"], entries[1].ChapterSet.Chapters.Select(static chapter => chapter.Name));
     }
 
     private static MediaChapterImporter CreateImporter(params MediaChapterEntry[] entries) =>

@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 
@@ -16,14 +17,14 @@ public sealed class MplsImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
-        var options = result.Groups.Single().Options;
-        Assert.Equal(sample.ExpectedOptionCount, options.Count);
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal(sample.ExpectedOptionCount, entries.Count);
         for (var i = 0; i < sample.ExpectedOptions.Length; i++)
         {
             var expected = sample.ExpectedOptions[i];
-            var actual = options[i];
-            var info = actual.ChapterInfo;
-            Assert.Equal("MPLS", info.SourceType);
+            var actual = entries[i];
+            var info = actual.ChapterSet;
+            Assert.Equal(ChapterImportFormat.Mpls, info.ImportFormat);
             Assert.Equal(expected.SourceName, info.SourceName);
             Assert.Equal(expected.ChapterCount, info.Chapters.Count);
             Assert.Equal(expected.FramesPerSecond, info.FramesPerSecond, precision: 3);

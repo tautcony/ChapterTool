@@ -1,3 +1,4 @@
+using ChapterTool.Core.Models;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using ChapterTool.Avalonia.Views.Controls;
@@ -29,7 +30,7 @@ public sealed class MainWindowStateHeadlessTests
         Assert.False(saveButton.IsEnabled);
         Assert.False(clipBox.IsVisible);
         Assert.Empty(chapterGrid.ItemsSource!.Cast<object>());
-        Assert.Equal((int)ChapterExportFormat.Txt, formatBox.SelectedIndex);
+        Assert.Equal(ChapterExportFormats.IndexOf(ChapterExportFormat.Txt), formatBox.SelectedIndex);
         Assert.Equal(0, frameRateBox.SelectedIndex);
         Assert.Equal(host.ViewModel.StatusText, status.Text);
         Assert.Equal(0, progress.Value);
@@ -40,8 +41,8 @@ public sealed class MainWindowStateHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.mpls",
-            MainWindowHeadlessTestHost.Option("MPLS", "00001", "Opening", "Middle"),
-            MainWindowHeadlessTestHost.Option("MPLS", "00002", "Alt")));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "Opening", "Middle"),
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "Alt")));
 
         await host.LoadAsync("movie.mpls");
 
@@ -69,7 +70,7 @@ public sealed class MainWindowStateHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
-            MainWindowHeadlessTestHost.Option("OGM", "movie.txt", "Intro")));
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro")));
         await host.LoadAsync("movie.txt");
 
         var formatBox = host.RequiredControl<ComboBox>("FormatBox");
@@ -82,7 +83,7 @@ public sealed class MainWindowStateHeadlessTests
         var frameRateBox = host.RequiredControl<ComboBox>("FrameRateBox");
         var roundFramesBox = host.RequiredControl<CheckBox>("RoundFramesBox");
 
-        formatBox.SelectedIndex = (int)ChapterExportFormat.Xml;
+        formatBox.SelectedIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Xml);
         await host.LayoutAsync();
         Assert.True(xmlLanguageGroup.IsEnabled);
 
@@ -109,7 +110,7 @@ public sealed class MainWindowStateHeadlessTests
         Assert.Equal("Chapter 01", host.SaveService.LastInfo.Chapters[0].Name);
         Assert.Equal(TimeSpan.FromSeconds(1), host.SaveService.LastInfo.Chapters[0].Time);
 
-        formatBox.SelectedIndex = (int)ChapterExportFormat.Txt;
+        formatBox.SelectedIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         await host.LayoutAsync();
         Assert.False(xmlLanguageGroup.IsEnabled);
     }

@@ -121,6 +121,8 @@ Start with:
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterImporterRegistry.cs`
 
+`RuntimeChapterSaveService` applies UI save-file concerns such as output directory selection, generated file path diagnostics, and `ChapterExportOptions.EmitBom` UTF-8 encoding behavior around Core export content.
+
 If the wiring looks wrong, inspect:
 
 - `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs`
@@ -141,6 +143,8 @@ Start with:
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
 - `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
+
+Output defaults such as save format, XML language, UTF-8 BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`.
 
 ### CLI behavior
 

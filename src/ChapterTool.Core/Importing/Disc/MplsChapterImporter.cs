@@ -45,8 +45,8 @@ public sealed class MplsChapterImporter : IChapterImporter
         try
         {
             var parsed = MplsPlaylistFile.Read(stream);
-            var options = parsed.PlayList.PlayItems.Select((playItem, index) => ToOption(request.Path, playItem, parsed.PlayListMark.Marks, index)).ToList();
-            return new ChapterImportResult(true, [new ChapterInfoGroup(request.Path, options)], []);
+            var entries = parsed.PlayList.PlayItems.Select((playItem, index) => ToOption(request.Path, playItem, parsed.PlayListMark.Marks, index)).ToList();
+            return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
         {
@@ -73,16 +73,14 @@ public sealed class MplsChapterImporter : IChapterImporter
     /// <param name="path">The source path.</param>
     /// <param name="title">The display title.</param>
     /// <param name="sourceName">The source display name.</param>
-    /// <param name="sourceIndex">The source index.</param>
     /// <param name="sourceType">The source type.</param>
     /// <param name="duration">The duration.</param>
     /// <returns>The operation result.</returns>
-    public static ChapterInfo ReadPlaylistInfo(
+    public static ChapterSet ReadPlaylistInfo(
         string path,
         string title = "",
         string? sourceName = null,
-        int sourceIndex = 0,
-        string sourceType = "MPLS",
+        ChapterImportFormat sourceType = ChapterImportFormat.Mpls,
         TimeSpan? duration = null)
     {
         using var stream = File.OpenRead(path);
@@ -95,19 +93,16 @@ public sealed class MplsChapterImporter : IChapterImporter
             .FirstOrDefault();
         var totalPts = playItems.Aggregate(0UL, static (sum, item) => sum + item.OUTTime - item.INTime);
 
-        return new ChapterInfo(
+        return new ChapterSet(
             title,
             sourceName ?? string.Join("+", playItems.Select(static item => item.FullName)),
-            sourceIndex,
             sourceType,
             frameRateCode < FrameRates.Length ? FrameRates[frameRateCode] : 0,
             duration ?? PtsToTime(checked((uint)Math.Min(totalPts, uint.MaxValue))),
-            chapters,
-            Tag: path,
-            TagType: sourceType);
+            chapters);
     }
 
-    private static ChapterSourceOption ToOption(string path, MplsPlayItem playItem, IReadOnlyList<MplsMark> marks, int playItemIndex)
+    private static ChapterImportEntry ToOption(string path, MplsPlayItem playItem, IReadOnlyList<MplsMark> marks, int playItemIndex)
     {
         var matchingMarks = marks
             .Where(mark => mark.MarkType == 0x01 && mark.RefToPlayItemID == playItemIndex)
@@ -124,21 +119,18 @@ public sealed class MplsChapterImporter : IChapterImporter
                 .Select((mark, index) => new Chapter(index + 1, PtsToTime(mark.MarkTimeStamp - offset), $"Chapter {index + 1:D2}"))
                 .ToList();
         var frameRateCode = playItem.STNTable.PrimaryVideoStreamEntries.FirstOrDefault()?.StreamAttributes.FrameRate ?? 0;
-        var info = new ChapterInfo(
+        var info = new ChapterSet(
             string.Empty,
             playItem.FullName,
-            playItemIndex,
-            "MPLS",
+            ChapterImportFormat.Mpls,
             frameRateCode < FrameRates.Length ? FrameRates[frameRateCode] : 0,
             PtsToTime(playItem.OUTTime - playItem.INTime),
-            chapters,
-            Tag: path,
-            TagType: "MPLS");
+            chapters);
         var refs = playItem.FullName
             .Split('&', StringSplitOptions.RemoveEmptyEntries)
-            .Select(clip => new SourceMediaReference($"{clip}.m2ts", Path.Combine("..", "STREAM", $"{clip}.m2ts")))
+            .Select(clip => new MediaFileReference($"{clip}.m2ts", Path.Combine("..", "STREAM", $"{clip}.m2ts")))
             .ToList();
-        return new ChapterSourceOption($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Count}", info, CanCombine: true, MediaReferences: refs);
+        return new ChapterImportEntry($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Count}", info, CanCombine: true, MediaReferences: refs);
     }
 
     private static List<Chapter> PlaylistChapters(IReadOnlyList<MplsPlayItem> playItems, IReadOnlyList<MplsMark> marks)

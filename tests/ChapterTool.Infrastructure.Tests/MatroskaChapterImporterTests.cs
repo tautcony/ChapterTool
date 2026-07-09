@@ -54,8 +54,8 @@ public sealed class MatroskaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(@"C:\media\movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
-        Assert.Equal(2, result.Groups.Single().Options.Count);
-        Assert.Equal("Intro", result.Groups.Single().Options[0].ChapterInfo.Chapters.Single().Name);
+        Assert.Equal(2, result.Groups.Single().Entries.Count);
+        Assert.Equal("Intro", result.Groups.Single().Entries[0].ChapterSet.Chapters.Single().Name);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class MatroskaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("/media/movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
-        Assert.Equal("序章", result.Groups.Single().Options.Single().ChapterInfo.Chapters.Single().Name);
+        Assert.Equal("序章", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
     }
 
     [Theory]

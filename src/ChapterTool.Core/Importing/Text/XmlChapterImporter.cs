@@ -95,9 +95,9 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
                 new Dictionary<string, object?>(StringComparer.Ordinal) { ["name"] = root.Name }));
         }
 
-        var groups = new List<ChapterInfoGroup>();
-        var options = new List<ChapterSourceOption>();
-        var defaultOptionIndex = 0;
+        var groups = new List<ChapterImportSource>();
+        var entries = new List<ChapterImportEntry>();
+        var defaultEntryIndex = 0;
         var hasDefaultEdition = false;
         var editionIndex = 0;
         foreach (XmlNode child in root.ChildNodes)
@@ -136,31 +136,30 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
                 }
             }
 
-            var info = new ChapterInfo(
+            var info = new ChapterSet(
                 $"Edition {editionIndex + 1:D2}",
                 Path.GetFileName(path),
-                editionIndex,
-                "XML",
+                ChapterImportFormat.MatroskaXml,
                 0,
                 chapters.Count == 0 ? TimeSpan.Zero : chapters[^1].Time,
                 Renumber(chapters));
-            options.Add(new ChapterSourceOption($"edition-{editionIndex}", info.Title, info));
+            entries.Add(new ChapterImportEntry($"edition-{editionIndex}", info.Title, info));
 
             if (isDefaultEdition && !hasDefaultEdition)
             {
-                defaultOptionIndex = editionIndex;
+                defaultEntryIndex = editionIndex;
                 hasDefaultEdition = true;
             }
 
             editionIndex++;
         }
 
-        if (options.Count == 0 || options.All(static option => option.ChapterInfo.Chapters.Count == 0))
+        if (entries.Count == 0 || entries.All(static entry => entry.ChapterSet.Chapters.Count == 0))
         {
             return ChapterImportResult.Failed(Error("XmlNoChapters", "No Matroska XML chapters were parsed."));
         }
 
-        groups.Add(new ChapterInfoGroup(path, options, defaultOptionIndex));
+        groups.Add(new ChapterImportSource(path, entries, defaultEntryIndex));
         return new ChapterImportResult(true, groups, []);
     }
 

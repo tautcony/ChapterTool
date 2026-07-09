@@ -15,7 +15,7 @@
   
   
 <data name="Action.CombineSegments" xml:space="preserve">
-    <value>セグメントを結合: オプション数={options}, ソース種別={sourceType}</value>
+    <value>セグメントを結合: オプション数={entries}, ソース種別={sourceType}</value>
   </data>
 <data name="Action.DeleteRows" xml:space="preserve">
     <value>行を削除: インデックス={indexes}</value>
@@ -33,7 +33,7 @@
     <value>フレーム前方シフト: フレーム数={frames}</value>
   </data>
 <data name="Action.SplitCombinedSegments" xml:space="preserve">
-    <value>結合済みセグメントを分割: オプション数={options}, ソース種別={sourceType}</value>
+    <value>結合済みセグメントを分割: オプション数={entries}, ソース種別={sourceType}</value>
   </data>
 <data name="App.Title" xml:space="preserve">
     <value>[VCB-Studio] ChapterTool</value>
@@ -399,13 +399,13 @@
     <value>フレーム情報を更新: option={option}, fps={fps}, round={round}, chapters={chapters}</value>
   </data>
 <data name="Log.ImportGroup" xml:space="preserve">
-    <value>{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultOptionIndex={defaultOptionIndex}, options={options}</value>
+    <value>{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultEntryIndex={defaultEntryIndex}, entries={entries}</value>
   </data>
-<data name="Log.ImportOption" xml:space="preserve">
-    <value>{operation} option {optionIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</value>
+<data name="Log.ImportEntry" xml:space="preserve">
+    <value>{operation} entry {entryIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</value>
   </data>
 <data name="Log.ImportSummary" xml:space="preserve">
-    <value>{operation} result: success={success}, partial={partial}, groups={groups}, options={options}, chapters={chapters}, diagnostics={diagnostics}</value>
+    <value>{operation} result: success={success}, partial={partial}, groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</value>
   </data>
 <data name="Log.LanguageSet" xml:space="preserve">
     <value>言語を {language} に設定しました</value>
@@ -625,6 +625,9 @@
   </data>
 <data name="Settings.DefaultXmlLanguage" xml:space="preserve">
     <value>既定の XML 言語</value>
+  </data>
+<data name="Settings.EmitBom" xml:space="preserve">
+    <value>UTF-8 BOM を書き込む</value>
   </data>
 <data name="Settings.Eac3toPath" xml:space="preserve">
     <value>eac3to</value>

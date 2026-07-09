@@ -27,6 +27,7 @@ public sealed class SettingsToolViewModelTests
             FfmpegPath: "ffmpeg",
             DefaultSaveFormat: "Xml",
             DefaultXmlLanguage: "ja",
+            EmitBom: true,
             FrameAccuracyTolerance: 0.02m));
         var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default);
         var owner = CreateOwner(appStore);
@@ -41,6 +42,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.FfmpegPath = "new-ffmpeg";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
+        viewModel.EmitBom = false;
         viewModel.FrameAccuracyTolerance = 0.2m;
         viewModel.ColorSlots[0].Value = "#010203";
 
@@ -54,9 +56,11 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("new-ffmpeg", appStore.Current.FfmpegPath);
         Assert.Equal("Json", appStore.Current.DefaultSaveFormat);
         Assert.Equal("jpn", appStore.Current.DefaultXmlLanguage);
+        Assert.False(appStore.Current.EmitBom);
         Assert.Equal(0.2m, appStore.Current.FrameAccuracyTolerance);
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
         Assert.Equal("jpn", owner.XmlLanguage);
+        Assert.False(owner.EmitBom);
         Assert.Equal(0.2m, owner.FrameAccuracyTolerance);
         Assert.Equal("new-out", owner.SaveDirectory);
         Assert.Equal("ja-JP", owner.UiLanguage);
@@ -95,6 +99,7 @@ public sealed class SettingsToolViewModelTests
             Language: "en-US",
             DefaultSaveFormat: "Txt",
             DefaultXmlLanguage: "und",
+            EmitBom: true,
             FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
@@ -104,12 +109,14 @@ public sealed class SettingsToolViewModelTests
         viewModel.SaveDirectory = "live";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
+        viewModel.EmitBom = false;
         viewModel.FrameAccuracyTolerance = 0.20m;
 
         Assert.Equal("ja-JP", owner.UiLanguage);
         Assert.Equal("live", owner.SaveDirectory);
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
         Assert.Equal("jpn", owner.XmlLanguage);
+        Assert.False(owner.EmitBom);
         Assert.Equal(0.20m, owner.FrameAccuracyTolerance);
         Assert.Equal("saved", appStore.Current.SavingPath);
         Assert.Equal("en-US", appStore.Current.Language);
@@ -269,8 +276,8 @@ public sealed class SettingsToolViewModelTests
         Assert.Contains("CUE", viewModel.SaveFormatOptions);
         Assert.Contains("JSON", viewModel.SaveFormatOptions);
         Assert.DoesNotContain("Qpf", viewModel.SaveFormatOptions);
-        Assert.Contains("Chapter2Qpfile", viewModel.SaveFormatOptions);
-        Assert.Equal(10, viewModel.SaveFormatOptions.Count);
+        Assert.DoesNotContain("Chapter2Qpfile", viewModel.SaveFormatOptions);
+        Assert.Equal(9, viewModel.SaveFormatOptions.Count);
     }
 
     [Fact]
@@ -283,11 +290,11 @@ public sealed class SettingsToolViewModelTests
             new AppLocalizationManager("en-US"));
 
         var index = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
-        var option = viewModel.XmlLanguageDisplayOptions[index];
+        var entry = viewModel.XmlLanguageDisplayOptions[index];
 
-        Assert.Equal("jpn", option.MainText);
-        Assert.Equal("Japanese", option.RemarkText);
-        Assert.Equal("jpn（Japanese）", option.DisplayText);
+        Assert.Equal("jpn", entry.MainText);
+        Assert.Equal("Japanese", entry.RemarkText);
+        Assert.Equal("jpn（Japanese）", entry.DisplayText);
     }
 
     [Fact]
@@ -300,11 +307,11 @@ public sealed class SettingsToolViewModelTests
         viewModel.PropertyChanged += (_, args) => notifications.Add(args.PropertyName);
 
         localizer.SetCulture("zh-CN");
-        var option = viewModel.XmlLanguageDisplayOptions[viewModel.XmlLanguageOptions.ToList().IndexOf("und")];
+        var entry = viewModel.XmlLanguageDisplayOptions[viewModel.XmlLanguageOptions.ToList().IndexOf("und")];
 
         Assert.Contains(nameof(SettingsToolViewModel.XmlLanguageDisplayOptions), notifications);
-        Assert.Equal("未确定", option.RemarkText);
-        Assert.Equal("und（未确定）", option.DisplayText);
+        Assert.Equal("未确定", entry.RemarkText);
+        Assert.Equal("und（未确定）", entry.DisplayText);
     }
 
     [Fact]
@@ -640,7 +647,7 @@ public sealed class SettingsToolViewModelTests
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterImportResult(
                 true,
-                [new ChapterInfoGroup(path, [new ChapterSourceOption("default", "default", new ChapterInfo(path, path, 0, "OGM", 24, TimeSpan.Zero, []))])],
+                [new ChapterImportSource(path, [new ChapterImportEntry("default", "default", new ChapterSet(path, path, ChapterImportFormat.Ogm, 24, TimeSpan.Zero, []))])],
                 []));
     }
 
@@ -648,7 +655,7 @@ public sealed class SettingsToolViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 

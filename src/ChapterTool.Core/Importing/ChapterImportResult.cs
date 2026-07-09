@@ -12,7 +12,7 @@ namespace ChapterTool.Core.Importing;
 /// <param name="IsPartial">The IsPartial value.</param>
 public sealed record ChapterImportResult(
     bool Success,
-    IReadOnlyList<ChapterInfoGroup> Groups,
+    IReadOnlyList<ChapterImportSource> Groups,
     IReadOnlyList<ChapterDiagnostic> Diagnostics,
     bool IsPartial = false)
 {
@@ -21,7 +21,7 @@ public sealed record ChapterImportResult(
     /// </summary>
     /// <param name="groups">The imported groups.</param>
     /// <returns>The operation result.</returns>
-    public static ChapterImportResult Succeeded(params ChapterInfoGroup[] groups) =>
+    public static ChapterImportResult Succeeded(params ChapterImportSource[] groups) =>
         new(true, groups, []);
 
     /// <summary>
