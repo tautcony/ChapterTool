@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
@@ -82,7 +83,7 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaProcessFailed");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaProcessFailed);
     }
 
     private void RequireMkvToolNix()

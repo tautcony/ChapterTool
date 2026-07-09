@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Platform;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ public sealed class PlatformServiceTests
         var result = await service.ResolveAsync("missing-tool", TestContext.Current.CancellationToken);
 
         Assert.False(result.Found);
-        Assert.Equal("NativeLibraryMissing", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.NativeLibraryMissing, result.DiagnosticCode);
     }
 
     [Fact]

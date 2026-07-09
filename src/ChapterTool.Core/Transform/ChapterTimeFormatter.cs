@@ -54,7 +54,7 @@ public sealed partial class ChapterTimeFormatter : IChapterTimeFormatter
             [
                 new ChapterDiagnostic(
                     DiagnosticSeverity.Warning,
-                    "InvalidTimeText",
+                    ChapterDiagnosticCode.InvalidTimeText,
                     "Time text is empty or does not match the legacy HH:mm:ss.sss format.")
             ]);
     }

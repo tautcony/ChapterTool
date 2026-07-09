@@ -1459,7 +1459,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     private string LocalizeDiagnostic(ChapterDiagnostic diagnostic)
     {
-        var diagnosticKey = $"Diagnostic.{diagnostic.Code}";
+        var diagnosticKey = $"Diagnostic.{diagnostic.DisplayCode}";
         if (!Localizer.TryGetString(diagnosticKey, out var template))
         {
             return diagnostic.Message;
@@ -1665,7 +1665,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
                 diagnostic.Details,
                 ("operation", operation),
                 ("severity", diagnostic.Severity),
-                ("code", diagnostic.Code),
+                ("code", diagnostic.DisplayCode),
                 ("location", location),
                 ("message", LocalizeDiagnostic(diagnostic)),
                 ("details", details));

@@ -142,7 +142,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         if (spans.Any(static span => span.Kind == ExpressionTokenKind.Unknown))
         {
             var unknown = spans.First(static span => span.Kind == ExpressionTokenKind.Unknown);
-            return [Diagnostic("InvalidExpression.LuaUnknownToken", $"Unsupported Lua token '{unknown.Text}'.", "Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.", unknown.Start, unknown.Length)];
+            return [Diagnostic(ChapterDiagnosticCode.InvalidExpressionLuaUnknownToken, $"Unsupported Lua token '{unknown.Text}'.", "Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.", unknown.Start, unknown.Length)];
         }
 
         var result = expressionEngine.Evaluate(
@@ -164,15 +164,27 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         return [new ExpressionAuthoringDiagnostic(diagnostic, suggestion, target.Start, Math.Max(1, target.Length))];
     }
 
-    private static ExpressionDiagnosticSuggestion SuggestionFor(string diagnosticCode, string expression) =>
-        diagnosticCode switch
+    private static ExpressionDiagnosticSuggestion SuggestionFor(ChapterDiagnosticCode diagnosticCode, string expression)
+    {
+        if (diagnosticCode == ChapterDiagnosticCode.InvalidExpressionLuaCompile && EndsWithOperator(expression))
         {
-            "InvalidExpression.LuaCompile" when EndsWithOperator(expression) => new("Expression.Suggestion.AddOperand", "Add the missing operand before applying this token."),
-            "InvalidExpression.LuaCompile" => new("Expression.Suggestion.CheckLuaSyntax", "Check the Lua syntax or complete the expression."),
-            "InvalidExpression.LuaRuntime" => new("Expression.Suggestion.CheckLuaRuntime", "Check that referenced Lua variables and functions exist."),
-            "InvalidExpression.LuaInvalidReturn" => new("Expression.Suggestion.ReturnNumber", "Return a finite number of seconds."),
-            _ => new("Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.")
-        };
+            return new("Expression.Suggestion.AddOperand", "Add the missing operand before applying this token.");
+        }
+
+        if (diagnosticCode == ChapterDiagnosticCode.InvalidExpressionLuaCompile)
+        {
+            return new("Expression.Suggestion.CheckLuaSyntax", "Check the Lua syntax or complete the expression.");
+        }
+
+        if (diagnosticCode == ChapterDiagnosticCode.InvalidExpressionLuaRuntime)
+        {
+            return new("Expression.Suggestion.CheckLuaRuntime", "Check that referenced Lua variables and functions exist.");
+        }
+
+        return diagnosticCode == ChapterDiagnosticCode.InvalidExpressionLuaInvalidReturn
+            ? new ExpressionDiagnosticSuggestion("Expression.Suggestion.ReturnNumber", "Return a finite number of seconds.")
+            : new ExpressionDiagnosticSuggestion("Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.");
+    }
 
     private static bool EndsWithOperator(string expression)
     {
@@ -180,7 +192,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         return trimmed.EndsWith('+') || trimmed.EndsWith('-') || trimmed.EndsWith('*') || trimmed.EndsWith('/') || trimmed.EndsWith('%') || trimmed.EndsWith('^') || trimmed.EndsWith('.');
     }
 
-    private static ExpressionAuthoringDiagnostic Diagnostic(string code, string message, string suggestionCode, string suggestion, int start, int length) =>
+    private static ExpressionAuthoringDiagnostic Diagnostic(ChapterDiagnosticCode code, string message, string suggestionCode, string suggestion, int start, int length) =>
         new(new ChapterDiagnostic(DiagnosticSeverity.Warning, code, message, Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = message }), new ExpressionDiagnosticSuggestion(suggestionCode, suggestion), start, length);
 
     private static ExpressionTokenSpan? LastMeaningfulSpan(IReadOnlyList<ExpressionTokenSpan> spans) =>

@@ -35,14 +35,14 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         Report(request.ProgressReporter, ChapterImportProgressPhase.LoadingSource, 0.05);
         if (!Directory.Exists(playlistDirectory))
         {
-            return ChapterImportResult.Failed(Error("InvalidStructure", "Blu-ray BDMV/PLAYLIST directory was not found."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidStructure, "Blu-ray BDMV/PLAYLIST directory was not found."));
         }
 
         Report(request.ProgressReporter, ChapterImportProgressPhase.ValidatingSource, 0.10);
         var location = await toolLocator.LocateAsync("eac3to", cancellationToken);
         if (!location.Found || string.IsNullOrWhiteSpace(location.Path))
         {
-            return ChapterImportResult.Failed(Error("MissingDependency", location.Message ?? "eac3to was not found."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.MissingDependency, location.Message ?? "eac3to was not found."));
         }
 
         Report(request.ProgressReporter, ChapterImportProgressPhase.DiscoveringTitles, 0.15);
@@ -55,7 +55,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         var candidates = ParsePlaylistList(listResult.Text ?? string.Empty);
         if (candidates.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("DependencyOutputUnrecognized", "eac3to playlist output was not recognized."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.DependencyOutputUnrecognized, "eac3to playlist output was not recognized."));
         }
 
         var entries = new List<ChapterImportEntry>();
@@ -122,7 +122,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 .FirstOrDefault();
             if (chapterInfo is null || chapterInfo.Chapters.Count == 0)
             {
-                diagnostics.Add(Error("NoChaptersFound", $"eac3to exported no parseable chapters for {candidate.MplsName}."));
+                diagnostics.Add(Error(ChapterDiagnosticCode.NoChaptersFound, $"eac3to exported no parseable chapters for {candidate.MplsName}."));
                 continue;
             }
 
@@ -165,27 +165,27 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            return ProcessTextResult.Failed(Error("DependencyCannotStart", $"eac3to could not be started: {exception.Message}"));
+            return ProcessTextResult.Failed(Error(ChapterDiagnosticCode.DependencyCannotStart, $"eac3to could not be started: {exception.Message}"));
         }
 
         if (result.Cancelled)
         {
-            return ProcessTextResult.Failed(Error("DependencyExecutionCancelled", "eac3to was cancelled."));
+            return ProcessTextResult.Failed(Error(ChapterDiagnosticCode.DependencyExecutionCancelled, "eac3to was cancelled."));
         }
 
         if (result.TimedOut)
         {
-            return ProcessTextResult.Failed(Error("DependencyExecutionTimedOut", "eac3to timed out."));
+            return ProcessTextResult.Failed(Error(ChapterDiagnosticCode.DependencyExecutionTimedOut, "eac3to timed out."));
         }
 
         if (result.ExitCode is not 0 || (string.IsNullOrWhiteSpace(result.StandardOutput) && !string.IsNullOrWhiteSpace(result.StandardError)))
         {
-            return ProcessTextResult.Failed(Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
+            return ProcessTextResult.Failed(Error(ChapterDiagnosticCode.DependencyExecutionFailed, result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
         }
 
         if (result.OutputTruncated)
         {
-            return ProcessTextResult.Failed(Error("DependencyOutputTruncated", "eac3to output exceeded the capture limit and cannot be parsed safely."));
+            return ProcessTextResult.Failed(Error(ChapterDiagnosticCode.DependencyOutputTruncated, "eac3to output exceeded the capture limit and cannot be parsed safely."));
         }
 
         return ProcessTextResult.Succeeded(result.StandardOutput);
@@ -209,7 +209,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 return new ChapterExportResult(
                     false,
                     null,
-                    [Error("DependencyCannotStart", $"eac3to chapter export could not be started: {exception.Message}")]);
+                    [Error(ChapterDiagnosticCode.DependencyCannotStart, $"eac3to chapter export could not be started: {exception.Message}")]);
             }
 
             if (ToExecutionDiagnostic(result, "eac3to chapter export") is { } execution)
@@ -222,13 +222,13 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 return new ChapterExportResult(
                     false,
                     null,
-                    [Error("DependencyOutputMissing", "eac3to did not create a chapter export file.")]);
+                    [Error(ChapterDiagnosticCode.DependencyOutputMissing, "eac3to did not create a chapter export file.")]);
             }
 
             var text = await File.ReadAllTextAsync(tempPath, cancellationToken);
             if (string.IsNullOrWhiteSpace(text))
             {
-                return new ChapterExportResult(false, null, [Error("DependencyOutputEmpty", "eac3to chapter export was empty.")]);
+                return new ChapterExportResult(false, null, [Error(ChapterDiagnosticCode.DependencyOutputEmpty, "eac3to chapter export was empty.")]);
             }
 
             return new ChapterExportResult(true, text, []);
@@ -255,22 +255,22 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
     {
         if (result.Cancelled)
         {
-            return Error("DependencyExecutionCancelled", $"{operation} was cancelled.");
+            return Error(ChapterDiagnosticCode.DependencyExecutionCancelled, $"{operation} was cancelled.");
         }
 
         if (result.TimedOut)
         {
-            return Error("DependencyExecutionTimedOut", $"{operation} timed out.");
+            return Error(ChapterDiagnosticCode.DependencyExecutionTimedOut, $"{operation} timed out.");
         }
 
         if (result.ExitCode is not 0)
         {
-            return Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? $"{operation} failed." : result.StandardError);
+            return Error(ChapterDiagnosticCode.DependencyExecutionFailed, result.StandardError.Length == 0 ? $"{operation} failed." : result.StandardError);
         }
 
         if (result.OutputTruncated)
         {
-            return Error("DependencyOutputTruncated", $"{operation} output exceeded the capture limit and cannot be parsed safely.");
+            return Error(ChapterDiagnosticCode.DependencyOutputTruncated, $"{operation} output exceeded the capture limit and cannot be parsed safely.");
         }
 
         return null;
@@ -384,11 +384,11 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             .ToArray();
 
         return errors.Length == 0
-            ? [Error("NoChaptersFound", "No BDMV playlists with chapters were parsed.")]
+            ? [Error(ChapterDiagnosticCode.NoChaptersFound, "No BDMV playlists with chapters were parsed.")]
             : errors;
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
     private sealed record PlaylistCandidate(int Index, string MplsName, string SourceName, TimeSpan Duration, bool HasChapters);

@@ -61,7 +61,7 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
             return result;
         }
 
-        return ChapterImportResult.Failed(Error("PremiereMarkerListInvalid", "Unable to parse Adobe Premiere Pro chapter marker list."));
+        return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.PremiereMarkerListInvalid, "Unable to parse Adobe Premiere Pro chapter marker list."));
     }
 
     private bool TryParse(string text, string path, out ChapterImportResult result)
@@ -289,7 +289,7 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
         return CommonFrameRates[^1];
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
     [GeneratedRegex(@"^\s*(?<Hour>\d+)\s*[:;]\s*(?<Minute>\d+)\s*[:;]\s*(?<Second>\d+)\s*[:;]\s*(?<Frame>\d+)\s*$")]

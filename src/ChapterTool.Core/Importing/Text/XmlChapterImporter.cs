@@ -43,7 +43,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
             }
             catch (XmlException exception)
             {
-                return ChapterImportResult.Failed(Error("InvalidXml", exception.Message));
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidXml, exception.Message));
             }
         }
 
@@ -56,7 +56,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         }
         catch (XmlException exception)
         {
-            return ChapterImportResult.Failed(Error("InvalidXml", exception.Message));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidXml, exception.Message));
         }
     }
 
@@ -75,7 +75,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         }
         catch (XmlException exception)
         {
-            return ChapterImportResult.Failed(Error("InvalidXml", exception.Message));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidXml, exception.Message));
         }
 
         return ParseDocument(document, path);
@@ -86,12 +86,12 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         var root = document.DocumentElement;
         if (root is null)
         {
-            return ChapterImportResult.Failed(Error("EmptyXml", "XML document has no root element."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmptyXml, "XML document has no root element."));
         }
 
         if (root.Name != "Chapters")
         {
-            return ChapterImportResult.Failed(Error("XmlInvalidRoot", $"Expected Chapters root, got {root.Name}.",
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.XmlInvalidRoot, $"Expected Chapters root, got {root.Name}.",
                 new Dictionary<string, object?>(StringComparer.Ordinal) { ["name"] = root.Name }));
         }
 
@@ -109,7 +109,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
             if (child.Name != "EditionEntry")
             {
-                return ChapterImportResult.Failed(Error("InvalidEntryElement", $"Expected EditionEntry, got {child.Name}.",
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidEntryElement, $"Expected EditionEntry, got {child.Name}.",
                     new Dictionary<string, object?>(StringComparer.Ordinal) { ["name"] = child.Name }));
             }
 
@@ -156,7 +156,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
         if (entries.Count == 0 || entries.All(static entry => entry.ChapterSet.Chapters.Count == 0))
         {
-            return ChapterImportResult.Failed(Error("XmlNoChapters", "No Matroska XML chapters were parsed."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.XmlNoChapters, "No Matroska XML chapters were parsed."));
         }
 
         groups.Add(new ChapterImportSource(path, entries, defaultEntryIndex));
@@ -206,9 +206,9 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
     private static IReadOnlyList<Chapter> Renumber(IReadOnlyList<Chapter> chapters) =>
         chapters.Select((chapter, index) => chapter with { DisplayNumber = index + 1 }).ToList();
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
-    private static ChapterDiagnostic Error(string code, string message, IReadOnlyDictionary<string, object?> arguments) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message, IReadOnlyDictionary<string, object?> arguments) =>
         new(DiagnosticSeverity.Error, code, message, Arguments: arguments);
 }

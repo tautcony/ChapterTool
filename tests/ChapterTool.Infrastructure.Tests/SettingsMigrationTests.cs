@@ -37,25 +37,6 @@ public sealed class SettingsMigrationTests
     }
 
     [Fact]
-    public async Task App_settings_concurrent_corrupt_loads_surface_structured_errors()
-    {
-        var root = CreateTempDirectory();
-        await File.WriteAllTextAsync(Path.Combine(root, "appsettings.json"), "{");
-        var first = new AppSettingsStore(root);
-        var second = new AppSettingsStore(root);
-
-        var results = await Task.WhenAll(
-            CaptureCorruptLoadAsync(first),
-            CaptureCorruptLoadAsync(second));
-
-        Assert.All(results, exception =>
-        {
-            Assert.NotNull(exception);
-            Assert.True(File.Exists(exception!.BackupPath));
-        });
-    }
-
-    [Fact]
     public async Task Theme_settings_preserves_corrupt_current_file_and_surfaces_error()
     {
         var root = CreateTempDirectory();

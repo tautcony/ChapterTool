@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Importing.Media;
 
@@ -52,13 +53,13 @@ public sealed class FfprobeMediaChapterReaderTests
     public async Task ReadAsyncReturnsMissingDependencyDiagnostic()
     {
         var reader = new FfprobeMediaChapterReader(
-            new FakeToolLocator(new ExternalToolLocation(false, null, "MissingDependency", "ffprobe missing")),
+            new FakeToolLocator(new ExternalToolLocation(false, null, ChapterDiagnosticCode.MissingDependency, "ffprobe missing")),
             new FakeProcessRunner(SuccessfulJson("""{"chapters":[]}""")));
 
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("FfprobeMissingDependency", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.FfprobeMissingDependency, result.DiagnosticCode);
     }
 
     [Fact]
@@ -71,13 +72,13 @@ public sealed class FfprobeMediaChapterReaderTests
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("FfprobeCannotStart", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.FfprobeCannotStart, result.DiagnosticCode);
     }
 
     [Theory]
-    [InlineData(true, false, "FfprobeProcessTimedOut")]
-    [InlineData(false, true, "FfprobeProcessCancelled")]
-    public async Task ReadAsyncMapsTimeoutAndCancellation(bool timedOut, bool cancelled, string expectedCode)
+    [InlineData(true, false, ChapterDiagnosticReason.TimedOut)]
+    [InlineData(false, true, ChapterDiagnosticReason.Cancelled)]
+    public async Task ReadAsyncMapsTimeoutAndCancellation(bool timedOut, bool cancelled, ChapterDiagnosticReason reason)
     {
         var reader = new FfprobeMediaChapterReader(
             new FakeToolLocator(new ExternalToolLocation(true, "ffprobe")),
@@ -86,7 +87,7 @@ public sealed class FfprobeMediaChapterReaderTests
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal(expectedCode, result.DiagnosticCode);
+        Assert.Equal(new ChapterDiagnosticCode(ChapterDiagnosticSource.FfprobeProcess, reason), result.DiagnosticCode);
     }
 
     [Fact]
@@ -99,15 +100,15 @@ public sealed class FfprobeMediaChapterReaderTests
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("FfprobeProcessFailed", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.FfprobeProcessFailed, result.DiagnosticCode);
         Assert.Contains("错误", result.Details, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("", "FfprobeEmptyOutput")]
-    [InlineData("{not json", "FfprobeParseFailed")]
-    [InlineData("""{"chapters":"not an array"}""", "FfprobeParseFailed")]
-    public async Task ReadAsyncMapsEmptyAndMalformedOutput(string stdout, string expectedCode)
+    [InlineData("", ChapterDiagnosticSource.FfprobeOutput, ChapterDiagnosticReason.Empty)]
+    [InlineData("{not json", ChapterDiagnosticSource.Ffprobe, ChapterDiagnosticReason.ParseFailed)]
+    [InlineData("""{"chapters":"not an array"}""", ChapterDiagnosticSource.Ffprobe, ChapterDiagnosticReason.ParseFailed)]
+    public async Task ReadAsyncMapsEmptyAndMalformedOutput(string stdout, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var reader = new FfprobeMediaChapterReader(
             new FakeToolLocator(new ExternalToolLocation(true, "ffprobe")),
@@ -116,7 +117,7 @@ public sealed class FfprobeMediaChapterReaderTests
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal(expectedCode, result.DiagnosticCode);
+        Assert.Equal(new ChapterDiagnosticCode(source, reason), result.DiagnosticCode);
     }
 
     [Fact]
@@ -129,7 +130,7 @@ public sealed class FfprobeMediaChapterReaderTests
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("FfprobeOutputTruncated", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.FfprobeOutputTruncated, result.DiagnosticCode);
     }
 
     private static ProcessRunResult SuccessfulJson(string stdout) =>

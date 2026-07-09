@@ -11,8 +11,14 @@ namespace ChapterTool.Core.Diagnostics;
 /// <param name="Arguments">Structured diagnostic arguments for localization or formatting, when available.</param>
 public sealed record ChapterDiagnostic(
     DiagnosticSeverity Severity,
-    string Code,
+    ChapterDiagnosticCode Code,
     string Message,
     string? Location = null,
     string? Details = null,
-    IReadOnlyDictionary<string, object?>? Arguments = null);
+    IReadOnlyDictionary<string, object?>? Arguments = null)
+{
+    /// <summary>
+    /// Gets the stable string code used in localization resources, logs, and CLI output.
+    /// </summary>
+    public string DisplayCode => Code.ToDisplayCode();
+}

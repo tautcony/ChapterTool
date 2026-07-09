@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Tools;
 
@@ -112,7 +113,7 @@ public sealed class ExternalToolLocatorTests
 
         Assert.False(location.Found);
         Assert.Null(location.Path);
-        Assert.Equal("MissingDependency", location.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.MissingDependency, location.DiagnosticCode);
     }
 
     [Fact]
@@ -126,7 +127,7 @@ public sealed class ExternalToolLocatorTests
 
         Assert.False(location.Found);
         Assert.Null(location.Path);
-        Assert.Equal("MissingDependency", location.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.MissingDependency, location.DiagnosticCode);
     }
 
     [Fact]
@@ -143,7 +144,7 @@ public sealed class ExternalToolLocatorTests
 
         Assert.False(location.Found);
         Assert.Null(location.Path);
-        Assert.Equal("MissingDependency", location.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.MissingDependency, location.DiagnosticCode);
     }
 
     [Fact]
@@ -322,7 +323,7 @@ public sealed class ExternalToolLocatorTests
 
         Assert.False(location.Found);
         Assert.Null(location.Path);
-        Assert.Equal("MissingDependency", location.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.MissingDependency, location.DiagnosticCode);
     }
 
     [Fact]

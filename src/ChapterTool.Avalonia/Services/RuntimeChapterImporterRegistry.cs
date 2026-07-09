@@ -3,6 +3,7 @@ using ChapterTool.Core.Importing.Cue;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Importing.Text;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Bdmv;
@@ -63,16 +64,16 @@ public sealed class RuntimeChapterImporterRegistry(
         var extension = Path.GetExtension(path).ToLowerInvariant();
         return extension switch
         {
-            ".mp4" or ".m4a" or ".m4v" when ReferenceEquals(primaryImporter, mediaImporter) && HasDiagnostic(primaryResult, "FfprobeMissingDependency", "FfprobeCannotStart")
+            ".mp4" or ".m4a" or ".m4v" when ReferenceEquals(primaryImporter, mediaImporter) && HasDiagnostic(primaryResult, ChapterDiagnosticCode.FfprobeMissingDependency, ChapterDiagnosticCode.FfprobeCannotStart)
                 => mp4FallbackImporter,
-            ".mkv" or ".mka" or ".mks" or ".webm" when primaryImporter is MatroskaChapterImporter && HasDiagnostic(primaryResult, "MatroskaMissingDependency", "MatroskaCannotStart")
+            ".mkv" or ".mka" or ".mks" or ".webm" when primaryImporter is MatroskaChapterImporter && HasDiagnostic(primaryResult, ChapterDiagnosticCode.MatroskaMissingDependency, ChapterDiagnosticCode.MatroskaCannotStart)
                 => mediaImporter,
-            ".flac" when primaryImporter is FlacCueImporter && HasDiagnostic(primaryResult, "FlacEmbeddedCueNotFound")
+            ".flac" when primaryImporter is FlacCueImporter && HasDiagnostic(primaryResult, ChapterDiagnosticCode.FlacEmbeddedCueNotFound)
                 => mediaImporter,
             _ => null
         };
     }
 
-    private static bool HasDiagnostic(ChapterImportResult result, params string[] codes) =>
-        result.Diagnostics.Any(diagnostic => codes.Contains(diagnostic.Code, StringComparer.Ordinal));
+    private static bool HasDiagnostic(ChapterImportResult result, params ChapterDiagnosticCode[] codes) =>
+        result.Diagnostics.Any(diagnostic => codes.Contains(diagnostic.Code));
 }

@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
@@ -45,7 +46,7 @@ public sealed class MplsImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidMpls");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidMpls);
     }
 
     [Fact]
@@ -57,7 +58,7 @@ public sealed class MplsImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("bad-extension.mpls", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidMpls");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidMpls);
     }
 
     public static TheoryData<SampleExpectation> SampleExpectations() =>

@@ -62,274 +62,274 @@
 <data name="Common.Use" xml:space="preserve">
     <value>Use</value>
   </data>
-<data name="Diagnostic.DependencyExecutionCancelled" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">
     <value>The operation was cancelled.</value>
   </data>
-<data name="Diagnostic.DependencyExecutionFailed" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.Failed" xml:space="preserve">
     <value>The operation failed: {message}</value>
   </data>
-<data name="Diagnostic.DependencyExecutionTimedOut" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.TimedOut" xml:space="preserve">
     <value>The operation timed out.</value>
   </data>
-<data name="Diagnostic.DependencyOutputEmpty" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Empty" xml:space="preserve">
     <value>The chapter export file was empty.</value>
   </data>
-<data name="Diagnostic.DependencyOutputMissing" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Missing" xml:space="preserve">
     <value>The chapter export file was not created.</value>
   </data>
-<data name="Diagnostic.DependencyOutputUnrecognized" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Unrecognized" xml:space="preserve">
     <value>The playlist output was not recognized.</value>
   </data>
-<data name="Diagnostic.EmbeddedCueNotFound" xml:space="preserve">
+<data name="Diagnostic.EmbeddedCue.NotFound" xml:space="preserve">
     <value>No embedded cuesheet was found.</value>
   </data>
-<data name="Diagnostic.EmptyChapters" xml:space="preserve">
+<data name="Diagnostic.Chapters.Empty" xml:space="preserve">
     <value>No chapters were parsed.</value>
   </data>
-<data name="Diagnostic.EmptyCueFile" xml:space="preserve">
+<data name="Diagnostic.CueFile.Empty" xml:space="preserve">
     <value>CUE text is empty or no chapters were parsed.</value>
   </data>
-<data name="Diagnostic.EmptyXml" xml:space="preserve">
+<data name="Diagnostic.Xml.Empty" xml:space="preserve">
     <value>The XML document has no root element.</value>
   </data>
-<data name="Diagnostic.FfprobeCannotStart" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.CannotStart" xml:space="preserve">
     <value>ffprobe could not be started: {message}</value>
   </data>
-<data name="Diagnostic.FfprobeEmptyOutput" xml:space="preserve">
+<data name="Diagnostic.FfprobeOutput.Empty" xml:space="preserve">
     <value>ffprobe did not return chapter JSON.</value>
   </data>
-<data name="Diagnostic.FfprobeMissingDependency" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.MissingDependency" xml:space="preserve">
     <value>ffprobe was not found.</value>
   </data>
-<data name="Diagnostic.FfprobeParseFailed" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.ParseFailed" xml:space="preserve">
     <value>ffprobe output could not be parsed: {message}</value>
   </data>
-<data name="Diagnostic.FfprobeProcessCancelled" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.Cancelled" xml:space="preserve">
     <value>ffprobe was cancelled.</value>
   </data>
-<data name="Diagnostic.FfprobeProcessFailed" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.Failed" xml:space="preserve">
     <value>ffprobe exited with a non-zero code.</value>
   </data>
-<data name="Diagnostic.FfprobeProcessTimedOut" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.TimedOut" xml:space="preserve">
     <value>ffprobe timed out.</value>
   </data>
-<data name="Diagnostic.FlacEmbeddedCueNotFound" xml:space="preserve">
+<data name="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">
     <value>No Vorbis cuesheet comment was found.</value>
   </data>
-<data name="Diagnostic.ImporterFallbackUsed" xml:space="preserve">
+<data name="Diagnostic.ImporterFallback.Used" xml:space="preserve">
     <value>The primary importer was unavailable; a fallback importer was used.</value>
   </data>
-<data name="Diagnostic.InvalidChapterIndex" xml:space="preserve">
+<data name="Diagnostic.ChapterIndex.Invalid" xml:space="preserve">
     <value>Chapter index {index} is out of range.</value>
   </data>
-<data name="Diagnostic.InvalidChapterPair" xml:space="preserve">
+<data name="Diagnostic.ChapterPair.Invalid" xml:space="preserve">
     <value>A chapter line could not be parsed: {line}</value>
   </data>
-<data name="Diagnostic.InvalidChapterText" xml:space="preserve">
+<data name="Diagnostic.ChapterText.Invalid" xml:space="preserve">
     <value>Chapter text is empty or has no valid entries.</value>
   </data>
-<data name="Diagnostic.InvalidChapterTimestamp" xml:space="preserve">
+<data name="Diagnostic.ChapterTimestamp.Invalid" xml:space="preserve">
     <value>A media chapter had no valid non-negative start timestamp.</value>
   </data>
-<data name="Diagnostic.InvalidContainerHeader" xml:space="preserve">
+<data name="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">
     <value>The file is not a supported container.</value>
   </data>
-<data name="Diagnostic.InvalidEntryElement" xml:space="preserve">
+<data name="Diagnostic.EntryElement.Invalid" xml:space="preserve">
     <value>Expected EditionEntry, got {name}.</value>
   </data>
-<data name="Diagnostic.InvalidExpression" xml:space="preserve">
+<data name="Diagnostic.Expression.Invalid" xml:space="preserve">
     <value>The expression is invalid: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.Incomplete" xml:space="preserve">
+  <data name="Diagnostic.Expression.Incomplete" xml:space="preserve">
     <value>The expression did not reduce to one value.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.InsufficientOperands" xml:space="preserve">
+  <data name="Diagnostic.Expression.InsufficientOperands" xml:space="preserve">
     <value>Token '{token}' requires more operands.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.InvalidCharacter" xml:space="preserve">
+  <data name="Diagnostic.ExpressionCharacter.Invalid" xml:space="preserve">
     <value>Invalid character '{character}'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MisplacedComma" xml:space="preserve">
+  <data name="Diagnostic.ExpressionComma.Misplaced" xml:space="preserve">
     <value>Misplaced comma.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperandBeforeParen" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperandBeforeParen.Missing" xml:space="preserve">
     <value>Missing operand before ')'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperator" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.Missing" xml:space="preserve">
     <value>Missing operator before '{token}'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeFunction" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperatorBeforeFunction.Missing" xml:space="preserve">
     <value>Missing operator before function '{token}'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeParen" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperatorBeforeParen.Missing" xml:space="preserve">
     <value>Missing operator before '('.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.OperatorRequiresLeftOperand" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.RequiresLeftOperand" xml:space="preserve">
     <value>Operator '{token}' requires a left operand.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryMissingCondition" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryCondition.Missing" xml:space="preserve">
     <value>Operator '?' requires a condition.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryMissingTrueExpression" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryTrueExpression.Missing" xml:space="preserve">
     <value>Operator ':' requires a true expression.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedColon" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryColon.Unmatched" xml:space="preserve">
     <value>Operator ':' requires a matching '?'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedQuestion" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryQuestion.Unmatched" xml:space="preserve">
     <value>Operator '?' requires a matching ':'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnbalancedParentheses" xml:space="preserve">
+  <data name="Diagnostic.ExpressionParentheses.Unbalanced" xml:space="preserve">
     <value>Unbalanced parentheses.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnknownToken" xml:space="preserve">
+  <data name="Diagnostic.ExpressionToken.Unknown" xml:space="preserve">
     <value>Unknown token '{token}'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedFunction" xml:space="preserve">
+  <data name="Diagnostic.ExpressionFunction.Unsupported" xml:space="preserve">
     <value>Unsupported function '{function}'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedOperator" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.Unsupported" xml:space="preserve">
     <value>Unsupported operator '{token}'.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedToken" xml:space="preserve">
+  <data name="Diagnostic.ExpressionToken.Unsupported" xml:space="preserve">
     <value>Unsupported token '{token}'.</value>
   </data>
-<data name="Diagnostic.InvalidExpressionTime" xml:space="preserve">
+<data name="Diagnostic.ExpressionTime.Invalid" xml:space="preserve">
     <value>The expression time is invalid: {message}</value>
   </data>
-<data name="Diagnostic.InvalidFrameRate" xml:space="preserve">
+<data name="Diagnostic.FrameRate.Invalid" xml:space="preserve">
     <value>Frame rate must be greater than zero.</value>
   </data>
-<data name="Diagnostic.InvalidFrameText" xml:space="preserve">
+<data name="Diagnostic.FrameText.Invalid" xml:space="preserve">
     <value>Frame text did not contain a frame number or fps was invalid.</value>
   </data>
-<data name="Diagnostic.InvalidIfo" xml:space="preserve">
+<data name="Diagnostic.Ifo.Invalid" xml:space="preserve">
     <value>The IFO file is invalid: {message}</value>
   </data>
-<data name="Diagnostic.InvalidMpls" xml:space="preserve">
+<data name="Diagnostic.Mpls.Invalid" xml:space="preserve">
     <value>The MPLS file is invalid: {message}</value>
   </data>
-<data name="Diagnostic.InvalidStructure" xml:space="preserve">
+<data name="Diagnostic.Structure.Invalid" xml:space="preserve">
     <value>The Blu-ray BDMV/PLAYLIST directory was not found.</value>
   </data>
-<data name="Diagnostic.InvalidTimeText" xml:space="preserve">
+<data name="Diagnostic.TimeText.Invalid" xml:space="preserve">
     <value>Time text is empty or does not match the expected format.</value>
   </data>
-<data name="Diagnostic.InvalidTimecodeText" xml:space="preserve">
+<data name="Diagnostic.TimecodeText.Invalid" xml:space="preserve">
     <value>No valid timecode entries were found.</value>
   </data>
-<data name="Diagnostic.InvalidXml" xml:space="preserve">
+<data name="Diagnostic.Xml.Invalid" xml:space="preserve">
     <value>The XML could not be parsed: {message}</value>
   </data>
-<data name="Diagnostic.MalformedCueSyntax" xml:space="preserve">
+<data name="Diagnostic.CueSyntax.Malformed" xml:space="preserve">
     <value>CUE index syntax is unsupported or malformed.</value>
   </data>
-<data name="Diagnostic.MatroskaCannotStart" xml:space="preserve">
+<data name="Diagnostic.Matroska.CannotStart" xml:space="preserve">
     <value>mkvextract could not be started: {message}</value>
   </data>
-<data name="Diagnostic.MatroskaMissingDependency" xml:space="preserve">
+<data name="Diagnostic.Matroska.MissingDependency" xml:space="preserve">
     <value>mkvextract was not found.</value>
   </data>
-<data name="Diagnostic.MatroskaNoChapters" xml:space="preserve">
+<data name="Diagnostic.MatroskaChapters.None" xml:space="preserve">
     <value>mkvextract did not return chapter XML.</value>
   </data>
-<data name="Diagnostic.MatroskaProcessCancelled" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.Cancelled" xml:space="preserve">
     <value>mkvextract was cancelled: {message}</value>
   </data>
-<data name="Diagnostic.MatroskaProcessFailed" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.Failed" xml:space="preserve">
     <value>mkvextract failed: {message}</value>
   </data>
-<data name="Diagnostic.MatroskaProcessTimedOut" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.TimedOut" xml:space="preserve">
     <value>mkvextract timed out: {message}</value>
   </data>
-<data name="Diagnostic.MediaReadFailed" xml:space="preserve">
+<data name="Diagnostic.MediaRead.Failed" xml:space="preserve">
     <value>Media chapters could not be read: {message}</value>
   </data>
-<data name="Diagnostic.MissingDependency" xml:space="preserve">
+<data name="Diagnostic.Dependency.Missing" xml:space="preserve">
     <value>eac3to was not found.</value>
   </data>
-<data name="Diagnostic.Mp4FileInaccessible" xml:space="preserve">
+<data name="Diagnostic.Mp4File.Inaccessible" xml:space="preserve">
     <value>The MP4 file could not be accessed: {message}</value>
   </data>
-<data name="Diagnostic.Mp4FileNotFound" xml:space="preserve">
+<data name="Diagnostic.Mp4File.NotFound" xml:space="preserve">
     <value>The MP4 file was not found: {message}</value>
   </data>
-<data name="Diagnostic.Mp4InvalidPath" xml:space="preserve">
+<data name="Diagnostic.Mp4Path.Invalid" xml:space="preserve">
     <value>The MP4 path is empty.</value>
   </data>
-<data name="Diagnostic.Mp4MalformedMetadata" xml:space="preserve">
+<data name="Diagnostic.Mp4Metadata.Malformed" xml:space="preserve">
     <value>The MP4 chapter metadata is malformed.</value>
   </data>
-<data name="Diagnostic.Mp4ReadFailed" xml:space="preserve">
+<data name="Diagnostic.Mp4Read.Failed" xml:space="preserve">
     <value>The MP4 file could not be read: {message}</value>
   </data>
-<data name="Diagnostic.Mp4UnsupportedMetadata" xml:space="preserve">
+<data name="Diagnostic.Mp4Metadata.Unsupported" xml:space="preserve">
     <value>The MP4 chapter metadata is unsupported.</value>
   </data>
-<data name="Diagnostic.NativeLibraryMissing" xml:space="preserve">
+<data name="Diagnostic.NativeLibrary.Missing" xml:space="preserve">
     <value>A native dependency was not found: {message}</value>
   </data>
-<data name="Diagnostic.NoChapters" xml:space="preserve">
+<data name="Diagnostic.Chapters.None" xml:space="preserve">
     <value>No chapters are available for export.</value>
   </data>
-<data name="Diagnostic.NoChaptersFound" xml:space="preserve">
+<data name="Diagnostic.Chapters.NotFound" xml:space="preserve">
     <value>No chapters were found.</value>
   </data>
-<data name="Diagnostic.NoRowsSelected" xml:space="preserve">
+<data name="Diagnostic.Rows.NoneSelected" xml:space="preserve">
     <value>Select one or more chapter rows first.</value>
   </data>
-<data name="Diagnostic.NoSegments" xml:space="preserve">
+<data name="Diagnostic.Segments.None" xml:space="preserve">
     <value>No chapter segments are available.</value>
   </data>
-<data name="Diagnostic.OgmInvalidFirstLine" xml:space="preserve">
+<data name="Diagnostic.OgmFirstLine.Invalid" xml:space="preserve">
     <value>The first OGM chapter line is missing or invalid.</value>
   </data>
-<data name="Diagnostic.OrderShiftNormalized" xml:space="preserve">
+<data name="Diagnostic.OrderShift.Normalized" xml:space="preserve">
     <value>Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.</value>
   </data>
-<data name="Diagnostic.PartialParse" xml:space="preserve">
+<data name="Diagnostic.Parse.Partial" xml:space="preserve">
     <value>Parsing stopped before all input was consumed.</value>
   </data>
-<data name="Diagnostic.PremiereMarkerListInvalid" xml:space="preserve">
+<data name="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">
     <value>Unable to parse the Adobe Premiere Pro chapter marker list.</value>
   </data>
-<data name="Diagnostic.Saved" xml:space="preserve">
+<data name="Diagnostic.Save.Succeeded" xml:space="preserve">
     <value>Saved: {path}</value>
   </data>
-<data name="Diagnostic.Stdout" xml:space="preserve">
+<data name="Diagnostic.StandardOutput.Captured" xml:space="preserve">
     <value>Command output: {output}</value>
   </data>
-<data name="Diagnostic.UnsupportedAppendSource" xml:space="preserve">
+<data name="Diagnostic.AppendSource.Unsupported" xml:space="preserve">
     <value>Only MPLS chapter groups can be appended.</value>
   </data>
-<data name="Diagnostic.UnsupportedCombineSource" xml:space="preserve">
+<data name="Diagnostic.CombineSource.Unsupported" xml:space="preserve">
     <value>Only MPLS and DVD chapter groups can be combined.</value>
   </data>
-<data name="Diagnostic.UnsupportedExportFormat" xml:space="preserve">
+<data name="Diagnostic.ExportFormat.Unsupported" xml:space="preserve">
     <value>Unsupported export format.</value>
   </data>
-<data name="Diagnostic.UnsupportedSource" xml:space="preserve">
+<data name="Diagnostic.Source.Unsupported" xml:space="preserve">
     <value>Unsupported source extension: {extension}</value>
   </data>
-<data name="Diagnostic.WebVttInvalidHeader" xml:space="preserve">
+<data name="Diagnostic.WebVttHeader.Invalid" xml:space="preserve">
     <value>The WebVTT header is missing.</value>
   </data>
-<data name="Diagnostic.WebVttMalformedCue" xml:space="preserve">
+<data name="Diagnostic.WebVttCue.Malformed" xml:space="preserve">
     <value>A WebVTT cue could not be parsed.</value>
   </data>
-<data name="Diagnostic.WebVttUnsupportedTimingSettings" xml:space="preserve">
+<data name="Diagnostic.WebVttTimingSettings.Unsupported" xml:space="preserve">
     <value>The WebVTT timing settings are unsupported.</value>
   </data>
-<data name="Diagnostic.XmlInvalidRoot" xml:space="preserve">
+<data name="Diagnostic.XmlRoot.Invalid" xml:space="preserve">
     <value>Expected Chapters root, got {name}.</value>
   </data>
-<data name="Diagnostic.XmlNoChapters" xml:space="preserve">
+<data name="Diagnostic.XmlChapters.None" xml:space="preserve">
     <value>No Matroska XML chapters were parsed.</value>
   </data>
-<data name="Diagnostic.XplNoChapters" xml:space="preserve">
+<data name="Diagnostic.XplChapters.None" xml:space="preserve">
     <value>No HD-DVD chapters were parsed.</value>
   </data>
-<data name="Diagnostic.XplParseFailed" xml:space="preserve">
+<data name="Diagnostic.XplParse.Failed" xml:space="preserve">
     <value>The XPL playlist could not be parsed: {message}</value>
   </data>
 <data name="EditKind.Frame" xml:space="preserve">
@@ -827,28 +827,28 @@
   <data name="Status.LuaExpressionScriptLoaded" xml:space="preserve">
     <value>Lua script loaded: {path}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.Lua" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.Invalid" xml:space="preserve">
     <value>Lua expression failed: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaCompile" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">
     <value>Lua expression syntax error: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaRuntime" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.RuntimeFailed" xml:space="preserve">
     <value>Lua expression runtime error: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaInvalidReturn" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionReturn.Invalid" xml:space="preserve">
     <value>Lua expression must return a finite number.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaMissingReturn" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionReturn.Missing" xml:space="preserve">
     <value>Lua expression did not return a value.</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaUnknownToken" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionToken.Unknown" xml:space="preserve">
     <value>Unknown Lua token: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaCanceled" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">
     <value>Lua expression was canceled.</value>
   </data>
-  <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
+                <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
     <value>Check the Lua expression syntax.</value>
   </data>
   <data name="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">

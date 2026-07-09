@@ -48,7 +48,7 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
         var lines = text.Trim(' ', '\t', '\r', '\n').Split('\n');
         if (lines.Length == 0 || !TimeLineRegex().IsMatch(lines[0]))
         {
-            return ChapterImportResult.Failed(Error("OgmInvalidFirstLine", "The first OGM chapter line is missing or invalid."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.OgmInvalidFirstLine, "The first OGM chapter line is missing or invalid."));
         }
 
         var firstTimeText = TimeValueRegex().Match(lines[0]).Value;
@@ -90,12 +90,12 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
 
         if (chapters.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("EmptyChapters", "No OGM chapters were parsed."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmptyChapters, "No OGM chapters were parsed."));
         }
 
         if (state == State.Name)
         {
-            diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, "PartialParse", "Parsing stopped after a chapter time without a matching name."));
+            diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.PartialParse, "Parsing stopped after a chapter time without a matching name."));
             return Success(path, chapters, diagnostics, isPartial: true);
         }
 
@@ -110,11 +110,11 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
     {
         if (chapters.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("InvalidChapterPair", $"Unable to parse OGM chapter line: {line}",
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidChapterPair, $"Unable to parse OGM chapter line: {line}",
                 new Dictionary<string, object?>(StringComparer.Ordinal) { ["line"] = line }));
         }
 
-        diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, "PartialParse", $"Parsing stopped at line: {line}"));
+        diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.PartialParse, $"Parsing stopped at line: {line}"));
         return Success(path, chapters, diagnostics, isPartial: true);
     }
 
@@ -136,10 +136,10 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
         return new ChapterImportResult(true, [group], diagnostics, isPartial);
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
-    private static ChapterDiagnostic Error(string code, string message, IReadOnlyDictionary<string, object?> arguments) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message, IReadOnlyDictionary<string, object?> arguments) =>
         new(DiagnosticSeverity.Error, code, message, Arguments: arguments);
 
     private enum State

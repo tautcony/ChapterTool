@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
@@ -36,7 +37,7 @@ public sealed class ChapterEditingServiceTests
         var result = service.EditFrame(sample, 1, text, framesPerSecond);
 
         Assert.Equal(sample.Chapters[1].StartTime, result.ChapterSet.Chapters[1].StartTime);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameText");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameText);
     }
 
     [Fact]
@@ -73,7 +74,7 @@ public sealed class ChapterEditingServiceTests
         var result = service.ApplyOrderShift(Sample(), -2);
 
         Assert.Equal([1, 2, 3], result.ChapterSet.Chapters.Select(static chapter => chapter.DisplayNumber).ToArray());
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OrderShiftNormalized");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OrderShiftNormalized);
     }
 
     [Fact]

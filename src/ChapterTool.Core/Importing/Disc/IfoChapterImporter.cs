@@ -45,14 +45,14 @@ public sealed partial class IfoChapterImporter : IChapterImporter
                 .ToList();
             if (entries.Count == 0)
             {
-                return ChapterImportResult.Failed(Error("NoChaptersFound", "No DVD chapters were parsed."));
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.NoChaptersFound, "No DVD chapters were parsed."));
             }
 
             return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or EndOfStreamException)
         {
-            return ChapterImportResult.Failed(Error("InvalidIfo", exception.Message));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidIfo, exception.Message));
         }
         finally
         {
@@ -230,7 +230,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
 
     private static uint ToInt32(byte[] bytes) => (uint)((bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3]);
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
     [GeneratedRegex(@"^VTS_(?<Title>\d+)_0\.IFO$", RegexOptions.IgnoreCase)]

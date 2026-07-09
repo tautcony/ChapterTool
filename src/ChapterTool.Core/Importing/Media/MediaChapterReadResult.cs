@@ -11,7 +11,7 @@ namespace ChapterTool.Core.Importing.Media;
 public sealed record MediaChapterReadResult(
     bool Success,
     IReadOnlyList<MediaChapterEntry> Chapters,
-    string? DiagnosticCode = null,
+    Diagnostics.ChapterDiagnosticCode? DiagnosticCode = null,
     string? Message = null,
     string? Details = null)
 {
@@ -29,6 +29,6 @@ public sealed record MediaChapterReadResult(
     /// <param name="message">The diagnostic message.</param>
     /// <param name="details">Additional diagnostic details.</param>
     /// <returns>The operation result.</returns>
-    public static MediaChapterReadResult Failed(string code, string message, string? details = null) =>
+    public static MediaChapterReadResult Failed(Diagnostics.ChapterDiagnosticCode code, string message, string? details = null) =>
         new(false, [], code, message, details);
 }

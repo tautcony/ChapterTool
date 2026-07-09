@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
@@ -38,12 +39,12 @@ public sealed class MatroskaChapterImporterTests
     [Fact]
     public async Task ImportAsyncReturnsMissingToolDiagnostic()
     {
-        var importer = NewImporter(location: new ExternalToolLocation(false, null, "MissingDependency", "mkvextract missing"));
+        var importer = NewImporter(location: new ExternalToolLocation(false, null, ChapterDiagnosticCode.MissingDependency, "mkvextract missing"));
 
         var result = await importer.ImportAsync(new ChapterImportRequest(@"C:\media\movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaMissingDependency");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaMissingDependency);
     }
 
     [Fact]
@@ -70,16 +71,16 @@ public sealed class MatroskaChapterImporterTests
     }
 
     [Theory]
-    [InlineData("", "", "MatroskaNoChapters")]
-    [InlineData("", "warnings only", "MatroskaProcessFailed")]
-    public async Task ImportAsyncFailsEmptyStdout(string stdout, string stderr, string code)
+    [InlineData("", "", ChapterDiagnosticSource.MatroskaChapters, ChapterDiagnosticReason.None)]
+    [InlineData("", "warnings only", ChapterDiagnosticSource.MatroskaProcess, ChapterDiagnosticReason.Failed)]
+    public async Task ImportAsyncFailsEmptyStdout(string stdout, string stderr, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var importer = NewImporter(result: Successful(stdout, stderr));
 
         var result = await importer.ImportAsync(new ChapterImportRequest(@"C:\media\movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     [Fact]
@@ -99,7 +100,7 @@ public sealed class MatroskaChapterImporterTests
 
         Assert.False(result.Success);
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("MatroskaProcessFailed", diagnostic.Code);
+        Assert.Equal(ChapterDiagnosticCode.MatroskaProcessFailed, diagnostic.Code);
         Assert.Contains("ExitCode: 2", diagnostic.Message, StringComparison.Ordinal);
     }
 
@@ -120,7 +121,7 @@ public sealed class MatroskaChapterImporterTests
 
         Assert.False(result.Success);
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("MatroskaProcessFailed", diagnostic.Code);
+        Assert.Equal(ChapterDiagnosticCode.MatroskaProcessFailed, diagnostic.Code);
         Assert.Contains("错误", diagnostic.Message, StringComparison.Ordinal);
     }
 
@@ -132,7 +133,7 @@ public sealed class MatroskaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaProcessTimedOut");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaProcessTimedOut);
     }
 
     [Fact]
@@ -143,7 +144,7 @@ public sealed class MatroskaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaProcessCancelled");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaProcessCancelled);
     }
 
     [Fact]
@@ -154,7 +155,7 @@ public sealed class MatroskaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaOutputTruncated");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaOutputTruncated);
     }
 
     [Fact]

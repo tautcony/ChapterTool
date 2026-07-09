@@ -46,13 +46,13 @@ public sealed class TakCueImporter(CueSheetParser? parser = null) : IChapterImpo
 
         if (bytes.Length < 4 || Encoding.ASCII.GetString(bytes, 0, 4) != "tBaK")
         {
-            return ChapterImportResult.Failed(Error("InvalidContainerHeader", "The file is not a TAK container."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidContainerHeader, "The file is not a TAK container."));
         }
 
         var cue = ExtractCue(bytes.AsSpan(Math.Min(4, bytes.Length)));
         if (cue is null)
         {
-            return ChapterImportResult.Failed(Error("EmbeddedCueNotFound", "No TAK cuesheet marker was found."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmbeddedCueNotFound, "No TAK cuesheet marker was found."));
         }
 
         return CueSheetParser.Parse(cue, request.Path);
@@ -140,6 +140,6 @@ public sealed class TakCueImporter(CueSheetParser? parser = null) : IChapterImpo
         return -1;
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 }

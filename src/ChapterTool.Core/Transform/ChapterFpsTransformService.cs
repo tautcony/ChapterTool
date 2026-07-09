@@ -22,7 +22,7 @@ public sealed class ChapterFpsTransformService
             return new ChangeFpsResult(
                 false,
                 info,
-                [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidFrameRate", "Source and target frame rates must be greater than zero.")]);
+                [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidFrameRate, "Source and target frame rates must be greater than zero.")]);
         }
 
         var chapters = info.Chapters.Select(chapter => TransformChapter(chapter, sourceFps, targetFps)).ToList();

@@ -50,7 +50,7 @@ public sealed class MplsChapterImporter : IChapterImporter
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
         {
-            return ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidMpls", exception.Message));
+            return ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidMpls, exception.Message));
         }
     }
 

@@ -329,7 +329,7 @@ public sealed partial class ExpressionEditor : UserControl
         primaryDiagnostic = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Length > 0) ?? result.Diagnostics.FirstOrDefault();
         var hasDiagnostic = primaryDiagnostic is not null;
         diagnosticTooltipText = hasDiagnostic
-            ? LocalizeDiagnostic(primaryDiagnostic!.Diagnostic.Code, primaryDiagnostic.Diagnostic.Message, primaryDiagnostic.Diagnostic.Arguments) + Environment.NewLine + LocalizeSuggestion(primaryDiagnostic.Suggestion)
+            ? LocalizeDiagnostic(primaryDiagnostic!.Diagnostic.DisplayCode, primaryDiagnostic.Diagnostic.Message, primaryDiagnostic.Diagnostic.Arguments) + Environment.NewLine + LocalizeSuggestion(primaryDiagnostic.Suggestion)
             : string.Empty;
         DiagnosticTextBlock.Text = diagnosticTooltipText;
         if (!hasDiagnostic)

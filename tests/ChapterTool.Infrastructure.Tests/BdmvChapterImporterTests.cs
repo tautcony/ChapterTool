@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Infrastructure.Services;
@@ -54,7 +55,7 @@ public sealed class BdmvChapterImporterTests
         Assert.Equal(2, runner.Requests.Count);
         Assert.False(File.Exists(runner.ExportedPaths.Single()));
         Assert.Contains(progressValues, value => value is > 0 and < 1);
-        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "Stdout");
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.Stdout);
     }
 
     [Fact]
@@ -99,18 +100,18 @@ public sealed class BdmvChapterImporterTests
     [Fact]
     public async Task ImportAsyncFailsMissingDependency()
     {
-        var importer = new BdmvChapterImporter(new FakeLocator(new ExternalToolLocation(false, null, "MissingDependency", "missing")), new FakeRunner([]), new ChapterTimeFormatter());
+        var importer = new BdmvChapterImporter(new FakeLocator(new ExternalToolLocation(false, null, ChapterDiagnosticCode.MissingDependency, "missing")), new FakeRunner([]), new ChapterTimeFormatter());
 
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MissingDependency");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MissingDependency);
     }
 
     [Theory]
-    [InlineData("", "DependencyOutputUnrecognized")]
-    [InlineData("stderr", "DependencyExecutionFailed")]
-    public async Task ImportAsyncDiagnosesBadDependencyOutput(string stderr, string code)
+    [InlineData("", ChapterDiagnosticSource.DependencyOutput, ChapterDiagnosticReason.Unrecognized)]
+    [InlineData("stderr", ChapterDiagnosticSource.DependencyExecution, ChapterDiagnosticReason.Failed)]
+    public async Task ImportAsyncDiagnosesBadDependencyOutput(string stderr, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var resultToReturn = stderr.Length == 0
             ? Success("not a playlist")
@@ -120,7 +121,7 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     [Fact]
@@ -145,7 +146,7 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyOutputTruncated");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.DependencyOutputTruncated);
     }
 
     [Fact]
@@ -167,7 +168,7 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OgmInvalidFirstLine");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OgmInvalidFirstLine);
         Assert.Equal(2, runner.Requests.Count);
     }
 
@@ -190,7 +191,7 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyOutputMissing");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.DependencyOutputMissing);
     }
 
     [Fact]
@@ -215,13 +216,13 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyExecutionFailed");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.DependencyExecutionFailed);
     }
 
     [Theory]
-    [InlineData(true, false, "DependencyExecutionTimedOut")]
-    [InlineData(false, true, "DependencyExecutionCancelled")]
-    public async Task ImportAsyncDiagnosesListTimeoutAndCancellation(bool timedOut, bool cancelled, string code)
+    [InlineData(true, false, ChapterDiagnosticReason.TimedOut)]
+    [InlineData(false, true, ChapterDiagnosticReason.Cancelled)]
+    public async Task ImportAsyncDiagnosesListTimeoutAndCancellation(bool timedOut, bool cancelled, ChapterDiagnosticReason reason)
     {
         var importer = NewImporter(new FakeRunner([
             new ProcessRunResult(null, "", "", timedOut, cancelled, "eac3to", [], null)
@@ -230,13 +231,13 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(ChapterDiagnosticSource.DependencyExecution, reason));
     }
 
     [Theory]
-    [InlineData(true, false, "DependencyExecutionTimedOut")]
-    [InlineData(false, true, "DependencyExecutionCancelled")]
-    public async Task ImportAsyncDiagnosesExportTimeoutAndCancellation(bool timedOut, bool cancelled, string code)
+    [InlineData(true, false, ChapterDiagnosticReason.TimedOut)]
+    [InlineData(false, true, ChapterDiagnosticReason.Cancelled)]
+    public async Task ImportAsyncDiagnosesExportTimeoutAndCancellation(bool timedOut, bool cancelled, ChapterDiagnosticReason reason)
     {
         var root = CreateBdmvRoot();
         File.Copy(
@@ -254,7 +255,7 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(ChapterDiagnosticSource.DependencyExecution, reason));
     }
 
     [Fact]
@@ -265,7 +266,7 @@ public sealed class BdmvChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyCannotStart");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.DependencyCannotStart);
     }
 
     private static BdmvChapterImporter NewImporter(IProcessRunner runner) =>

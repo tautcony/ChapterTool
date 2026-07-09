@@ -39,14 +39,14 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
         {
             cue = ReadCue(stream);
         }
-        catch (InvalidDataException exception) when (exception.Message == "InvalidContainerHeader")
+        catch (InvalidDataException exception) when (exception.Message == ChapterDiagnosticCode.InvalidContainerHeader.ToDisplayCode())
         {
-            return ChapterImportResult.Failed(Error("InvalidContainerHeader", "The file is not a FLAC container."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidContainerHeader, "The file is not a FLAC container."));
         }
 
         if (cue is null)
         {
-            return ChapterImportResult.Failed(Error("FlacEmbeddedCueNotFound", "No Vorbis cuesheet comment was found."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.FlacEmbeddedCueNotFound, "No Vorbis cuesheet comment was found."));
         }
 
         return CueSheetParser.Parse(cue, request.Path);
@@ -57,7 +57,7 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
         Span<byte> header = stackalloc byte[4];
         if (stream.Read(header) != 4 || Encoding.ASCII.GetString(header) != "fLaC")
         {
-            throw new InvalidDataException("InvalidContainerHeader");
+            throw new InvalidDataException(ChapterDiagnosticCode.InvalidContainerHeader.ToDisplayCode());
         }
 
         Span<byte> lengthBytes = stackalloc byte[3];
@@ -151,6 +151,6 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
         return true;
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 }

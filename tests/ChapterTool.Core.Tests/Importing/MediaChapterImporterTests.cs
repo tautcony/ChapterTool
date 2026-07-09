@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
@@ -72,7 +73,7 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("empty.wav"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "NoChaptersFound");
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.NoChaptersFound);
     }
 
     [Fact]
@@ -85,7 +86,7 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("bad.mp3"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "InvalidChapterTimestamp");
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidChapterTimestamp);
     }
 
     [Fact]
@@ -98,7 +99,7 @@ public sealed class MediaChapterImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("huge.mp4"), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "InvalidChapterTimestamp");
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidChapterTimestamp);
     }
 
     [Fact]

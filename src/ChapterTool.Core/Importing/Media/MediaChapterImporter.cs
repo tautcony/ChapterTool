@@ -67,21 +67,21 @@ public sealed class MediaChapterImporter(
         {
             return ChapterImportResult.Failed(new ChapterDiagnostic(
                 DiagnosticSeverity.Error,
-                read.DiagnosticCode ?? "MediaReadFailed",
+                read.DiagnosticCode ?? ChapterDiagnosticCode.MediaReadFailed,
                 read.Message ?? "Media chapter reader failed.",
                 Details: read.Details));
         }
 
         if (read.Chapters.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("NoChaptersFound", "No media chapters were read."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.NoChaptersFound, "No media chapters were read."));
         }
 
         var diagnostics = new List<ChapterDiagnostic>();
         var normalized = NormalizeEntries(read.Chapters, diagnostics);
         if (normalized.Count == 0)
         {
-            diagnostics.Add(Error("InvalidChapterTimestamp", "No media chapter had a valid non-negative start timestamp."));
+            diagnostics.Add(Error(ChapterDiagnosticCode.InvalidChapterTimestamp, "No media chapter had a valid non-negative start timestamp."));
             return new ChapterImportResult(false, [], diagnostics);
         }
 
@@ -182,7 +182,7 @@ public sealed class MediaChapterImporter(
             {
                 diagnostics.Add(new ChapterDiagnostic(
                     DiagnosticSeverity.Warning,
-                    "InvalidChapterTimestamp",
+                    ChapterDiagnosticCode.InvalidChapterTimestamp,
                     $"Skipped media chapter at source index {entry.SourceOrder} because it has no valid non-negative start timestamp."));
                 continue;
             }
@@ -274,7 +274,7 @@ public sealed class MediaChapterImporter(
     private static ReferencedMediaFile CreateReference(string path) =>
         new(Path.GetFileName(path), Path.GetFileName(path), path);
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
     private sealed record NormalizedMediaChapter(MediaChapterEntry Entry, TimeSpan Start, TimeSpan? End);

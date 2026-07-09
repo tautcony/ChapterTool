@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
@@ -18,7 +19,7 @@ public sealed class FfprobeMediaChapterReader(
         if (!location.Found || string.IsNullOrWhiteSpace(location.Path))
         {
             return MediaChapterReadResult.Failed(
-                "FfprobeMissingDependency",
+                ChapterDiagnosticCode.FfprobeMissingDependency,
                 location.Message ?? "ffprobe was not found.");
         }
 
@@ -36,33 +37,33 @@ public sealed class FfprobeMediaChapterReader(
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
         {
             return MediaChapterReadResult.Failed(
-                "FfprobeCannotStart",
+                ChapterDiagnosticCode.FfprobeCannotStart,
                 $"ffprobe could not be started: {exception.Message}");
         }
 
         if (result.Cancelled)
         {
-            return MediaChapterReadResult.Failed("FfprobeProcessCancelled", "ffprobe was cancelled.", ProcessDetails(result));
+            return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeProcessCancelled, "ffprobe was cancelled.", ProcessDetails(result));
         }
 
         if (result.TimedOut)
         {
-            return MediaChapterReadResult.Failed("FfprobeProcessTimedOut", "ffprobe timed out.", ProcessDetails(result));
+            return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeProcessTimedOut, "ffprobe timed out.", ProcessDetails(result));
         }
 
         if (result.ExitCode is not 0)
         {
-            return MediaChapterReadResult.Failed("FfprobeProcessFailed", "ffprobe exited with a non-zero code.", ProcessDetails(result));
+            return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeProcessFailed, "ffprobe exited with a non-zero code.", ProcessDetails(result));
         }
 
         if (result.OutputTruncated)
         {
-            return MediaChapterReadResult.Failed("FfprobeOutputTruncated", "ffprobe output exceeded the capture limit and cannot be parsed safely.", ProcessDetails(result));
+            return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeOutputTruncated, "ffprobe output exceeded the capture limit and cannot be parsed safely.", ProcessDetails(result));
         }
 
         if (string.IsNullOrWhiteSpace(result.StandardOutput))
         {
-            return MediaChapterReadResult.Failed("FfprobeEmptyOutput", "ffprobe did not return chapter JSON.", ProcessDetails(result));
+            return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeEmptyOutput, "ffprobe did not return chapter JSON.", ProcessDetails(result));
         }
 
         return Parse(result.StandardOutput, result);
@@ -76,7 +77,7 @@ public sealed class FfprobeMediaChapterReader(
             var rawChapters = output?.Chapters;
             if (rawChapters is null || rawChapters.Length == 0)
             {
-                return MediaChapterReadResult.Failed("FfprobeParseFailed", "ffprobe JSON did not contain a chapters array.", ProcessDetails(result));
+                return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeParseFailed, "ffprobe JSON did not contain a chapters array.", ProcessDetails(result));
             }
 
             var chapters = new List<MediaChapterEntry>();
@@ -99,7 +100,7 @@ public sealed class FfprobeMediaChapterReader(
         }
         catch (JsonException exception)
         {
-            return MediaChapterReadResult.Failed("FfprobeParseFailed", exception.Message, ProcessDetails(result));
+            return MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeParseFailed, exception.Message, ProcessDetails(result));
         }
     }
 

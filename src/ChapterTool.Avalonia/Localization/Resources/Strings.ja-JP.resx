@@ -62,274 +62,274 @@
 <data name="Common.Use" xml:space="preserve">
     <value>使用</value>
   </data>
-<data name="Diagnostic.DependencyExecutionCancelled" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">
     <value>操作はキャンセルされました。</value>
   </data>
-<data name="Diagnostic.DependencyExecutionFailed" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.Failed" xml:space="preserve">
     <value>操作が失敗しました: {message}</value>
   </data>
-<data name="Diagnostic.DependencyExecutionTimedOut" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.TimedOut" xml:space="preserve">
     <value>操作がタイムアウトしました。</value>
   </data>
-<data name="Diagnostic.DependencyOutputEmpty" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Empty" xml:space="preserve">
     <value>章節エクスポートファイルが空です。</value>
   </data>
-<data name="Diagnostic.DependencyOutputMissing" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Missing" xml:space="preserve">
     <value>章節エクスポートファイルが作成されませんでした。</value>
   </data>
-<data name="Diagnostic.DependencyOutputUnrecognized" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Unrecognized" xml:space="preserve">
     <value>プレイリスト出力を認識できませんでした。</value>
   </data>
-<data name="Diagnostic.EmbeddedCueNotFound" xml:space="preserve">
+<data name="Diagnostic.EmbeddedCue.NotFound" xml:space="preserve">
     <value>埋め込み cuesheet が見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.EmptyChapters" xml:space="preserve">
+<data name="Diagnostic.Chapters.Empty" xml:space="preserve">
     <value>章節が解析されませんでした。</value>
   </data>
-<data name="Diagnostic.EmptyCueFile" xml:space="preserve">
+<data name="Diagnostic.CueFile.Empty" xml:space="preserve">
     <value>CUE テキストが空であるか、章節が解析されませんでした。</value>
   </data>
-<data name="Diagnostic.EmptyXml" xml:space="preserve">
+<data name="Diagnostic.Xml.Empty" xml:space="preserve">
     <value>XML ドキュメントにルート要素がありません。</value>
   </data>
-<data name="Diagnostic.FfprobeCannotStart" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.CannotStart" xml:space="preserve">
     <value>ffprobe を起動できませんでした: {message}</value>
   </data>
-<data name="Diagnostic.FfprobeEmptyOutput" xml:space="preserve">
+<data name="Diagnostic.FfprobeOutput.Empty" xml:space="preserve">
     <value>ffprobe が章節 JSON を返しませんでした。</value>
   </data>
-<data name="Diagnostic.FfprobeMissingDependency" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.MissingDependency" xml:space="preserve">
     <value>ffprobe が見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.FfprobeParseFailed" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.ParseFailed" xml:space="preserve">
     <value>ffprobe の出力を解析できませんでした: {message}</value>
   </data>
-<data name="Diagnostic.FfprobeProcessCancelled" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.Cancelled" xml:space="preserve">
     <value>ffprobe はキャンセルされました。</value>
   </data>
-<data name="Diagnostic.FfprobeProcessFailed" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.Failed" xml:space="preserve">
     <value>ffprobe は 0 以外の終了コードで終了しました。</value>
   </data>
-<data name="Diagnostic.FfprobeProcessTimedOut" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.TimedOut" xml:space="preserve">
     <value>ffprobe がタイムアウトしました。</value>
   </data>
-<data name="Diagnostic.FlacEmbeddedCueNotFound" xml:space="preserve">
+<data name="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">
     <value>Vorbis cuesheet コメントが見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.ImporterFallbackUsed" xml:space="preserve">
+<data name="Diagnostic.ImporterFallback.Used" xml:space="preserve">
     <value>プライマリ インポーターが利用できないため、フォールバック インポーターを使用しました。</value>
   </data>
-<data name="Diagnostic.InvalidChapterIndex" xml:space="preserve">
+<data name="Diagnostic.ChapterIndex.Invalid" xml:space="preserve">
     <value>章節インデックス {index} が範囲外です。</value>
   </data>
-<data name="Diagnostic.InvalidChapterPair" xml:space="preserve">
+<data name="Diagnostic.ChapterPair.Invalid" xml:space="preserve">
     <value>章節行を解析できませんでした: {line}</value>
   </data>
-<data name="Diagnostic.InvalidChapterText" xml:space="preserve">
+<data name="Diagnostic.ChapterText.Invalid" xml:space="preserve">
     <value>章節テキストが空であるか、有効なエントリがありません。</value>
   </data>
-<data name="Diagnostic.InvalidChapterTimestamp" xml:space="preserve">
+<data name="Diagnostic.ChapterTimestamp.Invalid" xml:space="preserve">
     <value>メディア章節に有効な負でない開始タイムスタンプがありません。</value>
   </data>
-<data name="Diagnostic.InvalidContainerHeader" xml:space="preserve">
+<data name="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">
     <value>このファイルはサポート対象のコンテナではありません。</value>
   </data>
-<data name="Diagnostic.InvalidEntryElement" xml:space="preserve">
+<data name="Diagnostic.EntryElement.Invalid" xml:space="preserve">
     <value>EditionEntry を期待しましたが、{name} でした。</value>
   </data>
-<data name="Diagnostic.InvalidExpression" xml:space="preserve">
+<data name="Diagnostic.Expression.Invalid" xml:space="preserve">
     <value>式が無効です: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.Incomplete" xml:space="preserve">
+  <data name="Diagnostic.Expression.Incomplete" xml:space="preserve">
     <value>式が単一の値に還元されませんでした。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.InsufficientOperands" xml:space="preserve">
+  <data name="Diagnostic.Expression.InsufficientOperands" xml:space="preserve">
     <value>トークン '{token}' にはより多くのオペランドが必要です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.InvalidCharacter" xml:space="preserve">
+  <data name="Diagnostic.ExpressionCharacter.Invalid" xml:space="preserve">
     <value>無効な文字 '{character}' です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MisplacedComma" xml:space="preserve">
+  <data name="Diagnostic.ExpressionComma.Misplaced" xml:space="preserve">
     <value>カンマの位置が不正です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperandBeforeParen" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperandBeforeParen.Missing" xml:space="preserve">
     <value>')' の前にオペランドがありません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperator" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.Missing" xml:space="preserve">
     <value>'{token}' の前に演算子がありません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeFunction" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperatorBeforeFunction.Missing" xml:space="preserve">
     <value>関数 '{token}' の前に演算子がありません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeParen" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperatorBeforeParen.Missing" xml:space="preserve">
     <value>'(' の前に演算子がありません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.OperatorRequiresLeftOperand" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.RequiresLeftOperand" xml:space="preserve">
     <value>演算子 '{token}' には左オペランドが必要です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryMissingCondition" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryCondition.Missing" xml:space="preserve">
     <value>演算子 '?' には条件が必要です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryMissingTrueExpression" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryTrueExpression.Missing" xml:space="preserve">
     <value>演算子 ':' には真の式が必要です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedColon" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryColon.Unmatched" xml:space="preserve">
     <value>演算子 ':' に対応する '?' がありません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedQuestion" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryQuestion.Unmatched" xml:space="preserve">
     <value>演算子 '?' に対応する ':' がありません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnbalancedParentheses" xml:space="preserve">
+  <data name="Diagnostic.ExpressionParentheses.Unbalanced" xml:space="preserve">
     <value>括弧が一致していません。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnknownToken" xml:space="preserve">
+  <data name="Diagnostic.ExpressionToken.Unknown" xml:space="preserve">
     <value>不明なトークン '{token}' です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedFunction" xml:space="preserve">
+  <data name="Diagnostic.ExpressionFunction.Unsupported" xml:space="preserve">
     <value>サポート対象外の関数 '{function}' です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedOperator" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.Unsupported" xml:space="preserve">
     <value>サポート対象外の演算子 '{token}' です。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedToken" xml:space="preserve">
+  <data name="Diagnostic.ExpressionToken.Unsupported" xml:space="preserve">
     <value>サポート対象外のトークン '{token}' です。</value>
   </data>
-<data name="Diagnostic.InvalidExpressionTime" xml:space="preserve">
+<data name="Diagnostic.ExpressionTime.Invalid" xml:space="preserve">
     <value>式の時間が無効です: {message}</value>
   </data>
-<data name="Diagnostic.InvalidFrameRate" xml:space="preserve">
+<data name="Diagnostic.FrameRate.Invalid" xml:space="preserve">
     <value>フレームレートは 0 より大きい必要があります。</value>
   </data>
-<data name="Diagnostic.InvalidFrameText" xml:space="preserve">
+<data name="Diagnostic.FrameText.Invalid" xml:space="preserve">
     <value>フレームテキストにフレーム番号が含まれないか、fps が無効です。</value>
   </data>
-<data name="Diagnostic.InvalidIfo" xml:space="preserve">
+<data name="Diagnostic.Ifo.Invalid" xml:space="preserve">
     <value>IFO ファイルが無効です: {message}</value>
   </data>
-<data name="Diagnostic.InvalidMpls" xml:space="preserve">
+<data name="Diagnostic.Mpls.Invalid" xml:space="preserve">
     <value>MPLS ファイルが無効です: {message}</value>
   </data>
-<data name="Diagnostic.InvalidStructure" xml:space="preserve">
+<data name="Diagnostic.Structure.Invalid" xml:space="preserve">
     <value>Blu-ray の BDMV/PLAYLIST ディレクトリが見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.InvalidTimeText" xml:space="preserve">
+<data name="Diagnostic.TimeText.Invalid" xml:space="preserve">
     <value>時間テキストが空であるか、想定形式と一致しません。</value>
   </data>
-<data name="Diagnostic.InvalidTimecodeText" xml:space="preserve">
+<data name="Diagnostic.TimecodeText.Invalid" xml:space="preserve">
     <value>有効なタイムコード エントリが見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.InvalidXml" xml:space="preserve">
+<data name="Diagnostic.Xml.Invalid" xml:space="preserve">
     <value>XML を解析できませんでした: {message}</value>
   </data>
-<data name="Diagnostic.MalformedCueSyntax" xml:space="preserve">
+<data name="Diagnostic.CueSyntax.Malformed" xml:space="preserve">
     <value>CUE インデックス構文はサポート対象外または不正です。</value>
   </data>
-<data name="Diagnostic.MatroskaCannotStart" xml:space="preserve">
+<data name="Diagnostic.Matroska.CannotStart" xml:space="preserve">
     <value>mkvextract を起動できませんでした: {message}</value>
   </data>
-<data name="Diagnostic.MatroskaMissingDependency" xml:space="preserve">
+<data name="Diagnostic.Matroska.MissingDependency" xml:space="preserve">
     <value>mkvextract が見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.MatroskaNoChapters" xml:space="preserve">
+<data name="Diagnostic.MatroskaChapters.None" xml:space="preserve">
     <value>mkvextract が章節 XML を返しませんでした。</value>
   </data>
-<data name="Diagnostic.MatroskaProcessCancelled" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.Cancelled" xml:space="preserve">
     <value>mkvextract はキャンセルされました: {message}</value>
   </data>
-<data name="Diagnostic.MatroskaProcessFailed" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.Failed" xml:space="preserve">
     <value>mkvextract が失敗しました: {message}</value>
   </data>
-<data name="Diagnostic.MatroskaProcessTimedOut" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.TimedOut" xml:space="preserve">
     <value>mkvextract がタイムアウトしました: {message}</value>
   </data>
-<data name="Diagnostic.MediaReadFailed" xml:space="preserve">
+<data name="Diagnostic.MediaRead.Failed" xml:space="preserve">
     <value>メディア章節を読み取れませんでした: {message}</value>
   </data>
-<data name="Diagnostic.MissingDependency" xml:space="preserve">
+<data name="Diagnostic.Dependency.Missing" xml:space="preserve">
     <value>eac3to が見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.Mp4FileInaccessible" xml:space="preserve">
+<data name="Diagnostic.Mp4File.Inaccessible" xml:space="preserve">
     <value>MP4 ファイルにアクセスできませんでした: {message}</value>
   </data>
-<data name="Diagnostic.Mp4FileNotFound" xml:space="preserve">
+<data name="Diagnostic.Mp4File.NotFound" xml:space="preserve">
     <value>MP4 ファイルが見つかりませんでした: {message}</value>
   </data>
-<data name="Diagnostic.Mp4InvalidPath" xml:space="preserve">
+<data name="Diagnostic.Mp4Path.Invalid" xml:space="preserve">
     <value>MP4 パスが空です。</value>
   </data>
-<data name="Diagnostic.Mp4MalformedMetadata" xml:space="preserve">
+<data name="Diagnostic.Mp4Metadata.Malformed" xml:space="preserve">
     <value>MP4 章節メタデータが不正です。</value>
   </data>
-<data name="Diagnostic.Mp4ReadFailed" xml:space="preserve">
+<data name="Diagnostic.Mp4Read.Failed" xml:space="preserve">
     <value>MP4 ファイルを読み取れませんでした: {message}</value>
   </data>
-<data name="Diagnostic.Mp4UnsupportedMetadata" xml:space="preserve">
+<data name="Diagnostic.Mp4Metadata.Unsupported" xml:space="preserve">
     <value>MP4 章節メタデータはサポート対象外です。</value>
   </data>
-<data name="Diagnostic.NativeLibraryMissing" xml:space="preserve">
+<data name="Diagnostic.NativeLibrary.Missing" xml:space="preserve">
     <value>ネイティブ依存関係が見つかりませんでした: {message}</value>
   </data>
-<data name="Diagnostic.NoChapters" xml:space="preserve">
+<data name="Diagnostic.Chapters.None" xml:space="preserve">
     <value>エクスポート可能な章節がありません。</value>
   </data>
-<data name="Diagnostic.NoChaptersFound" xml:space="preserve">
+<data name="Diagnostic.Chapters.NotFound" xml:space="preserve">
     <value>章節が見つかりませんでした。</value>
   </data>
-<data name="Diagnostic.NoRowsSelected" xml:space="preserve">
+<data name="Diagnostic.Rows.NoneSelected" xml:space="preserve">
     <value>1 つ以上の章節行を選択してください。</value>
   </data>
-<data name="Diagnostic.NoSegments" xml:space="preserve">
+<data name="Diagnostic.Segments.None" xml:space="preserve">
     <value>使用可能な章節セグメントがありません。</value>
   </data>
-<data name="Diagnostic.OgmInvalidFirstLine" xml:space="preserve">
+<data name="Diagnostic.OgmFirstLine.Invalid" xml:space="preserve">
     <value>先頭の OGM 章節行が存在しないか無効です。</value>
   </data>
-<data name="Diagnostic.OrderShiftNormalized" xml:space="preserve">
+<data name="Diagnostic.OrderShift.Normalized" xml:space="preserve">
     <value>章節番号シフト {shift} は負の章節番号になるため、0 に正規化されました。</value>
   </data>
-<data name="Diagnostic.PartialParse" xml:space="preserve">
+<data name="Diagnostic.Parse.Partial" xml:space="preserve">
     <value>すべての入力を消費する前に解析が停止しました。</value>
   </data>
-<data name="Diagnostic.PremiereMarkerListInvalid" xml:space="preserve">
+<data name="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">
     <value>Adobe Premiere Pro の章節マーカーリストを解析できませんでした。</value>
   </data>
-<data name="Diagnostic.Saved" xml:space="preserve">
+<data name="Diagnostic.Save.Succeeded" xml:space="preserve">
     <value>保存しました: {path}</value>
   </data>
-<data name="Diagnostic.Stdout" xml:space="preserve">
+<data name="Diagnostic.StandardOutput.Captured" xml:space="preserve">
     <value>コマンド出力: {output}</value>
   </data>
-<data name="Diagnostic.UnsupportedAppendSource" xml:space="preserve">
+<data name="Diagnostic.AppendSource.Unsupported" xml:space="preserve">
     <value>追加できるのは MPLS 章節グループのみです。</value>
   </data>
-<data name="Diagnostic.UnsupportedCombineSource" xml:space="preserve">
+<data name="Diagnostic.CombineSource.Unsupported" xml:space="preserve">
     <value>結合できるのは MPLS および DVD 章節グループのみです。</value>
   </data>
-<data name="Diagnostic.UnsupportedExportFormat" xml:space="preserve">
+<data name="Diagnostic.ExportFormat.Unsupported" xml:space="preserve">
     <value>サポート対象外のエクスポート形式です。</value>
   </data>
-<data name="Diagnostic.UnsupportedSource" xml:space="preserve">
+<data name="Diagnostic.Source.Unsupported" xml:space="preserve">
     <value>サポート対象外のソース拡張子です: {extension}</value>
   </data>
-<data name="Diagnostic.WebVttInvalidHeader" xml:space="preserve">
+<data name="Diagnostic.WebVttHeader.Invalid" xml:space="preserve">
     <value>WebVTT ヘッダーがありません。</value>
   </data>
-<data name="Diagnostic.WebVttMalformedCue" xml:space="preserve">
+<data name="Diagnostic.WebVttCue.Malformed" xml:space="preserve">
     <value>WebVTT キューを解析できませんでした。</value>
   </data>
-<data name="Diagnostic.WebVttUnsupportedTimingSettings" xml:space="preserve">
+<data name="Diagnostic.WebVttTimingSettings.Unsupported" xml:space="preserve">
     <value>サポート対象外の WebVTT タイミング設定です。</value>
   </data>
-<data name="Diagnostic.XmlInvalidRoot" xml:space="preserve">
+<data name="Diagnostic.XmlRoot.Invalid" xml:space="preserve">
     <value>Chapters ルートを期待しましたが、{name} でした。</value>
   </data>
-<data name="Diagnostic.XmlNoChapters" xml:space="preserve">
+<data name="Diagnostic.XmlChapters.None" xml:space="preserve">
     <value>Matroska XML 章節が解析されませんでした。</value>
   </data>
-<data name="Diagnostic.XplNoChapters" xml:space="preserve">
+<data name="Diagnostic.XplChapters.None" xml:space="preserve">
     <value>HD-DVD 章節が解析されませんでした。</value>
   </data>
-<data name="Diagnostic.XplParseFailed" xml:space="preserve">
+<data name="Diagnostic.XplParse.Failed" xml:space="preserve">
     <value>XPL プレイリストを解析できませんでした: {message}</value>
   </data>
 <data name="EditKind.Frame" xml:space="preserve">
@@ -827,28 +827,28 @@
   <data name="Status.LuaExpressionScriptLoaded" xml:space="preserve">
     <value>Lua スクリプトを読み込みました: {path}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.Lua" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.Invalid" xml:space="preserve">
     <value>Lua 式に失敗しました: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaCompile" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">
     <value>Lua 式の構文エラー: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaRuntime" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.RuntimeFailed" xml:space="preserve">
     <value>Lua 式の実行時エラー: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaInvalidReturn" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionReturn.Invalid" xml:space="preserve">
     <value>Lua 式は有限の数値を返す必要があります。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaMissingReturn" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionReturn.Missing" xml:space="preserve">
     <value>Lua 式が値を返しませんでした。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaUnknownToken" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionToken.Unknown" xml:space="preserve">
     <value>不明な Lua トークン: {message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaCanceled" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">
     <value>Lua 式はキャンセルされました。</value>
   </data>
-  <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
+                <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
     <value>Lua 式の構文を確認してください。</value>
   </data>
   <data name="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">

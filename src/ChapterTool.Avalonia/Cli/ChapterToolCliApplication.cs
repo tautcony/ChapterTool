@@ -188,18 +188,18 @@ public sealed class ChapterToolCliApplication(
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, "MissingInput", "Input path is required."));
+            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MissingInput, "Input path is required."));
         }
 
         if (!File.Exists(inputPath) && !Directory.Exists(inputPath))
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, "InputNotFound", $"Input path '{inputPath}' was not found."));
+            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InputNotFound, $"Input path '{inputPath}' was not found."));
         }
 
         var importer = importerRegistry.Resolve(inputPath);
         if (importer is null)
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedInput", $"No importer is available for '{inputPath}'."));
+            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedInput, $"No importer is available for '{inputPath}'."));
         }
 
         var result = await importer.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
@@ -214,7 +214,7 @@ public sealed class ChapterToolCliApplication(
                     var diagnostics = result.Diagnostics.Concat([
                         new ChapterDiagnostic(
                             DiagnosticSeverity.Info,
-                            "FallbackImporterUsed",
+                            ChapterDiagnosticCode.ImporterFallbackUsed,
                             $"Primary importer '{importer.Id}' could not be invoked; fallback importer '{fallback.Id}' was used.")
                     ]).ToList();
 
@@ -381,14 +381,14 @@ public sealed class ChapterToolCliApplication(
             var groupIndex = localGroupIndex + groupOffset;
             diagnostics.Add(new ChapterDiagnostic(
                 DiagnosticSeverity.Info,
-                "AvailableGroup",
+                ChapterDiagnosticCode.SelectionGroupAvailable,
                 $"group={groupIndex} default-entry-index={group.DefaultEntryIndex} source={group.SourcePath}"));
             for (var entryIndex = 0; entryIndex < group.Entries.Count; entryIndex++)
             {
                 var entry = group.Entries[entryIndex];
                 diagnostics.Add(new ChapterDiagnostic(
                     DiagnosticSeverity.Info,
-                    "AvailableOption",
+                    ChapterDiagnosticCode.SelectionOptionAvailable,
                     $"group={groupIndex} entry-index={entryIndex} entry-id={entry.Id} name={entry.DisplayName}"));
             }
         }
@@ -397,7 +397,7 @@ public sealed class ChapterToolCliApplication(
     }
 
     private IEnumerable<string> FormatDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
-        diagnostics.Select(static diagnostic => $"{diagnostic.Severity.ToString().ToUpperInvariant()} {diagnostic.Code}: {diagnostic.Message}");
+        diagnostics.Select(static diagnostic => $"{diagnostic.Severity.ToString().ToUpperInvariant()} {diagnostic.DisplayCode}: {diagnostic.Message}");
 
     private void RenderFailure(string message, IReadOnlyList<ChapterDiagnostic> diagnostics)
     {
@@ -436,7 +436,7 @@ public sealed class ChapterToolCliApplication(
         public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>();
 
         public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "Unavailable", "Importer is unavailable.")));
+            ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.Unavailable, "Importer is unavailable.")));
     }
 }
 

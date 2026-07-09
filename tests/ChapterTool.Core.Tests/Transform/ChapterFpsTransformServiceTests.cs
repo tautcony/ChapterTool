@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
@@ -46,7 +47,7 @@ public sealed class ChapterFpsTransformServiceTests
 
         Assert.False(result.Success);
         Assert.Same(info, result.Info);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
     }
 
     private static ChapterSet Sample() =>

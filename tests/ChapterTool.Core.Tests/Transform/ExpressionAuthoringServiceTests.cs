@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Transform;
@@ -98,7 +99,8 @@ public sealed class ExpressionAuthoringServiceTests
         var result = service.Analyze("t +", 3);
         var diagnostic = Assert.Single(result.Diagnostics);
 
-        Assert.StartsWith("InvalidExpression.Lua", diagnostic.Diagnostic.Code, StringComparison.Ordinal);
+        Assert.Equal(ChapterDiagnosticSource.LuaExpression, diagnostic.Diagnostic.Code.Source);
+        Assert.Equal(ChapterDiagnosticReason.CompileFailed, diagnostic.Diagnostic.Code.Reason);
         Assert.Equal("Expression.Suggestion.AddOperand", diagnostic.Suggestion.Code);
         Assert.False(string.IsNullOrWhiteSpace(diagnostic.Suggestion.Message));
         Assert.Equal(2, diagnostic.Start);
@@ -111,7 +113,7 @@ public sealed class ExpressionAuthoringServiceTests
         var result = service.Analyze("missing(t)", 10);
         var diagnostic = Assert.Single(result.Diagnostics);
 
-        Assert.Equal("InvalidExpression.LuaRuntime", diagnostic.Diagnostic.Code);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, diagnostic.Diagnostic.Code);
         Assert.Equal("Expression.Suggestion.CheckLuaRuntime", diagnostic.Suggestion.Code);
     }
 
@@ -121,7 +123,7 @@ public sealed class ExpressionAuthoringServiceTests
         var result = service.Analyze("return 'bad'", 12);
         var diagnostic = Assert.Single(result.Diagnostics);
 
-        Assert.Equal("InvalidExpression.LuaInvalidReturn", diagnostic.Diagnostic.Code);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaInvalidReturn, diagnostic.Diagnostic.Code);
         Assert.Equal("Expression.Suggestion.ReturnNumber", diagnostic.Suggestion.Code);
     }
 }

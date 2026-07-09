@@ -106,7 +106,7 @@ public sealed class ChapterExpressionService
     }
 
     private static ChapterDiagnostic InvalidTime(string message) =>
-        new(DiagnosticSeverity.Warning, "InvalidExpressionTime", message);
+        new(DiagnosticSeverity.Warning, ChapterDiagnosticCode.InvalidExpressionTime, message);
 
     private sealed record FrameDisplay(string Text, FrameAccuracy Accuracy);
 }

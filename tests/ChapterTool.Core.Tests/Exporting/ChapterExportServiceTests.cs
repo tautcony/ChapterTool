@@ -3,6 +3,7 @@ using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using System.Globalization;
 using System.Xml.Linq;
+using ChapterTool.Core.Diagnostics;
 
 namespace ChapterTool.Core.Tests.Exporting;
 
@@ -100,7 +101,7 @@ public sealed class ChapterExportServiceTests
 
         Assert.False(result.Success);
         Assert.Empty(result.Content);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidWebVttCueText");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidWebVttCueText);
     }
 
     [Fact]
@@ -173,7 +174,7 @@ public sealed class ChapterExportServiceTests
         Assert.Contains("CHAPTER03=00:00:20.000", result.Content, StringComparison.Ordinal);
         Assert.DoesNotContain("CHAPTER00", result.Content, StringComparison.Ordinal);
         Assert.DoesNotContain("CHAPTER-01", result.Content, StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OrderShiftNormalized");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OrderShiftNormalized);
     }
 
     [Fact]
@@ -254,7 +255,7 @@ public sealed class ChapterExportServiceTests
 
         Assert.Contains("CHAPTER01=00:00:00.000", result.Content, StringComparison.Ordinal);
         Assert.DoesNotContain("-", result.Content, StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidExpressionTime");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidExpressionTime);
     }
 
     [Fact]
@@ -287,7 +288,7 @@ public sealed class ChapterExportServiceTests
             new ChapterExportOptions(format));
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
     }
 
     [Fact]
@@ -298,7 +299,7 @@ public sealed class ChapterExportServiceTests
             new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "t + 1"));
 
         Assert.True(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
     }
 
     private static ChapterSet Sample(ChapterImportFormat sourceType = ChapterImportFormat.Ogm) =>

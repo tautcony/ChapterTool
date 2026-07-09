@@ -62,274 +62,274 @@
 <data name="Common.Use" xml:space="preserve">
     <value>使用</value>
   </data>
-<data name="Diagnostic.DependencyExecutionCancelled" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">
     <value>操作已取消。</value>
   </data>
-<data name="Diagnostic.DependencyExecutionFailed" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.Failed" xml:space="preserve">
     <value>操作失败：{message}</value>
   </data>
-<data name="Diagnostic.DependencyExecutionTimedOut" xml:space="preserve">
+<data name="Diagnostic.DependencyExecution.TimedOut" xml:space="preserve">
     <value>操作超时。</value>
   </data>
-<data name="Diagnostic.DependencyOutputEmpty" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Empty" xml:space="preserve">
     <value>章节导出文件为空。</value>
   </data>
-<data name="Diagnostic.DependencyOutputMissing" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Missing" xml:space="preserve">
     <value>未生成章节导出文件。</value>
   </data>
-<data name="Diagnostic.DependencyOutputUnrecognized" xml:space="preserve">
+<data name="Diagnostic.DependencyOutput.Unrecognized" xml:space="preserve">
     <value>无法识别播放列表输出。</value>
   </data>
-<data name="Diagnostic.EmbeddedCueNotFound" xml:space="preserve">
+<data name="Diagnostic.EmbeddedCue.NotFound" xml:space="preserve">
     <value>未找到内嵌的 cuesheet。</value>
   </data>
-<data name="Diagnostic.EmptyChapters" xml:space="preserve">
+<data name="Diagnostic.Chapters.Empty" xml:space="preserve">
     <value>未解析到任何章节。</value>
   </data>
-<data name="Diagnostic.EmptyCueFile" xml:space="preserve">
+<data name="Diagnostic.CueFile.Empty" xml:space="preserve">
     <value>CUE 文本为空，或未解析到章节。</value>
   </data>
-<data name="Diagnostic.EmptyXml" xml:space="preserve">
+<data name="Diagnostic.Xml.Empty" xml:space="preserve">
     <value>XML 文档没有根元素。</value>
   </data>
-<data name="Diagnostic.FfprobeCannotStart" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.CannotStart" xml:space="preserve">
     <value>无法启动 ffprobe：{message}</value>
   </data>
-<data name="Diagnostic.FfprobeEmptyOutput" xml:space="preserve">
+<data name="Diagnostic.FfprobeOutput.Empty" xml:space="preserve">
     <value>ffprobe 未返回章节 JSON。</value>
   </data>
-<data name="Diagnostic.FfprobeMissingDependency" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.MissingDependency" xml:space="preserve">
     <value>未找到 ffprobe。</value>
   </data>
-<data name="Diagnostic.FfprobeParseFailed" xml:space="preserve">
+<data name="Diagnostic.Ffprobe.ParseFailed" xml:space="preserve">
     <value>无法解析 ffprobe 输出：{message}</value>
   </data>
-<data name="Diagnostic.FfprobeProcessCancelled" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.Cancelled" xml:space="preserve">
     <value>ffprobe 已取消。</value>
   </data>
-<data name="Diagnostic.FfprobeProcessFailed" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.Failed" xml:space="preserve">
     <value>ffprobe 以非零代码退出。</value>
   </data>
-<data name="Diagnostic.FfprobeProcessTimedOut" xml:space="preserve">
+<data name="Diagnostic.FfprobeProcess.TimedOut" xml:space="preserve">
     <value>ffprobe 超时。</value>
   </data>
-<data name="Diagnostic.FlacEmbeddedCueNotFound" xml:space="preserve">
+<data name="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">
     <value>未找到 Vorbis cuesheet 注释。</value>
   </data>
-<data name="Diagnostic.ImporterFallbackUsed" xml:space="preserve">
+<data name="Diagnostic.ImporterFallback.Used" xml:space="preserve">
     <value>主导入器不可用，已使用备用导入器。</value>
   </data>
-<data name="Diagnostic.InvalidChapterIndex" xml:space="preserve">
+<data name="Diagnostic.ChapterIndex.Invalid" xml:space="preserve">
     <value>章节索引 {index} 超出范围。</value>
   </data>
-<data name="Diagnostic.InvalidChapterPair" xml:space="preserve">
+<data name="Diagnostic.ChapterPair.Invalid" xml:space="preserve">
     <value>无法解析章节行：{line}</value>
   </data>
-<data name="Diagnostic.InvalidChapterText" xml:space="preserve">
+<data name="Diagnostic.ChapterText.Invalid" xml:space="preserve">
     <value>章节文本为空，或没有有效条目。</value>
   </data>
-<data name="Diagnostic.InvalidChapterTimestamp" xml:space="preserve">
+<data name="Diagnostic.ChapterTimestamp.Invalid" xml:space="preserve">
     <value>媒体章节没有有效的非负起始时间戳。</value>
   </data>
-<data name="Diagnostic.InvalidContainerHeader" xml:space="preserve">
+<data name="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">
     <value>该文件不是受支持的容器。</value>
   </data>
-<data name="Diagnostic.InvalidEntryElement" xml:space="preserve">
+<data name="Diagnostic.EntryElement.Invalid" xml:space="preserve">
     <value>应为 EditionEntry，实际为 {name}。</value>
   </data>
-<data name="Diagnostic.InvalidExpression" xml:space="preserve">
+<data name="Diagnostic.Expression.Invalid" xml:space="preserve">
     <value>表达式无效：{message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.Incomplete" xml:space="preserve">
+  <data name="Diagnostic.Expression.Incomplete" xml:space="preserve">
     <value>表达式未能归约为单个值。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.InsufficientOperands" xml:space="preserve">
+  <data name="Diagnostic.Expression.InsufficientOperands" xml:space="preserve">
     <value>标记 '{token}' 需要更多操作数。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.InvalidCharacter" xml:space="preserve">
+  <data name="Diagnostic.ExpressionCharacter.Invalid" xml:space="preserve">
     <value>无效字符 '{character}'。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MisplacedComma" xml:space="preserve">
+  <data name="Diagnostic.ExpressionComma.Misplaced" xml:space="preserve">
     <value>逗号位置错误。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperandBeforeParen" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperandBeforeParen.Missing" xml:space="preserve">
     <value>')' 前缺少操作数。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperator" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.Missing" xml:space="preserve">
     <value>'{token}' 前缺少运算符。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeFunction" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperatorBeforeFunction.Missing" xml:space="preserve">
     <value>函数 '{token}' 前缺少运算符。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.MissingOperatorBeforeParen" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperatorBeforeParen.Missing" xml:space="preserve">
     <value>'(' 前缺少运算符。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.OperatorRequiresLeftOperand" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.RequiresLeftOperand" xml:space="preserve">
     <value>运算符 '{token}' 需要左操作数。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryMissingCondition" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryCondition.Missing" xml:space="preserve">
     <value>运算符 '?' 需要条件。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryMissingTrueExpression" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryTrueExpression.Missing" xml:space="preserve">
     <value>运算符 ':' 需要真值表达式。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedColon" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryColon.Unmatched" xml:space="preserve">
     <value>运算符 ':' 需要匹配的 '?'。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.TernaryUnmatchedQuestion" xml:space="preserve">
+  <data name="Diagnostic.ExpressionTernaryQuestion.Unmatched" xml:space="preserve">
     <value>运算符 '?' 需要匹配的 ':'。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnbalancedParentheses" xml:space="preserve">
+  <data name="Diagnostic.ExpressionParentheses.Unbalanced" xml:space="preserve">
     <value>括号不匹配。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnknownToken" xml:space="preserve">
+  <data name="Diagnostic.ExpressionToken.Unknown" xml:space="preserve">
     <value>未知标记 '{token}'。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedFunction" xml:space="preserve">
+  <data name="Diagnostic.ExpressionFunction.Unsupported" xml:space="preserve">
     <value>不受支持的函数 '{function}'。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedOperator" xml:space="preserve">
+  <data name="Diagnostic.ExpressionOperator.Unsupported" xml:space="preserve">
     <value>不受支持的运算符 '{token}'。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.UnsupportedToken" xml:space="preserve">
+  <data name="Diagnostic.ExpressionToken.Unsupported" xml:space="preserve">
     <value>不受支持的标记 '{token}'。</value>
   </data>
-<data name="Diagnostic.InvalidExpressionTime" xml:space="preserve">
+<data name="Diagnostic.ExpressionTime.Invalid" xml:space="preserve">
     <value>表达式时间无效：{message}</value>
   </data>
-<data name="Diagnostic.InvalidFrameRate" xml:space="preserve">
+<data name="Diagnostic.FrameRate.Invalid" xml:space="preserve">
     <value>帧率必须大于零。</value>
   </data>
-<data name="Diagnostic.InvalidFrameText" xml:space="preserve">
+<data name="Diagnostic.FrameText.Invalid" xml:space="preserve">
     <value>帧文本未包含帧编号，或帧率无效。</value>
   </data>
-<data name="Diagnostic.InvalidIfo" xml:space="preserve">
+<data name="Diagnostic.Ifo.Invalid" xml:space="preserve">
     <value>IFO 文件无效：{message}</value>
   </data>
-<data name="Diagnostic.InvalidMpls" xml:space="preserve">
+<data name="Diagnostic.Mpls.Invalid" xml:space="preserve">
     <value>MPLS 文件无效：{message}</value>
   </data>
-<data name="Diagnostic.InvalidStructure" xml:space="preserve">
+<data name="Diagnostic.Structure.Invalid" xml:space="preserve">
     <value>未找到 Blu-ray BDMV/PLAYLIST 目录。</value>
   </data>
-<data name="Diagnostic.InvalidTimeText" xml:space="preserve">
+<data name="Diagnostic.TimeText.Invalid" xml:space="preserve">
     <value>时间文本为空，或不符合预期格式。</value>
   </data>
-<data name="Diagnostic.InvalidTimecodeText" xml:space="preserve">
+<data name="Diagnostic.TimecodeText.Invalid" xml:space="preserve">
     <value>未找到有效的时间码条目。</value>
   </data>
-<data name="Diagnostic.InvalidXml" xml:space="preserve">
+<data name="Diagnostic.Xml.Invalid" xml:space="preserve">
     <value>无法解析 XML：{message}</value>
   </data>
-<data name="Diagnostic.MalformedCueSyntax" xml:space="preserve">
+<data name="Diagnostic.CueSyntax.Malformed" xml:space="preserve">
     <value>CUE 索引语法不受支持或格式错误。</value>
   </data>
-<data name="Diagnostic.MatroskaCannotStart" xml:space="preserve">
+<data name="Diagnostic.Matroska.CannotStart" xml:space="preserve">
     <value>无法启动 mkvextract：{message}</value>
   </data>
-<data name="Diagnostic.MatroskaMissingDependency" xml:space="preserve">
+<data name="Diagnostic.Matroska.MissingDependency" xml:space="preserve">
     <value>未找到 mkvextract。</value>
   </data>
-<data name="Diagnostic.MatroskaNoChapters" xml:space="preserve">
+<data name="Diagnostic.MatroskaChapters.None" xml:space="preserve">
     <value>mkvextract 未返回章节 XML。</value>
   </data>
-<data name="Diagnostic.MatroskaProcessCancelled" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.Cancelled" xml:space="preserve">
     <value>mkvextract 已取消：{message}</value>
   </data>
-<data name="Diagnostic.MatroskaProcessFailed" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.Failed" xml:space="preserve">
     <value>mkvextract 执行失败：{message}</value>
   </data>
-<data name="Diagnostic.MatroskaProcessTimedOut" xml:space="preserve">
+<data name="Diagnostic.MatroskaProcess.TimedOut" xml:space="preserve">
     <value>mkvextract 超时：{message}</value>
   </data>
-<data name="Diagnostic.MediaReadFailed" xml:space="preserve">
+<data name="Diagnostic.MediaRead.Failed" xml:space="preserve">
     <value>无法读取媒体章节：{message}</value>
   </data>
-<data name="Diagnostic.MissingDependency" xml:space="preserve">
+<data name="Diagnostic.Dependency.Missing" xml:space="preserve">
     <value>未找到 eac3to。</value>
   </data>
-<data name="Diagnostic.Mp4FileInaccessible" xml:space="preserve">
+<data name="Diagnostic.Mp4File.Inaccessible" xml:space="preserve">
     <value>无法访问 MP4 文件：{message}</value>
   </data>
-<data name="Diagnostic.Mp4FileNotFound" xml:space="preserve">
+<data name="Diagnostic.Mp4File.NotFound" xml:space="preserve">
     <value>未找到 MP4 文件：{message}</value>
   </data>
-<data name="Diagnostic.Mp4InvalidPath" xml:space="preserve">
+<data name="Diagnostic.Mp4Path.Invalid" xml:space="preserve">
     <value>MP4 路径为空。</value>
   </data>
-<data name="Diagnostic.Mp4MalformedMetadata" xml:space="preserve">
+<data name="Diagnostic.Mp4Metadata.Malformed" xml:space="preserve">
     <value>MP4 章节元数据格式错误。</value>
   </data>
-<data name="Diagnostic.Mp4ReadFailed" xml:space="preserve">
+<data name="Diagnostic.Mp4Read.Failed" xml:space="preserve">
     <value>无法读取 MP4 文件：{message}</value>
   </data>
-<data name="Diagnostic.Mp4UnsupportedMetadata" xml:space="preserve">
+<data name="Diagnostic.Mp4Metadata.Unsupported" xml:space="preserve">
     <value>MP4 章节元数据不受支持。</value>
   </data>
-<data name="Diagnostic.NativeLibraryMissing" xml:space="preserve">
+<data name="Diagnostic.NativeLibrary.Missing" xml:space="preserve">
     <value>未找到本地依赖：{message}</value>
   </data>
-<data name="Diagnostic.NoChapters" xml:space="preserve">
+<data name="Diagnostic.Chapters.None" xml:space="preserve">
     <value>没有可导出的章节。</value>
   </data>
-<data name="Diagnostic.NoChaptersFound" xml:space="preserve">
+<data name="Diagnostic.Chapters.NotFound" xml:space="preserve">
     <value>未找到章节。</value>
   </data>
-<data name="Diagnostic.NoRowsSelected" xml:space="preserve">
+<data name="Diagnostic.Rows.NoneSelected" xml:space="preserve">
     <value>请先选择一个或多个章节行。</value>
   </data>
-<data name="Diagnostic.NoSegments" xml:space="preserve">
+<data name="Diagnostic.Segments.None" xml:space="preserve">
     <value>没有可用的章节段落。</value>
   </data>
-<data name="Diagnostic.OgmInvalidFirstLine" xml:space="preserve">
+<data name="Diagnostic.OgmFirstLine.Invalid" xml:space="preserve">
     <value>缺少或无效的首行 OGM 章节行。</value>
   </data>
-<data name="Diagnostic.OrderShiftNormalized" xml:space="preserve">
+<data name="Diagnostic.OrderShift.Normalized" xml:space="preserve">
     <value>章节编号位移 {shift} 会产生非正的章节编号，已归一化为 0。</value>
   </data>
-<data name="Diagnostic.PartialParse" xml:space="preserve">
+<data name="Diagnostic.Parse.Partial" xml:space="preserve">
     <value>解析在消耗全部输入前停止。</value>
   </data>
-<data name="Diagnostic.PremiereMarkerListInvalid" xml:space="preserve">
+<data name="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">
     <value>无法解析 Adobe Premiere Pro 章节标记列表。</value>
   </data>
-<data name="Diagnostic.Saved" xml:space="preserve">
+<data name="Diagnostic.Save.Succeeded" xml:space="preserve">
     <value>已保存：{path}</value>
   </data>
-<data name="Diagnostic.Stdout" xml:space="preserve">
+<data name="Diagnostic.StandardOutput.Captured" xml:space="preserve">
     <value>命令输出：{output}</value>
   </data>
-<data name="Diagnostic.UnsupportedAppendSource" xml:space="preserve">
+<data name="Diagnostic.AppendSource.Unsupported" xml:space="preserve">
     <value>仅支持追加 MPLS 章节组。</value>
   </data>
-<data name="Diagnostic.UnsupportedCombineSource" xml:space="preserve">
+<data name="Diagnostic.CombineSource.Unsupported" xml:space="preserve">
     <value>仅支持合并 MPLS 与 DVD 章节组。</value>
   </data>
-<data name="Diagnostic.UnsupportedExportFormat" xml:space="preserve">
+<data name="Diagnostic.ExportFormat.Unsupported" xml:space="preserve">
     <value>不受支持的导出格式。</value>
   </data>
-<data name="Diagnostic.UnsupportedSource" xml:space="preserve">
+<data name="Diagnostic.Source.Unsupported" xml:space="preserve">
     <value>不受支持的来源扩展名：{extension}</value>
   </data>
-<data name="Diagnostic.WebVttInvalidHeader" xml:space="preserve">
+<data name="Diagnostic.WebVttHeader.Invalid" xml:space="preserve">
     <value>缺少 WebVTT 头。</value>
   </data>
-<data name="Diagnostic.WebVttMalformedCue" xml:space="preserve">
+<data name="Diagnostic.WebVttCue.Malformed" xml:space="preserve">
     <value>无法解析 WebVTT 提示。</value>
   </data>
-<data name="Diagnostic.WebVttUnsupportedTimingSettings" xml:space="preserve">
+<data name="Diagnostic.WebVttTimingSettings.Unsupported" xml:space="preserve">
     <value>不受支持的 WebVTT 时间设置。</value>
   </data>
-<data name="Diagnostic.XmlInvalidRoot" xml:space="preserve">
+<data name="Diagnostic.XmlRoot.Invalid" xml:space="preserve">
     <value>应为 Chapters 根节点，实际为 {name}。</value>
   </data>
-<data name="Diagnostic.XmlNoChapters" xml:space="preserve">
+<data name="Diagnostic.XmlChapters.None" xml:space="preserve">
     <value>未解析到 Matroska XML 章节。</value>
   </data>
-<data name="Diagnostic.XplNoChapters" xml:space="preserve">
+<data name="Diagnostic.XplChapters.None" xml:space="preserve">
     <value>未解析到 HD-DVD 章节。</value>
   </data>
-<data name="Diagnostic.XplParseFailed" xml:space="preserve">
+<data name="Diagnostic.XplParse.Failed" xml:space="preserve">
     <value>无法解析 XPL 播放列表：{message}</value>
   </data>
 <data name="EditKind.Frame" xml:space="preserve">
@@ -827,28 +827,28 @@
   <data name="Status.LuaExpressionScriptLoaded" xml:space="preserve">
     <value>已加载 Lua 脚本：{path}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.Lua" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.Invalid" xml:space="preserve">
     <value>Lua 表达式失败：{message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaCompile" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">
     <value>Lua 表达式语法错误：{message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaRuntime" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.RuntimeFailed" xml:space="preserve">
     <value>Lua 表达式运行错误：{message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaInvalidReturn" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionReturn.Invalid" xml:space="preserve">
     <value>Lua 表达式必须返回有限数字。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaMissingReturn" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionReturn.Missing" xml:space="preserve">
     <value>Lua 表达式没有返回值。</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaUnknownToken" xml:space="preserve">
+  <data name="Diagnostic.LuaExpressionToken.Unknown" xml:space="preserve">
     <value>未知 Lua 标记：{message}</value>
   </data>
-  <data name="Diagnostic.InvalidExpression.LuaCanceled" xml:space="preserve">
+  <data name="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">
     <value>Lua 表达式已取消。</value>
   </data>
-  <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
+                <data name="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">
     <value>检查 Lua 表达式语法。</value>
   </data>
   <data name="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">

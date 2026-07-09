@@ -64,9 +64,9 @@ public sealed class RuntimeChapterSaveServiceTests
 
             Assert.True(result.Success);
             Assert.True(result.Diagnostics.Count >= 2, $"Expected at least 2 diagnostics but got {result.Diagnostics.Count}");
-            Assert.Contains(result.Diagnostics, d => d.Code == "OrderShiftNormalized");
-            Assert.Contains(result.Diagnostics, d => d.Code == "Saved");
-            var savedDiagnostic = result.Diagnostics.Single(d => d.Code == "Saved");
+            Assert.Contains(result.Diagnostics, d => d.Code == ChapterDiagnosticCode.OrderShiftNormalized);
+            Assert.Contains(result.Diagnostics, d => d.Code == ChapterDiagnosticCode.Saved);
+            var savedDiagnostic = result.Diagnostics.Single(d => d.Code == ChapterDiagnosticCode.Saved);
             Assert.Equal(DiagnosticSeverity.Info, savedDiagnostic.Severity);
             Assert.Contains("test.xml", savedDiagnostic.Message);
         }
@@ -135,6 +135,6 @@ public sealed class RuntimeChapterSaveServiceTests
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "SaveFailed");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.SaveFailed);
     }
 }

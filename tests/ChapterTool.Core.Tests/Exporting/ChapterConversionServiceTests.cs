@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
@@ -30,7 +31,7 @@ public sealed class ChapterConversionServiceTests
 
         Assert.Equal("2", result.Content);
         Assert.False(invalid.Success);
-        Assert.Contains(invalid.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
+        Assert.Contains(invalid.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
     }
 
     [Fact]
@@ -145,7 +146,7 @@ public sealed class ChapterConversionServiceTests
         var result = service.ChapterTextToQpfile("not chapters", 24m);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidChapterText");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidChapterText);
     }
 
     private static ChapterSet Sample() =>

@@ -83,7 +83,7 @@ public sealed class ChapterTimeFormatterTests
         Assert.Equal(TimeSpan.Zero, actual.Value);
         var diagnostic = Assert.Single(actual.Diagnostics);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Equal("InvalidTimeText", diagnostic.Code);
+        Assert.Equal(ChapterDiagnosticCode.InvalidTimeText, diagnostic.Code);
     }
 
     [Theory]
@@ -97,7 +97,7 @@ public sealed class ChapterTimeFormatterTests
         Assert.Equal(TimeSpan.Zero, actual.Value);
         var diagnostic = Assert.Single(actual.Diagnostics);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Equal("InvalidTimeText", diagnostic.Code);
+        Assert.Equal(ChapterDiagnosticCode.InvalidTimeText, diagnostic.Code);
     }
 
     [Theory]

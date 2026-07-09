@@ -20,7 +20,7 @@ public sealed partial class CueSheetParser
     {
         if (string.IsNullOrWhiteSpace(text))
         {
-            return ChapterImportResult.Failed(Error("EmptyCueFile", "CUE text is empty."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmptyCueFile, "CUE text is empty."));
         }
 
         var title = string.Empty;
@@ -103,12 +103,12 @@ public sealed partial class CueSheetParser
 
         if (malformed)
         {
-            return ChapterImportResult.Failed(Error("MalformedCueSyntax", "CUE index syntax is unsupported or malformed."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.MalformedCueSyntax, "CUE index syntax is unsupported or malformed."));
         }
 
         if (chapters.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("EmptyCueFile", "No CUE chapters were parsed."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmptyCueFile, "No CUE chapters were parsed."));
         }
 
         var ordered = chapters.OrderBy(static chapter => chapter.DisplayNumber).ToList();
@@ -132,7 +132,7 @@ public sealed partial class CueSheetParser
         return new TimeSpan(0, 0, minute, second, millisecond);
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
     [GeneratedRegex(@"^TITLE\s+""(?<Title>.+)""$", RegexOptions.IgnoreCase)]

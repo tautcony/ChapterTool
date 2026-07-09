@@ -1,4 +1,5 @@
 using System.Globalization;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
@@ -122,20 +123,22 @@ public sealed class LuaExpressionScriptServiceTests
 
         Assert.False(result.Success);
         Assert.Equal(10, result.Value);
-        Assert.StartsWith("InvalidExpression.Lua", Assert.Single(result.Diagnostics).Code, StringComparison.Ordinal);
+        Assert.Equal(ChapterDiagnosticSource.LuaExpressionReturn, Assert.Single(result.Diagnostics).Code.Source);
     }
 
     [Theory]
-    [InlineData("return t +", "InvalidExpression.LuaCompile")]
-    [InlineData("return missing()", "InvalidExpression.LuaRuntime")]
-    [InlineData("t 1 +", "InvalidExpression.LuaCompile")]
-    public void Lua_failures_are_structured_diagnostics(string script, string expectedCode)
+    [InlineData("return t +", ChapterDiagnosticReason.CompileFailed)]
+    [InlineData("return missing()", ChapterDiagnosticReason.RuntimeFailed)]
+    [InlineData("t 1 +", ChapterDiagnosticReason.CompileFailed)]
+    public void Lua_failures_are_structured_diagnostics(string script, ChapterDiagnosticReason reason)
     {
         var result = service.Evaluate(script, Context(timeSeconds: 10, fps: 24));
 
         Assert.False(result.Success);
         Assert.Equal(10, result.Value);
-        Assert.Equal(expectedCode, Assert.Single(result.Diagnostics).Code);
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal(ChapterDiagnosticSource.LuaExpression, diagnostic.Code.Source);
+        Assert.Equal(reason, diagnostic.Code.Reason);
     }
 
     [Fact(Timeout = 2000)]
@@ -147,7 +150,7 @@ public sealed class LuaExpressionScriptServiceTests
 
         Assert.False(result.Success);
         Assert.Equal(10, result.Value);
-        Assert.Equal("InvalidExpression.LuaCanceled", Assert.Single(result.Diagnostics).Code);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCanceled, Assert.Single(result.Diagnostics).Code);
     }
 
     [Fact]
@@ -156,7 +159,7 @@ public sealed class LuaExpressionScriptServiceTests
         var result = service.Evaluate("return io.open('chapters.txt')", Context(timeSeconds: 10, fps: 24));
 
         Assert.False(result.Success);
-        Assert.Equal("InvalidExpression.LuaRuntime", Assert.Single(result.Diagnostics).Code);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, Assert.Single(result.Diagnostics).Code);
     }
 
     private static ChapterExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1) =>

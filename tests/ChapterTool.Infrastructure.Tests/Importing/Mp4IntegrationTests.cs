@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Infrastructure.Importing.Media;
@@ -65,6 +66,6 @@ public sealed class Mp4IntegrationTests
         var result = await reader.ReadAsync(path, TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("Mp4InvalidPath", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.Mp4InvalidPath, result.DiagnosticCode);
     }
 }
