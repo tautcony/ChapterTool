@@ -153,6 +153,67 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task OlderLoadResultDoesNotOverwriteNewerLoad()
+    {
+        var load = new ControlledLoadService(new Dictionary<string, ChapterImportResult>(StringComparer.Ordinal)
+        {
+            ["slow.txt"] = ImportResult("slow.txt", Info("OGM", "slow.txt", new Chapter(1, TimeSpan.Zero, "Slow"))),
+            ["fast.txt"] = ImportResult("fast.txt", Info("OGM", "fast.txt", new Chapter(1, TimeSpan.Zero, "Fast")))
+        });
+        var vm = CreateViewModel(load);
+
+        var slow = vm.LoadCommand.ExecuteAsync("slow.txt").AsTask();
+        await load.WaitForRequestAsync("slow.txt");
+        var fast = vm.DropPathLoadCommand.ExecuteAsync("fast.txt").AsTask();
+        await load.WaitForRequestAsync("fast.txt");
+
+        load.Complete("fast.txt");
+        await fast;
+        Assert.Equal("fast.txt", vm.CurrentPath);
+        Assert.Equal("Fast", vm.Rows.Single().Name);
+
+        load.Complete("slow.txt");
+        await slow;
+
+        Assert.Equal("fast.txt", vm.CurrentPath);
+        Assert.Equal("Fast", vm.Rows.Single().Name);
+    }
+
+    [Fact]
+    public async Task OlderAppendResultDoesNotOverwriteNewerLoad()
+    {
+        var load = new ControlledLoadService(new Dictionary<string, ChapterImportResult>(StringComparer.Ordinal)
+        {
+            ["base.mpls"] = ImportResult("base.mpls", Info("MPLS", "base", new Chapter(1, TimeSpan.Zero, "Base"))),
+            ["append.mpls"] = ImportResult("append.mpls", Info("MPLS", "append", new Chapter(1, TimeSpan.Zero, "Append"))),
+            ["new.txt"] = ImportResult("new.txt", Info("OGM", "new.txt", new Chapter(1, TimeSpan.Zero, "New")))
+        });
+        var vm = CreateViewModel(load);
+
+        var baseLoad = vm.LoadCommand.ExecuteAsync("base.mpls").AsTask();
+        await load.WaitForRequestAsync("base.mpls");
+        load.Complete("base.mpls");
+        await baseLoad;
+
+        var append = vm.AppendMplsCommand.ExecuteAsync("append.mpls").AsTask();
+        await load.WaitForRequestAsync("append.mpls");
+        var newerLoad = vm.LoadCommand.ExecuteAsync("new.txt").AsTask();
+        await load.WaitForRequestAsync("new.txt");
+
+        load.Complete("new.txt");
+        await newerLoad;
+        Assert.Equal("new.txt", vm.CurrentPath);
+        Assert.Equal("New", vm.Rows.Single().Name);
+
+        load.Complete("append.mpls");
+        await append;
+
+        Assert.Equal("new.txt", vm.CurrentPath);
+        Assert.Equal("New", vm.Rows.Single().Name);
+        Assert.False(vm.IsClipCombineChecked);
+    }
+
+    [Fact]
     public async Task ClipDisplayOptionsExposeMainContentWithRemarksWithoutChangingSourceOptions()
     {
         var firstInfo = Info("MPLS", "00002", new Chapter(1, TimeSpan.Zero, "A"));
@@ -854,6 +915,22 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task FailedSaveDirectoryDoesNotPersistThroughStore()
+    {
+        var store = new FakeSettingsStore(new AppSettings(SavingPath: "out", Language: "en-US"));
+        var save = new FakeSaveService { Result = new ChapterExportResult(false, "", "", []) };
+        var vm = CreateViewModel(saveService: save, appSettingsStore: store);
+
+        await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        await vm.SaveDirectoryCommand.ExecuteAsync("bad-out");
+
+        Assert.Equal("bad-out", save.LastDirectory);
+        Assert.Equal("out", store.Current.SavingPath);
+        Assert.Equal("out", vm.SaveDirectory);
+    }
+
+    [Fact]
     public async Task UiLanguagePersistsThroughSettingsStore()
     {
         var store = new FakeSettingsStore(new AppSettings(Language: ""));
@@ -1008,18 +1085,69 @@ public sealed class MainWindowViewModelTests
         }
     }
 
+    private sealed class ControlledLoadService(IReadOnlyDictionary<string, ChapterImportResult> results) : IChapterLoadService
+    {
+        private readonly Dictionary<string, TaskCompletionSource> started = [];
+        private readonly Dictionary<string, TaskCompletionSource<ChapterImportResult>> completions = [];
+
+        public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken)
+        {
+            return LoadAsync(path, progress: null, cancellationToken);
+        }
+
+        public async ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken)
+        {
+            var startedSource = SourceFor(started, path);
+            var completion = CompletionFor(path);
+            startedSource.TrySetResult();
+            progress?.Report(new ChapterLoadProgress(0.25, "Status.LoadingSource.Parse"));
+            using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
+            return await completion.Task;
+        }
+
+        public Task WaitForRequestAsync(string path) => SourceFor(started, path).Task;
+
+        public void Complete(string path)
+        {
+            CompletionFor(path).TrySetResult(results[path]);
+        }
+
+        private TaskCompletionSource<ChapterImportResult> CompletionFor(string path)
+        {
+            if (!completions.TryGetValue(path, out var source))
+            {
+                source = new TaskCompletionSource<ChapterImportResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+                completions[path] = source;
+            }
+
+            return source;
+        }
+
+        private static TaskCompletionSource SourceFor(Dictionary<string, TaskCompletionSource> sources, string path)
+        {
+            if (!sources.TryGetValue(path, out var source))
+            {
+                source = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                sources[path] = source;
+            }
+
+            return source;
+        }
+    }
+
     private sealed class FakeSaveService : IChapterSaveService
     {
         public ChapterInfo? LastInfo { get; private set; }
         public ChapterExportOptions? LastOptions { get; private set; }
         public string? LastDirectory { get; private set; }
+        public ChapterExportResult Result { get; init; } = new(true, "ok", ".txt", []);
 
         public ValueTask<ChapterExportResult> SaveAsync(ChapterInfo info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken)
         {
             LastInfo = info;
             LastOptions = options;
             LastDirectory = directory;
-            return ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
+            return ValueTask.FromResult(Result);
         }
     }
 

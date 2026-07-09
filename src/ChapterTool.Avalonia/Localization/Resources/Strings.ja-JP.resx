@@ -662,6 +662,9 @@
 <data name="Settings.Status.Ready" xml:space="preserve">
     <value>設定を読み込みました</value>
   </data>
+<data name="Settings.Status.LoadedDefaults" xml:space="preserve">
+    <value>設定を読み込めなかったため、既定値を表示しています</value>
+  </data>
 <data name="Settings.Status.Reset" xml:space="preserve">
     <value>既定値を復元しました</value>
   </data>

@@ -77,4 +77,27 @@ public sealed class RuntimeChapterSaveServiceTests
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task RuntimeSaveReturnsDiagnosticWhenFileSystemWriteFails()
+    {
+        var info = new ChapterInfo(
+            "test",
+            "test.xml",
+            0,
+            "XML",
+            24,
+            TimeSpan.FromMinutes(1),
+            [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
+
+        var result = await service.SaveAsync(
+            info,
+            new ChapterExportOptions(ChapterExportFormat.Txt),
+            "bad\0path",
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "SaveFailed");
+    }
 }

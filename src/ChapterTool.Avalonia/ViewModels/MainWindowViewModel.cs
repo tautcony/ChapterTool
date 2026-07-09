@@ -37,6 +37,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private bool currentInfoBelongsToSelectedClip;
     private ChapterInfoGroup? splitClipGroup;
     private ChapterSourceOption? combinedClipOption;
+    private int loadOperationVersion;
     private bool isRefreshingChapterNameModeOptions;
     private bool autoGenerateNames;
     private bool useTemplateNames;
@@ -713,6 +714,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {
+        var operationId = Interlocked.Increment(ref loadOperationVersion);
         if (string.IsNullOrWhiteSpace(path))
         {
             SetStatus("Status.NoSourceSelected");
@@ -726,10 +728,20 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         SetProgressStatus("Status.LoadingSource");
         var progress = new ChapterLoadProgressSink(update =>
         {
+            if (operationId != Volatile.Read(ref loadOperationVersion))
+            {
+                return;
+            }
+
             Progress = Math.Clamp(update.Value, 0, 0.98);
             SetProgressStatus(update.Message);
         });
         var result = await loadService.LoadAsync(path, progress, cancellationToken);
+        if (operationId != Volatile.Read(ref loadOperationVersion))
+        {
+            return;
+        }
+
         LogImportSummary("Load", result);
         if (!result.Success || result.Groups.Count == 0)
         {
@@ -783,7 +795,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             ("expression", Expression));
         LogDiagnostics(Localizer.GetString("Operation.OutputProjection"), projection.Diagnostics);
         var result = await saveService.SaveAsync(projection.Info, options, directory, cancellationToken);
-        if (!string.IsNullOrWhiteSpace(directory))
+        if (result.Success && !string.IsNullOrWhiteSpace(directory))
         {
             SaveDirectory = directory;
             if (appSettingsStore is not null)
@@ -882,7 +894,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     private async ValueTask AppendMplsAsync(string path, CancellationToken cancellationToken)
     {
-        if (currentGroup is null)
+        var operationId = Volatile.Read(ref loadOperationVersion);
+        var expectedGroup = currentGroup;
+        var expectedSplitGroup = splitClipGroup;
+        if (expectedGroup is null)
         {
             SetStatus("Status.NoCurrentMplsGroup");
             LogStatus();
@@ -892,6 +907,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         Log("Log.AppendingMpls", ("path", path));
         var result = await loadService.LoadAsync(path, cancellationToken);
+        if (operationId != Volatile.Read(ref loadOperationVersion)
+            || !ReferenceEquals(expectedGroup, currentGroup)
+            || !ReferenceEquals(expectedSplitGroup, splitClipGroup))
+        {
+            return;
+        }
+
         LogImportSummary("Append load", result);
         if (!result.Success || result.Groups.Count == 0)
         {
@@ -902,7 +924,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        var baseGroup = splitClipGroup ?? currentGroup;
+        var baseGroup = expectedSplitGroup ?? expectedGroup;
         var edit = ChapterSegmentService.Append(baseGroup, result.Groups[0]);
         if (edit.Diagnostics.Count > 0)
         {

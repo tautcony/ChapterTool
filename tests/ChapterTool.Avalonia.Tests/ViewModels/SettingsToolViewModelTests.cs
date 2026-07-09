@@ -65,6 +65,29 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
+    public async Task LoadFallsBackToDefaultsWhenSettingsStoresFail()
+    {
+        var owner = CreateOwner();
+        var themeApplication = new FakeThemeApplicationService();
+        var localizer = new AppLocalizationManager("en-US");
+        var viewModel = CreateViewModel(
+            owner,
+            new ThrowingAppSettingsStore(),
+            new ThrowingThemeSettingsStore(),
+            localizer,
+            themeApplicationService: themeApplication);
+
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
+        Assert.Equal(ThemeColorSettings.Default.BackChange, viewModel.ColorSlots[0].Value);
+        Assert.Equal(ThemeColorSettings.Default.BackChange, themeApplication.LastApplied?.BackChange);
+        Assert.True(viewModel.SettingsLoadFailed);
+        Assert.Contains("defaults", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.False(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
     public async Task RuntimeSafeSettingsApplyImmediatelyWithoutSavingStore()
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(
@@ -282,6 +305,27 @@ public sealed class SettingsToolViewModelTests
         Assert.Contains(nameof(SettingsToolViewModel.XmlLanguageDisplayOptions), notifications);
         Assert.Equal("未确定", option.RemarkText);
         Assert.Equal("und（未确定）", option.DisplayText);
+    }
+
+    [Fact]
+    public void DisposedViewModelStopsRefreshingLocalizedOptions()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var owner = CreateOwner(localizer: localizer);
+        var viewModel = CreateViewModel(owner, null, null, localizer);
+        var notifications = 0;
+        viewModel.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SettingsToolViewModel.XmlLanguageDisplayOptions))
+            {
+                notifications++;
+            }
+        };
+
+        (viewModel as IDisposable)?.Dispose();
+        localizer.SetCulture("zh-CN");
+
+        Assert.Equal(0, notifications);
     }
 
     [Fact]
@@ -550,6 +594,22 @@ public sealed class SettingsToolViewModelTests
             Current = settings;
             return ValueTask.CompletedTask;
         }
+    }
+
+    private sealed class ThrowingAppSettingsStore : ISettingsStore<AppSettings>
+    {
+        public ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromException<AppSettings>(new CorruptSettingsFileException("appsettings.json", "appsettings.json.bad", new InvalidDataException()));
+
+        public ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    }
+
+    private sealed class ThrowingThemeSettingsStore : ISettingsStore<ThemeColorSettings>
+    {
+        public ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromException<ThemeColorSettings>(new CorruptSettingsFileException("theme-colors.json", "theme-colors.json.bad", new InvalidDataException()));
+
+        public ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
 
     private sealed class FakeThemeApplicationService : IThemeApplicationService

@@ -108,6 +108,7 @@ public sealed class AvaloniaWindowService : IWindowService
         };
         window.Closed += (_, _) =>
         {
+            DisposeContentDataContext(window);
             windows.Remove(windowId);
             parameters.Remove(windowId);
         };
@@ -129,6 +130,7 @@ public sealed class AvaloniaWindowService : IWindowService
 
     private void Refresh(Window window, string id, object? parameter)
     {
+        DisposeContentDataContext(window);
         window.Title = Title(id);
         parameters[id] = parameter;
         window.Content = parameter is MainWindowViewModel viewModel
@@ -201,4 +203,11 @@ public sealed class AvaloniaWindowService : IWindowService
 
     private string PlaceholderText(string id) => Title(id);
 
+    private static void DisposeContentDataContext(Window window)
+    {
+        if (window.Content is Control { DataContext: IDisposable disposable })
+        {
+            disposable.Dispose();
+        }
+    }
 }
