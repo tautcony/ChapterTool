@@ -15,7 +15,7 @@ public sealed class ChapterFpsTransformServiceTests
         var result = ChapterFpsTransformService.ChangeFps(info, 24m, 48m);
 
         Assert.True(result.Success);
-        Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[1].Time);
+        Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[1].StartTime);
         Assert.Equal(48, result.Info.FramesPerSecond);
     }
 
@@ -26,15 +26,15 @@ public sealed class ChapterFpsTransformServiceTests
         {
             Chapters =
             [
-                new Chapter(1, TimeSpan.FromSeconds(10), "A", End: TimeSpan.FromSeconds(12))
+                new Chapter(1, TimeSpan.FromSeconds(10), "A", EndTime: TimeSpan.FromSeconds(12))
             ]
         };
 
         var result = ChapterFpsTransformService.ChangeFps(info, 24m, 48m);
 
         Assert.True(result.Success);
-        Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[0].Time);
-        Assert.Equal(TimeSpan.FromSeconds(6), result.Info.Chapters[0].End);
+        Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(6), result.Info.Chapters[0].EndTime);
     }
 
     [Fact]

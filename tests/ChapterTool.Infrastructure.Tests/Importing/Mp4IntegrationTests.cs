@@ -38,8 +38,8 @@ public sealed class Mp4IntegrationTests
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
         Assert.Equal(
             [TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20)],
-            result.Groups.Single().Entries.Single().ChapterSet.Chapters.Select(static chapter => chapter.Time));
-        Assert.Contains(result.Groups.Single().Entries.Single().MediaReferences ?? [],
+            result.Groups.Single().Entries.Single().ChapterSet.Chapters.Select(static chapter => chapter.StartTime));
+        Assert.Contains(result.Groups.Single().Entries.Single().ReferencedMediaFiles ?? [],
             reference => reference.AbsolutePath == FixturePath);
     }
 

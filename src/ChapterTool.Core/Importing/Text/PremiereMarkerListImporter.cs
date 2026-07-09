@@ -142,7 +142,7 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
             Path.GetFileName(path),
             ChapterImportFormat.PremiereMarkers,
             0,
-            chapters[^1].Time,
+            chapters[^1].StartTime,
             chapters);
         result = TextImportUtilities.SingleGroup(path, info);
         return true;

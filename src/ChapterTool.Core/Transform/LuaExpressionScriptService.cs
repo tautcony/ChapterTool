@@ -136,7 +136,7 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
 
         var chapter = new LuaTable
         {
-            ["number"] = context.Chapter.Number,
+            ["number"] = context.Chapter.DisplayNumber,
             ["time"] = (double)context.TimeSeconds,
             ["name"] = context.Chapter.Name,
             ["frames"] = context.Chapter.FramesInfo,

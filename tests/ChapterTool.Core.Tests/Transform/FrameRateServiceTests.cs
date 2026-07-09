@@ -156,7 +156,7 @@ public sealed class FrameRateServiceTests
         var chapters = new[]
         {
             new Chapter(1, TimeSpan.Zero, "Chapter 1"),
-            new Chapter(-1, Chapter.SeparatorTime, ""),
+            Chapter.Separator(),
             new Chapter(2, TimeSpan.FromSeconds(7d / 25d), "Chapter 2")
         };
         var info = NewInfo(0m, chapters);

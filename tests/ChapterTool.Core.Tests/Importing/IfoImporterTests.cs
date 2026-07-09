@@ -32,7 +32,7 @@ public sealed class IfoImporterTests
                 "01:32:31.813",
                 "01:49:12.679"
             ],
-            info.Chapters.Select(chapter => formatter.Format(chapter.Time)));
+            info.Chapters.Select(chapter => formatter.Format(chapter.StartTime)));
     }
 
     [Fact]
@@ -53,8 +53,8 @@ public sealed class IfoImporterTests
             Assert.Equal(47, info.Chapters.Count);
             Assert.Equal(25, info.FramesPerSecond);
             Assert.Equal(TimeSpan.FromMilliseconds(1411200), info.Duration);
-            Assert.Equal(TimeSpan.Zero, info.Chapters[0].Time);
-            Assert.Equal(TimeSpan.FromMinutes(23), info.Chapters[^1].Time);
+            Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);
+            Assert.Equal(TimeSpan.FromMinutes(23), info.Chapters[^1].StartTime);
         });
         Assert.Equal(["VTS_33_1", "VTS_33_2", "VTS_33_3"], infos.Select(static info => info.SourceName));
     }

@@ -29,7 +29,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
         var parsed = timeFormatter.Parse(text);
         var value = parsed.Value >= TimeSpan.FromDays(1) ? TimeSpan.Zero : parsed.Value;
-        chapters[index] = chapter with { Time = value };
+        chapters[index] = chapter with { StartTime = value };
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, parsed.Diagnostics);
     }
 
@@ -65,7 +65,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
         chapters[index] = chapter with
         {
-            Time = TimeSpan.FromSeconds((double)seconds),
+            StartTime = TimeSpan.FromSeconds((double)seconds),
             FramesInfo = frame.ToString("0", CultureInfo.InvariantCulture),
             FrameAccuracy = FrameAccuracy.Accurate
         };
@@ -107,8 +107,8 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         var chapters = info.Chapters.Where((_, index) => !indexes.Contains(index)).ToList();
         if (chapters.Count > 0 && indexes.Contains(0))
         {
-            var shift = chapters[0].Time;
-            chapters = chapters.Select(chapter => chapter.IsSeparator ? chapter : chapter with { Time = chapter.Time - shift }).ToList();
+            var shift = chapters[0].StartTime;
+            chapters = chapters.Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift }).ToList();
         }
 
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
@@ -143,7 +143,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         var effectiveShift = Math.Max(0, shift);
         var number = 0;
         var chapters = info.Chapters
-            .Select(chapter => chapter.IsSeparator ? chapter with { Number = 0 } : chapter with { Number = ++number + effectiveShift })
+            .Select(chapter => chapter.IsSeparator ? chapter with { DisplayNumber = 0 } : chapter with { DisplayNumber = ++number + effectiveShift })
             .ToList();
         var diagnostics = effectiveShift == shift
             ? Array.Empty<ChapterDiagnostic>()
@@ -195,8 +195,8 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
         var shift = ChapterRounding.SecondsToTimeSpan(frames / framesPerSecond);
         var chapters = info.Chapters
-            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { Time = chapter.Time - shift })
-            .Where(static chapter => chapter.IsSeparator || chapter.Time >= TimeSpan.Zero);
+            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })
+            .Where(static chapter => chapter.IsSeparator || chapter.StartTime >= TimeSpan.Zero);
 
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
@@ -255,7 +255,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     {
         var number = 0;
         return chapters
-            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { Number = ++number })
+            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { DisplayNumber = ++number })
             .ToList();
     }
 
@@ -282,6 +282,6 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
     private static long ChapterFrame(Chapter chapter, decimal framesPerSecond)
     {
-        return ChapterRounding.RoundToInt64((decimal)chapter.Time.TotalSeconds * framesPerSecond);
+        return ChapterRounding.RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond);
     }
 }

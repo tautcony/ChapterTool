@@ -23,12 +23,12 @@ public sealed class ChapterOutputProjectionServiceTests
                 ApplyExpression: true,
                 Expression: "t + index"));
 
-        Assert.Equal(TimeSpan.FromSeconds(10), source.Chapters[0].Time);
+        Assert.Equal(TimeSpan.FromSeconds(10), source.Chapters[0].StartTime);
         Assert.Same(originalFirst, source.Chapters[0]);
         Assert.Empty(result.Diagnostics);
-        Assert.Equal([3, 4, 5], result.OutputChapters.Select(static chapter => chapter.Number));
+        Assert.Equal([3, 4, 5], result.OutputChapters.Select(static chapter => chapter.DisplayNumber));
         Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03"], result.OutputChapters.Select(static chapter => chapter.Name));
-        Assert.Equal([11, 22, 33], result.OutputChapters.Select(static chapter => (int)chapter.Time.TotalSeconds));
+        Assert.Equal([11, 22, 33], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
         Assert.Equal("264", result.OutputChapters[0].FramesInfo);
         Assert.True(result.OutputChapters[0].FrameAccuracy is FrameAccuracy.Accurate);
     }
@@ -36,7 +36,7 @@ public sealed class ChapterOutputProjectionServiceTests
     [Fact]
     public void Projection_preserves_separators_and_excludes_them_from_output_chapters()
     {
-        var separator = new Chapter(0, Chapter.SeparatorTime, "---");
+        var separator = Chapter.Separator("---");
         var info = Sample() with
         {
             Chapters = [Sample().Chapters[0], separator, Sample().Chapters[1]]
@@ -48,9 +48,9 @@ public sealed class ChapterOutputProjectionServiceTests
 
         Assert.Equal(3, result.Info.Chapters.Count);
         Assert.True(result.Info.Chapters[1].IsSeparator);
-        Assert.Equal(0, result.Info.Chapters[1].Number);
+        Assert.Equal(0, result.Info.Chapters[1].DisplayNumber);
         Assert.Equal(2, result.OutputChapters.Count);
-        Assert.Equal([1, 2], result.OutputChapters.Select(static chapter => (int)chapter.Time.TotalSeconds));
+        Assert.Equal([1, 2], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         Assert.Equal(3, result.Diagnostics.Count);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal("InvalidExpression.LuaRuntime", diagnostic.Code));
-        Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.Time.TotalSeconds));
+        Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
         Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03"], result.OutputChapters.Select(static chapter => chapter.Name));
     }
 
@@ -79,7 +79,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         Assert.Equal(3, result.Diagnostics.Count);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal("InvalidExpressionTime", diagnostic.Code));
-        Assert.All(result.OutputChapters, chapter => Assert.Equal(TimeSpan.Zero, chapter.Time));
+        Assert.All(result.OutputChapters, chapter => Assert.Equal(TimeSpan.Zero, chapter.StartTime));
     }
 
     private static ChapterSet Sample() =>

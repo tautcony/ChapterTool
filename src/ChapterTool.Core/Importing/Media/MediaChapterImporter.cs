@@ -104,7 +104,7 @@ public sealed class MediaChapterImporter(
             Path.GetFileName(path),
             chapters,
             renumberFallbacks: true);
-        return [new ChapterImportEntry("default", "FFprobe Chapters", info, MediaReferences: [CreateReference(path)])];
+        return [new ChapterImportEntry("default", "FFprobe Chapters", info, ReferencedMediaFiles: [CreateReference(path)])];
     }
 
     private static List<ChapterImportEntry> CreateEditionOptions(string path, IReadOnlyList<NormalizedMediaChapter> chapters)
@@ -139,7 +139,7 @@ public sealed class MediaChapterImporter(
     {
         var title = $"Edition {editionIndex + 1:D2}";
         var info = CreateInfo(title, Path.GetFileName(path), chapters, renumberFallbacks: true);
-        return new ChapterImportEntry($"edition-{editionIndex}", title, info, CanCombine: false, MediaReferences: [CreateReference(path)]);
+        return new ChapterImportEntry($"edition-{editionIndex}", title, info, CanCombine: false, ReferencedMediaFiles: [CreateReference(path)]);
     }
 
     private static ChapterSet CreateInfo(
@@ -158,7 +158,7 @@ public sealed class MediaChapterImporter(
                 index + 1,
                 chapter.Start,
                 ChapterName(chapter.Entry, renumberFallbacks ? index + 1 : chapter.Entry.SourceOrder + 1),
-                End: chapter.End))
+                EndTime: chapter.End))
             .ToList();
         var duration = ordered
             .Select(static chapter => chapter.End)
@@ -271,7 +271,7 @@ public sealed class MediaChapterImporter(
     private static string? TagValue(MediaChapterEntry entry, string key) =>
         entry.Tags.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;
 
-    private static MediaFileReference CreateReference(string path) =>
+    private static ReferencedMediaFile CreateReference(string path) =>
         new(Path.GetFileName(path), Path.GetFileName(path), path);
 
     private static ChapterDiagnostic Error(string code, string message) =>

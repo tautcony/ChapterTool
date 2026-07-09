@@ -106,9 +106,9 @@ public sealed class MainWindowStateHeadlessTests
         Assert.Equal("jpn", host.SaveService.LastOptions.XmlLanguage);
         Assert.Equal("out", host.SaveService.LastDirectory);
         Assert.NotNull(host.SaveService.LastInfo);
-        Assert.Equal(3, host.SaveService.LastInfo.Chapters[0].Number);
+        Assert.Equal(3, host.SaveService.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", host.SaveService.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(1), host.SaveService.LastInfo.Chapters[0].Time);
+        Assert.Equal(TimeSpan.FromSeconds(1), host.SaveService.LastInfo.Chapters[0].StartTime);
 
         formatBox.SelectedIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         await host.LayoutAsync();

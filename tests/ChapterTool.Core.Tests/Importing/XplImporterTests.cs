@@ -29,9 +29,9 @@ public sealed class XplImporterTests
             Assert.Equal(24, actual.FramesPerSecond);
             AssertTimeNear(expected.Duration, actual.Duration);
             Assert.Equal(expected.ChapterCount, actual.Chapters.Count);
-            AssertTimeNear(expected.FirstTime, actual.Chapters[0].Time);
+            AssertTimeNear(expected.FirstTime, actual.Chapters[0].StartTime);
             Assert.Equal(expected.FirstName, actual.Chapters[0].Name);
-            AssertTimeNear(expected.LastTime, actual.Chapters[^1].Time);
+            AssertTimeNear(expected.LastTime, actual.Chapters[^1].StartTime);
             Assert.Equal(expected.LastName, actual.Chapters[^1].Name);
         }
     }
@@ -66,7 +66,7 @@ public sealed class XplImporterTests
             TimeSpan.FromSeconds(3226)
         };
         var actual = xplResult.Groups.Single().Entries.Single(entry => entry.ChapterSet.Chapters.Count == expectedTimes.Length);
-        Assert.Equal(expectedTimes, actual.ChapterSet.Chapters.Select(static chapter => chapter.Time));
+        Assert.Equal(expectedTimes, actual.ChapterSet.Chapters.Select(static chapter => chapter.StartTime));
     }
 
     [Fact]

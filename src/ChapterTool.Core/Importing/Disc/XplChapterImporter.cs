@@ -97,10 +97,10 @@ public sealed class XplChapterImporter : IChapterImporter
                     24,
                     ParseTime(durationText, timeBase, tickBase, tickBaseDivisor),
                     chapters);
-                IReadOnlyList<MediaFileReference> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
+                IReadOnlyList<ReferencedMediaFile> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
                     ? []
-                    : [new MediaFileReference(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
-                yield return new ChapterImportEntry($"title-{optionIndex}", $"{info.Title}__{chapters.Count}", info, MediaReferences: mediaReferences);
+                    : [new ReferencedMediaFile(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
+                yield return new ChapterImportEntry($"title-{optionIndex}", $"{info.Title}__{chapters.Count}", info, ReferencedMediaFiles: mediaReferences);
                 optionIndex++;
             }
         }

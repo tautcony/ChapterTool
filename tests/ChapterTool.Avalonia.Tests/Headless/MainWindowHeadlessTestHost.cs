@@ -111,15 +111,15 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             : chapterNames
                 .Select((name, index) => new Chapter(index + 1, TimeSpan.FromSeconds(index * 10), name))
                 .ToArray();
-        var duration = chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].Time;
+        var duration = chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].StartTime;
         var info = new ChapterSet(sourceName, sourceName, sourceType, 24, duration, chapters);
         return new ChapterImportEntry(sourceName, sourceName, info);
     }
 
-    public static ChapterImportEntry OptionWithMedia(ChapterImportFormat sourceType,  string sourceName, MediaFileReference media, params string[] chapterNames)
+    public static ChapterImportEntry OptionWithMedia(ChapterImportFormat sourceType,  string sourceName, ReferencedMediaFile referencedMedia, params string[] chapterNames)
     {
         var entry = Entry(sourceType, sourceName, chapterNames);
-        return entry with { MediaReferences = [media] };
+        return entry with { ReferencedMediaFiles = [referencedMedia] };
     }
 
     public async ValueTask LoadAsync(string path)

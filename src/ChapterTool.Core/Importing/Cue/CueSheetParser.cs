@@ -111,13 +111,13 @@ public sealed partial class CueSheetParser
             return ChapterImportResult.Failed(Error("EmptyCueFile", "No CUE chapters were parsed."));
         }
 
-        var ordered = chapters.OrderBy(static chapter => chapter.Number).ToList();
+        var ordered = chapters.OrderBy(static chapter => chapter.DisplayNumber).ToList();
         var info = new ChapterSet(
             title,
             sourceName.Length == 0 ? Path.GetFileName(path) : sourceName,
             ChapterImportFormat.Cue,
             0,
-            ordered[^1].Time,
+            ordered[^1].StartTime,
             ordered);
         var entry = new ChapterImportEntry("default", "CUE Chapters", info);
         return new ChapterImportResult(true, [new ChapterImportSource(path, [entry])], []);

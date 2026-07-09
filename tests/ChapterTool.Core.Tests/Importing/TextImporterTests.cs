@@ -43,7 +43,7 @@ public sealed class TextImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PartialParse");
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(6, chapters.Count);
-        Assert.Equal(TimeSpan.Zero, chapters[0].Time);
+        Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
         Assert.Equal("Chapter 06", chapters[5].Name);
     }
 
@@ -60,8 +60,8 @@ public sealed class TextImporterTests
             """);
 
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(TimeSpan.Zero, chapters[0].Time);
-        Assert.Equal(TimeSpan.FromSeconds(30), chapters[1].Time);
+        Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(30), chapters[1].StartTime);
     }
 
     [Fact]
@@ -127,9 +127,9 @@ public sealed class TextImporterTests
         Assert.Equal("markers.txt", info.SourceName);
         Assert.Equal(2, info.Chapters.Count);
         Assert.Equal("Intro", info.Chapters[0].Name);
-        Assert.Equal(TimeSpan.Zero, info.Chapters[0].Time);
+        Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);
         Assert.Equal("Part A", info.Chapters[1].Name);
-        Assert.Equal(TimeSpan.FromMilliseconds(83456), info.Chapters[1].Time);
+        Assert.Equal(TimeSpan.FromMilliseconds(83456), info.Chapters[1].StartTime);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class TextImporterTests
         Assert.True(result.Success, Diagnostics(result));
         var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
         Assert.Equal("Scene 02", chapter.Name);
-        Assert.Equal(TimeSpan.FromMilliseconds(12345), chapter.Time);
+        Assert.Equal(TimeSpan.FromMilliseconds(12345), chapter.StartTime);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public sealed class TextImporterTests
         Assert.True(result.Success, Diagnostics(result));
         var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
         Assert.Equal("Act \"One, Start\"", chapter.Name);
-        Assert.Equal(TimeSpan.FromSeconds(10) + TimeSpan.FromTicks((long)Math.Round(12 * TimeSpan.TicksPerSecond / 23.976M)), chapter.Time);
+        Assert.Equal(TimeSpan.FromSeconds(10) + TimeSpan.FromTicks((long)Math.Round(12 * TimeSpan.TicksPerSecond / 23.976M)), chapter.StartTime);
     }
 
     [Fact]
@@ -251,9 +251,9 @@ public sealed class TextImporterTests
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(7, chapters.Count);
         Assert.Equal("Introduction", chapters[0].Name);
-        Assert.Equal(TimeSpan.FromMilliseconds(28206), chapters[1].Time);
-        Assert.Equal(TimeSpan.FromSeconds(26), chapters[0].End);
-        Assert.Equal(TimeSpan.FromMilliseconds(547500), chapters[^1].End);
+        Assert.Equal(TimeSpan.FromMilliseconds(28206), chapters[1].StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(26), chapters[0].EndTime);
+        Assert.Equal(TimeSpan.FromMilliseconds(547500), chapters[^1].EndTime);
         Assert.Equal(TimeSpan.FromMilliseconds(547500), result.Groups.Single().Entries.Single().ChapterSet.Duration);
     }
 
@@ -339,8 +339,8 @@ public sealed class TextImporterTests
         Assert.True(result.Success);
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(["Parent", "Child"], chapters.Select(chapter => chapter.Name));
-        Assert.Equal(TimeSpan.FromSeconds(30), chapters[0].End);
-        Assert.Null(chapters[1].End);
+        Assert.Equal(TimeSpan.FromSeconds(30), chapters[0].EndTime);
+        Assert.Null(chapters[1].EndTime);
     }
 
     [Fact]
@@ -365,7 +365,7 @@ public sealed class TextImporterTests
 
         var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
         Assert.Equal("Kept", chapter.Name);
-        Assert.Equal(1, chapter.Number);
+        Assert.Equal(1, chapter.DisplayNumber);
     }
 
     [Theory]
@@ -394,7 +394,7 @@ public sealed class TextImporterTests
         Assert.Equal(30, chapters.Count);
         Assert.Equal("01 High-energy Particle", chapters[0].Name);
         Assert.Contains(chapters, chapter => chapter.Name.Contains("カゲロウデイズ", StringComparison.Ordinal));
-        Assert.Equal(TimeSpan.FromMilliseconds(6789383), chapters[^1].Time);
+        Assert.Equal(TimeSpan.FromMilliseconds(6789383), chapters[^1].StartTime);
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public sealed class TextImporterTests
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(17, chapters.Count);
         Assert.Equal("Chapter 01", chapters[0].Name.Trim());
-        Assert.Equal(TimeSpan.FromMilliseconds(267080), chapters[1].Time);
+        Assert.Equal(TimeSpan.FromMilliseconds(267080), chapters[1].StartTime);
     }
 
     [Fact]
@@ -476,8 +476,8 @@ public sealed class TextImporterTests
         var entries = result.Groups.Single().Entries;
         Assert.Equal(2, entries.Count);
         Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], entries[0].ChapterSet.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal(TimeSpan.FromMinutes(2), entries[1].ChapterSet.Chapters.Single().Time);
-        Assert.Equal(TimeSpan.FromMinutes(4), entries[1].ChapterSet.Chapters.Single().End);
+        Assert.Equal(TimeSpan.FromMinutes(2), entries[1].ChapterSet.Chapters.Single().StartTime);
+        Assert.Equal(TimeSpan.FromMinutes(4), entries[1].ChapterSet.Chapters.Single().EndTime);
         Assert.Equal("A hidden and not enabled chapter.", entries[1].ChapterSet.Chapters.Single().Name);
     }
 
@@ -494,10 +494,10 @@ public sealed class TextImporterTests
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(6, chapters.Count);
         Assert.Equal("Ouvertüre", chapters[0].Name);
-        Assert.Equal(TimeSpan.Zero, chapters[0].Time);
-        Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[0].End);
+        Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[0].EndTime);
         Assert.Equal("Dialog: Er erwacht!", chapters[^1].Name);
-        Assert.Equal(TimeSpan.FromMinutes(27).Add(TimeSpan.FromSeconds(27)), chapters[^1].Time);
+        Assert.Equal(TimeSpan.FromMinutes(27).Add(TimeSpan.FromSeconds(27)), chapters[^1].StartTime);
     }
 
     [Fact]
@@ -615,9 +615,9 @@ public sealed class TextImporterTests
             Assert.Equal(expected.ChapterCount, chapters.Count);
             Assert.Equal(expected.Duration, entries[i].ChapterSet.Duration);
             Assert.Equal(expected.FirstName, chapters[0].Name);
-            Assert.Equal(expected.FirstTime, chapters[0].Time);
+            Assert.Equal(expected.FirstTime, chapters[0].StartTime);
             Assert.Equal(expected.LastName, chapters[^1].Name);
-            Assert.Equal(expected.LastTime, chapters[^1].Time);
+            Assert.Equal(expected.LastTime, chapters[^1].StartTime);
         }
     }
 

@@ -83,7 +83,7 @@ public sealed class RuntimeChapterLoadServiceTests
             Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
             var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
             Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], chapters.Select(static chapter => chapter.Name));
-            Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(30)], chapters.Select(static chapter => chapter.Time));
+            Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(30)], chapters.Select(static chapter => chapter.StartTime));
         }
         finally
         {
@@ -203,14 +203,14 @@ public sealed class RuntimeChapterLoadServiceTests
                 Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], chapters.Select(static chapter => chapter.Name));
                 Assert.Equal(
                     [TimeSpan.Zero, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(330), TimeSpan.FromSeconds(740)],
-                    chapters.Select(static chapter => chapter.Time));
+                    chapters.Select(static chapter => chapter.StartTime));
 
                 if (result.Diagnostics.Any(static diagnostic => diagnostic.Code == "MatroskaMissingDependency"))
                 {
                     Assert.Single(entries);
                     Assert.Equal(
                         [TimeSpan.FromSeconds(29.15), null, null, TimeSpan.FromSeconds(775)],
-                        chapters.Select(static chapter => chapter.End));
+                        chapters.Select(static chapter => chapter.EndTime));
                     Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed");
                     Assert.Equal(ChapterImportFormat.Media, entries.Single().ChapterSet.ImportFormat);
                 }
@@ -219,7 +219,7 @@ public sealed class RuntimeChapterLoadServiceTests
                     Assert.Equal(2, entries.Count);
                     Assert.Equal(
                         [null, null, null, TimeSpan.FromSeconds(775)],
-                        chapters.Select(static chapter => chapter.End));
+                        chapters.Select(static chapter => chapter.EndTime));
                     Assert.Equal(ChapterImportFormat.MatroskaXml, entries[0].ChapterSet.ImportFormat);
                 }
             }

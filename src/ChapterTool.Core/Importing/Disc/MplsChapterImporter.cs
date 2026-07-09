@@ -128,9 +128,9 @@ public sealed class MplsChapterImporter : IChapterImporter
             chapters);
         var refs = playItem.FullName
             .Split('&', StringSplitOptions.RemoveEmptyEntries)
-            .Select(clip => new MediaFileReference($"{clip}.m2ts", Path.Combine("..", "STREAM", $"{clip}.m2ts")))
+            .Select(clip => new ReferencedMediaFile($"{clip}.m2ts", Path.Combine("..", "STREAM", $"{clip}.m2ts")))
             .ToList();
-        return new ChapterImportEntry($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Count}", info, CanCombine: true, MediaReferences: refs);
+        return new ChapterImportEntry($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Count}", info, CanCombine: true, ReferencedMediaFiles: refs);
     }
 
     private static List<Chapter> PlaylistChapters(IReadOnlyList<MplsPlayItem> playItems, IReadOnlyList<MplsMark> marks)

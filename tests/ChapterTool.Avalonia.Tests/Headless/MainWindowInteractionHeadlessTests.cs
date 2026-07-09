@@ -108,7 +108,7 @@ public sealed class MainWindowInteractionHeadlessTests
                 MainWindowHeadlessTestHost.OptionWithMedia(
                     ChapterImportFormat.Mpls,
                     "00001",
-                    new MediaFileReference("clip.m2ts", "clip.m2ts"),
+                    new ReferencedMediaFile("clip.m2ts", "clip.m2ts"),
                     "A"),
                 MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "B")));
             await host.LoadAsync(Path.Combine(root, "movie.mpls"));

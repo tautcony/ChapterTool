@@ -74,8 +74,8 @@ public sealed class ChapterExportServiceTests
             Duration = TimeSpan.FromSeconds(60),
             Chapters =
             [
-                new Chapter(1, TimeSpan.Zero, "Intro", End: TimeSpan.FromSeconds(4)),
-                new Chapter(2, TimeSpan.FromSeconds(10), "Middle", End: TimeSpan.FromSeconds(15)),
+                new Chapter(1, TimeSpan.Zero, "Intro", EndTime: TimeSpan.FromSeconds(4)),
+                new Chapter(2, TimeSpan.FromSeconds(10), "Middle", EndTime: TimeSpan.FromSeconds(15)),
                 new Chapter(3, TimeSpan.FromSeconds(30), "End")
             ]
         };
@@ -93,7 +93,7 @@ public sealed class ChapterExportServiceTests
     {
         var info = Sample() with
         {
-            Chapters = [new Chapter(1, TimeSpan.Zero, "Line 1\r\nLine 2 --> marker", End: TimeSpan.FromSeconds(1))]
+            Chapters = [new Chapter(1, TimeSpan.Zero, "Line 1\r\nLine 2 --> marker", EndTime: TimeSpan.FromSeconds(1))]
         };
 
         var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
@@ -184,7 +184,7 @@ public sealed class ChapterExportServiceTests
             Chapters =
             [
                 new Chapter(1, TimeSpan.Zero, "A", "0"),
-                new Chapter(-1, Chapter.SeparatorTime, ""),
+                Chapter.Separator(),
                 new Chapter(2, TimeSpan.FromSeconds(7), "B", "168")
             ]
         };
@@ -219,7 +219,7 @@ public sealed class ChapterExportServiceTests
             Chapters =
             [
                 new Chapter(1, TimeSpan.FromSeconds(5), "A"),
-                new Chapter(-1, Chapter.SeparatorTime, ""),
+                Chapter.Separator(),
                 new Chapter(2, TimeSpan.FromSeconds(7), "B")
             ]
         };

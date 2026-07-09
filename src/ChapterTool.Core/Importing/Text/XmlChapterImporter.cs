@@ -130,7 +130,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
             for (var i = 0; i < chapters.Count - 1; i++)
             {
-                if (chapters[i].Time == chapters[i + 1].Time)
+                if (chapters[i].StartTime == chapters[i + 1].StartTime)
                 {
                     chapters.RemoveAt(i--);
                 }
@@ -141,7 +141,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
                 Path.GetFileName(path),
                 ChapterImportFormat.MatroskaXml,
                 0,
-                chapters.Count == 0 ? TimeSpan.Zero : chapters[^1].Time,
+                chapters.Count == 0 ? TimeSpan.Zero : chapters[^1].StartTime,
                 Renumber(chapters));
             entries.Add(new ChapterImportEntry($"edition-{editionIndex}", info.Title, info));
 
@@ -193,7 +193,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
         if (hasStart)
         {
-            yield return new Chapter(index, start, name, End: end);
+            yield return new Chapter(index, start, name, EndTime: end);
         }
 
         foreach (var chapter in inner)
@@ -204,7 +204,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
     }
 
     private static IReadOnlyList<Chapter> Renumber(IReadOnlyList<Chapter> chapters) =>
-        chapters.Select((chapter, index) => chapter with { Number = index + 1 }).ToList();
+        chapters.Select((chapter, index) => chapter with { DisplayNumber = index + 1 }).ToList();
 
     private static ChapterDiagnostic Error(string code, string message) =>
         new(DiagnosticSeverity.Error, code, message);

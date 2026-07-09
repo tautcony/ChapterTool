@@ -12,8 +12,8 @@ public sealed class ChapterRowViewModel
         string? name = null)
     {
         Chapter = chapter;
-        Number = number ?? chapter.Number;
-        TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.Time);
+        Number = number ?? chapter.DisplayNumber;
+        TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.StartTime);
         Name = name ?? chapter.Name;
         FramesInfo = chapter.FramesInfo;
         IsFrameAccurate = chapter.FrameAccuracy == FrameAccuracy.Accurate;

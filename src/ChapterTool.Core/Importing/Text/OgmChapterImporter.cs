@@ -129,7 +129,7 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
             Path.GetFileName(path),
             ChapterImportFormat.Ogm,
             0,
-            chapters[^1].Time,
+            chapters[^1].StartTime,
             chapters);
         var entry = new ChapterImportEntry("default", "OGM Chapters", info);
         var group = new ChapterImportSource(path, [entry]);

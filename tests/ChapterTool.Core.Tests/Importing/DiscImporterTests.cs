@@ -92,16 +92,16 @@ public sealed class DiscImporterTests
         Assert.Equal("00002", info.SourceName);
         Assert.Equal(24, info.FramesPerSecond);
         Assert.Equal(46, info.Chapters.Count);
-        Assert.Equal(TimeSpan.Zero, info.Chapters[0].Time);
-        Assert.Equal(TimeSpan.FromMilliseconds(14417), info.Chapters[1].Time);
+        Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromMilliseconds(14417), info.Chapters[1].StartTime);
         Assert.Equal(MplsTimes(
             0, 648750, 984375, 23799375, 27487500, 28044375, 28276875, 28918125, 29195625, 36823125, 41679375,
             52321875, 56593125, 62563125, 73524375, 83199375, 95167500, 100741875, 106155000, 116420625,
             120845625, 126307500, 129403125, 139273125, 141071250, 142704375, 147866250, 151578750, 157603125,
             163599375, 170810625, 178768125, 186941250, 191786250, 192165000, 202076250, 213168750, 222028125,
             228003750, 236915625, 244306875, 253316250, 260053125, 271863750, 284366250, 285738750),
-            info.Chapters.Select(chapter => chapter.Time));
-        Assert.Contains(entry.MediaReferences ?? [], reference => reference.RelativePath == Path.Combine("..", "STREAM", "00002.m2ts"));
+            info.Chapters.Select(chapter => chapter.StartTime));
+        Assert.Contains(entry.ReferencedMediaFiles ?? [], reference => reference.RelativePath == Path.Combine("..", "STREAM", "00002.m2ts"));
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public sealed class DiscImporterTests
         Assert.Equal("00001", info.SourceName);
         Assert.Equal(24000d / 1001d, info.FramesPerSecond);
         Assert.Equal(MplsChapterImporter.PtsToTime(163027149 - 90000), info.Duration);
-        Assert.Equal(MplsTimes(0, 41963170, 96516418, 96831733, 98138038, 102186457, 131841081, 158573411, 162621830), info.Chapters.Select(chapter => chapter.Time));
+        Assert.Equal(MplsTimes(0, 41963170, 96516418, 96831733, 98138038, 102186457, 131841081, 158573411, 162621830), info.Chapters.Select(chapter => chapter.StartTime));
     }
 
     [Fact]
@@ -133,9 +133,9 @@ public sealed class DiscImporterTests
         Assert.Equal(9, infos.Length);
         Assert.Equal(["00005", "00006&00007", "00008", "00009&00010", "00011", "00012", "00013&00014", "00015", "00016"], infos.Select(info => info.SourceName));
         Assert.All(infos, info => Assert.Equal(24000d / 1001d, info.FramesPerSecond));
-        Assert.Equal(TimeSpan.Zero, infos[1].Chapters.Single().Time);
-        Assert.Equal(MplsTimes(0, 20609964), infos[2].Chapters.Select(chapter => chapter.Time));
-        Assert.Equal(MplsTimes(0, 4185431, 8233850, 23263865), infos[5].Chapters.Select(chapter => chapter.Time));
+        Assert.Equal(TimeSpan.Zero, infos[1].Chapters.Single().StartTime);
+        Assert.Equal(MplsTimes(0, 20609964), infos[2].Chapters.Select(chapter => chapter.StartTime));
+        Assert.Equal(MplsTimes(0, 4185431, 8233850, 23263865), infos[5].Chapters.Select(chapter => chapter.StartTime));
     }
 
     [Fact]
@@ -165,8 +165,8 @@ public sealed class DiscImporterTests
         Assert.Equal("VTS_05_1", info.SourceName);
         Assert.Equal(7, info.Chapters.Count);
         Assert.Equal("Chapter 07", info.Chapters[6].Name);
-        Assert.Equal("01:49:12.679", new ChapterTimeFormatter().Format(info.Chapters[6].Time));
-        Assert.Contains(entry.MediaReferences ?? [], reference => reference.RelativePath == "VTS_05_1.VOB");
+        Assert.Equal("01:49:12.679", new ChapterTimeFormatter().Format(info.Chapters[6].StartTime));
+        Assert.Contains(entry.ReferencedMediaFiles ?? [], reference => reference.RelativePath == "VTS_05_1.VOB");
     }
 
     [Fact]
@@ -275,8 +275,8 @@ public sealed class DiscImporterTests
         Assert.Equal(ChapterImportFormat.HdDvdXpl, info.ImportFormat);
         Assert.Equal("Main", info.Title);
         Assert.Equal("ADV_OBJ/main.evo", info.SourceName);
-        Assert.Equal(TimeSpan.FromSeconds(60.5), info.Chapters[1].Time);
-        Assert.Contains(result.Groups.Single().Entries.Single().MediaReferences ?? [], reference => reference.RelativePath == Path.Combine("..", "HVDVD_TS", "main.evo"));
+        Assert.Equal(TimeSpan.FromSeconds(60.5), info.Chapters[1].StartTime);
+        Assert.Contains(result.Groups.Single().Entries.Single().ReferencedMediaFiles ?? [], reference => reference.RelativePath == Path.Combine("..", "HVDVD_TS", "main.evo"));
     }
 
     [Fact]
@@ -308,11 +308,11 @@ public sealed class DiscImporterTests
         Assert.Equal(2, infos.Length);
         Assert.Equal("Display Title", infos[0].Title);
         Assert.Equal("Display Chapter", infos[0].Chapters.Single().Name);
-        Assert.Equal(TimeSpan.FromSeconds(1.5), infos[0].Chapters.Single().Time);
+        Assert.Equal(TimeSpan.FromSeconds(1.5), infos[0].Chapters.Single().StartTime);
         Assert.Equal(TimeSpan.FromSeconds(10.5), infos[0].Duration);
         Assert.Equal("Second Title", infos[1].Title);
         Assert.Equal("Second Chapter", infos[1].Chapters.Single().Name);
-        Assert.Equal(TimeSpan.FromSeconds(2), infos[1].Chapters.Single().Time);
+        Assert.Equal(TimeSpan.FromSeconds(2), infos[1].Chapters.Single().StartTime);
     }
 
     [Theory]
