@@ -64,6 +64,10 @@ The system SHALL transform chapter times through Lua scripts using structured su
 - **WHEN** Lua compilation, Lua execution, or Lua return conversion fails
 - **THEN** Core SHALL return a failure diagnostic and preserve original chapter time behavior
 
+#### Scenario: Lua execution is bounded
+- **WHEN** a Lua expression or transform function does not complete within the execution budget
+- **THEN** Core SHALL stop the script, return a structured timeout diagnostic, and preserve original chapter time behavior
+
 #### Scenario: Postfix expressions are not a required expression target
 - **WHEN** expression transform behavior is implemented for this change
 - **THEN** Core SHALL NOT require postfix expression authoring or postfix token-list evaluation as part of the user-facing expression workflow
@@ -111,7 +115,7 @@ The system SHALL expose chapter editing as Core operations callable by ViewModel
 - **THEN** Core SHALL insert a chapter named `New Chapter` before it and renumber the chapter list
 
 ### Requirement: Export formats
-The system SHALL export TXT/OGM, Matroska XML, QPFile, TimeCodes, tsMuxeR meta, CUE, and JSON through UI-independent exporter contracts.
+The system SHALL export TXT/OGM, Matroska XML, QPFile, TimeCodes, tsMuxeR meta, CUE, JSON, WebVTT, celltimes, and Chapter-to-QPFile through UI-independent exporter contracts.
 
 #### Scenario: TXT export writes OGM pairs
 - **WHEN** TXT export runs
@@ -134,9 +138,18 @@ The system SHALL export TXT/OGM, Matroska XML, QPFile, TimeCodes, tsMuxeR meta, 
 - **WHEN** QPFile or celltimes output is generated
 - **THEN** each exported frame number SHALL use the configured compatibility rounding policy for integer-frame output
 
+#### Scenario: Frame-number exporters reject non-finite frame rates
+- **WHEN** QPFile, celltimes, Chapter-to-QPFile, or expression projection needs frame-rate arithmetic and the selected frame rate is NaN or infinity
+- **THEN** Core SHALL return a structured invalid-frame-rate diagnostic instead of throwing or producing invalid frame numbers
+
 #### Scenario: JSON export handles MPLS source name
 - **WHEN** JSON export runs for an MPLS source
 - **THEN** `sourceName` SHALL be `{SourceName}.m2ts`
+
+#### Scenario: WebVTT export preserves explicit chapter ends
+- **WHEN** WebVTT export runs for chapters with explicit end timestamps
+- **THEN** each cue SHALL use the chapter's explicit end timestamp
+- **AND** chapters without an explicit end SHALL fall back to the next chapter start or the chapter set duration
 
 ### Requirement: Legacy-compatible rounding policies
 The system SHALL use documented legacy compatibility rounding policies for chapter timestamp formatting and frame-number conversions.

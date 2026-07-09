@@ -182,6 +182,11 @@ The rewrite SHALL account for installer strategy, native dependencies, assets, l
 - **WHEN** packaging is implemented
 - **THEN** icons, UI images, native DLLs, and third-party license files SHALL be migrated, replaced, or explicitly retired with rationale
 
+#### Scenario: Stale legacy installer inputs are retired
+- **WHEN** legacy installer scripts, plugins, or distribution inputs target obsolete executable names, version sources, or product metadata
+- **THEN** they SHALL be removed or replaced instead of remaining as runnable-looking packaging inputs
+- **AND** the maintained distribution documentation SHALL identify the current packaging status and any intentionally retired paths
+
 #### Scenario: FFprobe dependency is documented
 - **WHEN** release artifacts or packaging documentation are produced
 - **THEN** they SHALL document ffprobe/FFmpeg as the primary multimedia chapter reader dependency for MP4-family and other non-Matroska containers

@@ -35,6 +35,7 @@ The system SHALL import simple WebVTT cue files as chapter sets.
 #### Scenario: Valid WebVTT imports cues
 - **WHEN** a `.vtt` file has a `WEBVTT` header and cue timing lines containing `-->`
 - **THEN** the importer SHALL use cue start times as chapter times and the first following text line as chapter name
+- **AND** it SHALL preserve cue end times as chapter end metadata when present
 
 #### Scenario: Invalid WebVTT fails
 - **WHEN** the header, timing line, or cue text is missing or malformed
@@ -67,11 +68,17 @@ The system SHALL import Matroska chapter XML documents.
 
 #### Scenario: Editions become selectable chapter sets
 - **WHEN** an XML document has root `Chapters` and child `EditionEntry` elements
-- **THEN** each edition SHALL produce one chapter set with default edition index zero
+- **THEN** each edition SHALL produce one selectable chapter set
+- **AND** the default edition index SHALL be zero when no edition is explicitly flagged as default
+- **AND** when one or more editions have `EditionFlagDefault` set to `1`, the first flagged edition SHALL be the default
 
 #### Scenario: Nested atoms are flattened
 - **WHEN** `ChapterAtom` elements are nested
 - **THEN** the importer SHALL flatten them into the documented legacy order
+
+#### Scenario: XML chapter end metadata is preserved
+- **WHEN** a `ChapterAtom` contains `ChapterTimeEnd`
+- **THEN** the importer SHALL preserve it as chapter end metadata without assuming it equals the next chapter start
 
 #### Scenario: Adjacent duplicate times are removed
 - **WHEN** adjacent emitted chapters have equal times
@@ -129,4 +136,3 @@ The system SHALL import `.mkv`, `.mka`, `.mks`, and `.webm` chapters through mkv
 #### Scenario: XML file import remains independent
 - **WHEN** a standalone `.xml` Matroska chapter document is imported
 - **THEN** the existing XML importer SHALL continue to parse it without requiring mkvextract or ffprobe
-

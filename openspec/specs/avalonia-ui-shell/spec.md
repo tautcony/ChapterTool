@@ -14,6 +14,10 @@ The Avalonia main window SHALL be driven by a ViewModel rather than by direct co
 - **WHEN** a load service returns a successful chapter result
 - **THEN** the ViewModel SHALL update current path, display path, clip options, current chapter rows, status text, and progress from the result
 
+#### Scenario: Older load results are ignored
+- **WHEN** a source load is still running and a newer source load starts
+- **THEN** progress and result updates from the older load SHALL NOT overwrite the newer load's current path, chapter rows, status, or progress state after the newer load has become current
+
 ### Requirement: Main window load progress
 The main window SHALL present bounded progress during source loading when the load pipeline reports intermediate progress.
 
@@ -63,6 +67,11 @@ The UI shell SHALL expose documented main-window actions through commands.
 #### Scenario: Save delegates to service
 - **WHEN** save is invoked
 - **THEN** the ViewModel SHALL synchronize current rows and call the save service with selected save type, language, naming, template, order shift, expression, and directory options
+
+#### Scenario: Save write failures return diagnostics
+- **WHEN** the runtime save service cannot create, write, move, or replace the target output file because of an I/O, path, or permission failure
+- **THEN** save SHALL return a structured failure diagnostic
+- **AND** the shell SHALL keep the application usable rather than allowing the file-system exception to escape the command
 
 ### Requirement: Keyboard and menu routing
 The Avalonia shell SHALL preserve documented shortcuts and context menu actions.

@@ -29,6 +29,11 @@ The system SHALL use typed cross-platform settings while reading compatible lega
 - **WHEN** legacy `color-config.json` exists in compatible locations
 - **THEN** theme settings SHALL read valid six-slot color values and ignore invalid values safely
 
+#### Scenario: Settings load failures fall back safely
+- **WHEN** application or theme settings cannot be loaded because the settings file is corrupt, unreadable, or inaccessible
+- **THEN** startup and settings ViewModels SHALL fall back to typed default settings
+- **AND** the failed asynchronous load SHALL be observed rather than surfacing as an unhandled fire-and-forget exception
+
 ### Requirement: Platform service abstractions
 The application SHALL access dialogs, clipboard, shell, process execution, settings, localization, windows, privileges, file association, and native dependencies through injectable services.
 
@@ -135,6 +140,11 @@ Auxiliary UI tools SHALL be implemented as dedicated Avalonia views with ViewMod
 - **WHEN** a secondary window is opened, closed, and reopened
 - **THEN** it SHALL preserve the documented reusable, modal, or result-returning behavior for that tool
 
+#### Scenario: Secondary window view models are released
+- **WHEN** a secondary window closes or the window service replaces its content
+- **THEN** any disposable DataContext SHALL be disposed
+- **AND** tool ViewModels that subscribe to localization or other long-lived services SHALL unsubscribe during disposal
+
 ### Requirement: Avalonia localization resources are complete
 The application SHALL package complete Simplified Chinese, English, and Japanese localization resources for Avalonia UI, prompts, and user-facing message formatting.
 
@@ -216,6 +226,11 @@ The settings system SHALL persist all settings exposed by the unified settings p
 #### Scenario: Existing settings still load
 - **WHEN** existing `appsettings.json` files or migrated `chaptertool.json` files omit newly added settings fields
 - **THEN** the settings store SHALL load successfully and use defaults matching the current application startup behavior
+
+#### Scenario: Settings saves are serialized
+- **WHEN** multiple application or theme settings saves are requested concurrently
+- **THEN** each store SHALL serialize writes through a single save path
+- **AND** temporary file names SHALL be unique per write so one save cannot delete or replace another save's in-progress temporary file
 
 #### Scenario: Workflow defaults persist
 - **WHEN** the user saves default save format or default XML language from the settings panel
