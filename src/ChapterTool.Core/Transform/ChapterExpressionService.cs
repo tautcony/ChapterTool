@@ -37,7 +37,11 @@ public sealed class ChapterExpressionService
         var diagnostics = new List<ChapterDiagnostic>();
         var nonSeparatorCount = info.Chapters.Count(static chapter => !chapter.IsSeparator);
         var nonSeparatorIndex = 0;
-        var framesPerSecond = (decimal)info.FramesPerSecond;
+        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var frameRateDiagnostic))
+        {
+            return new ChapterExpressionResult(info, [frameRateDiagnostic!]);
+        }
+
         var chapters = info.Chapters.Select(chapter =>
         {
             if (chapter.IsSeparator)

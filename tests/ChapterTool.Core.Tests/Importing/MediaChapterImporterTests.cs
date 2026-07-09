@@ -88,6 +88,19 @@ public sealed class MediaChapterImporterTests
     }
 
     [Fact]
+    public async Task ImportAsyncSkipsTimestampsBeyondTimeSpanRange()
+    {
+        var importer = CreateImporter(
+            Entry(0, 0, "1/1000", 0, 1000, "999999999999999999999", "1000000000000000000000", ("title", "Huge decimal")),
+            Entry(1, 1, "999999999999999999999/1", long.MaxValue, long.MaxValue, null, null, ("title", "Huge time base")));
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("huge.mp4"), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "InvalidChapterTimestamp");
+    }
+
+    [Fact]
     public async Task ImportAsyncGroupsEditionsByEditionUidWithUntaggedLast()
     {
         var importer = CreateImporter(

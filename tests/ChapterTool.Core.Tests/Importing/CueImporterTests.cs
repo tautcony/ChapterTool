@@ -175,6 +175,19 @@ public sealed class CueImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "FlacEmbeddedCueNotFound");
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FlacImporterFailsNegativeVorbisCommentLengths(bool negativeVendorLength)
+    {
+        using var stream = new MemoryStream(CreateFlacWithNegativeVorbisLength(negativeVendorLength));
+
+        var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "FlacEmbeddedCueNotFound");
+    }
+
     [Fact]
     public async Task TakImporterFailsInvalidHeader()
     {
@@ -325,6 +338,26 @@ public sealed class CueImporterTests
             WriteVorbisComment(stream, cueKey + "=" + cue);
         }
 
+        return stream.ToArray();
+    }
+
+    private static byte[] CreateFlacWithNegativeVorbisLength(bool negativeVendorLength)
+    {
+        using var stream = new MemoryStream();
+        stream.Write("fLaC"u8);
+        using var block = new MemoryStream();
+        if (negativeVendorLength)
+        {
+            WriteLittleEndianInt32(block, -1);
+        }
+        else
+        {
+            WriteLittleEndianInt32(block, 0);
+            WriteLittleEndianInt32(block, 1);
+            WriteLittleEndianInt32(block, -1);
+        }
+
+        WriteBlock(stream, type: 4, isLast: true, block.ToArray());
         return stream.ToArray();
     }
 

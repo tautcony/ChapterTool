@@ -50,15 +50,19 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         }
 
         var match = FirstIntegerRegex().Match(text);
-        if (!match.Success || framesPerSecond <= 0)
+        if (!match.Success
+            || framesPerSecond <= 0
+            || !decimal.TryParse(match.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var frame))
         {
-            return new ChapterEditResult(
-                info,
-                [new ChapterDiagnostic(DiagnosticSeverity.Warning, "InvalidFrameText", "Frame text did not contain a frame number or fps was invalid.")]);
+            return InvalidFrameText(info);
         }
 
-        var frame = decimal.Parse(match.Value, CultureInfo.InvariantCulture);
         var seconds = frame / framesPerSecond;
+        if (seconds < 0 || seconds > (decimal)TimeSpan.MaxValue.TotalSeconds)
+        {
+            return InvalidFrameText(info);
+        }
+
         chapters[index] = chapter with
         {
             Time = TimeSpan.FromSeconds((double)seconds),
@@ -67,6 +71,11 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         };
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
+
+    private static ChapterEditResult InvalidFrameText(ChapterInfo info) =>
+        new(
+            info,
+            [new ChapterDiagnostic(DiagnosticSeverity.Warning, "InvalidFrameText", "Frame text did not contain a frame number or fps was invalid.")]);
 
     /// <summary>
     /// Executes the Rename operation.

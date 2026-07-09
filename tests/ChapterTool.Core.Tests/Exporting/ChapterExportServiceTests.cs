@@ -67,6 +67,43 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
+    public void Webvtt_export_preserves_explicit_chapter_end_times()
+    {
+        var info = Sample() with
+        {
+            Duration = TimeSpan.FromSeconds(60),
+            Chapters =
+            [
+                new Chapter(1, TimeSpan.Zero, "Intro", End: TimeSpan.FromSeconds(4)),
+                new Chapter(2, TimeSpan.FromSeconds(10), "Middle", End: TimeSpan.FromSeconds(15)),
+                new Chapter(3, TimeSpan.FromSeconds(30), "End")
+            ]
+        };
+
+        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
+
+        Assert.True(result.Success);
+        Assert.Contains("00:00:00.000 --> 00:00:04.000", result.Content, StringComparison.Ordinal);
+        Assert.Contains("00:00:10.000 --> 00:00:15.000", result.Content, StringComparison.Ordinal);
+        Assert.Contains("00:00:30.000 --> 00:01:00.000", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Webvtt_export_rejects_unsupported_cue_text_control_sequences()
+    {
+        var info = Sample() with
+        {
+            Chapters = [new Chapter(1, TimeSpan.Zero, "Line 1\r\nLine 2 --> marker", End: TimeSpan.FromSeconds(1))]
+        };
+
+        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
+
+        Assert.False(result.Success);
+        Assert.Empty(result.Content);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidWebVttCueText");
+    }
+
+    [Fact]
     public void Txt_export_applies_order_shift_and_generated_names()
     {
         var result = service.Export(
@@ -238,6 +275,31 @@ public sealed class ChapterExportServiceTests
             new ChapterExportOptions(ChapterExportFormat.Qpfile, ApplyExpression: true, Expression: "t + 1"));
 
         Assert.StartsWith("24 I", result.Content, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(ChapterExportFormat.Qpfile)]
+    [InlineData(ChapterExportFormat.Celltimes)]
+    [InlineData(ChapterExportFormat.Chapter2Qpfile)]
+    public void Frame_based_exports_return_diagnostic_for_non_finite_frame_rate(ChapterExportFormat format)
+    {
+        var result = service.Export(
+            Sample() with { FramesPerSecond = double.NaN },
+            new ChapterExportOptions(format));
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
+    }
+
+    [Fact]
+    public void Expression_projection_returns_diagnostic_for_non_finite_frame_rate()
+    {
+        var result = service.Export(
+            Sample() with { FramesPerSecond = double.PositiveInfinity },
+            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "t + 1"));
+
+        Assert.True(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameRate");
     }
 
     private static ChapterInfo Sample(string sourceType = "OGM") =>

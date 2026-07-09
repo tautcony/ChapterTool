@@ -104,7 +104,9 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
     private static string? ReadVorbisComment(byte[] block)
     {
         var offset = 0;
-        if (!TryReadInt32(block, ref offset, out var vendorLength) || offset + vendorLength > block.Length)
+        if (!TryReadInt32(block, ref offset, out var vendorLength)
+            || vendorLength < 0
+            || vendorLength > block.Length - offset)
         {
             return null;
         }
@@ -117,7 +119,9 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
 
         for (var i = 0; i < count; i++)
         {
-            if (!TryReadInt32(block, ref offset, out var commentLength) || offset + commentLength > block.Length)
+            if (!TryReadInt32(block, ref offset, out var commentLength)
+                || commentLength < 0
+                || commentLength > block.Length - offset)
             {
                 return null;
             }

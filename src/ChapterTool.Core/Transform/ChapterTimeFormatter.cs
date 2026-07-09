@@ -89,12 +89,29 @@ public sealed partial class ChapterTimeFormatter : IChapterTimeFormatter
             return false;
         }
 
-        var hour = int.Parse(match.Groups["Hour"].Value, CultureInfo.InvariantCulture);
-        var minute = int.Parse(match.Groups["Minute"].Value, CultureInfo.InvariantCulture);
-        var second = int.Parse(match.Groups["Second"].Value, CultureInfo.InvariantCulture);
-        var millisecond = int.Parse(match.Groups["Millisecond"].Value, CultureInfo.InvariantCulture);
-        value = new TimeSpan(0, hour, minute, second, millisecond);
-        return true;
+        if (!int.TryParse(match.Groups["Hour"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var hour)
+            || !int.TryParse(match.Groups["Minute"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var minute)
+            || !int.TryParse(match.Groups["Second"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var second)
+            || !int.TryParse(match.Groups["Millisecond"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var millisecond))
+        {
+            return false;
+        }
+
+        try
+        {
+            value = new TimeSpan(0, hour, minute, second, millisecond);
+            return true;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            value = TimeSpan.Zero;
+            return false;
+        }
+        catch (OverflowException)
+        {
+            value = TimeSpan.Zero;
+            return false;
+        }
     }
 
     [GeneratedRegex(@"(?<Hour>\d+)\s*:\s*(?<Minute>\d+)\s*:\s*(?<Second>\d+)\s*[\.,]\s*(?<Millisecond>\d{3})")]

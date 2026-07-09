@@ -13,6 +13,8 @@ public sealed class MediaChapterImporter(
     IMediaChapterReader reader,
     IEnumerable<string>? supportedExtensions = null) : IChapterImporter
 {
+    private static readonly decimal MaxTimeSpanSeconds = (decimal)TimeSpan.MaxValue.Ticks / TimeSpan.TicksPerSecond;
+
     private static readonly IReadOnlySet<string> DefaultSupportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         ".mp4",
@@ -208,7 +210,14 @@ public sealed class MediaChapterImporter(
 
         if (integerValue.HasValue && TryParseTimeBase(timeBase, out var numerator, out var denominator))
         {
-            return SecondsToTimeSpan(integerValue.Value * numerator / denominator);
+            try
+            {
+                return SecondsToTimeSpan(integerValue.Value * numerator / denominator);
+            }
+            catch (OverflowException)
+            {
+                return null;
+            }
         }
 
         return null;
@@ -235,8 +244,22 @@ public sealed class MediaChapterImporter(
         return true;
     }
 
-    private static TimeSpan SecondsToTimeSpan(decimal seconds) =>
-        TimeSpan.FromTicks((long)decimal.Round(seconds * TimeSpan.TicksPerSecond, 0, MidpointRounding.AwayFromZero));
+    private static TimeSpan? SecondsToTimeSpan(decimal seconds)
+    {
+        if (seconds < 0 || seconds > MaxTimeSpanSeconds)
+        {
+            return null;
+        }
+
+        try
+        {
+            return TimeSpan.FromTicks((long)decimal.Round(seconds * TimeSpan.TicksPerSecond, 0, MidpointRounding.AwayFromZero));
+        }
+        catch (OverflowException)
+        {
+            return null;
+        }
+    }
 
     private static string ChapterName(MediaChapterEntry entry, int number) =>
         TagValue(entry, "title") is { Length: > 0 } title

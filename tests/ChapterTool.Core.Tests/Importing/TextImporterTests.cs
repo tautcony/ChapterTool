@@ -547,6 +547,38 @@ public sealed class TextImporterTests
     }
 
     [Fact]
+    public async Task XmlImporterKeepsFirstDefaultEditionWhenMultipleEditionsAreDefault()
+    {
+        var importer = new XmlChapterImporter(formatter);
+        var xml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <Chapters>
+              <EditionEntry>
+                <EditionFlagDefault>1</EditionFlagDefault>
+                <ChapterAtom>
+                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                  <ChapterDisplay><ChapterString>First Default</ChapterString></ChapterDisplay>
+                </ChapterAtom>
+              </EditionEntry>
+              <EditionEntry>
+                <EditionFlagDefault>1</EditionFlagDefault>
+                <ChapterAtom>
+                  <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                  <ChapterDisplay><ChapterString>Second Default</ChapterString></ChapterDisplay>
+                </ChapterAtom>
+              </EditionEntry>
+            </Chapters>
+            """;
+
+        var result = importer.ImportText(xml);
+
+        Assert.True(result.Success, Diagnostics(result));
+        var group = result.Groups.Single();
+        Assert.Equal(0, group.DefaultOptionIndex);
+        Assert.Equal("First Default", group.Options[group.DefaultOptionIndex].ChapterInfo.Chapters.Single().Name);
+    }
+
+    [Fact]
     public async Task XmlFourEditionLegacySampleCreatesOneOptionPerEdition()
     {
         var importer = new XmlChapterImporter(formatter);
