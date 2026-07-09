@@ -31,6 +31,14 @@ jobs:
       - name: Test
         run: dotnet test ChapterTool.Avalonia.slnx --configuration Release --no-build --blame-hang --blame-hang-timeout 10m --blame-hang-dump-type full
 
+      - name: Validate PowerShell publish script
+        shell: pwsh
+        run: |
+          $null = [System.Management.Automation.Language.Parser]::ParseFile(
+            (Join-Path $PWD 'scripts/publish.ps1'),
+            [ref]$null,
+            [ref]$null)
+
       - name: Pack ChapterTool.Core
         run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore --output artifacts/nuget
 
@@ -75,6 +83,9 @@ jobs:
 
       - name: Publish
         run: ./scripts/publish.sh -Runtime ${{ matrix.runtime }} -NoRestore -PublishSingleFile
+
+      - name: Verify publish artifact
+        run: ./scripts/verify-publish-artifact.sh -Runtime ${{ matrix.runtime }} -Path artifacts/publish/framework-dependent/${{ matrix.runtime }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

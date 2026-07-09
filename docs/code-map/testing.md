@@ -108,3 +108,13 @@ High-signal test files:
 - parsing or export semantics changed: start in `tests/ChapterTool.Core.Tests`
 - external tool, settings, process, or platform boundary changed: start in `tests/ChapterTool.Infrastructure.Tests`
 - view, viewmodel, CLI, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
+
+## Distribution Verification
+
+- Maintained publish entry points:
+  - `scripts/publish.sh`
+  - `scripts/publish.ps1`
+  - `.github/workflows/dotnet-ci.yml`
+- Current distribution notes:
+  - `dist/README.md`
+- The legacy Windows NSIS installer inputs are retired. Future installer work should consume the `src/ChapterTool.Avalonia` publish output and derive version metadata from `Directory.Build.props`.
