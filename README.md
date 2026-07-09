@@ -10,7 +10,7 @@ ChapterTool is a cross-platform Avalonia desktop chapter editor for importing, a
 
 - Import chapter data from text files, disc playlist formats, BDMV folders, and media containers.
 - Edit chapter names and timestamps in a cross-platform Avalonia UI.
-- Apply time adjustments with an expression editor that supports infix or Reverse Polish notation expressions, diagnostics, completion, and syntax highlighting.
+- Apply time adjustments with a Lua expression/script editor that supports diagnostics, completion, and syntax highlighting.
 - Calculate frame information from chapter times and frame rate settings.
 - Combine supported multi-segment sources such as MPLS and IFO.
 - Export chapters as `.txt`, `.xml`, `.qpf`, `.TimeCodes.txt`, `.TsMuxeR_Meta.txt`, `.cue`, `.json`, `.vtt`, and Celltimes output.
@@ -83,14 +83,9 @@ Use the publish helpers for local artifacts:
 ./scripts/publish.ps1 -Runtime win-x64 -SelfContained
 ```
 
-```bash
-./scripts/publish.sh -Runtime linux-x64
-./scripts/publish.sh -Runtime osx-arm64 -SelfContained
-```
-
 Framework-dependent artifacts are written under `artifacts/publish/framework-dependent/<runtime>`. Self-contained artifacts are written under `artifacts/publish/self-contained/<runtime>`.
 
-The GitHub Actions publish job currently builds framework-dependent artifacts for `win-x64`, `linux-x64`, and `osx-arm64`.
+The GitHub Actions publish job currently builds single-file framework-dependent artifacts for `win-x64`, `linux-x64`, and `osx-arm64`; the macOS job also packages the app as a `.dmg`.
 
 ## Project Layout
 

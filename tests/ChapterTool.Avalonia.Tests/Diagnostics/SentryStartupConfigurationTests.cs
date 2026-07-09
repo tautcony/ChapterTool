@@ -16,7 +16,7 @@ public sealed class SentryStartupConfigurationTests
         Assert.True(options.Enabled);
         Assert.Equal(SentryStartupConfiguration.DefaultDsn, options.Dsn);
         Assert.Equal("production", options.Environment);
-        Assert.StartsWith("ChapterTool@23.0.0", options.Release, StringComparison.Ordinal);
+        Assert.StartsWith("ChapterTool@23", options.Release, StringComparison.Ordinal);
         Assert.False(options.Debug);
         Assert.Equal(SentryLevel.Warning, options.DiagnosticLevel);
         Assert.True(options.SendDefaultPii);

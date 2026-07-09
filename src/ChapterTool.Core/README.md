@@ -187,12 +187,14 @@ All operations return diagnostics via `ChapterDiagnostic`:
 ```csharp
 public sealed record ChapterDiagnostic(
     DiagnosticSeverity Severity,  // Info, Warning, Error
-    string Code,
+    ChapterDiagnosticCode Code,
     string Message,
     string? Location = null,
     string? Details = null,
     IReadOnlyDictionary<string, object?>? Arguments = null);
 ```
+
+Use `DisplayCode` when you need the stable string form used by logs, CLI output, or localization resources.
 
 ## Extensibility
 
