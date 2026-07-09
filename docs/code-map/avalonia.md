@@ -149,7 +149,7 @@ Start with:
 - `src/ChapterTool.Avalonia/Program.cs`
 - `src/ChapterTool.Avalonia/Cli/ChapterToolCliApplication.cs`
 
-Use `ChapterToolCliCommands.cs` and `ChapterToolCliSupport.cs` for argument parsing and supported format definitions.
+Use `ChapterToolCliCommands.cs` and `ChapterToolCliSupport.cs` for DotMake.CommandLine command definitions, bound launch-plan analysis, and supported format definitions.
 
 ### Localization changes
 

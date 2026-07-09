@@ -7,9 +7,13 @@ namespace ChapterTool.Avalonia.Cli;
     Children = [typeof(LoadCliCommand), typeof(ConvertCliCommand), typeof(InspectCliCommand), typeof(FormatsCliCommand)])]
 public sealed class ChapterToolRootCliCommand
 {
-    public void Run(CliContext context)
+    [CliArgument(Description = "Input file or supported source path for GUI startup.", Required = false)]
+    public string Input { get; set; } = string.Empty;
+
+    public int Run(CliContext context)
     {
         context.ShowHelp();
+        return context.Result.HasTokens ? 1 : 0;
     }
 }
 

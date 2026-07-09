@@ -15,7 +15,88 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
-    public void AnalyzeLaunchReturnsOnlyExplicitLoadInputsForGui()
+    public void AnalyzeLaunchDoesNotBindInvalidCliOptionsBeforeRun()
+    {
+        var plan = ChapterToolCliSupport.AnalyzeLaunch(["convert", "missing.xml", "--format", "expr"]);
+
+        Assert.False(plan.LaunchGui);
+        Assert.NotNull(plan.CliResult);
+    }
+
+    [Fact]
+    public void UnknownRootTokenReturnsFailureExitCode()
+    {
+        var plan = ChapterToolCliSupport.AnalyzeLaunch(["nosuchcommand"]);
+
+        Assert.False(plan.LaunchGui);
+        Assert.NotNull(plan.CliResult);
+        Assert.NotEqual(0, plan.CliResult.Run());
+    }
+
+    [Fact]
+    public void CommandLevelFormatsReturnsSuccess()
+    {
+        var plan = ChapterToolCliSupport.AnalyzeLaunch(["formats"]);
+
+        Assert.Equal(0, plan.CliResult!.Run());
+    }
+
+    [Fact]
+    public void CommandLevelConvertWritesOutputFile()
+    {
+        var outputPath = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "chapters.txt");
+        try
+        {
+            var plan = ChapterToolCliSupport.AnalyzeLaunch([
+                "convert",
+                XmlFixture(),
+                "--format",
+                "txt",
+                "--output",
+                outputPath,
+                "--group-index",
+                "0",
+                "--option-index",
+                "0"
+            ]);
+
+            Assert.Equal(0, plan.CliResult!.Run());
+            Assert.Contains("CHAPTER01=", File.ReadAllText(outputPath), StringComparison.Ordinal);
+        }
+        finally
+        {
+            var directory = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void CommandLevelConvertRejectsConflictingOutputOptions()
+    {
+        var outputPath = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "chapters.txt");
+        var plan = ChapterToolCliSupport.AnalyzeLaunch([
+            "convert",
+            XmlFixture(),
+            "--format",
+            "txt",
+            "--stdout",
+            "--output",
+            outputPath,
+            "--group-index",
+            "0",
+            "--option-index",
+            "0"
+        ]);
+
+        Assert.Equal(1, plan.CliResult!.Run());
+        Assert.False(File.Exists(outputPath));
+    }
+
+    [Fact]
+    public void AnalyzeLaunchReturnsLoadInputsForGui()
     {
         var path = Path.GetTempFileName();
         try
@@ -23,6 +104,7 @@ public sealed class ChapterToolCliApplicationTests
             var loadByArgument = ChapterToolCliSupport.AnalyzeLaunch(["load", path]);
             var loadByOption = ChapterToolCliSupport.AnalyzeLaunch(["load", "--source", path]);
             var plainPath = ChapterToolCliSupport.AnalyzeLaunch([path]);
+            var missingPlainPath = ChapterToolCliSupport.AnalyzeLaunch([Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing.xml")]);
             var convert = ChapterToolCliSupport.AnalyzeLaunch(["convert", path]);
             var empty = ChapterToolCliSupport.AnalyzeLaunch([]);
 
@@ -30,8 +112,10 @@ public sealed class ChapterToolCliApplicationTests
             Assert.Equal(path, loadByArgument.GuiStartupPath);
             Assert.True(loadByOption.LaunchGui);
             Assert.Equal(path, loadByOption.GuiStartupPath);
-            Assert.False(plainPath.LaunchGui);
-            Assert.Null(plainPath.GuiStartupPath);
+            Assert.True(plainPath.LaunchGui);
+            Assert.Equal(path, plainPath.GuiStartupPath);
+            Assert.False(missingPlainPath.LaunchGui);
+            Assert.NotNull(missingPlainPath.CliResult);
             Assert.False(convert.LaunchGui);
             Assert.Null(convert.GuiStartupPath);
             Assert.False(empty.LaunchGui);

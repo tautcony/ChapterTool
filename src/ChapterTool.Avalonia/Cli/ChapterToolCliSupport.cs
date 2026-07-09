@@ -12,11 +12,6 @@ internal static class ChapterToolCliSupport
 
     public static CliLaunchPlan AnalyzeLaunch(IReadOnlyList<string> args)
     {
-        if (args.Count == 0)
-        {
-            return CliLaunchPlan.None;
-        }
-
         var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
         if (parsed.IsCalled<LoadCliCommand>())
         {
@@ -26,12 +21,24 @@ internal static class ChapterToolCliSupport
             return CliLaunchPlan.Gui(startupPath);
         }
 
+        if (!parsed.IsCalled<ConvertCliCommand>()
+            && !parsed.IsCalled<InspectCliCommand>()
+            && !parsed.IsCalled<FormatsCliCommand>()
+            && parsed.Bind<ChapterToolRootCliCommand>() is ChapterToolRootCliCommand inputCommand
+            && inputCommand.Input.Length > 0
+            && IsExistingPath(inputCommand.Input))
+        {
+            return CliLaunchPlan.Gui(inputCommand.Input);
+        }
+
         var shouldRunCli = parsed.IsCalled<ConvertCliCommand>()
             || parsed.IsCalled<InspectCliCommand>()
             || parsed.IsCalled<FormatsCliCommand>()
             || parsed.HasTokens;
         return shouldRunCli ? CliLaunchPlan.Cli(parsed) : CliLaunchPlan.None;
     }
+
+    private static bool IsExistingPath(string value) => File.Exists(value) || Directory.Exists(value);
 
     public static IReadOnlyList<CliOutputFormatDefinition> OutputFormats { get; } =
     [

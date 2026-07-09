@@ -13,6 +13,7 @@
 - Prefer `rg` for searching files and text.
 - Use `docs/code-map/` as the primary navigation index for the current codebase. Update the relevant files there when feature work changes module ownership, entry points, runtime wiring, or the main tests a maintainer should inspect.
 - Keep user-facing Chinese strings as valid UTF-8. Validate localization through behavior, rendered UI, or resource-level checks rather than hard-coding incidental mojibake examples.
+- CLI 参数入口必须通过 `DotMake.CommandLine` 定义、解析和绑定；不要在 `Program.cs` 或 CLI 支持代码中手写遍历、识别、分流原始 `args` 的逻辑。
 - Keep this file focused on durable repository guidance. Do not add one-off implementation notes, completed change records, or transient archive paths here.
 
 ## PowerShell Guidance
