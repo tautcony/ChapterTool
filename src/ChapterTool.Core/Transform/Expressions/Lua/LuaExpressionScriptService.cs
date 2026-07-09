@@ -1,15 +1,14 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
 using Lua;
 using Lua.Standard;
 
-namespace ChapterTool.Core.Transform;
+namespace ChapterTool.Core.Transform.Expressions.Lua;
 
 /// <summary>
 /// Evaluates Lua scripts against chapter expression contexts.
 /// </summary>
-public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptService
+public sealed partial class LuaExpressionScriptService : IChapterExpressionEngine
 {
     private static readonly Regex ReturnOrTransformPattern = ReturnOrTransformRegex();
     private static readonly TimeSpan DefaultExecutionTimeout = TimeSpan.FromMilliseconds(500);
@@ -35,9 +34,14 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
     }
 
     /// <summary>
+    /// Gets the stable language or engine identifier.
+    /// </summary>
+    public string EngineId => "lua";
+
+    /// <summary>
     /// Gets the built-in Lua expression presets.
     /// </summary>
-    public IReadOnlyList<LuaExpressionScriptPreset> Presets { get; } =
+    public IReadOnlyList<ChapterExpressionPreset> Presets { get; } =
     [
         new(
             "identity",
@@ -62,17 +66,17 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
     ];
 
     /// <summary>
-    /// Executes the Evaluate operation.
+    /// Evaluates Lua script text against a chapter expression context.
     /// </summary>
-    /// <param name="scriptText">The Lua script text.</param>
+    /// <param name="sourceText">The Lua script text.</param>
     /// <param name="context">The expression context.</param>
-    /// <returns>The operation result.</returns>
-    public LuaExpressionEvaluationResult Evaluate(string scriptText, LuaExpressionContext context)
+    /// <returns>The expression evaluation result.</returns>
+    public ChapterExpressionEvaluationResult Evaluate(string sourceText, ChapterExpressionContext context)
     {
         var fallback = context.TimeSeconds;
         try
         {
-            var source = NormalizeSource(scriptText);
+            var source = NormalizeSource(sourceText);
             using var state = LuaState.Create();
             using var timeout = new CancellationTokenSource(executionTimeout);
             ConfigureState(state, context);
@@ -117,13 +121,13 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
         }
     }
 
-    private static string NormalizeSource(string scriptText)
+    private static string NormalizeSource(string sourceText)
     {
-        var source = string.IsNullOrWhiteSpace(scriptText) ? "t" : scriptText.Trim();
+        var source = string.IsNullOrWhiteSpace(sourceText) ? "t" : sourceText.Trim();
         return ReturnOrTransformPattern.IsMatch(source) ? source : $"return ({source})";
     }
 
-    private static void ConfigureState(LuaState state, LuaExpressionContext context)
+    private static void ConfigureState(LuaState state, ChapterExpressionContext context)
     {
         state.OpenMathLibrary();
         state.OpenStringLibrary();
@@ -169,7 +173,7 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
         });
     }
 
-    private static LuaExpressionEvaluationResult NumericResult(LuaValue value, decimal fallback)
+    private static ChapterExpressionEvaluationResult NumericResult(LuaValue value, decimal fallback)
     {
         if (!value.TryRead<double>(out var number) || double.IsNaN(number) || double.IsInfinity(number))
         {
@@ -178,7 +182,7 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
 
         try
         {
-            return new LuaExpressionEvaluationResult(true, (decimal)number, []);
+            return new ChapterExpressionEvaluationResult(true, (decimal)number, []);
         }
         catch (OverflowException exception)
         {
@@ -186,7 +190,7 @@ public sealed partial class LuaExpressionScriptService : ILuaExpressionScriptSer
         }
     }
 
-    private static LuaExpressionEvaluationResult Failure(decimal fallback, string code, string message) =>
+    private static ChapterExpressionEvaluationResult Failure(decimal fallback, string code, string message) =>
         new(
             false,
             fallback,

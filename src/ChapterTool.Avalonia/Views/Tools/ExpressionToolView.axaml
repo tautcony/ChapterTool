@@ -16,7 +16,7 @@
                 ItemsSource="{Binding Presets}"
                 SelectedIndex="{Binding SelectedPresetIndex}">
         <ComboBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:LuaExpressionPresetViewModel">
+          <DataTemplate x:DataType="vm:ExpressionPresetViewModel">
             <StackPanel>
               <TextBlock Text="{Binding DisplayName}" />
               <TextBlock Text="{Binding Description}" FontSize="11" Opacity="0.72" TextWrapping="Wrap" />
@@ -47,7 +47,7 @@
 
     <Grid Grid.Row="3" ColumnDefinitions="Auto,*" ColumnSpacing="8">
       <CheckBox Grid.Column="0" Content="{DynamicResource Tool.Expression.Apply}" IsChecked="{Binding ApplyExpression}" />
-      <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding LuaExpressionSourceName}" TextTrimming="CharacterEllipsis" />
+      <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding ExpressionSourceName}" TextTrimming="CharacterEllipsis" />
     </Grid>
 
     <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">

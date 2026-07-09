@@ -203,8 +203,8 @@ public sealed partial class MainWindow : Window
 
         var text = await File.ReadAllTextAsync(path, CancellationToken.None);
         viewModel.Expression = string.IsNullOrWhiteSpace(text) ? "t" : text;
-        viewModel.LuaExpressionSourceName = Path.GetFileName(path);
-        viewModel.LuaExpressionPresetId = string.Empty;
+        viewModel.ExpressionSourceName = Path.GetFileName(path);
+        viewModel.ExpressionPresetId = string.Empty;
         viewModel.ApplyExpression = true;
     }
 

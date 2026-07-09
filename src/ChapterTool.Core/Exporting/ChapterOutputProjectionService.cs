@@ -1,6 +1,8 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using LuaExpressionScriptService = ChapterTool.Core.Transform.Expressions.Lua.LuaExpressionScriptService;
 
 namespace ChapterTool.Core.Exporting;
 
@@ -9,15 +11,15 @@ namespace ChapterTool.Core.Exporting;
 /// </summary>
 public sealed class ChapterOutputProjectionService
 {
-    private readonly ILuaExpressionScriptService luaExpressionService;
+    private readonly IChapterExpressionEngine expressionEngine;
 
     /// <summary>
     /// Projects chapter output data before export by applying expressions, ordering, and naming entries.
     /// </summary>
-    /// <param name="luaExpressionService">The Lua expression service.</param>
-    public ChapterOutputProjectionService(ILuaExpressionScriptService? luaExpressionService = null)
+    /// <param name="expressionEngine">The chapter expression engine.</param>
+    public ChapterOutputProjectionService(IChapterExpressionEngine? expressionEngine = null)
     {
-        this.luaExpressionService = luaExpressionService ?? new LuaExpressionScriptService();
+        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
     }
 
     /// <summary>
@@ -29,7 +31,7 @@ public sealed class ChapterOutputProjectionService
     public ChapterOutputProjectionResult Project(ChapterSet info, ChapterExportOptions options)
     {
         var diagnostics = new List<ChapterDiagnostic>();
-        var expressionResult = new ChapterExpressionService(luaExpressionService).Apply(info, options.ApplyExpression, options.Expression);
+        var expressionResult = new ChapterExpressionService(expressionEngine).Apply(info, options.ApplyExpression, options.Expression);
         diagnostics.AddRange(expressionResult.Diagnostics);
 
         var effectiveShift = NormalizeOrderShift(options.OrderShift, diagnostics);

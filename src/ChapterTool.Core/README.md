@@ -14,7 +14,7 @@ dotnet add package ChapterTool.Core
 - **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes
 - **Convert** OGM chapter text to QPFile output, optionally using timecode mappings
 - **Edit** chapter data: time edit, frame edit, rename, delete, insert, reorder, shift, apply name templates
-- **Transform** chapter times: Lua expression scripting, frame rate detection and conversion
+- **Transform** chapter times: pluggable expression engines, frame rate detection and conversion
 - **Combine & append** chapter segments from multipart sources (MPLS/DVD)
 
 ## Quick Start
@@ -89,6 +89,8 @@ result = editor.ApplyTemplate(info, "Opening\nMain Feature\nCredits");
 
 ```csharp
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using ChapterTool.Core.Transform.Expressions.Lua;
 
 // Frame rate detection
 var fpsService = new FrameRateService();
@@ -97,9 +99,9 @@ var detected = fpsService.Detect(info, tolerance: 0.001m);
 // Change frame rate
 var fpsResult = ChapterFpsTransformService.ChangeFps(info, sourceFps: 23.976m, targetFps: 25m);
 
-var luaService = new LuaExpressionScriptService();
-var context = new LuaExpressionContext(chapter, Index: 1, Count: 10, TimeSeconds: 60m, FramesPerSecond: 23.976m);
-var luaResult = luaService.Evaluate("t + 1.0", context);
+IChapterExpressionEngine expressionEngine = new LuaExpressionScriptService();
+var context = new ChapterExpressionContext(chapter, Index: 1, Count: 10, TimeSeconds: 60m, FramesPerSecond: 23.976m);
+var expressionResult = expressionEngine.Evaluate("t + 1.0", context);
 ```
 
 ## Supported Formats
@@ -170,8 +172,8 @@ ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cance
 
 ## Expression Engine
 
-`LuaExpressionScriptService` evaluates Lua expression scripts for chapter time transforms.
-Simple arithmetic can be entered without `return`, while full scripts may use `return` or define `transform(chapter)`.
+`IChapterExpressionEngine` is the standard interface for chapter time expression evaluation.
+`LuaExpressionScriptService` is the built-in Lua implementation under `ChapterTool.Core.Transform.Expressions.Lua`. Simple arithmetic can be entered without `return`, while full scripts may use `return` or define `transform(chapter)`.
 
 - **Globals**: `t` (time in seconds), `fps` (frames per second), `index`, `count`, and `chapter`
 - **Libraries**: safe Lua `math`, `string`, and `table` libraries
@@ -205,7 +207,7 @@ public interface IChapterImporter
 }
 ```
 
-Implement `IChapterExporter` to add custom export formats, or `IMediaChapterReader` to support reading chapters from additional media container formats.
+Implement `IChapterExporter` to add custom export formats, `IMediaChapterReader` to support reading chapters from additional media container formats, or `IChapterExpressionEngine` to evaluate chapter time expressions with another language or execution framework.
 
 ## License
 

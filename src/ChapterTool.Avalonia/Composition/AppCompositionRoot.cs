@@ -8,6 +8,8 @@ using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Platform;
@@ -24,7 +26,7 @@ public sealed class AppCompositionRoot : IDisposable
 {
     private readonly string? startupPath;
     private readonly ChapterTimeFormatter formatter = new();
-    private readonly LuaExpressionScriptService expressionService = new();
+    private readonly IChapterExpressionEngine expressionEngine = new LuaExpressionScriptService();
     private readonly FrameRateService frameRateService = new();
     private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
     private readonly AppLocalizationManager localizationManager = new();
@@ -73,7 +75,8 @@ public sealed class AppCompositionRoot : IDisposable
             CreateShellService(),
             appSettingsStore,
             frameRateService,
-            localizationManager);
+            localizationManager,
+            expressionEngine);
 
     public IApplicationLogService CreateApplicationLogService() => logService;
 
@@ -95,7 +98,7 @@ public sealed class AppCompositionRoot : IDisposable
         new(CreateExternalToolLocator(), CreateProcessRunner());
 
     public IChapterSaveService CreateChapterSaveService() =>
-        new RuntimeChapterSaveService(new ChapterExportService(formatter, expressionService));
+        new RuntimeChapterSaveService(new ChapterExportService(formatter, expressionEngine));
 
     public IChapterEditingService CreateChapterEditingService() => new ChapterEditingService(formatter);
 
