@@ -25,7 +25,13 @@ Canonical data contracts shared across the pipeline:
 Shared diagnostic contracts:
 
 - `src/ChapterTool.Core/Diagnostics/ChapterDiagnostic.cs`
+- `src/ChapterTool.Core/Diagnostics/ChapterDiagnosticCode.cs`
+- `src/ChapterTool.Core/Diagnostics/ChapterDiagnosticSource.cs`
+- `src/ChapterTool.Core/Diagnostics/ChapterDiagnosticReason.cs`
+- `src/ChapterTool.Core/Diagnostics/ChapterDiagnosticCodeExtensions.cs`
 - `src/ChapterTool.Core/Diagnostics/DiagnosticSeverity.cs`
+
+`ChapterDiagnostic.Code` is structured as `ChapterDiagnosticSource + ChapterDiagnosticReason`; `DisplayCode` renders the stable localization/log code as `Source.Reason`.
 
 ### Importing
 

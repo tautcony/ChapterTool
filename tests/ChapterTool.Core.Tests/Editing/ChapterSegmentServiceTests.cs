@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 
@@ -32,7 +33,7 @@ public sealed class ChapterSegmentServiceTests
         var result = ChapterSegmentService.Combine(group);
 
         Assert.NotEmpty(result.Diagnostics);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedCombineSource");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedCombineSource);
     }
 
     [Fact]
@@ -47,7 +48,7 @@ public sealed class ChapterSegmentServiceTests
 
         var result = ChapterSegmentService.Combine(group);
 
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedCombineSource");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedCombineSource);
     }
 
     [Fact]
@@ -79,7 +80,7 @@ public sealed class ChapterSegmentServiceTests
 
         var result = ChapterSegmentService.Append(existing, appended);
 
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedAppendSource");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedAppendSource);
     }
 
     private static ChapterSet Info(ChapterImportFormat sourceType, TimeSpan duration, params Chapter[] chapters) =>

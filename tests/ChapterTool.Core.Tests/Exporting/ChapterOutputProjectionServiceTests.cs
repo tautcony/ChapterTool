@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
@@ -66,7 +67,7 @@ public sealed class ChapterOutputProjectionServiceTests
                 Expression: "return bad()"));
 
         Assert.Equal(3, result.Diagnostics.Count);
-        Assert.All(result.Diagnostics, diagnostic => Assert.Equal("InvalidExpression.LuaRuntime", diagnostic.Code));
+        Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, diagnostic.Code));
         Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
         Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03"], result.OutputChapters.Select(static chapter => chapter.Name));
     }
@@ -79,7 +80,7 @@ public sealed class ChapterOutputProjectionServiceTests
             new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "-1"));
 
         Assert.Equal(3, result.Diagnostics.Count);
-        Assert.All(result.Diagnostics, diagnostic => Assert.Equal("InvalidExpressionTime", diagnostic.Code));
+        Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionTime, diagnostic.Code));
         Assert.All(result.OutputChapters, chapter => Assert.Equal(TimeSpan.Zero, chapter.StartTime));
     }
 

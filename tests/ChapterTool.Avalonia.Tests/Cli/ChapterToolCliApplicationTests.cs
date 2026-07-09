@@ -246,7 +246,7 @@ public sealed class ChapterToolCliApplicationTests
 
         Assert.Equal(1, exitCode);
         Assert.Contains("Group 0 has multiple entries", console.Stderr, StringComparison.Ordinal);
-        Assert.Contains("AvailableGroup", console.Stderr, StringComparison.Ordinal);
+        Assert.Contains("SelectionGroup.Available", console.Stderr, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using ChapterTool.Core.Diagnostics;
+
 namespace ChapterTool.Infrastructure.Platform;
 
 public sealed class FileSystemNativeDependencyService(IReadOnlyList<string> searchDirectories) : INativeDependencyService
@@ -17,7 +19,7 @@ public sealed class FileSystemNativeDependencyService(IReadOnlyList<string> sear
         return ValueTask.FromResult(new NativeDependencyLocation(
             false,
             null,
-            "NativeLibraryMissing",
+            ChapterDiagnosticCode.NativeLibraryMissing,
             $"Native dependency '{dependencyId}' was not found."));
     }
 }

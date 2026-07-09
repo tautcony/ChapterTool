@@ -14,14 +14,14 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
     {
         if (string.IsNullOrWhiteSpace(path) || (!File.Exists(path) && !Directory.Exists(path)))
         {
-            return ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidPath", "The source path does not exist.")));
+            return ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidPath, "The source path does not exist.")));
         }
 
         var extension = Path.GetExtension(path);
         var importer = importerRegistry.Resolve(path);
 
         return importer is null
-            ? ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedSource", $"Unsupported source extension: {extension}.",
+            ? ValueTask.FromResult(ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedSource, $"Unsupported source extension: {extension}.",
                 Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["extension"] = extension })))
             : LoadWithFallbackAsync(path, importer, progress, cancellationToken);
     }
@@ -48,10 +48,10 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
         var fallbackReason = primaryResult.Diagnostics.FirstOrDefault();
         var fallbackDiagnostic = new ChapterDiagnostic(
             DiagnosticSeverity.Info,
-            "ImporterFallbackUsed",
+            ChapterDiagnosticCode.ImporterFallbackUsed,
             $"Primary importer '{importer.Id}' could not be invoked; used fallback importer '{fallback.Id}'.",
             path,
-            $"primary={importer.Id}; fallback={fallback.Id}; reason={fallbackReason?.Code ?? "Unknown"}");
+            $"primary={importer.Id}; fallback={fallback.Id}; reason={fallbackReason?.DisplayCode ?? "Unknown"}");
         var diagnostics = primaryResult.Diagnostics.Concat([fallbackDiagnostic]).Concat(fallbackResult.Diagnostics).ToList();
         return fallbackResult with { Diagnostics = diagnostics };
     }

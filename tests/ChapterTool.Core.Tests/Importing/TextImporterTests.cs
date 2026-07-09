@@ -40,7 +40,7 @@ public sealed class TextImporterTests
 
         Assert.True(result.Success);
         Assert.True(result.IsPartial);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PartialParse");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.PartialParse);
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
         Assert.Equal(6, chapters.Count);
         Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
@@ -71,7 +71,7 @@ public sealed class TextImporterTests
         var result = importer.ImportText("CHAPTER01NAME=Intro");
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "OgmInvalidFirstLine");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OgmInvalidFirstLine);
     }
 
     [Fact]
@@ -181,16 +181,16 @@ public sealed class TextImporterTests
     }
 
     [Theory]
-    [InlineData("Marker Name,Comment\r\nIntro,Missing time", "PremiereMarkerListInvalid")]
-    [InlineData("Marker Name,In,Marker Type\r\nNote,not-time,Chapter", "PremiereMarkerListInvalid")]
-    public void PremiereImporterFailsInvalidMarkerLists(string text, string code)
+    [InlineData("Marker Name,Comment\r\nIntro,Missing time", ChapterDiagnosticSource.PremiereMarkerList, ChapterDiagnosticReason.Invalid)]
+    [InlineData("Marker Name,In,Marker Type\r\nNote,not-time,Chapter", ChapterDiagnosticSource.PremiereMarkerList, ChapterDiagnosticReason.Invalid)]
+    public void PremiereImporterFailsInvalidMarkerLists(string text, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var importer = new PremiereMarkerListImporter(formatter);
         var result = importer.ImportText(text);
 
         Assert.False(result.Success);
         Assert.Empty(result.Groups);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public sealed class TextImporterTests
 
         Assert.True(result.Success);
         Assert.True(result.IsPartial);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "PartialParse");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.PartialParse);
         Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
     }
 
@@ -274,17 +274,17 @@ public sealed class TextImporterTests
     }
 
     [Theory]
-    [InlineData("BAD\n\n00:00:00.000 --> 00:00:01.000\nIntro", "WebVttInvalidHeader")]
-    [InlineData("WEBVTT\n\nbad timing\nIntro", "WebVttMalformedCue")]
-    [InlineData("WEBVTT\n\n00:00:00.000 --> 00:00:01.000 align:start\nIntro", "WebVttUnsupportedTimingSettings")]
-    public async Task WebVttImporterFailsMalformedInput(string text, string code)
+    [InlineData("BAD\n\n00:00:00.000 --> 00:00:01.000\nIntro", ChapterDiagnosticSource.WebVttHeader, ChapterDiagnosticReason.Invalid)]
+    [InlineData("WEBVTT\n\nbad timing\nIntro", ChapterDiagnosticSource.WebVttCue, ChapterDiagnosticReason.Malformed)]
+    [InlineData("WEBVTT\n\n00:00:00.000 --> 00:00:01.000 align:start\nIntro", ChapterDiagnosticSource.WebVttTimingSettings, ChapterDiagnosticReason.Unsupported)]
+    public async Task WebVttImporterFailsMalformedInput(string text, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var importer = new WebVttChapterImporter();
         var result = WebVttChapterImporter.ImportText(text);
 
         Assert.False(result.Success);
         Assert.Empty(result.Groups);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     [Fact]
@@ -369,15 +369,15 @@ public sealed class TextImporterTests
     }
 
     [Theory]
-    [InlineData("<NotChapters />", "XmlInvalidRoot")]
-    [InlineData("<Chapters><EditionEntry><ChapterAtom><ChapterDisplay><ChapterString>No Time</ChapterString></ChapterDisplay></ChapterAtom></EditionEntry></Chapters>", "XmlNoChapters")]
-    public async Task XmlImporterFailsInvalidDocuments(string xml, string code)
+    [InlineData("<NotChapters />", ChapterDiagnosticSource.XmlRoot, ChapterDiagnosticReason.Invalid)]
+    [InlineData("<Chapters><EditionEntry><ChapterAtom><ChapterDisplay><ChapterString>No Time</ChapterString></ChapterDisplay></ChapterAtom></EditionEntry></Chapters>", ChapterDiagnosticSource.XmlChapters, ChapterDiagnosticReason.None)]
+    public async Task XmlImporterFailsInvalidDocuments(string xml, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var importer = new XmlChapterImporter(formatter);
         var result = importer.ImportText(xml);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     [Fact]

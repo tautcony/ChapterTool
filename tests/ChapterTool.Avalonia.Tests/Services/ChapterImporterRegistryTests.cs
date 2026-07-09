@@ -105,11 +105,11 @@ public sealed class ChapterImporterRegistryTests
     public void RuntimeRegistryResolvesAtlFallbackForLegacyMp4WhenFfprobeCannotBeInvoked()
     {
         var registry = CreateFakeRegistry(
-            ffprobeResult: MediaChapterReadResult.Failed("FfprobeMissingDependency", "missing"),
+            ffprobeResult: MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeMissingDependency, "missing"),
             mp4Result: MediaChapterReadResult.Succeeded(MediaEntry("Fallback", 0, 1000)));
 
         var primary = registry.Resolve("movie.mp4")!;
-        var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeMissingDependency", "missing"));
+        var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FfprobeMissingDependency, "missing"));
         var fallback = registry.ResolveFallback("movie.mp4", primary, primaryResult);
 
         Assert.NotNull(fallback);
@@ -124,10 +124,10 @@ public sealed class ChapterImporterRegistryTests
             ffprobeResult: MediaChapterReadResult.Succeeded(new MediaChapterEntry(
                 0, "1/1000", 0, 1000, "0.000000", "1.000000",
                 new Dictionary<string, string> { ["title"] = "Intro" }, 0)),
-            mp4Result: MediaChapterReadResult.Failed("Mp4ReadFailed", "failed"));
+            mp4Result: MediaChapterReadResult.Failed(ChapterDiagnosticCode.Mp4ReadFailed, "failed"));
 
         var primary = registry.Resolve("movie.mkv")!;
-        var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "MatroskaMissingDependency", "missing"));
+        var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MatroskaMissingDependency, "missing"));
         var fallback = registry.ResolveFallback("movie.mkv", primary, primaryResult);
 
         Assert.NotNull(fallback);
@@ -141,10 +141,10 @@ public sealed class ChapterImporterRegistryTests
             ffprobeResult: MediaChapterReadResult.Succeeded(new MediaChapterEntry(
                 0, "1/1000", 0, 1000, "0.000000", "1.000000",
                 new Dictionary<string, string> { ["title"] = "Intro" }, 0)),
-            mp4Result: MediaChapterReadResult.Failed("Mp4ReadFailed", "failed"));
+            mp4Result: MediaChapterReadResult.Failed(ChapterDiagnosticCode.Mp4ReadFailed, "failed"));
 
         var primary = registry.Resolve("music.flac")!;
-        var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FlacEmbeddedCueNotFound", "missing"));
+        var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FlacEmbeddedCueNotFound, "missing"));
         var fallback = registry.ResolveFallback("music.flac", primary, primaryResult);
 
         Assert.NotNull(fallback);
@@ -155,13 +155,13 @@ public sealed class ChapterImporterRegistryTests
     public void RuntimeRegistryDoesNotFallbackForInvokedFfprobeFailureOrNonLegacyMp4()
     {
         var registry = CreateFakeRegistry(
-            ffprobeResult: MediaChapterReadResult.Failed("FfprobeProcessFailed", "failed"),
+            ffprobeResult: MediaChapterReadResult.Failed(ChapterDiagnosticCode.FfprobeProcessFailed, "failed"),
             mp4Result: MediaChapterReadResult.Succeeded(MediaEntry("Fallback", 0, 1000)));
 
         var mp4Primary = registry.Resolve("movie.mp4")!;
-        var invokedFailure = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeProcessFailed", "failed"));
+        var invokedFailure = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FfprobeProcessFailed, "failed"));
         var movPrimary = registry.Resolve("movie.mov")!;
-        var missingFfprobe = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeMissingDependency", "missing"));
+        var missingFfprobe = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FfprobeMissingDependency, "missing"));
 
         Assert.Null(registry.ResolveFallback("movie.mp4", mp4Primary, invokedFailure));
         Assert.Null(registry.ResolveFallback("movie.mov", movPrimary, missingFfprobe));
@@ -232,7 +232,7 @@ public sealed class ChapterImporterRegistryTests
     private sealed class FakeExternalToolLocator : IExternalToolLocator
     {
         public ValueTask<ExternalToolLocation> LocateAsync(string toolName, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new ExternalToolLocation(false, null, "MissingDependency", toolName));
+            ValueTask.FromResult(new ExternalToolLocation(false, null, ChapterDiagnosticCode.MissingDependency, toolName));
     }
 
     private sealed class FakeProcessRunner : IProcessRunner

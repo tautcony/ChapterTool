@@ -3,6 +3,7 @@ using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Editing;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
@@ -73,19 +74,20 @@ public sealed partial class LocalizationTests
     public void DiagnosticKeysLocalizeAcrossCultures()
     {
         var localizer = new AppLocalizationManager("en-US");
+        var invalidIndexKey = $"Diagnostic.{ChapterDiagnosticCode.InvalidChapterIndex.ToDisplayCode()}";
 
-        Assert.True(localizer.TryGetString("Diagnostic.InvalidChapterIndex", out _));
-        Assert.True(localizer.TryGetString("Diagnostic.MissingDependency", out _));
+        Assert.True(localizer.TryGetString(invalidIndexKey, out _));
+        Assert.True(localizer.TryGetString($"Diagnostic.{ChapterDiagnosticCode.MissingDependency.ToDisplayCode()}", out _));
 
         var arguments = new Dictionary<string, object?> { ["index"] = 7 };
         Assert.Equal(
-            AppLocalizationResources.All["en-US"]["Diagnostic.InvalidChapterIndex"].Replace("{index}", "7", StringComparison.Ordinal),
-            localizer.Format("Diagnostic.InvalidChapterIndex", arguments));
+            AppLocalizationResources.All["en-US"][invalidIndexKey].Replace("{index}", "7", StringComparison.Ordinal),
+            localizer.Format(invalidIndexKey, arguments));
 
         localizer.SetCulture("zh-CN");
         Assert.Equal(
-            AppLocalizationResources.All["zh-CN"]["Diagnostic.InvalidChapterIndex"].Replace("{index}", "7", StringComparison.Ordinal),
-            localizer.Format("Diagnostic.InvalidChapterIndex", arguments));
+            AppLocalizationResources.All["zh-CN"][invalidIndexKey].Replace("{index}", "7", StringComparison.Ordinal),
+            localizer.Format(invalidIndexKey, arguments));
     }
 
     [Fact]

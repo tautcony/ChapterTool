@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
@@ -91,7 +92,7 @@ public sealed class XplImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("test.xml", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "XplParseFailed");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
     }
 
     private static string Diagnostics(ChapterImportResult result) =>

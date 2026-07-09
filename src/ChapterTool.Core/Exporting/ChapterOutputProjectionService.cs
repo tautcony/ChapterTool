@@ -69,7 +69,7 @@ public sealed class ChapterOutputProjectionService
 
         diagnostics.Add(new ChapterDiagnostic(
             DiagnosticSeverity.Warning,
-            "OrderShiftNormalized",
+            ChapterDiagnosticCode.OrderShiftNormalized,
             $"Chapter number shift {orderShift} would produce non-positive chapter numbers and was normalized to 0.",
             Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["shift"] = orderShift }));
         return 0;

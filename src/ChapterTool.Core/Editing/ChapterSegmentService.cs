@@ -17,13 +17,13 @@ public sealed class ChapterSegmentService
     {
         if (group.Entries.Count == 0)
         {
-            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "NoSegments", "No chapter segments are available.")]);
+            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.NoSegments, "No chapter segments are available.")]);
         }
 
         var sourceType = group.Entries[0].ChapterSet.ImportFormat;
         if (sourceType is not (ChapterImportFormat.Mpls or ChapterImportFormat.DvdIfo) || group.Entries.Any(entry => entry.ChapterSet.ImportFormat != sourceType))
         {
-            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedCombineSource", "Only MPLS and DVD chapter groups can be combined.")]);
+            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedCombineSource, "Only MPLS and DVD chapter groups can be combined.")]);
         }
 
         var offset = TimeSpan.Zero;
@@ -57,12 +57,12 @@ public sealed class ChapterSegmentService
     {
         if (existing.Entries.Count == 0 || appended.Entries.Count == 0)
         {
-            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "NoSegments", "No chapter segments are available.")]);
+            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.NoSegments, "No chapter segments are available.")]);
         }
 
         if (existing.Entries.Concat(appended.Entries).Any(static entry => entry.ChapterSet.ImportFormat != ChapterImportFormat.Mpls))
         {
-            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, "UnsupportedAppendSource", "Only MPLS chapter groups can be appended.")]);
+            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedAppendSource, "Only MPLS chapter groups can be appended.")]);
         }
 
         var combined = existing with { Entries = existing.Entries.Concat(appended.Entries).ToList() };

@@ -45,7 +45,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
         var blocks = text.Split("\n\n");
         if (blocks.Length == 0 || !blocks[0].TrimStart().StartsWith("WEBVTT", StringComparison.Ordinal))
         {
-            return ChapterImportResult.Failed(Error("WebVttInvalidHeader", "WebVTT header is missing."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.WebVttInvalidHeader, "WebVTT header is missing."));
         }
 
         var chapters = new List<Chapter>();
@@ -54,15 +54,15 @@ public sealed class WebVttChapterImporter : IChapterImporter
             var lines = block.Split('\n').SkipWhile(static line => !line.Contains("-->", StringComparison.Ordinal)).ToArray();
             if (lines.Length < 2)
             {
-                return ChapterImportResult.Failed(Error("WebVttMalformedCue", $"Unable to parse WebVTT cue: {block}"));
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.WebVttMalformedCue, $"Unable to parse WebVTT cue: {block}"));
             }
 
             var parts = lines[0].Split("-->", StringSplitOptions.TrimEntries);
             if (parts.Length != 2 || !TimeSpan.TryParse(parts[0], out var start) || !TimeSpan.TryParse(parts[1], out var end))
             {
                 var code = parts.Length == 2 && parts[1].Contains(' ', StringComparison.Ordinal)
-                    ? "WebVttUnsupportedTimingSettings"
-                    : "WebVttMalformedCue";
+                    ? ChapterDiagnosticCode.WebVttUnsupportedTimingSettings
+                    : ChapterDiagnosticCode.WebVttMalformedCue;
                 return ChapterImportResult.Failed(Error(code, $"Unable to parse WebVTT timing line: {lines[0]}"));
             }
 
@@ -71,7 +71,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
 
         if (chapters.Count == 0)
         {
-            return ChapterImportResult.Failed(Error("WebVttMalformedCue", "No WebVTT cues were parsed."));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.WebVttMalformedCue, "No WebVTT cues were parsed."));
         }
 
         var info = new ChapterSet(
@@ -84,6 +84,6 @@ public sealed class WebVttChapterImporter : IChapterImporter
         return TextImportUtilities.SingleGroup(path, info);
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 }

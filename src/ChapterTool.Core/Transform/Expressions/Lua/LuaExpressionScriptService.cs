@@ -97,27 +97,27 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
                     .GetAwaiter()
                     .GetResult();
                 return callResults.Length == 0
-                    ? Failure(fallback, "InvalidExpression.LuaMissingReturn", "Lua transform did not return a value.")
+                    ? Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaMissingReturn, "Lua transform did not return a value.")
                     : NumericResult(callResults[0], fallback);
             }
 
-            return Failure(fallback, "InvalidExpression.LuaMissingReturn", "Lua expression did not return a value.");
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaMissingReturn, "Lua expression did not return a value.");
         }
         catch (LuaCompileException exception)
         {
-            return Failure(fallback, "InvalidExpression.LuaCompile", exception.Message);
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaCompile, exception.Message);
         }
         catch (LuaRuntimeException exception)
         {
-            return Failure(fallback, "InvalidExpression.LuaRuntime", exception.Message);
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaRuntime, exception.Message);
         }
         catch (OperationCanceledException exception)
         {
-            return Failure(fallback, "InvalidExpression.LuaCanceled", exception.Message);
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaCanceled, exception.Message);
         }
         catch (Exception exception) when (exception is InvalidOperationException or ArgumentException or OverflowException)
         {
-            return Failure(fallback, "InvalidExpression.Lua", exception.Message);
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLua, exception.Message);
         }
     }
 
@@ -177,7 +177,7 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
     {
         if (!value.TryRead<double>(out var number) || double.IsNaN(number) || double.IsInfinity(number))
         {
-            return Failure(fallback, "InvalidExpression.LuaInvalidReturn", $"Lua expression returned {value.TypeToString()} instead of a finite number.");
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaInvalidReturn, $"Lua expression returned {value.TypeToString()} instead of a finite number.");
         }
 
         try
@@ -186,11 +186,11 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         }
         catch (OverflowException exception)
         {
-            return Failure(fallback, "InvalidExpression.LuaInvalidReturn", exception.Message);
+            return Failure(fallback, ChapterDiagnosticCode.InvalidExpressionLuaInvalidReturn, exception.Message);
         }
     }
 
-    private static ChapterExpressionEvaluationResult Failure(decimal fallback, string code, string message) =>
+    private static ChapterExpressionEvaluationResult Failure(decimal fallback, ChapterDiagnosticCode code, string message) =>
         new(
             false,
             fallback,

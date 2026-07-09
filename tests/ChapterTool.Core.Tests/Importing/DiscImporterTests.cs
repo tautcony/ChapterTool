@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
@@ -147,7 +148,7 @@ public sealed class DiscImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("bad.mpls", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidMpls");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidMpls);
     }
 
     [Fact]
@@ -242,7 +243,7 @@ public sealed class DiscImporterTests
         {
             var result = await importer.ImportAsync(new ChapterImportRequest(path), TestContext.Current.CancellationToken);
             Assert.False(result.Success);
-            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidIfo");
+            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidIfo);
         }
         finally
         {
@@ -327,7 +328,7 @@ public sealed class DiscImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("bad.xpl", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code is "XplParseFailed" or "XplNoChapters");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed || diagnostic.Code == ChapterDiagnosticCode.XplNoChapters);
     }
 
     private static TimeSpan[] MplsTimes(params uint[] ptsOffsets) =>

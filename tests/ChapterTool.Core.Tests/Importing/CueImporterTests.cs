@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Cue;
@@ -117,16 +118,16 @@ public sealed class CueImporterTests
     }
 
     [Theory]
-    [InlineData("", "EmptyCueFile")]
-    [InlineData("TITLE \"x\"", "EmptyCueFile")]
-    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 02 00:00:00", "MalformedCueSyntax")]
-    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 01 bad", "MalformedCueSyntax")]
-    public void CueParserFailsEmptyOrMalformedText(string text, string code)
+    [InlineData("", ChapterDiagnosticSource.CueFile, ChapterDiagnosticReason.Empty)]
+    [InlineData("TITLE \"x\"", ChapterDiagnosticSource.CueFile, ChapterDiagnosticReason.Empty)]
+    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 02 00:00:00", ChapterDiagnosticSource.CueSyntax, ChapterDiagnosticReason.Malformed)]
+    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 01 bad", ChapterDiagnosticSource.CueSyntax, ChapterDiagnosticReason.Malformed)]
+    public void CueParserFailsEmptyOrMalformedText(string text, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var result = CueSheetParser.Parse(text);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     [Fact]
@@ -137,7 +138,7 @@ public sealed class CueImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidContainerHeader");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidContainerHeader);
     }
 
     [Fact]
@@ -172,7 +173,7 @@ public sealed class CueImporterTests
         var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "FlacEmbeddedCueNotFound");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.FlacEmbeddedCueNotFound);
     }
 
     [Theory]
@@ -185,7 +186,7 @@ public sealed class CueImporterTests
         var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "FlacEmbeddedCueNotFound");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.FlacEmbeddedCueNotFound);
     }
 
     [Fact]
@@ -196,7 +197,7 @@ public sealed class CueImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidContainerHeader");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidContainerHeader);
     }
 
     [Fact]
@@ -234,7 +235,7 @@ public sealed class CueImporterTests
         var result = await new TakCueImporter().ImportAsync(new ChapterImportRequest("music.tak", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "EmbeddedCueNotFound");
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.EmbeddedCueNotFound);
     }
 
     [Fact]

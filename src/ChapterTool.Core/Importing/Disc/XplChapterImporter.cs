@@ -49,14 +49,14 @@ public sealed class XplChapterImporter : IChapterImporter
             var entries = Parse(document, request.Path).ToList();
             if (entries.Count == 0)
             {
-                return ChapterImportResult.Failed(Error("XplNoChapters", "No HD-DVD chapters were parsed."));
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.XplNoChapters, "No HD-DVD chapters were parsed."));
             }
 
             return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
         }
         catch (Exception exception) when (exception is FormatException or InvalidDataException or InvalidOperationException or System.Xml.XmlException)
         {
-            return ChapterImportResult.Failed(Error("XplParseFailed", exception.Message));
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.XplParseFailed, exception.Message));
         }
     }
 
@@ -131,6 +131,6 @@ public sealed class XplChapterImporter : IChapterImporter
         return main.Add(TimeSpan.FromTicks((long)ticks));
     }
 
-    private static ChapterDiagnostic Error(string code, string message) =>
+    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 }

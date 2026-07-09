@@ -75,7 +75,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     private static ChapterEditResult InvalidFrameText(ChapterSet info) =>
         new(
             info,
-            [new ChapterDiagnostic(DiagnosticSeverity.Warning, "InvalidFrameText", "Frame text did not contain a frame number or fps was invalid.")]);
+            [new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.InvalidFrameText, "Frame text did not contain a frame number or fps was invalid.")]);
 
     /// <summary>
     /// Executes the Rename operation.
@@ -151,7 +151,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
             [
                 new ChapterDiagnostic(
                     DiagnosticSeverity.Warning,
-                    "OrderShiftNormalized",
+                    ChapterDiagnosticCode.OrderShiftNormalized,
                     $"Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.",
                     Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["shift"] = shift })
             ];
@@ -190,7 +190,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         {
             return new ChapterEditResult(
                 info,
-                [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidFrameRate", "Frame rate must be greater than zero.")]);
+                [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero.")]);
         }
 
         var shift = ChapterRounding.SecondsToTimeSpan(frames / framesPerSecond);
@@ -214,14 +214,14 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         {
             return new ChapterZonesResult(
                 string.Empty,
-                [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidFrameRate", "Frame rate must be greater than zero.")]);
+                [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero.")]);
         }
 
         if (indexes.Count == 0)
         {
             return new ChapterZonesResult(
                 string.Empty,
-                [new ChapterDiagnostic(DiagnosticSeverity.Warning, "NoRowsSelected", "Select one or more chapter rows first.")]);
+                [new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.NoRowsSelected, "Select one or more chapter rows first.")]);
         }
 
         var ranges = new List<(long Begin, long End)>();
@@ -244,7 +244,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         {
             return new ChapterZonesResult(
                 string.Empty,
-                [new ChapterDiagnostic(DiagnosticSeverity.Warning, "NoRowsSelected", "No valid chapter rows were selected.")]);
+                [new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.NoRowsSelected, "No valid chapter rows were selected.")]);
         }
 
         var zones = "--zones " + string.Join("/", ranges.OrderBy(static range => range.Begin).Select(static range => $"{range.Begin},{range.End},"));
@@ -274,7 +274,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     private static ChapterEditResult InvalidIndex(ChapterSet info, int index) =>
         new(
             info,
-            [new ChapterDiagnostic(DiagnosticSeverity.Error, "InvalidChapterIndex", $"Chapter index {index} is out of range.",
+            [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidChapterIndex, $"Chapter index {index} is out of range.",
                 Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["index"] = index })]);
 
     [GeneratedRegex(@"\d+")]

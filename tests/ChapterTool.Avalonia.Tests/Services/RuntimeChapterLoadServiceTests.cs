@@ -101,8 +101,12 @@ public sealed class RuntimeChapterLoadServiceTests
             var result = await CreateService().LoadAsync(path, TestContext.Current.CancellationToken);
 
             Assert.False(result.Success);
-            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code is "FfprobeMissingDependency" or "FfprobeCannotStart" or "FfprobeProcessFailed" or "FfprobeParseFailed");
-            Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedSource");
+            Assert.Contains(result.Diagnostics, diagnostic =>
+                diagnostic.Code == ChapterDiagnosticCode.FfprobeMissingDependency ||
+                diagnostic.Code == ChapterDiagnosticCode.FfprobeCannotStart ||
+                diagnostic.Code == ChapterDiagnosticCode.FfprobeProcessFailed ||
+                diagnostic.Code == ChapterDiagnosticCode.FfprobeParseFailed);
+            Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedSource);
         }
         finally
         {
@@ -114,7 +118,7 @@ public sealed class RuntimeChapterLoadServiceTests
     public async Task RuntimeFallsBackWhenPrimaryCannotBeInvoked()
     {
         var path = await CreateTempFileAsync(".mp4");
-        var primary = new StubImporter("ffprobe-media", ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeMissingDependency", "missing")));
+        var primary = new StubImporter("ffprobe-media", ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FfprobeMissingDependency, "missing")));
         var fallback = new StubImporter("mp4", SuccessfulImport(path, ChapterImportFormat.Media));
         var registry = new StubRegistry(primary, fallback);
         var service = new RuntimeChapterLoadService(registry);
@@ -125,13 +129,13 @@ public sealed class RuntimeChapterLoadServiceTests
             Assert.True(result.Success, Diagnostics(result));
             Assert.Equal(1, primary.CallCount);
             Assert.Equal(1, fallback.CallCount);
-            var fallbackDiagnostic = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed");
+            var fallbackDiagnostic = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.ImporterFallbackUsed);
             Assert.Equal(DiagnosticSeverity.Info, fallbackDiagnostic.Severity);
             Assert.Equal(path, fallbackDiagnostic.Location);
             Assert.Contains("primary=ffprobe-media", fallbackDiagnostic.Details, StringComparison.Ordinal);
             Assert.Contains("fallback=mp4", fallbackDiagnostic.Details, StringComparison.Ordinal);
-            Assert.Contains("reason=FfprobeMissingDependency", fallbackDiagnostic.Details, StringComparison.Ordinal);
-            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "FfprobeMissingDependency");
+            Assert.Contains("reason=Ffprobe.MissingDependency", fallbackDiagnostic.Details, StringComparison.Ordinal);
+            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.FfprobeMissingDependency);
         }
         finally
         {
@@ -164,7 +168,7 @@ public sealed class RuntimeChapterLoadServiceTests
     public async Task RuntimeDoesNotFallbackAfterInvokedPrimaryFailure()
     {
         var path = await CreateTempFileAsync(".mp4");
-        var primary = new StubImporter("ffprobe-media", ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, "FfprobeProcessFailed", "process failed")));
+        var primary = new StubImporter("ffprobe-media", ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FfprobeProcessFailed, "process failed")));
         var fallback = new StubImporter("mp4", SuccessfulImport(path, ChapterImportFormat.Media));
         var registry = new StubRegistry(primary, fallback);
         var service = new RuntimeChapterLoadService(registry);
@@ -175,8 +179,8 @@ public sealed class RuntimeChapterLoadServiceTests
             Assert.False(result.Success);
             Assert.Equal(1, primary.CallCount);
             Assert.Equal(0, fallback.CallCount);
-            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "FfprobeProcessFailed");
-            Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed");
+            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.FfprobeProcessFailed);
+            Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.ImporterFallbackUsed);
         }
         finally
         {
@@ -205,13 +209,13 @@ public sealed class RuntimeChapterLoadServiceTests
                     [TimeSpan.Zero, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(330), TimeSpan.FromSeconds(740)],
                     chapters.Select(static chapter => chapter.StartTime));
 
-                if (result.Diagnostics.Any(static diagnostic => diagnostic.Code == "MatroskaMissingDependency"))
+                if (result.Diagnostics.Any(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaMissingDependency))
                 {
                     Assert.Single(entries);
                     Assert.Equal(
                         [TimeSpan.FromSeconds(29.15), null, null, TimeSpan.FromSeconds(775)],
                         chapters.Select(static chapter => chapter.EndTime));
-                    Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == "ImporterFallbackUsed");
+                    Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.ImporterFallbackUsed);
                     Assert.Equal(ChapterImportFormat.Media, entries.Single().ChapterSet.ImportFormat);
                 }
                 else
@@ -225,10 +229,10 @@ public sealed class RuntimeChapterLoadServiceTests
             }
             else
             {
-                Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaMissingDependency");
+                Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MatroskaMissingDependency);
             }
 
-            Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedSource");
+            Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedSource);
         }
         finally
         {
@@ -246,8 +250,10 @@ public sealed class RuntimeChapterLoadServiceTests
             var result = await CreateService().LoadAsync(root, TestContext.Current.CancellationToken);
 
             Assert.False(result.Success);
-            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code is "MissingDependency" or "DependencyExecutionFailed");
-            Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == "UnsupportedSource");
+            Assert.Contains(result.Diagnostics, diagnostic =>
+                diagnostic.Code == ChapterDiagnosticCode.MissingDependency ||
+                diagnostic.Code == ChapterDiagnosticCode.DependencyExecutionFailed);
+            Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedSource);
         }
         finally
         {
@@ -320,7 +326,12 @@ public sealed class RuntimeChapterLoadServiceTests
         public IChapterImporter? Resolve(string path) => primary;
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) =>
-            primaryResult.Diagnostics.Any(static diagnostic => diagnostic.Code is "FfprobeMissingDependency" or "FfprobeCannotStart" or "MatroskaMissingDependency" or "MatroskaCannotStart" or "FlacEmbeddedCueNotFound")
+            primaryResult.Diagnostics.Any(static diagnostic =>
+                diagnostic.Code == ChapterDiagnosticCode.FfprobeMissingDependency ||
+                diagnostic.Code == ChapterDiagnosticCode.FfprobeCannotStart ||
+                diagnostic.Code == ChapterDiagnosticCode.MatroskaMissingDependency ||
+                diagnostic.Code == ChapterDiagnosticCode.MatroskaCannotStart ||
+                diagnostic.Code == ChapterDiagnosticCode.FlacEmbeddedCueNotFound)
                 ? fallback
                 : null;
     }

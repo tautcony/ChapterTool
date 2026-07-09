@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
 
@@ -73,7 +74,7 @@ public sealed class ExternalToolLocator(
         return Cache(cacheKey, new ExternalToolLocation(
             false,
             null,
-            "MissingDependency",
+            ChapterDiagnosticCode.MissingDependency,
             $"External tool '{toolId}' was not found."));
     }
 

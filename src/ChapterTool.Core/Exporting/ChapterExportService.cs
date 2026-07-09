@@ -56,7 +56,7 @@ public sealed partial class ChapterExportService
             ChapterExportFormat.Json => Json(info, options),
             ChapterExportFormat.WebVtt => WebVtt(outputInfo, options),
             ChapterExportFormat.Celltimes => Celltimes(outputInfo),
-            _ => Failure("UnsupportedExportFormat", "Unsupported export format.")
+            _ => Failure(ChapterDiagnosticCode.UnsupportedExportFormat, "Unsupported export format.")
         };
 
         return result with
@@ -109,7 +109,7 @@ public sealed partial class ChapterExportService
         var chapters = info.Chapters.Where(NotSeparator).Select(FormatTime).ToList();
         if (chapters.Count == 0)
         {
-            return Failure("NoChapters", "No chapters are available for tsMuxeR meta export.");
+            return Failure(ChapterDiagnosticCode.NoChapters, "No chapters are available for tsMuxeR meta export.");
         }
 
         return Success($"--custom-{Environment.NewLine}chapters={string.Join(';', chapters)}", ".TsMuxeR_Meta.txt");
@@ -172,7 +172,7 @@ public sealed partial class ChapterExportService
             if (!IsSupportedWebVttCueText(chapter.Name))
             {
                 return Failure(
-                    "InvalidWebVttCueText",
+                    ChapterDiagnosticCode.InvalidWebVttCueText,
                     "WebVTT cue text cannot contain line breaks or the cue timing separator.");
             }
 
@@ -250,7 +250,7 @@ public sealed partial class ChapterExportService
     private static ChapterExportResult Success(string content, string extension) =>
         new(true, content, extension, []);
 
-    private static ChapterExportResult Failure(string code, string message) =>
+    private static ChapterExportResult Failure(ChapterDiagnosticCode code, string message) =>
         new(false, string.Empty, string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);
 
     private static ChapterExportResult Failure(ChapterDiagnostic diagnostic) =>

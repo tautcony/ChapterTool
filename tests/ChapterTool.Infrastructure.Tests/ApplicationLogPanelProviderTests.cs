@@ -1,4 +1,5 @@
-﻿using ChapterTool.Infrastructure.Platform;
+﻿using ChapterTool.Core.Diagnostics;
+using ChapterTool.Infrastructure.Platform;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Infrastructure.Tests;
@@ -14,7 +15,7 @@ public sealed class ApplicationLogPanelProviderTests
         logger.LogWarning(
             new EventId(42, "Log.Test"),
             "Import diagnostic {Code} at {Location}",
-            "PartialParse",
+            ChapterDiagnosticCode.PartialParse,
             "line 5");
 
         var entry = Assert.Single(service.Entries);
@@ -22,8 +23,8 @@ public sealed class ApplicationLogPanelProviderTests
         Assert.Equal("ChapterTool.Tests", entry.Category);
         Assert.Equal(42, entry.EventId);
         Assert.Equal("Log.Test", entry.EventName);
-        Assert.Equal("Import diagnostic PartialParse at line 5", entry.Message);
-        Assert.Equal("PartialParse", entry.StructuredState?["Code"]);
+        Assert.Equal("Import diagnostic Parse.Partial at line 5", entry.Message);
+        Assert.Equal(ChapterDiagnosticCode.PartialParse, entry.StructuredState?["Code"]);
         Assert.Equal("line 5", entry.StructuredState?["Location"]);
     }
 
@@ -36,7 +37,7 @@ public sealed class ApplicationLogPanelProviderTests
         {
             ["MessageKey"] = "Log.Diagnostic",
             ["operation"] = "Load",
-            ["code"] = "FfprobeProcessFailed",
+            ["code"] = ChapterDiagnosticCode.FfprobeProcessFailed,
             ["TechnicalDetail"] = "exitCode=1 stderr=failed"
         };
 
@@ -47,7 +48,7 @@ public sealed class ApplicationLogPanelProviderTests
         Assert.Equal("Log.Diagnostic", entry.MessageKey);
         Assert.Equal("Log.Diagnostic", entry.Message);
         Assert.Equal("Load", entry.Arguments?["operation"]);
-        Assert.Equal("FfprobeProcessFailed", entry.Arguments?["code"]);
+        Assert.Equal(ChapterDiagnosticCode.FfprobeProcessFailed, entry.Arguments?["code"]);
         Assert.Equal("exitCode=1 stderr=failed", entry.TechnicalDetail);
         Assert.DoesNotContain(entry.Arguments!, pair => pair.Key is "MessageKey" or "TechnicalDetail");
     }

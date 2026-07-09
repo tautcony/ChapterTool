@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
@@ -77,9 +78,9 @@ public sealed class IfoImporterTests
     }
 
     [Theory]
-    [InlineData("NULL.IFO", "NoChaptersFound")]
-    [InlineData("OUT_OF_RANGE.IFO", "InvalidIfo")]
-    public async Task InvalidIfoSamplesReturnExpectedDiagnostics(string fileName, string expectedCode)
+    [InlineData("NULL.IFO", ChapterDiagnosticSource.Chapters, ChapterDiagnosticReason.NotFound)]
+    [InlineData("OUT_OF_RANGE.IFO", ChapterDiagnosticSource.Ifo, ChapterDiagnosticReason.Invalid)]
+    public async Task InvalidIfoSamplesReturnExpectedDiagnostics(string fileName, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         var importer = new IfoChapterImporter();
 
@@ -88,7 +89,7 @@ public sealed class IfoImporterTests
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == expectedCode);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
     private static string Diagnostics(ChapterImportResult result) =>

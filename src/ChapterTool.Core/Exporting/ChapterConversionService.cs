@@ -23,7 +23,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
 
         if (framesPerSecond <= 0)
         {
-            return Failure("InvalidFrameRate", "Frame rate must be greater than zero.");
+            return Failure(ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero.");
         }
 
         var lines = info.Chapters
@@ -46,18 +46,18 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
     {
         if (string.IsNullOrWhiteSpace(chapterText))
         {
-            return Failure("InvalidChapterText", "Chapter text is empty.");
+            return Failure(ChapterDiagnosticCode.InvalidChapterText, "Chapter text is empty.");
         }
 
         if (framesPerSecond <= 0 && string.IsNullOrWhiteSpace(timecodeText))
         {
-            return Failure("InvalidFrameRate", "Frame rate must be greater than zero when no timecode file is provided.");
+            return Failure(ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero when no timecode file is provided.");
         }
 
         var times = ParseChapterTimes(chapterText);
         if (times.Count == 0)
         {
-            return Failure("InvalidChapterText", "No valid OGM chapter time entries were found.");
+            return Failure(ChapterDiagnosticCode.InvalidChapterText, "No valid OGM chapter time entries were found.");
         }
 
         TimecodeMap? timecodeMap = null;
@@ -66,7 +66,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
             var parsed = TimecodeMap.Parse(timecodeText);
             if (parsed is null)
             {
-                return Failure("InvalidTimecodeText", "No valid timecode entries were found.");
+                return Failure(ChapterDiagnosticCode.InvalidTimecodeText, "No valid timecode entries were found.");
             }
 
             timecodeMap = parsed;
@@ -119,7 +119,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
     private static ChapterConversionResult Success(string content, string extension) =>
         new(true, content, extension, []);
 
-    private static ChapterConversionResult Failure(string code, string message) =>
+    private static ChapterConversionResult Failure(ChapterDiagnosticCode code, string message) =>
         new(false, string.Empty, string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);
 
     private sealed class TimecodeMap

@@ -976,7 +976,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task DiagnosticLogsCaptureSeverityAndFormatForLogWindow()
     {
-        var diagnostic = new ChapterDiagnostic(DiagnosticSeverity.Warning, "PartialParse", "stopped", "line 5", "tail");
+        var diagnostic = new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.PartialParse, "stopped", "line 5", "tail");
         var log = new ApplicationLogPanelProvider();
         var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))) with
         {
@@ -987,9 +987,9 @@ public sealed class MainWindowViewModelTests
 
         var entry = Assert.Single(log.Entries, static item => item.MessageKey == "Log.Diagnostic");
         Assert.Equal(LogLevel.Warning, entry.Level);
-        Assert.Equal("PartialParse", entry.Arguments?["code"]);
+        Assert.Equal("Parse.Partial", entry.Arguments?["code"]);
         Assert.Equal("tail", entry.TechnicalDetail);
-        Assert.Contains("Load diagnostic: severity=Warning, code=PartialParse", vm.LogText(), StringComparison.Ordinal);
+        Assert.Contains("Load diagnostic: severity=Warning, code=Parse.Partial", vm.LogText(), StringComparison.Ordinal);
     }
 
     private static MainWindowViewModel CreateViewModel(

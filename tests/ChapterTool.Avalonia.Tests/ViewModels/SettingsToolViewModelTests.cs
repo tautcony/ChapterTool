@@ -2,6 +2,7 @@ using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -639,7 +640,7 @@ public sealed class SettingsToolViewModelTests
             ValueTask.FromResult(
                 locations.TryGetValue(toolId, out var location)
                     ? location
-                    : new ExternalToolLocation(false, null, "MissingDependency", toolId));
+                    : new ExternalToolLocation(false, null, ChapterDiagnosticCode.MissingDependency, toolId));
     }
 
     private sealed class FakeLoadService : IChapterLoadService

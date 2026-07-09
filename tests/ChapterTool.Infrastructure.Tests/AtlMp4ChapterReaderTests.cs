@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Importing.Media;
 
 namespace ChapterTool.Infrastructure.Tests;
@@ -54,7 +55,7 @@ public sealed class AtlMp4ChapterReaderTests
         var result = await reader.ReadAsync("offset.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("Mp4UnsupportedMetadata", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.Mp4UnsupportedMetadata, result.DiagnosticCode);
     }
 
     [Theory]
@@ -68,12 +69,12 @@ public sealed class AtlMp4ChapterReaderTests
         var result = await reader.ReadAsync("bad.mp4", TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Equal("Mp4MalformedMetadata", result.DiagnosticCode);
+        Assert.Equal(ChapterDiagnosticCode.Mp4MalformedMetadata, result.DiagnosticCode);
     }
 
     [Theory]
     [MemberData(nameof(ExceptionDiagnostics))]
-    public async Task ReaderMapsAtlAndFileExceptionsToStructuredDiagnostics(Exception exception, string expectedCode)
+    public async Task ReaderMapsAtlAndFileExceptionsToStructuredDiagnostics(Exception exception, ChapterDiagnosticCode expectedCode)
     {
         var reader = new AtlMp4ChapterReader(new ThrowingAtlTrackChapterSource(exception));
 
@@ -84,16 +85,16 @@ public sealed class AtlMp4ChapterReaderTests
         Assert.Contains(exception.Message, result.Message, StringComparison.Ordinal);
     }
 
-    public static TheoryData<Exception, string> ExceptionDiagnostics() => new()
+    public static TheoryData<Exception, ChapterDiagnosticCode> ExceptionDiagnostics() => new()
     {
-        { new FileNotFoundException("missing"), "Mp4FileNotFound" },
-        { new DirectoryNotFoundException("missing directory"), "Mp4FileNotFound" },
-        { new UnauthorizedAccessException("denied"), "Mp4FileInaccessible" },
-        { new IOException("read failed"), "Mp4ReadFailed" },
-        { new InvalidDataException("malformed"), "Mp4MalformedMetadata" },
-        { new InvalidOperationException("unsupported"), "Mp4UnsupportedMetadata" },
-        { new NotSupportedException("not supported"), "Mp4UnsupportedMetadata" },
-        { new ArgumentException("bad argument"), "Mp4UnsupportedMetadata" }
+        { new FileNotFoundException("missing"), ChapterDiagnosticCode.Mp4FileNotFound },
+        { new DirectoryNotFoundException("missing directory"), ChapterDiagnosticCode.Mp4FileNotFound },
+        { new UnauthorizedAccessException("denied"), ChapterDiagnosticCode.Mp4FileInaccessible },
+        { new IOException("read failed"), ChapterDiagnosticCode.Mp4ReadFailed },
+        { new InvalidDataException("malformed"), ChapterDiagnosticCode.Mp4MalformedMetadata },
+        { new InvalidOperationException("unsupported"), ChapterDiagnosticCode.Mp4UnsupportedMetadata },
+        { new NotSupportedException("not supported"), ChapterDiagnosticCode.Mp4UnsupportedMetadata },
+        { new ArgumentException("bad argument"), ChapterDiagnosticCode.Mp4UnsupportedMetadata }
     };
 
     private sealed class FakeAtlTrackChapterSource(params AtlChapterEntry[] chapters) : IAtlTrackChapterSource

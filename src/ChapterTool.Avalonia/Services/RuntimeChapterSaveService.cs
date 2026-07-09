@@ -28,7 +28,7 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
                 cancellationToken);
             return result with
             {
-                Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, "Saved", path,
+                Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.Saved, path,
                     Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["path"] = path })]
             };
         }
@@ -42,7 +42,7 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
                     .. result.Diagnostics,
                     new ChapterDiagnostic(
                         DiagnosticSeverity.Error,
-                        "SaveFailed",
+                        ChapterDiagnosticCode.SaveFailed,
                         $"Chapter file could not be saved: {exception.Message}",
                         Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
                         {
