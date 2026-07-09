@@ -8,12 +8,14 @@ public sealed partial class AppSettingsStore(string settingsDirectory) : ISettin
     private const string CurrentFileName = "appsettings.json";
 
     private readonly Lock syncRoot = new();
+    private readonly SemaphoreSlim saveLock = new(1, 1);
     private AppSettings? cachedSettings;
     private FileStamp cachedFileStamp;
 
     public async ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken)
     {
         var currentPath = Path.Combine(settingsDirectory, CurrentFileName);
+        using var corruptLoadScope = CorruptSettingsFile.EnterLoad(currentPath);
         var stamp = GetFileStamp(currentPath);
 
         lock (syncRoot)
@@ -39,6 +41,18 @@ public sealed partial class AppSettingsStore(string settingsDirectory) : ISettin
             {
                 throw CorruptSettingsFile.Preserve(currentPath, exception);
             }
+            catch (FileNotFoundException exception) when (CorruptSettingsFile.TryGetConcurrentPreservation(currentPath, exception, out var corruptException))
+            {
+                throw corruptException;
+            }
+        }
+
+        if (CorruptSettingsFile.TryGetConcurrentPreservation(
+            currentPath,
+            new FileNotFoundException("The settings file was preserved by another concurrent load.", currentPath),
+            out var concurrentCorruptException))
+        {
+            throw concurrentCorruptException;
         }
 
         settings = new AppSettings();
@@ -48,12 +62,15 @@ public sealed partial class AppSettingsStore(string settingsDirectory) : ISettin
 
     public async ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(settingsDirectory);
-        var currentPath = Path.Combine(settingsDirectory, CurrentFileName);
-        var tempPath = currentPath + ".tmp";
+        await saveLock.WaitAsync(cancellationToken);
+        string? tempPath = null;
 
         try
         {
+            Directory.CreateDirectory(settingsDirectory);
+            var currentPath = Path.Combine(settingsDirectory, CurrentFileName);
+            tempPath = $"{currentPath}.{Guid.NewGuid():N}.tmp";
+
             await using (var stream = File.Create(tempPath))
             {
                 await JsonSerializer.SerializeAsync(stream, settings, AppJsonSerializerContext.Default.AppSettings, cancellationToken);
@@ -64,12 +81,25 @@ public sealed partial class AppSettingsStore(string settingsDirectory) : ISettin
         }
         catch
         {
-            if (File.Exists(tempPath))
+            if (!string.IsNullOrWhiteSpace(tempPath) && File.Exists(tempPath))
             {
-                File.Delete(tempPath);
+                try
+                {
+                    File.Delete(tempPath);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
             }
 
             throw;
+        }
+        finally
+        {
+            saveLock.Release();
         }
     }
 

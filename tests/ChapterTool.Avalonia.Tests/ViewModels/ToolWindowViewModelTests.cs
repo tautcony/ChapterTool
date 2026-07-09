@@ -1,5 +1,6 @@
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -86,6 +87,41 @@ public sealed class ToolWindowViewModelTests
     }
 
     [Fact]
+    public async Task ColorSettingsToolFallsBackToDefaultsWhenThemeLoadFails()
+    {
+        var themeApplication = new FakeThemeApplicationService();
+        var vm = new ColorSettingsViewModel(new ThrowingThemeSettingsStore(), themeApplication);
+
+        await vm.InitializationTask;
+
+        Assert.Equal(ThemeColorSettings.Default.BackChange, vm.Slots[0].Value);
+        Assert.Equal(ThemeColorSettings.Default.BackChange, themeApplication.LastApplied?.BackChange);
+        Assert.True(vm.ThemeLoadFailed);
+        Assert.Contains("defaults", vm.LoadWarningText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DisposedLanguageToolStopsRefreshingLocalizedOptions()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var owner = CreateOwner(localizer);
+        var vm = new LanguageToolViewModel(owner);
+        var notifications = 0;
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(LanguageToolViewModel.Languages))
+            {
+                notifications++;
+            }
+        };
+
+        (vm as IDisposable)?.Dispose();
+        localizer.SetCulture("zh-CN");
+
+        Assert.Equal(0, notifications);
+    }
+
+    [Fact]
     public async Task ExpressionTemplateAndForwardShiftToolsApplyToOwner()
     {
         var owner = CreateOwner();
@@ -139,7 +175,7 @@ public sealed class ToolWindowViewModelTests
         }
     }
 
-    private static MainWindowViewModel CreateOwner()
+    private static MainWindowViewModel CreateOwner(IAppLocalizer? localizer = null)
     {
         var formatter = new ChapterTimeFormatter();
         var logService = new ApplicationLogPanelProvider();
@@ -154,7 +190,8 @@ public sealed class ToolWindowViewModelTests
             new FakeWindowService(),
             formatter,
             logService,
-            TestApplicationLogger.Create<MainWindowViewModel>(logService));
+            TestApplicationLogger.Create<MainWindowViewModel>(logService),
+            localizer: localizer);
     }
 
     private sealed class FakeThemeSettingsStore : ISettingsStore<ThemeColorSettings>
@@ -168,6 +205,21 @@ public sealed class ToolWindowViewModelTests
             Current = settings;
             return ValueTask.CompletedTask;
         }
+    }
+
+    private sealed class ThrowingThemeSettingsStore : ISettingsStore<ThemeColorSettings>
+    {
+        public ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromException<ThemeColorSettings>(new CorruptSettingsFileException("theme-colors.json", "theme-colors.json.bad", new InvalidDataException()));
+
+        public ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    }
+
+    private sealed class FakeThemeApplicationService : IThemeApplicationService
+    {
+        public ThemeColorSettings? LastApplied { get; private set; }
+
+        public void Apply(ThemeColorSettings settings) => LastApplied = settings;
     }
 
     private sealed class FakeLoadService(ChapterImportResult result) : IChapterLoadService

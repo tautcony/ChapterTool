@@ -662,6 +662,9 @@
 <data name="Settings.Status.Ready" xml:space="preserve">
     <value>Settings loaded</value>
   </data>
+<data name="Settings.Status.LoadedDefaults" xml:space="preserve">
+    <value>Settings could not be loaded; defaults are shown</value>
+  </data>
 <data name="Settings.Status.Reset" xml:space="preserve">
     <value>Defaults restored</value>
   </data>

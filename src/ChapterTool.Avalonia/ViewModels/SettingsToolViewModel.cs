@@ -12,7 +12,7 @@ using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed class SettingsToolViewModel : ObservableViewModel
+public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
     private static readonly ChapterExportFormat[] SaveFormats =
     [
@@ -37,6 +37,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IThemeApplicationService? themeApplicationService;
     private readonly IShellService? shellService;
+    private readonly EventHandler cultureChangedHandler;
     private AppSettings savedAppSettings = new();
     private ThemeColorSettings savedThemeSettings = ThemeColorSettings.Default;
     private string selectedLanguage;
@@ -107,20 +108,32 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         ClearFfprobeCommand = ClearCommand(() => FfprobePath = null);
         ClearFfmpegCommand = ClearCommand(() => FfmpegPath = null);
         OpenRepositoryCommand = new UiCommand(async (_, token) => await OpenRepositoryAsync(token), _ => shellService is not null);
-        this.localizer.CultureChanged += (_, _) =>
+        cultureChangedHandler = (_, _) =>
         {
             RefreshLanguages();
             RefreshXmlLanguageDisplayOptions(notify: true);
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
             {
-                StatusText = this.localizer.GetString("Settings.Status.Ready");
+                StatusText = StatusTextForCurrentLoadState();
             }
         };
+        this.localizer.CultureChanged += cultureChangedHandler;
         if (autoLoad)
         {
-            _ = InitializeAsync();
+            InitializationTask = InitializeAsync();
         }
+        else
+        {
+            InitializationTask = Task.CompletedTask;
+        }
+    }
+
+    internal Task InitializationTask { get; }
+
+    public void Dispose()
+    {
+        localizer.CultureChanged -= cultureChangedHandler;
     }
 
     public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
@@ -307,6 +320,12 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         appSettingsStore is not null && CurrentAppSettings() != savedAppSettings
         || themeSettingsStore is not null && CurrentThemeSettings() != savedThemeSettings;
 
+    public bool SettingsLoadFailed
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
     public string StatusText
     {
         get;
@@ -367,27 +386,80 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
+        SettingsLoadFailed = false;
         liveApplyEnabled = false;
-        if (appSettingsStore is not null)
+        try
         {
-            var settings = await appSettingsStore.LoadAsync(cancellationToken);
-            ApplyAppSettingsToFields(settings);
-            savedAppSettings = CurrentAppSettings();
+            if (appSettingsStore is not null)
+            {
+                var settings = await LoadAppSettingsOrDefaultAsync(cancellationToken);
+                ApplyAppSettingsToFields(settings);
+                savedAppSettings = CurrentAppSettings();
+            }
+
+            if (themeSettingsStore is not null)
+            {
+                var theme = await LoadThemeSettingsOrDefaultAsync(cancellationToken);
+                savedThemeSettings = NormalizeThemeSettings(theme);
+                ApplyColors(theme);
+                themeApplicationService?.Apply(theme);
+            }
+        }
+        finally
+        {
+            liveApplyEnabled = true;
         }
 
-        if (themeSettingsStore is not null)
-        {
-            var theme = await themeSettingsStore.LoadAsync(cancellationToken);
-            savedThemeSettings = NormalizeThemeSettings(theme);
-            ApplyColors(theme);
-            themeApplicationService?.Apply(theme);
-        }
-
-        liveApplyEnabled = true;
         ApplyCurrentAppSettingsToOwner();
         RefreshToolStatuses();
         NotifyUnsavedChanges();
-        StatusText = localizer.GetString("Settings.Status.Ready");
+        StatusText = StatusTextForCurrentLoadState();
+    }
+
+    private async ValueTask<AppSettings> LoadAppSettingsOrDefaultAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await appSettingsStore!.LoadAsync(cancellationToken);
+        }
+        catch (IOException)
+        {
+            SettingsLoadFailed = true;
+            return new AppSettings();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SettingsLoadFailed = true;
+            return new AppSettings();
+        }
+        catch (CorruptSettingsFileException)
+        {
+            SettingsLoadFailed = true;
+            return new AppSettings();
+        }
+    }
+
+    private async ValueTask<ThemeColorSettings> LoadThemeSettingsOrDefaultAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await themeSettingsStore!.LoadAsync(cancellationToken);
+        }
+        catch (IOException)
+        {
+            SettingsLoadFailed = true;
+            return ThemeColorSettings.Default;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SettingsLoadFailed = true;
+            return ThemeColorSettings.Default;
+        }
+        catch (CorruptSettingsFileException)
+        {
+            SettingsLoadFailed = true;
+            return ThemeColorSettings.Default;
+        }
     }
 
     private async Task InitializeAsync()
@@ -397,6 +469,12 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
     private async ValueTask SaveAsync(CancellationToken cancellationToken)
     {
+        if (SettingsLoadFailed && !HasUnsavedChanges)
+        {
+            StatusText = StatusTextForCurrentLoadState();
+            return;
+        }
+
         if (appSettingsStore is not null)
         {
             var settings = CurrentAppSettings();
@@ -415,6 +493,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel
 
         RefreshToolStatuses();
         NotifyUnsavedChanges();
+        SettingsLoadFailed = false;
         StatusText = localizer.GetString("Settings.Status.Saved");
     }
 
@@ -465,8 +544,12 @@ public sealed class SettingsToolViewModel : ObservableViewModel
         themeApplicationService?.Apply(ThemeColorSettings.Default);
         ApplyLiveSettings();
         RefreshToolStatuses();
+        SettingsLoadFailed = false;
         StatusText = localizer.GetString("Settings.Status.Reset");
     }
+
+    private string StatusTextForCurrentLoadState() =>
+        localizer.GetString(SettingsLoadFailed ? "Settings.Status.LoadedDefaults" : "Settings.Status.Ready");
 
     private async ValueTask PickDirectoryAsync(Action<string> apply, CancellationToken cancellationToken)
     {

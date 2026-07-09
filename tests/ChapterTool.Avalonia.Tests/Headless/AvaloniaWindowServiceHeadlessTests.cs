@@ -89,6 +89,31 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Settings_close_disposes_localization_subscription()
+    {
+        using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
+        var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
+        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        var window = SettingsWindow(service);
+        var settings = SettingsViewModel(window);
+        var notifications = 0;
+        settings.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(SettingsToolViewModel.XmlLanguageDisplayOptions))
+            {
+                notifications++;
+            }
+        };
+
+        window.Close();
+        await DrainUiAsync();
+        host.Localizer.SetCulture("zh-CN");
+        await DrainUiAsync();
+
+        Assert.Equal(0, notifications);
+    }
+
+    [AvaloniaFact]
     public async Task Settings_language_change_keeps_live_selection_and_refreshes_option_text()
     {
         using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));

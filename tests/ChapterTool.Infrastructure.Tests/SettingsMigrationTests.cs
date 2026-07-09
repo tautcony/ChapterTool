@@ -37,6 +37,25 @@ public sealed class SettingsMigrationTests
     }
 
     [Fact]
+    public async Task App_settings_concurrent_corrupt_loads_surface_structured_errors()
+    {
+        var root = CreateTempDirectory();
+        await File.WriteAllTextAsync(Path.Combine(root, "appsettings.json"), "{");
+        var first = new AppSettingsStore(root);
+        var second = new AppSettingsStore(root);
+
+        var results = await Task.WhenAll(
+            CaptureCorruptLoadAsync(first),
+            CaptureCorruptLoadAsync(second));
+
+        Assert.All(results, exception =>
+        {
+            Assert.NotNull(exception);
+            Assert.True(File.Exists(exception!.BackupPath));
+        });
+    }
+
+    [Fact]
     public async Task Theme_settings_preserves_corrupt_current_file_and_surfaces_error()
     {
         var root = CreateTempDirectory();
@@ -53,10 +72,83 @@ public sealed class SettingsMigrationTests
         Assert.Equal("{", await File.ReadAllTextAsync(exception.BackupPath));
     }
 
+    [Fact]
+    public async Task Theme_settings_concurrent_corrupt_loads_surface_structured_errors()
+    {
+        var root = CreateTempDirectory();
+        await File.WriteAllTextAsync(Path.Combine(root, "theme-colors.json"), "{");
+        var first = new ThemeSettingsStore(root);
+        var second = new ThemeSettingsStore(root);
+
+        var results = await Task.WhenAll(
+            CaptureCorruptLoadAsync(first),
+            CaptureCorruptLoadAsync(second));
+
+        Assert.All(results, exception =>
+        {
+            Assert.NotNull(exception);
+            Assert.True(File.Exists(exception!.BackupPath));
+        });
+    }
+
+    [Fact]
+    public async Task App_settings_concurrent_saves_do_not_race_on_temp_file()
+    {
+        var root = CreateTempDirectory();
+        var store = new AppSettingsStore(root);
+        var payload = new string('x', 100_000);
+
+        await Task.WhenAll(Enumerable.Range(0, 30).Select(index =>
+            store.SaveAsync(new AppSettings(Language: "en-US", FfprobePath: $"{payload}-{index}"), TestContext.Current.CancellationToken).AsTask()));
+
+        var saved = await store.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Equal("en-US", saved.Language);
+        Assert.Empty(Directory.EnumerateFiles(root, "appsettings.json.*.tmp"));
+    }
+
+    [Fact]
+    public async Task Theme_settings_concurrent_saves_do_not_race_on_temp_file()
+    {
+        var root = CreateTempDirectory();
+        var store = new ThemeSettingsStore(root);
+
+        await Task.WhenAll(Enumerable.Range(0, 30).Select(index =>
+            store.SaveAsync(ThemeColorSettings.Default with { BackChange = $"#{index % 10}{index % 10}{index % 10}{index % 10}{index % 10}{index % 10}" }, TestContext.Current.CancellationToken).AsTask()));
+
+        _ = await store.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.Empty(Directory.EnumerateFiles(root, "theme-colors.json.*.tmp"));
+    }
+
     private static string CreateTempDirectory()
     {
         var path = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(path);
         return path;
+    }
+
+    private static async Task<CorruptSettingsFileException?> CaptureCorruptLoadAsync(AppSettingsStore store)
+    {
+        try
+        {
+            _ = await store.LoadAsync(TestContext.Current.CancellationToken);
+            return null;
+        }
+        catch (CorruptSettingsFileException exception)
+        {
+            return exception;
+        }
+    }
+
+    private static async Task<CorruptSettingsFileException?> CaptureCorruptLoadAsync(ThemeSettingsStore store)
+    {
+        try
+        {
+            _ = await store.LoadAsync(TestContext.Current.CancellationToken);
+            return null;
+        }
+        catch (CorruptSettingsFileException exception)
+        {
+            return exception;
+        }
     }
 }

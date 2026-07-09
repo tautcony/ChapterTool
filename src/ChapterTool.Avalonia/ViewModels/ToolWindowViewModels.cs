@@ -382,6 +382,8 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
 {
     private readonly ISettingsStore<ThemeColorSettings>? store;
     private readonly IThemeApplicationService? themeApplicationService;
+    private bool isLoading;
+    private bool hasUserChanges;
 
     public ColorSettingsViewModel(
         ISettingsStore<ThemeColorSettings>? store,
@@ -397,18 +399,37 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
             {
                 if (args.PropertyName == nameof(ColorSlotViewModel.Value))
                 {
+                    if (!isLoading)
+                    {
+                        hasUserChanges = true;
+                    }
+
                     ApplyCurrentTheme();
                 }
             };
         }
 
         SaveCommand = new UiCommand(async (_, token) => await SaveAsync(token), _ => this.store is not null);
-        _ = LoadAsync();
+        InitializationTask = LoadAsync();
     }
 
     public ObservableCollection<ColorSlotViewModel> Slots { get; }
 
     public UiCommand SaveCommand { get; }
+
+    public bool ThemeLoadFailed
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    }
+
+    public string LoadWarningText
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = string.Empty;
+
+    internal Task InitializationTask { get; }
 
     private async Task LoadAsync()
     {
@@ -417,19 +438,50 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
             return;
         }
 
-        var settings = await store.LoadAsync(CancellationToken.None);
-        var values = settings.OrderedSlots.ToList();
-        for (var index = 0; index < Slots.Count && index < values.Count; index++)
+        isLoading = true;
+        try
         {
-            Slots[index].Value = values[index].Value;
+            var settings = await LoadThemeOrDefaultAsync();
+            var values = settings.OrderedSlots.ToList();
+            for (var index = 0; index < Slots.Count && index < values.Count; index++)
+            {
+                Slots[index].Value = values[index].Value;
+            }
+        }
+        finally
+        {
+            isLoading = false;
         }
 
         ApplyCurrentTheme();
     }
 
+    private async Task<ThemeColorSettings> LoadThemeOrDefaultAsync()
+    {
+        try
+        {
+            return await store!.LoadAsync(CancellationToken.None);
+        }
+        catch (IOException)
+        {
+            MarkThemeLoadFailed();
+            return ThemeColorSettings.Default;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            MarkThemeLoadFailed();
+            return ThemeColorSettings.Default;
+        }
+        catch (CorruptSettingsFileException)
+        {
+            MarkThemeLoadFailed();
+            return ThemeColorSettings.Default;
+        }
+    }
+
     private async ValueTask SaveAsync(CancellationToken cancellationToken)
     {
-        if (store is null || Slots.Count < 6)
+        if (store is null || Slots.Count < 6 || (ThemeLoadFailed && !hasUserChanges))
         {
             return;
         }
@@ -443,7 +495,16 @@ public sealed class ColorSettingsViewModel : ObservableViewModel
             NormalizeColor(Slots[4].Value, defaults[4].Value),
             NormalizeColor(Slots[5].Value, defaults[5].Value));
         await store.SaveAsync(settings, cancellationToken);
+        ThemeLoadFailed = false;
+        LoadWarningText = string.Empty;
+        hasUserChanges = false;
         themeApplicationService?.Apply(settings);
+    }
+
+    private void MarkThemeLoadFailed()
+    {
+        ThemeLoadFailed = true;
+        LoadWarningText = "Theme settings could not be loaded; defaults are shown.";
     }
 
     private void ApplyCurrentTheme()
@@ -546,9 +607,10 @@ public sealed class ColorSlotViewModel(string name, string value) : ObservableVi
         TryParseColor(value, out var color) ? ToHex(color) : fallback;
 }
 
-public sealed class LanguageToolViewModel : ObservableViewModel
+public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
 {
     private readonly MainWindowViewModel owner;
+    private readonly EventHandler cultureChangedHandler;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private string selectedLanguage;
     private bool isRefreshingLanguages;
@@ -558,10 +620,11 @@ public sealed class LanguageToolViewModel : ObservableViewModel
         this.owner = owner;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         ReplaceLanguages(BuildLanguages());
-        owner.Localizer.CultureChanged += (_, _) =>
+        cultureChangedHandler = (_, _) =>
         {
             RefreshLanguages();
         };
+        owner.Localizer.CultureChanged += cultureChangedHandler;
         ApplyCommand = new UiCommand(async (parameter, token) =>
         {
             var language = parameter is LanguageToolViewModel viewModel
@@ -607,6 +670,11 @@ public sealed class LanguageToolViewModel : ObservableViewModel
     }
 
     public UiCommand ApplyCommand { get; }
+
+    public void Dispose()
+    {
+        owner.Localizer.CultureChanged -= cultureChangedHandler;
+    }
 
     private void RefreshLanguages()
     {

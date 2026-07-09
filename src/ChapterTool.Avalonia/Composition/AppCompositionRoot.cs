@@ -141,6 +141,10 @@ public sealed class AppCompositionRoot : IDisposable
         {
             themeApplicationService.Apply(ThemeColorSettings.Default);
         }
+        catch (CorruptSettingsFileException)
+        {
+            themeApplicationService.Apply(ThemeColorSettings.Default);
+        }
     }
 
     public void Dispose()

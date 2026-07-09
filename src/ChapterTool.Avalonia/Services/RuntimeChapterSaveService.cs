@@ -14,15 +14,38 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
             return result;
         }
 
-        var targetDirectory = string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
-        Directory.CreateDirectory(targetDirectory);
-        var baseName = string.IsNullOrWhiteSpace(info.SourceName) ? "chapters" : Path.GetFileNameWithoutExtension(info.SourceName);
-        var path = Path.Combine(targetDirectory, baseName + result.FileExtension);
-        await File.WriteAllTextAsync(path, result.Content, cancellationToken);
-        return result with
+        try
         {
-            Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, "Saved", path,
-                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["path"] = path })]
-        };
+            var targetDirectory = string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
+            Directory.CreateDirectory(targetDirectory);
+            var baseName = string.IsNullOrWhiteSpace(info.SourceName) ? "chapters" : Path.GetFileNameWithoutExtension(info.SourceName);
+            var path = Path.Combine(targetDirectory, baseName + result.FileExtension);
+            await File.WriteAllTextAsync(path, result.Content, cancellationToken);
+            return result with
+            {
+                Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, "Saved", path,
+                    Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["path"] = path })]
+            };
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return result with
+            {
+                Success = false,
+                Diagnostics =
+                [
+                    .. result.Diagnostics,
+                    new ChapterDiagnostic(
+                        DiagnosticSeverity.Error,
+                        "SaveFailed",
+                        $"Chapter file could not be saved: {exception.Message}",
+                        Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
+                        {
+                            ["directory"] = directory,
+                            ["message"] = exception.Message
+                        })
+                ]
+            };
+        }
     }
 }
