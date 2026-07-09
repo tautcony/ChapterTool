@@ -26,6 +26,19 @@ public sealed class ChapterEditingServiceTests
         Assert.Equal(FrameAccuracy.Accurate, result.ChapterInfo.Chapters[1].FrameAccuracy);
     }
 
+    [Theory]
+    [InlineData("999999999999999999999999999999999999999 frames", 24)]
+    [InlineData("99999999999999999999999999999 frames", 0.000000001)]
+    public void EditFrame_returns_diagnostic_for_overflowing_frame_text(string text, decimal framesPerSecond)
+    {
+        var sample = Sample();
+
+        var result = service.EditFrame(sample, 1, text, framesPerSecond);
+
+        Assert.Equal(sample.Chapters[1].Time, result.ChapterInfo.Chapters[1].Time);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidFrameText");
+    }
+
     [Fact]
     public void Delete_first_chapter_shifts_remaining_times_to_zero()
     {

@@ -98,6 +98,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         var groups = new List<ChapterInfoGroup>();
         var options = new List<ChapterSourceOption>();
         var defaultOptionIndex = 0;
+        var hasDefaultEdition = false;
         var editionIndex = 0;
         foreach (XmlNode child in root.ChildNodes)
         {
@@ -145,9 +146,10 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
                 Renumber(chapters));
             options.Add(new ChapterSourceOption($"edition-{editionIndex}", info.Title, info));
 
-            if (isDefaultEdition && defaultOptionIndex == 0)
+            if (isDefaultEdition && !hasDefaultEdition)
             {
                 defaultOptionIndex = editionIndex;
+                hasDefaultEdition = true;
             }
 
             editionIndex++;

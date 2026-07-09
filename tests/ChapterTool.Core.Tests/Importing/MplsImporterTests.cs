@@ -47,6 +47,18 @@ public sealed class MplsImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidMpls");
     }
 
+    [Fact]
+    public async Task InvalidExtensionDataAddressReturnsInvalidMplsDiagnostic()
+    {
+        var importer = new MplsChapterImporter();
+        using var stream = new MemoryStream(MplsWithInvalidExtensionDataAddress());
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("bad-extension.mpls", stream), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "InvalidMpls");
+    }
+
     public static TheoryData<SampleExpectation> SampleExpectations() =>
     [
         Sample("00000_HEVC.mpls", [new("00000", 1, 0, Ms(16850), TimeSpan.Zero, TimeSpan.Zero, 1)]),
@@ -216,4 +228,53 @@ public sealed class MplsImporterTests
 
     private static string Diagnostics(ChapterImportResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));
+
+    private static byte[] MplsWithInvalidExtensionDataAddress()
+    {
+        using var stream = new MemoryStream();
+        stream.Write("MPLS"u8);
+        stream.Write("0200"u8);
+        WriteUInt32BigEndian(stream, 50);
+        WriteUInt32BigEndian(stream, 70);
+        WriteUInt32BigEndian(stream, 82);
+        stream.Write(new byte[20]);
+
+        WriteUInt32BigEndian(stream, 14);
+        stream.WriteByte(0);
+        stream.WriteByte(0);
+        WriteUInt16BigEndian(stream, 0);
+        stream.Write(new byte[8]);
+        WriteUInt16BigEndian(stream, 0);
+
+        stream.Position = 50;
+        WriteUInt32BigEndian(stream, 6);
+        WriteUInt16BigEndian(stream, 0);
+        WriteUInt16BigEndian(stream, 0);
+        WriteUInt16BigEndian(stream, 0);
+
+        stream.Position = 70;
+        WriteUInt32BigEndian(stream, 2);
+        WriteUInt16BigEndian(stream, 0);
+
+        stream.Position = 82;
+        WriteUInt32BigEndian(stream, 4);
+        WriteUInt32BigEndian(stream, 8);
+        stream.Write(new byte[3]);
+        stream.WriteByte(0);
+        return stream.ToArray();
+    }
+
+    private static void WriteUInt16BigEndian(Stream stream, ushort value)
+    {
+        stream.WriteByte((byte)(value >> 8));
+        stream.WriteByte((byte)value);
+    }
+
+    private static void WriteUInt32BigEndian(Stream stream, uint value)
+    {
+        stream.WriteByte((byte)(value >> 24));
+        stream.WriteByte((byte)(value >> 16));
+        stream.WriteByte((byte)(value >> 8));
+        stream.WriteByte((byte)value);
+    }
 }

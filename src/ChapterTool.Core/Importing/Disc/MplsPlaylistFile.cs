@@ -853,9 +853,19 @@ internal sealed record MplsExtensionData(
             entries.Add(MplsExtDataEntry.Read(stream));
         }
 
+        if (dataBlockStartAddress > length)
+        {
+            throw new InvalidDataException("MPLS extension data block start address exceeds extension length.");
+        }
+
         var dataBlockLength = length - dataBlockStartAddress;
+        if (dataBlockLength > int.MaxValue)
+        {
+            throw new InvalidDataException("MPLS extension data block is too large.");
+        }
+
         stream.Position = basePosition + dataBlockStartAddress;
-        var dataBlock = stream.ReadExactBytes(checked((int)dataBlockLength));
+        var dataBlock = stream.ReadExactBytes((int)dataBlockLength);
         return new MplsExtensionData(length, dataBlockStartAddress, numberOfExtDataEntries, entries, dataBlock);
     }
 }

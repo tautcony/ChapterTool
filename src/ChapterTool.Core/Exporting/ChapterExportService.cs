@@ -118,10 +118,9 @@ public sealed partial class ChapterExportService
 
     private static ChapterExportResult Qpfile(ChapterInfo info)
     {
-        var framesPerSecond = (decimal)info.FramesPerSecond;
-        if (framesPerSecond <= 0)
+        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
         {
-            return Failure("InvalidFrameRate", "Frame rate must be greater than zero for QPFile export.");
+            return Failure(diagnostic!);
         }
 
         return Lines(
@@ -135,14 +134,24 @@ public sealed partial class ChapterExportService
 
     private static ChapterExportResult Celltimes(ChapterInfo info)
     {
-        var conversion = ChapterConversionService.ToCelltimes(info, (decimal)info.FramesPerSecond);
+        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
+        {
+            return Failure(diagnostic!);
+        }
+
+        var conversion = ChapterConversionService.ToCelltimes(info, framesPerSecond);
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
     private ChapterExportResult Chapter2Qpfile(ChapterInfo info, ChapterExportOptions options)
     {
+        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
+        {
+            return Failure(diagnostic!);
+        }
+
         var text = Text(info, options);
-        var conversion = chapterConversionService.ChapterTextToQpfile(text.Content, (decimal)info.FramesPerSecond);
+        var conversion = chapterConversionService.ChapterTextToQpfile(text.Content, framesPerSecond);
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
@@ -173,7 +182,14 @@ public sealed partial class ChapterExportService
         for (var i = 0; i < chapters.Count; i++)
         {
             var chapter = chapters[i];
-            var endTime = i + 1 < chapters.Count ? chapters[i + 1].Time : info.Duration;
+            if (!IsSupportedWebVttCueText(chapter.Name))
+            {
+                return Failure(
+                    "InvalidWebVttCueText",
+                    "WebVTT cue text cannot contain line breaks or the cue timing separator.");
+            }
+
+            var endTime = chapter.End ?? (i + 1 < chapters.Count ? chapters[i + 1].Time : info.Duration);
 
             builder.AppendLine(CultureInfo.InvariantCulture, $"{FormatWebVttTime(chapter.Time)} --> {FormatWebVttTime(endTime)}");
             builder.AppendLine(chapter.Name);
@@ -194,6 +210,11 @@ public sealed partial class ChapterExportService
         var milliseconds = time.Milliseconds;
         return $"{hours:D2}:{minutes:D2}:{seconds:D2}.{milliseconds:D3}";
     }
+
+    private static bool IsSupportedWebVttCueText(string value) =>
+        !value.Contains('\r')
+        && !value.Contains('\n')
+        && !value.Contains("-->", StringComparison.Ordinal);
 
     private static ChapterExportResult Json(ChapterInfo info, ChapterExportOptions options)
     {
@@ -244,6 +265,9 @@ public sealed partial class ChapterExportService
 
     private static ChapterExportResult Failure(string code, string message) =>
         new(false, string.Empty, string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);
+
+    private static ChapterExportResult Failure(ChapterDiagnostic diagnostic) =>
+        new(false, string.Empty, string.Empty, [diagnostic]);
 
     private sealed record JsonPayload(string? SourceName, IReadOnlyList<JsonChapter> Chapter);
 

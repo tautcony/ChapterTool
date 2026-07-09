@@ -87,6 +87,20 @@ public sealed class ChapterTimeFormatterTests
     }
 
     [Theory]
+    [InlineData("999999999999999999999:00:00.000")]
+    [InlineData("00:999999999999999999999:00.000")]
+    [InlineData("00:00:999999999999999999999.000")]
+    public void Parse_returns_invalid_time_diagnostic_for_overflowing_numbers(string text)
+    {
+        var actual = formatter.Parse(text);
+
+        Assert.Equal(TimeSpan.Zero, actual.Value);
+        var diagnostic = Assert.Single(actual.Diagnostics);
+        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+        Assert.Equal("InvalidTimeText", diagnostic.Code);
+    }
+
+    [Theory]
     [InlineData(0, 15, 19, 280, "15:19:21")]
     [InlineData(1, 2, 3, 4, "62:03:00")]
     [InlineData(0, 0, 0, 999, "00:00:75")]
