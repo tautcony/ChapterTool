@@ -10,7 +10,7 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
         return LoadAsync(path, progress: null, cancellationToken);
     }
 
-    public ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken)
+    public ValueTask<ChapterImportResult> LoadAsync(string path, IChapterImportProgressReporter? progress, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(path) || (!File.Exists(path) && !Directory.Exists(path)))
         {
@@ -29,10 +29,10 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
     private async ValueTask<ChapterImportResult> LoadWithFallbackAsync(
         string path,
         IChapterImporter importer,
-        IProgress<ChapterLoadProgress>? progress,
+        IChapterImportProgressReporter? progress,
         CancellationToken cancellationToken)
     {
-        var primaryResult = await importer.ImportAsync(new ChapterImportRequest(path, Progress: progress), cancellationToken);
+        var primaryResult = await importer.ImportAsync(new ChapterImportRequest(path, ProgressReporter: progress), cancellationToken);
         if (primaryResult.Success)
         {
             return primaryResult;
@@ -44,7 +44,7 @@ public sealed class RuntimeChapterLoadService(IChapterImporterRegistry importerR
             return primaryResult;
         }
 
-        var fallbackResult = await fallback.ImportAsync(new ChapterImportRequest(path, Progress: progress), cancellationToken);
+        var fallbackResult = await fallback.ImportAsync(new ChapterImportRequest(path, ProgressReporter: progress), cancellationToken);
         var fallbackReason = primaryResult.Diagnostics.FirstOrDefault();
         var fallbackDiagnostic = new ChapterDiagnostic(
             DiagnosticSeverity.Info,

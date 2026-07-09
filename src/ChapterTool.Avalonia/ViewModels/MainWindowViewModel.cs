@@ -737,16 +737,16 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         Log("Log.LoadingSource", ("path", path));
         Progress = 0.05;
-        SetProgressStatus("Status.LoadingSource");
-        var progress = new ChapterLoadProgressSink(update =>
+        SetProgressStatus(ChapterImportProgressPhase.LoadingSource);
+        var progress = new ChapterImportProgressSink(update =>
         {
             if (operationId != Volatile.Read(ref loadOperationVersion))
             {
                 return;
             }
 
-            Progress = Math.Clamp(update.Value, 0, 0.98);
-            SetProgressStatus(update.Message);
+            Progress = Math.Clamp(update.Fraction ?? Progress, 0, 0.98);
+            SetProgressStatus(update.Phase);
         });
         var result = await loadService.LoadAsync(path, progress, cancellationToken);
         if (operationId != Volatile.Read(ref loadOperationVersion))
@@ -1428,9 +1428,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         SetStatus(key, arguments);
     }
 
-    private void SetProgressStatus(string? messageKey, params (string Name, object? Value)[] arguments)
+    private void SetProgressStatus(ChapterImportProgressPhase? phase, params (string Name, object? Value)[] arguments)
     {
         currentStatusMessage = null;
+        var messageKey = phase is null ? null : ProgressStatusKey(phase.Value);
         currentProgressMessage = messageKey is null
             ? null
             : new LocalizedMessage(
@@ -1438,6 +1439,16 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
                 arguments.ToDictionary(static item => item.Name, static item => item.Value, StringComparer.Ordinal));
         StatusText = currentProgressMessage is null ? string.Empty : Localizer.Format(currentProgressMessage);
     }
+
+    private static string ProgressStatusKey(ChapterImportProgressPhase phase) => phase switch
+    {
+        ChapterImportProgressPhase.LoadingSource => "Status.LoadingSource",
+        ChapterImportProgressPhase.ValidatingSource => "Status.LoadingSource.Validate",
+        ChapterImportProgressPhase.DiscoveringTitles => "Status.LoadingSource.Discover",
+        ChapterImportProgressPhase.ExportingChapters => "Status.LoadingSource.Export",
+        ChapterImportProgressPhase.ParsingChapters => "Status.LoadingSource.Parse",
+        _ => "Status.LoadingSource"
+    };
 
     private string LocalizeDiagnostic(ChapterDiagnostic diagnostic)
     {
@@ -1698,9 +1709,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         Frame
     }
 
-    private sealed class ChapterLoadProgressSink(Action<ChapterLoadProgress> handler) : IProgress<ChapterLoadProgress>
+    private sealed class ChapterImportProgressSink(Action<ChapterImportProgress> handler) : IChapterImportProgressReporter
     {
-        public void Report(ChapterLoadProgress value) => handler(value);
+        public void Report(ChapterImportProgress progress) => handler(progress);
     }
 }
 

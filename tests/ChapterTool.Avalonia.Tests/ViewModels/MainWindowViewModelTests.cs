@@ -86,7 +86,7 @@ public sealed class MainWindowViewModelTests
     {
         var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))))
         {
-            OnLoad = progress => progress?.Report(new ChapterLoadProgress(0.42, "Status.LoadingSource.Export"))
+            OnLoad = progress => progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ExportingChapters, 0.42))
         };
         var vm = CreateViewModel(load);
         var progressValues = new List<double>();
@@ -1047,14 +1047,14 @@ public sealed class MainWindowViewModelTests
     {
         private readonly Queue<ChapterImportResult> results = new(results);
 
-        public Action<IProgress<ChapterLoadProgress>?>? OnLoad { get; init; }
+        public Action<IChapterImportProgressReporter?>? OnLoad { get; init; }
 
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken)
         {
             return LoadAsync(path, progress: null, cancellationToken);
         }
 
-        public ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken)
+        public ValueTask<ChapterImportResult> LoadAsync(string path, IChapterImportProgressReporter? progress, CancellationToken cancellationToken)
         {
             if (results.Count == 0)
             {
@@ -1076,10 +1076,10 @@ public sealed class MainWindowViewModelTests
             return LoadAsync(path, progress: null, cancellationToken);
         }
 
-        public async ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken)
+        public async ValueTask<ChapterImportResult> LoadAsync(string path, IChapterImportProgressReporter? progress, CancellationToken cancellationToken)
         {
             await Task.Yield();
-            progress?.Report(new ChapterLoadProgress(0.25, "Status.LoadingSource.Parse"));
+            progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ParsingChapters, 0.25));
             CompletedAfterAwait = true;
             return result;
         }
@@ -1095,12 +1095,12 @@ public sealed class MainWindowViewModelTests
             return LoadAsync(path, progress: null, cancellationToken);
         }
 
-        public async ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken)
+        public async ValueTask<ChapterImportResult> LoadAsync(string path, IChapterImportProgressReporter? progress, CancellationToken cancellationToken)
         {
             var startedSource = SourceFor(started, path);
             var completion = CompletionFor(path);
             startedSource.TrySetResult();
-            progress?.Report(new ChapterLoadProgress(0.25, "Status.LoadingSource.Parse"));
+            progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ParsingChapters, 0.25));
             using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
             return await completion.Task;
         }

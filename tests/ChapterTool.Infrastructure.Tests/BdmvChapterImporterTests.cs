@@ -32,7 +32,7 @@ public sealed class BdmvChapterImporterTests
         var progressValues = new List<double>();
         var progress = new ListProgress(progressValues);
 
-        var result = await importer.ImportAsync(new ChapterImportRequest(root, Progress: progress), TestContext.Current.CancellationToken);
+        var result = await importer.ImportAsync(new ChapterImportRequest(root, ProgressReporter: progress), TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
         var info = result.Groups.Single().Entries.Single().ChapterSet;
@@ -306,9 +306,15 @@ public sealed class BdmvChapterImporterTests
             ValueTask.FromResult(location);
     }
 
-    private sealed class ListProgress(List<double> values) : IProgress<ChapterLoadProgress>
+    private sealed class ListProgress(List<double> values) : IChapterImportProgressReporter
     {
-        public void Report(ChapterLoadProgress value) => values.Add(value.Value);
+        public void Report(ChapterImportProgress progress)
+        {
+            if (progress.Fraction is { } fraction)
+            {
+                values.Add(fraction);
+            }
+        }
     }
 
     private sealed class FakeRunner(IReadOnlyList<ProcessRunResult> results, Func<ProcessRunRequest, Task>? onRun = null) : IProcessRunner

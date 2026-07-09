@@ -6,6 +6,6 @@ public interface IChapterLoadService
 {
     ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken);
 
-    ValueTask<ChapterImportResult> LoadAsync(string path, IProgress<ChapterLoadProgress>? progress, CancellationToken cancellationToken) =>
+    ValueTask<ChapterImportResult> LoadAsync(string path, IChapterImportProgressReporter? progress, CancellationToken cancellationToken) =>
         LoadAsync(path, cancellationToken);
 }

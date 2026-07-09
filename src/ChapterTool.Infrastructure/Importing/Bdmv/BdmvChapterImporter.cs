@@ -32,20 +32,20 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
         var playlistDirectory = Path.Combine(request.Path, "BDMV", "PLAYLIST");
-        Report(request.Progress, 0.05, "Status.LoadingSource");
+        Report(request.ProgressReporter, ChapterImportProgressPhase.LoadingSource, 0.05);
         if (!Directory.Exists(playlistDirectory))
         {
             return ChapterImportResult.Failed(Error("InvalidStructure", "Blu-ray BDMV/PLAYLIST directory was not found."));
         }
 
-        Report(request.Progress, 0.10, "Status.LoadingSource.Validate");
+        Report(request.ProgressReporter, ChapterImportProgressPhase.ValidatingSource, 0.10);
         var location = await toolLocator.LocateAsync("eac3to", cancellationToken);
         if (!location.Found || string.IsNullOrWhiteSpace(location.Path))
         {
             return ChapterImportResult.Failed(Error("MissingDependency", location.Message ?? "eac3to was not found."));
         }
 
-        Report(request.Progress, 0.15, "Status.LoadingSource.Discover");
+        Report(request.ProgressReporter, ChapterImportProgressPhase.DiscoveringTitles, 0.15);
         var listResult = await RunAsync(location.Path, ToolWorkingDirectory(location.Path), [request.Path, "-showall"], cancellationToken);
         if (!listResult.Success)
         {
@@ -66,7 +66,13 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         {
             var candidate = chapterCandidates[candidateIndex];
             var baseProgress = 0.20 + candidateIndex * 0.75 / Math.Max(chapterCandidates.Length, 1);
-            Report(request.Progress, baseProgress, "Status.LoadingSource.Export");
+            Report(
+                request.ProgressReporter,
+                ChapterImportProgressPhase.ExportingChapters,
+                baseProgress,
+                candidate.SourceName,
+                candidateIndex + 1,
+                chapterCandidates.Length);
 
             var playlistPath = Path.Combine(playlistDirectory, candidate.MplsName);
             if (!File.Exists(playlistPath))
@@ -96,7 +102,13 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 continue;
             }
 
-            Report(request.Progress, Math.Min(baseProgress + 0.05, 0.95), "Status.LoadingSource.Parse");
+            Report(
+                request.ProgressReporter,
+                ChapterImportProgressPhase.ParsingChapters,
+                Math.Min(baseProgress + 0.05, 0.95),
+                candidate.SourceName,
+                candidateIndex + 1,
+                chapterCandidates.Length);
             var parsed = ogmChapterImporter.ImportText(export.Text, playlistPath);
             diagnostics.AddRange(parsed.Diagnostics);
             if (!parsed.Success)
@@ -135,8 +147,14 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
     }
 
-    private static void Report(IProgress<ChapterLoadProgress>? progress, double value, string message) =>
-        progress?.Report(new ChapterLoadProgress(value, message));
+    private static void Report(
+        IChapterImportProgressReporter? progress,
+        ChapterImportProgressPhase phase,
+        double fraction,
+        string? sourceName = null,
+        int? current = null,
+        int? total = null) =>
+        progress?.Report(new ChapterImportProgress(phase, fraction, sourceName, current, total));
 
     private async ValueTask<ProcessTextResult> RunAsync(string executable, string? workingDirectory, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {

@@ -152,7 +152,7 @@ public sealed class RuntimeChapterLoadServiceTests
             var result = await service.LoadAsync(path, progress, TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, Diagnostics(result));
-            Assert.Same(progress, importer.LastRequest?.Progress);
+            Assert.Same(progress, importer.LastRequest?.ProgressReporter);
         }
         finally
         {
@@ -343,9 +343,9 @@ public sealed class RuntimeChapterLoadServiceTests
         }
     }
 
-    private sealed class StubProgress : IProgress<ChapterLoadProgress>
+    private sealed class StubProgress : IChapterImportProgressReporter
     {
-        public void Report(ChapterLoadProgress value)
+        public void Report(ChapterImportProgress progress)
         {
         }
     }

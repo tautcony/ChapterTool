@@ -34,7 +34,7 @@ Import contracts and format-specific parsers:
 - `src/ChapterTool.Core/Importing/IChapterImporter.cs`
 - `src/ChapterTool.Core/Importing/ChapterImportRequest.cs`
 - `src/ChapterTool.Core/Importing/ChapterImportResult.cs`
-- `src/ChapterTool.Core/Importing/ChapterLoadProgress.cs`
+- `src/ChapterTool.Core/Importing/ChapterImportProgress.cs`
 
 Important format entry points:
 
