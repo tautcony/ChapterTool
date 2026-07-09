@@ -11,7 +11,7 @@ public sealed class ChapterSegmentService
     /// <summary>
     /// Executes the Combine operation.
     /// </summary>
-    /// <param name="group">The group value.</param>
+    /// <param name="group">The imported chapter source whose entries should be combined.</param>
     /// <returns>The operation result.</returns>
     public static ChapterEditResult Combine(ChapterImportSource group)
     {
@@ -50,8 +50,8 @@ public sealed class ChapterSegmentService
     /// <summary>
     /// Executes the Append operation.
     /// </summary>
-    /// <param name="existing">The existing value.</param>
-    /// <param name="appended">The appended value.</param>
+    /// <param name="existing">The imported chapter source that should remain first in the combined result.</param>
+    /// <param name="appended">The imported chapter source to append after <paramref name="existing"/>.</param>
     /// <returns>The operation result.</returns>
     public static ChapterEditResult Append(ChapterImportSource existing, ChapterImportSource appended)
     {

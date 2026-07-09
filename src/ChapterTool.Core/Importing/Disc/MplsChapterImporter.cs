@@ -57,7 +57,7 @@ public sealed class MplsChapterImporter : IChapterImporter
     /// <summary>
     /// Executes the PtsToTime operation.
     /// </summary>
-    /// <param name="pts">The pts value.</param>
+    /// <param name="pts">The Blu-ray presentation timestamp in 45 kHz PTS units.</param>
     /// <returns>The operation result.</returns>
     public static TimeSpan PtsToTime(uint pts)
     {

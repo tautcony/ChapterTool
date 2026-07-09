@@ -7,7 +7,7 @@ internal static class CueTextDecoder
     /// <summary>
     /// Executes the Decode operation.
     /// </summary>
-    /// <param name="bytes">The bytes value.</param>
+    /// <param name="bytes">The encoded CUE text bytes to decode.</param>
     /// <returns>The operation result.</returns>
     public static string Decode(byte[] bytes)
     {

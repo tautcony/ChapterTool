@@ -113,8 +113,8 @@ public sealed class ChapterExpressionService
 /// <summary>
 /// Represents the result of applying an expression transform.
 /// </summary>
-/// <param name="Info">The Info value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
+/// <param name="Info">The chapter set after applying the expression transform.</param>
+/// <param name="Diagnostics">Diagnostics produced while applying the expression.</param>
 public sealed record ChapterExpressionResult(
     ChapterSet Info,
     IReadOnlyList<ChapterDiagnostic> Diagnostics);

@@ -6,11 +6,11 @@ namespace ChapterTool.Core.Transform;
 /// <summary>
 /// Provides chapter context values to Lua expression scripts.
 /// </summary>
-/// <param name="Chapter">The Chapter value.</param>
-/// <param name="Index">The Index value.</param>
-/// <param name="Count">The Count value.</param>
-/// <param name="TimeSeconds">The TimeSeconds value.</param>
-/// <param name="FramesPerSecond">The FramesPerSecond value.</param>
+/// <param name="Chapter">The chapter being evaluated.</param>
+/// <param name="Index">The one-based index among non-separator chapters.</param>
+/// <param name="Count">The total number of non-separator chapters.</param>
+/// <param name="TimeSeconds">The chapter start time in seconds.</param>
+/// <param name="FramesPerSecond">The frame rate available to the script.</param>
 public sealed record LuaExpressionContext(
     Chapter Chapter,
     int Index,
@@ -21,9 +21,9 @@ public sealed record LuaExpressionContext(
 /// <summary>
 /// Represents the result of Lua expression evaluation.
 /// </summary>
-/// <param name="Success">The Success value.</param>
-/// <param name="Value">The Value value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
+/// <param name="Success">Whether the Lua expression evaluated successfully.</param>
+/// <param name="Value">The numeric result returned by the Lua expression.</param>
+/// <param name="Diagnostics">Diagnostics produced during Lua evaluation.</param>
 public sealed record LuaExpressionEvaluationResult(
     bool Success,
     decimal Value,
@@ -32,10 +32,10 @@ public sealed record LuaExpressionEvaluationResult(
 /// <summary>
 /// Describes a built-in Lua expression preset.
 /// </summary>
-/// <param name="Id">The Id value.</param>
-/// <param name="DisplayName">The DisplayName value.</param>
-/// <param name="Description">The Description value.</param>
-/// <param name="ScriptText">The ScriptText value.</param>
+/// <param name="Id">The stable preset identifier.</param>
+/// <param name="DisplayName">The preset label shown to users.</param>
+/// <param name="Description">The preset description shown to users.</param>
+/// <param name="ScriptText">The Lua script text supplied by the preset.</param>
 public sealed record LuaExpressionScriptPreset(
     string Id,
     string DisplayName,

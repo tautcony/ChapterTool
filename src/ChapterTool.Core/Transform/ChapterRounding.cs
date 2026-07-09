@@ -24,7 +24,7 @@ public static class ChapterRounding
     /// <summary>
     /// Executes the SecondsToTimeSpan operation.
     /// </summary>
-    /// <param name="seconds">The seconds value.</param>
+    /// <param name="seconds">The duration in seconds to convert.</param>
     /// <returns>The operation result.</returns>
     public static TimeSpan SecondsToTimeSpan(decimal seconds) =>
         TimeSpan.FromTicks(RoundToInt64(seconds * TimeSpan.TicksPerSecond));

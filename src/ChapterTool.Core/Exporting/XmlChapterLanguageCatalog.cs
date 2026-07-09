@@ -5,8 +5,8 @@ namespace ChapterTool.Core.Exporting;
 /// <summary>
 /// Represents a Matroska XML chapter language option.
 /// </summary>
-/// <param name="Code">The Code value.</param>
-/// <param name="DisplayName">The DisplayName value.</param>
+/// <param name="Code">The two-letter or three-letter language code.</param>
+/// <param name="DisplayName">The language label shown to users.</param>
 public sealed record XmlChapterLanguage(string Code, string DisplayName);
 
 /// <summary>

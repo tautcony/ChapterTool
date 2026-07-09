@@ -3,11 +3,11 @@ namespace ChapterTool.Core.Importing.Media;
 /// <summary>
 /// Represents the result returned by a media chapter reader.
 /// </summary>
-/// <param name="Success">The Success value.</param>
-/// <param name="Chapters">The Chapters value.</param>
-/// <param name="DiagnosticCode">The DiagnosticCode value.</param>
-/// <param name="Message">The Message value.</param>
-/// <param name="Details">The Details value.</param>
+/// <param name="Success">Whether the media reader completed successfully.</param>
+/// <param name="Chapters">The raw chapter entries returned by the media reader.</param>
+/// <param name="DiagnosticCode">The diagnostic code to report when reading fails.</param>
+/// <param name="Message">The diagnostic message to report when reading fails.</param>
+/// <param name="Details">Additional diagnostic details from the media reader.</param>
 public sealed record MediaChapterReadResult(
     bool Success,
     IReadOnlyList<MediaChapterEntry> Chapters,

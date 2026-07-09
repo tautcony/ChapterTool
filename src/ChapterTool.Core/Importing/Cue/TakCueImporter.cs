@@ -61,7 +61,7 @@ public sealed class TakCueImporter(CueSheetParser? parser = null) : IChapterImpo
     /// <summary>
     /// Executes the ExtractCue operation.
     /// </summary>
-    /// <param name="data">The data value.</param>
+    /// <param name="data">The TAK file bytes to scan for an embedded CUE sheet.</param>
     /// <returns>The operation result.</returns>
     public static string? ExtractCue(ReadOnlySpan<byte> data)
     {

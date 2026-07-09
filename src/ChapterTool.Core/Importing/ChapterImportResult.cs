@@ -6,10 +6,10 @@ namespace ChapterTool.Core.Importing;
 /// <summary>
 /// Represents the result of a chapter import operation.
 /// </summary>
-/// <param name="Success">The Success value.</param>
-/// <param name="Groups">The Groups value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
-/// <param name="IsPartial">The IsPartial value.</param>
+/// <param name="Success">Whether the import completed successfully.</param>
+/// <param name="Groups">The imported sources and chapter entries.</param>
+/// <param name="Diagnostics">Diagnostics produced during import.</param>
+/// <param name="IsPartial">Whether the result contains usable data despite import diagnostics.</param>
 public sealed record ChapterImportResult(
     bool Success,
     IReadOnlyList<ChapterImportSource> Groups,

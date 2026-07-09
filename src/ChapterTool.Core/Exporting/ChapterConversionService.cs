@@ -38,9 +38,9 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
     /// <summary>
     /// Executes the ChapterTextToQpfile operation.
     /// </summary>
-    /// <param name="chapterText">The chapterText value.</param>
+    /// <param name="chapterText">The OGM-style chapter text to convert.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <param name="timecodeText">The timecodeText value.</param>
+    /// <param name="timecodeText">Optional v2 timecode text used to map chapter times to frames.</param>
     /// <returns>The operation result.</returns>
     public ChapterConversionResult ChapterTextToQpfile(string chapterText, decimal framesPerSecond, string? timecodeText = null)
     {

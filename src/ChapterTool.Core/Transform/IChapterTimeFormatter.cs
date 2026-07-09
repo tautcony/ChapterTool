@@ -10,7 +10,7 @@ public interface IChapterTimeFormatter
     /// <summary>
     /// Formats a time value as a ChapterTool timestamp.
     /// </summary>
-    /// <param name="time">The time value.</param>
+    /// <param name="time">The time value to format.</param>
     /// <returns>The formatted timestamp.</returns>
     string Format(TimeSpan time);
 
@@ -31,7 +31,7 @@ public interface IChapterTimeFormatter
     /// <summary>
     /// Formats a time value as a CUE sheet timestamp.
     /// </summary>
-    /// <param name="time">The time value.</param>
+    /// <param name="time">The time value to format.</param>
     /// <returns>The formatted CUE timestamp.</returns>
     string FormatCue(TimeSpan time);
 }
@@ -39,8 +39,8 @@ public interface IChapterTimeFormatter
 /// <summary>
 /// Represents the result of parsing a chapter time string.
 /// </summary>
-/// <param name="Value">The Value value.</param>
-/// <param name="Diagnostics">The Diagnostics value.</param>
+/// <param name="Value">Parsed timestamp value.</param>
+/// <param name="Diagnostics">Diagnostics produced while parsing the timestamp.</param>
 public sealed record TimeParseResult(
     TimeSpan Value,
     IReadOnlyList<ChapterDiagnostic> Diagnostics);

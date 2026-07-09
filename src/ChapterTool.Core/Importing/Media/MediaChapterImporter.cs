@@ -8,7 +8,7 @@ namespace ChapterTool.Core.Importing.Media;
 /// Imports media chapter metadata through an injected media chapter reader.
 /// </summary>
 /// <param name="reader">The media chapter reader.</param>
-/// <param name="supportedExtensions">The supportedExtensions value.</param>
+/// <param name="supportedExtensions">The file extensions this importer should accept, or the default media extensions when omitted.</param>
 public sealed class MediaChapterImporter(
     IMediaChapterReader reader,
     IEnumerable<string>? supportedExtensions = null) : IChapterImporter
