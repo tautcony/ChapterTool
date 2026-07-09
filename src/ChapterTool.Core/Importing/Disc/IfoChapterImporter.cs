@@ -41,7 +41,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
                     $"{info.SourceName}__{info.Chapters.Count}",
                     info,
                     CanCombine: true,
-                    MediaReferences: [new MediaFileReference($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))
+                    ReferencedMediaFiles: [new ReferencedMediaFile($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))
                 .ToList();
             if (entries.Count == 0)
             {

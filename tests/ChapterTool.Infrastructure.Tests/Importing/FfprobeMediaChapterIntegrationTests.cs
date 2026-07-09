@@ -34,8 +34,8 @@ public sealed class FfprobeMediaChapterIntegrationTests
         Assert.Equal("FFprobe Chapters", entry.DisplayName);
         Assert.Equal(expectedDuration, info.Duration);
         Assert.Equal(expectedNames, info.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal(expectedStarts, info.Chapters.Select(static chapter => chapter.Time));
-        Assert.Equal(expectedEnds, info.Chapters.Select(static chapter => chapter.End));
+        Assert.Equal(expectedStarts, info.Chapters.Select(static chapter => chapter.StartTime));
+        Assert.Equal(expectedEnds, info.Chapters.Select(static chapter => chapter.EndTime));
     }
 
     public static TheoryData<string, TimeSpan, string[], TimeSpan[], TimeSpan?[]> ChapteredContainerFixtures() => new()

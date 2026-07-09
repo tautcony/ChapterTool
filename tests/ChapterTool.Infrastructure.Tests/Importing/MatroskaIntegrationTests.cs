@@ -55,16 +55,16 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
         Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], chapters.Select(static chapter => chapter.Name));
         Assert.Equal(
             [TimeSpan.Zero, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(330), TimeSpan.FromSeconds(740)],
-            chapters.Select(static chapter => chapter.Time));
+            chapters.Select(static chapter => chapter.StartTime));
         Assert.Equal(
             [null, null, null, TimeSpan.FromSeconds(775)],
-            chapters.Select(static chapter => chapter.End));
+            chapters.Select(static chapter => chapter.EndTime));
 
         var hiddenEditionChapters = entries[1].ChapterSet.Chapters;
         var hiddenChapter = Assert.Single(hiddenEditionChapters);
         Assert.Equal("A hidden and not enabled chapter.", hiddenChapter.Name);
-        Assert.Equal(TimeSpan.FromSeconds(120), hiddenChapter.Time);
-        Assert.Equal(TimeSpan.FromSeconds(240), hiddenChapter.End);
+        Assert.Equal(TimeSpan.FromSeconds(120), hiddenChapter.StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(240), hiddenChapter.EndTime);
     }
 
     [Fact]

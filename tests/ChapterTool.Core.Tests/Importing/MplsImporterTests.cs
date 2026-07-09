@@ -29,9 +29,9 @@ public sealed class MplsImporterTests
             Assert.Equal(expected.ChapterCount, info.Chapters.Count);
             Assert.Equal(expected.FramesPerSecond, info.FramesPerSecond, precision: 3);
             Assert.Equal(expected.Duration, info.Duration);
-            Assert.Equal(expected.FirstTime, info.Chapters[0].Time);
-            Assert.Equal(expected.LastTime, info.Chapters[^1].Time);
-            Assert.Equal(expected.MediaReferenceCount, actual.MediaReferences?.Count ?? 0);
+            Assert.Equal(expected.FirstTime, info.Chapters[0].StartTime);
+            Assert.Equal(expected.LastTime, info.Chapters[^1].StartTime);
+            Assert.Equal(expected.MediaReferenceCount, actual.ReferencedMediaFiles?.Count ?? 0);
         }
     }
 

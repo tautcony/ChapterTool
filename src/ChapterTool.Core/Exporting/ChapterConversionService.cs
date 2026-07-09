@@ -29,7 +29,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
         var lines = info.Chapters
             .Where(static chapter => !chapter.IsSeparator)
             .Select(chapter => ChapterRounding
-                .RoundToInt64((decimal)chapter.Time.TotalSeconds * framesPerSecond)
+                .RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond)
                 .ToString(CultureInfo.InvariantCulture));
 
         return Success(string.Join(Environment.NewLine, lines), ".celltimes.txt");

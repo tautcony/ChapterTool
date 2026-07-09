@@ -44,12 +44,12 @@ public sealed class ChapterFpsTransformService
             return chapter;
         }
 
-        var frame = ChapterRounding.RoundToInt64((decimal)chapter.Time.TotalSeconds * sourceFps);
+        var frame = ChapterRounding.RoundToInt64((decimal)chapter.StartTime.TotalSeconds * sourceFps);
         var time = ChapterRounding.SecondsToTimeSpan(frame / targetFps);
-        TimeSpan? end = chapter.End is null
+        TimeSpan? end = chapter.EndTime is null
             ? null
-            : TransformEnd(chapter, chapter.End.Value, sourceFps, targetFps, frame);
-        return chapter with { Time = time, End = end };
+            : TransformEnd(chapter, chapter.EndTime.Value, sourceFps, targetFps, frame);
+        return chapter with { StartTime = time, EndTime = end };
     }
 
     private static TimeSpan TransformEnd(Chapter chapter, TimeSpan end, decimal sourceFps, decimal targetFps, long startFrame)

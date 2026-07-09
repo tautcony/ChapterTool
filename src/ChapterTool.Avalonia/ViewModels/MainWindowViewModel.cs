@@ -532,10 +532,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         private set => SetProperty(ref field, value);
     }
 
-    public IReadOnlyList<MediaFileReference> RelatedMediaReferences =>
+    public IReadOnlyList<ReferencedMediaFile> RelatedMediaReferences =>
         currentGroup is null || SelectedClipIndex < 0 || SelectedClipIndex >= currentGroup.Entries.Count
             ? []
-            : currentGroup.Entries[SelectedClipIndex].MediaReferences ?? [];
+            : currentGroup.Entries[SelectedClipIndex].ReferencedMediaFiles ?? [];
 
     public bool CanAppendMpls => currentGroup?.Entries.Any(static entry => entry.ChapterSet.ImportFormat == ChapterImportFormat.Mpls) == true;
 
@@ -1162,7 +1162,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private static ChapterImportEntry CreateCombinedClipOption(ChapterImportSource sourceGroup, ChapterSet combinedInfo)
     {
         var mediaReferences = sourceGroup.Entries
-            .SelectMany(static entry => entry.MediaReferences ?? [])
+            .SelectMany(static entry => entry.ReferencedMediaFiles ?? [])
             .Distinct()
             .ToArray();
         return new ChapterImportEntry(
@@ -1170,7 +1170,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             $"{combinedInfo.Title}__{combinedInfo.Chapters.Count}",
             combinedInfo,
             CanCombine: true,
-            MediaReferences: mediaReferences);
+            ReferencedMediaFiles: mediaReferences);
     }
 
     private void RefreshRows()
@@ -1381,7 +1381,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             return;
         }
 
-        var reference = parameter as MediaFileReference ?? RelatedMediaReferences.FirstOrDefault();
+        var reference = parameter as ReferencedMediaFile ?? RelatedMediaReferences.FirstOrDefault();
         var target = reference?.AbsolutePath;
         if (string.IsNullOrWhiteSpace(target) && reference is not null && !string.IsNullOrWhiteSpace(CurrentPath))
         {

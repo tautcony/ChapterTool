@@ -607,9 +607,9 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(string.Empty, save.LastOptions.LuaExpressionPresetId);
         Assert.Equal(string.Empty, save.LastOptions.LuaExpressionSourceName);
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(3, save.LastInfo.Chapters[0].Number);
+        Assert.Equal(3, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].Time);
+        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].StartTime);
         Assert.Equal("out", save.LastDirectory);
     }
 
@@ -633,7 +633,7 @@ public sealed class MainWindowViewModelTests
         await vm.SaveDirectoryCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].Time);
+        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].StartTime);
         Assert.Equal("24", save.LastInfo.Chapters[0].FramesInfo);
         Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
         Assert.NotNull(save.LastOptions);
@@ -661,9 +661,9 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("CHAPTER04=00:00:02.000", preview, StringComparison.Ordinal);
         Assert.Contains("CHAPTER04NAME=Chapter 01", preview, StringComparison.Ordinal);
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(4, save.LastInfo.Chapters[0].Number);
+        Assert.Equal(4, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo.Chapters[0].Time);
+        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo.Chapters[0].StartTime);
     }
 
     [Fact]
@@ -711,7 +711,7 @@ public sealed class MainWindowViewModelTests
         await vm.SaveDirectoryCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(1, save.LastInfo.Chapters[0].Number);
+        Assert.Equal(1, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.NotNull(save.LastOptions);
         Assert.Equal(0, save.LastOptions.OrderShift);
     }
@@ -725,7 +725,7 @@ public sealed class MainWindowViewModelTests
                 ChapterImportFormat.Cue,
                 "album.cue",
                 new Chapter(1, TimeSpan.Zero, "A", "0"),
-                new Chapter(-1, Chapter.SeparatorTime, ""),
+                Chapter.Separator(),
                 new Chapter(2, TimeSpan.FromSeconds(7), "B", "168"))));
         var vm = CreateViewModel(load);
         await vm.LoadCommand.ExecuteAsync("album.cue");
@@ -772,7 +772,7 @@ public sealed class MainWindowViewModelTests
         await vm.SaveDirectoryCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].Time);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
         Assert.Equal("0", save.LastInfo.Chapters[0].FramesInfo);
         Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
     }
@@ -865,7 +865,7 @@ public sealed class MainWindowViewModelTests
         await File.WriteAllBytesAsync(media, [0]);
         var shell = new FakeShellService();
         var info = Info(ChapterImportFormat.Mpls, "movie", new Chapter(1, TimeSpan.Zero, "A"));
-        var entry = new ChapterImportEntry("clip-0", "movie__1", info, MediaReferences: [new MediaFileReference("movie.m2ts", "movie.m2ts")]);
+        var entry = new ChapterImportEntry("clip-0", "movie__1", info, ReferencedMediaFiles: [new ReferencedMediaFile("movie.m2ts", "movie.m2ts")]);
         var load = new FakeLoadService(new ChapterImportResult(true, [new ChapterImportSource(Path.Combine(root, "movie.mpls"), [entry])], []));
         var vm = CreateViewModel(load, shellService: shell);
 
@@ -1019,7 +1019,7 @@ public sealed class MainWindowViewModelTests
     }
 
     private static ChapterSet Info(ChapterImportFormat sourceType,  string sourceName, params Chapter[] chapters) =>
-        new(sourceName, sourceName, sourceType, 24, chapters.Last().Time, chapters);
+        new(sourceName, sourceName, sourceType, 24, chapters.Last().StartTime, chapters);
 
     private static ChapterImportResult ImportResult(string path, params ChapterSet[] infos)
     {

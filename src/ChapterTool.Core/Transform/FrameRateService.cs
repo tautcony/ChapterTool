@@ -172,7 +172,7 @@ public sealed class FrameRateService : IFrameRateService
 
     private static decimal CalculateFrames(Chapter chapter, decimal framesPerSecond)
     {
-        return (decimal)chapter.Time.TotalSeconds * framesPerSecond;
+        return (decimal)chapter.StartTime.TotalSeconds * framesPerSecond;
     }
 
     private sealed record FrameDisplay(string Text, FrameAccuracy Accuracy);

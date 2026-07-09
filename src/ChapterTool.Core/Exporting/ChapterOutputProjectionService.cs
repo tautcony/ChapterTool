@@ -41,13 +41,13 @@ public sealed class ChapterOutputProjectionService
         {
             if (chapter.IsSeparator)
             {
-                return chapter with { Number = 0 };
+                return chapter with { DisplayNumber = 0 };
             }
 
             outputIndex++;
             return chapter with
             {
-                Number = outputIndex + effectiveShift,
+                DisplayNumber = outputIndex + effectiveShift,
                 Name = OutputName(chapter.Name, outputIndex, useGeneratedNames, templateNames)
             };
         }).ToList();

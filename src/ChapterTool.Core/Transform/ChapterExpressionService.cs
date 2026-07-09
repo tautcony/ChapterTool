@@ -50,7 +50,7 @@ public sealed class ChapterExpressionService
             }
 
             nonSeparatorIndex++;
-            var originalSeconds = (decimal)chapter.Time.TotalSeconds;
+            var originalSeconds = (decimal)chapter.StartTime.TotalSeconds;
             var evaluated = luaExpressionService.Evaluate(
                 expression,
                 new LuaExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond));
@@ -69,7 +69,7 @@ public sealed class ChapterExpressionService
             var frameDisplay = FormatFrames(normalized, framesPerSecond);
             return chapter with
             {
-                Time = TimeSpan.FromSeconds((double)normalized),
+                StartTime = TimeSpan.FromSeconds((double)normalized),
                 FramesInfo = frameDisplay.Text,
                 FrameAccuracy = frameDisplay.Accuracy
             };

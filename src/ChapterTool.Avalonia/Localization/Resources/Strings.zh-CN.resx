@@ -338,7 +338,7 @@
 <data name="EditKind.Name" xml:space="preserve">
     <value>名称</value>
   </data>
-<data name="EditKind.Time" xml:space="preserve">
+<data name="EditKind.StartTime" xml:space="preserve">
     <value>时间</value>
   </data>
 <data name="FilePicker.AppendMpls.Title" xml:space="preserve">

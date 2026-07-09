@@ -68,8 +68,8 @@ public sealed partial class ChapterExportService
         var builder = new StringBuilder();
         foreach (var chapter in info.Chapters.Where(NotSeparator))
         {
-            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{chapter.Number:D2}={FormatTime(chapter)}");
-            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{chapter.Number:D2}NAME={chapter.Name}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{chapter.DisplayNumber:D2}={FormatTime(chapter)}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"CHAPTER{chapter.DisplayNumber:D2}NAME={chapter.Name}");
         }
 
         return Success(builder.ToString(), ".txt");
@@ -125,7 +125,7 @@ public sealed partial class ChapterExportService
             info.Chapters
                 .Where(NotSeparator)
                 .Select(chapter => ChapterRounding
-                    .RoundToInt64((decimal)chapter.Time.TotalSeconds * framesPerSecond)
+                    .RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond)
                     .ToString(CultureInfo.InvariantCulture) + " I"));
     }
 
@@ -151,7 +151,7 @@ public sealed partial class ChapterExportService
         {
             builder.AppendLine(CultureInfo.InvariantCulture, $"  TRACK {++track:D2} AUDIO");
             builder.AppendLine(CultureInfo.InvariantCulture, $"    TITLE \"{Escape(chapter.Name)}\"");
-            builder.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {timeFormatter.FormatCue(chapter.Time)}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"    INDEX 01 {timeFormatter.FormatCue(chapter.StartTime)}");
         }
 
         return Success(builder.ToString(), ".cue");
@@ -174,9 +174,9 @@ public sealed partial class ChapterExportService
                     "WebVTT cue text cannot contain line breaks or the cue timing separator.");
             }
 
-            var endTime = chapter.End ?? (i + 1 < chapters.Count ? chapters[i + 1].Time : info.Duration);
+            var endTime = chapter.EndTime ?? (i + 1 < chapters.Count ? chapters[i + 1].StartTime : info.Duration);
 
-            builder.AppendLine(CultureInfo.InvariantCulture, $"{FormatWebVttTime(chapter.Time)} --> {FormatWebVttTime(endTime)}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"{FormatWebVttTime(chapter.StartTime)} --> {FormatWebVttTime(endTime)}");
             builder.AppendLine(chapter.Name);
             if (i < chapters.Count - 1)
             {
@@ -212,14 +212,14 @@ public sealed partial class ChapterExportService
             {
                 if (previous is not null)
                 {
-                    baseTime = previous.Time;
+                    baseTime = previous.StartTime;
                     entries.Add(new JsonChapter(previous.Name, 0));
                 }
 
                 continue;
             }
 
-            entries.Add(new JsonChapter(chapter.Name, (chapter.Time - baseTime).TotalSeconds));
+            entries.Add(new JsonChapter(chapter.Name, (chapter.StartTime - baseTime).TotalSeconds));
             previous = chapter;
         }
 
@@ -234,7 +234,7 @@ public sealed partial class ChapterExportService
 
     private static string Escape(string value) => value.Replace("\"", "\\\"", StringComparison.Ordinal);
 
-    private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.Time);
+    private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.StartTime);
 
     private static int NextUid(Random random) => random.Next(1, int.MaxValue);
 

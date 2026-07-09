@@ -124,7 +124,7 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
                 $"playlist-{candidate.Index}",
                 $"{candidate.SourceName}__{bdmvInfo.Chapters.Count}",
                 bdmvInfo,
-                MediaReferences: MediaReferences(candidate.SourceName)));
+                ReferencedMediaFiles: MediaReferences(candidate.SourceName)));
         }
 
         if (entries.Count == 0)
@@ -344,11 +344,11 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         }
     }
 
-    private static IReadOnlyList<MediaFileReference> MediaReferences(string sourceName) =>
+    private static IReadOnlyList<ReferencedMediaFile> MediaReferences(string sourceName) =>
         sourceName
             .Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Where(static part => part.EndsWith(".m2ts", StringComparison.OrdinalIgnoreCase))
-            .Select(static part => new MediaFileReference(part, Path.Combine("..", "STREAM", part)))
+            .Select(static part => new ReferencedMediaFile(part, Path.Combine("..", "STREAM", part)))
             .ToList();
 
     private static string? ToolWorkingDirectory(string executable)

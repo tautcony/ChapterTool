@@ -6,7 +6,7 @@ namespace ChapterTool.Core.Models;
 /// <param name="DisplayName">The DisplayName value.</param>
 /// <param name="RelativePath">The RelativePath value.</param>
 /// <param name="AbsolutePath">The AbsolutePath value.</param>
-public sealed record MediaFileReference(
+public sealed record ReferencedMediaFile(
     string DisplayName,
     string RelativePath,
     string? AbsolutePath = null);

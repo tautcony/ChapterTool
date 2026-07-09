@@ -23,8 +23,8 @@ public sealed class MediaChapterImporterTests
         Assert.Equal(0, info.FramesPerSecond);
         Assert.Equal(TimeSpan.FromSeconds(30), info.Duration);
         Assert.Equal(["Chapter 01", "Chapter 02", "章节 03", "Chapter 04"], info.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(12), TimeSpan.FromSeconds(20)], info.Chapters.Select(static chapter => chapter.Time));
-        Assert.Equal([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(12), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(30)], info.Chapters.Select(static chapter => chapter.End));
+        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(12), TimeSpan.FromSeconds(20)], info.Chapters.Select(static chapter => chapter.StartTime));
+        Assert.Equal([TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(12), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(30)], info.Chapters.Select(static chapter => chapter.EndTime));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public sealed class MediaChapterImporterTests
 
         Assert.True(result.Success, Diagnostics(result));
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(35)], chapters.Select(static chapter => chapter.Time));
+        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(35)], chapters.Select(static chapter => chapter.StartTime));
         Assert.Equal(["Start with decimals, end with decimals", "Time base fallback only", "Uppercase TITLE tag", "Chapter 04"], chapters.Select(static chapter => chapter.Name));
     }
 
@@ -57,10 +57,10 @@ public sealed class MediaChapterImporterTests
 
         Assert.True(result.Success, Diagnostics(result));
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(TimeSpan.FromSeconds(8), chapters[0].End);
-        Assert.Equal(TimeSpan.FromSeconds(15), chapters[1].End);
-        Assert.Null(chapters[2].End);
-        Assert.Null(chapters[3].End);
+        Assert.Equal(TimeSpan.FromSeconds(8), chapters[0].EndTime);
+        Assert.Equal(TimeSpan.FromSeconds(15), chapters[1].EndTime);
+        Assert.Null(chapters[2].EndTime);
+        Assert.Null(chapters[3].EndTime);
         Assert.Equal(TimeSpan.FromSeconds(15), result.Groups.Single().Entries.Single().ChapterSet.Duration);
     }
 

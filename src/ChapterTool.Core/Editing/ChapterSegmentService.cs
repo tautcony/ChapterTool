@@ -32,7 +32,7 @@ public sealed class ChapterSegmentService
         {
             foreach (var chapter in entry.ChapterSet.Chapters.Where(static chapter => !chapter.IsSeparator))
             {
-                chapters.Add(new Chapter(chapters.Count + 1, offset + chapter.Time, $"Chapter {chapters.Count + 1:D2}"));
+                chapters.Add(new Chapter(chapters.Count + 1, offset + chapter.StartTime, $"Chapter {chapters.Count + 1:D2}"));
             }
 
             offset += entry.ChapterSet.Duration;

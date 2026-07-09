@@ -1,31 +1,52 @@
 namespace ChapterTool.Core.Models;
 
 /// <summary>
-/// Represents a single chapter marker with timing, naming, and frame metadata.
+/// Represents a single chapter row with timing, naming, frame metadata, and structural role.
 /// </summary>
-/// <param name="Number">The Number value.</param>
-/// <param name="Time">The Time value.</param>
-/// <param name="Name">The Name value.</param>
-/// <param name="FramesInfo">The FramesInfo value.</param>
-/// <param name="End">The End value.</param>
-/// <param name="FrameAccuracy">The FrameAccuracy value.</param>
+/// <param name="DisplayNumber">The output-facing chapter number.</param>
+/// <param name="StartTime">The chapter start time.</param>
+/// <param name="Name">The chapter display name.</param>
+/// <param name="FramesInfo">The frame display/edit text associated with the chapter.</param>
+/// <param name="EndTime">The optional chapter end time.</param>
+/// <param name="FrameAccuracy">Whether the start time lands exactly on a frame boundary.</param>
+/// <param name="Kind">The chapter row kind.</param>
 public sealed record Chapter(
-    int Number,
-    TimeSpan Time,
+    int DisplayNumber,
+    TimeSpan StartTime,
     string Name,
     string FramesInfo = "",
-    TimeSpan? End = null,
-    FrameAccuracy FrameAccuracy = FrameAccuracy.Neutral)
+    TimeSpan? EndTime = null,
+    FrameAccuracy FrameAccuracy = FrameAccuracy.Neutral,
+    ChapterKind Kind = ChapterKind.Marker)
 {
     /// <summary>
-    /// Gets the SeparatorTime value.
+    /// Gets whether this row is a structural separator rather than a real chapter marker.
     /// </summary>
-    public static readonly TimeSpan SeparatorTime = TimeSpan.MinValue;
+    public bool IsSeparator => Kind == ChapterKind.Separator;
 
     /// <summary>
-    /// Gets the IsSeparator value.
+    /// Creates a structural separator row.
     /// </summary>
-    public bool IsSeparator => Time == SeparatorTime;
+    /// <param name="name">The optional separator label.</param>
+    /// <returns>A separator chapter row.</returns>
+    public static Chapter Separator(string name = "") =>
+        new(0, TimeSpan.Zero, name, Kind: ChapterKind.Separator);
+}
+
+/// <summary>
+/// Identifies whether a chapter row is a real marker or a structural separator.
+/// </summary>
+public enum ChapterKind
+{
+    /// <summary>
+    /// A real chapter marker with a meaningful start time.
+    /// </summary>
+    Marker,
+
+    /// <summary>
+    /// A structural separator row used to split chapter sections.
+    /// </summary>
+    Separator
 }
 
 /// <summary>

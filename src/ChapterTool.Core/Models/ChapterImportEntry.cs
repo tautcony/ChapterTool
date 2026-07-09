@@ -7,13 +7,13 @@ namespace ChapterTool.Core.Models;
 /// <param name="DisplayName">The DisplayName value.</param>
 /// <param name="ChapterSet">The ChapterSet value.</param>
 /// <param name="CanCombine">The CanCombine value.</param>
-/// <param name="MediaReferences">The MediaReferences value.</param>
+/// <param name="ReferencedMediaFiles">The MediaReferences value.</param>
 public sealed record ChapterImportEntry(
     string Id,
     string DisplayName,
     ChapterSet ChapterSet,
     bool CanCombine = false,
-    IReadOnlyList<MediaFileReference>? MediaReferences = null)
+    IReadOnlyList<ReferencedMediaFile>? ReferencedMediaFiles = null)
 {
     /// <inheritdoc />
     public override string ToString() => DisplayName;

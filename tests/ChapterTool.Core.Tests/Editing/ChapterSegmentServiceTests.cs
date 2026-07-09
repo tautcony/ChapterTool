@@ -19,7 +19,7 @@ public sealed class ChapterSegmentServiceTests
 
         Assert.Empty(result.Diagnostics);
         Assert.Equal("FULL Chapter", result.ChapterSet.Title);
-        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(25)], result.ChapterSet.Chapters.Select(chapter => chapter.Time));
+        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20), TimeSpan.FromSeconds(25)], result.ChapterSet.Chapters.Select(chapter => chapter.StartTime));
         Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], result.ChapterSet.Chapters.Select(chapter => chapter.Name));
         Assert.Equal(TimeSpan.FromSeconds(50), result.ChapterSet.Duration);
     }
@@ -63,7 +63,7 @@ public sealed class ChapterSegmentServiceTests
         var result = ChapterSegmentService.Append(existing, appended);
 
         Assert.Empty(result.Diagnostics);
-        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(20)], result.ChapterSet.Chapters.Select(chapter => chapter.Time));
+        Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(20)], result.ChapterSet.Chapters.Select(chapter => chapter.StartTime));
         Assert.Equal(TimeSpan.FromSeconds(30), result.ChapterSet.Duration);
     }
 

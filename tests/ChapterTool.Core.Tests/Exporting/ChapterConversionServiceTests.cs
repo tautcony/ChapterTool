@@ -157,7 +157,7 @@ public sealed class ChapterConversionServiceTests
             TimeSpan.FromSeconds(30),
             [
                 new Chapter(1, TimeSpan.Zero, "Intro"),
-                new Chapter(-1, Chapter.SeparatorTime, ""),
+                Chapter.Separator(),
                 new Chapter(2, TimeSpan.FromSeconds(10), "Middle")
             ]);
 }

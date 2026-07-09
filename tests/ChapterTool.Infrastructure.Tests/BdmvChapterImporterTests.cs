@@ -41,10 +41,10 @@ public sealed class BdmvChapterImporterTests
         Assert.Equal("00001.m2ts", info.SourceName);
         Assert.Equal(2, info.Chapters.Count);
         Assert.Equal(["Opening", "Middle"], info.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal(TimeSpan.FromMilliseconds(754567), info.Chapters[1].Time);
+        Assert.Equal(TimeSpan.FromMilliseconds(754567), info.Chapters[1].StartTime);
         Assert.Equal(TimeSpan.FromHours(1).Add(TimeSpan.FromSeconds(20)), info.Duration);
-        Assert.Equal("00001.m2ts", result.Groups.Single().Entries.Single().MediaReferences!.Single().DisplayName);
-        Assert.Equal(Path.Combine("..", "STREAM", "00001.m2ts"), result.Groups.Single().Entries.Single().MediaReferences!.Single().RelativePath);
+        Assert.Equal("00001.m2ts", result.Groups.Single().Entries.Single().ReferencedMediaFiles!.Single().DisplayName);
+        Assert.Equal(Path.Combine("..", "STREAM", "00001.m2ts"), result.Groups.Single().Entries.Single().ReferencedMediaFiles!.Single().RelativePath);
         Assert.Equal([root, "-showall"], runner.Requests[0].Arguments);
         Assert.Null(runner.Requests[0].WorkingDirectory);
         Assert.Equal([root, "1)", $"1:{runner.ExportedPaths.Single()}", "-showall"], runner.Requests[1].Arguments);

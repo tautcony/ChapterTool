@@ -51,7 +51,7 @@ public sealed class CueImporterTests
         Assert.Equal("とある科学の超電磁砲 ARCHIVES 2", info.Title);
         Assert.Equal(4, info.Chapters.Count);
         Assert.Equal("初色bloomy [初春飾利(豊崎愛生)]", info.Chapters[1].Name);
-        Assert.Equal(new TimeSpan(0, 0, 15, 19, 280), info.Chapters[1].Time);
+        Assert.Equal(new TimeSpan(0, 0, 15, 19, 280), info.Chapters[1].StartTime);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public sealed class CueImporterTests
         Assert.Equal(19, info.Chapters.Count);
         Assert.Equal("John Barry & His Orchestra - The Knack [Orbital]", info.Chapters[0].Name);
         Assert.Equal("Robert Mellin Orchestra - The Adventures Of Robinson Crusoe [Orbital]", info.Chapters[^1].Name);
-        Assert.Equal(new TimeSpan(0, 1, 11, 17, 707), info.Chapters[^1].Time);
+        Assert.Equal(new TimeSpan(0, 1, 11, 17, 707), info.Chapters[^1].StartTime);
     }
 
     [Theory]
@@ -248,7 +248,7 @@ public sealed class CueImporterTests
             TimeSpan.FromSeconds(90),
             [
                 new Chapter(7, TimeSpan.Zero, "A"),
-                new Chapter(-1, Chapter.SeparatorTime, ""),
+                Chapter.Separator(),
                 new Chapter(3, TimeSpan.FromSeconds(65.5), "B")
             ]);
         var exporter = new ChapterExportService(new ChapterTimeFormatter());

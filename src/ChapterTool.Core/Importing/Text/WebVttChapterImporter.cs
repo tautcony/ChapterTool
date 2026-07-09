@@ -66,7 +66,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
                 return ChapterImportResult.Failed(Error(code, $"Unable to parse WebVTT timing line: {lines[0]}"));
             }
 
-            chapters.Add(new Chapter(chapters.Count + 1, start, lines[1], End: end));
+            chapters.Add(new Chapter(chapters.Count + 1, start, lines[1], EndTime: end));
         }
 
         if (chapters.Count == 0)
@@ -79,7 +79,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
             Path.GetFileName(path),
             ChapterImportFormat.WebVtt,
             0,
-            chapters[^1].End ?? chapters[^1].Time,
+            chapters[^1].EndTime ?? chapters[^1].StartTime,
             chapters);
         return TextImportUtilities.SingleGroup(path, info);
     }
