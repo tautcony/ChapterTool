@@ -119,6 +119,19 @@ public sealed class FfprobeMediaChapterReaderTests
         Assert.Equal(expectedCode, result.DiagnosticCode);
     }
 
+    [Fact]
+    public async Task ReadAsyncRejectsTruncatedJsonOutput()
+    {
+        var reader = new FfprobeMediaChapterReader(
+            new FakeToolLocator(new ExternalToolLocation(true, "ffprobe")),
+            new FakeProcessRunner(SuccessfulJson("""{"chapters":[]}""") with { OutputTruncated = true }));
+
+        var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Equal("FfprobeOutputTruncated", result.DiagnosticCode);
+    }
+
     private static ProcessRunResult SuccessfulJson(string stdout) =>
         new(0, stdout, "", false, false, "ffprobe", [], null);
 

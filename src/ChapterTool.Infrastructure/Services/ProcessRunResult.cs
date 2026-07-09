@@ -8,4 +8,5 @@ public sealed record ProcessRunResult(
     bool Cancelled,
     string FileName,
     IReadOnlyList<string> Arguments,
-    string? WorkingDirectory);
+    string? WorkingDirectory,
+    bool OutputTruncated = false);

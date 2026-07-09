@@ -6,4 +6,5 @@ public sealed record ProcessRunRequest(
     string? WorkingDirectory = null,
     TimeSpan? Timeout = null,
     bool RedirectOutput = true,
-    bool CreateNoWindow = true);
+    bool CreateNoWindow = true,
+    int MaxOutputCharacters = 1_000_000);

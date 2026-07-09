@@ -57,6 +57,45 @@ public sealed class BdmvChapterImporterTests
     }
 
     [Fact]
+    public async Task ImportAsyncTreatsUnreadableMetadataTitleAsBestEffort()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var root = CreateBdmvRoot(writeMeta: true);
+        var metaPath = Path.Combine(root, "BDMV", "META", "DL", "disc.xml");
+        File.SetUnixFileMode(metaPath, UnixFileMode.None);
+        try
+        {
+            File.Copy(
+                Path.Combine(FixtureResolver.RepositoryRoot, "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Mpls", "00001_fch.mpls"),
+                Path.Combine(root, "BDMV", "PLAYLIST", "00001.mpls"));
+            var runner = new FakeRunner([
+                Success("""
+                    1) 00001.mpls, 00001.m2ts, 01:00:20
+                       - Chapters, 9 chapters
+                    """),
+                new ProcessRunResult(0, "", "", false, false, "eac3to", [], null)
+            ], ExportText("""
+                CHAPTER01=00:00:00.000
+                CHAPTER01NAME=Opening
+                """));
+            var importer = NewImporter(runner);
+
+            var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
+
+            Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message)));
+            Assert.Equal(string.Empty, result.Groups.Single().Options.Single().ChapterInfo.Title);
+        }
+        finally
+        {
+            File.SetUnixFileMode(metaPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
+
+    [Fact]
     public async Task ImportAsyncFailsMissingDependency()
     {
         var importer = new BdmvChapterImporter(new FakeLocator(new ExternalToolLocation(false, null, "MissingDependency", "missing")), new FakeRunner([]), new ChapterTimeFormatter());
@@ -81,6 +120,31 @@ public sealed class BdmvChapterImporterTests
 
         Assert.False(result.Success);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+    }
+
+    [Fact]
+    public async Task ImportAsyncRejectsTruncatedPlaylistOutput()
+    {
+        var importer = NewImporter(new FakeRunner([
+            new ProcessRunResult(
+                0,
+                """
+                1) 00001.mpls, 00001.m2ts, 01:00:20
+                   - Chapters, 9 chapters
+                """,
+                "",
+                false,
+                false,
+                "eac3to",
+                [],
+                null,
+                OutputTruncated: true)
+        ]));
+
+        var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyOutputTruncated");
     }
 
     [Fact]
@@ -128,7 +192,82 @@ public sealed class BdmvChapterImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyOutputMissing");
     }
 
-    private static BdmvChapterImporter NewImporter(FakeRunner runner) =>
+    [Fact]
+    public async Task ImportAsyncFailsWhenChapterExportProcessFailsEvenIfFileExists()
+    {
+        var root = CreateBdmvRoot();
+        File.Copy(
+            Path.Combine(FixtureResolver.RepositoryRoot, "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Mpls", "00001_fch.mpls"),
+            Path.Combine(root, "BDMV", "PLAYLIST", "00001.mpls"));
+        var runner = new FakeRunner([
+            Success("""
+                1) 00001.mpls, 00001.m2ts, 01:00:20
+                   - Chapters, 9 chapters
+                """),
+            new ProcessRunResult(7, "", "export failed", false, false, "eac3to", [], null)
+        ], ExportText("""
+            CHAPTER01=00:00:00.000
+            CHAPTER01NAME=Opening
+            """));
+        var importer = NewImporter(runner);
+
+        var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyExecutionFailed");
+    }
+
+    [Theory]
+    [InlineData(true, false, "DependencyExecutionTimedOut")]
+    [InlineData(false, true, "DependencyExecutionCancelled")]
+    public async Task ImportAsyncDiagnosesListTimeoutAndCancellation(bool timedOut, bool cancelled, string code)
+    {
+        var importer = NewImporter(new FakeRunner([
+            new ProcessRunResult(null, "", "", timedOut, cancelled, "eac3to", [], null)
+        ]));
+
+        var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+    }
+
+    [Theory]
+    [InlineData(true, false, "DependencyExecutionTimedOut")]
+    [InlineData(false, true, "DependencyExecutionCancelled")]
+    public async Task ImportAsyncDiagnosesExportTimeoutAndCancellation(bool timedOut, bool cancelled, string code)
+    {
+        var root = CreateBdmvRoot();
+        File.Copy(
+            Path.Combine(FixtureResolver.RepositoryRoot, "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Mpls", "00001_fch.mpls"),
+            Path.Combine(root, "BDMV", "PLAYLIST", "00001.mpls"));
+        var runner = new FakeRunner([
+            Success("""
+                1) 00001.mpls, 00001.m2ts, 01:00:20
+                   - Chapters, 9 chapters
+                """),
+            new ProcessRunResult(null, "", "", timedOut, cancelled, "eac3to", [], null)
+        ]);
+        var importer = NewImporter(runner);
+
+        var result = await importer.ImportAsync(new ChapterImportRequest(root), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == code);
+    }
+
+    [Fact]
+    public async Task ImportAsyncReturnsDiagnosticWhenListProcessCannotStart()
+    {
+        var importer = NewImporter(new ThrowingRunner(new InvalidOperationException("cannot start")));
+
+        var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "DependencyCannotStart");
+    }
+
+    private static BdmvChapterImporter NewImporter(IProcessRunner runner) =>
         new(new FakeLocator(new ExternalToolLocation(true, "eac3to")), runner, new ChapterTimeFormatter());
 
     private static ProcessRunResult Success(string stdout) =>
@@ -202,5 +341,11 @@ public sealed class BdmvChapterImporterTests
                 WorkingDirectory = request.WorkingDirectory
             };
         }
+    }
+
+    private sealed class ThrowingRunner(Exception exception) : IProcessRunner
+    {
+        public ValueTask<ProcessRunResult> RunAsync(ProcessRunRequest request, CancellationToken cancellationToken) =>
+            ValueTask.FromException<ProcessRunResult>(exception);
     }
 }

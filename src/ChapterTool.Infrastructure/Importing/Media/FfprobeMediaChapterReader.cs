@@ -55,6 +55,11 @@ public sealed class FfprobeMediaChapterReader(
             return MediaChapterReadResult.Failed("FfprobeProcessFailed", "ffprobe exited with a non-zero code.", ProcessDetails(result));
         }
 
+        if (result.OutputTruncated)
+        {
+            return MediaChapterReadResult.Failed("FfprobeOutputTruncated", "ffprobe output exceeded the capture limit and cannot be parsed safely.", ProcessDetails(result));
+        }
+
         if (string.IsNullOrWhiteSpace(result.StandardOutput))
         {
             return MediaChapterReadResult.Failed("FfprobeEmptyOutput", "ffprobe did not return chapter JSON.", ProcessDetails(result));

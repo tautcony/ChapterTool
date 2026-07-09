@@ -69,6 +69,32 @@ public sealed class ProcessRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_truncates_large_redirected_output()
+    {
+        var runner = new ProcessRunner();
+        var request = ShellCommand.Create("printf 'abcdef'; printf 'uvwxyz' 1>&2") with { MaxOutputCharacters = 3 };
+
+        var result = await runner.RunAsync(request, TestContext.Current.CancellationToken);
+
+        Assert.Equal("abc", result.StandardOutput);
+        Assert.Equal("uvw", result.StandardError);
+        Assert.True(result.OutputTruncated);
+    }
+
+    [Fact]
+    public async Task RunAsync_preserves_partial_output_after_timeout()
+    {
+        var runner = new ProcessRunner();
+
+        var result = await runner.RunAsync(
+            ShellCommand.Create("printf 'before-timeout' 1>&2; sleep 5", timeout: TimeSpan.FromMilliseconds(100)),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.TimedOut);
+        Assert.Contains("before-timeout", result.StandardError, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RunAsync_can_disable_output_redirection()
     {
         var runner = new ProcessRunner();

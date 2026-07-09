@@ -147,6 +147,17 @@ public sealed class MatroskaChapterImporterTests
     }
 
     [Fact]
+    public async Task ImportAsyncRejectsTruncatedXmlOutput()
+    {
+        var importer = NewImporter(result: Successful(ValidXml) with { OutputTruncated = true });
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == "MatroskaOutputTruncated");
+    }
+
+    [Fact]
     public async Task ImportAsyncPassesPathAsSingleArgument()
     {
         var runner = new FakeProcessRunner(Successful(ValidXml));

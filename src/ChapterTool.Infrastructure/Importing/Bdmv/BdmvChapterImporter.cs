@@ -141,7 +141,16 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
 
     private async ValueTask<ProcessTextResult> RunAsync(string executable, string? workingDirectory, IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
-        var result = await processRunner.RunAsync(new ProcessRunRequest(executable, arguments, workingDirectory, TimeSpan.FromSeconds(60)), cancellationToken);
+        ProcessRunResult result;
+        try
+        {
+            result = await processRunner.RunAsync(new ProcessRunRequest(executable, arguments, workingDirectory, TimeSpan.FromSeconds(60)), cancellationToken);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            return ProcessTextResult.Failed(Error("DependencyCannotStart", $"eac3to could not be started: {exception.Message}"));
+        }
+
         if (result.Cancelled)
         {
             return ProcessTextResult.Failed(Error("DependencyExecutionCancelled", "eac3to was cancelled."));
@@ -157,6 +166,11 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             return ProcessTextResult.Failed(Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? "eac3to failed." : result.StandardError));
         }
 
+        if (result.OutputTruncated)
+        {
+            return ProcessTextResult.Failed(Error("DependencyOutputTruncated", "eac3to output exceeded the capture limit and cannot be parsed safely."));
+        }
+
         return ProcessTextResult.Succeeded(result.StandardOutput);
     }
 
@@ -166,17 +180,32 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         try
         {
             var arguments = new[] { bdmvRoot, $"{titleIndex})", $"1:{tempPath}", "-showall" };
-            var result = await processRunner.RunAsync(
-                new ProcessRunRequest(executable, arguments, Path.GetTempPath(), TimeSpan.FromSeconds(60), RedirectOutput: false, CreateNoWindow: true),
-                cancellationToken);
-
-            if (!File.Exists(tempPath))
+            ProcessRunResult result;
+            try
             {
-                var execution = ToExecutionDiagnostic(result, "eac3to chapter export");
+                result = await processRunner.RunAsync(
+                    new ProcessRunRequest(executable, arguments, Path.GetTempPath(), TimeSpan.FromSeconds(60), RedirectOutput: false, CreateNoWindow: true),
+                    cancellationToken);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
+            {
                 return new ChapterExportResult(
                     false,
                     null,
-                    [execution ?? Error("DependencyOutputMissing", "eac3to did not create a chapter export file.")]);
+                    [Error("DependencyCannotStart", $"eac3to chapter export could not be started: {exception.Message}")]);
+            }
+
+            if (ToExecutionDiagnostic(result, "eac3to chapter export") is { } execution)
+            {
+                return new ChapterExportResult(false, null, [execution]);
+            }
+
+            if (!File.Exists(tempPath))
+            {
+                return new ChapterExportResult(
+                    false,
+                    null,
+                    [Error("DependencyOutputMissing", "eac3to did not create a chapter export file.")]);
             }
 
             var text = await File.ReadAllTextAsync(tempPath, cancellationToken);
@@ -220,6 +249,11 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
         if (result.ExitCode is not 0)
         {
             return Error("DependencyExecutionFailed", result.StandardError.Length == 0 ? $"{operation} failed." : result.StandardError);
+        }
+
+        if (result.OutputTruncated)
+        {
+            return Error("DependencyOutputTruncated", $"{operation} output exceeded the capture limit and cannot be parsed safely.");
         }
 
         return null;
@@ -293,15 +327,22 @@ public sealed partial class BdmvChapterImporter : IChapterImporter
             return string.Empty;
         }
 
-        var file = Directory.EnumerateFiles(meta, "*.xml").FirstOrDefault();
-        if (file is null)
+        try
+        {
+            var file = Directory.EnumerateFiles(meta, "*.xml").FirstOrDefault();
+            if (file is null)
+            {
+                return string.Empty;
+            }
+
+            var text = File.ReadAllText(file);
+            var match = DiscTitleRegex().Match(text);
+            return match.Success ? match.Groups["Title"].Value : string.Empty;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             return string.Empty;
         }
-
-        var text = File.ReadAllText(file);
-        var match = DiscTitleRegex().Match(text);
-        return match.Success ? match.Groups["Title"].Value : string.Empty;
     }
 
     private static IReadOnlyList<SourceMediaReference> MediaReferences(string sourceName) =>

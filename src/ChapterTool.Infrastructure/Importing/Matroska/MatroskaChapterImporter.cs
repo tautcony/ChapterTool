@@ -70,6 +70,11 @@ public sealed class MatroskaChapterImporter(
             return ChapterImportResult.Failed(ProcessError("MatroskaProcessFailed", "mkvextract exited with a non-zero code.", result));
         }
 
+        if (result.OutputTruncated)
+        {
+            return ChapterImportResult.Failed(ProcessError("MatroskaOutputTruncated", "mkvextract output exceeded the capture limit and cannot be parsed safely.", result));
+        }
+
         if (string.IsNullOrWhiteSpace(result.StandardOutput))
         {
             var code = string.IsNullOrWhiteSpace(result.StandardError) ? "MatroskaNoChapters" : "MatroskaProcessFailed";
