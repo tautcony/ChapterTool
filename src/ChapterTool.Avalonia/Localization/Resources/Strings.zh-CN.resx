@@ -674,6 +674,9 @@
 <data name="Settings.OutputDefaults" xml:space="preserve">
     <value>输出默认值</value>
   </data>
+<data name="Settings.OpenSettingsFolder" xml:space="preserve">
+    <value>打开设置文件夹</value>
+  </data>
 <data name="Settings.ResetDefaults" xml:space="preserve">
     <value>恢复默认</value>
   </data>

@@ -674,6 +674,9 @@
 <data name="Settings.OutputDefaults" xml:space="preserve">
     <value>出力の既定値</value>
   </data>
+<data name="Settings.OpenSettingsFolder" xml:space="preserve">
+    <value>設定フォルダーを開く</value>
+  </data>
 <data name="Settings.ResetDefaults" xml:space="preserve">
     <value>既定値に戻す</value>
   </data>

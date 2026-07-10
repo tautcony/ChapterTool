@@ -25,6 +25,7 @@ namespace ChapterTool.Avalonia.Composition;
 public sealed class AppCompositionRoot : IDisposable
 {
     private readonly string? startupPath;
+    private readonly string settingsDirectory;
     private readonly ChapterTimeFormatter formatter = new();
     private readonly IChapterExpressionEngine expressionEngine = new LuaExpressionScriptService();
     private readonly FrameRateService frameRateService = new();
@@ -43,6 +44,7 @@ public sealed class AppCompositionRoot : IDisposable
     {
         this.startupPath = startupPath;
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
+        this.settingsDirectory = resolvedSettingsDirectory;
         appSettingsStore = new AppSettingsStore(resolvedSettingsDirectory);
         fontSettingsStore = new FontSettingsStore(resolvedSettingsDirectory);
         themeSettingsStore = new ThemeSettingsStore(resolvedSettingsDirectory);
@@ -123,7 +125,8 @@ public sealed class AppCompositionRoot : IDisposable
             shellService: CreateShellService(),
             fontSettingsStore: fontSettingsStore,
             fontFamilyCatalog: fontFamilyCatalog,
-            fontApplicationService: fontApplicationService);
+            fontApplicationService: fontApplicationService,
+            settingsDirectory: settingsDirectory);
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 

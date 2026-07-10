@@ -150,7 +150,9 @@ Start with:
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
 
-Output defaults such as save format, XML language, UTF-8 BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`.
+Output defaults such as save format, XML language, UTF-8 BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`. `AppCompositionRoot` also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
+
+Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together.
 
 Appearance is preset-only. `SettingsToolViewModel` owns localized preset options, live selection, Save/Reset/Discard state, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset, updates semantic application brushes and the Avalonia light/dark variant, while `App.axaml` owns shared control and `DataGridColumnHeader` semantic styles.
 

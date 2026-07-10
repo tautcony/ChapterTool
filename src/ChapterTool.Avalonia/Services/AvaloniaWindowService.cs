@@ -21,6 +21,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IShellService? shellService;
+    private readonly string? settingsDirectory;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
@@ -36,7 +37,8 @@ public sealed class AvaloniaWindowService : IWindowService
         IShellService? shellService = null,
         ISettingsStore<FontSettings>? fontSettingsStore = null,
         IFontFamilyCatalog? fontFamilyCatalog = null,
-        IFontApplicationService? fontApplicationService = null)
+        IFontApplicationService? fontApplicationService = null,
+        string? settingsDirectory = null)
     {
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
@@ -50,6 +52,7 @@ public sealed class AvaloniaWindowService : IWindowService
         this.settingsPickerFactory = settingsPickerFactory;
         this.externalToolLocator = externalToolLocator;
         this.shellService = shellService;
+        this.settingsDirectory = settingsDirectory;
         this.localizer.CultureChanged += (_, _) =>
         {
             foreach (var (id, window) in windows)
@@ -177,7 +180,8 @@ public sealed class AvaloniaWindowService : IWindowService
                     shellService,
                     fontSettingsStore,
                     fontFamilyCatalog,
-                    fontApplicationService)
+                    fontApplicationService,
+                    settingsDirectory)
             },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
             "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel, new AvaloniaFilePickerService(window, localizer)) },

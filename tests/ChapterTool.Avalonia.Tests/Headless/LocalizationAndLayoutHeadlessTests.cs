@@ -47,6 +47,26 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
 
     }
 
+    [AvaloniaFact]
+    public async Task Runtime_language_switch_refreshes_selected_auto_frame_rate_and_dropdown_item()
+    {
+        var localizer = new AppLocalizationManager("zh-CN");
+        using var host = new MainWindowHeadlessTestHost(localizer: localizer);
+        await host.LayoutAsync();
+        var frameRateBox = host.RequiredControl<ComboBox>("FrameRateBox");
+
+        Assert.Equal("自动", frameRateBox.SelectionBoxItem?.ToString());
+
+        localizer.SetCulture("en-US");
+        await host.LayoutAsync();
+
+        Assert.Equal("Auto", frameRateBox.SelectionBoxItem?.ToString());
+        frameRateBox.IsDropDownOpen = true;
+        await host.LayoutAsync();
+        var autoItem = Assert.IsType<ComboBoxItem>(frameRateBox.ContainerFromIndex(0));
+        Assert.Contains(autoItem.GetVisualDescendants().OfType<TextBlock>(), block => block.Text == "Auto");
+    }
+
     private static string ChapterNameModeSelectionText(MainWindowHeadlessTestHost host)
     {
         var selectedItem = Assert.IsType<SelectorDisplayOption>(host.RequiredControl<ComboBox>("ChapterNameModeBox").SelectedItem);

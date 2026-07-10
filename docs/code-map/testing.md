@@ -110,6 +110,10 @@ High-signal test files:
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light/dark presets and verifies the live palette preview, application variant, semantic resources, and existing DataGrid column-header brushes.
 
+The settings Headless workflows verify the footer settings-folder action, including its left-side placement, accessible label, and routed shell target.
+
+`LocalizationAndLayoutHeadlessTests` covers runtime localization of both selector dropdown entries and their current selection text, including the automatic frame-rate option.
+
 Font settings coverage is concentrated in `FontSettingsStoreTests`, `AvaloniaFontFamilyCatalogTests`, `AvaloniaFontApplicationServiceTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
 
 ## Quick Routing

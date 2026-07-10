@@ -85,6 +85,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         statusText = this.Localizer.GetString("Status.Ready");
         RefreshXmlLanguageDisplayOptions(notify: false);
         RefreshChapterNameModeOptions();
+        RefreshFrameRateDisplayOptions();
         this.Localizer.CultureChanged += (_, _) => RefreshLocalizedState();
         selectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
@@ -202,6 +203,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public ObservableCollection<SelectorDisplayOption> ClipDisplayOptions { get; } = [];
 
     public ObservableCollection<SelectorDisplayOption> ChapterNameModeOptions { get; } = [];
+
+    public ObservableCollection<SelectorDisplayOption> FrameRateDisplayOptions { get; } = [];
 
     public int SelectedClipIndex
     {
@@ -1525,6 +1528,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private void RefreshLocalizedState()
     {
         RefreshChapterNameModeOptions();
+        RefreshFrameRateDisplayOptions();
         RefreshXmlLanguageDisplayOptions(notify: true);
 
         if (string.IsNullOrEmpty(chapterNameTemplateText))
@@ -1604,6 +1608,34 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
 
         OnPropertyChanged(nameof(ChapterNameModeIndex));
+    }
+
+    private void RefreshFrameRateDisplayOptions()
+    {
+        var entries = frameRateService.Options
+            .Select((entry, index) => new SelectorDisplayOption(
+                entry.Code,
+                string.Empty,
+                index == 0 ? Localizer.GetString("Main.AutoFrameRate") : entry.DisplayName))
+            .ToArray();
+
+        if (FrameRateDisplayOptions.Count != entries.Length)
+        {
+            FrameRateDisplayOptions.Clear();
+            foreach (var entry in entries)
+            {
+                FrameRateDisplayOptions.Add(entry);
+            }
+        }
+        else
+        {
+            for (var index = 0; index < entries.Length; index++)
+            {
+                FrameRateDisplayOptions[index].UpdateFrom(entries[index]);
+            }
+        }
+
+        OnPropertyChanged(nameof(FrameRateDisplayOptions));
     }
 
     private void LogImportSummary(string operation, ChapterImportResult result)
