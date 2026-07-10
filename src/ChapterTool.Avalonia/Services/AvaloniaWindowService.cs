@@ -13,7 +13,10 @@ public sealed class AvaloniaWindowService : IWindowService
 {
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
     private readonly ISettingsStore<ThemeSettings>? themeSettingsStore;
+    private readonly ISettingsStore<FontSettings>? fontSettingsStore;
     private readonly IThemeApplicationService? themeApplicationService;
+    private readonly IFontFamilyCatalog? fontFamilyCatalog;
+    private readonly IFontApplicationService? fontApplicationService;
     private readonly ISettingsCloseConfirmationService settingsCloseConfirmationService;
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
     private readonly IExternalToolLocator? externalToolLocator;
@@ -30,11 +33,17 @@ public sealed class AvaloniaWindowService : IWindowService
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
         IExternalToolLocator? externalToolLocator = null,
         ISettingsCloseConfirmationService? settingsCloseConfirmationService = null,
-        IShellService? shellService = null)
+        IShellService? shellService = null,
+        ISettingsStore<FontSettings>? fontSettingsStore = null,
+        IFontFamilyCatalog? fontFamilyCatalog = null,
+        IFontApplicationService? fontApplicationService = null)
     {
         this.appSettingsStore = appSettingsStore;
         this.themeSettingsStore = themeSettingsStore;
         this.themeApplicationService = themeApplicationService;
+        this.fontSettingsStore = fontSettingsStore;
+        this.fontFamilyCatalog = fontFamilyCatalog;
+        this.fontApplicationService = fontApplicationService;
         this.localizer = localizer ?? new AppLocalizationManager();
         this.settingsCloseConfirmationService = settingsCloseConfirmationService
             ?? new AvaloniaSettingsCloseConfirmationService(this.localizer);
@@ -165,7 +174,10 @@ public sealed class AvaloniaWindowService : IWindowService
                     settingsPickerFactory?.Invoke(window),
                     externalToolLocator,
                     themeApplicationService,
-                    shellService)
+                    shellService,
+                    fontSettingsStore,
+                    fontFamilyCatalog,
+                    fontApplicationService)
             },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
             "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel, new AvaloniaFilePickerService(window, localizer)) },

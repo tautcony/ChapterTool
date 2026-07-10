@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Avalonia;
+using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Exporting;
@@ -19,17 +20,25 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private readonly MainWindowViewModel owner;
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
     private readonly ISettingsStore<ThemeSettings>? themeSettingsStore;
+    private readonly ISettingsStore<FontSettings>? fontSettingsStore;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private readonly ObservableCollection<ThemePresetOptionViewModel> themePresets = [];
+    private readonly ObservableCollection<FontFamilyOptionViewModel> uiFontFamilies = [];
+    private readonly ObservableCollection<FontFamilyOptionViewModel> monospaceFontFamilies = [];
     private readonly ISettingsPickerService? picker;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IThemeApplicationService? themeApplicationService;
+    private readonly IFontFamilyCatalog? fontFamilyCatalog;
+    private readonly IFontApplicationService? fontApplicationService;
     private readonly IShellService? shellService;
     private readonly EventHandler cultureChangedHandler;
     private AppSettings savedAppSettings = new();
     private ThemeSettings savedThemeSettings = ThemeSettings.Default;
+    private FontSettings savedFontSettings = FontSettings.Default;
     private string selectedThemePresetId = ThemePresetCatalog.DefaultPresetId;
+    private string selectedUiFontFamily = string.Empty;
+    private string selectedMonospaceFontFamily = string.Empty;
     private string selectedLanguage;
     private int defaultSaveFormatIndex;
     private int defaultXmlLanguageIndex;
@@ -49,6 +58,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         IExternalToolLocator? externalToolLocator = null,
         IThemeApplicationService? themeApplicationService = null,
         IShellService? shellService = null,
+        ISettingsStore<FontSettings>? fontSettingsStore = null,
+        IFontFamilyCatalog? fontFamilyCatalog = null,
+        IFontApplicationService? fontApplicationService = null,
         bool autoLoad = true)
     {
         this.owner = owner;
@@ -59,6 +71,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         this.externalToolLocator = externalToolLocator;
         this.themeApplicationService = themeApplicationService;
         this.shellService = shellService;
+        this.fontSettingsStore = fontSettingsStore;
+        this.fontFamilyCatalog = fontFamilyCatalog;
+        this.fontApplicationService = fontApplicationService;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Count - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
@@ -67,8 +82,11 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
         ReplaceThemePresets();
+        ReplaceFontFamilies();
 
-        SaveCommand = new UiCommand(async (_, token) => await SaveAsync(token), _ => appSettingsStore is not null || themeSettingsStore is not null);
+        SaveCommand = new UiCommand(
+            async (_, token) => await SaveAsync(token),
+            _ => appSettingsStore is not null || themeSettingsStore is not null || fontSettingsStore is not null);
         ResetCommand = new UiCommand((_, _) =>
         {
             ApplyDefaults();
@@ -90,6 +108,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         {
             RefreshLanguages();
             ReplaceThemePresets();
+            ReplaceFontFamilies();
             RefreshXmlLanguageDisplayOptions(notify: true);
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
@@ -171,6 +190,48 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         localizer.Format(
             "Settings.Appearance.PreviewFor",
             new Dictionary<string, object?> { ["name"] = SelectedThemePreset.DisplayName });
+
+    public IReadOnlyList<FontFamilyOptionViewModel> UiFontFamilies => uiFontFamilies;
+
+    public IReadOnlyList<FontFamilyOptionViewModel> MonospaceFontFamilies => monospaceFontFamilies;
+
+    public int SelectedUiFontFamilyIndex
+    {
+        get => uiFontFamilies.ToList().FindIndex(option => string.Equals(option.FamilyName, selectedUiFontFamily, StringComparison.Ordinal));
+        set
+        {
+            if (value >= 0 && value < uiFontFamilies.Count)
+            {
+                SetSelectedUiFontFamily(uiFontFamilies[value].FamilyName);
+            }
+        }
+    }
+
+    public int SelectedMonospaceFontFamilyIndex
+    {
+        get => monospaceFontFamilies.ToList().FindIndex(option => string.Equals(option.FamilyName, selectedMonospaceFontFamily, StringComparison.Ordinal));
+        set
+        {
+            if (value >= 0 && value < monospaceFontFamilies.Count)
+            {
+                SetSelectedMonospaceFontFamily(monospaceFontFamilies[value].FamilyName);
+            }
+        }
+    }
+
+    public FontFamilyOptionViewModel SelectedUiFontFamily =>
+        uiFontFamilies.First(option => string.Equals(option.FamilyName, selectedUiFontFamily, StringComparison.Ordinal));
+
+    public FontFamilyOptionViewModel SelectedMonospaceFontFamily =>
+        monospaceFontFamilies.First(option => string.Equals(option.FamilyName, selectedMonospaceFontFamily, StringComparison.Ordinal));
+
+    public string FontPreviewText => localizer.GetString("Settings.Appearance.FontPreviewSample");
+
+    public string UiFontPreviewAutomationName => FontPreviewAutomationName("Settings.Appearance.UiFontPreviewFor", SelectedUiFontFamily.DisplayName);
+
+    public string MonospaceFontPreviewAutomationName => FontPreviewAutomationName(
+        "Settings.Appearance.MonospaceFontPreviewFor",
+        SelectedMonospaceFontFamily.DisplayName);
 
     public string SelectedLanguage
     {
@@ -329,7 +390,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     public bool HasUnsavedChanges =>
         appSettingsStore is not null && CurrentAppSettings() != savedAppSettings
-        || themeSettingsStore is not null && CurrentThemeSettings() != savedThemeSettings;
+        || themeSettingsStore is not null && CurrentThemeSettings() != savedThemeSettings
+        || fontSettingsStore is not null && CurrentFontSettings() != savedFontSettings;
 
     public bool SettingsLoadFailed
     {
@@ -415,6 +477,14 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
                 ApplyThemeSettings(theme);
                 themeApplicationService?.Apply(theme);
             }
+
+            if (fontSettingsStore is not null)
+            {
+                var fonts = await LoadFontSettingsOrDefaultAsync(cancellationToken);
+                savedFontSettings = ResolveFontSettings(fonts);
+                ApplyFontSettings(savedFontSettings);
+                fontApplicationService?.Apply(savedFontSettings);
+            }
         }
         finally
         {
@@ -473,6 +543,29 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         }
     }
 
+    private async ValueTask<FontSettings> LoadFontSettingsOrDefaultAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await fontSettingsStore!.LoadAsync(cancellationToken);
+        }
+        catch (IOException)
+        {
+            SettingsLoadFailed = true;
+            return FontSettings.Default;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SettingsLoadFailed = true;
+            return FontSettings.Default;
+        }
+        catch (CorruptSettingsFileException)
+        {
+            SettingsLoadFailed = true;
+            return FontSettings.Default;
+        }
+    }
+
     private async Task InitializeAsync()
     {
         await LoadAsync(CancellationToken.None);
@@ -502,6 +595,14 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             themeApplicationService?.Apply(settings);
         }
 
+        if (fontSettingsStore is not null)
+        {
+            var settings = CurrentFontSettings();
+            await fontSettingsStore.SaveAsync(settings, cancellationToken);
+            savedFontSettings = settings;
+            fontApplicationService?.Apply(settings);
+        }
+
         RefreshToolStatuses();
         NotifyUnsavedChanges();
         SettingsLoadFailed = false;
@@ -510,13 +611,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     public void DiscardUnsavedAppearanceChanges()
     {
-        if (CurrentThemeSettings() == savedThemeSettings)
-        {
-            return;
-        }
-
         ApplyThemeSettings(savedThemeSettings);
+        ApplyFontSettings(savedFontSettings);
         themeApplicationService?.Apply(savedThemeSettings);
+        fontApplicationService?.Apply(savedFontSettings);
         NotifyUnsavedChanges();
     }
 
@@ -527,6 +625,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         {
             ApplyAppSettingsToFields(savedAppSettings);
             ApplyThemeSettings(savedThemeSettings);
+            ApplyFontSettings(savedFontSettings);
         }
         finally
         {
@@ -535,6 +634,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
         ApplyCurrentAppSettingsToOwner();
         themeApplicationService?.Apply(savedThemeSettings);
+        fontApplicationService?.Apply(savedFontSettings);
         RefreshToolStatuses();
         NotifyUnsavedChanges();
     }
@@ -553,7 +653,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         EmitBom = defaults.EmitBom;
         FrameAccuracyTolerance = defaults.FrameAccuracyTolerance;
         ApplyThemeSettings(ThemeSettings.Default);
+        ApplyFontSettings(FontSettings.Default);
         themeApplicationService?.Apply(ThemeSettings.Default);
+        fontApplicationService?.Apply(FontSettings.Default);
         ApplyLiveSettings();
         RefreshToolStatuses();
         SettingsLoadFailed = false;
@@ -769,6 +871,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     private ThemeSettings CurrentThemeSettings() => new(selectedThemePresetId);
 
+    private FontSettings CurrentFontSettings() => new(selectedUiFontFamily, selectedMonospaceFontFamily);
+
     private AppSettings CurrentAppSettings() =>
         savedAppSettings with
         {
@@ -801,6 +905,52 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private void ApplyThemeSettings(ThemeSettings settings)
     {
         SetSelectedThemePresetId(ThemePresetCatalog.Resolve(settings.PresetId).Id, apply: false);
+    }
+
+    private void ApplyFontSettings(FontSettings settings)
+    {
+        var resolved = ResolveFontSettings(settings);
+        SetSelectedUiFontFamily(resolved.UiFontFamily, apply: false);
+        SetSelectedMonospaceFontFamily(resolved.MonospaceFontFamily, apply: false);
+    }
+
+    private FontSettings ResolveFontSettings(FontSettings settings) =>
+        fontApplicationService?.Resolve(settings)
+        ?? (fontFamilyCatalog is null ? FontSettings.Normalize(settings) : FontSettingsResolver.Resolve(settings, fontFamilyCatalog));
+
+    private void SetSelectedUiFontFamily(string familyName, bool apply = true)
+    {
+        var resolved = ResolveFontSettings(new FontSettings(familyName, selectedMonospaceFontFamily));
+        if (!SetProperty(ref selectedUiFontFamily, resolved.UiFontFamily, nameof(SelectedUiFontFamily)))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(SelectedUiFontFamilyIndex));
+        OnPropertyChanged(nameof(UiFontPreviewAutomationName));
+        ApplyLiveFontSettings(apply);
+    }
+
+    private void SetSelectedMonospaceFontFamily(string familyName, bool apply = true)
+    {
+        var resolved = ResolveFontSettings(new FontSettings(selectedUiFontFamily, familyName));
+        if (!SetProperty(ref selectedMonospaceFontFamily, resolved.MonospaceFontFamily, nameof(SelectedMonospaceFontFamily)))
+        {
+            return;
+        }
+
+        OnPropertyChanged(nameof(SelectedMonospaceFontFamilyIndex));
+        OnPropertyChanged(nameof(MonospaceFontPreviewAutomationName));
+        ApplyLiveFontSettings(apply);
+    }
+
+    private void ApplyLiveFontSettings(bool apply)
+    {
+        if (apply && liveApplyEnabled && !isApplyingSnapshot)
+        {
+            fontApplicationService?.Apply(CurrentFontSettings());
+            NotifyUnsavedChanges();
+        }
     }
 
     private void SetSelectedThemePresetId(string presetId, bool apply = true)
@@ -838,6 +988,52 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         OnPropertyChanged(nameof(SelectedThemePresetIndex));
         OnPropertyChanged(nameof(ThemePreviewAutomationName));
     }
+
+    private void ReplaceFontFamilies()
+    {
+        var uiSelection = selectedUiFontFamily;
+        var monospaceSelection = selectedMonospaceFontFamily;
+        var families = fontFamilyCatalog?.Families ?? [];
+
+        uiFontFamilies.Clear();
+        uiFontFamilies.Add(new FontFamilyOptionViewModel(
+            string.Empty,
+            () => localizer.GetString("Settings.Appearance.SystemUiFont"),
+            true,
+            FontFamily.Default));
+        monospaceFontFamilies.Clear();
+        monospaceFontFamilies.Add(new FontFamilyOptionViewModel(
+            string.Empty,
+            () => localizer.GetString("Settings.Appearance.SystemMonospaceFont"),
+            true,
+            FontFamily.Parse(AvaloniaFontApplicationService.DefaultMonospaceFontFamily)));
+        var cultureName = localizer.CurrentCultureName;
+        foreach (var family in families)
+        {
+            var option = new FontFamilyOptionViewModel(
+                family.FamilyName,
+                () => family.GetDisplayName(cultureName),
+                false,
+                FontFamily.Parse(family.FamilyName));
+            uiFontFamilies.Add(option);
+            monospaceFontFamilies.Add(option);
+        }
+
+        selectedUiFontFamily = ResolveFontSettings(new FontSettings(uiSelection, monospaceSelection)).UiFontFamily;
+        selectedMonospaceFontFamily = ResolveFontSettings(new FontSettings(uiSelection, monospaceSelection)).MonospaceFontFamily;
+        OnPropertyChanged(nameof(UiFontFamilies));
+        OnPropertyChanged(nameof(MonospaceFontFamilies));
+        OnPropertyChanged(nameof(SelectedUiFontFamily));
+        OnPropertyChanged(nameof(SelectedMonospaceFontFamily));
+        OnPropertyChanged(nameof(SelectedUiFontFamilyIndex));
+        OnPropertyChanged(nameof(SelectedMonospaceFontFamilyIndex));
+        OnPropertyChanged(nameof(FontPreviewText));
+        OnPropertyChanged(nameof(UiFontPreviewAutomationName));
+        OnPropertyChanged(nameof(MonospaceFontPreviewAutomationName));
+    }
+
+    private string FontPreviewAutomationName(string key, string displayName) =>
+        localizer.Format(key, new Dictionary<string, object?> { ["name"] = displayName });
 
     private void ApplyLiveSettings()
     {
@@ -906,6 +1102,23 @@ public sealed record ThemePresetOptionViewModel(
     IReadOnlyList<ThemeSwatchViewModel> PreviewSwatches);
 
 public sealed record ThemeSwatchViewModel(string Color);
+
+public sealed class FontFamilyOptionViewModel(
+    string familyName,
+    Func<string> displayNameFactory,
+    bool isDefault,
+    FontFamily previewFontFamily)
+{
+    private readonly Lazy<string> displayName = new(displayNameFactory, LazyThreadSafetyMode.ExecutionAndPublication);
+
+    public string FamilyName { get; } = familyName;
+
+    public string DisplayName => displayName.Value;
+
+    public bool IsDefault { get; } = isDefault;
+
+    public FontFamily PreviewFontFamily { get; } = previewFontFamily;
+}
 
 public sealed record SettingsToolStatus(
     SettingsToolStatusKind Kind,

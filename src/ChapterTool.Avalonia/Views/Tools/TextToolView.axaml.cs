@@ -87,11 +87,9 @@ public sealed partial class TextToolView : UserControl
             return;
         }
 
-        const string fontFamily = "Menlo, Consolas, monospace";
         const double fontSize = 13;
         const double lineHeight = 19;
 
-        ContentText.FontFamily = FontFamily.Parse(fontFamily);
         ContentText.FontSize = fontSize;
         ContentText.LineHeight = lineHeight;
         ContentText.TextWrapping = TextWrapping.NoWrap;
@@ -120,7 +118,6 @@ public sealed partial class TextToolView : UserControl
 
             var number = new TextBlock
             {
-                FontFamily = FontFamily.Parse(fontFamily),
                 FontSize = fontSize,
                 LineHeight = lineHeight,
                 Height = lineHeight,

@@ -72,6 +72,7 @@ High-signal test files:
   - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs`
 - settings persistence:
   - `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/FontSettingsStoreTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ThemePresetCatalogTests.cs`
 
 Fixtures:
@@ -92,6 +93,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/`
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontApplicationServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
 - CLI
   - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
 - localization
@@ -106,6 +109,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowHeadlessTestHost.cs`
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light/dark presets and verifies the live palette preview, application variant, semantic resources, and existing DataGrid column-header brushes.
+
+Font settings coverage is concentrated in `FontSettingsStoreTests`, `AvaloniaFontFamilyCatalogTests`, `AvaloniaFontApplicationServiceTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
 
 ## Quick Routing
 

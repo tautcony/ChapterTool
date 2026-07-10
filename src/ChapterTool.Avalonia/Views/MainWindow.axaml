@@ -523,11 +523,16 @@
               Grid.Column="1"
               ColumnDefinitions="78,*"
               ColumnSpacing="6.4">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.OrderShift}" />
+          <TextBlock x:Name="OrderShiftLabel"
+                     Grid.Column="0"
+                     Classes="optionLabel"
+                     HorizontalAlignment="Left"
+                     Text="{DynamicResource Main.OrderShift}" />
           <NumericUpDown x:Name="OrderShiftBox"
                          Grid.Column="1"
                          MinWidth="73.6"
                          HorizontalAlignment="Stretch"
+                         FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
                          Minimum="-1000"
                          Maximum="1000"
                          Increment="1"

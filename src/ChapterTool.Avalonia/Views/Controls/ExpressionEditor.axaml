@@ -1,12 +1,18 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:ChapterTool.Avalonia.Views.Controls"
+             xmlns:edit="using:AvaloniaEdit"
              xmlns:transform="clr-namespace:ChapterTool.Core.Transform;assembly=ChapterTool.Core"
              x:Class="ChapterTool.Avalonia.Views.Controls.ExpressionEditor"
              MinHeight="25.6"
              Focusable="True"
              GotFocus="OnWrapperGotFocus"
              PointerPressed="OnPointerPressed">
+  <UserControl.Styles>
+    <Style Selector="edit|TextEditor">
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}" />
+    </Style>
+  </UserControl.Styles>
   <UserControl.Resources>
     <controls:ExpressionCompletionKindBrushConverter x:Key="CompletionKindBrushConverter" />
   </UserControl.Resources>

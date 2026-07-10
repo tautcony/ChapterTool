@@ -60,6 +60,8 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia/Services/AvaloniaFilePickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaSettingsPickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
+- `src/ChapterTool.Avalonia/Services/AvaloniaFontApplicationService.cs`
+- `src/ChapterTool.Avalonia/Services/IFontFamilyCatalog.cs`
 
 ### CLI
 
@@ -142,6 +144,8 @@ Start with:
 - `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
+- `src/ChapterTool.Avalonia/Services/AvaloniaFontApplicationService.cs`
+- `src/ChapterTool.Avalonia/Services/IFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
@@ -149,6 +153,8 @@ Start with:
 Output defaults such as save format, XML language, UTF-8 BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`.
 
 Appearance is preset-only. `SettingsToolViewModel` owns localized preset options, live selection, Save/Reset/Discard state, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset, updates semantic application brushes and the Avalonia light/dark variant, while `App.axaml` owns shared control and `DataGridColumnHeader` semantic styles.
+
+Font appearance is split into independent UI and monospace families. `AvaloniaFontFamilyCatalog` snapshots and canonicalizes system fonts, lazily resolves localized family metadata for the active UI culture, and keeps canonical names for persistence. `AvaloniaFontApplicationService` resolves unavailable choices and updates `ChapterTool.UiFontFamily` and `ChapterTool.MonospaceFontFamily`. `App.axaml` applies the UI family through window inheritance and table headers, while chapter `DataGridCell`, `OrderShiftBox`, `ExpressionEditor`, and `TextToolView` consume the monospace resource so existing surfaces refresh at runtime without changing icon fonts.
 
 ### CLI behavior
 

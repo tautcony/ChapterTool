@@ -31,7 +31,10 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
     private readonly AppLocalizationManager localizationManager = new();
     private readonly AppSettingsStore appSettingsStore;
+    private readonly FontSettingsStore fontSettingsStore;
     private readonly ThemeSettingsStore themeSettingsStore;
+    private readonly AvaloniaFontFamilyCatalog fontFamilyCatalog = new();
+    private readonly AvaloniaFontApplicationService fontApplicationService;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
     private readonly ILoggerFactory loggerFactory;
     private bool disposed;
@@ -41,7 +44,9 @@ public sealed class AppCompositionRoot : IDisposable
         this.startupPath = startupPath;
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         appSettingsStore = new AppSettingsStore(resolvedSettingsDirectory);
+        fontSettingsStore = new FontSettingsStore(resolvedSettingsDirectory);
         themeSettingsStore = new ThemeSettingsStore(resolvedSettingsDirectory);
+        fontApplicationService = new AvaloniaFontApplicationService(fontFamilyCatalog);
         var serilogLogger = CreateSerilogLogger(resolvedSettingsDirectory);
         loggerFactory = LoggerFactory.Create(builder =>
         {
@@ -53,7 +58,9 @@ public sealed class AppCompositionRoot : IDisposable
         // Settings are loaded asynchronously from MainWindow.Opened. Blocking here can deadlock
         // macOS single-file startup before Avalonia has shown the first window.
         themeApplicationService.Apply(ThemeSettings.Default);
+        fontApplicationService.Apply(FontSettings.Default);
         _ = ApplyThemeSettingsAsync();
+        _ = ApplyFontSettingsAsync();
     }
 
     public MainWindow CreateMainWindow()
@@ -113,7 +120,10 @@ public sealed class AppCompositionRoot : IDisposable
             owner => new AvaloniaSettingsPickerService(owner, localizationManager),
             CreateExternalToolLocator(),
             new AvaloniaSettingsCloseConfirmationService(localizationManager),
-            shellService: CreateShellService());
+            shellService: CreateShellService(),
+            fontSettingsStore: fontSettingsStore,
+            fontFamilyCatalog: fontFamilyCatalog,
+            fontApplicationService: fontApplicationService);
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 
@@ -147,6 +157,27 @@ public sealed class AppCompositionRoot : IDisposable
         catch (CorruptSettingsFileException)
         {
             themeApplicationService.Apply(ThemeSettings.Default);
+        }
+    }
+
+    private async Task ApplyFontSettingsAsync()
+    {
+        try
+        {
+            var settings = await fontSettingsStore.LoadAsync(CancellationToken.None);
+            fontApplicationService.Apply(settings);
+        }
+        catch (IOException)
+        {
+            fontApplicationService.Apply(FontSettings.Default);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            fontApplicationService.Apply(FontSettings.Default);
+        }
+        catch (CorruptSettingsFileException)
+        {
+            fontApplicationService.Apply(FontSettings.Default);
         }
     }
 

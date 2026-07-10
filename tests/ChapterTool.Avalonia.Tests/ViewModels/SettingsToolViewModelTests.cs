@@ -572,11 +572,149 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("picked-executable", viewModel.FfprobePath);
     }
 
+    [Fact]
+    public async Task Font_selections_apply_independently_save_reset_and_discard()
+    {
+        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
+        var fontStore = new FakeFontSettingsStore(new FontSettings("UI One", "Mono One"));
+        var catalog = new AvaloniaFontFamilyCatalog(["UI One", "UI Two", "Mono One", "Mono Two"]);
+        var application = new FakeFontApplicationService(catalog);
+        var viewModel = CreateViewModel(
+            CreateOwner(appStore),
+            appStore,
+            new FakeThemeSettingsStore(ThemeSettings.Default),
+            new AppLocalizationManager("en-US"),
+            fontSettingsStore: fontStore,
+            fontFamilyCatalog: catalog,
+            fontApplicationService: application);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        SelectUiFont(viewModel, "UI Two");
+        Assert.Equal(new FontSettings("UI Two", "Mono One"), application.LastApplied);
+        Assert.Equal(new FontSettings("UI One", "Mono One"), fontStore.Current);
+        Assert.True(viewModel.HasUnsavedChanges);
+
+        SelectMonospaceFont(viewModel, "Mono Two");
+        await viewModel.SaveCommand.ExecuteAsync();
+        Assert.Equal(new FontSettings("UI Two", "Mono Two"), fontStore.Current);
+        Assert.False(viewModel.HasUnsavedChanges);
+
+        viewModel.SelectedUiFontFamilyIndex = 0;
+        viewModel.SelectedMonospaceFontFamilyIndex = 0;
+        viewModel.DiscardUnsavedAppearanceChanges();
+        Assert.Equal("UI Two", viewModel.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("Mono Two", viewModel.SelectedMonospaceFontFamily.FamilyName);
+        Assert.False(viewModel.HasUnsavedChanges);
+
+        await viewModel.ResetCommand.ExecuteAsync();
+        Assert.True(viewModel.SelectedUiFontFamily.IsDefault);
+        Assert.True(viewModel.SelectedMonospaceFontFamily.IsDefault);
+        Assert.Equal(new FontSettings("UI Two", "Mono Two"), fontStore.Current);
+        Assert.True(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task Unavailable_saved_fonts_fall_back_without_write_or_dirty_state()
+    {
+        var fontStore = new FakeFontSettingsStore(new FontSettings("Missing UI", "Mono One"));
+        var catalog = new AvaloniaFontFamilyCatalog(["UI One", "Mono One"]);
+        var application = new FakeFontApplicationService(catalog);
+        var viewModel = CreateViewModel(
+            CreateOwner(),
+            null,
+            null,
+            new AppLocalizationManager("en-US"),
+            fontSettingsStore: fontStore,
+            fontFamilyCatalog: catalog,
+            fontApplicationService: application);
+
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(viewModel.SelectedUiFontFamily.IsDefault);
+        Assert.Equal("Mono One", viewModel.SelectedMonospaceFontFamily.FamilyName);
+        Assert.Equal(new FontSettings("Missing UI", "Mono One"), fontStore.Current);
+        Assert.Equal(0, fontStore.Saves);
+        Assert.False(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task Font_default_labels_refresh_without_changing_canonical_selections()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var catalog = new AvaloniaFontFamilyCatalog(["UI One", "Mono One"]);
+        var viewModel = CreateViewModel(
+            CreateOwner(localizer: localizer),
+            null,
+            null,
+            localizer,
+            fontFamilyCatalog: catalog,
+            fontApplicationService: new FakeFontApplicationService(catalog));
+
+        SelectUiFont(viewModel, "UI One");
+        SelectMonospaceFont(viewModel, "Mono One");
+        Assert.Equal("System default", viewModel.UiFontFamilies[0].DisplayName);
+
+        localizer.SetCulture("zh-CN");
+
+        Assert.Equal("UI One", viewModel.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("Mono One", viewModel.SelectedMonospaceFontFamily.FamilyName);
+        Assert.Equal("系统默认", viewModel.UiFontFamilies[0].DisplayName);
+        Assert.Contains("界面字体预览", viewModel.UiFontPreviewAutomationName, StringComparison.Ordinal);
+        Assert.Contains("章节字幕", viewModel.FontPreviewText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Localized_font_family_names_follow_language_without_changing_canonical_identity()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var catalog = AvaloniaFontFamilyCatalog.FromEntries(
+        [
+            new FontFamilyCatalogEntry(
+                "Canonical Family",
+                new Dictionary<string, string>
+                {
+                    ["zh-CN"] = "简体字体名",
+                    ["ja-JP"] = "日本語フォント名"
+                })
+        ]);
+        var viewModel = CreateViewModel(
+            CreateOwner(localizer: localizer),
+            null,
+            null,
+            localizer,
+            fontFamilyCatalog: catalog,
+            fontApplicationService: new FakeFontApplicationService(catalog));
+        SelectUiFont(viewModel, "Canonical Family");
+
+        Assert.Equal("Canonical Family", viewModel.SelectedUiFontFamily.DisplayName);
+        localizer.SetCulture("zh-CN");
+        Assert.Equal("Canonical Family", viewModel.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("简体字体名", viewModel.SelectedUiFontFamily.DisplayName);
+
+        localizer.SetCulture("ja-JP");
+        Assert.Equal("Canonical Family", viewModel.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("日本語フォント名", viewModel.SelectedUiFontFamily.DisplayName);
+    }
+
     private static void SelectPreset(SettingsToolViewModel viewModel, string presetId)
     {
         var index = viewModel.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
         Assert.True(index >= 0, $"Preset not found: {presetId}");
         viewModel.SelectedThemePresetIndex = index;
+    }
+
+    private static void SelectUiFont(SettingsToolViewModel viewModel, string familyName)
+    {
+        var index = viewModel.UiFontFamilies.ToList().FindIndex(option => option.FamilyName == familyName);
+        Assert.True(index >= 0, $"UI font not found: {familyName}");
+        viewModel.SelectedUiFontFamilyIndex = index;
+    }
+
+    private static void SelectMonospaceFont(SettingsToolViewModel viewModel, string familyName)
+    {
+        var index = viewModel.MonospaceFontFamilies.ToList().FindIndex(option => option.FamilyName == familyName);
+        Assert.True(index >= 0, $"Monospace font not found: {familyName}");
+        viewModel.SelectedMonospaceFontFamilyIndex = index;
     }
 
     private static SettingsToolViewModel CreateViewModel(
@@ -586,7 +724,10 @@ public sealed class SettingsToolViewModelTests
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
-        IThemeApplicationService? themeApplicationService = null) =>
+        IThemeApplicationService? themeApplicationService = null,
+        ISettingsStore<FontSettings>? fontSettingsStore = null,
+        IFontFamilyCatalog? fontFamilyCatalog = null,
+        IFontApplicationService? fontApplicationService = null) =>
         new(
             owner,
             appSettingsStore,
@@ -595,6 +736,9 @@ public sealed class SettingsToolViewModelTests
             picker,
             externalToolLocator,
             themeApplicationService,
+            fontSettingsStore: fontSettingsStore,
+            fontFamilyCatalog: fontFamilyCatalog,
+            fontApplicationService: fontApplicationService,
             autoLoad: false);
 
     private static MainWindowViewModel CreateOwner(
@@ -642,6 +786,21 @@ public sealed class SettingsToolViewModelTests
         }
     }
 
+    private sealed class FakeFontSettingsStore(FontSettings initial) : ISettingsStore<FontSettings>
+    {
+        public FontSettings Current { get; private set; } = initial;
+        public int Saves { get; private set; }
+
+        public ValueTask<FontSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
+
+        public ValueTask SaveAsync(FontSettings settings, CancellationToken cancellationToken)
+        {
+            Current = settings;
+            Saves++;
+            return ValueTask.CompletedTask;
+        }
+    }
+
     private sealed class ThrowingAppSettingsStore : ISettingsStore<AppSettings>
     {
         public ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken) =>
@@ -663,6 +822,15 @@ public sealed class SettingsToolViewModelTests
         public ThemeSettings? LastApplied { get; private set; }
 
         public void Apply(ThemeSettings settings) => LastApplied = settings;
+    }
+
+    private sealed class FakeFontApplicationService(IFontFamilyCatalog catalog) : IFontApplicationService
+    {
+        public FontSettings? LastApplied { get; private set; }
+
+        public FontSettings Resolve(FontSettings settings) => FontSettingsResolver.Resolve(settings, catalog);
+
+        public void Apply(FontSettings settings) => LastApplied = Resolve(settings);
     }
 
     private sealed class FakeSettingsPicker(string directory, string executable) : ISettingsPickerService

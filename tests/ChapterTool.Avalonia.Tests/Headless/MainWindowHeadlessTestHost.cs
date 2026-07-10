@@ -26,7 +26,8 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         AppLocalizationManager? localizer = null,
         AppSettings? appSettings = null,
         ThemeSettings? themeSettings = null,
-        IShellService? shellService = null)
+        IShellService? shellService = null,
+        FontSettings? fontSettings = null)
         : this(
             loadResult is null
                 ? [ImportResult("movie.txt", Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro"))]
@@ -34,7 +35,8 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             localizer,
             appSettings,
             themeSettings,
-            shellService)
+            shellService,
+            fontSettings)
     {
     }
 
@@ -43,7 +45,8 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         AppLocalizationManager? localizer = null,
         AppSettings? appSettings = null,
         ThemeSettings? themeSettings = null,
-        IShellService? shellService = null)
+        IShellService? shellService = null,
+        FontSettings? fontSettings = null)
     {
         Localizer = localizer ?? new AppLocalizationManager("en-US");
         LoadService = new FakeLoadService(loadResults.Count == 0
@@ -55,6 +58,9 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         SettingsPickerService = new FakeSettingsPickerService();
         AppSettingsStore = new FakeSettingsStore<AppSettings>(appSettings ?? new AppSettings(Language: "en-US"));
         ThemeSettingsStore = new FakeSettingsStore<ThemeSettings>(themeSettings ?? ThemeSettings.Default);
+        FontSettingsStore = new FakeSettingsStore<FontSettings>(fontSettings ?? FontSettings.Default);
+        FontFamilyCatalog = new AvaloniaFontFamilyCatalog(["ChapterTool UI Test", "ChapterTool Mono Test"]);
+        FontApplicationService = new AvaloniaFontApplicationService(FontFamilyCatalog);
         ShellService = shellService ?? new FakeShellService();
         logService = new ApplicationLogPanelProvider();
         ViewModel = new MainWindowViewModel(
@@ -92,6 +98,12 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public FakeSettingsStore<AppSettings> AppSettingsStore { get; }
 
     public FakeSettingsStore<ThemeSettings> ThemeSettingsStore { get; }
+
+    public FakeSettingsStore<FontSettings> FontSettingsStore { get; }
+
+    public IFontFamilyCatalog FontFamilyCatalog { get; }
+
+    public IFontApplicationService FontApplicationService { get; }
 
     public IShellService ShellService { get; }
 

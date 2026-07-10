@@ -31,7 +31,7 @@
     </Style>
     <Style Selector="TextBlock.repoAddress">
       <Setter Property="TextWrapping" Value="Wrap" />
-      <Setter Property="FontFamily" Value="Consolas, Menlo, Monaco, monospace" />
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}" />
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AccentBrush}" />
     </Style>
     <Style Selector="Button.linkButton">
@@ -63,6 +63,15 @@
     <Style Selector="Border.themeSwatch">
       <Setter Property="Width" Value="34" />
       <Setter Property="Height" Value="34" />
+      <Setter Property="Margin" Value="0,0,4,4" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Border.fontPreview">
+      <Setter Property="MinHeight" Value="44" />
+      <Setter Property="MaxWidth" Value="440" />
+      <Setter Property="Padding" Value="10,8" />
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
@@ -248,7 +257,7 @@
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="4,12,12,4">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.Appearance}" />
-            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.Preset}" />
               <ComboBox x:Name="ThemePresetCombo"
                         Grid.Row="0"
@@ -277,7 +286,7 @@
                             AutomationProperties.Name="{Binding ThemePreviewAutomationName}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal" Spacing="4" />
+                    <WrapPanel Orientation="Horizontal" />
                   </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
@@ -286,6 +295,78 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
+
+              <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.UiFont}" />
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6" MaxWidth="440" HorizontalAlignment="Left">
+                <ComboBox x:Name="UiFontFamilyCombo"
+                          MinWidth="240"
+                          HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding UiFontFamilies}"
+                          SelectedIndex="{Binding SelectedUiFontFamilyIndex}">
+                  <ComboBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                  </ComboBox.ItemsPanel>
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FontFamilyOptionViewModel">
+                      <TextBlock Text="{Binding DisplayName}"
+                                 FontFamily="{Binding PreviewFontFamily}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                  <ComboBox.SelectionBoxItemTemplate>
+                    <DataTemplate x:DataType="vm:FontFamilyOptionViewModel">
+                      <TextBlock Text="{Binding DisplayName}"
+                                 FontFamily="{Binding PreviewFontFamily}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ComboBox.SelectionBoxItemTemplate>
+                </ComboBox>
+                <Border x:Name="UiFontPreview"
+                        Classes="fontPreview"
+                        AutomationProperties.Name="{Binding UiFontPreviewAutomationName}">
+                  <TextBlock FontFamily="{DynamicResource ChapterTool.UiFontFamily}"
+                             Text="{Binding FontPreviewText}"
+                             TextTrimming="CharacterEllipsis" />
+                </Border>
+              </StackPanel>
+
+              <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.MonospaceFont}" />
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6" MaxWidth="440" HorizontalAlignment="Left">
+                <ComboBox x:Name="MonospaceFontFamilyCombo"
+                          MinWidth="240"
+                          HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding MonospaceFontFamilies}"
+                          SelectedIndex="{Binding SelectedMonospaceFontFamilyIndex}">
+                  <ComboBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                  </ComboBox.ItemsPanel>
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FontFamilyOptionViewModel">
+                      <TextBlock Text="{Binding DisplayName}"
+                                 FontFamily="{Binding PreviewFontFamily}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                  <ComboBox.SelectionBoxItemTemplate>
+                    <DataTemplate x:DataType="vm:FontFamilyOptionViewModel">
+                      <TextBlock Text="{Binding DisplayName}"
+                                 FontFamily="{Binding PreviewFontFamily}"
+                                 TextTrimming="CharacterEllipsis" />
+                    </DataTemplate>
+                  </ComboBox.SelectionBoxItemTemplate>
+                </ComboBox>
+                <Border x:Name="MonospaceFontPreview"
+                        Classes="fontPreview"
+                        AutomationProperties.Name="{Binding MonospaceFontPreviewAutomationName}">
+                  <TextBlock FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
+                             Text="{Binding FontPreviewText}"
+                             TextTrimming="CharacterEllipsis" />
+                </Border>
+              </StackPanel>
             </Grid>
           </StackPanel>
         </ScrollViewer>

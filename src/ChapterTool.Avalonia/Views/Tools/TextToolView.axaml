@@ -6,6 +6,9 @@
              x:DataType="vm:TextToolViewModel"
              x:CompileBindings="True">
   <UserControl.Styles>
+    <Style Selector="StackPanel#LineNumbersHost > TextBlock">
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}" />
+    </Style>
     <Style Selector="Button">
       <Setter Property="CornerRadius" Value="2" />
       <Setter Property="BorderThickness" Value="1" />
@@ -83,7 +86,8 @@
                       MinWidth="0" />
           <SelectableTextBlock x:Name="ContentText"
                                Grid.Column="1"
-                               MinWidth="0" />
+                               MinWidth="0"
+                               FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}" />
         </Grid>
       </ScrollViewer>
     </Border>

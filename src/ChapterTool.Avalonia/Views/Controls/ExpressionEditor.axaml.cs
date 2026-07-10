@@ -94,7 +94,6 @@ public sealed partial class ExpressionEditor : UserControl
         {
             ShowLineNumbers = false,
             WordWrap = false,
-            FontFamily = FontFamily.Parse("Menlo, Consolas, monospace"),
             FontSize = 13,
             Background = Brushes.Transparent,
             Foreground = Brush("#24292f"),

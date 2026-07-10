@@ -602,6 +602,13 @@
 <data name="Settings.Appearance.Preset" xml:space="preserve"><value>Theme preset</value></data>
 <data name="Settings.Appearance.Preview" xml:space="preserve"><value>Palette preview</value></data>
 <data name="Settings.Appearance.PreviewFor" xml:space="preserve"><value>Palette preview for {name}</value></data>
+<data name="Settings.Appearance.UiFont" xml:space="preserve"><value>UI font</value></data>
+<data name="Settings.Appearance.MonospaceFont" xml:space="preserve"><value>Monospace font</value></data>
+<data name="Settings.Appearance.SystemUiFont" xml:space="preserve"><value>System default</value></data>
+<data name="Settings.Appearance.SystemMonospaceFont" xml:space="preserve"><value>System monospace default</value></data>
+<data name="Settings.Appearance.FontPreviewSample" xml:space="preserve"><value>Aa Chapters 0123456789 !? [] {}</value></data>
+<data name="Settings.Appearance.UiFontPreviewFor" xml:space="preserve"><value>UI font preview for {name}</value></data>
+<data name="Settings.Appearance.MonospaceFontPreviewFor" xml:space="preserve"><value>Monospace font preview for {name}</value></data>
 <data name="Settings.Appearance.Preset.avalonia-default" xml:space="preserve"><value>Avalonia Default</value></data>
 <data name="Settings.Appearance.Preset.solarized-light" xml:space="preserve"><value>Solarized Light</value></data>
 <data name="Settings.Appearance.Preset.solarized-dark" xml:space="preserve"><value>Solarized Dark</value></data>

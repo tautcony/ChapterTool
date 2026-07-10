@@ -3,6 +3,8 @@
              x:Class="ChapterTool.Avalonia.App"
              RequestedThemeVariant="Light">
   <Application.Resources>
+    <FontFamily x:Key="ChapterTool.UiFontFamily">sans-serif</FontFamily>
+    <FontFamily x:Key="ChapterTool.MonospaceFontFamily">Menlo, Consolas, monospace</FontFamily>
     <SolidColorBrush x:Key="ChapterTool.WindowBackgroundBrush" Color="#F0F0F0" />
     <SolidColorBrush x:Key="ChapterTool.PanelBackgroundBrush" Color="#F7F7F7" />
     <SolidColorBrush x:Key="ChapterTool.ControlBackgroundBrush" Color="#FFFFFF" />
@@ -25,6 +27,7 @@
     <Style Selector="Window">
       <Setter Property="Background" Value="{DynamicResource ChapterTool.WindowBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.UiFontFamily}" />
     </Style>
     <Style Selector="TextBox, ComboBox, NumericUpDown">
       <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
@@ -44,6 +47,10 @@
     </Style>
     <Style Selector="ComboBoxItem, MenuItem, CheckBox, RadioButton, TabItem">
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.UiFontFamily}" />
+    </Style>
+    <Style Selector="ToolTip">
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.UiFontFamily}" />
     </Style>
     <Style Selector="DataGrid">
       <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
@@ -70,6 +77,7 @@
       <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}" />
     </Style>
     <Style Selector="DataGridRow:pointerover DataGridCell">
       <Setter Property="Background" Value="{DynamicResource ChapterTool.HoverBackgroundBrush}" />
