@@ -287,21 +287,24 @@
                     Grid.Row="1"
                     Width="152"
                     HorizontalAlignment="Right"
+                    ItemsSource="{Binding FrameRateDisplayOptions}"
                     SelectedIndex="{Binding SelectedFrameRateIndex}"
                     SelectionChanged="OnFrameOptionsChanged">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+            <ComboBox.SelectionBoxItemTemplate>
+              <DataTemplate x:DataType="vm:SelectorDisplayOption">
+                <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
+              </DataTemplate>
+            </ComboBox.SelectionBoxItemTemplate>
             <ComboBox.ContextMenu>
               <ContextMenu>
                 <MenuItem Header="{DynamicResource Main.ChangeFps}" Command="{Binding ChangeFpsCommand}" />
               </ContextMenu>
             </ComboBox.ContextMenu>
-            <ComboBoxItem Content="{DynamicResource Main.AutoFrameRate}" />
-            <ComboBoxItem Content="24000 / 1001" />
-            <ComboBoxItem Content="24000 / 1000" />
-            <ComboBoxItem Content="25000 / 1000" />
-            <ComboBoxItem Content="30000 / 1001" />
-            <ComboBoxItem Content="RESER / VED" />
-            <ComboBoxItem Content="50000 / 1000" />
-            <ComboBoxItem Content="60000 / 1001" />
           </ComboBox>
         </Grid>
       </Grid>

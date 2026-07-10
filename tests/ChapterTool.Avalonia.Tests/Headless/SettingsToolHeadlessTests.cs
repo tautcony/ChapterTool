@@ -105,6 +105,54 @@ public sealed class SettingsToolHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Settings_footer_opens_the_configured_settings_folder_from_the_leftmost_button()
+    {
+        var shellService = new MainWindowHeadlessTestHost.FakeShellService();
+        using var host = new MainWindowHeadlessTestHost(shellService: shellService);
+        var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool-settings-folder-test");
+        var viewModel = new SettingsToolViewModel(
+            host.ViewModel,
+            host.AppSettingsStore,
+            host.ThemeSettingsStore,
+            host.Localizer,
+            shellService: shellService,
+            settingsDirectory: settingsDirectory,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 760,
+            Height = 520
+        };
+
+        try
+        {
+            window.Show();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            var openFolderButton = window.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => button.Name == "OpenSettingsFolderButton");
+            var resetButton = window.GetVisualDescendants()
+                .OfType<Button>()
+                .Single(button => ReferenceEquals(button.Command, viewModel.ResetCommand));
+
+            Assert.Equal("Open settings folder", AutomationProperties.GetName(openFolderButton));
+            Assert.True(Left(openFolderButton, window) < Left(resetButton, window));
+            Assert.InRange(Math.Abs(Top(resetButton, window) - Top(openFolderButton, window)), 0, 4);
+
+            openFolderButton.Command!.Execute(openFolderButton.CommandParameter);
+            Dispatcher.UIThread.RunJobs();
+
+            Assert.Equal(settingsDirectory, Assert.Single(shellService.Opened));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Preset_selection_updates_preview_runtime_theme_and_existing_grid_headers()
     {
         using var host = new MainWindowHeadlessTestHost();
@@ -335,6 +383,10 @@ public sealed class SettingsToolHeadlessTests
 
     private static double Left(Control control, Window window) =>
         control.TranslatePoint(default, window)?.X
+        ?? throw new InvalidOperationException($"Could not translate {control.Name} bounds.");
+
+    private static double Top(Control control, Window window) =>
+        control.TranslatePoint(default, window)?.Y
         ?? throw new InvalidOperationException($"Could not translate {control.Name} bounds.");
 
     private static Color BrushColor(IBrush? brush) => Assert.IsType<SolidColorBrush>(brush).Color;

@@ -32,6 +32,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private readonly IFontFamilyCatalog? fontFamilyCatalog;
     private readonly IFontApplicationService? fontApplicationService;
     private readonly IShellService? shellService;
+    private readonly string? settingsDirectory;
     private readonly EventHandler cultureChangedHandler;
     private AppSettings savedAppSettings = new();
     private ThemeSettings savedThemeSettings = ThemeSettings.Default;
@@ -61,6 +62,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ISettingsStore<FontSettings>? fontSettingsStore = null,
         IFontFamilyCatalog? fontFamilyCatalog = null,
         IFontApplicationService? fontApplicationService = null,
+        string? settingsDirectory = null,
         bool autoLoad = true)
     {
         this.owner = owner;
@@ -74,6 +76,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         this.fontSettingsStore = fontSettingsStore;
         this.fontFamilyCatalog = fontFamilyCatalog;
         this.fontApplicationService = fontApplicationService;
+        this.settingsDirectory = settingsDirectory;
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Count - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
@@ -104,6 +107,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ClearFfprobeCommand = ClearCommand(() => FfprobePath = null);
         ClearFfmpegCommand = ClearCommand(() => FfmpegPath = null);
         OpenRepositoryCommand = new UiCommand(async (_, token) => await OpenRepositoryAsync(token), _ => shellService is not null);
+        OpenSettingsFolderCommand = new UiCommand(
+            async (_, token) => await OpenSettingsFolderAsync(token),
+            _ => shellService is not null && !string.IsNullOrWhiteSpace(settingsDirectory));
         cultureChangedHandler = (_, _) =>
         {
             RefreshLanguages();
@@ -457,6 +463,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     public UiCommand OpenRepositoryCommand { get; }
 
+    public UiCommand OpenSettingsFolderCommand { get; }
+
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
         SettingsLoadFailed = false;
@@ -705,6 +713,14 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         if (shellService is not null)
         {
             await shellService.OpenAsync("https://github.com/tautcony/ChapterTool", cancellationToken);
+        }
+    }
+
+    private async ValueTask OpenSettingsFolderAsync(CancellationToken cancellationToken)
+    {
+        if (shellService is not null && !string.IsNullOrWhiteSpace(settingsDirectory))
+        {
+            await shellService.OpenAsync(settingsDirectory, cancellationToken);
         }
     }
 

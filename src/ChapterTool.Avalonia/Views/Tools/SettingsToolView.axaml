@@ -395,10 +395,18 @@
 
     </TabControl>
 
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-      <TextBlock Grid.Column="0" Classes="status" VerticalAlignment="Center" Text="{Binding StatusText}" />
-      <Button Grid.Column="1" Content="{DynamicResource Settings.ResetDefaults}" Command="{Binding ResetCommand}" />
-      <Button Grid.Column="2" Content="{DynamicResource Common.Save}" Command="{Binding SaveCommand}" />
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+      <Button x:Name="OpenSettingsFolderButton"
+              Grid.Column="0"
+              Classes="compact"
+              Command="{Binding OpenSettingsFolderCommand}"
+              AutomationProperties.Name="{DynamicResource Settings.OpenSettingsFolder}"
+              ToolTip.Tip="{DynamicResource Settings.OpenSettingsFolder}">
+        <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
+      </Button>
+      <TextBlock Grid.Column="1" Classes="status" VerticalAlignment="Center" Text="{Binding StatusText}" />
+      <Button Grid.Column="2" Content="{DynamicResource Settings.ResetDefaults}" Command="{Binding ResetCommand}" />
+      <Button Grid.Column="3" Content="{DynamicResource Common.Save}" Command="{Binding SaveCommand}" />
     </Grid>
   </Grid>
 </UserControl>
