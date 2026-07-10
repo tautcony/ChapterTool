@@ -12,8 +12,8 @@
       <Setter Property="Padding" Value="12,6" />
       <Setter Property="MinHeight" Value="32" />
       <Setter Property="MinWidth" Value="82" />
-      <Setter Property="Background" Value="#ffffff" />
-      <Setter Property="BorderBrush" Value="#0a84ff" />
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AccentBrush}" />
       <Setter Property="HorizontalContentAlignment" Value="Center" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
     </Style>
@@ -35,7 +35,7 @@
                   IsVisible="{Binding CanSelectFormat}" />
         <TextBlock VerticalAlignment="Center"
                    FontSize="13"
-                   Foreground="#5f6b7a"
+                   Foreground="{DynamicResource ChapterTool.MutedForegroundBrush}"
                    Text="{Binding Kind}" />
       </StackPanel>
       <StackPanel DockPanel.Dock="Right"
@@ -66,8 +66,8 @@
     </DockPanel>
 
     <Border Grid.Row="1"
-            Background="#ffffff"
-            BorderBrush="#c7ccd1"
+            Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
+            BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
             BorderThickness="1"
             CornerRadius="2"
             MinWidth="0"

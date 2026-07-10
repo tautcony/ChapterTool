@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
@@ -30,7 +29,7 @@ public sealed class SettingsToolViewModelTests
             DefaultXmlLanguage: "ja",
             EmitBom: true,
             FrameAccuracyTolerance: 0.02m));
-        var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default);
+        var themeStore = new FakeThemeSettingsStore(ThemeSettings.Default);
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(owner, appStore, themeStore, new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -45,7 +44,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         viewModel.EmitBom = false;
         viewModel.FrameAccuracyTolerance = 0.2m;
-        viewModel.ColorSlots[0].Value = "#010203";
+        SelectPreset(viewModel, "solarized-dark");
 
         await viewModel.SaveCommand.ExecuteAsync();
 
@@ -65,7 +64,7 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal(0.2m, owner.FrameAccuracyTolerance);
         Assert.Equal("new-out", owner.SaveDirectory);
         Assert.Equal("ja-JP", owner.UiLanguage);
-        Assert.Equal("#010203", themeStore.Current.BackChange);
+        Assert.Equal("solarized-dark", themeStore.Current.PresetId);
         Assert.False(viewModel.HasUnsavedChanges);
     }
 
@@ -85,8 +84,8 @@ public sealed class SettingsToolViewModelTests
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
-        Assert.Equal(ThemeColorSettings.Default.BackChange, viewModel.ColorSlots[0].Value);
-        Assert.Equal(ThemeColorSettings.Default.BackChange, themeApplication.LastApplied?.BackChange);
+        Assert.Equal(ThemePresetCatalog.DefaultPresetId, viewModel.SelectedThemePreset.Id);
+        Assert.Equal(ThemePresetCatalog.DefaultPresetId, themeApplication.LastApplied?.PresetId);
         Assert.True(viewModel.SettingsLoadFailed);
         Assert.Contains("defaults", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
         Assert.False(viewModel.HasUnsavedChanges);
@@ -103,7 +102,7 @@ public sealed class SettingsToolViewModelTests
             EmitBom: true,
             FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -129,7 +128,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US", SavingPath: "saved"));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -152,7 +151,7 @@ public sealed class SettingsToolViewModelTests
             DefaultSaveFormat: "Txt",
             DefaultXmlLanguage: "und",
             FrameAccuracyTolerance: 0.10m));
-        var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
+        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("solarized-light"));
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -167,7 +166,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.SaveDirectory = "live";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.FrameAccuracyTolerance = 0.20m;
-        viewModel.ColorSlots[0].Value = "#123456";
+        SelectPreset(viewModel, "ayu-dark");
 
         viewModel.DiscardUnsavedChanges();
 
@@ -176,9 +175,9 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
         Assert.Equal("und", owner.XmlLanguage);
         Assert.Equal(0.10m, owner.FrameAccuracyTolerance);
-        Assert.Equal("#010203", themeApplication.LastApplied?.BackChange);
+        Assert.Equal("solarized-light", themeApplication.LastApplied?.PresetId);
         Assert.Equal("en-US", appStore.Current.Language);
-        Assert.Equal("#010203", themeStore.Current.BackChange);
+        Assert.Equal("solarized-light", themeStore.Current.PresetId);
         Assert.False(viewModel.HasUnsavedChanges);
     }
 
@@ -187,7 +186,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: -1m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0.15m, viewModel.FrameAccuracyTolerance);
@@ -204,7 +203,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.FrameAccuracyToleranceSliderValue = 0.173;
@@ -223,7 +222,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.15m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.FrameAccuracyToleranceSliderValue = 0.141;
@@ -242,7 +241,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var sliderNotifications = 0;
         viewModel.PropertyChanged += (_, args) =>
@@ -337,25 +336,10 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
-    public void ColorSlotSynchronizesColorAndHexValue()
-    {
-        var slot = new ColorSlotViewModel("BackChange", "#010203")
-        {
-            Color = Color.FromRgb(10, 11, 12)
-        };
-
-        Assert.Equal("#0A0B0C", slot.Value);
-
-        slot.Value = "#112233";
-
-        Assert.Equal(Color.FromRgb(17, 34, 51), slot.Color);
-    }
-
-    [Fact]
     public async Task AppearanceChangesApplyThemeImmediately()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings());
-        var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default);
+        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
+        var themeStore = new FakeThemeSettingsStore(ThemeSettings.Default);
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -366,17 +350,18 @@ public sealed class SettingsToolViewModelTests
             themeApplicationService: themeApplication);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
-        viewModel.ColorSlots[0].Value = "#123456";
+        SelectPreset(viewModel, "gruvbox-dark");
 
-        Assert.Equal("#123456", themeApplication.LastApplied?.BackChange);
+        Assert.Equal("gruvbox-dark", themeApplication.LastApplied?.PresetId);
+        Assert.Equal(ThemeSettings.Default, themeStore.Current);
         Assert.True(viewModel.HasUnsavedChanges);
     }
 
     [Fact]
     public async Task DiscardUnsavedAppearanceChangesRestoresLoadedTheme()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings());
-        var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
+        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
+        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("solarized-light"));
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -387,12 +372,12 @@ public sealed class SettingsToolViewModelTests
             themeApplicationService: themeApplication);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
-        viewModel.ColorSlots[0].Value = "#123456";
+        SelectPreset(viewModel, "ayu-dark");
         viewModel.DiscardUnsavedAppearanceChanges();
 
-        Assert.Equal("#010203", viewModel.ColorSlots[0].Value);
-        Assert.Equal("#010203", themeApplication.LastApplied?.BackChange);
-        Assert.Equal("#010203", themeStore.Current.BackChange);
+        Assert.Equal("solarized-light", viewModel.SelectedThemePreset.Id);
+        Assert.Equal("solarized-light", themeApplication.LastApplied?.PresetId);
+        Assert.Equal("solarized-light", themeStore.Current.PresetId);
         Assert.False(viewModel.HasUnsavedChanges);
     }
 
@@ -400,7 +385,7 @@ public sealed class SettingsToolViewModelTests
     public async Task DiscardAfterSaveKeepsSavedAppearanceChanges()
     {
         var appStore = new FakeAppSettingsStore(new AppSettings());
-        var themeStore = new FakeThemeSettingsStore(ThemeColorSettings.Default with { BackChange = "#010203" });
+        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("solarized-light"));
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -411,13 +396,59 @@ public sealed class SettingsToolViewModelTests
             themeApplicationService: themeApplication);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
-        viewModel.ColorSlots[0].Value = "#123456";
+        SelectPreset(viewModel, "ayu-dark");
         await viewModel.SaveCommand.ExecuteAsync();
         viewModel.DiscardUnsavedAppearanceChanges();
 
-        Assert.Equal("#123456", viewModel.ColorSlots[0].Value);
-        Assert.Equal("#123456", themeApplication.LastApplied?.BackChange);
-        Assert.Equal("#123456", themeStore.Current.BackChange);
+        Assert.Equal("ayu-dark", viewModel.SelectedThemePreset.Id);
+        Assert.Equal("ayu-dark", themeApplication.LastApplied?.PresetId);
+        Assert.Equal("ayu-dark", themeStore.Current.PresetId);
+    }
+
+    [Fact]
+    public async Task ResetSelectsDefaultPresetWithoutPersistingIt()
+    {
+        var appStore = new FakeAppSettingsStore(new AppSettings());
+        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("ayu-dark"));
+        var themeApplication = new FakeThemeApplicationService();
+        var viewModel = CreateViewModel(
+            CreateOwner(appStore),
+            appStore,
+            themeStore,
+            new AppLocalizationManager("en-US"),
+            themeApplicationService: themeApplication);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        await viewModel.ResetCommand.ExecuteAsync();
+
+        Assert.Equal(ThemePresetCatalog.DefaultPresetId, viewModel.SelectedThemePreset.Id);
+        Assert.Equal(ThemePresetCatalog.DefaultPresetId, themeApplication.LastApplied?.PresetId);
+        Assert.Equal("ayu-dark", themeStore.Current.PresetId);
+        Assert.True(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task PresetDisplayNamesRefreshWithoutChangingStableSelection()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
+        var viewModel = CreateViewModel(
+            CreateOwner(appStore, localizer),
+            appStore,
+            new FakeThemeSettingsStore(ThemeSettings.Default),
+            localizer);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        SelectPreset(viewModel, "ayu-mirage");
+
+        Assert.Equal("Ayu Mirage", viewModel.SelectedThemePreset.DisplayName);
+        localizer.SetCulture("zh-CN");
+        Assert.Equal("ayu-mirage", viewModel.SelectedThemePreset.Id);
+        Assert.Equal("Ayu 幻景", viewModel.SelectedThemePreset.DisplayName);
+        Assert.Contains("Ayu 幻景", viewModel.ThemePreviewAutomationName, StringComparison.Ordinal);
+
+        localizer.SetCulture("ja-JP");
+        Assert.Equal("ayu-mirage", viewModel.SelectedThemePreset.Id);
+        Assert.Equal("Ayu ミラージュ", viewModel.SelectedThemePreset.DisplayName);
     }
 
     [Fact]
@@ -425,7 +456,7 @@ public sealed class SettingsToolViewModelTests
     {
         var appStore = new FakeAppSettingsStore(new AppSettings(FfprobePath: "missing"));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         await viewModel.ClearFfprobeCommand.ExecuteAsync();
@@ -444,7 +475,7 @@ public sealed class SettingsToolViewModelTests
         await File.WriteAllTextAsync(executable, "");
         var appStore = new FakeAppSettingsStore(new AppSettings(FfprobePath: root));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
 
         try
         {
@@ -467,7 +498,7 @@ public sealed class SettingsToolViewModelTests
         await File.WriteAllTextAsync(ffprobe, "");
         var appStore = new FakeAppSettingsStore(new AppSettings(FfmpegPath: ffprobe));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
 
         try
         {
@@ -503,7 +534,7 @@ public sealed class SettingsToolViewModelTests
         var viewModel = CreateViewModel(
             owner,
             appStore,
-            new FakeThemeSettingsStore(ThemeColorSettings.Default),
+            new FakeThemeSettingsStore(ThemeSettings.Default),
             new AppLocalizationManager("en-US"),
             externalToolLocator: locator);
 
@@ -532,7 +563,7 @@ public sealed class SettingsToolViewModelTests
         var appStore = new FakeAppSettingsStore(new AppSettings());
         var picker = new FakeSettingsPicker("picked-directory", "picked-executable");
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeColorSettings.Default), new AppLocalizationManager("en-US"), picker);
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"), picker);
 
         await viewModel.BrowseSaveDirectoryCommand.ExecuteAsync();
         await viewModel.BrowseFfprobeCommand.ExecuteAsync();
@@ -541,10 +572,17 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("picked-executable", viewModel.FfprobePath);
     }
 
+    private static void SelectPreset(SettingsToolViewModel viewModel, string presetId)
+    {
+        var index = viewModel.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
+        Assert.True(index >= 0, $"Preset not found: {presetId}");
+        viewModel.SelectedThemePresetIndex = index;
+    }
+
     private static SettingsToolViewModel CreateViewModel(
         MainWindowViewModel owner,
         ISettingsStore<AppSettings>? appSettingsStore,
-        ISettingsStore<ThemeColorSettings>? themeSettingsStore,
+        ISettingsStore<ThemeSettings>? themeSettingsStore,
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
@@ -591,13 +629,13 @@ public sealed class SettingsToolViewModelTests
         }
     }
 
-    private sealed class FakeThemeSettingsStore(ThemeColorSettings initial) : ISettingsStore<ThemeColorSettings>
+    private sealed class FakeThemeSettingsStore(ThemeSettings initial) : ISettingsStore<ThemeSettings>
     {
-        public ThemeColorSettings Current { get; private set; } = initial;
+        public ThemeSettings Current { get; private set; } = initial;
 
-        public ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
+        public ValueTask<ThemeSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
 
-        public ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken)
+        public ValueTask SaveAsync(ThemeSettings settings, CancellationToken cancellationToken)
         {
             Current = settings;
             return ValueTask.CompletedTask;
@@ -612,19 +650,19 @@ public sealed class SettingsToolViewModelTests
         public ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
 
-    private sealed class ThrowingThemeSettingsStore : ISettingsStore<ThemeColorSettings>
+    private sealed class ThrowingThemeSettingsStore : ISettingsStore<ThemeSettings>
     {
-        public ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromException<ThemeColorSettings>(new CorruptSettingsFileException("theme-colors.json", "theme-colors.json.bad", new InvalidDataException()));
+        public ValueTask<ThemeSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromException<ThemeSettings>(new CorruptSettingsFileException("theme-settings.json", "theme-settings.json.bad", new InvalidDataException()));
 
-        public ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask SaveAsync(ThemeSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
 
     private sealed class FakeThemeApplicationService : IThemeApplicationService
     {
-        public ThemeColorSettings? LastApplied { get; private set; }
+        public ThemeSettings? LastApplied { get; private set; }
 
-        public void Apply(ThemeColorSettings settings) => LastApplied = settings;
+        public void Apply(ThemeSettings settings) => LastApplied = settings;
     }
 
     private sealed class FakeSettingsPicker(string directory, string executable) : ISettingsPickerService

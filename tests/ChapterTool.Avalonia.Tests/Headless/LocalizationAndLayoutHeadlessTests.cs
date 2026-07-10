@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Infrastructure.Configuration;

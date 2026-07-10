@@ -173,7 +173,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         PreviewCommand = WindowCommand("preview", () => currentInfo is not null);
         LogCommand = WindowCommand("log");
         SettingsCommand = WindowCommand("settings");
-        ColorSettingsCommand = WindowCommand("color-settings");
         LanguageCommand = WindowCommand("language");
         ExpressionCommand = WindowCommand("expression");
         TemplateNamesCommand = WindowCommand("template-names");
@@ -584,7 +583,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public UiCommand PreviewCommand { get; private set; } = null!;
     public UiCommand LogCommand { get; private set; } = null!;
     public UiCommand SettingsCommand { get; private set; } = null!;
-    public UiCommand ColorSettingsCommand { get; private set; } = null!;
     public UiCommand LanguageCommand { get; private set; } = null!;
     public UiCommand ExpressionCommand { get; private set; } = null!;
     public UiCommand TemplateNamesCommand { get; private set; } = null!;
@@ -1336,7 +1334,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         PreviewCommand.RaiseCanExecuteChanged();
         LogCommand.RaiseCanExecuteChanged();
         SettingsCommand.RaiseCanExecuteChanged();
-        ColorSettingsCommand.RaiseCanExecuteChanged();
         LanguageCommand.RaiseCanExecuteChanged();
         ExpressionCommand.RaiseCanExecuteChanged();
         TemplateNamesCommand.RaiseCanExecuteChanged();

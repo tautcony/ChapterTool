@@ -18,16 +18,18 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     private readonly MainWindowViewModel owner;
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
-    private readonly ISettingsStore<ThemeColorSettings>? themeSettingsStore;
+    private readonly ISettingsStore<ThemeSettings>? themeSettingsStore;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
+    private readonly ObservableCollection<ThemePresetOptionViewModel> themePresets = [];
     private readonly ISettingsPickerService? picker;
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IThemeApplicationService? themeApplicationService;
     private readonly IShellService? shellService;
     private readonly EventHandler cultureChangedHandler;
     private AppSettings savedAppSettings = new();
-    private ThemeColorSettings savedThemeSettings = ThemeColorSettings.Default;
+    private ThemeSettings savedThemeSettings = ThemeSettings.Default;
+    private string selectedThemePresetId = ThemePresetCatalog.DefaultPresetId;
     private string selectedLanguage;
     private int defaultSaveFormatIndex;
     private int defaultXmlLanguageIndex;
@@ -41,7 +43,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     public SettingsToolViewModel(
         MainWindowViewModel owner,
         ISettingsStore<AppSettings>? appSettingsStore,
-        ISettingsStore<ThemeColorSettings>? themeSettingsStore,
+        ISettingsStore<ThemeSettings>? themeSettingsStore,
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
@@ -64,19 +66,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
-        ColorSlots = new ObservableCollection<ColorSlotViewModel>(
-            ThemeColorSettings.Default.OrderedSlots.Select(static slot => new ColorSlotViewModel(slot.Name, slot.Value)));
-        foreach (var slot in ColorSlots)
-        {
-            slot.PropertyChanged += (_, args) =>
-            {
-                if (args.PropertyName == nameof(ColorSlotViewModel.Value))
-                {
-                    ApplyCurrentTheme();
-                    NotifyUnsavedChanges();
-                }
-            };
-        }
+        ReplaceThemePresets();
 
         SaveCommand = new UiCommand(async (_, token) => await SaveAsync(token), _ => appSettingsStore is not null || themeSettingsStore is not null);
         ResetCommand = new UiCommand((_, _) =>
@@ -99,6 +89,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         cultureChangedHandler = (_, _) =>
         {
             RefreshLanguages();
+            ReplaceThemePresets();
             RefreshXmlLanguageDisplayOptions(notify: true);
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
@@ -159,7 +150,27 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         }
     }
 
-    public ObservableCollection<ColorSlotViewModel> ColorSlots { get; }
+    public IReadOnlyList<ThemePresetOptionViewModel> ThemePresets => themePresets;
+
+    public int SelectedThemePresetIndex
+    {
+        get => themePresets.ToList().FindIndex(option => string.Equals(option.Id, selectedThemePresetId, StringComparison.Ordinal));
+        set
+        {
+            if (value >= 0 && value < themePresets.Count)
+            {
+                SetSelectedThemePresetId(themePresets[value].Id);
+            }
+        }
+    }
+
+    public ThemePresetOptionViewModel SelectedThemePreset =>
+        themePresets.First(option => string.Equals(option.Id, selectedThemePresetId, StringComparison.Ordinal));
+
+    public string ThemePreviewAutomationName =>
+        localizer.Format(
+            "Settings.Appearance.PreviewFor",
+            new Dictionary<string, object?> { ["name"] = SelectedThemePreset.DisplayName });
 
     public string SelectedLanguage
     {
@@ -400,8 +411,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             if (themeSettingsStore is not null)
             {
                 var theme = await LoadThemeSettingsOrDefaultAsync(cancellationToken);
-                savedThemeSettings = NormalizeThemeSettings(theme);
-                ApplyColors(theme);
+                savedThemeSettings = ThemePresetCatalog.Normalize(theme);
+                ApplyThemeSettings(theme);
                 themeApplicationService?.Apply(theme);
             }
         }
@@ -439,7 +450,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         }
     }
 
-    private async ValueTask<ThemeColorSettings> LoadThemeSettingsOrDefaultAsync(CancellationToken cancellationToken)
+    private async ValueTask<ThemeSettings> LoadThemeSettingsOrDefaultAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -448,17 +459,17 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         catch (IOException)
         {
             SettingsLoadFailed = true;
-            return ThemeColorSettings.Default;
+            return ThemeSettings.Default;
         }
         catch (UnauthorizedAccessException)
         {
             SettingsLoadFailed = true;
-            return ThemeColorSettings.Default;
+            return ThemeSettings.Default;
         }
         catch (CorruptSettingsFileException)
         {
             SettingsLoadFailed = true;
-            return ThemeColorSettings.Default;
+            return ThemeSettings.Default;
         }
     }
 
@@ -487,7 +498,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             var settings = CurrentThemeSettings();
             await themeSettingsStore.SaveAsync(settings, cancellationToken);
             savedThemeSettings = settings;
-            ApplyColors(settings);
+            ApplyThemeSettings(settings);
             themeApplicationService?.Apply(settings);
         }
 
@@ -504,7 +515,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             return;
         }
 
-        ApplyColors(savedThemeSettings);
+        ApplyThemeSettings(savedThemeSettings);
         themeApplicationService?.Apply(savedThemeSettings);
         NotifyUnsavedChanges();
     }
@@ -515,7 +526,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         try
         {
             ApplyAppSettingsToFields(savedAppSettings);
-            ApplyColors(savedThemeSettings);
+            ApplyThemeSettings(savedThemeSettings);
         }
         finally
         {
@@ -541,8 +552,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         DefaultXmlLanguageIndex = XmlLanguageIndex(defaults.DefaultXmlLanguage);
         EmitBom = defaults.EmitBom;
         FrameAccuracyTolerance = defaults.FrameAccuracyTolerance;
-        ApplyColors(ThemeColorSettings.Default);
-        themeApplicationService?.Apply(ThemeColorSettings.Default);
+        ApplyThemeSettings(ThemeSettings.Default);
+        themeApplicationService?.Apply(ThemeSettings.Default);
         ApplyLiveSettings();
         RefreshToolStatuses();
         SettingsLoadFailed = false;
@@ -756,12 +767,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             : new SettingsToolStatus(SettingsToolStatusKind.Missing, candidate, executableName);
     }
 
-    private ThemeColorSettings CurrentThemeSettings()
-    {
-        var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
-        var values = ColorSlots.Select((slot, index) => NormalizeColor(slot.Value, defaults[index].Value)).ToList();
-        return new ThemeColorSettings(values[0], values[1], values[2], values[3], values[4], values[5]);
-    }
+    private ThemeSettings CurrentThemeSettings() => new(selectedThemePresetId);
 
     private AppSettings CurrentAppSettings() =>
         savedAppSettings with
@@ -792,30 +798,45 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
     }
 
-    private static ThemeColorSettings NormalizeThemeSettings(ThemeColorSettings settings)
+    private void ApplyThemeSettings(ThemeSettings settings)
     {
-        var defaults = ThemeColorSettings.Default.OrderedSlots.ToList();
-        var values = settings.OrderedSlots.Select((slot, index) => NormalizeColor(slot.Value, defaults[index].Value)).ToList();
-        return new ThemeColorSettings(values[0], values[1], values[2], values[3], values[4], values[5]);
+        SetSelectedThemePresetId(ThemePresetCatalog.Resolve(settings.PresetId).Id, apply: false);
     }
 
-    private void ApplyColors(ThemeColorSettings settings)
+    private void SetSelectedThemePresetId(string presetId, bool apply = true)
     {
-        var values = settings.OrderedSlots.ToList();
-        for (var index = 0; index < ColorSlots.Count && index < values.Count; index++)
-        {
-            ColorSlots[index].Value = values[index].Value;
-        }
-    }
-
-    private void ApplyCurrentTheme()
-    {
-        if (ColorSlots.Count < ThemeColorSettings.Default.OrderedSlots.Count)
+        var normalized = ThemePresetCatalog.Resolve(presetId).Id;
+        if (!SetProperty(ref selectedThemePresetId, normalized, nameof(SelectedThemePreset)))
         {
             return;
         }
 
-        themeApplicationService?.Apply(CurrentThemeSettings());
+        OnPropertyChanged(nameof(SelectedThemePresetIndex));
+        OnPropertyChanged(nameof(ThemePreviewAutomationName));
+        if (apply && liveApplyEnabled && !isApplyingSnapshot)
+        {
+            themeApplicationService?.Apply(CurrentThemeSettings());
+            NotifyUnsavedChanges();
+        }
+    }
+
+    private void ReplaceThemePresets()
+    {
+        var selectedId = selectedThemePresetId;
+        themePresets.Clear();
+        foreach (var preset in ThemePresetCatalog.All)
+        {
+            themePresets.Add(new ThemePresetOptionViewModel(
+                preset.Id,
+                localizer.GetString(preset.DisplayNameKey),
+                preset.Palette.PreviewSwatches.Select(static color => new ThemeSwatchViewModel(color)).ToArray()));
+        }
+
+        selectedThemePresetId = ThemePresetCatalog.Resolve(selectedId).Id;
+        OnPropertyChanged(nameof(ThemePresets));
+        OnPropertyChanged(nameof(SelectedThemePreset));
+        OnPropertyChanged(nameof(SelectedThemePresetIndex));
+        OnPropertyChanged(nameof(ThemePreviewAutomationName));
     }
 
     private void ApplyLiveSettings()
@@ -832,19 +853,6 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private void ApplyCurrentAppSettingsToOwner() => owner.ApplySettings(CurrentAppSettings());
 
     private void NotifyUnsavedChanges() => OnPropertyChanged(nameof(HasUnsavedChanges));
-
-    private static string NormalizeColor(string? value, string fallback)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return fallback;
-        }
-
-        var text = value.Trim();
-        return text is ['#', _, _, _, _, _, _] && text.Skip(1).All(Uri.IsHexDigit)
-            ? text.ToUpperInvariant()
-            : fallback;
-    }
 
     private static string? CleanPath(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
@@ -891,6 +899,13 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         return Math.Max(0, index);
     }
 }
+
+public sealed record ThemePresetOptionViewModel(
+    string Id,
+    string DisplayName,
+    IReadOnlyList<ThemeSwatchViewModel> PreviewSwatches);
+
+public sealed record ThemeSwatchViewModel(string Color);
 
 public sealed record SettingsToolStatus(
     SettingsToolStatusKind Kind,

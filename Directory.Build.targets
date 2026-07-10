@@ -1,0 +1,4 @@
+<Project>
+  <!-- Override Avalonia.BuildServices' build-time telemetry target repository-wide. -->
+  <Target Name="AvaloniaStats" />
+</Project>

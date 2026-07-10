@@ -13,7 +13,7 @@
   <Grid x:Name="RootGrid"
         ClipToBounds="False">
     <Border x:Name="EditorBorder"
-            Background="{DynamicResource ChapterTool.TextBackBrush}"
+            Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
             BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
             BorderThickness="1"
             CornerRadius="2">
@@ -30,7 +30,7 @@
               MinWidth="300"
               MaxWidth="520"
               MaxHeight="260"
-              Background="{DynamicResource ChapterTool.TextBackBrush}"
+              Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
               BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
               BorderThickness="1"
               CornerRadius="4"
@@ -87,8 +87,8 @@
            IsLightDismissEnabled="False">
       <Border x:Name="DiagnosticPanel"
               MaxWidth="360"
-              Background="{DynamicResource ChapterTool.TextBackBrush}"
-              BorderBrush="#b42318"
+              Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
+              BorderBrush="{DynamicResource ChapterTool.DiagnosticErrorBrush}"
               BorderThickness="1"
               CornerRadius="4"
               Padding="10,8"
@@ -96,7 +96,7 @@
               PointerEntered="OnDiagnosticPanelPointerEntered"
               PointerExited="OnDiagnosticPanelPointerExited">
         <TextBlock x:Name="DiagnosticTextBlock"
-                   Foreground="#b42318"
+                   Foreground="{DynamicResource ChapterTool.DiagnosticErrorBrush}"
                    TextWrapping="Wrap" />
       </Border>
     </Popup>

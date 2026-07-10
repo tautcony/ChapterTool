@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.Tests.Headless;
 using ChapterTool.Avalonia.Services;
@@ -12,7 +13,7 @@ namespace ChapterTool.Avalonia.Tests.Services;
 public sealed class AvaloniaThemeApplicationServiceTests
 {
     [AvaloniaFact]
-    public void ApplyWritesThemeBrushResources()
+    public void ApplyWritesSemanticBrushResourcesAndDarkVariant()
     {
         Dispatcher.UIThread.Invoke(() =>
         {
@@ -22,30 +23,30 @@ public sealed class AvaloniaThemeApplicationServiceTests
 
             try
             {
-                service.Apply(new ThemeColorSettings(
-                    "#010203",
-                    "#111213",
-                    "#212223",
-                    "#313233",
-                    "#414243",
-                    "#515253"));
+                service.Apply(new ThemeSettings("ayu-dark"));
+                var palette = ThemePresetCatalog.Resolve("ayu-dark").Palette;
 
-                Assert.Equal(Color.FromRgb(1, 2, 3), BrushColor(application, AvaloniaThemeApplicationService.BackChangeBrushKey));
-                Assert.Equal(Color.FromRgb(17, 18, 19), BrushColor(application, AvaloniaThemeApplicationService.TextBackBrushKey));
-                Assert.Equal(Color.FromRgb(33, 34, 35), BrushColor(application, AvaloniaThemeApplicationService.MouseOverBrushKey));
-                Assert.Equal(Color.FromRgb(49, 50, 51), BrushColor(application, AvaloniaThemeApplicationService.MouseDownBrushKey));
-                Assert.Equal(Color.FromRgb(65, 66, 67), BrushColor(application, AvaloniaThemeApplicationService.BorderBrushKey));
-                Assert.Equal(Color.FromRgb(81, 82, 83), BrushColor(application, AvaloniaThemeApplicationService.TextFrontBrushKey));
+                Assert.Equal(Color.Parse(palette.WindowBackground), BrushColor(application, AvaloniaThemeApplicationService.WindowBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.PanelBackground), BrushColor(application, AvaloniaThemeApplicationService.PanelBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.ControlBackground), BrushColor(application, AvaloniaThemeApplicationService.ControlBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.ControlForeground), BrushColor(application, AvaloniaThemeApplicationService.ControlForegroundBrushKey));
+                Assert.Equal(Color.Parse(palette.MutedForeground), BrushColor(application, AvaloniaThemeApplicationService.MutedForegroundBrushKey));
+                Assert.Equal(Color.Parse(palette.Accent), BrushColor(application, AvaloniaThemeApplicationService.AccentBrushKey));
+                Assert.Equal(Color.Parse(palette.AccentForeground), BrushColor(application, AvaloniaThemeApplicationService.AccentForegroundBrushKey));
+                Assert.Equal(Color.Parse(palette.Border), BrushColor(application, AvaloniaThemeApplicationService.BorderBrushKey));
+                Assert.Equal(Color.Parse(palette.HoverBackground), BrushColor(application, AvaloniaThemeApplicationService.HoverBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.ActiveBackground), BrushColor(application, AvaloniaThemeApplicationService.ActiveBackgroundBrushKey));
+                Assert.Equal(ThemeVariant.Dark, application.RequestedThemeVariant);
             }
             finally
             {
-                service.Apply(ThemeColorSettings.Default);
+                service.Apply(ThemeSettings.Default);
             }
         });
     }
 
     [AvaloniaFact]
-    public void ApplyFallsBackToDefaultBrushForInvalidColor()
+    public void ApplyUnknownPresetFallsBackToDefaultLightVariant()
     {
         Dispatcher.UIThread.Invoke(() =>
         {
@@ -55,13 +56,16 @@ public sealed class AvaloniaThemeApplicationServiceTests
 
             try
             {
-                service.Apply(ThemeColorSettings.Default with { BackChange = "invalid" });
+                service.Apply(new ThemeSettings("missing"));
 
-                Assert.Equal(Color.Parse(ThemeColorSettings.Default.BackChange), BrushColor(application, AvaloniaThemeApplicationService.BackChangeBrushKey));
+                Assert.Equal(
+                    Color.Parse(ThemePresetCatalog.Default.Palette.WindowBackground),
+                    BrushColor(application, AvaloniaThemeApplicationService.WindowBackgroundBrushKey));
+                Assert.Equal(ThemeVariant.Light, application.RequestedThemeVariant);
             }
             finally
             {
-                service.Apply(ThemeColorSettings.Default);
+                service.Apply(ThemeSettings.Default);
             }
         });
     }

@@ -7,9 +7,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
-using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
-using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -70,34 +68,6 @@ public sealed class ToolWindowViewModelTests
         Assert.Contains("QPFile", vm.FormatOptions);
         Assert.DoesNotContain("Chapter2Qpfile", vm.FormatOptions);
         Assert.Equal(9, vm.FormatOptions.Count);
-    }
-
-    [Fact]
-    public async Task ColorSettingsToolPersistsSixNormalizedSlots()
-    {
-        var store = new FakeThemeSettingsStore();
-        var vm = new ColorSettingsViewModel(store);
-        vm.Slots[0].Value = "#abcdef";
-        vm.Slots[1].Value = "invalid";
-
-        await vm.SaveCommand.ExecuteAsync();
-
-        Assert.Equal("#ABCDEF", store.Current.BackChange);
-        Assert.Equal(ThemeColorSettings.Default.TextBack, store.Current.TextBack);
-    }
-
-    [Fact]
-    public async Task ColorSettingsToolFallsBackToDefaultsWhenThemeLoadFails()
-    {
-        var themeApplication = new FakeThemeApplicationService();
-        var vm = new ColorSettingsViewModel(new ThrowingThemeSettingsStore(), themeApplication);
-
-        await vm.InitializationTask;
-
-        Assert.Equal(ThemeColorSettings.Default.BackChange, vm.Slots[0].Value);
-        Assert.Equal(ThemeColorSettings.Default.BackChange, themeApplication.LastApplied?.BackChange);
-        Assert.True(vm.ThemeLoadFailed);
-        Assert.Contains("defaults", vm.LoadWarningText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -192,34 +162,6 @@ public sealed class ToolWindowViewModelTests
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
             localizer: localizer);
-    }
-
-    private sealed class FakeThemeSettingsStore : ISettingsStore<ThemeColorSettings>
-    {
-        public ThemeColorSettings Current { get; private set; } = ThemeColorSettings.Default;
-
-        public ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
-
-        public ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken)
-        {
-            Current = settings;
-            return ValueTask.CompletedTask;
-        }
-    }
-
-    private sealed class ThrowingThemeSettingsStore : ISettingsStore<ThemeColorSettings>
-    {
-        public ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromException<ThemeColorSettings>(new CorruptSettingsFileException("theme-colors.json", "theme-colors.json.bad", new InvalidDataException()));
-
-        public ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
-    }
-
-    private sealed class FakeThemeApplicationService : IThemeApplicationService
-    {
-        public ThemeColorSettings? LastApplied { get; private set; }
-
-        public void Apply(ThemeColorSettings settings) => LastApplied = settings;
     }
 
     private sealed class FakeLoadService(ChapterImportResult result) : IChapterLoadService

@@ -1,14 +1,9 @@
 using ChapterTool.Core.Models;
 using Avalonia.Controls;
-using Avalonia.Layout;
-using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
-using Avalonia.Media;
-using Avalonia.VisualTree;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
-using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Tests.Headless;

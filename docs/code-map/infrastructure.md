@@ -34,6 +34,8 @@
 
 - schema:
   - `src/ChapterTool.Infrastructure/Configuration/AppSettings.cs`
+  - `src/ChapterTool.Infrastructure/Configuration/ThemeSettings.cs`
+  - `src/ChapterTool.Infrastructure/Configuration/ThemePresetCatalog.cs`
 - storage:
   - `src/ChapterTool.Infrastructure/Configuration/AppSettingsStore.cs`
   - `src/ChapterTool.Infrastructure/Configuration/ThemeSettingsStore.cs`
@@ -44,6 +46,8 @@
   - `src/ChapterTool.Infrastructure/Configuration/AppJsonSerializerContext.cs`
 
 `AppSettings` stores runtime-safe output defaults including save format, XML language, UTF-8 BOM emission, and frame-accuracy tolerance; the Avalonia settings tool applies these live and persists them through `AppSettingsStore`.
+
+`ThemeSettings` persists only a stable built-in preset id in `theme-settings.json`. `ThemePresetCatalog` owns preset identity, light/dark base variants, semantic palettes, preview swatches, and default fallback; the legacy `theme-colors.json` file is intentionally ignored.
 
 ### Platform services
 

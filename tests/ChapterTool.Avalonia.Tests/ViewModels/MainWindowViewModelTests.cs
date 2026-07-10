@@ -53,7 +53,6 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(vm.PreviewCommand);
         Assert.NotNull(vm.LogCommand);
         Assert.NotNull(vm.SettingsCommand);
-        Assert.NotNull(vm.ColorSettingsCommand);
         Assert.NotNull(vm.LanguageCommand);
         Assert.NotNull(vm.ExpressionCommand);
         Assert.NotNull(vm.TemplateNamesCommand);

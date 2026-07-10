@@ -3,17 +3,79 @@
              x:Class="ChapterTool.Avalonia.App"
              RequestedThemeVariant="Light">
   <Application.Resources>
-    <SolidColorBrush x:Key="ChapterTool.BackChangeBrush" Color="#F0F0F0" />
-    <SolidColorBrush x:Key="ChapterTool.TextBackBrush" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="ChapterTool.MouseOverBrush" Color="#E5F1FB" />
-    <SolidColorBrush x:Key="ChapterTool.MouseDownBrush" Color="#CCE4F7" />
-    <SolidColorBrush x:Key="ChapterTool.BorderBrush" Color="#ADADAD" />
-    <SolidColorBrush x:Key="ChapterTool.TextFrontBrush" Color="#000000" />
+    <SolidColorBrush x:Key="ChapterTool.WindowBackgroundBrush" Color="#F0F0F0" />
+    <SolidColorBrush x:Key="ChapterTool.PanelBackgroundBrush" Color="#F7F7F7" />
+    <SolidColorBrush x:Key="ChapterTool.ControlBackgroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ChapterTool.ControlForegroundBrush" Color="#111111" />
+    <SolidColorBrush x:Key="ChapterTool.MutedForegroundBrush" Color="#595959" />
+    <SolidColorBrush x:Key="ChapterTool.AccentBrush" Color="#0067C0" />
+    <SolidColorBrush x:Key="ChapterTool.AccentForegroundBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="ChapterTool.BorderBrush" Color="#767676" />
+    <SolidColorBrush x:Key="ChapterTool.HoverBackgroundBrush" Color="#D6E9F8" />
+    <SolidColorBrush x:Key="ChapterTool.ActiveBackgroundBrush" Color="#CCE4F7" />
+    <SolidColorBrush x:Key="ChapterTool.FrameNeutralBrush" Color="#111111" />
+    <SolidColorBrush x:Key="ChapterTool.FrameAccurateBrush" Color="#0F7A2F" />
+    <SolidColorBrush x:Key="ChapterTool.FrameInexactBrush" Color="#B42318" />
+    <SolidColorBrush x:Key="ChapterTool.DiagnosticErrorBrush" Color="#B42318" />
   </Application.Resources>
   <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
-    <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <Style Selector="Window">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.WindowBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    </Style>
+    <Style Selector="TextBox, ComboBox, NumericUpDown">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+    </Style>
+    <Style Selector="Button:pointerover, ComboBoxItem:pointerover, MenuItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.HoverBackgroundBrush}" />
+    </Style>
+    <Style Selector="Button:pressed, ComboBoxItem:selected, MenuItem:selected">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ActiveBackgroundBrush}" />
+    </Style>
+    <Style Selector="ComboBoxItem, MenuItem, CheckBox, RadioButton, TabItem">
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    </Style>
+    <Style Selector="DataGrid">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+    </Style>
+    <Style Selector="DataGridColumnHeader">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+    </Style>
+    <Style Selector="DataGridColumnHeader:pointerover">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.HoverBackgroundBrush}" />
+    </Style>
+    <Style Selector="DataGridColumnHeader:pressed">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ActiveBackgroundBrush}" />
+    </Style>
+    <Style Selector="DataGridColumnHeader /template/ Path">
+      <Setter Property="Fill" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    </Style>
+    <Style Selector="DataGridCell">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+    </Style>
+    <Style Selector="DataGridRow:pointerover DataGridCell">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.HoverBackgroundBrush}" />
+    </Style>
+    <Style Selector="DataGridRow:selected DataGridCell">
+      <Setter Property="Background" Value="{DynamicResource ChapterTool.ActiveBackgroundBrush}" />
+    </Style>
   </Application.Styles>
 </Application>

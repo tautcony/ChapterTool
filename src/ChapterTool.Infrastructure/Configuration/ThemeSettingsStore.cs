@@ -3,12 +3,12 @@ using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Configuration;
 
-public sealed partial class ThemeSettingsStore(string settingsDirectory) : ISettingsStore<ThemeColorSettings>
+public sealed partial class ThemeSettingsStore(string settingsDirectory) : ISettingsStore<ThemeSettings>
 {
-    private const string CurrentFileName = "theme-colors.json";
+    private const string CurrentFileName = "theme-settings.json";
     private readonly SemaphoreSlim saveLock = new(1, 1);
 
-    public async ValueTask<ThemeColorSettings> LoadAsync(CancellationToken cancellationToken)
+    public async ValueTask<ThemeSettings> LoadAsync(CancellationToken cancellationToken)
     {
         var currentPath = Path.Combine(settingsDirectory, CurrentFileName);
         using var corruptLoadScope = CorruptSettingsFile.EnterLoad(currentPath);
@@ -17,8 +17,8 @@ public sealed partial class ThemeSettingsStore(string settingsDirectory) : ISett
             try
             {
                 await using var stream = File.OpenRead(currentPath);
-                return await JsonSerializer.DeserializeAsync(stream, AppJsonSerializerContext.Default.ThemeColorSettings, cancellationToken)
-                    ?? ThemeColorSettings.Default;
+                var settings = await JsonSerializer.DeserializeAsync(stream, AppJsonSerializerContext.Default.ThemeSettings, cancellationToken);
+                return ThemePresetCatalog.Normalize(settings);
             }
             catch (JsonException exception)
             {
@@ -38,10 +38,10 @@ public sealed partial class ThemeSettingsStore(string settingsDirectory) : ISett
             throw concurrentCorruptException;
         }
 
-        return ThemeColorSettings.Default;
+        return ThemeSettings.Default;
     }
 
-    public async ValueTask SaveAsync(ThemeColorSettings settings, CancellationToken cancellationToken)
+    public async ValueTask SaveAsync(ThemeSettings settings, CancellationToken cancellationToken)
     {
         await saveLock.WaitAsync(cancellationToken);
         string? tempPath = null;
@@ -54,7 +54,7 @@ public sealed partial class ThemeSettingsStore(string settingsDirectory) : ISett
 
             await using (var stream = File.Create(tempPath))
             {
-                await JsonSerializer.SerializeAsync(stream, settings, AppJsonSerializerContext.Default.ThemeColorSettings, cancellationToken);
+                await JsonSerializer.SerializeAsync(stream, ThemePresetCatalog.Normalize(settings), AppJsonSerializerContext.Default.ThemeSettings, cancellationToken);
             }
 
             File.Move(tempPath, currentPath, overwrite: true);
