@@ -56,9 +56,12 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         WindowService = new FakeWindowService();
         FilePickerService = new FakeFilePickerService();
         SettingsPickerService = new FakeSettingsPickerService();
-        AppSettingsStore = new FakeSettingsStore<AppSettings>(appSettings ?? new AppSettings(Language: "en-US"));
-        ThemeSettingsStore = new FakeSettingsStore<ThemeSettings>(themeSettings ?? ThemeSettings.Default);
-        FontSettingsStore = new FakeSettingsStore<FontSettings>(fontSettings ?? FontSettings.Default);
+        SettingsStore = new FakeSettingsStore(new ChapterToolSettings
+        {
+            Application = appSettings ?? new AppSettings(Language: "en-US"),
+            Theme = themeSettings ?? ThemeSettings.Default,
+            Font = fontSettings ?? FontSettings.Default,
+        });
         FontFamilyCatalog = new AvaloniaFontFamilyCatalog(["ChapterTool UI Test", "ChapterTool Mono Test"]);
         FontApplicationService = new AvaloniaFontApplicationService(FontFamilyCatalog);
         ShellService = shellService ?? new FakeShellService();
@@ -73,7 +76,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
             ShellService,
-            AppSettingsStore,
+            SettingsStore,
             frameRateService: null,
             Localizer);
         Window = new MainWindow(ViewModel, _ => FilePickerService);
@@ -95,11 +98,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public FakeSettingsPickerService SettingsPickerService { get; }
 
-    public FakeSettingsStore<AppSettings> AppSettingsStore { get; }
-
-    public FakeSettingsStore<ThemeSettings> ThemeSettingsStore { get; }
-
-    public FakeSettingsStore<FontSettings> FontSettingsStore { get; }
+    public FakeSettingsStore SettingsStore { get; }
 
     public IFontFamilyCatalog FontFamilyCatalog { get; }
 
@@ -361,17 +360,32 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         public ValueTask<string?> PickExecutableAsync(string title, CancellationToken cancellationToken) => ValueTask.FromResult(ExecutablePath);
     }
 
-    internal sealed class FakeSettingsStore<TSettings>(TSettings current) : ISettingsStore<TSettings>
+    internal sealed class FakeSettingsStore(ChapterToolSettings current) : ISettingsStore<ChapterToolSettings>
     {
-        public TSettings Current { get; private set; } = current;
+        public ChapterToolSettings Current { get; private set; } = current;
+        public int Loads { get; private set; }
         public int Saves { get; private set; }
+        public int Updates { get; private set; }
 
-        public ValueTask<TSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
+        public ValueTask<ChapterToolSettings> LoadAsync(CancellationToken cancellationToken)
+        {
+            Loads++;
+            return ValueTask.FromResult(Current);
+        }
 
-        public ValueTask SaveAsync(TSettings settings, CancellationToken cancellationToken)
+        public ValueTask SaveAsync(ChapterToolSettings settings, CancellationToken cancellationToken)
         {
             Saves++;
             Current = settings;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask UpdateAsync(
+            Func<ChapterToolSettings, ChapterToolSettings> update,
+            CancellationToken cancellationToken)
+        {
+            Updates++;
+            Current = update(Current);
             return ValueTask.CompletedTask;
         }
     }

@@ -25,7 +25,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost(
             localizer: localizer,
             appSettings: new AppSettings(Language: "en-US", DefaultXmlLanguage: "jpn"));
-        var viewModel = new SettingsToolViewModel(host.ViewModel, host.AppSettingsStore, host.ThemeSettingsStore, host.Localizer, autoLoad: false);
+        var viewModel = new SettingsToolViewModel(host.ViewModel, host.SettingsStore, host.Localizer, autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var window = new Window
         {
@@ -68,8 +68,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost();
         var viewModel = new SettingsToolViewModel(
             host.ViewModel,
-            host.AppSettingsStore,
-            host.ThemeSettingsStore,
+            host.SettingsStore,
             host.Localizer,
             autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -112,8 +111,7 @@ public sealed class SettingsToolHeadlessTests
         var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool-settings-folder-test");
         var viewModel = new SettingsToolViewModel(
             host.ViewModel,
-            host.AppSettingsStore,
-            host.ThemeSettingsStore,
+            host.SettingsStore,
             host.Localizer,
             shellService: shellService,
             settingsDirectory: settingsDirectory,
@@ -160,8 +158,7 @@ public sealed class SettingsToolHeadlessTests
         var themeService = new AvaloniaThemeApplicationService();
         var viewModel = new SettingsToolViewModel(
             host.ViewModel,
-            host.AppSettingsStore,
-            host.ThemeSettingsStore,
+            host.SettingsStore,
             host.Localizer,
             themeApplicationService: themeService,
             autoLoad: false);
@@ -202,7 +199,7 @@ public sealed class SettingsToolHeadlessTests
             });
             Assert.Equal(Color.Parse(dark.HoverBackground), ResourceColor(AvaloniaThemeApplicationService.HoverBackgroundBrushKey));
             Assert.Equal(Color.Parse(dark.ActiveBackground), ResourceColor(AvaloniaThemeApplicationService.ActiveBackgroundBrushKey));
-            Assert.Equal(ThemeSettings.Default, host.ThemeSettingsStore.Current);
+            Assert.Equal(ThemeSettings.Default, host.SettingsStore.Current.Theme);
 
             combo.SelectedIndex = viewModel.ThemePresets.ToList().FindIndex(option => option.Id == "solarized-light");
             Dispatcher.UIThread.RunJobs();
@@ -226,10 +223,8 @@ public sealed class SettingsToolHeadlessTests
         var fontService = host.FontApplicationService;
         var viewModel = new SettingsToolViewModel(
             host.ViewModel,
-            host.AppSettingsStore,
-            host.ThemeSettingsStore,
+            host.SettingsStore,
             host.Localizer,
-            fontSettingsStore: host.FontSettingsStore,
             fontFamilyCatalog: host.FontFamilyCatalog,
             fontApplicationService: fontService,
             autoLoad: false);
@@ -299,10 +294,10 @@ public sealed class SettingsToolHeadlessTests
             Assert.All(
                 settingsWindow.GetVisualDescendants().OfType<Control>().Where(control => control.GetType().Name == "Icon"),
                 icon => Assert.True(icon.IsVisible));
-            Assert.Equal(FontSettings.Default, host.FontSettingsStore.Current);
+            Assert.Equal(FontSettings.Default, host.SettingsStore.Current.Font);
 
             await viewModel.SaveCommand.ExecuteAsync();
-            Assert.Equal(new FontSettings("ChapterTool UI Test", "ChapterTool Mono Test"), host.FontSettingsStore.Current);
+            Assert.Equal(new FontSettings("ChapterTool UI Test", "ChapterTool Mono Test"), host.SettingsStore.Current.Font);
             viewModel.SelectedUiFontFamilyIndex = 0;
             viewModel.SelectedMonospaceFontFamilyIndex = 0;
             viewModel.DiscardUnsavedAppearanceChanges();
@@ -330,10 +325,8 @@ public sealed class SettingsToolHeadlessTests
         var fontService = new AvaloniaFontApplicationService(catalog);
         var viewModel = new SettingsToolViewModel(
             host.ViewModel,
-            host.AppSettingsStore,
-            host.ThemeSettingsStore,
+            host.SettingsStore,
             host.Localizer,
-            fontSettingsStore: host.FontSettingsStore,
             fontFamilyCatalog: catalog,
             fontApplicationService: fontService,
             autoLoad: false);

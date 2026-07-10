@@ -11,9 +11,7 @@ namespace ChapterTool.Avalonia.Services;
 
 public sealed class AvaloniaWindowService : IWindowService
 {
-    private readonly ISettingsStore<AppSettings>? appSettingsStore;
-    private readonly ISettingsStore<ThemeSettings>? themeSettingsStore;
-    private readonly ISettingsStore<FontSettings>? fontSettingsStore;
+    private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
     private readonly IThemeApplicationService? themeApplicationService;
     private readonly IFontFamilyCatalog? fontFamilyCatalog;
     private readonly IFontApplicationService? fontApplicationService;
@@ -27,23 +25,19 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly IAppLocalizer localizer;
 
     public AvaloniaWindowService(
-        ISettingsStore<AppSettings>? appSettingsStore = null,
-        ISettingsStore<ThemeSettings>? themeSettingsStore = null,
+        ISettingsStore<ChapterToolSettings>? settingsStore = null,
         IThemeApplicationService? themeApplicationService = null,
         IAppLocalizer? localizer = null,
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
         IExternalToolLocator? externalToolLocator = null,
         ISettingsCloseConfirmationService? settingsCloseConfirmationService = null,
         IShellService? shellService = null,
-        ISettingsStore<FontSettings>? fontSettingsStore = null,
         IFontFamilyCatalog? fontFamilyCatalog = null,
         IFontApplicationService? fontApplicationService = null,
         string? settingsDirectory = null)
     {
-        this.appSettingsStore = appSettingsStore;
-        this.themeSettingsStore = themeSettingsStore;
+        this.settingsStore = settingsStore;
         this.themeApplicationService = themeApplicationService;
-        this.fontSettingsStore = fontSettingsStore;
         this.fontFamilyCatalog = fontFamilyCatalog;
         this.fontApplicationService = fontApplicationService;
         this.localizer = localizer ?? new AppLocalizationManager();
@@ -171,14 +165,12 @@ public sealed class AvaloniaWindowService : IWindowService
             {
                 DataContext = new SettingsToolViewModel(
                     viewModel,
-                    appSettingsStore,
-                    themeSettingsStore,
+                    settingsStore,
                     localizer,
                     settingsPickerFactory?.Invoke(window),
                     externalToolLocator,
                     themeApplicationService,
                     shellService,
-                    fontSettingsStore,
                     fontFamilyCatalog,
                     fontApplicationService,
                     settingsDirectory)

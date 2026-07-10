@@ -56,27 +56,27 @@ The system SHALL NOT expose manual theme color editing or a `Custom` preset stat
 - **THEN** no standalone legacy color-settings command or view SHALL be available
 
 ### Requirement: Theme preset persistence resolves safely
-The system SHALL persist stable preset identity and SHALL resolve unavailable selections to a deterministic default.
+The system SHALL persist stable preset identity in the theme section of the unified versioned settings document and SHALL resolve unavailable selections to a deterministic default.
 
 #### Scenario: Selected preset is persisted by id
 - **WHEN** the user saves appearance settings
-- **THEN** the replacement theme settings file SHALL persist the selected stable preset id rather than semantic palette values or a localized display name
+- **THEN** the unified theme section SHALL persist the selected stable preset id rather than semantic palette values or a localized display name
 
-#### Scenario: Missing theme settings use the default
-- **WHEN** the replacement theme settings file does not exist
+#### Scenario: Missing theme section uses the default
+- **WHEN** the unified settings document or its theme section does not exist
 - **THEN** the selected preset SHALL resolve to `Avalonia Default`
 
 #### Scenario: Blank or unknown preset id uses the default
-- **WHEN** the replacement theme settings file contains a blank or unrecognized preset id
+- **WHEN** the unified theme section contains a blank or unrecognized preset id
 - **THEN** the selected preset SHALL resolve to `Avalonia Default`
-- **AND** loading or live application alone SHALL NOT rewrite the settings file
+- **AND** loading or live application alone SHALL NOT rewrite a current-version settings document
 
-#### Scenario: Legacy theme settings are intentionally ignored
+#### Scenario: Legacy theme colors remain intentionally ignored
 - **WHEN** only the legacy `theme-colors.json` file exists
 - **THEN** the selected preset SHALL resolve to `Avalonia Default`
-- **AND** the legacy six-slot values SHALL NOT be migrated into the replacement preset model
+- **AND** the legacy six-slot values SHALL NOT be migrated into the preset model
 
-#### Scenario: Malformed replacement settings are preserved
-- **WHEN** the replacement theme settings file contains malformed JSON
+#### Scenario: Malformed unified settings are preserved
+- **WHEN** active `settings.json` contains malformed JSON
 - **THEN** the existing corrupt-settings preservation behavior SHALL be used
 - **AND** the running application SHALL fall back to `Avalonia Default`

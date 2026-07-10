@@ -18,7 +18,7 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task LoadsAndSavesDurablePreferences()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(
+        var appStore = new FakeSettingsStore(new AppSettings(
             SavingPath: "out",
             Language: "en-US",
             MkvToolnixPath: "mkv",
@@ -29,7 +29,7 @@ public sealed class SettingsToolViewModelTests
             DefaultXmlLanguage: "ja",
             EmitBom: true,
             FrameAccuracyTolerance: 0.02m));
-        var themeStore = new FakeThemeSettingsStore(ThemeSettings.Default);
+        var themeStore = new FakeThemeSettingsState(ThemeSettings.Default);
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(owner, appStore, themeStore, new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -65,19 +65,21 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("new-out", owner.SaveDirectory);
         Assert.Equal("ja-JP", owner.UiLanguage);
         Assert.Equal("solarized-dark", themeStore.Current.PresetId);
+        Assert.Equal(1, appStore.Loads);
+        Assert.Equal(1, appStore.Saves);
         Assert.False(viewModel.HasUnsavedChanges);
     }
 
     [Fact]
-    public async Task LoadFallsBackToDefaultsWhenSettingsStoresFail()
+    public async Task LoadFallsBackToDefaultsWhenSettingsStoreFails()
     {
         var owner = CreateOwner();
         var themeApplication = new FakeThemeApplicationService();
         var localizer = new AppLocalizationManager("en-US");
         var viewModel = CreateViewModel(
             owner,
-            new ThrowingAppSettingsStore(),
-            new ThrowingThemeSettingsStore(),
+            new ThrowingSettingsStore(),
+            null,
             localizer,
             themeApplicationService: themeApplication);
 
@@ -94,7 +96,7 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task RuntimeSafeSettingsApplyImmediatelyWithoutSavingStore()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(
+        var appStore = new FakeSettingsStore(new AppSettings(
             SavingPath: "saved",
             Language: "en-US",
             DefaultSaveFormat: "Txt",
@@ -102,7 +104,7 @@ public sealed class SettingsToolViewModelTests
             EmitBom: true,
             FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -126,9 +128,9 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task SavePersistsLiveSettingsAndClearsUnsavedState()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US", SavingPath: "saved"));
+        var appStore = new FakeSettingsStore(new AppSettings(Language: "en-US", SavingPath: "saved"));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectedLanguage = "ja-JP";
@@ -145,13 +147,13 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task DiscardUnsavedChangesRestoresSavedRuntimeState()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(
+        var appStore = new FakeSettingsStore(new AppSettings(
             SavingPath: "saved",
             Language: "en-US",
             DefaultSaveFormat: "Txt",
             DefaultXmlLanguage: "und",
             FrameAccuracyTolerance: 0.10m));
-        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("solarized-light"));
+        var themeStore = new FakeThemeSettingsState(new ThemeSettings("solarized-light"));
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -184,9 +186,9 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task FrameAccuracyToleranceIsNormalizedBeforeSave()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: -1m));
+        var appStore = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: -1m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0.15m, viewModel.FrameAccuracyTolerance);
@@ -201,9 +203,9 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task FrameAccuracyToleranceSliderUsesContinuousBoundedValueAndDisplayText()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
+        var appStore = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.FrameAccuracyToleranceSliderValue = 0.173;
@@ -220,9 +222,9 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task FrameAccuracyToleranceSliderSnapsNearRecommendedValues()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.15m));
+        var appStore = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.15m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.FrameAccuracyToleranceSliderValue = 0.141;
@@ -239,9 +241,9 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task FrameAccuracyToleranceSliderDoesNotRewriteThumbValueWhenSnapping()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
+        var appStore = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.10m));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var sliderNotifications = 0;
         viewModel.PropertyChanged += (_, args) =>
@@ -338,8 +340,8 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task AppearanceChangesApplyThemeImmediately()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
-        var themeStore = new FakeThemeSettingsStore(ThemeSettings.Default);
+        var appStore = new FakeSettingsStore(new AppSettings(Language: "en-US"));
+        var themeStore = new FakeThemeSettingsState(ThemeSettings.Default);
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -360,8 +362,8 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task DiscardUnsavedAppearanceChangesRestoresLoadedTheme()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
-        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("solarized-light"));
+        var appStore = new FakeSettingsStore(new AppSettings(Language: "en-US"));
+        var themeStore = new FakeThemeSettingsState(new ThemeSettings("solarized-light"));
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -384,8 +386,8 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task DiscardAfterSaveKeepsSavedAppearanceChanges()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings());
-        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("solarized-light"));
+        var appStore = new FakeSettingsStore(new AppSettings());
+        var themeStore = new FakeThemeSettingsState(new ThemeSettings("solarized-light"));
         var themeApplication = new FakeThemeApplicationService();
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(
@@ -408,8 +410,8 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task ResetSelectsDefaultPresetWithoutPersistingIt()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings());
-        var themeStore = new FakeThemeSettingsStore(new ThemeSettings("ayu-dark"));
+        var appStore = new FakeSettingsStore(new AppSettings());
+        var themeStore = new FakeThemeSettingsState(new ThemeSettings("ayu-dark"));
         var themeApplication = new FakeThemeApplicationService();
         var viewModel = CreateViewModel(
             CreateOwner(appStore),
@@ -431,11 +433,11 @@ public sealed class SettingsToolViewModelTests
     public async Task PresetDisplayNamesRefreshWithoutChangingStableSelection()
     {
         var localizer = new AppLocalizationManager("en-US");
-        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
+        var appStore = new FakeSettingsStore(new AppSettings(Language: "en-US"));
         var viewModel = CreateViewModel(
             CreateOwner(appStore, localizer),
             appStore,
-            new FakeThemeSettingsStore(ThemeSettings.Default),
+            new FakeThemeSettingsState(ThemeSettings.Default),
             localizer);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         SelectPreset(viewModel, "ayu-mirage");
@@ -454,9 +456,9 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task ClearPathRestoresDiscoveryStatus()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(FfprobePath: "missing"));
+        var appStore = new FakeSettingsStore(new AppSettings(FfprobePath: "missing"));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         await viewModel.ClearFfprobeCommand.ExecuteAsync();
@@ -473,9 +475,9 @@ public sealed class SettingsToolViewModelTests
         var executableName = OperatingSystem.IsWindows() ? "ffprobe.exe" : "ffprobe";
         var executable = Path.Combine(root, executableName);
         await File.WriteAllTextAsync(executable, "");
-        var appStore = new FakeAppSettingsStore(new AppSettings(FfprobePath: root));
+        var appStore = new FakeSettingsStore(new AppSettings(FfprobePath: root));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
 
         try
         {
@@ -496,9 +498,9 @@ public sealed class SettingsToolViewModelTests
         Directory.CreateDirectory(root);
         var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
         await File.WriteAllTextAsync(ffprobe, "");
-        var appStore = new FakeAppSettingsStore(new AppSettings(FfmpegPath: ffprobe));
+        var appStore = new FakeSettingsStore(new AppSettings(FfmpegPath: ffprobe));
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
 
         try
         {
@@ -523,7 +525,7 @@ public sealed class SettingsToolViewModelTests
         await File.WriteAllTextAsync(mkvextract, "");
         await File.WriteAllTextAsync(eac3to, "");
         await File.WriteAllTextAsync(ffprobe, "");
-        var appStore = new FakeAppSettingsStore(new AppSettings());
+        var appStore = new FakeSettingsStore(new AppSettings());
         var owner = CreateOwner(appStore);
         var locator = new FakeExternalToolLocator(new Dictionary<string, ExternalToolLocation>(StringComparer.OrdinalIgnoreCase)
         {
@@ -534,7 +536,7 @@ public sealed class SettingsToolViewModelTests
         var viewModel = CreateViewModel(
             owner,
             appStore,
-            new FakeThemeSettingsStore(ThemeSettings.Default),
+            new FakeThemeSettingsState(ThemeSettings.Default),
             new AppLocalizationManager("en-US"),
             externalToolLocator: locator);
 
@@ -560,10 +562,10 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task PickerCommandsUseInjectedPicker()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings());
+        var appStore = new FakeSettingsStore(new AppSettings());
         var picker = new FakeSettingsPicker("picked-directory", "picked-executable");
         var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsStore(ThemeSettings.Default), new AppLocalizationManager("en-US"), picker);
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"), picker);
 
         await viewModel.BrowseSaveDirectoryCommand.ExecuteAsync();
         await viewModel.BrowseFfprobeCommand.ExecuteAsync();
@@ -575,16 +577,16 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task Font_selections_apply_independently_save_reset_and_discard()
     {
-        var appStore = new FakeAppSettingsStore(new AppSettings(Language: "en-US"));
-        var fontStore = new FakeFontSettingsStore(new FontSettings("UI One", "Mono One"));
+        var appStore = new FakeSettingsStore(new AppSettings(Language: "en-US"));
+        var fontStore = new FakeFontSettingsState(new FontSettings("UI One", "Mono One"));
         var catalog = new AvaloniaFontFamilyCatalog(["UI One", "UI Two", "Mono One", "Mono Two"]);
         var application = new FakeFontApplicationService(catalog);
         var viewModel = CreateViewModel(
             CreateOwner(appStore),
             appStore,
-            new FakeThemeSettingsStore(ThemeSettings.Default),
+            new FakeThemeSettingsState(ThemeSettings.Default),
             new AppLocalizationManager("en-US"),
-            fontSettingsStore: fontStore,
+            fontState: fontStore,
             fontFamilyCatalog: catalog,
             fontApplicationService: application);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
@@ -616,7 +618,7 @@ public sealed class SettingsToolViewModelTests
     [Fact]
     public async Task Unavailable_saved_fonts_fall_back_without_write_or_dirty_state()
     {
-        var fontStore = new FakeFontSettingsStore(new FontSettings("Missing UI", "Mono One"));
+        var fontStore = new FakeFontSettingsState(new FontSettings("Missing UI", "Mono One"));
         var catalog = new AvaloniaFontFamilyCatalog(["UI One", "Mono One"]);
         var application = new FakeFontApplicationService(catalog);
         var viewModel = CreateViewModel(
@@ -624,7 +626,7 @@ public sealed class SettingsToolViewModelTests
             null,
             null,
             new AppLocalizationManager("en-US"),
-            fontSettingsStore: fontStore,
+            fontState: fontStore,
             fontFamilyCatalog: catalog,
             fontApplicationService: application);
 
@@ -719,30 +721,40 @@ public sealed class SettingsToolViewModelTests
 
     private static SettingsToolViewModel CreateViewModel(
         MainWindowViewModel owner,
-        ISettingsStore<AppSettings>? appSettingsStore,
-        ISettingsStore<ThemeSettings>? themeSettingsStore,
+        ISettingsStore<ChapterToolSettings>? settingsStore,
+        FakeThemeSettingsState? themeState,
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
         IThemeApplicationService? themeApplicationService = null,
-        ISettingsStore<FontSettings>? fontSettingsStore = null,
+        FakeFontSettingsState? fontState = null,
         IFontFamilyCatalog? fontFamilyCatalog = null,
-        IFontApplicationService? fontApplicationService = null) =>
-        new(
+        IFontApplicationService? fontApplicationService = null)
+    {
+        if (settingsStore is null && (themeState is not null || fontState is not null))
+        {
+            settingsStore = new FakeSettingsStore(new AppSettings());
+        }
+
+        if (settingsStore is FakeSettingsStore fakeStore)
+        {
+            fakeStore.Configure(themeState, fontState);
+        }
+
+        return new SettingsToolViewModel(
             owner,
-            appSettingsStore,
-            themeSettingsStore,
+            settingsStore,
             localizer,
             picker,
             externalToolLocator,
             themeApplicationService,
-            fontSettingsStore: fontSettingsStore,
             fontFamilyCatalog: fontFamilyCatalog,
             fontApplicationService: fontApplicationService,
             autoLoad: false);
+    }
 
     private static MainWindowViewModel CreateOwner(
-        ISettingsStore<AppSettings>? appSettingsStore = null,
+        ISettingsStore<ChapterToolSettings>? settingsStore = null,
         IAppLocalizer? localizer = null)
     {
         var logService = new ApplicationLogPanelProvider();
@@ -756,65 +768,92 @@ public sealed class SettingsToolViewModelTests
             new ChapterTimeFormatter(),
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
-            appSettingsStore: appSettingsStore,
+            settingsStore: settingsStore,
             localizer: localizer ?? new AppLocalizationManager("en-US"));
     }
 
-    private sealed class FakeAppSettingsStore(AppSettings initial) : ISettingsStore<AppSettings>
+    private sealed class FakeSettingsStore(AppSettings initial) : ISettingsStore<ChapterToolSettings>
     {
-        public AppSettings Current { get; private set; } = initial;
+        private FakeThemeSettingsState? themeStore;
+        private FakeFontSettingsState? fontStore;
 
-        public ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
+        public ChapterToolSettings CurrentSettings { get; private set; } = new() { Application = initial };
 
-        public ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken)
+        public AppSettings Current => CurrentSettings.Application;
+
+        public int Loads { get; private set; }
+
+        public int Saves { get; private set; }
+
+        public void Configure(FakeThemeSettingsState? themeState, FakeFontSettingsState? fontState)
         {
-            Current = settings;
+            themeStore = themeState;
+            fontStore = fontState;
+            CurrentSettings = CurrentSettings with
+            {
+                Theme = themeState?.Current ?? CurrentSettings.Theme,
+                Font = fontState?.Current ?? CurrentSettings.Font,
+            };
+        }
+
+        public ValueTask<ChapterToolSettings> LoadAsync(CancellationToken cancellationToken)
+        {
+            Loads++;
+            return ValueTask.FromResult(CurrentSettings);
+        }
+
+        public ValueTask SaveAsync(ChapterToolSettings settings, CancellationToken cancellationToken)
+        {
+            Saves++;
+            CurrentSettings = settings;
+            themeStore?.SetCurrent(settings.Theme);
+            fontStore?.SetCurrent(settings.Font, saved: true);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask UpdateAsync(
+            Func<ChapterToolSettings, ChapterToolSettings> update,
+            CancellationToken cancellationToken)
+        {
+            CurrentSettings = update(CurrentSettings);
+            themeStore?.SetCurrent(CurrentSettings.Theme);
+            fontStore?.SetCurrent(CurrentSettings.Font, saved: true);
             return ValueTask.CompletedTask;
         }
     }
 
-    private sealed class FakeThemeSettingsStore(ThemeSettings initial) : ISettingsStore<ThemeSettings>
+    private sealed class FakeThemeSettingsState(ThemeSettings initial)
     {
         public ThemeSettings Current { get; private set; } = initial;
 
-        public ValueTask<ThemeSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
-
-        public ValueTask SaveAsync(ThemeSettings settings, CancellationToken cancellationToken)
-        {
-            Current = settings;
-            return ValueTask.CompletedTask;
-        }
+        public void SetCurrent(ThemeSettings settings) => Current = settings;
     }
 
-    private sealed class FakeFontSettingsStore(FontSettings initial) : ISettingsStore<FontSettings>
+    private sealed class FakeFontSettingsState(FontSettings initial)
     {
         public FontSettings Current { get; private set; } = initial;
         public int Saves { get; private set; }
 
-        public ValueTask<FontSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
-
-        public ValueTask SaveAsync(FontSettings settings, CancellationToken cancellationToken)
+        public void SetCurrent(FontSettings settings, bool saved)
         {
             Current = settings;
-            Saves++;
-            return ValueTask.CompletedTask;
+            if (saved)
+            {
+                Saves++;
+            }
         }
     }
 
-    private sealed class ThrowingAppSettingsStore : ISettingsStore<AppSettings>
+    private sealed class ThrowingSettingsStore : ISettingsStore<ChapterToolSettings>
     {
-        public ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromException<AppSettings>(new CorruptSettingsFileException("appsettings.json", "appsettings.json.bad", new InvalidDataException()));
+        public ValueTask<ChapterToolSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromException<ChapterToolSettings>(new CorruptSettingsFileException("settings.json", "settings.json.bad", new InvalidDataException()));
 
-        public ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
-    }
+        public ValueTask SaveAsync(ChapterToolSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
-    private sealed class ThrowingThemeSettingsStore : ISettingsStore<ThemeSettings>
-    {
-        public ValueTask<ThemeSettings> LoadAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromException<ThemeSettings>(new CorruptSettingsFileException("theme-settings.json", "theme-settings.json.bad", new InvalidDataException()));
-
-        public ValueTask SaveAsync(ThemeSettings settings, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask UpdateAsync(
+            Func<ChapterToolSettings, ChapterToolSettings> update,
+            CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
 
     private sealed class FakeThemeApplicationService : IThemeApplicationService

@@ -32,8 +32,8 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Equal(1, confirmation.Calls);
         Assert.True(window.IsVisible);
         Assert.Equal("live", host.ViewModel.SaveDirectory);
-        Assert.Equal("saved", host.AppSettingsStore.Current.SavingPath);
-        Assert.Equal("solarized-light", host.ThemeSettingsStore.Current.PresetId);
+        Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
+        Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
         Assert.Equal("ayu-dark", settings.SelectedThemePreset.Id);
     }
 
@@ -57,8 +57,8 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Equal(1, confirmation.Calls);
         Assert.False(window.IsVisible);
         Assert.Equal("saved", host.ViewModel.SaveDirectory);
-        Assert.Equal("saved", host.AppSettingsStore.Current.SavingPath);
-        Assert.Equal("solarized-light", host.ThemeSettingsStore.Current.PresetId);
+        Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
+        Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
         Assert.Equal("solarized-light", settings.SelectedThemePreset.Id);
     }
 
@@ -82,8 +82,8 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Equal(1, confirmation.Calls);
         Assert.False(window.IsVisible);
         Assert.Equal("live", host.ViewModel.SaveDirectory);
-        Assert.Equal("live", host.AppSettingsStore.Current.SavingPath);
-        Assert.Equal("ayu-dark", host.ThemeSettingsStore.Current.PresetId);
+        Assert.Equal("live", host.SettingsStore.Current.Application.SavingPath);
+        Assert.Equal("ayu-dark", host.SettingsStore.Current.Theme.PresetId);
     }
 
     [AvaloniaFact]
@@ -164,15 +164,14 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Contains(
             settings.Languages,
             language => language is { CultureName: "en-US", DisplayName: "英語" });
-        Assert.Equal("en-US", host.AppSettingsStore.Current.Language);
+        Assert.Equal("en-US", host.SettingsStore.Current.Application.Language);
     }
 
     private static AvaloniaWindowService CreateService(
         MainWindowHeadlessTestHost host,
         ISettingsCloseConfirmationService confirmation) =>
         new(
-            host.AppSettingsStore,
-            host.ThemeSettingsStore,
+            host.SettingsStore,
             new FakeThemeApplicationService(),
             host.Localizer,
             _ => host.SettingsPickerService,

@@ -33,25 +33,29 @@
 ### Settings and configuration persistence
 
 - schema:
+  - `src/ChapterTool.Infrastructure/Configuration/ChapterToolSettings.cs`
   - `src/ChapterTool.Infrastructure/Configuration/AppSettings.cs`
   - `src/ChapterTool.Infrastructure/Configuration/FontSettings.cs`
   - `src/ChapterTool.Infrastructure/Configuration/ThemeSettings.cs`
   - `src/ChapterTool.Infrastructure/Configuration/ThemePresetCatalog.cs`
 - storage:
-  - `src/ChapterTool.Infrastructure/Configuration/AppSettingsStore.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/FontSettingsStore.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/ThemeSettingsStore.cs`
+  - `src/ChapterTool.Infrastructure/Configuration/ChapterToolSettingsStore.cs`
+- contracts:
+  - `src/ChapterTool.Infrastructure/Services/ISettingsStore.cs`
 - corrupt-file handling:
   - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFile.cs`
   - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFileException.cs`
+  - `src/ChapterTool.Infrastructure/Configuration/UnsupportedSettingsVersionException.cs`
 - JSON source generation:
   - `src/ChapterTool.Infrastructure/Configuration/AppJsonSerializerContext.cs`
 
-`AppSettings` stores runtime-safe output defaults including save format, XML language, UTF-8 BOM emission, and frame-accuracy tolerance; the Avalonia settings tool applies these live and persists them through `AppSettingsStore`.
+`ChapterToolSettingsStore` is the only settings persistence implementation and implements `ISettingsStore<ChapterToolSettings>`. It persists schema-versioned `application`, `theme`, and `font` child content in `settings.json`, serializes atomic read-modify-write operations by canonical path, upgrades known older unified shapes, rejects future versions without overwriting them, and ignores predecessor settings files when the unified document is absent.
 
-`ThemeSettings` persists only a stable built-in preset id in `theme-settings.json`. `ThemePresetCatalog` owns preset identity, light/dark base variants, semantic palettes, preview swatches, and default fallback; the legacy `theme-colors.json` file is intentionally ignored.
+All runtime consumers receive the same aggregate store. `SettingsToolViewModel` loads the document once and saves all changed child content with one aggregate write; isolated changes use `UpdateAsync` for one lock-scoped read-modify-write. The store caches the normalized aggregate by file timestamp and length, so unchanged subsequent loads do not reopen or reparse JSON. New settings areas should extend `ChapterToolSettings` and add a schema upgrade when the persisted structure changes instead of adding a store or file.
 
-`FontSettings` persists independent canonical UI and monospace family names in `font-settings.json`. Empty values are stable category defaults; `FontSettingsStore` trims values, preserves malformed files, and never needs an Avalonia dependency or system-font lookup.
+`ThemeSettings` persists only a stable built-in preset id in the unified `theme` section. `ThemePresetCatalog` owns preset identity, light/dark base variants, semantic palettes, preview swatches, and default fallback; the legacy `theme-colors.json` file remains intentionally ignored.
+
+`FontSettings` persists independent canonical UI and monospace family names in the unified `font` section. Empty values are stable category defaults; normalization never needs an Avalonia dependency or system-font lookup.
 
 ### Platform services
 
@@ -115,8 +119,7 @@ Use `ExternalToolPathResolver.cs` when path expansion, executable name, or defau
 
 Start with:
 
-- `src/ChapterTool.Infrastructure/Configuration/AppSettingsStore.cs`
-- `src/ChapterTool.Infrastructure/Configuration/FontSettingsStore.cs`
+- `src/ChapterTool.Infrastructure/Configuration/ChapterToolSettingsStore.cs`
 - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFile.cs`
 
 ### Shell, terminal, file reveal, and app log issues

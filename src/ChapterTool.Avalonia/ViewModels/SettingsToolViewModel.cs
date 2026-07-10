@@ -18,9 +18,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
 
     private readonly MainWindowViewModel owner;
-    private readonly ISettingsStore<AppSettings>? appSettingsStore;
-    private readonly ISettingsStore<ThemeSettings>? themeSettingsStore;
-    private readonly ISettingsStore<FontSettings>? fontSettingsStore;
+    private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private readonly ObservableCollection<ThemePresetOptionViewModel> themePresets = [];
@@ -34,6 +32,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private readonly IShellService? shellService;
     private readonly string? settingsDirectory;
     private readonly EventHandler cultureChangedHandler;
+    private ChapterToolSettings savedSettings = ChapterToolSettings.Default;
     private AppSettings savedAppSettings = new();
     private ThemeSettings savedThemeSettings = ThemeSettings.Default;
     private FontSettings savedFontSettings = FontSettings.Default;
@@ -52,28 +51,24 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     public SettingsToolViewModel(
         MainWindowViewModel owner,
-        ISettingsStore<AppSettings>? appSettingsStore,
-        ISettingsStore<ThemeSettings>? themeSettingsStore,
+        ISettingsStore<ChapterToolSettings>? settingsStore,
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
         IExternalToolLocator? externalToolLocator = null,
         IThemeApplicationService? themeApplicationService = null,
         IShellService? shellService = null,
-        ISettingsStore<FontSettings>? fontSettingsStore = null,
         IFontFamilyCatalog? fontFamilyCatalog = null,
         IFontApplicationService? fontApplicationService = null,
         string? settingsDirectory = null,
         bool autoLoad = true)
     {
         this.owner = owner;
-        this.appSettingsStore = appSettingsStore;
-        this.themeSettingsStore = themeSettingsStore;
+        this.settingsStore = settingsStore;
         this.localizer = localizer ?? owner.Localizer;
         this.picker = picker;
         this.externalToolLocator = externalToolLocator;
         this.themeApplicationService = themeApplicationService;
         this.shellService = shellService;
-        this.fontSettingsStore = fontSettingsStore;
         this.fontFamilyCatalog = fontFamilyCatalog;
         this.fontApplicationService = fontApplicationService;
         this.settingsDirectory = settingsDirectory;
@@ -89,7 +84,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
         SaveCommand = new UiCommand(
             async (_, token) => await SaveAsync(token),
-            _ => appSettingsStore is not null || themeSettingsStore is not null || fontSettingsStore is not null);
+            _ => settingsStore is not null);
         ResetCommand = new UiCommand((_, _) =>
         {
             ApplyDefaults();
@@ -395,9 +390,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FrameAccuracyTolerance.ToString("0.###", CultureInfo.InvariantCulture);
 
     public bool HasUnsavedChanges =>
-        appSettingsStore is not null && CurrentAppSettings() != savedAppSettings
-        || themeSettingsStore is not null && CurrentThemeSettings() != savedThemeSettings
-        || fontSettingsStore is not null && CurrentFontSettings() != savedFontSettings;
+        settingsStore is not null
+        && (CurrentAppSettings() != savedAppSettings
+            || CurrentThemeSettings() != savedThemeSettings
+            || CurrentFontSettings() != savedFontSettings);
 
     public bool SettingsLoadFailed
     {
@@ -471,24 +467,19 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         liveApplyEnabled = false;
         try
         {
-            if (appSettingsStore is not null)
+            if (settingsStore is not null)
             {
-                var settings = await LoadAppSettingsOrDefaultAsync(cancellationToken);
-                ApplyAppSettingsToFields(settings);
+                var settings = await LoadSettingsOrDefaultAsync(cancellationToken);
+                savedSettings = settings;
+                ApplyAppSettingsToFields(settings.Application);
                 savedAppSettings = CurrentAppSettings();
-            }
 
-            if (themeSettingsStore is not null)
-            {
-                var theme = await LoadThemeSettingsOrDefaultAsync(cancellationToken);
+                var theme = settings.Theme;
                 savedThemeSettings = ThemePresetCatalog.Normalize(theme);
                 ApplyThemeSettings(theme);
                 themeApplicationService?.Apply(theme);
-            }
 
-            if (fontSettingsStore is not null)
-            {
-                var fonts = await LoadFontSettingsOrDefaultAsync(cancellationToken);
+                var fonts = settings.Font;
                 savedFontSettings = ResolveFontSettings(fonts);
                 ApplyFontSettings(savedFontSettings);
                 fontApplicationService?.Apply(savedFontSettings);
@@ -505,72 +496,26 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         StatusText = StatusTextForCurrentLoadState();
     }
 
-    private async ValueTask<AppSettings> LoadAppSettingsOrDefaultAsync(CancellationToken cancellationToken)
+    private async ValueTask<ChapterToolSettings> LoadSettingsOrDefaultAsync(CancellationToken cancellationToken)
     {
         try
         {
-            return await appSettingsStore!.LoadAsync(cancellationToken);
+            return await settingsStore!.LoadAsync(cancellationToken);
         }
         catch (IOException)
         {
             SettingsLoadFailed = true;
-            return new AppSettings();
+            return ChapterToolSettings.Default;
         }
         catch (UnauthorizedAccessException)
         {
             SettingsLoadFailed = true;
-            return new AppSettings();
+            return ChapterToolSettings.Default;
         }
         catch (CorruptSettingsFileException)
         {
             SettingsLoadFailed = true;
-            return new AppSettings();
-        }
-    }
-
-    private async ValueTask<ThemeSettings> LoadThemeSettingsOrDefaultAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await themeSettingsStore!.LoadAsync(cancellationToken);
-        }
-        catch (IOException)
-        {
-            SettingsLoadFailed = true;
-            return ThemeSettings.Default;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            SettingsLoadFailed = true;
-            return ThemeSettings.Default;
-        }
-        catch (CorruptSettingsFileException)
-        {
-            SettingsLoadFailed = true;
-            return ThemeSettings.Default;
-        }
-    }
-
-    private async ValueTask<FontSettings> LoadFontSettingsOrDefaultAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await fontSettingsStore!.LoadAsync(cancellationToken);
-        }
-        catch (IOException)
-        {
-            SettingsLoadFailed = true;
-            return FontSettings.Default;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            SettingsLoadFailed = true;
-            return FontSettings.Default;
-        }
-        catch (CorruptSettingsFileException)
-        {
-            SettingsLoadFailed = true;
-            return FontSettings.Default;
+            return ChapterToolSettings.Default;
         }
     }
 
@@ -587,28 +532,26 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             return;
         }
 
-        if (appSettingsStore is not null)
+        if (settingsStore is not null)
         {
-            var settings = CurrentAppSettings();
-            await appSettingsStore.SaveAsync(settings, cancellationToken);
-            savedAppSettings = settings;
-        }
+            var application = CurrentAppSettings();
+            var theme = CurrentThemeSettings();
+            var font = CurrentFontSettings();
+            var settings = ChapterToolSettings.Normalize(savedSettings with
+            {
+                Application = application,
+                Theme = theme,
+                Font = font,
+            });
 
-        if (themeSettingsStore is not null)
-        {
-            var settings = CurrentThemeSettings();
-            await themeSettingsStore.SaveAsync(settings, cancellationToken);
-            savedThemeSettings = settings;
-            ApplyThemeSettings(settings);
-            themeApplicationService?.Apply(settings);
-        }
-
-        if (fontSettingsStore is not null)
-        {
-            var settings = CurrentFontSettings();
-            await fontSettingsStore.SaveAsync(settings, cancellationToken);
-            savedFontSettings = settings;
-            fontApplicationService?.Apply(settings);
+            await settingsStore.SaveAsync(settings, cancellationToken);
+            savedSettings = settings;
+            savedAppSettings = application;
+            savedThemeSettings = theme;
+            savedFontSettings = font;
+            ApplyThemeSettings(theme);
+            themeApplicationService?.Apply(theme);
+            fontApplicationService?.Apply(font);
         }
 
         RefreshToolStatuses();

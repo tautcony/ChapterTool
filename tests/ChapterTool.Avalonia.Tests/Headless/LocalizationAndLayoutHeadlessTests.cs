@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Infrastructure.Configuration;
@@ -51,7 +52,9 @@ public sealed partial class LocalizationAndLayoutHeadlessTests
     public async Task Runtime_language_switch_refreshes_selected_auto_frame_rate_and_dropdown_item()
     {
         var localizer = new AppLocalizationManager("zh-CN");
-        using var host = new MainWindowHeadlessTestHost(localizer: localizer);
+        using var host = new MainWindowHeadlessTestHost(
+            localizer: localizer,
+            appSettings: new AppSettings(Language: "zh-CN"));
         await host.LayoutAsync();
         var frameRateBox = host.RequiredControl<ComboBox>("FrameRateBox");
 

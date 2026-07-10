@@ -484,7 +484,7 @@ public sealed class MainWindowViewModelTests
     {
         var store = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: 0.001m));
         var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(1.004), "Intro"))));
-        var vm = CreateViewModel(load, appSettingsStore: store);
+        var vm = CreateViewModel(load, settingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
@@ -494,7 +494,10 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("25", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameInexact);
 
-        store.Current = store.Current with { FrameAccuracyTolerance = 0.2m };
+        store.Current = store.Current with
+        {
+            Application = store.Current.Application with { FrameAccuracyTolerance = 0.2m },
+        };
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
         await vm.RefreshCommand.ExecuteAsync();
 
@@ -903,14 +906,14 @@ public sealed class MainWindowViewModelTests
     {
         var store = new FakeSettingsStore(new AppSettings(SavingPath: "out", Language: "en-US"));
         var save = new FakeSaveService();
-        var vm = CreateViewModel(saveService: save, appSettingsStore: store);
+        var vm = CreateViewModel(saveService: save, settingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         await vm.SaveDirectoryCommand.ExecuteAsync("new-out");
 
         Assert.Equal("new-out", save.LastDirectory);
-        Assert.Equal("new-out", store.Current.SavingPath);
+        Assert.Equal("new-out", store.Current.Application.SavingPath);
     }
 
     [Fact]
@@ -918,14 +921,14 @@ public sealed class MainWindowViewModelTests
     {
         var store = new FakeSettingsStore(new AppSettings(SavingPath: "out", Language: "en-US"));
         var save = new FakeSaveService { Result = new ChapterExportResult(false, "", "", []) };
-        var vm = CreateViewModel(saveService: save, appSettingsStore: store);
+        var vm = CreateViewModel(saveService: save, settingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         await vm.SaveDirectoryCommand.ExecuteAsync("bad-out");
 
         Assert.Equal("bad-out", save.LastDirectory);
-        Assert.Equal("out", store.Current.SavingPath);
+        Assert.Equal("out", store.Current.Application.SavingPath);
         Assert.Equal("out", vm.SaveDirectory);
     }
 
@@ -933,12 +936,12 @@ public sealed class MainWindowViewModelTests
     public async Task UiLanguagePersistsThroughSettingsStore()
     {
         var store = new FakeSettingsStore(new AppSettings(Language: ""));
-        var vm = CreateViewModel(appSettingsStore: store);
+        var vm = CreateViewModel(settingsStore: store);
 
         await vm.SaveUiLanguageAsync("en-US", TestContext.Current.CancellationToken);
 
         Assert.Equal("en-US", vm.UiLanguage);
-        Assert.Equal("en-US", store.Current.Language);
+        Assert.Equal("en-US", store.Current.Application.Language);
     }
 
     [Fact]
@@ -946,7 +949,7 @@ public sealed class MainWindowViewModelTests
     {
         var store = new FakeSettingsStore(new AppSettings(Language: ""));
         var localizer = new AppLocalizationManager("en-US");
-        var vm = CreateViewModel(appSettingsStore: store, localizer: localizer);
+        var vm = CreateViewModel(settingsStore: store, localizer: localizer);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
 
@@ -997,7 +1000,7 @@ public sealed class MainWindowViewModelTests
         FakeWindowService? windowService = null,
         IApplicationLogService? logService = null,
         IShellService? shellService = null,
-        ISettingsStore<AppSettings>? appSettingsStore = null,
+        ISettingsStore<ChapterToolSettings>? settingsStore = null,
         IAppLocalizer? localizer = null)
     {
         logService ??= new ApplicationLogPanelProvider();
@@ -1012,7 +1015,7 @@ public sealed class MainWindowViewModelTests
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
             shellService,
-            appSettingsStore,
+            settingsStore,
             frameRateService: null,
             localizer ?? new AppLocalizationManager("en-US"));
     }
@@ -1188,15 +1191,23 @@ public sealed class MainWindowViewModelTests
         }
     }
 
-    private sealed class FakeSettingsStore(AppSettings initial) : ISettingsStore<AppSettings>
+    private sealed class FakeSettingsStore(AppSettings initial) : ISettingsStore<ChapterToolSettings>
     {
-        public AppSettings Current { get; set; } = initial;
+        public ChapterToolSettings Current { get; set; } = new() { Application = initial };
 
-        public ValueTask<AppSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
+        public ValueTask<ChapterToolSettings> LoadAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Current);
 
-        public ValueTask SaveAsync(AppSettings settings, CancellationToken cancellationToken)
+        public ValueTask SaveAsync(ChapterToolSettings settings, CancellationToken cancellationToken)
         {
             Current = settings;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask UpdateAsync(
+            Func<ChapterToolSettings, ChapterToolSettings> update,
+            CancellationToken cancellationToken)
+        {
+            Current = update(Current);
             return ValueTask.CompletedTask;
         }
     }

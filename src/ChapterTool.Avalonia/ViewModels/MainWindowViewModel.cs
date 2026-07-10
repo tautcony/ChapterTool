@@ -31,7 +31,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private readonly IApplicationLogService logService;
     private readonly ILogger<MainWindowViewModel> logger;
     private readonly IShellService? shellService;
-    private readonly ISettingsStore<AppSettings>? appSettingsStore;
+    private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
 
     private ChapterImportSource? currentGroup;
     private ChapterSet? currentInfo;
@@ -61,7 +61,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         IApplicationLogService logService,
         ILogger<MainWindowViewModel> logger,
         IShellService? shellService = null,
-        ISettingsStore<AppSettings>? appSettingsStore = null,
+        ISettingsStore<ChapterToolSettings>? settingsStore = null,
         IFrameRateService? frameRateService = null,
         IAppLocalizer? localizer = null,
         IChapterExpressionEngine? expressionEngine = null)
@@ -80,7 +80,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         this.Localizer = localizer ?? new AppLocalizationManager();
         this.shellService = shellService;
-        this.appSettingsStore = appSettingsStore;
+        this.settingsStore = settingsStore;
         chapterNameTemplateStatus = this.Localizer.GetString("Status.TemplateNotSelected");
         statusText = this.Localizer.GetString("Status.Ready");
         RefreshXmlLanguageDisplayOptions(notify: false);
@@ -612,13 +612,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public async ValueTask LoadSettingsAsync(CancellationToken cancellationToken)
     {
-        if (appSettingsStore is null)
+        if (settingsStore is null)
         {
             return;
         }
 
-        var settings = await appSettingsStore.LoadAsync(cancellationToken);
-        ApplySettings(settings);
+        var settings = await settingsStore.LoadAsync(cancellationToken);
+        ApplySettings(settings.Application);
         Log("Log.SettingsLoaded",
             ("savingPath", SaveDirectory ?? string.Empty),
             ("language", UiLanguage));
@@ -647,13 +647,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     {
         UiLanguage = AppLanguage.Normalize(language);
         Localizer.SetCulture(UiLanguage);
-        if (appSettingsStore is null)
+        if (settingsStore is null)
         {
             return;
         }
 
-        var current = await appSettingsStore.LoadAsync(cancellationToken);
-        await appSettingsStore.SaveAsync(current with { Language = UiLanguage }, cancellationToken);
+        await settingsStore.UpdateAsync(
+            current => current with { Application = current.Application with { Language = UiLanguage } },
+            cancellationToken);
         Log("Log.LanguageSet", ("language", UiLanguage));
         NotifyStateChanged();
     }
@@ -818,10 +819,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         if (result.Success && !string.IsNullOrWhiteSpace(directory))
         {
             SaveDirectory = directory;
-            if (appSettingsStore is not null)
+            if (settingsStore is not null)
             {
-                var current = await appSettingsStore.LoadAsync(cancellationToken);
-                await appSettingsStore.SaveAsync(current with { SavingPath = directory }, cancellationToken);
+                await settingsStore.UpdateAsync(
+                    current => current with { Application = current.Application with { SavingPath = directory } },
+                    cancellationToken);
             }
         }
 

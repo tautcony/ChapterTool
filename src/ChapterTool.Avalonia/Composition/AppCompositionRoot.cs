@@ -31,9 +31,7 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly FrameRateService frameRateService = new();
     private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
     private readonly AppLocalizationManager localizationManager = new();
-    private readonly AppSettingsStore appSettingsStore;
-    private readonly FontSettingsStore fontSettingsStore;
-    private readonly ThemeSettingsStore themeSettingsStore;
+    private readonly ChapterToolSettingsStore settingsStore;
     private readonly AvaloniaFontFamilyCatalog fontFamilyCatalog = new();
     private readonly AvaloniaFontApplicationService fontApplicationService;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
@@ -45,9 +43,7 @@ public sealed class AppCompositionRoot : IDisposable
         this.startupPath = startupPath;
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         this.settingsDirectory = resolvedSettingsDirectory;
-        appSettingsStore = new AppSettingsStore(resolvedSettingsDirectory);
-        fontSettingsStore = new FontSettingsStore(resolvedSettingsDirectory);
-        themeSettingsStore = new ThemeSettingsStore(resolvedSettingsDirectory);
+        settingsStore = new ChapterToolSettingsStore(resolvedSettingsDirectory);
         fontApplicationService = new AvaloniaFontApplicationService(fontFamilyCatalog);
         var serilogLogger = CreateSerilogLogger(resolvedSettingsDirectory);
         loggerFactory = LoggerFactory.Create(builder =>
@@ -61,8 +57,7 @@ public sealed class AppCompositionRoot : IDisposable
         // macOS single-file startup before Avalonia has shown the first window.
         themeApplicationService.Apply(ThemeSettings.Default);
         fontApplicationService.Apply(FontSettings.Default);
-        _ = ApplyThemeSettingsAsync();
-        _ = ApplyFontSettingsAsync();
+        _ = ApplyAppearanceSettingsAsync();
     }
 
     public MainWindow CreateMainWindow()
@@ -82,7 +77,7 @@ public sealed class AppCompositionRoot : IDisposable
             logService,
             loggerFactory.CreateLogger<MainWindowViewModel>(),
             CreateShellService(),
-            appSettingsStore,
+            settingsStore,
             frameRateService,
             localizationManager,
             expressionEngine);
@@ -115,15 +110,13 @@ public sealed class AppCompositionRoot : IDisposable
 
     public IWindowService CreateWindowService() =>
         new AvaloniaWindowService(
-            appSettingsStore,
-            themeSettingsStore,
+            settingsStore,
             themeApplicationService,
             localizationManager,
             owner => new AvaloniaSettingsPickerService(owner, localizationManager),
             CreateExternalToolLocator(),
             new AvaloniaSettingsCloseConfirmationService(localizationManager),
             shellService: CreateShellService(),
-            fontSettingsStore: fontSettingsStore,
             fontFamilyCatalog: fontFamilyCatalog,
             fontApplicationService: fontApplicationService,
             settingsDirectory: settingsDirectory);
@@ -135,51 +128,34 @@ public sealed class AppCompositionRoot : IDisposable
     public IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner, localizationManager);
 
     public IExternalToolLocator CreateExternalToolLocator() =>
-        new ExternalToolLocator(appSettingsStore, PathSearchDirectories().ToList());
+        new ExternalToolLocator(settingsStore, PathSearchDirectories().ToList());
 
     public static IProcessRunner CreateProcessRunner() => new ProcessRunner();
 
     public static INativeDependencyService CreateNativeDependencyService() =>
         new FileSystemNativeDependencyService(PathSearchDirectories().Prepend(AppContext.BaseDirectory).ToList());
 
-    private async Task ApplyThemeSettingsAsync()
+    private async Task ApplyAppearanceSettingsAsync()
     {
         try
         {
-            var settings = await themeSettingsStore.LoadAsync(CancellationToken.None);
-            themeApplicationService.Apply(settings);
+            var settings = await settingsStore.LoadAsync(CancellationToken.None);
+            themeApplicationService.Apply(settings.Theme);
+            fontApplicationService.Apply(settings.Font);
         }
         catch (IOException)
         {
             themeApplicationService.Apply(ThemeSettings.Default);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            themeApplicationService.Apply(ThemeSettings.Default);
-        }
-        catch (CorruptSettingsFileException)
-        {
-            themeApplicationService.Apply(ThemeSettings.Default);
-        }
-    }
-
-    private async Task ApplyFontSettingsAsync()
-    {
-        try
-        {
-            var settings = await fontSettingsStore.LoadAsync(CancellationToken.None);
-            fontApplicationService.Apply(settings);
-        }
-        catch (IOException)
-        {
             fontApplicationService.Apply(FontSettings.Default);
         }
         catch (UnauthorizedAccessException)
         {
+            themeApplicationService.Apply(ThemeSettings.Default);
             fontApplicationService.Apply(FontSettings.Default);
         }
         catch (CorruptSettingsFileException)
         {
+            themeApplicationService.Apply(ThemeSettings.Default);
             fontApplicationService.Apply(FontSettings.Default);
         }
     }

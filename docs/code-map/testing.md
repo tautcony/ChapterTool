@@ -72,8 +72,10 @@ High-signal test files:
   - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs`
 - settings persistence:
   - `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`
-  - `tests/ChapterTool.Infrastructure.Tests/FontSettingsStoreTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/ChapterToolSettingsFontTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ThemePresetCatalogTests.cs`
+
+`SettingsMigrationTests` is the primary behavioral coverage for the single versioned `settings.json` document: aggregate persistence, unchanged-file snapshot caching, ignored predecessor files, version-zero upgrade, current-version no-rewrite behavior, invalid/future-version handling, corrupt active-file preservation, and concurrent aggregate updates. `ChapterToolSettingsFontTests` keeps focused coverage of font normalization through the unified `font` child content.
 
 Fixtures:
 
@@ -114,7 +116,7 @@ The settings Headless workflows verify the footer settings-folder action, includ
 
 `LocalizationAndLayoutHeadlessTests` covers runtime localization of both selector dropdown entries and their current selection text, including the automatic frame-rate option.
 
-Font settings coverage is concentrated in `FontSettingsStoreTests`, `AvaloniaFontFamilyCatalogTests`, `AvaloniaFontApplicationServiceTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
+Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AvaloniaFontApplicationServiceTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
 
 ## Quick Routing
 

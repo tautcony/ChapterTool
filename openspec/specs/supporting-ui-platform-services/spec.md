@@ -221,24 +221,24 @@ The application SHALL persist supported UI languages as explicit culture tags wh
 - **THEN** localization SHALL fall back to Simplified Chinese and SHALL keep the application usable
 
 ### Requirement: Typed settings cover editable application preferences
-The settings system SHALL persist all settings exposed by the unified settings panel through typed cross-platform stores while preserving legacy migration behavior.
+The settings system SHALL persist all settings exposed by the unified settings panel through one typed cross-platform aggregate store backed by one versioned settings document.
 
 #### Scenario: Existing settings still load
-- **WHEN** existing `appsettings.json` files or migrated `chaptertool.json` files omit newly added settings fields
+- **WHEN** `settings.json` omits newly added application settings fields
 - **THEN** the settings store SHALL load successfully and use defaults matching the current application startup behavior
 
-#### Scenario: Settings saves are serialized
-- **WHEN** multiple application or theme settings saves are requested concurrently
-- **THEN** each store SHALL serialize writes through a single save path
-- **AND** temporary file names SHALL be unique per write so one save cannot delete or replace another save's in-progress temporary file
+#### Scenario: Settings panel commits once
+- **WHEN** the user saves application, theme, and font choices from the settings panel
+- **THEN** the panel SHALL submit one aggregate settings value through one store call
+- **AND** the store SHALL perform one atomic replacement of the unified document
 
 #### Scenario: Workflow defaults persist
 - **WHEN** the user saves default save format or default XML language from the settings panel
-- **THEN** those defaults SHALL be written to typed settings and applied when a new main window ViewModel loads settings
+- **THEN** those defaults SHALL be written to the application child content and applied when a new main window ViewModel loads aggregate settings
 
-#### Scenario: Theme colors remain compatible
+#### Scenario: Appearance settings remain typed
 - **WHEN** appearance settings are saved from the settings panel
-- **THEN** the six theme color slots SHALL continue using the existing theme settings store and legacy color slot order
+- **THEN** theme preset identity and font family choices SHALL be written as child content of the same aggregate settings value
 
 ### Requirement: External tool settings are editable and verifiable
 The application SHALL allow users to configure, clear, and verify external tool paths used by current import workflows.

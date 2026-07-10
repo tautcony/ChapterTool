@@ -150,7 +150,7 @@ Start with:
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
 
-Output defaults such as save format, XML language, UTF-8 BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`. `AppCompositionRoot` also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
+Output defaults such as save format, XML language, UTF-8 BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
 
 Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together.
 

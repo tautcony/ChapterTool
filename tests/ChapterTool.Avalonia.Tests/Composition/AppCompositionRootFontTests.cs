@@ -30,7 +30,9 @@ public sealed class AppCompositionRootFontTests
         var ui = families[0];
         var mono = families.Length > 1 ? families[1] : families[0];
         var root = CreateTempDirectory();
-        await new FontSettingsStore(root).SaveAsync(new FontSettings(ui, mono), TestContext.Current.CancellationToken);
+        await new ChapterToolSettingsStore(root).SaveAsync(
+            new ChapterToolSettings { Font = new FontSettings(ui, mono) },
+            TestContext.Current.CancellationToken);
 
         using var composition = new AppCompositionRoot(settingsDirectory: root);
         await WaitForFontResourcesAsync(ui, mono);
@@ -43,7 +45,7 @@ public sealed class AppCompositionRootFontTests
     public async Task Corrupt_font_settings_keep_defaults_and_main_window_usable()
     {
         var root = CreateTempDirectory();
-        await File.WriteAllTextAsync(Path.Combine(root, "font-settings.json"), "{");
+        await File.WriteAllTextAsync(Path.Combine(root, ChapterToolSettingsStore.FileName), "{");
 
         using var composition = new AppCompositionRoot(settingsDirectory: root);
         var window = composition.CreateMainWindow();

@@ -85,13 +85,17 @@ public sealed class FfprobeMediaChapterIntegrationTests
         }
     }
 
-    private sealed class EmptySettingsStore : ISettingsStore<Configuration.AppSettings>
+    private sealed class EmptySettingsStore : ISettingsStore<Configuration.ChapterToolSettings>
     {
-        public ValueTask<Configuration.AppSettings> LoadAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromResult(new Configuration.AppSettings());
+        public ValueTask<Configuration.ChapterToolSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromResult(Configuration.ChapterToolSettings.Default);
 
-        public ValueTask SaveAsync(Configuration.AppSettings settings, CancellationToken cancellationToken) =>
+        public ValueTask SaveAsync(Configuration.ChapterToolSettings settings, CancellationToken cancellationToken) =>
             ValueTask.CompletedTask;
+
+        public ValueTask UpdateAsync(
+            Func<Configuration.ChapterToolSettings, Configuration.ChapterToolSettings> update,
+            CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
 
     private sealed class EmptyMkvToolNixInstallProbe : IMkvToolNixInstallProbe

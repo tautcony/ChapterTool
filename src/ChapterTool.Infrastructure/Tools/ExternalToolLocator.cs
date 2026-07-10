@@ -5,7 +5,7 @@ using ChapterTool.Infrastructure.Configuration;
 namespace ChapterTool.Infrastructure.Tools;
 
 public sealed class ExternalToolLocator(
-    ISettingsStore<AppSettings> settingsStore,
+    ISettingsStore<ChapterToolSettings> settingsStore,
     IReadOnlyList<string>? searchDirectories = null,
     IMkvToolNixInstallProbe? mkvToolNixInstallProbe = null,
     IExternalToolDefaultCandidateProvider? defaultCandidateProvider = null)
@@ -24,7 +24,7 @@ public sealed class ExternalToolLocator(
         cancellationToken.ThrowIfCancellationRequested();
 
         var settings = await settingsStore.LoadAsync(cancellationToken);
-        var configuredPath = GetConfiguredPath(toolId, settings);
+        var configuredPath = GetConfiguredPath(toolId, settings.Application);
         var cacheKey = new ToolCacheKey(toolId.ToLowerInvariant(), configuredPath);
         if (TryGetCachedLocation(cacheKey) is { } cached)
         {

@@ -24,7 +24,7 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
             .Where(static directory => !string.IsNullOrWhiteSpace(directory))
             .ToArray();
 
-        var locator = new ExternalToolLocator(new AppSettingsStore(root), pathDirs);
+        var locator = new ExternalToolLocator(new ChapterToolSettingsStore(root), pathDirs);
         mkvextractLocation = await locator.LocateAsync("mkvextract", TestContext.Current.CancellationToken);
 
         if (!mkvextractLocation.Found)

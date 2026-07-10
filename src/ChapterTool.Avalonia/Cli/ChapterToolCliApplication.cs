@@ -413,8 +413,8 @@ public sealed class ChapterToolCliApplication(
         var formatter = new Core.Transform.ChapterTimeFormatter();
         var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool.Cli");
         Directory.CreateDirectory(settingsDirectory);
-        var appSettingsStore = new Infrastructure.Configuration.AppSettingsStore(settingsDirectory);
-        var toolLocator = new Infrastructure.Tools.ExternalToolLocator(appSettingsStore, AppCompositionRoot.PathSearchDirectoriesForTests().ToList());
+        var settingsStore = new Infrastructure.Configuration.ChapterToolSettingsStore(settingsDirectory);
+        var toolLocator = new Infrastructure.Tools.ExternalToolLocator(settingsStore, AppCompositionRoot.PathSearchDirectoriesForTests().ToList());
         return new RuntimeChapterImporterRegistry(
             formatter,
             toolLocator,
