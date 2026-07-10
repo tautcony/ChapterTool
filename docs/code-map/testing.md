@@ -72,6 +72,7 @@ High-signal test files:
   - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs`
 - settings persistence:
   - `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/ThemePresetCatalogTests.cs`
 
 Fixtures:
 
@@ -90,6 +91,7 @@ High-signal test files:
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/`
+  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
 - CLI
   - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
 - localization
@@ -102,6 +104,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Headless/ToolViewsHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Headless/SettingsToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowHeadlessTestHost.cs`
+
+Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light/dark presets and verifies the live palette preview, application variant, semantic resources, and existing DataGrid column-header brushes.
 
 ## Quick Routing
 

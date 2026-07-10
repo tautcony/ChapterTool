@@ -12,7 +12,7 @@ namespace ChapterTool.Avalonia.Services;
 public sealed class AvaloniaWindowService : IWindowService
 {
     private readonly ISettingsStore<AppSettings>? appSettingsStore;
-    private readonly ISettingsStore<ThemeColorSettings>? themeSettingsStore;
+    private readonly ISettingsStore<ThemeSettings>? themeSettingsStore;
     private readonly IThemeApplicationService? themeApplicationService;
     private readonly ISettingsCloseConfirmationService settingsCloseConfirmationService;
     private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
@@ -24,7 +24,7 @@ public sealed class AvaloniaWindowService : IWindowService
 
     public AvaloniaWindowService(
         ISettingsStore<AppSettings>? appSettingsStore = null,
-        ISettingsStore<ThemeColorSettings>? themeSettingsStore = null,
+        ISettingsStore<ThemeSettings>? themeSettingsStore = null,
         IThemeApplicationService? themeApplicationService = null,
         IAppLocalizer? localizer = null,
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
@@ -75,8 +75,6 @@ public sealed class AvaloniaWindowService : IWindowService
             Height = 460,
             MinWidth = 420,
             MinHeight = 280,
-            MaxWidth = 1100,
-            MaxHeight = 840
         };
         var closeAccepted = false;
         Refresh(window, windowId, parameter);
@@ -169,7 +167,6 @@ public sealed class AvaloniaWindowService : IWindowService
                     themeApplicationService,
                     shellService)
             },
-            "color-settings" => new ColorSettingsView { DataContext = new ColorSettingsViewModel(themeSettingsStore, themeApplicationService) },
             "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
             "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel, new AvaloniaFilePickerService(window, localizer)) },
             "template-names" => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(viewModel) },
@@ -192,7 +189,6 @@ public sealed class AvaloniaWindowService : IWindowService
         "preview" => localizer.GetString("Tool.Preview.Title"),
         "log" => localizer.GetString("Tool.Log.Title"),
         "settings" => localizer.GetString("Tool.Settings.Title"),
-        "color-settings" => localizer.GetString("Tool.ColorSettings.Title"),
         "language" => localizer.GetString("Tool.Language.Title"),
         "expression" => localizer.GetString("Tool.Expression.Title"),
         "template-names" => localizer.GetString("Tool.TemplateNames.Title"),

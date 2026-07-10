@@ -599,6 +599,17 @@
 <data name="Settings.Appearance" xml:space="preserve">
     <value>外観</value>
   </data>
+<data name="Settings.Appearance.Preset" xml:space="preserve"><value>テーマプリセット</value></data>
+<data name="Settings.Appearance.Preview" xml:space="preserve"><value>パレットプレビュー</value></data>
+<data name="Settings.Appearance.PreviewFor" xml:space="preserve"><value>{name} のパレットプレビュー</value></data>
+<data name="Settings.Appearance.Preset.avalonia-default" xml:space="preserve"><value>Avalonia デフォルト</value></data>
+<data name="Settings.Appearance.Preset.solarized-light" xml:space="preserve"><value>Solarized ライト</value></data>
+<data name="Settings.Appearance.Preset.solarized-dark" xml:space="preserve"><value>Solarized ダーク</value></data>
+<data name="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve"><value>Gruvbox ライト</value></data>
+<data name="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve"><value>Gruvbox ダーク</value></data>
+<data name="Settings.Appearance.Preset.ayu-light" xml:space="preserve"><value>Ayu ライト</value></data>
+<data name="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve"><value>Ayu ミラージュ</value></data>
+<data name="Settings.Appearance.Preset.ayu-dark" xml:space="preserve"><value>Ayu ダーク</value></data>
 <data name="Settings.About" xml:space="preserve">
     <value>このアプリについて</value>
   </data>
@@ -769,12 +780,6 @@
   </data>
 <data name="Status.ZonesGenerated" xml:space="preserve">
     <value>Zones を生成しました</value>
-  </data>
-<data name="Tool.ColorSettings.Title" xml:space="preserve">
-    <value>色設定</value>
-  </data>
-<data name="Tool.ColorSlots" xml:space="preserve">
-    <value>旧形式の色スロット</value>
   </data>
 <data name="Tool.Expression.Apply" xml:space="preserve">
     <value>式を適用</value>

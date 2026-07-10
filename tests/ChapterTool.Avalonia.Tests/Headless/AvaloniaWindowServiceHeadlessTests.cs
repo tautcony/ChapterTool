@@ -15,7 +15,9 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     [AvaloniaFact]
     public async Task Settings_close_cancel_keeps_window_open_and_live_changes()
     {
-        using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
+        using var host = new MainWindowHeadlessTestHost(
+            appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"),
+            themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
         var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
@@ -23,6 +25,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         var settings = SettingsViewModel(window);
 
         settings.SaveDirectory = "live";
+        SelectPreset(settings, "ayu-dark");
         window.Close();
         await DrainUiAsync();
 
@@ -30,12 +33,16 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.True(window.IsVisible);
         Assert.Equal("live", host.ViewModel.SaveDirectory);
         Assert.Equal("saved", host.AppSettingsStore.Current.SavingPath);
+        Assert.Equal("solarized-light", host.ThemeSettingsStore.Current.PresetId);
+        Assert.Equal("ayu-dark", settings.SelectedThemePreset.Id);
     }
 
     [AvaloniaFact]
     public async Task Settings_close_discard_restores_saved_state_and_closes()
     {
-        using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
+        using var host = new MainWindowHeadlessTestHost(
+            appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"),
+            themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Discard);
         var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
@@ -43,6 +50,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         var settings = SettingsViewModel(window);
 
         settings.SaveDirectory = "live";
+        SelectPreset(settings, "ayu-dark");
         window.Close();
         await DrainUiAsync();
 
@@ -50,12 +58,16 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.False(window.IsVisible);
         Assert.Equal("saved", host.ViewModel.SaveDirectory);
         Assert.Equal("saved", host.AppSettingsStore.Current.SavingPath);
+        Assert.Equal("solarized-light", host.ThemeSettingsStore.Current.PresetId);
+        Assert.Equal("solarized-light", settings.SelectedThemePreset.Id);
     }
 
     [AvaloniaFact]
     public async Task Settings_close_save_persists_state_and_closes()
     {
-        using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
+        using var host = new MainWindowHeadlessTestHost(
+            appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"),
+            themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Save);
         var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
@@ -63,6 +75,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         var settings = SettingsViewModel(window);
 
         settings.SaveDirectory = "live";
+        SelectPreset(settings, "ayu-dark");
         window.Close();
         await DrainUiAsync();
 
@@ -70,6 +83,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.False(window.IsVisible);
         Assert.Equal("live", host.ViewModel.SaveDirectory);
         Assert.Equal("live", host.AppSettingsStore.Current.SavingPath);
+        Assert.Equal("ayu-dark", host.ThemeSettingsStore.Current.PresetId);
     }
 
     [AvaloniaFact]
@@ -173,6 +187,13 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         return windows["settings"];
     }
 
+    private static void SelectPreset(SettingsToolViewModel settings, string presetId)
+    {
+        var index = settings.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
+        Assert.True(index >= 0, $"Preset not found: {presetId}");
+        settings.SelectedThemePresetIndex = index;
+    }
+
     private static async ValueTask DrainUiAsync()
     {
         Dispatcher.UIThread.RunJobs();
@@ -198,7 +219,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
     private sealed class FakeThemeApplicationService : IThemeApplicationService
     {
-        public void Apply(ThemeColorSettings settings)
+        public void Apply(ThemeSettings settings)
         {
         }
     }

@@ -21,7 +21,7 @@
     </Style>
     <Style Selector="TextBlock.status">
       <Setter Property="FontSize" Value="12" />
-      <Setter Property="Foreground" Value="#586069" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.MutedForegroundBrush}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.aboutBody">
@@ -32,7 +32,7 @@
     <Style Selector="TextBlock.repoAddress">
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="FontFamily" Value="Consolas, Menlo, Monaco, monospace" />
-      <Setter Property="Foreground" Value="#2F6FED" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AccentBrush}" />
     </Style>
     <Style Selector="Button.linkButton">
       <Setter Property="HorizontalAlignment" Value="Left" />
@@ -40,7 +40,7 @@
       <Setter Property="Padding" Value="0" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Foreground" Value="#2F6FED" />
+      <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AccentBrush}" />
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="TextBox, ComboBox">
@@ -60,11 +60,11 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="TextAlignment" Value="Right" />
     </Style>
-    <Style Selector="ColorPicker">
-      <Setter Property="Width" Value="78" />
-      <Setter Property="Height" Value="40" />
-      <Setter Property="MinWidth" Value="78" />
-      <Setter Property="MinHeight" Value="40" />
+    <Style Selector="Border.themeSwatch">
+      <Setter Property="Width" Value="34" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Button.compact">
       <Setter Property="MinWidth" Value="42" />
@@ -248,20 +248,45 @@
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="12" Margin="4,12,12,4">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.Appearance}" />
-            <ItemsControl ItemsSource="{Binding ColorSlots}">
-              <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="vm:ColorSlotViewModel">
-                  <Grid ColumnDefinitions="150,Auto,120" ColumnSpacing="12" Margin="0,0,0,8" VerticalAlignment="Center">
-                    <TextBlock Grid.Column="0" Classes="label" Text="{Binding Name}" />
-                    <ColorPicker Grid.Column="1" Color="{Binding Color, Mode=TwoWay}" VerticalAlignment="Center" />
-                    <TextBox Grid.Column="2"
-                             Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                             VerticalAlignment="Center"
-                             HorizontalAlignment="Stretch" />
-                  </Grid>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+              <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.Preset}" />
+              <ComboBox x:Name="ThemePresetCombo"
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        MinWidth="240"
+                        HorizontalAlignment="Left"
+                        ItemsSource="{Binding ThemePresets}"
+                        SelectedIndex="{Binding SelectedThemePresetIndex}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ThemePresetOptionViewModel">
+                    <TextBlock Text="{Binding DisplayName}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+                <ComboBox.SelectionBoxItemTemplate>
+                  <DataTemplate x:DataType="vm:ThemePresetOptionViewModel">
+                    <TextBlock Text="{Binding DisplayName}" />
+                  </DataTemplate>
+                </ComboBox.SelectionBoxItemTemplate>
+              </ComboBox>
+              <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.Preview}" />
+              <ItemsControl x:Name="ThemePalettePreview"
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            HorizontalAlignment="Left"
+                            ItemsSource="{Binding SelectedThemePreset.PreviewSwatches}"
+                            AutomationProperties.Name="{Binding ThemePreviewAutomationName}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="4" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:ThemeSwatchViewModel">
+                    <Border Classes="themeSwatch" Background="{Binding Color}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Grid>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

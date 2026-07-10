@@ -52,7 +52,7 @@ public sealed class AppCompositionRoot : IDisposable
 
         // Settings are loaded asynchronously from MainWindow.Opened. Blocking here can deadlock
         // macOS single-file startup before Avalonia has shown the first window.
-        themeApplicationService.Apply(ThemeColorSettings.Default);
+        themeApplicationService.Apply(ThemeSettings.Default);
         _ = ApplyThemeSettingsAsync();
     }
 
@@ -138,15 +138,15 @@ public sealed class AppCompositionRoot : IDisposable
         }
         catch (IOException)
         {
-            themeApplicationService.Apply(ThemeColorSettings.Default);
+            themeApplicationService.Apply(ThemeSettings.Default);
         }
         catch (UnauthorizedAccessException)
         {
-            themeApplicationService.Apply(ThemeColorSettings.Default);
+            themeApplicationService.Apply(ThemeSettings.Default);
         }
         catch (CorruptSettingsFileException)
         {
-            themeApplicationService.Apply(ThemeColorSettings.Default);
+            themeApplicationService.Apply(ThemeSettings.Default);
         }
     }
 

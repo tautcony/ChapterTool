@@ -1,6 +1,5 @@
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
-using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Infrastructure.Platform;
 using Microsoft.Extensions.Logging;

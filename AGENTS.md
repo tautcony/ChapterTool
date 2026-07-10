@@ -36,6 +36,7 @@
   - `openspec list --json`
   - `openspec status --change "<change-name>" --json`
   - `openspec validate "<change-name>" --strict`
+- Before archiving a change with delta specs, sync every delta into the corresponding main spec under `openspec/specs/`; do not archive with spec sync skipped.
 - After completing and archiving a change, validate all specs:
   - `openspec validate --all`
 

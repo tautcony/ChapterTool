@@ -7,7 +7,6 @@ using Avalonia.VisualTree;
 using AvaloniaEdit;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.Views;
 
@@ -578,7 +577,6 @@ public sealed partial class MainWindow : Window
         yield return viewModel.OpenRelatedMediaCommand;
         yield return viewModel.PreviewCommand;
         yield return viewModel.SettingsCommand;
-        yield return viewModel.ColorSettingsCommand;
         yield return viewModel.ExpressionCommand;
         yield return viewModel.TemplateNamesCommand;
         yield return viewModel.ZonesCommand;

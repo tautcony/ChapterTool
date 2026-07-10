@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -26,7 +25,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         ChapterImportResult? loadResult = null,
         AppLocalizationManager? localizer = null,
         AppSettings? appSettings = null,
-        ThemeColorSettings? themeSettings = null,
+        ThemeSettings? themeSettings = null,
         IShellService? shellService = null)
         : this(
             loadResult is null
@@ -43,7 +42,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         IReadOnlyList<ChapterImportResult> loadResults,
         AppLocalizationManager? localizer = null,
         AppSettings? appSettings = null,
-        ThemeColorSettings? themeSettings = null,
+        ThemeSettings? themeSettings = null,
         IShellService? shellService = null)
     {
         Localizer = localizer ?? new AppLocalizationManager("en-US");
@@ -55,7 +54,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         FilePickerService = new FakeFilePickerService();
         SettingsPickerService = new FakeSettingsPickerService();
         AppSettingsStore = new FakeSettingsStore<AppSettings>(appSettings ?? new AppSettings(Language: "en-US"));
-        ThemeSettingsStore = new FakeSettingsStore<ThemeColorSettings>(themeSettings ?? ThemeColorSettings.Default);
+        ThemeSettingsStore = new FakeSettingsStore<ThemeSettings>(themeSettings ?? ThemeSettings.Default);
         ShellService = shellService ?? new FakeShellService();
         logService = new ApplicationLogPanelProvider();
         ViewModel = new MainWindowViewModel(
@@ -92,7 +91,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public FakeSettingsStore<AppSettings> AppSettingsStore { get; }
 
-    public FakeSettingsStore<ThemeColorSettings> ThemeSettingsStore { get; }
+    public FakeSettingsStore<ThemeSettings> ThemeSettingsStore { get; }
 
     public IShellService ShellService { get; }
 

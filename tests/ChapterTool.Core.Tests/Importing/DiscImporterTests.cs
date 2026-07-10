@@ -2,7 +2,6 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
-using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Importing;

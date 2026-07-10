@@ -599,6 +599,17 @@
 <data name="Settings.Appearance" xml:space="preserve">
     <value>外观</value>
   </data>
+<data name="Settings.Appearance.Preset" xml:space="preserve"><value>主题预设</value></data>
+<data name="Settings.Appearance.Preview" xml:space="preserve"><value>配色预览</value></data>
+<data name="Settings.Appearance.PreviewFor" xml:space="preserve"><value>{name} 的配色预览</value></data>
+<data name="Settings.Appearance.Preset.avalonia-default" xml:space="preserve"><value>Avalonia 默认</value></data>
+<data name="Settings.Appearance.Preset.solarized-light" xml:space="preserve"><value>Solarized 浅色</value></data>
+<data name="Settings.Appearance.Preset.solarized-dark" xml:space="preserve"><value>Solarized 深色</value></data>
+<data name="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve"><value>Gruvbox 浅色</value></data>
+<data name="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve"><value>Gruvbox 深色</value></data>
+<data name="Settings.Appearance.Preset.ayu-light" xml:space="preserve"><value>Ayu 浅色</value></data>
+<data name="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve"><value>Ayu 幻景</value></data>
+<data name="Settings.Appearance.Preset.ayu-dark" xml:space="preserve"><value>Ayu 深色</value></data>
 <data name="Settings.About" xml:space="preserve">
     <value>关于</value>
   </data>
@@ -769,12 +780,6 @@
   </data>
 <data name="Status.ZonesGenerated" xml:space="preserve">
     <value>Zones 已生成</value>
-  </data>
-<data name="Tool.ColorSettings.Title" xml:space="preserve">
-    <value>颜色设置</value>
-  </data>
-<data name="Tool.ColorSlots" xml:space="preserve">
-    <value>旧版颜色槽</value>
   </data>
 <data name="Tool.Expression.Apply" xml:space="preserve">
     <value>应用表达式</value>
