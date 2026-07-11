@@ -1,12 +1,13 @@
 ---
 name: openspec-verify-change
 description: Verify implementation matches change artifacts. Use when the user wants to validate that implementation is complete, correct, and coherent before archiving.
+allowed-tools: Bash(openspec:*)
 license: MIT
 compatibility: Requires openspec CLI.
 metadata:
   author: openspec
   version: "1.0"
-  generatedBy: "1.5.0"
+  generatedBy: "1.6.0"
 ---
 
 Verify that an implementation matches the change artifacts (specs, tasks, design).
