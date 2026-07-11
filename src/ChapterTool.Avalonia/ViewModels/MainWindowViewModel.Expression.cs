@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Session;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -115,7 +116,7 @@ public sealed partial class MainWindowViewModel
     {
         if (currentInfo is null)
         {
-            lastSuccessfulExpressionProjection = null;
+            workspace.ClearProjectionCache();
             Rows.Clear();
             return;
         }
@@ -131,14 +132,14 @@ public sealed partial class MainWindowViewModel
         // Failed evaluations would otherwise snap back to source times before the user finishes typing.
         if (ApplyExpression
             && projection.Diagnostics.Any(ChapterExpressionValidation.IsLuaExpressionDiagnostic)
-            && lastSuccessfulExpressionProjection is not null)
+            && workspace.LastSuccessfulExpressionProjection is not null)
         {
             return;
         }
 
         if (!ApplyExpression || !projection.Diagnostics.Any(ChapterExpressionValidation.IsLuaExpressionDiagnostic))
         {
-            lastSuccessfulExpressionProjection = ApplyExpression ? projection : null;
+            workspace.LastSuccessfulExpressionProjection = ApplyExpression ? projection : null;
         }
 
         Rows.Clear();
@@ -183,13 +184,5 @@ public sealed partial class MainWindowViewModel
             : outputProjectionService.Project(currentInfo, CurrentExportOptions());
 
     private ChapterExportOptions CurrentExportOptionsForProjectedInfo() =>
-        CurrentExportOptions() with
-        {
-            ApplyExpression = false,
-            AutoGenerateNames = false,
-            UseTemplateNames = false,
-            ChapterNameTemplateText = string.Empty,
-            OrderShift = 0,
-            ProjectOutput = false
-        };
+        workspace.CreateExportOptionsForProjectedInfo(CurrentExportPreferenceInputs());
 }

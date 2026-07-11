@@ -212,6 +212,51 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task LateProgressFromSupersededLoadIsIgnored()
+    {
+        var load = new ControlledLoadService(new Dictionary<string, ChapterImportResult>(StringComparer.Ordinal)
+        {
+            ["slow.txt"] = ImportResult("slow.txt", Info(ChapterImportFormat.Ogm, "slow.txt", new Chapter(1, TimeSpan.Zero, "Slow"))),
+            ["fast.txt"] = ImportResult("fast.txt", Info(ChapterImportFormat.Ogm, "fast.txt", new Chapter(1, TimeSpan.Zero, "Fast")))
+        });
+        var vm = CreateViewModel(load);
+        var progressAfterFast = new List<double>();
+
+        var slow = vm.LoadCommand.ExecuteAsync("slow.txt").AsTask();
+        await load.WaitForRequestAsync("slow.txt");
+
+        // Use DropPathLoadCommand so the second load can start while LoadCommand is still executing.
+        var fast = vm.DropPathLoadCommand.ExecuteAsync("fast.txt").AsTask();
+        await load.WaitForRequestAsync("fast.txt");
+        load.Complete("fast.txt");
+        await fast;
+
+        Assert.Equal("fast.txt", vm.CurrentPath);
+        Assert.Equal(1, vm.Progress);
+
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.Progress))
+            {
+                progressAfterFast.Add(vm.Progress);
+            }
+        };
+
+        // Late progress from the superseded slow load must not move the newer session's progress.
+        load.ReportProgress("slow.txt", new ChapterImportProgress(ChapterImportProgressPhase.ExportingChapters, 0.9));
+        Assert.Equal(1, vm.Progress);
+        Assert.Empty(progressAfterFast);
+
+        load.Complete("slow.txt");
+        await slow;
+
+        Assert.Equal("fast.txt", vm.CurrentPath);
+        Assert.Equal("Fast", vm.Rows.Single().Name);
+        Assert.Equal(1, vm.Progress);
+        Assert.Empty(progressAfterFast);
+    }
+
+    [Fact]
     public async Task ClipDisplayOptionsExposeMainContentWithRemarksWithoutChangingSourceOptions()
     {
         var firstInfo = Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.Zero, "A"));
@@ -1188,6 +1233,7 @@ public sealed class MainWindowViewModelTests
     {
         private readonly Dictionary<string, TaskCompletionSource> started = [];
         private readonly Dictionary<string, TaskCompletionSource<ChapterImportResult>> completions = [];
+        private readonly Dictionary<string, IChapterImportProgressReporter?> progressReporters = new(StringComparer.Ordinal);
 
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken)
         {
@@ -1198,6 +1244,7 @@ public sealed class MainWindowViewModelTests
         {
             var startedSource = SourceFor(started, path);
             var completion = CompletionFor(path);
+            progressReporters[path] = progress;
             startedSource.TrySetResult();
             progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ParsingChapters, 0.25));
             using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
@@ -1209,6 +1256,16 @@ public sealed class MainWindowViewModelTests
         public void Complete(string path)
         {
             CompletionFor(path).TrySetResult(results[path]);
+        }
+
+        public void ReportProgress(string path, ChapterImportProgress progress)
+        {
+            if (!progressReporters.TryGetValue(path, out var reporter) || reporter is null)
+            {
+                throw new InvalidOperationException($"No progress reporter captured for '{path}'.");
+            }
+
+            reporter.Report(progress);
         }
 
         private TaskCompletionSource<ChapterImportResult> CompletionFor(string path)

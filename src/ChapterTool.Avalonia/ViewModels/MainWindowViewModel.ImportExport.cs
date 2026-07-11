@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Session;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -19,11 +20,10 @@ namespace ChapterTool.Avalonia.ViewModels;
 
 public sealed partial class MainWindowViewModel
 {
-    private ChapterExportOptions CurrentExportOptions() =>
+    private ExportPreferenceInputs CurrentExportPreferenceInputs() =>
         new(
             Format: SaveFormat,
             XmlLanguage: XmlLanguage,
-            SourceFileName: currentInfo?.SourceName,
             AutoGenerateNames: AutoGenerateNames,
             UseTemplateNames: UseTemplateNames,
             ChapterNameTemplateText: ChapterNameTemplateText,
@@ -35,9 +35,12 @@ public sealed partial class MainWindowViewModel
             TextEncoding: OutputTextEncoding,
             EmitBom: EmitBom);
 
+    private ChapterExportOptions CurrentExportOptions() =>
+        workspace.CreateExportOptions(CurrentExportPreferenceInputs());
+
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {
-        var operationId = Interlocked.Increment(ref loadOperationVersion);
+        var operationId = workspace.BeginLoadOperation();
         if (string.IsNullOrWhiteSpace(path))
         {
             SetStatus("Status.NoSourceSelected");
@@ -51,7 +54,7 @@ public sealed partial class MainWindowViewModel
         SetProgressStatus(ChapterImportProgressPhase.LoadingSource);
         var progress = new ChapterImportProgressSink(update =>
         {
-            if (operationId != Volatile.Read(ref loadOperationVersion))
+            if (!workspace.IsCurrentRevision(operationId))
             {
                 return;
             }
@@ -60,7 +63,7 @@ public sealed partial class MainWindowViewModel
             SetProgressStatus(update.Phase);
         });
         var result = await loadService.LoadAsync(path, progress, cancellationToken);
-        if (operationId != Volatile.Read(ref loadOperationVersion))
+        if (!workspace.IsCurrentRevision(operationId))
         {
             return;
         }
@@ -77,21 +80,16 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        CurrentPath = path;
-        DisplayPath = Path.GetFileName(path);
-        currentGroup = result.Groups[0];
-        splitClipGroup = null;
-        combinedClipOption = null;
-        IsClipCombineChecked = false;
-        currentInfoBelongsToSelectedClip = false;
-        SelectedClipIndex = -1;
-        ClipOptions.Clear();
-        foreach (var entry in currentGroup.Entries)
+        // Load always starts in split mode; previous combined backup/mode is discarded.
+        var session = ClipSessionTransitions.FromLoad(result.Groups[0]);
+        if (!workspace.TryCommitLoad(operationId, path, session))
         {
-            ClipOptions.Add(entry);
+            return;
         }
 
-        SelectClip(Math.Clamp(currentGroup.DefaultEntryIndex, 0, ClipOptions.Count - 1));
+        OnPropertyChanged(nameof(CurrentPath));
+        OnPropertyChanged(nameof(DisplayPath));
+        ApplyClipSessionUi(session, selectIndex: session.SelectedIndex);
         SetStatus("Status.LoadedChapters", ("count", Rows.Count));
         currentProgressMessage = null;
         Progress = 1;
@@ -153,10 +151,11 @@ public sealed partial class MainWindowViewModel
 
     private async ValueTask AppendMplsAsync(string path, CancellationToken cancellationToken)
     {
-        var operationId = Volatile.Read(ref loadOperationVersion);
-        var expectedGroup = currentGroup;
-        var expectedSplitGroup = splitClipGroup;
-        if (expectedGroup is null)
+        var operationId = workspace.CaptureRevision();
+        // Session-token identity: discard late append if load/combine/restore replaced the session.
+        var expectedSession = workspace.ClipSession;
+        var expectedSessionId = expectedSession?.SessionId;
+        if (expectedSession is null || expectedSessionId is null)
         {
             SetStatus("Status.NoCurrentMplsGroup");
             LogStatus();
@@ -166,9 +165,8 @@ public sealed partial class MainWindowViewModel
 
         Log("Log.AppendingMpls", ("path", path));
         var result = await loadService.LoadAsync(path, cancellationToken);
-        if (operationId != Volatile.Read(ref loadOperationVersion)
-            || !ReferenceEquals(expectedGroup, currentGroup)
-            || !ReferenceEquals(expectedSplitGroup, splitClipGroup))
+        if (!workspace.IsCurrentRevision(operationId)
+            || workspace.ClipSession?.SessionId != expectedSessionId)
         {
             return;
         }
@@ -183,36 +181,24 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        var baseGroup = expectedSplitGroup ?? expectedGroup;
-        var edit = ChapterSegmentService.Append(baseGroup, result.Groups[0]);
-        if (edit.Diagnostics.Count > 0)
+        // Use the live session snapshot only when identity still matches (select/write-back may have updated entries).
+        var sessionForAppend = workspace.ClipSession ?? expectedSession;
+        var transition = ClipSessionTransitions.Append(sessionForAppend, result.Groups[0]);
+        if (!transition.Succeeded || transition.Session is null)
         {
-            SetStatus(null, diagnostic: edit.Diagnostics[0]);
+            SetStatus(null, diagnostic: transition.EditResult.Diagnostics.FirstOrDefault());
             LogStatus();
-            LogDiagnostics(Localizer.GetString("Operation.AppendEdit"), edit.Diagnostics);
+            LogDiagnostics(Localizer.GetString("Operation.AppendEdit"), transition.EditResult.Diagnostics);
             NotifyStateChanged();
             return;
         }
 
-        var entries = baseGroup.Entries.ToList();
-        entries.AddRange(result.Groups[0].Entries);
-        var appendedGroup = baseGroup with { Entries = entries };
-        var combinedOption = CreateCombinedClipOption(appendedGroup, edit.ChapterSet);
-
-        splitClipGroup = appendedGroup;
-        combinedClipOption = combinedOption;
-        currentGroup = appendedGroup with { Entries = [combinedOption], DefaultEntryIndex = 0 };
-        IsClipCombineChecked = true;
-        SelectedClipIndex = -1;
-        ClipOptions.Clear();
-        foreach (var entry in currentGroup.Entries)
+        if (!workspace.TryCommitAppend(operationId, expectedSessionId.Value, transition.Session))
         {
-            ClipOptions.Add(entry);
+            return;
         }
 
-        currentInfo = edit.ChapterSet;
-        currentInfoBelongsToSelectedClip = false;
-        SelectClip(0);
+        ApplyClipSessionUi(transition.Session, selectIndex: 0);
         SetStatus("Status.AppendedMplsSegments", ("count", result.Groups[0].Entries.Count));
         LogStatus();
         LogDiagnostics(Localizer.GetString("Operation.AppendLoad"), result.Diagnostics);
