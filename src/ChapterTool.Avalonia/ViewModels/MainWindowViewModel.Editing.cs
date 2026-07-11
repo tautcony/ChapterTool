@@ -43,7 +43,7 @@ public sealed partial class MainWindowViewModel
             ("chapters", currentInfo.Chapters.Count),
             ("fps", $"{currentInfo.FramesPerSecond:0.###}"));
         selectedFrameRateOption = frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
-        SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
         ApplyFrameInfo();
     }
 
@@ -175,7 +175,7 @@ public sealed partial class MainWindowViewModel
             selectedFrameRateOption = result.SelectedOption;
         }
 
-        SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
         Log("Log.FrameInfoUpdated",
             ("entry", appliedOption.DisplayName),
             ("fps", $"{result.FramesPerSecond:0.###}"),

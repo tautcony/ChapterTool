@@ -279,8 +279,7 @@
           <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <CheckBox x:Name="RoundFramesBox"
                       Content="{DynamicResource Main.RoundFrames}"
-                      IsChecked="{Binding RoundFrames}"
-                      IsCheckedChanged="OnFrameOptionsChanged" />
+                      IsChecked="{Binding RoundFrames}" />
             <Button x:Name="PreviewButton"
                     Classes="iconAction"
                     AutomationProperties.AutomationId="PreviewWindow"
@@ -312,8 +311,7 @@
                     Width="152"
                     HorizontalAlignment="Right"
                     ItemsSource="{Binding FrameRateDisplayOptions}"
-                    SelectedIndex="{Binding SelectedFrameRateIndex}"
-                    SelectionChanged="OnFrameOptionsChanged">
+                    SelectedIndex="{Binding SelectedFrameRateIndex, Mode=TwoWay}">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="vm:SelectorDisplayOption">
                 <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
@@ -337,6 +335,7 @@
         <TextBox x:Name="PathBox"
                  Grid.Row="0"
                  IsVisible="False"
+                 Text="{Binding SourcePath, Mode=TwoWay}"
                  AutomationProperties.AutomationId="SourcePath" />
         <Grid Grid.Row="1" MinHeight="208">
           <DataGrid x:Name="ChapterGrid"
@@ -377,7 +376,10 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnTime}" Width="136" MinWidth="105.6">
+              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnTime}"
+                                      Tag="{x:Static vm:ChapterGridColumnIds.Time}"
+                                      Width="136"
+                                      MinWidth="105.6">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate x:DataType="vm:ChapterRowViewModel">
                     <TextBlock HorizontalAlignment="Stretch"
@@ -394,7 +396,10 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellEditingTemplate>
               </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnName}" Width="*" MinWidth="144">
+              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnName}"
+                                      Tag="{x:Static vm:ChapterGridColumnIds.Name}"
+                                      Width="*"
+                                      MinWidth="144">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate x:DataType="vm:ChapterRowViewModel">
                     <TextBlock HorizontalAlignment="Stretch"
@@ -411,7 +416,10 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellEditingTemplate>
               </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnFrames}" Width="120" MinWidth="76.8">
+              <DataGridTemplateColumn Header="{DynamicResource Main.ColumnFrames}"
+                                      Tag="{x:Static vm:ChapterGridColumnIds.Frames}"
+                                      Width="120"
+                                      MinWidth="76.8">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate x:DataType="vm:ChapterRowViewModel">
                     <Grid VerticalAlignment="Center">
@@ -614,7 +622,7 @@
                                      HorizontalAlignment="Stretch"
                                      IsMultilineExpandable="True"
                                      MultilineExpansionChanged="OnExpressionEditorMultilineExpansionChanged"
-                                     Text="{Binding Expression}"
+                                     Text="{Binding Expression, Mode=TwoWay}"
                                      Localizer="{Binding Localizer}"
                                      AutomationProperties.AutomationId="ExpressionText" />
           <Button Grid.Column="3"

@@ -29,12 +29,12 @@
 
 ## 3. Slice C — Binding authority, commands, grid identity
 
-- [ ] 3.1 Bind path, save format, naming mode, expression, order shift, and frame options as the authoritative state; remove production `ReadAdvancedOptions` / `ReadFrameOptions` / format control scrapes.
-- [ ] 3.2 Reduce window command wrappers to view-parameter adapters only; unify shortcut routing onto the same ViewModel command paths.
-- [ ] 3.3 Route DataGrid cell commits through stable column identity (`Tag`/id/enum); remove bilingual header-string matching.
-- [ ] 3.4 Add/update unit and Headless tests proving bound options flow into save/preview and that zh/en/ja localization still commits to the correct edit path.
-- [ ] 3.5 Focused verification: Avalonia unit tests, then (after unit tests finish) `dotnet test tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj`.
-- [ ] 3.6 Slice C merge gate: after focused commands complete, build affected projects if needed and run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
+- [x] 3.1 Bind path, save format, naming mode, expression, order shift, and frame options as the authoritative state; remove production `ReadAdvancedOptions` / `ReadFrameOptions` / format control scrapes.
+- [x] 3.2 Reduce window command wrappers to view-parameter adapters only; unify shortcut routing onto the same ViewModel command paths.
+- [x] 3.3 Route DataGrid cell commits through stable column identity (`Tag`/id/enum); remove bilingual header-string matching.
+- [x] 3.4 Add/update unit and Headless tests proving bound options flow into save/preview and that zh/en/ja localization still commits to the correct edit path.
+- [x] 3.5 Focused verification: Avalonia unit tests, then (after unit tests finish) `dotnet test tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj`.
+- [x] 3.6 Slice C merge gate: after focused commands complete, build affected projects if needed and run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
 
 ## 4. Slice D — Tool ports and window registry
 

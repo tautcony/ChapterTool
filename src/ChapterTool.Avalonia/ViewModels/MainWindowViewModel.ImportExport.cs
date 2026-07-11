@@ -87,6 +87,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
+        SourcePath = path;
         OnPropertyChanged(nameof(CurrentPath));
         OnPropertyChanged(nameof(DisplayPath));
         ApplyClipSessionUi(session, selectIndex: session.SelectedIndex);

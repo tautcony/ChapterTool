@@ -195,6 +195,16 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public string DisplayPath => workspace.DisplayPath;
 
+    /// <summary>
+    /// Authoritative path text for the source path box and reload/load adapters.
+    /// Updated by browse/drop and synchronized from successful loads.
+    /// </summary>
+    public string SourcePath
+    {
+        get;
+        set => SetProperty(ref field, value);
+    } = string.Empty;
+
     public ObservableCollection<ChapterRowViewModel> Rows { get; } = [];
 
     public bool IsChapterGridEmpty => Rows.Count == 0;
@@ -242,10 +252,18 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         set => SetProperty(ref field, value);
     } = new();
 
+    private bool suppressFrameOptionsRefresh;
+
     public bool RoundFrames
     {
         get;
-        set => SetProperty(ref field, value);
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnFrameOptionsChangedFromBinding();
+            }
+        }
     } = true;
 
     public decimal FrameAccuracyTolerance
@@ -264,8 +282,25 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public int SelectedFrameRateIndex
     {
         get;
-        private set => SetProperty(ref field, value);
-    } = -1;
+        set
+        {
+            if (!SetProperty(ref field, value))
+            {
+                return;
+            }
+
+            if (!suppressFrameOptionsRefresh)
+            {
+                var entry = FrameRateOptionForComboIndex(value);
+                if (entry is not null)
+                {
+                    selectedFrameRateOption = entry;
+                }
+            }
+
+            OnFrameOptionsChangedFromBinding();
+        }
+    } = 0;
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombineChecked;
 
@@ -602,19 +637,51 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public void SetFrameOptions(int frameRateIndex, bool roundFrames)
     {
-        RoundFrames = roundFrames;
-        var entry = FrameRateOptionForComboIndex(frameRateIndex);
-        if (entry is not null)
+        suppressFrameOptionsRefresh = true;
+        try
         {
-            selectedFrameRateOption = entry;
-            SelectedFrameRateIndex = frameRateIndex;
+            RoundFrames = roundFrames;
+            var entry = FrameRateOptionForComboIndex(frameRateIndex);
+            if (entry is not null)
+            {
+                selectedFrameRateOption = entry;
+                SelectedFrameRateIndex = frameRateIndex;
+                return;
+            }
+
+            selectedFrameRateOption = currentInfo is null
+                ? frameRateService.Options[0]
+                : frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
+            SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        }
+        finally
+        {
+            suppressFrameOptionsRefresh = false;
+        }
+    }
+
+    private void OnFrameOptionsChangedFromBinding()
+    {
+        if (suppressFrameOptionsRefresh || currentInfo is null)
+        {
             return;
         }
 
-        selectedFrameRateOption = currentInfo is null
-            ? frameRateService.Options[0]
-            : frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
-        SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+        ApplyFrameInfo();
+    }
+
+    /// <summary>Assigns frame-rate selection without re-running ApplyFrameInfo (used during internal refresh).</summary>
+    private void SetSelectedFrameRateIndexSilent(int index)
+    {
+        suppressFrameOptionsRefresh = true;
+        try
+        {
+            SelectedFrameRateIndex = index;
+        }
+        finally
+        {
+            suppressFrameOptionsRefresh = false;
+        }
     }
 
 
@@ -806,6 +873,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 }
 
 public sealed record ChapterCellEdit(int Index, string Value);
+
+/// <summary>Stable chapter-grid column identities (not localized header text).</summary>
+public static class ChapterGridColumnIds
+{
+    public const string Time = "Time";
+    public const string Name = "Name";
+    public const string Frames = "Frames";
+}
 
 public sealed class SelectorDisplayOption(string mainText, string remarkText, string displayText) : ObservableViewModel
 {
