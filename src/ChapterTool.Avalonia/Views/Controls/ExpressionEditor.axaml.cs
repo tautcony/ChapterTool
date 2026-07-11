@@ -17,6 +17,11 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Views.Controls;
 
+public sealed class ExpressionEditorExpansionChangedEventArgs(double heightDelta) : EventArgs
+{
+    public double HeightDelta { get; } = heightDelta;
+}
+
 public sealed class ExpressionCompletionKindBrushConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -68,14 +73,20 @@ public sealed partial class ExpressionEditor : UserControl
     public static readonly StyledProperty<double> EditorHeightProperty =
         AvaloniaProperty.Register<ExpressionEditor, double>(nameof(EditorHeight), 25.6);
 
+    public static readonly StyledProperty<bool> IsMultilineExpandableProperty =
+        AvaloniaProperty.Register<ExpressionEditor, bool>(nameof(IsMultilineExpandable));
+
     private readonly IExpressionAuthoringService authoringService = new ExpressionAuthoringService();
     private readonly TextEditor editor;
     private readonly ExpressionColorizer colorizer;
     private readonly DiagnosticUnderlineRenderer diagnosticRenderer;
     private readonly DispatcherTimer diagnosticHideTimer;
+    private readonly DispatcherTimer diagnosticRenderTimer;
     private bool updatingText;
+    private bool settingEditorTextFromProperty;
     private bool shouldShowCompletion;
     private bool isPointerOverDiagnosticPopup;
+    private bool isMultilineExpanded;
     private string diagnosticTooltipText = string.Empty;
     private ExpressionAuthoringDiagnostic? primaryDiagnostic;
 
@@ -90,6 +101,12 @@ public sealed partial class ExpressionEditor : UserControl
             Interval = TimeSpan.FromMilliseconds(150)
         };
         diagnosticHideTimer.Tick += OnDiagnosticHideTimerTick;
+        diagnosticRenderTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        diagnosticRenderTimer.Tick += OnDiagnosticRenderTimerTick;
+
         editor = new TextEditor
         {
             ShowLineNumbers = false,
@@ -108,8 +125,7 @@ public sealed partial class ExpressionEditor : UserControl
         editor.TextArea.TextView.BackgroundRenderers.Add(diagnosticRenderer);
         editor.TextChanged += OnEditorTextChanged;
         editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
-        editor.TextArea.AddHandler(KeyDownEvent, OnEditorPreviewKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
-        editor.TextArea.KeyDown += OnEditorKeyDown;
+        editor.TextArea.AddHandler(KeyDownEvent, OnEditorPreviewKeyDown, RoutingStrategies.Tunnel);
         editor.TextArea.TextInput += OnEditorTextInput;
         editor.TextArea.TextView.PointerMoved += OnTextViewPointerMoved;
         editor.TextArea.TextView.PointerExited += OnTextViewPointerExited;
@@ -119,7 +135,8 @@ public sealed partial class ExpressionEditor : UserControl
         editor.TextArea.LostFocus += OnEditorFocusChanged;
         editor.TextArea.Focusable = true;
         EditorHost.Content = editor;
-        AnalyzeAndRender();
+        UpdateMultilineState();
+        AnalyzeAndRender(renderDiagnosticsImmediately: true);
     }
 
     public string Text
@@ -140,6 +157,14 @@ public sealed partial class ExpressionEditor : UserControl
         set => SetValue(EditorHeightProperty, value);
     }
 
+    public bool IsMultilineExpandable
+    {
+        get => GetValue(IsMultilineExpandableProperty);
+        set => SetValue(IsMultilineExpandableProperty, value);
+    }
+
+    public event EventHandler<ExpressionEditorExpansionChangedEventArgs>? MultilineExpansionChanged;
+
     public IReadOnlyList<ExpressionCompletion> CurrentCompletions { get; private set; } = [];
 
     public string EditorText => editor.Text;
@@ -152,10 +177,36 @@ public sealed partial class ExpressionEditor : UserControl
 
     public bool IsDiagnosticOpen => DiagnosticPopup.IsOpen;
 
+    public double ActualEditorHeightForTesting => editor.Height;
+
+    public int CaretOffsetForTesting => editor.CaretOffset;
+
+    public bool IsMultilineExpanded
+    {
+        get => isMultilineExpanded;
+        set
+        {
+            if (isMultilineExpanded == value)
+            {
+                return;
+            }
+
+            SetMultilineExpanded(value);
+        }
+    }
+
     public void MoveCaretToEnd()
     {
         editor.CaretOffset = editor.Document.TextLength;
         FocusInnerEditor();
+        AnalyzeAndRender(renderDiagnosticsImmediately: true);
+    }
+
+    public void SetCaretOffsetForTesting(int offset)
+    {
+        FocusInnerEditor();
+        editor.SelectionLength = 0;
+        editor.CaretOffset = Math.Clamp(offset, 0, editor.Document.TextLength);
         AnalyzeAndRender();
     }
 
@@ -171,7 +222,7 @@ public sealed partial class ExpressionEditor : UserControl
         var offset = editor.CaretOffset;
         editor.Document.Insert(offset, text);
         editor.CaretOffset = Math.Clamp(offset + text.Length, 0, editor.Document.TextLength);
-        AnalyzeAndRender();
+        AnalyzeAndRender(renderDiagnosticsImmediately: false);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -182,10 +233,19 @@ public sealed partial class ExpressionEditor : UserControl
             var value = change.NewValue as string ?? string.Empty;
             if (editor.Text != value)
             {
-                editor.Text = value;
+                settingEditorTextFromProperty = true;
+                try
+                {
+                    editor.Text = value;
+                }
+                finally
+                {
+                    settingEditorTextFromProperty = false;
+                }
             }
 
-            AnalyzeAndRender();
+            UpdateMultilineState();
+            AnalyzeAndRender(renderDiagnosticsImmediately: true);
         }
         else if (change.Property == LocalizerProperty)
         {
@@ -196,6 +256,11 @@ public sealed partial class ExpressionEditor : UserControl
             var height = Math.Max(25.6, change.GetNewValue<double>());
             editor.MinHeight = height;
             editor.Height = height;
+            UpdateMultilineState();
+        }
+        else if (change.Property == IsMultilineExpandableProperty && editor is not null)
+        {
+            UpdateMultilineState();
         }
     }
 
@@ -215,17 +280,75 @@ public sealed partial class ExpressionEditor : UserControl
         SetCurrentValue(TextProperty, editor.Text);
         updatingText = false;
         shouldShowCompletion = true;
-        AnalyzeAndRender();
+        if (IsMultilineExpandable
+            && !settingEditorTextFromProperty
+            && !isMultilineExpanded
+            && HasMultipleLines(editor.Text))
+        {
+            SetMultilineExpanded(true);
+        }
+        else
+        {
+            UpdateMultilineState();
+        }
+
+        AnalyzeAndRender(renderDiagnosticsImmediately: false);
     }
+
+    private void OnMultilineToggleClick(object? sender, RoutedEventArgs args)
+    {
+        IsMultilineExpanded = !IsMultilineExpanded;
+        args.Handled = true;
+        Dispatcher.UIThread.Post(FocusInnerEditor);
+    }
+
+    private void UpdateMultilineState()
+    {
+        if (editor is null)
+        {
+            return;
+        }
+
+        var hasMultipleLines = HasMultipleLines(editor.Text);
+        SetMultilineExpanded(isMultilineExpanded && IsMultilineExpandable && hasMultipleLines);
+    }
+
+    private void SetMultilineExpanded(bool value)
+    {
+        var canExpand = IsMultilineExpandable && HasMultipleLines(editor.Text);
+        var nextValue = value && canExpand;
+        var changed = isMultilineExpanded != nextValue;
+        var previousHeight = editor.Height;
+        isMultilineExpanded = nextValue;
+
+        MultilineToggleButton.IsVisible = canExpand;
+        MultilineExpandIcon.IsVisible = !isMultilineExpanded;
+        MultilineCollapseIcon.IsVisible = isMultilineExpanded;
+
+        var requestedHeight = Math.Max(25.6, EditorHeight);
+        var effectiveHeight = canExpand
+            ? isMultilineExpanded ? 132 : 25.6
+            : requestedHeight;
+
+        editor.MinHeight = effectiveHeight;
+        editor.Height = effectiveHeight;
+        editor.VerticalScrollBarVisibility = isMultilineExpanded || requestedHeight > 25.6
+            ? ScrollBarVisibility.Auto
+            : ScrollBarVisibility.Disabled;
+
+        if (changed)
+        {
+            MultilineExpansionChanged?.Invoke(
+                this,
+                new ExpressionEditorExpansionChangedEventArgs(effectiveHeight - previousHeight));
+        }
+    }
+
+    private static bool HasMultipleLines(string text) => text.Contains('\n') || text.Contains('\r');
 
     private void OnCaretPositionChanged(object? sender, EventArgs args)
     {
-        AnalyzeAndRender();
-    }
-
-    private void OnEditorKeyDown(object? sender, KeyEventArgs args)
-    {
-        HandleCompletionKeys(args);
+        AnalyzeAndRender(renderDiagnosticsImmediately: !diagnosticRenderTimer.IsEnabled);
     }
 
     private void OnEditorPreviewKeyDown(object? sender, KeyEventArgs args)
@@ -237,6 +360,18 @@ public sealed partial class ExpressionEditor : UserControl
     {
         if (args.Handled)
         {
+            return;
+        }
+
+        var hasCommandModifier = args.KeyModifiers.HasFlag(KeyModifiers.Control)
+            || args.KeyModifiers.HasFlag(KeyModifiers.Alt)
+            || args.KeyModifiers.HasFlag(KeyModifiers.Meta);
+        if (!hasCommandModifier
+            && (args.Key == Key.Add
+                || (args.Key == Key.OemPlus && args.KeyModifiers.HasFlag(KeyModifiers.Shift))))
+        {
+            ReplaceSelection("+");
+            args.Handled = true;
             return;
         }
 
@@ -254,7 +389,7 @@ public sealed partial class ExpressionEditor : UserControl
             return;
         }
 
-        if ((args.Key == Key.Tab || args.Key == Key.Enter) && CompletionPopup.IsOpen && CurrentCompletions.Count > 0)
+        if (args.Key == Key.Tab && CompletionPopup.IsOpen && CurrentCompletions.Count > 0)
         {
             AcceptSelectedCompletion();
             args.Handled = true;
@@ -263,8 +398,18 @@ public sealed partial class ExpressionEditor : UserControl
 
         if (args.Key is Key.Escape)
         {
+            var wasOpen = CompletionPopup.IsOpen;
             CloseCompletionPopup();
+            args.Handled = wasOpen;
         }
+    }
+
+    private void ReplaceSelection(string text)
+    {
+        var start = editor.SelectionStart;
+        editor.Document.Replace(start, editor.SelectionLength, text);
+        editor.SelectionLength = 0;
+        editor.CaretOffset = start + text.Length;
     }
 
     private void OnEditorTextInput(object? sender, TextInputEventArgs args)
@@ -311,19 +456,37 @@ public sealed partial class ExpressionEditor : UserControl
         }
     }
 
-    private void AnalyzeAndRender()
+    private void AnalyzeAndRender(bool renderDiagnosticsImmediately = true)
     {
         var result = authoringService.Analyze(editor.Text, editor.CaretOffset);
         CurrentCompletions = result.Completions;
         colorizer.Update(result.Spans);
-        diagnosticRenderer.Update(result.Diagnostics);
         editor.TextArea.TextView.Redraw();
-        RenderDiagnostics(result);
+        if (renderDiagnosticsImmediately || result.Diagnostics.Count == 0)
+        {
+            diagnosticRenderTimer.Stop();
+            RenderDiagnostics(result);
+        }
+        else
+        {
+            diagnosticRenderTimer.Stop();
+            diagnosticRenderTimer.Start();
+        }
+
         RenderCompletionPopup();
+    }
+
+    private void OnDiagnosticRenderTimerTick(object? sender, EventArgs args)
+    {
+        diagnosticRenderTimer.Stop();
+        var result = authoringService.Analyze(editor.Text, editor.CaretOffset);
+        RenderDiagnostics(result);
     }
 
     private void RenderDiagnostics(ExpressionAnalysisResult result)
     {
+        diagnosticRenderer.Update(result.Diagnostics);
+        editor.TextArea.TextView.Redraw();
         primaryDiagnostic = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Length > 0) ?? result.Diagnostics.FirstOrDefault();
         var hasDiagnostic = primaryDiagnostic is not null;
         diagnosticTooltipText = hasDiagnostic
@@ -338,7 +501,9 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void RenderCompletionPopup()
     {
-        if (!shouldShowCompletion || (!editor.IsKeyboardFocusWithin && !IsCompletionPopupInteractionActive()) || CurrentCompletions.Count == 0)
+        if (!shouldShowCompletion
+            || (!editor.IsKeyboardFocusWithin && !IsCompletionPopupInteractionActive())
+            || CurrentCompletions.Count == 0)
         {
             CloseCompletionPopup();
             return;

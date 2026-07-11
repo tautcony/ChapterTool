@@ -1,5 +1,7 @@
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Controls;
@@ -55,6 +57,104 @@ public sealed class ToolViewsHeadlessTests
 
             Assert.Equal("t", editor.EditorText);
             Assert.Equal("t", editor.Text);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_collapses_multiline_scripts_until_expanded()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            IsMultilineExpandable = true,
+            Text = "local offset = 1\nreturn t + offset"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.False(editor.IsMultilineExpanded);
+            Assert.Equal(25.6, editor.ActualEditorHeightForTesting);
+
+            editor.SetCaretOffsetForTesting(6);
+            editor.IsMultilineExpanded = true;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(editor.IsMultilineExpanded);
+            Assert.Equal(132, editor.ActualEditorHeightForTesting);
+            Assert.Equal(6, editor.CaretOffsetForTesting);
+
+            window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, string.Empty);
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal("local ffset = 1\nreturn t + offset", editor.EditorText);
+            Assert.Equal(6, editor.CaretOffsetForTesting);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_enters_multiline_without_losing_the_editing_session()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            IsMultilineExpandable = true,
+            Text = "time"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.SetCaretOffsetForTesting(2);
+
+            window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, string.Empty);
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(editor.IsMultilineExpanded);
+            Assert.Contains('\n', editor.EditorText);
+            Assert.Equal("time", editor.EditorText.Replace("\r", string.Empty).Replace("\n", string.Empty));
+            Assert.True(editor.CaretOffsetForTesting > 2);
+
+            window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal("time", editor.EditorText);
+            Assert.False(editor.IsMultilineExpanded);
+            Assert.Equal(2, editor.CaretOffsetForTesting);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_keeps_requested_multiline_height_when_compact_expansion_is_disabled()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            EditorHeight = 112,
+            Text = "local offset = 1\nreturn t + offset"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.False(editor.IsMultilineExpanded);
+            Assert.Equal(112, editor.ActualEditorHeightForTesting);
         }
         finally
         {
@@ -155,6 +255,36 @@ public sealed class ToolViewsHeadlessTests
 
             Assert.True(editor.HasDiagnostic);
             Assert.Contains("Lua expression syntax error", editor.DiagnosticTooltipText, StringComparison.Ordinal);
+            Assert.Contains("Add the missing operand", editor.DiagnosticTooltipText, StringComparison.Ordinal);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_delays_diagnostics_while_text_is_still_changing()
+    {
+        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var editor = new ExpressionEditor
+        {
+            Localizer = host.Localizer,
+            Text = "t"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.MoveCaretToEnd();
+            editor.InsertTextForTesting(" +");
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.False(editor.HasDiagnostic);
+
+            await Task.Delay(600);
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(editor.HasDiagnostic);
             Assert.Contains("Add the missing operand", editor.DiagnosticTooltipText, StringComparison.Ordinal);
         }
         finally

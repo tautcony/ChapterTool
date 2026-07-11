@@ -135,7 +135,12 @@ Start with:
 
 - `src/ChapterTool.Avalonia/Views/Tools/ExpressionToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Controls/ExpressionEditor.axaml`
+- `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs`
 - `src/ChapterTool.Avalonia/ViewModels/ToolWindowViewModels.cs`
+- `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
+
+Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live valid projections, editing-key routing, and single-editor multiline expansion.
 
 ### Settings / theme / language UI
 

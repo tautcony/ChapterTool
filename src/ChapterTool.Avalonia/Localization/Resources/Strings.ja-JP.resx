@@ -590,6 +590,9 @@
 <data name="Operation.Load" xml:space="preserve">
     <value>読み込み</value>
   </data>
+<data name="Operation.LuaExpressionScript" xml:space="preserve">
+    <value>Lua 式スクリプト</value>
+  </data>
 <data name="Operation.OutputProjection" xml:space="preserve">
     <value>出力プロジェクション</value>
   </data>

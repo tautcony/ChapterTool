@@ -7,6 +7,7 @@ using Avalonia.VisualTree;
 using AvaloniaEdit;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.Views.Controls;
 
 namespace ChapterTool.Avalonia.Views;
 
@@ -200,11 +201,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        var text = await File.ReadAllTextAsync(path, CancellationToken.None);
-        viewModel.Expression = string.IsNullOrWhiteSpace(text) ? "t" : text;
-        viewModel.ExpressionSourceName = Path.GetFileName(path);
-        viewModel.ExpressionPresetId = string.Empty;
-        viewModel.ApplyExpression = true;
+        await viewModel.LoadLuaExpressionScriptAsync(path, CancellationToken.None);
     }
 
     private async Task OpenRelatedMediaAsync()
@@ -244,6 +241,13 @@ public sealed partial class MainWindow : Window
     private void OnSizeChanged(object? sender, SizeChangedEventArgs args)
     {
         ApplyAdvancedOptionsLayout();
+    }
+
+    private void OnExpressionEditorMultilineExpansionChanged(
+        object? sender,
+        ExpressionEditorExpansionChangedEventArgs args)
+    {
+        Height = Math.Max(MinHeight, Height + args.HeightDelta);
     }
 
     private async void OnFrameOptionsChanged(object? sender, RoutedEventArgs args)
@@ -350,12 +354,24 @@ public sealed partial class MainWindow : Window
         await shortcutRouter.RouteAsync(gesture);
     }
 
-    private static bool IsTextInputKeyScope(Visual? source)
+    private bool IsTextInputKeyScope(Visual? source)
     {
-        return source is TextBox or NumericUpDown or TextEditor
+        if (IsTextInputVisual(source))
+        {
+            return true;
+        }
+
+        return FocusManager?.GetFocusedElement() is Visual focused
+            && IsTextInputVisual(focused);
+    }
+
+    private static bool IsTextInputVisual(Visual? source)
+    {
+        return source is TextBox or NumericUpDown or TextEditor or ExpressionEditor
             || source?.FindAncestorOfType<TextBox>() is not null
             || source?.FindAncestorOfType<NumericUpDown>() is not null
-            || source?.FindAncestorOfType<TextEditor>() is not null;
+            || source?.FindAncestorOfType<TextEditor>() is not null
+            || source?.FindAncestorOfType<ExpressionEditor>() is not null;
     }
 
     private static string? Gesture(KeyEventArgs args)

@@ -473,10 +473,14 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         {
             if (parameter is ExpressionToolViewModel viewModel)
             {
-                owner.Expression = string.IsNullOrWhiteSpace(viewModel.Expression) ? "t" : viewModel.Expression;
-                owner.ApplyExpression = viewModel.ApplyExpression;
-                owner.ExpressionPresetId = viewModel.SelectedPreset?.Id ?? string.Empty;
-                owner.ExpressionSourceName = viewModel.ExpressionSourceName;
+                var diagnostic = owner.ApplyLuaExpressionSettings(
+                    viewModel.Expression,
+                    viewModel.ApplyExpression,
+                    viewModel.SelectedPreset?.Id ?? string.Empty,
+                    viewModel.ExpressionSourceName);
+                viewModel.StatusText = diagnostic is null
+                    ? owner.Localizer.GetString("Status.Updated")
+                    : owner.FormatDiagnosticForDisplay(diagnostic);
             }
 
             return ValueTask.CompletedTask;
@@ -557,7 +561,10 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         Expression = text;
         ExpressionSourceName = Path.GetFileName(path);
         SelectedPresetIndex = -1;
-        StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)));
+        var diagnostic = owner.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+        StatusText = diagnostic is null
+            ? owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
+            : owner.FormatDiagnosticForDisplay(diagnostic);
     }
 }
 

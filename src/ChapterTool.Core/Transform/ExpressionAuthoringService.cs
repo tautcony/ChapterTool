@@ -74,10 +74,14 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
             new("sin", ExpressionTokenKind.Function, "Alias for math.sin.", 1, "sin()"),
             new("sqrt", ExpressionTokenKind.Function, "Alias for math.sqrt.", 1, "sqrt()"),
             new("sign", ExpressionTokenKind.Function, "Sign of the value.", 1, "sign()"),
-            new("return", ExpressionTokenKind.Keyword, "Return the transformed time."),
             new("preset", ExpressionTokenKind.Snippet, "Built-in Lua expression presets. Type preset. to browse them.", null, "preset."),
             new("function transform(chapter)\n  return t\nend", ExpressionTokenKind.Snippet, "Reusable transform function snippet.", null, "function transform(chapter)\n  return t\nend")
         };
+
+        symbols.AddRange(Keywords.Select(static keyword => new ExpressionSymbol(
+            keyword,
+            ExpressionTokenKind.Keyword,
+            $"Lua {keyword} keyword.")));
 
         symbols.AddRange(expressionEngine.Presets.Select(static preset => new ExpressionSymbol(
             $"preset.{preset.Id}",

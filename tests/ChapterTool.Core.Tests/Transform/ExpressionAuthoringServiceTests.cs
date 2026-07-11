@@ -18,9 +18,24 @@ public sealed class ExpressionAuthoringServiceTests
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "math.floor", Kind: ExpressionTokenKind.Function, Arity: 1 });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "floor", Kind: ExpressionTokenKind.Function, Arity: 1 });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "return", Kind: ExpressionTokenKind.Keyword });
+        Assert.Contains(service.Symbols, symbol => symbol is { Text: "local", Kind: ExpressionTokenKind.Keyword });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "preset", Kind: ExpressionTokenKind.Snippet });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "preset.identity", Kind: ExpressionTokenKind.Snippet });
         Assert.Contains(service.Symbols, symbol => symbol is { Text: "preset.round-to-frame", Kind: ExpressionTokenKind.Snippet });
+    }
+
+    [Fact]
+    public void Analyze_returns_completion_for_lua_keyword_prefix()
+    {
+        var result = service.Analyze("loc", 3);
+
+        var completion = Assert.Single(result.Completions, item => item.Text == "local");
+        Assert.Equal(ExpressionTokenKind.Keyword, completion.Kind);
+        Assert.Equal("local", completion.InsertText);
+        Assert.Contains(result.Spans, span => span is { Text: "loc", Kind: ExpressionTokenKind.Variable });
+
+        var completed = service.Analyze("local offset = 1", 5);
+        Assert.Contains(completed.Spans, span => span is { Text: "local", Kind: ExpressionTokenKind.Keyword });
     }
 
     [Fact]

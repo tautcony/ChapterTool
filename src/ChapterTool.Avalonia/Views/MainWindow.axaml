@@ -588,6 +588,8 @@
                                      Grid.Column="2"
                                      MinWidth="128"
                                      HorizontalAlignment="Stretch"
+                                     IsMultilineExpandable="True"
+                                     MultilineExpansionChanged="OnExpressionEditorMultilineExpansionChanged"
                                      Text="{Binding Expression}"
                                      Localizer="{Binding Localizer}"
                                      AutomationProperties.AutomationId="ExpressionText" />

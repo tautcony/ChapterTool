@@ -590,6 +590,9 @@
 <data name="Operation.Load" xml:space="preserve">
     <value>Load</value>
   </data>
+<data name="Operation.LuaExpressionScript" xml:space="preserve">
+    <value>Lua expression script</value>
+  </data>
 <data name="Operation.OutputProjection" xml:space="preserve">
     <value>Output projection</value>
   </data>

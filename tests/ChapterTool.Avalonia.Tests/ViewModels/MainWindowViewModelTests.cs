@@ -994,6 +994,42 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("Load diagnostic: severity=Warning, code=Parse.Partial", vm.LogText(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task LoadLuaExpressionScriptAsyncReportsCompileDiagnosticToStatusAndLog()
+    {
+        var log = new ApplicationLogPanelProvider();
+        var vm = CreateViewModel(logService: log);
+        var scriptPath = Path.Combine(Path.GetTempPath(), $"chaptertool-{Guid.NewGuid():N}.lua");
+        await File.WriteAllTextAsync(scriptPath, "return (");
+        try
+        {
+            var diagnostic = await vm.LoadLuaExpressionScriptAsync(scriptPath, CancellationToken.None);
+
+            Assert.NotNull(diagnostic);
+            Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
+            Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
+            Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+            Assert.Contains("Lua expression script diagnostic", vm.LogText(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(scriptPath);
+        }
+    }
+
+    [Fact]
+    public async Task ExplicitlyAppliedLuaExpressionReportsCompileDiagnosticToStatusAndLog()
+    {
+        var log = new ApplicationLogPanelProvider();
+        var vm = CreateViewModel(logService: log);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        vm.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
+
+        Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
+        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+    }
+
     private static MainWindowViewModel CreateViewModel(
         IChapterLoadService? loadService = null,
         FakeSaveService? saveService = null,

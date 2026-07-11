@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Text.RegularExpressions;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
@@ -42,6 +43,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private ChapterImportEntry? combinedClipOption;
     private int loadOperationVersion;
     private bool isRefreshingChapterNameModeOptions;
+    private bool suppressExpressionRefreshDiagnostics;
     private bool autoGenerateNames;
     private bool useTemplateNames;
     private string chapterNameTemplateText = string.Empty;
@@ -50,6 +52,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private LocalizedMessage? currentStatusMessage;
     private LocalizedMessage? currentProgressMessage;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
+    private string? lastExpressionDiagnosticSignature;
+    private readonly DispatcherTimer expressionDiagnosticTimer;
 
     public MainWindowViewModel(
         IChapterLoadService loadService,
@@ -75,6 +79,15 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         this.frameRateService = frameRateService ?? new FrameRateService();
         this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
         outputProjectionService = new ChapterOutputProjectionService(this.expressionEngine);
+        expressionDiagnosticTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(500)
+        };
+        expressionDiagnosticTimer.Tick += (_, _) =>
+        {
+            expressionDiagnosticTimer.Stop();
+            RefreshRows();
+        };
         this.logService = logService;
         this.logger = logger;
 
@@ -506,7 +519,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         {
             if (SetProperty(ref field, value))
             {
-                RefreshRows();
+                RefreshRowsForExpressionEdit();
             }
         }
     } = "t";
@@ -682,6 +695,101 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public IApplicationLogService LogService => logService;
 
     public void ClearLog() => logService.Clear();
+
+    public async ValueTask<ChapterDiagnostic?> LoadLuaExpressionScriptAsync(string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var text = await File.ReadAllTextAsync(path, cancellationToken);
+        suppressExpressionRefreshDiagnostics = true;
+        try
+        {
+            Expression = string.IsNullOrWhiteSpace(text) ? "t" : text;
+            ExpressionSourceName = Path.GetFileName(path);
+            ExpressionPresetId = string.Empty;
+            ApplyExpression = true;
+        }
+        finally
+        {
+            suppressExpressionRefreshDiagnostics = false;
+        }
+
+        var diagnostic = ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+        if (diagnostic is not null)
+        {
+            SetStatus(null, diagnostic);
+            LogStatus(LogLevelFor(diagnostic.Severity));
+        }
+        else
+        {
+            SetStatus("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName));
+            LogStatus();
+        }
+
+        NotifyStateChanged();
+        return diagnostic;
+    }
+
+    public ChapterDiagnostic? ApplyLuaExpressionSettings(
+        string expression,
+        bool applyExpression,
+        string expressionPresetId,
+        string expressionSourceName)
+    {
+        suppressExpressionRefreshDiagnostics = true;
+        try
+        {
+            Expression = string.IsNullOrWhiteSpace(expression) ? "t" : expression;
+            ApplyExpression = applyExpression;
+            ExpressionPresetId = expressionPresetId;
+            ExpressionSourceName = expressionSourceName;
+        }
+        finally
+        {
+            suppressExpressionRefreshDiagnostics = false;
+        }
+
+        if (!ApplyExpression)
+        {
+            SetStatus("Status.Updated");
+            LogStatus();
+            NotifyStateChanged();
+            return null;
+        }
+
+        var diagnostic = ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+        if (diagnostic is not null)
+        {
+            SetStatus(null, diagnostic);
+            LogStatus(LogLevelFor(diagnostic.Severity));
+        }
+        else
+        {
+            SetStatus("Status.Updated");
+            LogStatus();
+        }
+
+        NotifyStateChanged();
+        return diagnostic;
+    }
+
+    public ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics)
+    {
+        var result = expressionEngine.Evaluate(
+            string.IsNullOrWhiteSpace(scriptText) ? "t" : scriptText,
+            CreateExpressionValidationContext());
+        if (logDiagnostics)
+        {
+            LogDiagnostics(Localizer.GetString("Operation.LuaExpressionScript"), result.Diagnostics);
+        }
+
+        return result.Diagnostics.FirstOrDefault();
+    }
+
+    public string FormatDiagnosticForDisplay(ChapterDiagnostic diagnostic) => LocalizeDiagnostic(diagnostic);
 
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
@@ -1185,18 +1293,79 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     private void RefreshRows()
     {
-        Rows.Clear();
         if (currentInfo is null)
         {
+            Rows.Clear();
+            return;
+        }
+
+        ApplyProjectionToRows(CurrentOutputProjection());
+    }
+
+    private void RefreshRowsForExpressionEdit()
+    {
+        expressionDiagnosticTimer.Stop();
+        if (currentInfo is null || !ApplyExpression)
+        {
+            RefreshRows();
             return;
         }
 
         var projection = CurrentOutputProjection();
+        if (projection.Diagnostics.Any(IsLuaExpressionDiagnostic))
+        {
+            expressionDiagnosticTimer.Start();
+            return;
+        }
+
+        ApplyProjectionToRows(projection);
+    }
+
+    private void ApplyProjectionToRows(ChapterOutputProjectionResult projection)
+    {
+        Rows.Clear();
+        ReportProjectionExpressionDiagnostics(projection.Diagnostics);
         foreach (var chapter in projection.OutputChapters)
         {
             Rows.Add(new ChapterRowViewModel(chapter, formatter));
         }
     }
+
+    private void ReportProjectionExpressionDiagnostics(IReadOnlyList<ChapterDiagnostic> diagnostics)
+    {
+        if (suppressExpressionRefreshDiagnostics || !ApplyExpression)
+        {
+            if (!suppressExpressionRefreshDiagnostics)
+            {
+                lastExpressionDiagnosticSignature = null;
+            }
+
+            return;
+        }
+
+        var diagnostic = diagnostics.FirstOrDefault(IsLuaExpressionDiagnostic);
+        if (diagnostic is null)
+        {
+            lastExpressionDiagnosticSignature = null;
+            return;
+        }
+
+        SetStatus(null, diagnostic);
+        var signature = $"{Expression}\n{diagnostic.Code}\n{diagnostic.Message}";
+        if (string.Equals(signature, lastExpressionDiagnosticSignature, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        lastExpressionDiagnosticSignature = signature;
+        LogDiagnostics(Localizer.GetString("Operation.LuaExpressionScript"), [diagnostic]);
+        LogStatus(LogLevelFor(diagnostic.Severity));
+    }
+
+    private static bool IsLuaExpressionDiagnostic(ChapterDiagnostic diagnostic) =>
+        diagnostic.Code.Source is ChapterDiagnosticSource.LuaExpression
+            or ChapterDiagnosticSource.LuaExpressionReturn
+            or ChapterDiagnosticSource.LuaExpressionToken;
 
     private ChapterOutputProjectionResult CurrentOutputProjection() =>
         currentInfo is null
@@ -1204,6 +1373,21 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
                 new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []),
                 [])
             : outputProjectionService.Project(currentInfo, CurrentExportOptions());
+
+    private ChapterExpressionContext CreateExpressionValidationContext()
+    {
+        var chapters = currentInfo?.Chapters.Where(static chapter => !chapter.IsSeparator).ToList() ?? [];
+        var chapter = chapters.FirstOrDefault() ?? new Chapter(1, TimeSpan.Zero, "Chapter 01");
+        var fps = currentInfo is { FramesPerSecond: > 0 }
+            ? (decimal)currentInfo.FramesPerSecond
+            : 24m;
+        return new ChapterExpressionContext(
+            chapter,
+            1,
+            Math.Max(1, chapters.Count),
+            (decimal)chapter.StartTime.TotalSeconds,
+            fps);
+    }
 
     private ChapterExportOptions CurrentExportOptionsForProjectedInfo() =>
         CurrentExportOptions() with

@@ -145,6 +145,26 @@ public sealed class ToolWindowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task ExpressionToolValidatesHandwrittenScriptWhenApplied()
+    {
+        var owner = CreateOwner(new AppLocalizationManager("en-US"));
+        await owner.LoadCommand.ExecuteAsync("movie.txt");
+        var expression = new ExpressionToolViewModel(owner)
+        {
+            Expression = "return (",
+            ApplyExpression = true
+        };
+
+        await expression.ApplyCommand.ExecuteAsync(expression);
+
+        Assert.Equal("return (", owner.Expression);
+        Assert.True(owner.ApplyExpression);
+        Assert.Contains("Lua expression syntax error", owner.StatusText, StringComparison.Ordinal);
+        Assert.Contains("Lua expression syntax error", expression.StatusText, StringComparison.Ordinal);
+        Assert.Contains(owner.LogService.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+    }
+
     private static MainWindowViewModel CreateOwner(IAppLocalizer? localizer = null)
     {
         var formatter = new ChapterTimeFormatter();

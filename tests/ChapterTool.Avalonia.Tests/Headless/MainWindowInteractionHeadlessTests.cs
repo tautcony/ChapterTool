@@ -74,8 +74,13 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.Contains("preview", host.WindowService.Opened);
     }
 
-    [AvaloniaFact]
-    public async Task Delete_key_in_expression_editor_does_not_delete_selected_chapter_rows()
+    [AvaloniaTheory]
+    [InlineData(Key.Delete, PhysicalKey.Delete, "tme")]
+    [InlineData(Key.Back, PhysicalKey.Backspace, "ime")]
+    public async Task Editing_keys_in_expression_editor_change_text_without_deleting_selected_chapter_rows(
+        Key key,
+        PhysicalKey physicalKey,
+        string expectedText)
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
@@ -85,13 +90,83 @@ public sealed class MainWindowInteractionHeadlessTests
 
         var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
         expressionBox.Text = "time";
+        expressionBox.SetCaretOffsetForTesting(1);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        host.Window.KeyPress(key, RawInputModifiers.None, physicalKey, string.Empty);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        Assert.Equal(expectedText, expressionBox.EditorText);
+        Assert.Equal(2, host.ViewModel.Rows.Count);
+    }
+
+    [AvaloniaFact]
+    public async Task Shifted_plus_character_is_inserted_in_expression_editor()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Text = "t ";
         expressionBox.MoveCaretToEnd();
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
 
-        host.Window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, string.Empty);
+        host.Window.KeyPress(Key.OemPlus, RawInputModifiers.Shift, PhysicalKey.Equal, "+");
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
 
-        Assert.Equal(2, host.ViewModel.Rows.Count);
+        Assert.Equal("t +", expressionBox.EditorText);
+    }
+
+    [AvaloniaFact]
+    public async Task Expanding_expression_editor_grows_window_downward_without_moving_its_top()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Text = "local offset = 1\nreturn t + offset";
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        var chapterGrid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var initialHeight = host.Window.Height;
+        var initialPosition = host.Window.Position;
+        var initialGridHeight = chapterGrid.Bounds.Height;
+
+        expressionBox.IsMultilineExpanded = true;
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        Assert.InRange(host.Window.Height - initialHeight, 106, 112);
+        Assert.Equal(initialPosition, host.Window.Position);
+        Assert.Equal(132, expressionBox.ActualEditorHeightForTesting);
+        Assert.True(chapterGrid.Bounds.Height >= initialGridHeight - 1);
+
+        expressionBox.IsMultilineExpanded = false;
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        Assert.InRange(Math.Abs(host.Window.Height - initialHeight), 0, 1);
+        Assert.Equal(initialPosition, host.Window.Position);
+        Assert.Equal(25.6, expressionBox.ActualEditorHeightForTesting);
+        Assert.InRange(Math.Abs(chapterGrid.Bounds.Height - initialGridHeight), 0, 1);
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_edit_delays_invalid_result_but_applies_valid_result_immediately()
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro")));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.ApplyExpression = true;
+        host.ViewModel.Expression = "t + 1";
+        Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+
+        host.ViewModel.Expression = "t +";
+        host.ViewModel.Expression = "t + (";
+        Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+
+        host.ViewModel.Expression = "t + 2";
+        Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
+
+        await Task.Delay(600);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
     }
 
     [AvaloniaFact]
