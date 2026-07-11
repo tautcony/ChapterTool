@@ -43,7 +43,7 @@ This change is a **behavior-preserving decomposition**. Product workflows stay t
 - No deletion or folding of the dedicated Language tool in this change; it shares the preference path with Settings.
 - No rewrite of `MplsPlaylistFile` or other Core format parsers in this change.
 - No expansion of CLI to expression/advanced transforms.
-- No combining of all slices into one PR; A→F stay separate merge units (A+B may not be casually merged; keep separate unless a future amendment reopens packaging).
+- No combining of all slices into one PR; A→F remain designed as separate merge units (see decision 11 for the A+B delivery note).
 
 ## Target architecture
 
@@ -217,9 +217,11 @@ IUiLanguageController    // language tool + settings share this path
 
     CLI still does basic convert without expression session. It only reuses construction of registry/exporter/settings directory rules.
 
-11. **PR slicing A→F is mandatory and separate (closed).**
+11. **PR slicing A→F is intended as independent merge units (closed; A+B delivery note).**
 
-    Each slice is an independently mergeable unit with its own verification gate. Do not land “workspace + bindings + tools + CLI” as one PR. Do not casually combine A+B; keep them separate so clip-session and workspace-facade regressions stay attributable.
+    Each slice is designed as an independently mergeable unit with its own verification gate. Do not land “workspace + bindings + tools + CLI” as one PR.
+
+    **Delivery note:** Slice A (typed clip session) and Slice B (ChapterWorkspace facade) were landed together in a single implementation commit during apply (commit message “slices A–B”), with combined verification covering both concurrent anti-stale regressions and workspace facade tests. That packaging choice is recorded here so artifacts match history; remaining slices C→F stayed separate. Future work that needs attributable clip-session vs workspace-facade diffs should still prefer separate commits when practical.
 
 12. **Language tool is retained; shared preference path only (closed).**
 
