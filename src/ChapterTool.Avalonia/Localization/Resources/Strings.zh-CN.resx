@@ -293,6 +293,12 @@
 <data name="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">
     <value>无法解析 Adobe Premiere Pro 章节标记列表。</value>
   </data>
+<data name="Diagnostic.Path.Invalid" xml:space="preserve">
+    <value>无法解析输出目录。请在设置中指定默认保存目录，或加载带有效路径的源文件。</value>
+  </data>
+<data name="Diagnostic.Save.Failed" xml:space="preserve">
+    <value>保存失败：{message}</value>
+  </data>
 <data name="Diagnostic.Save.Succeeded" xml:space="preserve">
     <value>已保存：{path}</value>
   </data>
@@ -563,8 +569,14 @@
 <data name="Main.SaveFormat" xml:space="preserve">
     <value>保存格式</value>
   </data>
+<data name="Main.OutputDirectoryUnresolved" xml:space="preserve">
+    <value>输出目录未解析</value>
+  </data>
 <data name="Main.SaveTo" xml:space="preserve">
-    <value>选择保存目录</value>
+    <value>保存到目录…</value>
+  </data>
+<data name="Main.SaveToShort" xml:space="preserve">
+    <value>另存到…</value>
   </data>
 <data name="Main.SettingsShort" xml:space="preserve">
     <value>设置</value>

@@ -8,7 +8,7 @@ using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Core.Transform;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class ToolViewsHeadlessTests

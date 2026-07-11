@@ -4,7 +4,7 @@ using Avalonia.Headless.XUnit;
 using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Core.Exporting;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowStateHeadlessTests
@@ -104,7 +104,7 @@ public sealed class MainWindowStateHeadlessTests
         Assert.NotNull(host.SaveService.LastOptions);
         Assert.Equal(ChapterExportFormat.Xml, host.SaveService.LastOptions.Format);
         Assert.Equal("jpn", host.SaveService.LastOptions.XmlLanguage);
-        Assert.Equal("out", host.SaveService.LastDirectory);
+        Assert.Equal(Path.GetFullPath("out"), host.SaveService.LastDirectory);
         Assert.NotNull(host.SaveService.LastInfo);
         Assert.Equal(3, host.SaveService.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", host.SaveService.LastInfo.Chapters[0].Name);

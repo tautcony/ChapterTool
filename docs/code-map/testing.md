@@ -8,8 +8,10 @@ This file maps production areas to the test projects and high-signal test files 
   - `tests/ChapterTool.Core.Tests`
 - Infrastructure behavior:
   - `tests/ChapterTool.Infrastructure.Tests`
-- Avalonia shell, runtime UI services, localization, CLI:
+- Avalonia ViewModels, runtime UI services, localization, CLI:
   - `tests/ChapterTool.Avalonia.Tests`
+- Avalonia Headless UI shell/interaction (separate process):
+  - `tests/ChapterTool.Avalonia.Headless.Tests`
 
 ## Core Test Map
 
@@ -83,7 +85,7 @@ Fixtures:
 
 ## Avalonia Test Map
 
-Use `tests/ChapterTool.Avalonia.Tests` when changing UI shell, view models, runtime UI services, localization, headless interaction flows, or CLI behavior.
+Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, localization, and CLI. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI shell and interaction workflows. Headless lives in its own project so Avalonia UI session work never shares a testhost process with non-UI unit tests.
 
 High-signal test files:
 
@@ -94,35 +96,34 @@ High-signal test files:
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/`
-  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontApplicationServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
 - CLI
   - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
 - localization
   - `tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs`
 - headless shell/interaction/integration
-  - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowHeadlessTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowInteractionHeadlessTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowStateHeadlessTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Headless/LocalizationAndLayoutHeadlessTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Headless/ToolViewsHeadlessTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Headless/SettingsToolHeadlessTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Headless/MainWindowHeadlessTestHost.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowInteractionHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowStateHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootFontTests.cs`
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light/dark presets and verifies the live palette preview, application variant, semantic resources, and existing DataGrid column-header brushes.
 
 The settings Headless workflows verify the footer settings-folder action, including its left-side placement, accessible label, and routed shell target.
 
-`LocalizationAndLayoutHeadlessTests` covers runtime localization of both selector dropdown entries and their current selection text, including the automatic frame-rate option.
-
-Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AvaloniaFontApplicationServiceTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
+Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
 
 ## Quick Routing
 
 - parsing or export semantics changed: start in `tests/ChapterTool.Core.Tests`
 - external tool, settings, process, or platform boundary changed: start in `tests/ChapterTool.Infrastructure.Tests`
-- view, viewmodel, CLI, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
+- viewmodel, CLI, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
+- XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
 
 ## Distribution Verification
 

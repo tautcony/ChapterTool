@@ -7,7 +7,7 @@ using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Configuration;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class AvaloniaWindowServiceHeadlessTests
@@ -31,7 +31,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
         Assert.Equal(1, confirmation.Calls);
         Assert.True(window.IsVisible);
-        Assert.Equal("live", host.ViewModel.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("live"), host.ViewModel.SaveDirectory);
         Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
         Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
         Assert.Equal("ayu-dark", settings.SelectedThemePreset.Id);
@@ -56,7 +56,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
         Assert.Equal(1, confirmation.Calls);
         Assert.False(window.IsVisible);
-        Assert.Equal("saved", host.ViewModel.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("saved"), host.ViewModel.SaveDirectory);
         Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
         Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
         Assert.Equal("solarized-light", settings.SelectedThemePreset.Id);
@@ -81,8 +81,8 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
         Assert.Equal(1, confirmation.Calls);
         Assert.False(window.IsVisible);
-        Assert.Equal("live", host.ViewModel.SaveDirectory);
-        Assert.Equal("live", host.SettingsStore.Current.Application.SavingPath);
+        Assert.Equal(Path.GetFullPath("live"), host.ViewModel.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("live"), host.SettingsStore.Current.Application.SavingPath);
         Assert.Equal("ayu-dark", host.SettingsStore.Current.Theme.PresetId);
     }
 

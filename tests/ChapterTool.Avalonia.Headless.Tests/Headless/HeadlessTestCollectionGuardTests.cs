@@ -1,7 +1,7 @@
 using System.Reflection;
 using Avalonia.Headless.XUnit;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 public sealed class HeadlessTestCollectionGuardTests
 {

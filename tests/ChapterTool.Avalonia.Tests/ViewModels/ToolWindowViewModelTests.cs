@@ -191,7 +191,7 @@ public sealed class ToolWindowViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));
     }
 

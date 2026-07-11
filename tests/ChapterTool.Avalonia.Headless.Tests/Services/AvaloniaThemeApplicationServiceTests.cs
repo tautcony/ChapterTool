@@ -3,11 +3,11 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using ChapterTool.Avalonia.Tests.Headless;
+using ChapterTool.Avalonia.Headless.Tests.Headless;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Infrastructure.Configuration;
 
-namespace ChapterTool.Avalonia.Tests.Services;
+namespace ChapterTool.Avalonia.Headless.Tests.Services;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class AvaloniaThemeApplicationServiceTests

@@ -13,7 +13,7 @@ using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Configuration;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class SettingsToolHeadlessTests

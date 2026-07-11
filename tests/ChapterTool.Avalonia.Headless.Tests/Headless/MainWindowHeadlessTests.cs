@@ -6,7 +6,7 @@ using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
 using ChapterTool.Core.Transform;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowHeadlessTests

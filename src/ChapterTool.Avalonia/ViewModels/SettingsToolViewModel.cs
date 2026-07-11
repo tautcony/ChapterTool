@@ -1029,7 +1029,18 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 
     private void NotifyUnsavedChanges() => OnPropertyChanged(nameof(HasUnsavedChanges));
 
-    private static string? CleanPath(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static string? CleanPath(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var trimmed = value.Trim();
+        return ChapterSavePath.TryNormalizeDirectory(trimmed, out var normalized) && normalized is not null
+            ? normalized
+            : trimmed;
+    }
 
     private static string InformationalVersion(Type type)
     {

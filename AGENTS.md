@@ -9,7 +9,8 @@
   - `src/ChapterTool.Avalonia`
   - `tests/ChapterTool.Core.Tests`
   - `tests/ChapterTool.Infrastructure.Tests`
-  - `tests/ChapterTool.Avalonia.Tests`
+  - `tests/ChapterTool.Avalonia.Tests` (ViewModel/CLI/service unit tests)
+  - `tests/ChapterTool.Avalonia.Headless.Tests` (Avalonia Headless UI tests; separate process from unit tests)
 - Prefer `rg` for searching files and text.
 - Use `docs/code-map/` as the primary navigation index for the current codebase. Update the relevant files there when feature work changes module ownership, entry points, runtime wiring, or the main tests a maintainer should inspect.
 - Keep user-facing Chinese strings as valid UTF-8. Validate localization through behavior, rendered UI, or resource-level checks rather than hard-coding incidental mojibake examples.
@@ -42,8 +43,10 @@
 
 ## Testing And Build
 
-- Run the focused Avalonia tests after XAML or UI shell changes:
+- Run focused Avalonia unit tests after ViewModel/CLI/service changes:
   - `dotnet test tests\ChapterTool.Avalonia.Tests\ChapterTool.Avalonia.Tests.csproj --no-restore`
+- Run focused Avalonia Headless tests after XAML or UI shell changes:
+  - `dotnet test tests\ChapterTool.Avalonia.Headless.Tests\ChapterTool.Avalonia.Headless.Tests.csproj --no-restore`
 - Run the full solution tests before finalizing broader changes:
   - `dotnet test ChapterTool.Avalonia.slnx --no-restore`
 - Build the Avalonia app when changing app project files:
@@ -53,7 +56,12 @@
 - If a test/build fails because `ChapterTool.Avalonia.exe` is locked, close the running app or run:
   - `Get-Process ChapterTool.Avalonia -ErrorAction SilentlyContinue | Stop-Process`
 - Do not run multiple `dotnet test` commands for projects in this solution in parallel. The test projects share referenced project `obj/` outputs, and parallel external test processes can fail with locked files such as `src/ChapterTool.Core/obj/Debug/net10.0/ChapterTool.Core.dll`. Prefer the full solution test command above, or run individual test projects sequentially.
-- Keep Avalonia Headless tests isolated without serializing the entire Avalonia test assembly. Do not reintroduce assembly-level `CollectionBehavior(DisableTestParallelization = true)` for this project; instead put every class containing `[AvaloniaFact]` or `[AvaloniaTheory]` in `AvaloniaHeadlessTestCollection`. The guard test `HeadlessTestCollectionGuardTests` exists to catch missed classes.
+- Keep Avalonia Headless UI tests in `tests/ChapterTool.Avalonia.Headless.Tests` so they run in a separate process from non-UI Avalonia unit tests. Do not put `[AvaloniaFact]` or `[AvaloniaTheory]` back into `ChapterTool.Avalonia.Tests`. The unit project guard `NoAvaloniaHeadlessAttributeGuardTests` fails if those attributes reappear there.
+- Within the Headless project, put every class containing `[AvaloniaFact]` or `[AvaloniaTheory]` in `AvaloniaHeadlessTestCollection` (serial within the process). Do not reintroduce assembly-level `CollectionBehavior(DisableTestParallelization = true)` for the non-Headless Avalonia unit-test project. The guard test `HeadlessTestCollectionGuardTests` exists to catch missed Headless classes.
+- **Process isolation is required, not optional.** Avalonia Headless runs a process-wide UI session (`HeadlessUnitTestSession` + dispatcher/`PushFrame`). xUnit `CollectionDefinition(DisableParallelization = true)` only serializes tests *inside* that collection; it does **not** stop other collections/classes in the same assembly from running in parallel. Putting `[AvaloniaFact]` next to ordinary `[Fact]` tests in one testhost has caused hard hangs (main thread and thread-pool stuck in `Monitor.Wait`) after unit tests finish while Headless never completes. Merging the projects again, or “isolating” only with a collection in a mixed assembly, will reintroduce that failure mode.
+- **Do not “fix” unexplained hangs by deleting Headless tests.** First split runs: unit project alone, Headless project alone, then full solution. If unit-only and Headless-only pass but a mixed same-process run hangs, treat it as process/UI-session isolation, not as a bad assertion in a single test file.
+- After a hung or force-killed test run, stop leftover apphosts before retrying (`ChapterTool.Avalonia.Headless.Tests`, and any stale `ChapterTool.Avalonia.Tests` testhost). Stray Headless/Skia processes make subsequent Headless runs more likely to stall.
+- Inside `[AvaloniaFact]`/`[AvaloniaTheory]`, avoid redundant `Dispatcher.UIThread.Invoke` (the runner already dispatches onto the UI thread). Prefer `RunJobs` and deterministic UI state over long `Task.Delay` waits when pumping the headless dispatcher.
 - Keep Avalonia Headless tests focused on UI behavior and workflow outcomes. Prefer tests that drive user actions or state changes and then verify the resulting UI state, command routing, localization refresh, selection changes, or persisted behavior.
 - Do not add Headless tests that only assert a control exists, a static label renders, a window opens, a screenshot file was written, or a layout has non-zero size unless that assertion is part of a broader user-facing behavior change being verified.
 - When a test constructs `SettingsToolViewModel` and then calls `LoadAsync` explicitly, pass `autoLoad: false`. Otherwise the constructor starts a background load and the test performs the same initialization twice, which slows Headless runs and can introduce races.

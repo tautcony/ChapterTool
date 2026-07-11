@@ -6,7 +6,12 @@ namespace ChapterTool.Avalonia.Services;
 
 public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : IChapterSaveService
 {
-    public async ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken)
+    public async ValueTask<ChapterExportResult> SaveAsync(
+        ChapterSet info,
+        ChapterExportOptions options,
+        string? directory,
+        CancellationToken cancellationToken,
+        string? sourcePath = null)
     {
         var result = exporter.Export(info, options);
         if (!result.Success)
@@ -14,12 +19,20 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
             return result;
         }
 
+        if (!ChapterSavePath.TryNormalizeDirectory(directory, out var targetDirectory) || targetDirectory is null)
+        {
+            return Fail(
+                result,
+                ChapterDiagnosticCode.InvalidPath,
+                "Output directory was not resolved. Set a default save directory in settings or load a source with a valid path.",
+                directory);
+        }
+
         try
         {
-            var targetDirectory = string.IsNullOrWhiteSpace(directory) ? Environment.CurrentDirectory : directory;
             Directory.CreateDirectory(targetDirectory);
-            var baseName = string.IsNullOrWhiteSpace(info.SourceName) ? "chapters" : Path.GetFileNameWithoutExtension(info.SourceName);
-            var path = Path.Combine(targetDirectory, baseName + result.FileExtension);
+            var baseName = ChapterSavePath.BuildBaseFileName(info, sourcePath);
+            var path = ChapterSavePath.AllocateUniqueFilePath(targetDirectory, baseName, result.FileExtension);
             await File.WriteAllTextAsync(
                 path,
                 result.Content,
@@ -27,29 +40,52 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
                 cancellationToken);
             return result with
             {
-                Diagnostics = [.. result.Diagnostics, new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.Saved, path,
-                    Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["path"] = path })]
-            };
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
-        {
-            return result with
-            {
-                Success = false,
                 Diagnostics =
                 [
                     .. result.Diagnostics,
                     new ChapterDiagnostic(
-                        DiagnosticSeverity.Error,
-                        ChapterDiagnosticCode.SaveFailed,
-                        $"Chapter file could not be saved: {exception.Message}",
-                        Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
-                        {
-                            ["directory"] = directory,
-                            ["message"] = exception.Message
-                        })
+                        DiagnosticSeverity.Info,
+                        ChapterDiagnosticCode.Saved,
+                        path,
+                        Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["path"] = path })
                 ]
             };
         }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return Fail(
+                result,
+                ChapterDiagnosticCode.SaveFailed,
+                $"Chapter file could not be saved: {exception.Message}",
+                directory,
+                exception.Message);
+        }
+    }
+
+    private static ChapterExportResult Fail(
+        ChapterExportResult result,
+        ChapterDiagnosticCode code,
+        string message,
+        string? directory,
+        string? detail = null)
+    {
+        var arguments = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["directory"] = directory
+        };
+        if (!string.IsNullOrWhiteSpace(detail))
+        {
+            arguments["message"] = detail;
+        }
+
+        return result with
+        {
+            Success = false,
+            Diagnostics =
+            [
+                .. result.Diagnostics,
+                new ChapterDiagnostic(DiagnosticSeverity.Error, code, message, Arguments: arguments)
+            ]
+        };
     }
 }

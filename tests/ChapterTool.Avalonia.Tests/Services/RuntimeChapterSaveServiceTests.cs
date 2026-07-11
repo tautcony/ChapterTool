@@ -105,7 +105,7 @@ public sealed class RuntimeChapterSaveServiceTests
                 new ChapterExportOptions(ChapterExportFormat.Txt, EmitBom: false),
                 directory,
                 TestContext.Current.CancellationToken);
-            var withoutBom = await File.ReadAllBytesAsync(Path.Combine(directory, "test.txt"), TestContext.Current.CancellationToken);
+            var withoutBom = await File.ReadAllBytesAsync(Path.Combine(directory, "test_1.txt"), TestContext.Current.CancellationToken);
 
             byte[] utf8Bom = [0xEF, 0xBB, 0xBF];
             Assert.True(withBom.Take(3).SequenceEqual(utf8Bom));
@@ -182,6 +182,94 @@ public sealed class RuntimeChapterSaveServiceTests
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.SaveFailed);
+        Assert.Contains(result.Diagnostics, diagnostic =>
+            diagnostic.Code == ChapterDiagnosticCode.SaveFailed || diagnostic.Code == ChapterDiagnosticCode.InvalidPath);
+    }
+
+    [Fact]
+    public async Task RuntimeSaveFailsWhenDirectoryUnresolved()
+    {
+        var info = new ChapterSet(
+            "test",
+            "test.txt",
+            ChapterImportFormat.Ogm,
+            24,
+            TimeSpan.FromMinutes(1),
+            [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
+
+        var result = await service.SaveAsync(
+            info,
+            new ChapterExportOptions(ChapterExportFormat.Txt),
+            directory: null,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidPath);
+    }
+
+    [Fact]
+    public async Task RuntimeSaveAllocatesUniquePathWhenTargetExists()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var info = new ChapterSet(
+            "test",
+            "movie.txt",
+            ChapterImportFormat.Ogm,
+            24,
+            TimeSpan.FromMinutes(1),
+            [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
+
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(directory, "movie.txt"), "existing", TestContext.Current.CancellationToken);
+            var result = await service.SaveAsync(
+                info,
+                new ChapterExportOptions(ChapterExportFormat.Txt),
+                directory,
+                TestContext.Current.CancellationToken);
+
+            Assert.True(result.Success);
+            Assert.True(File.Exists(Path.Combine(directory, "movie_1.txt")));
+            Assert.Equal("existing", await File.ReadAllTextAsync(Path.Combine(directory, "movie.txt"), TestContext.Current.CancellationToken));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RuntimeSaveUsesMplsClipSuffixInFileName()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var info = new ChapterSet(
+            "title",
+            "00001",
+            ChapterImportFormat.Mpls,
+            24,
+            TimeSpan.FromMinutes(1),
+            [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
+
+        try
+        {
+            var result = await service.SaveAsync(
+                info,
+                new ChapterExportOptions(ChapterExportFormat.Txt),
+                directory,
+                TestContext.Current.CancellationToken,
+                sourcePath: Path.Combine(directory, "00005.mpls"));
+
+            Assert.True(result.Success);
+            Assert.True(File.Exists(Path.Combine(directory, "00005__00001.txt")));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 }

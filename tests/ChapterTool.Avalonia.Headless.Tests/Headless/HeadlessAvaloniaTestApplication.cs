@@ -3,10 +3,10 @@ using Avalonia.Headless;
 using Optris.Icons.Avalonia;
 using Optris.Icons.Avalonia.FontAwesome;
 
-[assembly: AvaloniaTestApplication(typeof(ChapterTool.Avalonia.Tests.Headless.HeadlessAvaloniaTestApplication))]
+[assembly: AvaloniaTestApplication(typeof(ChapterTool.Avalonia.Headless.Tests.Headless.HeadlessAvaloniaTestApplication))]
 [assembly: AvaloniaTestIsolation(AvaloniaTestIsolationLevel.PerAssembly)]
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [CollectionDefinition(Name, DisableParallelization = true)]
 public sealed class AvaloniaHeadlessTestCollection

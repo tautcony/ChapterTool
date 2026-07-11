@@ -140,12 +140,17 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private async Task SaveAsync(string? directory)
+    private async Task SaveAsync(string? directoryOverride = null)
     {
         ReadAdvancedOptions();
         viewModel.SaveFormatIndex = Math.Max(0, FormatBox.SelectedIndex);
-        directory ??= string.IsNullOrWhiteSpace(viewModel.CurrentPath) ? null : Path.GetDirectoryName(viewModel.CurrentPath);
-        await viewModel.SaveDirectoryCommand.ExecuteAsync(directory);
+        if (string.IsNullOrWhiteSpace(directoryOverride))
+        {
+            await viewModel.SaveCommand.ExecuteAsync();
+            return;
+        }
+
+        await viewModel.SaveCommand.ExecuteAsync(directoryOverride);
     }
 
     private async Task SaveToAsync()
@@ -156,7 +161,6 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        viewModel.SaveDirectory = directory;
         await SaveAsync(directory);
     }
 
@@ -316,9 +320,9 @@ public sealed partial class MainWindow : Window
         }
 
         args.Handled = true;
-        if (gesture is "Ctrl+S" or "Alt+S")
+        if (gesture == "Ctrl+S")
         {
-            await SaveAsync(gesture == "Alt+S" ? viewModel.SaveDirectory : null);
+            await SaveAsync();
             return;
         }
 
@@ -387,11 +391,6 @@ public sealed partial class MainWindow : Window
         if (control && args.Key == Key.O)
         {
             return "Ctrl+O";
-        }
-
-        if (alt && args.Key == Key.S)
-        {
-            return "Alt+S";
         }
 
         if (control && args.Key == Key.R)
@@ -583,7 +582,6 @@ public sealed partial class MainWindow : Window
         yield return viewModel.ReloadCommand;
         yield return viewModel.AppendMplsCommand;
         yield return viewModel.SaveCommand;
-        yield return viewModel.SaveDirectoryCommand;
         yield return viewModel.RefreshCommand;
         yield return viewModel.ChangeFpsCommand;
         yield return viewModel.SelectClipCommand;

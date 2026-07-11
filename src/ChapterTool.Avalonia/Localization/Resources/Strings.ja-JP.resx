@@ -293,6 +293,12 @@
 <data name="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">
     <value>Adobe Premiere Pro の章節マーカーリストを解析できませんでした。</value>
   </data>
+<data name="Diagnostic.Path.Invalid" xml:space="preserve">
+    <value>出力先フォルダーを解決できません。設定で既定の保存先を指定するか、有効なパスのソースを読み込んでください。</value>
+  </data>
+<data name="Diagnostic.Save.Failed" xml:space="preserve">
+    <value>保存に失敗しました: {message}</value>
+  </data>
 <data name="Diagnostic.Save.Succeeded" xml:space="preserve">
     <value>保存しました: {path}</value>
   </data>
@@ -563,8 +569,14 @@
 <data name="Main.SaveFormat" xml:space="preserve">
     <value>保存形式</value>
   </data>
+<data name="Main.OutputDirectoryUnresolved" xml:space="preserve">
+    <value>出力先未解決</value>
+  </data>
 <data name="Main.SaveTo" xml:space="preserve">
-    <value>保存先を選択</value>
+    <value>フォルダーに保存…</value>
+  </data>
+<data name="Main.SaveToShort" xml:space="preserve">
+    <value>別名保存…</value>
   </data>
 <data name="Main.SettingsShort" xml:space="preserve">
     <value>設定</value>

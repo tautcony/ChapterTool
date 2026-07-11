@@ -12,11 +12,15 @@ namespace ChapterTool.Avalonia.Cli;
 public sealed class ChapterToolCliApplication(
     ICliConsole? console = null,
     RuntimeChapterImporterRegistry? importerRegistry = null,
-    ChapterExportService? exporter = null)
+    ChapterExportService? exporter = null,
+    string? configuredSavingPath = null,
+    string? settingsDirectory = null)
 {
     private readonly ICliConsole console = console ?? new SystemCliConsole();
-    private readonly RuntimeChapterImporterRegistry importerRegistry = importerRegistry ?? CreateImporterRegistry();
+    private readonly RuntimeChapterImporterRegistry importerRegistry = importerRegistry ?? CreateImporterRegistry(settingsDirectory);
     private readonly ChapterExportService exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter());
+    private readonly string? configuredSavingPath = configuredSavingPath;
+    private readonly string settingsDirectory = settingsDirectory ?? DefaultSettingsDirectory();
 
     public int ShowFormats()
     {
@@ -163,7 +167,13 @@ public sealed class ChapterToolCliApplication(
             return 0;
         }
 
-        var targetPath = ResolveOutputPath(request, format, info);
+        var targetPath = await ResolveOutputPathAsync(request, format, info, cancellationToken);
+        if (string.IsNullOrWhiteSpace(targetPath))
+        {
+            console.WriteErrorLine("Output directory was not resolved. Provide --output or set a default save directory in settings.");
+            return 1;
+        }
+
         var directory = Path.GetDirectoryName(targetPath);
         if (!string.IsNullOrWhiteSpace(directory))
         {
@@ -317,17 +327,51 @@ public sealed class ChapterToolCliApplication(
         return CliSelectionResult.Success(group.Entries[entryIndex]);
     }
 
-    private static string ResolveOutputPath(CliConvertRequest request, CliOutputFormatDefinition format, ChapterSet info)
+    private async Task<string?> ResolveOutputPathAsync(
+        CliConvertRequest request,
+        CliOutputFormatDefinition format,
+        ChapterSet info,
+        CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(request.OutputPath))
         {
             return Path.GetFullPath(request.OutputPath);
         }
 
-        var inputFullPath = Path.GetFullPath(request.InputPath);
-        var directory = Path.GetDirectoryName(inputFullPath) ?? Environment.CurrentDirectory;
-        var baseName = Path.GetFileNameWithoutExtension(inputFullPath);
-        return Path.Combine(directory, baseName + format.FileExtension);
+        var directory = await ResolveDefaultOutputDirectoryAsync(request.InputPath, cancellationToken);
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return null;
+        }
+
+        Directory.CreateDirectory(directory);
+        var baseName = ChapterSavePath.BuildBaseFileName(info, request.InputPath);
+        return ChapterSavePath.AllocateUniqueFilePath(directory, baseName, format.FileExtension);
+    }
+
+    private async Task<string?> ResolveDefaultOutputDirectoryAsync(string inputPath, CancellationToken cancellationToken)
+    {
+        var savingPath = configuredSavingPath ?? await LoadConfiguredSavingPathAsync(cancellationToken);
+        if (ChapterSavePath.TryNormalizeDirectory(savingPath, out var configured) && configured is not null)
+        {
+            return configured;
+        }
+
+        return ChapterSavePath.DirectoryOfSourcePath(inputPath);
+    }
+
+    private async Task<string?> LoadConfiguredSavingPathAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var store = new Infrastructure.Configuration.ChapterToolSettingsStore(settingsDirectory);
+            var settings = await store.LoadAsync(cancellationToken);
+            return settings.Application.SavingPath;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or Infrastructure.Configuration.CorruptSettingsFileException)
+        {
+            return null;
+        }
     }
 
     private static IEnumerable<string> DescribeGroup(ChapterImportSource group)
@@ -408,12 +452,12 @@ public sealed class ChapterToolCliApplication(
         }
     }
 
-    private static RuntimeChapterImporterRegistry CreateImporterRegistry()
+    private static RuntimeChapterImporterRegistry CreateImporterRegistry(string? settingsDirectory)
     {
         var formatter = new Core.Transform.ChapterTimeFormatter();
-        var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool.Cli");
-        Directory.CreateDirectory(settingsDirectory);
-        var settingsStore = new Infrastructure.Configuration.ChapterToolSettingsStore(settingsDirectory);
+        var resolvedSettingsDirectory = settingsDirectory ?? DefaultSettingsDirectory();
+        Directory.CreateDirectory(resolvedSettingsDirectory);
+        var settingsStore = new Infrastructure.Configuration.ChapterToolSettingsStore(resolvedSettingsDirectory);
         var toolLocator = new Infrastructure.Tools.ExternalToolLocator(settingsStore, AppCompositionRoot.PathSearchDirectoriesForTests().ToList());
         return new RuntimeChapterImporterRegistry(
             formatter,
@@ -421,6 +465,14 @@ public sealed class ChapterToolCliApplication(
             AppCompositionRoot.CreateProcessRunner(),
             new Infrastructure.Importing.Media.FfprobeMediaChapterReader(toolLocator, AppCompositionRoot.CreateProcessRunner()),
             AppCompositionRoot.CreateMp4ChapterReader());
+    }
+
+    private static string DefaultSettingsDirectory()
+    {
+        var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        return string.IsNullOrWhiteSpace(root)
+            ? Path.Combine(Environment.CurrentDirectory, "settings")
+            : Path.Combine(root, "ChapterTool");
     }
 
     private sealed record CliImportExecution(bool Success, IChapterImporter Importer, ChapterImportResult Result)

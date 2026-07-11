@@ -6,7 +6,7 @@ using Avalonia.Input;
 using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Core.Models;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowInteractionHeadlessTests
@@ -69,7 +69,7 @@ public sealed class MainWindowInteractionHeadlessTests
         await host.FocusAndPressAsync(Key.F11);
 
         Assert.Equal(["movie.mpls", "movie.mpls", "movie.mpls"], host.LoadService.Paths);
-        Assert.True(host.SaveService.Calls >= 2);
+        Assert.Equal(1, host.SaveService.Calls);
         Assert.Contains("log", host.WindowService.Opened);
         Assert.Contains("preview", host.WindowService.Opened);
     }
@@ -212,17 +212,5 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.False(emptyHost.RequiredMenuItem(emptyLoadButton, "AppendLoadMenuItem").IsEnabled);
         Assert.False(emptyHost.RequiredMenuItem(emptyGrid, "InsertMenuItem").IsEnabled);
         Assert.False(emptyHost.RequiredMenuItem(emptyGrid, "DeleteMenuItem").IsEnabled);
-    }
-
-    [AvaloniaFact]
-    public async Task Icon_only_main_window_buttons_have_accessible_names()
-    {
-        using var host = new MainWindowHeadlessTestHost();
-        await host.LayoutAsync();
-
-        Assert.Equal("Preview", AutomationProperties.GetName(host.RequiredControl<Button>("PreviewButton")));
-        Assert.Equal("Refresh", AutomationProperties.GetName(host.RequiredControl<Button>("RefreshButton")));
-        Assert.Equal("Settings", AutomationProperties.GetName(host.RequiredControl<Button>("SettingsButton")));
-        Assert.Equal("Template file", AutomationProperties.GetName(host.RequiredControl<Button>("ChapterNameTemplateButton")));
     }
 }

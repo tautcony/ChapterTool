@@ -51,22 +51,23 @@ public sealed class SettingsToolViewModelTests
         await viewModel.SaveCommand.ExecuteAsync();
 
         Assert.Equal("ja-JP", appStore.Current.Language);
-        Assert.Equal("new-out", appStore.Current.SavingPath);
+        Assert.Equal(Path.GetFullPath("new-out"), appStore.Current.SavingPath);
         Assert.Null(appStore.Current.MkvToolnixPath);
-        Assert.Equal("new-eac3to", appStore.Current.Eac3toPath);
-        Assert.Equal("new-ffprobe", appStore.Current.FfprobePath);
-        Assert.Equal("new-ffmpeg", appStore.Current.FfmpegPath);
+        Assert.Equal(Path.GetFullPath("new-eac3to"), appStore.Current.Eac3toPath);
+        Assert.Equal(Path.GetFullPath("new-ffprobe"), appStore.Current.FfprobePath);
+        Assert.Equal(Path.GetFullPath("new-ffmpeg"), appStore.Current.FfmpegPath);
         Assert.Equal("Json", appStore.Current.DefaultSaveFormat);
         Assert.Equal("jpn", appStore.Current.DefaultXmlLanguage);
         Assert.Equal("utf32be", appStore.Current.OutputTextEncoding);
         Assert.False(appStore.Current.EmitBom);
         Assert.Equal(0.2m, appStore.Current.FrameAccuracyTolerance);
-        Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
+        // Default save format is a startup preference and must not rewrite the live session format.
+        Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
         Assert.Equal("jpn", owner.XmlLanguage);
         Assert.Equal(OutputTextEncoding.Utf32BigEndian, owner.OutputTextEncoding);
         Assert.False(owner.EmitBom);
         Assert.Equal(0.2m, owner.FrameAccuracyTolerance);
-        Assert.Equal("new-out", owner.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("new-out"), owner.SaveDirectory);
         Assert.Equal("ja-JP", owner.UiLanguage);
         Assert.Equal("solarized-dark", themeStore.Current.PresetId);
         Assert.Equal(1, appStore.Loads);
@@ -119,8 +120,8 @@ public sealed class SettingsToolViewModelTests
         viewModel.FrameAccuracyTolerance = 0.20m;
 
         Assert.Equal("ja-JP", owner.UiLanguage);
-        Assert.Equal("live", owner.SaveDirectory);
-        Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
+        Assert.Equal(Path.GetFullPath("live"), owner.SaveDirectory);
+        Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
         Assert.Equal("jpn", owner.XmlLanguage);
         Assert.False(owner.EmitBom);
         Assert.Equal(0.20m, owner.FrameAccuracyTolerance);
@@ -144,7 +145,7 @@ public sealed class SettingsToolViewModelTests
         await viewModel.SaveCommand.ExecuteAsync();
 
         Assert.Equal("ja-JP", appStore.Current.Language);
-        Assert.Equal("live", appStore.Current.SavingPath);
+        Assert.Equal(Path.GetFullPath("live"), appStore.Current.SavingPath);
         Assert.False(viewModel.HasUnsavedChanges);
     }
 
@@ -177,7 +178,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.DiscardUnsavedChanges();
 
         Assert.Equal("en-US", owner.UiLanguage);
-        Assert.Equal("saved", owner.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("saved"), owner.SaveDirectory);
         Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
         Assert.Equal("und", owner.XmlLanguage);
         Assert.Equal(0.10m, owner.FrameAccuracyTolerance);
@@ -574,8 +575,8 @@ public sealed class SettingsToolViewModelTests
         await viewModel.BrowseSaveDirectoryCommand.ExecuteAsync();
         await viewModel.BrowseFfprobeCommand.ExecuteAsync();
 
-        Assert.Equal("picked-directory", viewModel.SaveDirectory);
-        Assert.Equal("picked-executable", viewModel.FfprobePath);
+        Assert.Equal(Path.GetFullPath("picked-directory"), viewModel.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("picked-executable"), viewModel.FfprobePath);
     }
 
     [Fact]
@@ -905,7 +906,7 @@ public sealed class SettingsToolViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
             ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 

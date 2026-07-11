@@ -132,8 +132,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             }
         }, parameter => CanAppendMpls && parameter is string path && !string.IsNullOrWhiteSpace(path));
         DropPathLoadCommand = new UiCommand(async (parameter, token) => await LoadPathAsync(parameter?.ToString() ?? string.Empty, token));
-        SaveCommand = new UiCommand(async (_, token) => await SaveAsync(null, token), _ => currentInfo is not null);
-        SaveDirectoryCommand = new UiCommand(async (parameter, token) => await SaveAsync(parameter?.ToString() ?? SaveDirectory, token), _ => currentInfo is not null);
+        SaveCommand = new UiCommand(async (parameter, token) => await SaveAsync(parameter?.ToString(), token), _ => currentInfo is not null);
     }
 
     private void InitializeEditCommands()
@@ -539,7 +538,24 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public string? SaveDirectory
     {
         get;
-        set => SetProperty(ref field, value);
+        private set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
+            }
+        }
+    }
+
+    public string EffectiveSaveDirectoryDisplay
+    {
+        get
+        {
+            var directory = ResolveSaveDirectory(directoryOverride: null);
+            return string.IsNullOrWhiteSpace(directory)
+                ? Localizer.GetString("Main.OutputDirectoryUnresolved")
+                : directory;
+        }
     }
 
     public string StatusText
@@ -592,7 +608,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public UiCommand AppendMplsCommand { get; private set; } = null!;
     public UiCommand DropPathLoadCommand { get; private set; } = null!;
     public UiCommand SaveCommand { get; private set; } = null!;
-    public UiCommand SaveDirectoryCommand { get; private set; } = null!;
     public UiCommand RefreshCommand { get; private set; } = null!;
     public UiCommand ChangeFpsCommand { get; private set; } = null!;
     public UiCommand SelectClipCommand { get; private set; } = null!;
@@ -637,19 +652,20 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
 
         var settings = await settingsStore.LoadAsync(cancellationToken);
-        ApplySettings(settings.Application);
+        ApplySettings(settings.Application, applyDefaultSaveFormat: true);
         Log("Log.SettingsLoaded",
             ("savingPath", SaveDirectory ?? string.Empty),
             ("language", UiLanguage));
         NotifyStateChanged();
     }
 
-    public void ApplySettings(AppSettings settings)
+    public void ApplySettings(AppSettings settings, bool applyDefaultSaveFormat = false)
     {
-        SaveDirectory = settings.SavingPath;
+        SaveDirectory = NormalizeConfiguredDirectory(settings.SavingPath);
         UiLanguage = AppLanguage.Normalize(settings.Language);
         Localizer.SetCulture(UiLanguage);
-        if (Enum.TryParse<ChapterExportFormat>(settings.DefaultSaveFormat, ignoreCase: true, out var format))
+        if (applyDefaultSaveFormat
+            && Enum.TryParse<ChapterExportFormat>(settings.DefaultSaveFormat, ignoreCase: true, out var format))
         {
             SaveFormat = format;
         }
@@ -914,13 +930,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         NotifyStateChanged();
     }
 
-    private async ValueTask SaveAsync(string? directory, CancellationToken cancellationToken)
+    private async ValueTask SaveAsync(string? directoryOverride, CancellationToken cancellationToken)
     {
         if (currentInfo is null)
         {
             return;
         }
 
+        var directory = ResolveSaveDirectory(directoryOverride);
         var projection = CurrentOutputProjection();
         var entries = CurrentExportOptionsForProjectedInfo();
         Log("Log.SavingChapters",
@@ -931,23 +948,57 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             ("applyExpression", ApplyExpression),
             ("expression", Expression));
         LogDiagnostics(Localizer.GetString("Operation.OutputProjection"), projection.Diagnostics);
-        var result = await saveService.SaveAsync(projection.Info, entries, directory, cancellationToken);
-        if (result.Success && !string.IsNullOrWhiteSpace(directory))
-        {
-            SaveDirectory = directory;
-            if (settingsStore is not null)
-            {
-                await settingsStore.UpdateAsync(
-                    current => current with { Application = current.Application with { SavingPath = directory } },
-                    cancellationToken);
-            }
-        }
-
-        SetStatus(result.Success ? "Status.Saved" : "Status.SaveFailed", diagnostic: result.Diagnostics.FirstOrDefault());
+        var result = await saveService.SaveAsync(projection.Info, entries, directory, cancellationToken, CurrentPath);
+        ApplySaveStatus(result);
         LogStatus();
         LogDiagnostics(Localizer.GetString("Operation.Save"), result.Diagnostics);
         NotifyStateChanged();
     }
+
+    private void ApplySaveStatus(ChapterExportResult result)
+    {
+        if (result.Success)
+        {
+            var saved = result.Diagnostics.LastOrDefault(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.Saved);
+            if (saved is not null)
+            {
+                SetStatus(null, saved);
+                return;
+            }
+
+            SetStatus("Status.Saved");
+            return;
+        }
+
+        var failure = result.Diagnostics.LastOrDefault(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Error)
+            ?? result.Diagnostics.LastOrDefault();
+        SetStatus("Status.SaveFailed", failure);
+    }
+
+    internal string? ResolveSaveDirectory(string? directoryOverride)
+    {
+        if (!string.IsNullOrWhiteSpace(directoryOverride))
+        {
+            return ChapterSavePath.TryNormalizeDirectory(directoryOverride, out var overrideDirectory)
+                ? overrideDirectory
+                : null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SaveDirectory))
+        {
+            return ChapterSavePath.TryNormalizeDirectory(SaveDirectory, out var configured)
+                ? configured
+                : null;
+        }
+
+        return ChapterSavePath.DirectoryOfSourcePath(CurrentPath);
+    }
+
+    private static string? NormalizeConfiguredDirectory(string? path) =>
+        ChapterSavePath.TryNormalizeDirectory(path, out var normalized) ? normalized : CleanWhitespacePath(path);
+
+    private static string? CleanWhitespacePath(string? path) =>
+        string.IsNullOrWhiteSpace(path) ? null : path.Trim();
 
     private void SelectClip(int index)
     {
@@ -1513,6 +1564,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(CanRefreshRows));
         OnPropertyChanged(nameof(CanEditRows));
         OnPropertyChanged(nameof(CanOpenRelatedMedia));
+        OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
         NotifyCommandStates();
     }
 
@@ -1521,7 +1573,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         ReloadCommand.RaiseCanExecuteChanged();
         AppendMplsCommand.RaiseCanExecuteChanged();
         SaveCommand.RaiseCanExecuteChanged();
-        SaveDirectoryCommand.RaiseCanExecuteChanged();
         RefreshCommand.RaiseCanExecuteChanged();
         ChangeFpsCommand.RaiseCanExecuteChanged();
         SelectClipCommand.RaiseCanExecuteChanged();

@@ -30,7 +30,26 @@ public sealed record ChapterToolSettings
         settings ??= new AppSettings();
         return settings with
         {
+            SavingPath = NormalizeDirectory(settings.SavingPath),
             OutputTextEncoding = OutputTextEncodings.Id(OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding))
         };
+    }
+
+    private static string? NormalizeDirectory(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var trimmed = path.Trim();
+        try
+        {
+            return Path.GetFullPath(trimmed);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return trimmed;
+        }
     }
 }

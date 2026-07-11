@@ -8,7 +8,6 @@ public sealed class ShortcutRouter(MainWindowViewModel viewModel)
         {
             "Ctrl+O" => viewModel.LoadCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "Ctrl+S" => viewModel.SaveCommand.ExecuteAsync(cancellationToken: cancellationToken),
-            "Alt+S" => viewModel.SaveDirectoryCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "Ctrl+R" or "F5" => viewModel.ReloadCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "Ctrl+L" => viewModel.LogCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "F11" => viewModel.PreviewCommand.ExecuteAsync(cancellationToken: cancellationToken),

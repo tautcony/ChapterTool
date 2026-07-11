@@ -293,6 +293,12 @@
 <data name="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">
     <value>Unable to parse the Adobe Premiere Pro chapter marker list.</value>
   </data>
+<data name="Diagnostic.Path.Invalid" xml:space="preserve">
+    <value>Output directory was not resolved. Set a default save directory in settings or load a source with a valid path.</value>
+  </data>
+<data name="Diagnostic.Save.Failed" xml:space="preserve">
+    <value>Save failed: {message}</value>
+  </data>
 <data name="Diagnostic.Save.Succeeded" xml:space="preserve">
     <value>Saved: {path}</value>
   </data>
@@ -563,8 +569,14 @@
 <data name="Main.SaveFormat" xml:space="preserve">
     <value>Save format</value>
   </data>
+<data name="Main.OutputDirectoryUnresolved" xml:space="preserve">
+    <value>Output directory unresolved</value>
+  </data>
 <data name="Main.SaveTo" xml:space="preserve">
-    <value>Choose Save Directory</value>
+    <value>Save to directory…</value>
+  </data>
+<data name="Main.SaveToShort" xml:space="preserve">
+    <value>Save to…</value>
   </data>
 <data name="Main.SettingsShort" xml:space="preserve">
     <value>Settings</value>

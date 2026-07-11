@@ -59,6 +59,13 @@ The rewrite SHALL migrate and strengthen existing MSTest coverage into .NET 10 t
 - **WHEN** `dotnet test ChapterTool.Avalonia.slnx --no-restore` runs after restore
 - **THEN** Core, Infrastructure, and Avalonia test assemblies SHALL execute under xUnit v3 without framework discovery failures
 
+### Requirement: Avalonia Headless UI tests run in a dedicated test process
+The solution SHALL keep Avalonia Headless UI tests (`[AvaloniaFact]` / `[AvaloniaTheory]`) in `tests/ChapterTool.Avalonia.Headless.Tests`, separate from non-UI Avalonia unit tests in `tests/ChapterTool.Avalonia.Tests`, so Headless UI session work does not share a testhost process with parallel unit tests.
+
+#### Scenario: Headless and unit Avalonia tests are different projects
+- **WHEN** a maintainer inspects the solution test projects
+- **THEN** Headless UI tests SHALL live under `ChapterTool.Avalonia.Headless.Tests` and non-UI Avalonia unit tests under `ChapterTool.Avalonia.Tests`
+
 ### Requirement: Avalonia Headless UI test coverage
 The Avalonia test project SHALL provide comprehensive headless Avalonia runtime coverage for rendered UI behavior that runs in CI without launching the desktop application.
 

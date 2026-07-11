@@ -40,7 +40,6 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(vm.AppendMplsCommand);
         Assert.NotNull(vm.DropPathLoadCommand);
         Assert.NotNull(vm.SaveCommand);
-        Assert.NotNull(vm.SaveDirectoryCommand);
         Assert.NotNull(vm.RefreshCommand);
         Assert.NotNull(vm.ChangeFpsCommand);
         Assert.NotNull(vm.SelectClipCommand);
@@ -469,7 +468,7 @@ public sealed class MainWindowViewModelTests
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SetFrameOptions(frameRateIndex: 3, roundFrames: false);
         await vm.RefreshCommand.ExecuteAsync();
-        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+        await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.Equal("12.5", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameNeutral);
@@ -596,7 +595,7 @@ public sealed class MainWindowViewModelTests
         vm.ApplyExpression = true;
         vm.Expression = "t + 1";
 
-        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+        await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastOptions);
         Assert.Equal(ChapterExportFormat.Cue, save.LastOptions.Format);
@@ -612,7 +611,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(3, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
         Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].StartTime);
-        Assert.Equal("out", save.LastDirectory);
+        Assert.Equal(Path.GetFullPath("out"), save.LastDirectory);
     }
 
     [Fact]
@@ -632,7 +631,7 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.Rows[0].IsFrameAccurate);
         Assert.Contains("CHAPTER01=00:00:01.000", vm.BuildPreview(), StringComparison.Ordinal);
 
-        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+        await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
         Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].StartTime);
@@ -658,7 +657,7 @@ public sealed class MainWindowViewModelTests
         vm.OrderShift = 3;
 
         var preview = vm.BuildPreview();
-        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+        await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.Contains("CHAPTER04=00:00:02.000", preview, StringComparison.Ordinal);
         Assert.Contains("CHAPTER04NAME=Chapter 01", preview, StringComparison.Ordinal);
@@ -710,7 +709,7 @@ public sealed class MainWindowViewModelTests
         Assert.DoesNotContain("CHAPTER00", preview, StringComparison.Ordinal);
         Assert.DoesNotContain("CHAPTER-01", preview, StringComparison.Ordinal);
 
-        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+        await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
         Assert.Equal(1, save.LastInfo.Chapters[0].DisplayNumber);
@@ -771,7 +770,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("0", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
 
-        await vm.SaveDirectoryCommand.ExecuteAsync("out");
+        await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
         Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
@@ -902,34 +901,96 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task SettingsLoadAndSaveDirectoryPersistThroughStore()
+    public async Task SaveCommandUsesConfiguredSaveDirectoryWhenSet()
     {
-        var store = new FakeSettingsStore(new AppSettings(SavingPath: "out", Language: "en-US"));
+        var configured = Path.GetFullPath("configured-out");
+        var store = new FakeSettingsStore(new AppSettings(SavingPath: configured, Language: "en-US"));
         var save = new FakeSaveService();
         var vm = CreateViewModel(saveService: save, settingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        await vm.SaveDirectoryCommand.ExecuteAsync("new-out");
+        await vm.SaveCommand.ExecuteAsync();
 
-        Assert.Equal("new-out", save.LastDirectory);
-        Assert.Equal("new-out", store.Current.Application.SavingPath);
+        Assert.Equal(configured, save.LastDirectory);
+        Assert.Equal(configured, vm.SaveDirectory);
+        Assert.Equal(configured, store.Current.Application.SavingPath);
     }
 
     [Fact]
-    public async Task FailedSaveDirectoryDoesNotPersistThroughStore()
+    public async Task SaveCommandFallsBackToSourceDirectoryWhenSaveDirectoryUnset()
     {
-        var store = new FakeSettingsStore(new AppSettings(SavingPath: "out", Language: "en-US"));
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save);
+        var sourcePath = Path.GetFullPath(Path.Combine("source-dir", "movie.txt"));
+
+        await vm.LoadCommand.ExecuteAsync(sourcePath);
+        await vm.SaveCommand.ExecuteAsync();
+
+        Assert.Equal(Path.GetDirectoryName(sourcePath), save.LastDirectory);
+        Assert.Null(vm.SaveDirectory);
+    }
+
+    [Fact]
+    public async Task ExplicitSaveDirectoryDoesNotMutateConfiguredSaveDirectory()
+    {
+        var configured = Path.GetFullPath("out");
+        var store = new FakeSettingsStore(new AppSettings(SavingPath: configured, Language: "en-US"));
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save, settingsStore: store);
+
+        await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        await vm.SaveCommand.ExecuteAsync("new-out");
+
+        Assert.Equal(Path.GetFullPath("new-out"), save.LastDirectory);
+        Assert.Equal(configured, vm.SaveDirectory);
+        Assert.Equal(configured, store.Current.Application.SavingPath);
+    }
+
+    [Fact]
+    public async Task FailedExplicitSaveDirectoryDoesNotMutateConfiguredSaveDirectory()
+    {
+        var configured = Path.GetFullPath("out");
+        var store = new FakeSettingsStore(new AppSettings(SavingPath: configured, Language: "en-US"));
         var save = new FakeSaveService { Result = new ChapterExportResult(false, "", "", []) };
         var vm = CreateViewModel(saveService: save, settingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        await vm.SaveDirectoryCommand.ExecuteAsync("bad-out");
+        await vm.SaveCommand.ExecuteAsync("bad-out");
 
-        Assert.Equal("bad-out", save.LastDirectory);
-        Assert.Equal("out", store.Current.Application.SavingPath);
-        Assert.Equal("out", vm.SaveDirectory);
+        Assert.Equal(Path.GetFullPath("bad-out"), save.LastDirectory);
+        Assert.Equal(configured, store.Current.Application.SavingPath);
+        Assert.Equal(configured, vm.SaveDirectory);
+    }
+
+    [Fact]
+    public async Task SaveStatusPrefersSavedDiagnosticPath()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var save = new FakeSaveService
+        {
+            Result = new ChapterExportResult(
+                true,
+                "ok",
+                ".txt",
+                [
+                    new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.OrderShiftNormalized, "shifted"),
+                    new ChapterDiagnostic(
+                        DiagnosticSeverity.Info,
+                        ChapterDiagnosticCode.Saved,
+                        Path.Combine(directory, "movie.txt"),
+                        Arguments: new Dictionary<string, object?> { ["path"] = Path.Combine(directory, "movie.txt") })
+                ])
+        };
+        var vm = CreateViewModel(saveService: save);
+        await vm.LoadCommand.ExecuteAsync(Path.Combine(directory, "movie.txt"));
+        await vm.SaveCommand.ExecuteAsync();
+
+        Assert.Contains(Path.Combine(directory, "movie.txt"), vm.StatusText, StringComparison.Ordinal);
+        Directory.Delete(directory, recursive: true);
     }
 
     [Fact]
@@ -1180,7 +1241,7 @@ public sealed class MainWindowViewModelTests
         public string? LastDirectory { get; private set; }
         public ChapterExportResult Result { get; init; } = new(true, "ok", ".txt", []);
 
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken)
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null)
         {
             LastInfo = info;
             LastOptions = options;

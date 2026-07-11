@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using ChapterTool.Avalonia.Headless.Tests;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
@@ -15,7 +16,7 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 
-namespace ChapterTool.Avalonia.Tests.Headless;
+namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 internal sealed class MainWindowHeadlessTestHost : IDisposable
 {
@@ -295,7 +296,8 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             ChapterSet info,
             ChapterExportOptions options,
             string? directory,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            string? sourcePath = null)
         {
             Calls++;
             LastInfo = info;

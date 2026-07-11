@@ -156,13 +156,28 @@
             BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
             BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="*,Auto,Auto" Height="27.2">
-        <TextBlock x:Name="StatusBlock"
-                   Grid.Column="0"
-                   Margin="8,0"
-                   VerticalAlignment="Center"
-                   FontSize="10.4"
-                   Foreground="{DynamicResource ChapterTool.ControlForegroundBrush}"
-                   Text="{Binding StatusText}" />
+        <StackPanel Grid.Column="0"
+                    Orientation="Horizontal"
+                    Margin="8,0"
+                    Spacing="12"
+                    VerticalAlignment="Center">
+          <TextBlock x:Name="StatusBlock"
+                     VerticalAlignment="Center"
+                     FontSize="10.4"
+                     Foreground="{DynamicResource ChapterTool.ControlForegroundBrush}"
+                     Text="{Binding StatusText}"
+                     TextTrimming="CharacterEllipsis" />
+          <TextBlock x:Name="OutputDirectoryBlock"
+                     VerticalAlignment="Center"
+                     FontSize="10.4"
+                     Opacity="0.75"
+                     Foreground="{DynamicResource ChapterTool.ControlForegroundBrush}"
+                     Text="{Binding EffectiveSaveDirectoryDisplay}"
+                     ToolTip.Tip="{Binding EffectiveSaveDirectoryDisplay}"
+                     TextTrimming="CharacterEllipsis"
+                     MaxWidth="280"
+                     AutomationProperties.AutomationId="OutputDirectoryDisplay" />
+        </StackPanel>
         <ProgressBar x:Name="ProgressBar"
                      Grid.Column="2"
                      Width="144"
@@ -205,13 +220,22 @@
                   AutomationProperties.AutomationId="SaveButton"
                   Content="{DynamicResource Common.Save}"
                   IsEnabled="{Binding CanSave}"
-                  Command="{Binding #RootWindow.SaveCommand}">
+                  Command="{Binding #RootWindow.SaveCommand}"
+                  ToolTip.Tip="{Binding EffectiveSaveDirectoryDisplay}">
             <Button.ContextMenu>
               <ContextMenu>
                 <MenuItem x:Name="SaveToMenuItem" Header="{DynamicResource Main.SaveTo}" Command="{Binding #RootWindow.SaveToCommand}" />
               </ContextMenu>
             </Button.ContextMenu>
           </Button>
+          <Button x:Name="SaveToButton"
+                  Classes="primaryAction"
+                  AutomationProperties.AutomationId="SaveToButton"
+                  AutomationProperties.Name="{DynamicResource Main.SaveTo}"
+                  Content="{DynamicResource Main.SaveToShort}"
+                  IsEnabled="{Binding CanSave}"
+                  Command="{Binding #RootWindow.SaveToCommand}"
+                  ToolTip.Tip="{DynamicResource Main.SaveTo}" />
         </StackPanel>
 
         <ComboBox x:Name="ClipBox"
