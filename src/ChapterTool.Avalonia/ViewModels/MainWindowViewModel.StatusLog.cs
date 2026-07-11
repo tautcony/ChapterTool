@@ -137,7 +137,7 @@ public sealed partial class MainWindowViewModel
         RefreshFrameRateDisplayOptions();
         RefreshXmlLanguageDisplayOptions(notify: true);
 
-        if (string.IsNullOrEmpty(chapterNameTemplateText))
+        if (string.IsNullOrEmpty(ChapterNameTemplateText))
         {
             ChapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
         }

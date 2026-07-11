@@ -171,9 +171,9 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         MainWindowHeadlessTestHost host,
         ISettingsCloseConfirmationService confirmation) =>
         new(
+            host.Localizer,
             host.SettingsStore,
             new FakeThemeApplicationService(),
-            host.Localizer,
             _ => host.SettingsPickerService,
             externalToolLocator: null,
             confirmation);

@@ -92,53 +92,71 @@ public sealed class ChapterWorkspaceTests
     }
 
     [Fact]
-    public void CreateExportOptions_UsesWorkspaceSourceNameAndPreferenceInputs()
+    public void CreateExportOptions_ReadsOwnedProjectionAndExportPreferences()
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
         Assert.True(workspace.TryCommitLoad(revision, "movie.mpls", ClipSessionTransitions.FromLoad(MultiMplsGroup())));
 
-        var options = workspace.CreateExportOptions(new ExportPreferenceInputs(
-            Format: ChapterExportFormat.Xml,
-            XmlLanguage: "eng",
-            AutoGenerateNames: true,
-            UseTemplateNames: false,
-            ChapterNameTemplateText: string.Empty,
-            OrderShift: 2,
-            ApplyExpression: true,
-            Expression: "t+1",
-            ExpressionPresetId: "preset",
-            ExpressionSourceName: "script.lua",
-            TextEncoding: OutputTextEncoding.Utf8,
-            EmitBom: false));
+        workspace.ExportPreferences.SetFormat(ChapterExportFormat.Xml);
+        workspace.ExportPreferences.SetXmlLanguage("eng");
+        workspace.ExportPreferences.SetTextEncoding(OutputTextEncoding.Utf8);
+        workspace.ExportPreferences.SetEmitBom(false);
+        workspace.Projection.SetAutoGenerateNames(true);
+        workspace.Projection.SetOrderShift(2);
+        workspace.ApplyExpressionFields("t+1", applyExpression: true, "preset", "script.lua");
+
+        var options = workspace.CreateExportOptions();
 
         Assert.Equal(ChapterExportFormat.Xml, options.Format);
         Assert.Equal("eng", options.XmlLanguage);
         Assert.Equal("00001", options.SourceFileName);
+        Assert.True(options.AutoGenerateNames);
         Assert.True(options.ApplyExpression);
         Assert.Equal("t+1", options.Expression);
+        Assert.Equal("preset", options.ExpressionPresetId);
+        Assert.Equal("script.lua", options.ExpressionSourceName);
         Assert.Equal(2, options.OrderShift);
         Assert.False(options.EmitBom);
 
-        var projected = workspace.CreateExportOptionsForProjectedInfo(new ExportPreferenceInputs(
-            Format: ChapterExportFormat.Xml,
-            XmlLanguage: "eng",
-            AutoGenerateNames: true,
-            UseTemplateNames: true,
-            ChapterNameTemplateText: "Ch%02d",
-            OrderShift: 2,
-            ApplyExpression: true,
-            Expression: "t+1",
-            ExpressionPresetId: "preset",
-            ExpressionSourceName: "script.lua",
-            TextEncoding: OutputTextEncoding.Utf8,
-            EmitBom: false));
+        var projected = workspace.CreateExportOptionsForProjectedInfo();
 
         Assert.False(projected.ApplyExpression);
         Assert.False(projected.AutoGenerateNames);
         Assert.False(projected.UseTemplateNames);
         Assert.Equal(0, projected.OrderShift);
         Assert.False(projected.ProjectOutput);
+        Assert.Equal(ChapterExportFormat.Xml, projected.Format);
+        Assert.Equal("eng", projected.XmlLanguage);
+    }
+
+    [Fact]
+    public void ApplyExpressionFields_UpdatesProjectionAtomically()
+    {
+        var workspace = new ChapterWorkspace();
+        workspace.ApplyExpressionFields("t*2", applyExpression: true, "id-1", "batch.lua");
+
+        Assert.Equal("t*2", workspace.Projection.Expression);
+        Assert.True(workspace.Projection.ApplyExpression);
+        Assert.Equal("id-1", workspace.Projection.ExpressionPresetId);
+        Assert.Equal("batch.lua", workspace.Projection.ExpressionSourceName);
+
+        var options = workspace.CreateExportOptions();
+        Assert.Equal("t*2", options.Expression);
+        Assert.True(options.ApplyExpression);
+    }
+
+    [Fact]
+    public void NamingModes_AreMutuallyExclusiveOnProjectionState()
+    {
+        var workspace = new ChapterWorkspace();
+        Assert.True(workspace.Projection.SetAutoGenerateNames(true));
+        Assert.True(workspace.Projection.AutoGenerateNames);
+        Assert.False(workspace.Projection.UseTemplateNames);
+
+        Assert.True(workspace.Projection.SetUseTemplateNames(true));
+        Assert.True(workspace.Projection.UseTemplateNames);
+        Assert.False(workspace.Projection.AutoGenerateNames);
     }
 
     [Fact]
@@ -150,9 +168,11 @@ public sealed class ChapterWorkspaceTests
             []);
         workspace.LastSuccessfulExpressionProjection = projection;
         Assert.Same(projection, workspace.LastSuccessfulExpressionProjection);
+        Assert.Same(projection, workspace.Projection.LastSuccessfulExpressionProjection);
 
         workspace.ClearProjectionCache();
         Assert.Null(workspace.LastSuccessfulExpressionProjection);
+        Assert.Null(workspace.Projection.LastSuccessfulExpressionProjection);
     }
 
     private static ChapterImportSource MultiMplsGroup() =>

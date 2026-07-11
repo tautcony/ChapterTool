@@ -74,10 +74,11 @@ public sealed partial class MainWindowViewModel
         isMutatingExpressionState = true;
         try
         {
-            Expression = string.IsNullOrWhiteSpace(expression) ? "t" : expression;
-            ApplyExpression = applyExpression;
-            ExpressionPresetId = expressionPresetId;
-            ExpressionSourceName = expressionSourceName;
+            workspace.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
+            OnPropertyChanged(nameof(Expression));
+            OnPropertyChanged(nameof(ApplyExpression));
+            OnPropertyChanged(nameof(ExpressionPresetId));
+            OnPropertyChanged(nameof(ExpressionSourceName));
         }
         finally
         {
@@ -184,5 +185,5 @@ public sealed partial class MainWindowViewModel
             : outputProjectionService.Project(currentInfo, CurrentExportOptions());
 
     private ChapterExportOptions CurrentExportOptionsForProjectedInfo() =>
-        workspace.CreateExportOptionsForProjectedInfo(CurrentExportPreferenceInputs());
+        workspace.CreateExportOptionsForProjectedInfo();
 }

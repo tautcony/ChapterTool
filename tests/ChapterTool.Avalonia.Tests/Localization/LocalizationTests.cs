@@ -9,6 +9,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
 
 namespace ChapterTool.Avalonia.Tests.Localization;
@@ -122,17 +123,22 @@ public sealed partial class LocalizationTests
     private static MainWindowViewModel CreateViewModel(IAppLocalizer localizer)
     {
         var logService = new ApplicationLogPanelProvider();
+        var formatter = new ChapterTimeFormatter();
+        var expressionEngine = new LuaExpressionScriptService();
 
         return new MainWindowViewModel(
             new FakeLoadService(),
             new FakeSaveService(),
-            new ChapterEditingService(new ChapterTimeFormatter()),
+            new ChapterEditingService(formatter),
             new ChapterSegmentService(),
             new FakeWindowService(),
-            new ChapterTimeFormatter(),
+            formatter,
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
-            localizer: localizer);
+            new FrameRateService(),
+            localizer,
+            expressionEngine,
+            new ChapterExportService(formatter, expressionEngine));
     }
 
     private sealed class FakeLoadService : IChapterLoadService

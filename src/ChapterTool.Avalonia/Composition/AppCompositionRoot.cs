@@ -76,12 +76,12 @@ public sealed class AppCompositionRoot : IDisposable
             formatter,
             logService,
             loggerFactory.CreateLogger<MainWindowViewModel>(),
-            CreateShellService(),
-            settingsStore,
             frameRateService,
             localizationManager,
             expressionEngine,
-            CreateChapterExportService());
+            CreateChapterExportService(),
+            CreateShellService(),
+            settingsStore);
 
     public IApplicationLogService CreateApplicationLogService() => logService;
 
@@ -133,9 +133,9 @@ public sealed class AppCompositionRoot : IDisposable
 
     public IWindowService CreateWindowService() =>
         new AvaloniaWindowService(
+            localizationManager,
             settingsStore,
             themeApplicationService,
-            localizationManager,
             owner => new AvaloniaSettingsPickerService(owner, localizationManager),
             CreateExternalToolLocator(),
             new AvaloniaSettingsCloseConfirmationService(localizationManager),

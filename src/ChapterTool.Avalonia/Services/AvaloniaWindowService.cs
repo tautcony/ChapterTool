@@ -25,9 +25,9 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly IReadOnlyList<ToolWindowRegistration> registrations;
 
     public AvaloniaWindowService(
+        IAppLocalizer localizer,
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
         IThemeApplicationService? themeApplicationService = null,
-        IAppLocalizer? localizer = null,
         Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
         IExternalToolLocator? externalToolLocator = null,
         ISettingsCloseConfirmationService? settingsCloseConfirmationService = null,
@@ -37,12 +37,12 @@ public sealed class AvaloniaWindowService : IWindowService
         string? settingsDirectory = null,
         IReadOnlyList<ToolWindowRegistration>? registrations = null)
     {
+        ArgumentNullException.ThrowIfNull(localizer);
         this.settingsStore = settingsStore;
         this.themeApplicationService = themeApplicationService;
         this.fontFamilyCatalog = fontFamilyCatalog;
         this.fontApplicationService = fontApplicationService;
-        // Composition root always supplies a localizer; fall back only for isolated tests.
-        this.localizer = localizer ?? new AppLocalizationManager();
+        this.localizer = localizer;
         this.settingsCloseConfirmationService = settingsCloseConfirmationService
             ?? new AvaloniaSettingsCloseConfirmationService(this.localizer);
         this.settingsPickerFactory = settingsPickerFactory;

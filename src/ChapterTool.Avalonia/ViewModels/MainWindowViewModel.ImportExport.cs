@@ -20,23 +20,8 @@ namespace ChapterTool.Avalonia.ViewModels;
 
 public sealed partial class MainWindowViewModel
 {
-    private ExportPreferenceInputs CurrentExportPreferenceInputs() =>
-        new(
-            Format: SaveFormat,
-            XmlLanguage: XmlLanguage,
-            AutoGenerateNames: AutoGenerateNames,
-            UseTemplateNames: UseTemplateNames,
-            ChapterNameTemplateText: ChapterNameTemplateText,
-            OrderShift: OrderShift,
-            ApplyExpression: ApplyExpression,
-            Expression: Expression,
-            ExpressionPresetId: ExpressionPresetId,
-            ExpressionSourceName: ExpressionSourceName,
-            TextEncoding: OutputTextEncoding,
-            EmitBom: EmitBom);
-
     private ChapterExportOptions CurrentExportOptions() =>
-        workspace.CreateExportOptions(CurrentExportPreferenceInputs());
+        workspace.CreateExportOptions();
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {

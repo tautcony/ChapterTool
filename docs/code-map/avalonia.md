@@ -38,9 +38,12 @@ Role split:
 Typed chapter session state lives under Avalonia `Session/` (not Core for this change):
 
 - `src/ChapterTool.Avalonia/Session/ClipSession.cs` — `SplitClipSession` / `CombinedClipSession` and pure transitions (`FromLoad`, `Select`, `ToggleCombine`, `Restore`, `Append`, `WriteBack`)
-- `src/ChapterTool.Avalonia/Session/ChapterWorkspace.cs` — workspace facade: source path, clip session, edit buffer, projection cache, export-preference snapshots, load/append revision + session-token commit APIs
+- `src/ChapterTool.Avalonia/Session/ProjectionState.cs` — naming mode, order shift, expression fields, last-successful projection cache
+- `src/ChapterTool.Avalonia/Session/ExportPreferences.cs` — save format, XML language, text encoding, BOM, save directory
+- `src/ChapterTool.Avalonia/Session/ChapterWorkspace.cs` — workspace facade: source path, clip session, edit buffer, owned `ProjectionState` + `ExportPreferences`, load/append revision + session-token commit APIs (`CreateExportOptions` / `CreateExportOptionsForProjectedInfo` read workspace-owned snapshots)
+- `src/ChapterTool.Avalonia/Session/Ports/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
 
-`MainWindowViewModel` is the bindable shell and holds one `ChapterWorkspace`. Load/append progress and results commit only through workspace revision rules; preview uses the composition-injected `ChapterExportService` (same construction path as save), not an ad-hoc export instance.
+`MainWindowViewModel` is the bindable shell and holds one `ChapterWorkspace`. Bindable projection/export properties facade workspace state (workspace is the owner). Load/append progress and results commit only through workspace revision rules; preview/save use composition-injected `ChapterExportService` with options from the workspace snapshot.
 
 ### Composition root
 

@@ -5,8 +5,8 @@ namespace ChapterTool.Avalonia.Session;
 
 /// <summary>
 /// Explicit chapter workspace/session owner for the Avalonia shell.
-/// Owns source metadata, typed clip session, edit buffer, projection cache,
-/// and async revision / session-token commit rules.
+/// Owns source metadata, typed clip session, edit buffer, projection state,
+/// export preferences, and async revision / session-token commit rules.
 /// </summary>
 public sealed class ChapterWorkspace
 {
@@ -27,8 +27,18 @@ public sealed class ChapterWorkspace
     /// <summary>Monotonic operation revision used for anti-stale load/append commits.</summary>
     public int CurrentRevision => Volatile.Read(ref currentRevision);
 
+    /// <summary>Projection state (naming, order, expression, last-good cache).</summary>
+    public ProjectionState Projection { get; } = new();
+
+    /// <summary>Export preference snapshot (format, language, encoding, BOM, save dir).</summary>
+    public ExportPreferences ExportPreferences { get; } = new();
+
     /// <summary>Last successful expression projection retained for mid-edit invalid expressions.</summary>
-    public ChapterOutputProjectionResult? LastSuccessfulExpressionProjection { get; set; }
+    public ChapterOutputProjectionResult? LastSuccessfulExpressionProjection
+    {
+        get => Projection.LastSuccessfulExpressionProjection;
+        set => Projection.LastSuccessfulExpressionProjection = value;
+    }
 
     /// <summary>Increments revision for a new load operation; returns the operation id to bind progress/result.</summary>
     public int BeginLoadOperation() => Interlocked.Increment(ref currentRevision);
@@ -115,33 +125,43 @@ public sealed class ChapterWorkspace
     }
 
     /// <summary>Clears expression projection cache (e.g. when chapter set becomes null).</summary>
-    public void ClearProjectionCache() => LastSuccessfulExpressionProjection = null;
+    public void ClearProjectionCache() => Projection.ClearProjectionCache();
 
     /// <summary>
-    /// Builds an export-preference snapshot for save/preview from the workspace session
-    /// and the current shell preference values.
+    /// Atomically applies expression session fields on the workspace projection state.
+    /// Callers should refresh rows once after this method returns.
     /// </summary>
-    public ChapterExportOptions CreateExportOptions(ExportPreferenceInputs inputs) =>
+    public void ApplyExpressionFields(
+        string expression,
+        bool applyExpression,
+        string expressionPresetId,
+        string expressionSourceName) =>
+        Projection.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
+
+    /// <summary>
+    /// Builds export options for save/preview from workspace projection + export preferences.
+    /// </summary>
+    public ChapterExportOptions CreateExportOptions() =>
         new(
-            Format: inputs.Format,
-            XmlLanguage: inputs.XmlLanguage,
+            Format: ExportPreferences.Format,
+            XmlLanguage: ExportPreferences.XmlLanguage,
             SourceFileName: CurrentChapterSet?.SourceName,
-            AutoGenerateNames: inputs.AutoGenerateNames,
-            UseTemplateNames: inputs.UseTemplateNames,
-            ChapterNameTemplateText: inputs.ChapterNameTemplateText,
-            OrderShift: inputs.OrderShift,
-            ApplyExpression: inputs.ApplyExpression,
-            Expression: inputs.Expression,
-            ExpressionPresetId: inputs.ExpressionPresetId,
-            ExpressionSourceName: inputs.ExpressionSourceName,
-            TextEncoding: inputs.TextEncoding,
-            EmitBom: inputs.EmitBom);
+            AutoGenerateNames: Projection.AutoGenerateNames,
+            UseTemplateNames: Projection.UseTemplateNames,
+            ChapterNameTemplateText: Projection.ChapterNameTemplateText,
+            OrderShift: Projection.OrderShift,
+            ApplyExpression: Projection.ApplyExpression,
+            Expression: Projection.Expression,
+            ExpressionPresetId: Projection.ExpressionPresetId,
+            ExpressionSourceName: Projection.ExpressionSourceName,
+            TextEncoding: ExportPreferences.TextEncoding,
+            EmitBom: ExportPreferences.EmitBom);
 
     /// <summary>
     /// Export options for already-projected chapter sets (expression/naming/order already applied).
     /// </summary>
-    public ChapterExportOptions CreateExportOptionsForProjectedInfo(ExportPreferenceInputs inputs) =>
-        CreateExportOptions(inputs) with
+    public ChapterExportOptions CreateExportOptionsForProjectedInfo() =>
+        CreateExportOptions() with
         {
             ApplyExpression = false,
             AutoGenerateNames = false,
@@ -151,21 +171,3 @@ public sealed class ChapterWorkspace
             ProjectOutput = false
         };
 }
-
-/// <summary>
-/// Shell-side preference inputs used to build a workspace export snapshot.
-/// Bindable fields remain on the ViewModel until binding-authority work consolidates them.
-/// </summary>
-public readonly record struct ExportPreferenceInputs(
-    ChapterExportFormat Format,
-    string XmlLanguage,
-    bool AutoGenerateNames,
-    bool UseTemplateNames,
-    string ChapterNameTemplateText,
-    int OrderShift,
-    bool ApplyExpression,
-    string Expression,
-    string ExpressionPresetId,
-    string ExpressionSourceName,
-    OutputTextEncoding TextEncoding,
-    bool EmitBom);

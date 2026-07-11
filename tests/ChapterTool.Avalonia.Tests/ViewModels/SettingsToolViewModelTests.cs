@@ -8,6 +8,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 
@@ -763,18 +764,23 @@ public sealed class SettingsToolViewModelTests
         IAppLocalizer? localizer = null)
     {
         var logService = new ApplicationLogPanelProvider();
+        var formatter = new ChapterTimeFormatter();
+        var expressionEngine = new LuaExpressionScriptService();
 
         return new MainWindowViewModel(
             new FakeLoadService(),
             new FakeSaveService(),
-            new ChapterEditingService(new ChapterTimeFormatter()),
+            new ChapterEditingService(formatter),
             new ChapterSegmentService(),
             new FakeWindowService(),
-            new ChapterTimeFormatter(),
+            formatter,
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
-            settingsStore: settingsStore,
-            localizer: localizer ?? new AppLocalizationManager("en-US"));
+            new FrameRateService(),
+            localizer ?? new AppLocalizationManager("en-US"),
+            expressionEngine,
+            new ChapterExportService(formatter, expressionEngine),
+            settingsStore: settingsStore);
     }
 
     private sealed class FakeSettingsStore(AppSettings initial) : ISettingsStore<ChapterToolSettings>

@@ -9,6 +9,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 using Microsoft.Extensions.Logging;
@@ -1205,20 +1206,24 @@ public sealed class MainWindowViewModelTests
         IAppLocalizer? localizer = null)
     {
         logService ??= new ApplicationLogPanelProvider();
+        var formatter = new ChapterTimeFormatter();
+        var expressionEngine = new LuaExpressionScriptService();
 
         return new MainWindowViewModel(
             loadService ?? new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro")))),
             saveService ?? new FakeSaveService(),
-            new ChapterEditingService(new ChapterTimeFormatter()),
+            new ChapterEditingService(formatter),
             new ChapterSegmentService(),
             windowService ?? new FakeWindowService(),
-            new ChapterTimeFormatter(),
+            formatter,
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
+            new FrameRateService(),
+            localizer ?? new AppLocalizationManager("en-US"),
+            expressionEngine,
+            new ChapterExportService(formatter, expressionEngine),
             shellService,
-            settingsStore,
-            frameRateService: null,
-            localizer ?? new AppLocalizationManager("en-US"));
+            settingsStore);
     }
 
     private static ChapterSet Info(ChapterImportFormat sourceType,  string sourceName, params Chapter[] chapters) =>

@@ -9,6 +9,7 @@ using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
@@ -203,6 +204,7 @@ public sealed class ToolWindowViewModelTests
     private static MainWindowViewModel CreateOwner(IAppLocalizer? localizer = null)
     {
         var formatter = new ChapterTimeFormatter();
+        var expressionEngine = new LuaExpressionScriptService();
         var logService = new ApplicationLogPanelProvider();
         return new MainWindowViewModel(
             new FakeLoadService(new ChapterImportResult(
@@ -216,7 +218,10 @@ public sealed class ToolWindowViewModelTests
             formatter,
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
-            localizer: localizer);
+            new FrameRateService(),
+            localizer ?? new AppLocalizationManager("en-US"),
+            expressionEngine,
+            new ChapterExportService(formatter, expressionEngine));
     }
 
     private sealed class FakeLoadService(ChapterImportResult result) : IChapterLoadService

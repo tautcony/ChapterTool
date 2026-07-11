@@ -70,3 +70,9 @@
 - [x] 7.1 Never treat focused-only green as sufficient for an independently mergeable slice; full `dotnet test ChapterTool.Avalonia.slnx` is required at each slice exit.
 - [x] 7.2 Do not launch multiple external `dotnet test` processes in parallel. Finish any focused Headless command before starting the full-solution gate. Headless remains process-isolated via its dedicated project/testhost; a single solution-level `dotnet test` that includes Headless is allowed.
 - [x] 7.3 Do not weaken or delete concurrent load/append anti-stale tests to make a refactor pass.
+
+## 8. Pre-archive gap remediation
+
+- [x] 8.1 Make `ChapterWorkspace` the true owner of `ProjectionState` and `ExportPreferences` (not only a projection cache + option builder); ViewModel properties facade workspace state; preview/save read `CreateExportOptions()` / `CreateExportOptionsForProjectedInfo()` from workspace-owned snapshots; atomic expression apply via workspace API.
+- [x] 8.2 Require non-null composition-owned localizer / frame / expression / export on production `MainWindowViewModel` and non-null localizer on `AvaloniaWindowService`; remove silent `new` fallbacks; tests supply explicit instances.
+- [x] 8.3 Revise `design.md` decision 11 so A+B packaging matches delivery history (no mandatory “must stay separate” claim contradicted by the landed commit).

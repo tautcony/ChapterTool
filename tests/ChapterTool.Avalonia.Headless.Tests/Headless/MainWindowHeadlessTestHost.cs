@@ -13,6 +13,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 
@@ -67,19 +68,23 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         FontApplicationService = new AvaloniaFontApplicationService(FontFamilyCatalog);
         ShellService = shellService ?? new FakeShellService();
         logService = new ApplicationLogPanelProvider();
+        var formatter = new ChapterTimeFormatter();
+        var expressionEngine = new LuaExpressionScriptService();
         ViewModel = new MainWindowViewModel(
             LoadService,
             SaveService,
-            new ChapterEditingService(new ChapterTimeFormatter()),
+            new ChapterEditingService(formatter),
             new ChapterSegmentService(),
             WindowService,
-            new ChapterTimeFormatter(),
+            formatter,
             logService,
             TestApplicationLogger.Create<MainWindowViewModel>(logService),
+            new FrameRateService(),
+            Localizer,
+            expressionEngine,
+            new ChapterExportService(formatter, expressionEngine),
             ShellService,
-            SettingsStore,
-            frameRateService: null,
-            Localizer);
+            SettingsStore);
         Window = new MainWindow(ViewModel, _ => FilePickerService);
     }
 

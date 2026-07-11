@@ -13,7 +13,6 @@ using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
-using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -47,9 +46,6 @@ public sealed partial class MainWindowViewModel :
     private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
     private bool isMutatingExpressionState;
-    private bool autoGenerateNames;
-    private bool useTemplateNames;
-    private string chapterNameTemplateText = string.Empty;
     private string chapterNameTemplateStatus;
     private string statusText;
     private LocalizedMessage? currentStatusMessage;
@@ -72,35 +68,47 @@ public sealed partial class MainWindowViewModel :
         IChapterTimeFormatter formatter,
         IApplicationLogService logService,
         ILogger<MainWindowViewModel> logger,
+        IFrameRateService frameRateService,
+        IAppLocalizer localizer,
+        IChapterExpressionEngine expressionEngine,
+        ChapterExportService exportService,
         IShellService? shellService = null,
-        ISettingsStore<ChapterToolSettings>? settingsStore = null,
-        IFrameRateService? frameRateService = null,
-        IAppLocalizer? localizer = null,
-        IChapterExpressionEngine? expressionEngine = null,
-        ChapterExportService? exportService = null)
+        ISettingsStore<ChapterToolSettings>? settingsStore = null)
     {
+        ArgumentNullException.ThrowIfNull(loadService);
+        ArgumentNullException.ThrowIfNull(saveService);
+        ArgumentNullException.ThrowIfNull(editingService);
+        ArgumentNullException.ThrowIfNull(segmentService);
+        ArgumentNullException.ThrowIfNull(windowService);
+        ArgumentNullException.ThrowIfNull(formatter);
+        ArgumentNullException.ThrowIfNull(logService);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(frameRateService);
+        ArgumentNullException.ThrowIfNull(localizer);
+        ArgumentNullException.ThrowIfNull(expressionEngine);
+        ArgumentNullException.ThrowIfNull(exportService);
+
         this.loadService = loadService;
         this.saveService = saveService;
         this.editingService = editingService;
         this.segmentService = segmentService;
         this.windowService = windowService;
         this.formatter = formatter;
-        this.frameRateService = frameRateService ?? new FrameRateService();
-        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
+        this.frameRateService = frameRateService;
+        this.expressionEngine = expressionEngine;
         outputProjectionService = new ChapterOutputProjectionService(this.expressionEngine);
-        this.exportService = exportService ?? new ChapterExportService(this.formatter, this.expressionEngine);
+        this.exportService = exportService;
         this.logService = logService;
         this.logger = logger;
-
-        this.Localizer = localizer ?? new AppLocalizationManager();
+        Localizer = localizer;
         this.shellService = shellService;
         this.settingsStore = settingsStore;
-        chapterNameTemplateStatus = this.Localizer.GetString("Status.TemplateNotSelected");
-        statusText = this.Localizer.GetString("Status.Ready");
+        chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
+        statusText = Localizer.GetString("Status.Ready");
         RefreshXmlLanguageDisplayOptions(notify: false);
         RefreshChapterNameModeOptions();
         RefreshFrameRateDisplayOptions();
-        this.Localizer.CultureChanged += (_, _) => RefreshLocalizedState();
+        Localizer.CultureChanged += (_, _) => RefreshLocalizedState();
         selectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
         Rows.CollectionChanged += OnRowsChanged;
@@ -322,16 +330,17 @@ public sealed partial class MainWindowViewModel :
 
     public ChapterExportFormat SaveFormat
     {
-        get;
+        get => workspace.ExportPreferences.Format;
         set
         {
-            if (SetProperty(ref field, value))
+            if (workspace.ExportPreferences.SetFormat(value))
             {
+                OnPropertyChanged();
                 OnPropertyChanged(nameof(SaveFormatIndex));
                 OnPropertyChanged(nameof(IsXmlLanguageEnabled));
             }
         }
-    } = ChapterExportFormat.Txt;
+    }
 
     public int SaveFormatIndex
     {
@@ -374,17 +383,17 @@ public sealed partial class MainWindowViewModel :
 
     public string XmlLanguage
     {
-        get;
+        get => workspace.ExportPreferences.XmlLanguage;
         set
         {
-            var normalized = string.IsNullOrWhiteSpace(value) ? "und" : value.Trim().ToLowerInvariant();
-            if (SetProperty(ref field, normalized))
+            if (workspace.ExportPreferences.SetXmlLanguage(value))
             {
+                OnPropertyChanged();
                 OnPropertyChanged(nameof(XmlLanguageIndex));
                 OnPropertyChanged(nameof(SelectedXmlLanguageDisplayOption));
             }
         }
-    } = "und";
+    }
 
     public int XmlLanguageIndex
     {
@@ -418,14 +427,15 @@ public sealed partial class MainWindowViewModel :
 
     public bool AutoGenerateNames
     {
-        get => autoGenerateNames;
+        get => workspace.Projection.AutoGenerateNames;
         set
         {
-            if (SetProperty(ref autoGenerateNames, value))
+            var previousTemplate = workspace.Projection.UseTemplateNames;
+            if (workspace.Projection.SetAutoGenerateNames(value))
             {
-                if (value && useTemplateNames)
+                OnPropertyChanged();
+                if (previousTemplate != workspace.Projection.UseTemplateNames)
                 {
-                    useTemplateNames = false;
                     OnPropertyChanged(nameof(UseTemplateNames));
                 }
 
@@ -437,14 +447,15 @@ public sealed partial class MainWindowViewModel :
 
     public bool UseTemplateNames
     {
-        get => useTemplateNames;
+        get => workspace.Projection.UseTemplateNames;
         set
         {
-            if (SetProperty(ref useTemplateNames, value))
+            var previousAuto = workspace.Projection.AutoGenerateNames;
+            if (workspace.Projection.SetUseTemplateNames(value))
             {
-                if (value && autoGenerateNames)
+                OnPropertyChanged();
+                if (previousAuto != workspace.Projection.AutoGenerateNames)
                 {
-                    autoGenerateNames = false;
                     OnPropertyChanged(nameof(AutoGenerateNames));
                 }
 
@@ -456,11 +467,12 @@ public sealed partial class MainWindowViewModel :
 
     public string ChapterNameTemplateText
     {
-        get => chapterNameTemplateText;
+        get => workspace.Projection.ChapterNameTemplateText;
         set
         {
-            if (SetProperty(ref chapterNameTemplateText, value))
+            if (workspace.Projection.SetChapterNameTemplateText(value))
             {
+                OnPropertyChanged();
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
                 RefreshRows();
             }
@@ -510,11 +522,12 @@ public sealed partial class MainWindowViewModel :
 
     public int OrderShift
     {
-        get;
+        get => workspace.Projection.OrderShift;
         set
         {
-            if (SetProperty(ref field, value))
+            if (workspace.Projection.SetOrderShift(value))
             {
+                OnPropertyChanged();
                 RefreshRows();
             }
         }
@@ -522,47 +535,68 @@ public sealed partial class MainWindowViewModel :
 
     public bool ApplyExpression
     {
-        get;
+        get => workspace.Projection.ApplyExpression;
         set
         {
-            if (SetProperty(ref field, value) && !isMutatingExpressionState)
+            if (workspace.Projection.SetApplyExpression(value))
             {
-                RefreshRows();
+                OnPropertyChanged();
+                if (!isMutatingExpressionState)
+                {
+                    RefreshRows();
+                }
             }
         }
     }
 
     public string Expression
     {
-        get;
+        get => workspace.Projection.Expression;
         set
         {
-            if (SetProperty(ref field, value) && !isMutatingExpressionState)
+            if (workspace.Projection.SetExpression(value))
             {
-                RefreshRows();
+                OnPropertyChanged();
+                if (!isMutatingExpressionState)
+                {
+                    RefreshRows();
+                }
             }
         }
-    } = "t";
+    }
 
     public string ExpressionPresetId
     {
-        get;
-        set => SetProperty(ref field, value);
-    } = string.Empty;
+        get => workspace.Projection.ExpressionPresetId;
+        set
+        {
+            if (workspace.Projection.SetExpressionPresetId(value))
+            {
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public string ExpressionSourceName
     {
-        get;
-        set => SetProperty(ref field, value);
-    } = string.Empty;
+        get => workspace.Projection.ExpressionSourceName;
+        set
+        {
+            if (workspace.Projection.SetExpressionSourceName(value))
+            {
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public string? SaveDirectory
     {
-        get;
+        get => workspace.ExportPreferences.SaveDirectory;
         private set
         {
-            if (SetProperty(ref field, value))
+            if (workspace.ExportPreferences.SetSaveDirectory(value))
             {
+                OnPropertyChanged();
                 OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
             }
         }
@@ -608,15 +642,27 @@ public sealed partial class MainWindowViewModel :
 
     public bool EmitBom
     {
-        get;
-        private set => SetProperty(ref field, value);
-    } = true;
+        get => workspace.ExportPreferences.EmitBom;
+        private set
+        {
+            if (workspace.ExportPreferences.SetEmitBom(value))
+            {
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public OutputTextEncoding OutputTextEncoding
     {
-        get;
-        private set => SetProperty(ref field, value);
-    } = OutputTextEncoding.Utf8;
+        get => workspace.ExportPreferences.TextEncoding;
+        private set
+        {
+            if (workspace.ExportPreferences.SetTextEncoding(value))
+            {
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public UiCommand LoadCommand { get; private set; } = null!;
     public UiCommand ReloadCommand { get; private set; } = null!;
