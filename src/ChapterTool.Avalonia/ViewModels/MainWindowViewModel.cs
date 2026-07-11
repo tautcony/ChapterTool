@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Session;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -28,19 +29,15 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private readonly IFrameRateService frameRateService;
     private readonly IChapterExpressionEngine expressionEngine;
     private readonly ChapterOutputProjectionService outputProjectionService;
+    private readonly ChapterExportService exportService;
+    private readonly ChapterWorkspace workspace = new();
     private readonly IApplicationLogService logService;
     private readonly ILogger<MainWindowViewModel> logger;
     private readonly IShellService? shellService;
     private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
 
-    private ChapterImportSource? currentGroup;
-    private ChapterSet? currentInfo;
     private FrameRateOption selectedFrameRateOption;
     private decimal? configuredFrameRate;
-    private bool currentInfoBelongsToSelectedClip;
-    private ChapterImportSource? splitClipGroup;
-    private ChapterImportEntry? combinedClipOption;
-    private int loadOperationVersion;
     private bool isRefreshingChapterNameModeOptions;
     private bool isMutatingExpressionState;
     private bool autoGenerateNames;
@@ -52,7 +49,12 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private LocalizedMessage? currentProgressMessage;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
     private string? lastExpressionDiagnosticSignature;
-    private ChapterOutputProjectionResult? lastSuccessfulExpressionProjection;
+
+    private ChapterSet? currentInfo
+    {
+        get => workspace.CurrentChapterSet;
+        set => workspace.SetCurrentChapterSet(value);
+    }
 
     public MainWindowViewModel(
         IChapterLoadService loadService,
@@ -67,7 +69,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
         IFrameRateService? frameRateService = null,
         IAppLocalizer? localizer = null,
-        IChapterExpressionEngine? expressionEngine = null)
+        IChapterExpressionEngine? expressionEngine = null,
+        ChapterExportService? exportService = null)
     {
         this.loadService = loadService;
         this.saveService = saveService;
@@ -78,6 +81,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         this.frameRateService = frameRateService ?? new FrameRateService();
         this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
         outputProjectionService = new ChapterOutputProjectionService(this.expressionEngine);
+        this.exportService = exportService ?? new ChapterExportService(this.formatter, this.expressionEngine);
         this.logService = logService;
         this.logger = logger;
 
@@ -96,6 +100,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         InitializeCommands();
     }
+
+    /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
+    internal ChapterWorkspace Workspace => workspace;
 
     private void InitializeCommands()
     {
@@ -184,17 +191,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         OpenRelatedMediaCommand = new UiCommand(async (parameter, token) => await OpenRelatedMediaAsync(parameter, token), _ => RelatedMediaReferences.Count > 0);
     }
 
-    public string CurrentPath
-    {
-        get;
-        private set => SetProperty(ref field, value);
-    } = string.Empty;
+    public string CurrentPath => workspace.CurrentPath;
 
-    public string DisplayPath
-    {
-        get;
-        private set => SetProperty(ref field, value);
-    } = string.Empty;
+    public string DisplayPath => workspace.DisplayPath;
 
     public ObservableCollection<ChapterRowViewModel> Rows { get; } = [];
 
@@ -270,18 +269,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombineChecked;
 
-    public bool IsClipCombineChecked
-    {
-        get;
-        private set
-        {
-            if (SetProperty(ref field, value))
-            {
-                OnPropertyChanged(nameof(IsClipSelectionVisible));
-                OnPropertyChanged(nameof(CanCombine));
-            }
-        }
-    }
+    /// <summary>Derived from typed clip session mode (combined vs split).</summary>
+    public bool IsClipCombineChecked => workspace.ClipSession?.IsCombined == true;
 
     public bool IsAdvancedPanelExpanded
     {
@@ -561,17 +550,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     }
 
     public IReadOnlyList<ReferencedMediaFile> RelatedMediaReferences =>
-        currentGroup is null || SelectedClipIndex < 0 || SelectedClipIndex >= currentGroup.Entries.Count
-            ? []
-            : currentGroup.Entries[SelectedClipIndex].ReferencedMediaFiles ?? [];
+        workspace.ClipSession?.RelatedMedia ?? [];
 
-    public bool CanAppendMpls => currentGroup?.Entries.Any(static entry => entry.ChapterSet.ImportFormat == ChapterImportFormat.Mpls) == true;
+    public bool CanAppendMpls => workspace.ClipSession?.CanAppendMpls == true;
 
-    public bool CanCombine => IsClipCombineChecked
-        || currentGroup is not null
-            && currentGroup.Entries.Count > 1
-            && currentGroup.Entries[0].ChapterSet.ImportFormat is ChapterImportFormat.Mpls or ChapterImportFormat.DvdIfo
-            && currentGroup.Entries.All(entry => entry.ChapterSet.ImportFormat == currentGroup.Entries[0].ChapterSet.ImportFormat);
+    public bool CanCombine => workspace.ClipSession?.CanCombine == true;
 
     public bool CanSave => currentInfo is not null;
 
@@ -646,7 +629,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         var projection = CurrentOutputProjection();
         var entries = CurrentExportOptionsForProjectedInfo();
-        var result = new ChapterExportService(formatter).Export(projection.Info, entries);
+        // Use composition-injected export service (same path family as save), not ad-hoc construction.
+        var result = exportService.Export(projection.Info, entries);
         if (!result.Success)
         {
             return string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
@@ -705,6 +689,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private void NotifyStateChanged()
     {
         OnPropertyChanged(nameof(IsClipSelectionVisible));
+        OnPropertyChanged(nameof(IsClipCombineChecked));
         OnPropertyChanged(nameof(RelatedMediaReferences));
         OnPropertyChanged(nameof(CanAppendMpls));
         OnPropertyChanged(nameof(CanCombine));

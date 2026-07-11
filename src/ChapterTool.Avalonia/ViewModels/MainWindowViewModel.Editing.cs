@@ -3,6 +3,7 @@ using System.Collections.Specialized;
 using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Session;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -21,15 +22,19 @@ public sealed partial class MainWindowViewModel
 {
     private void SelectClip(int index)
     {
-        if (index < 0 || index >= ClipOptions.Count)
+        if (workspace.ClipSession is null || index < 0 || index >= ClipOptions.Count)
         {
             return;
         }
 
-        SelectedClipIndex = index;
-        currentInfo = ClipOptions[index].ChapterSet;
+        workspace.SelectClip(index);
+        SelectedClipIndex = workspace.ClipSession.SelectedIndex;
+        if (currentInfo is null)
+        {
+            return;
+        }
+
         configuredFrameRate = (decimal)currentInfo.FramesPerSecond;
-        currentInfoBelongsToSelectedClip = !IsClipCombineChecked;
         Log("Log.SelectedSourceOption",
             ("index", index),
             ("label", ClipOptions[index].DisplayName),
@@ -62,40 +67,54 @@ public sealed partial class MainWindowViewModel
 
     private void CombineSegments()
     {
-        if (currentGroup is null)
+        if (workspace.ClipSession is null)
         {
             return;
         }
 
-        if (IsClipCombineChecked)
+        var originalGroup = workspace.ClipSession.OriginalGroup;
+        var wasCombined = workspace.ClipSession.IsCombined;
+        var beforeCount = wasCombined
+            ? currentInfo?.Chapters.Count ?? 0
+            : originalGroup.Entries.Sum(static entry => entry.ChapterSet.Chapters.Count);
+
+        var transition = ClipSessionTransitions.ToggleCombine(workspace.ClipSession);
+        if (!transition.Succeeded || transition.Session is null)
         {
-            RestoreSplitClips();
+            ApplyEdit(
+                transition.EditResult,
+                Localizer.Format(LocalizedMessage.Create(
+                    "Action.CombineSegments",
+                    ("entries", originalGroup.Entries.Count),
+                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat)))));
             return;
         }
 
-        var groupToCombine = splitClipGroup ?? currentGroup;
-        var result = ChapterSegmentService.Combine(groupToCombine);
-        if (result.Diagnostics.Count > 0)
-        {
-            ApplyEdit(result, Localizer.Format(LocalizedMessage.Create("Action.CombineSegments", ("entries", groupToCombine.Entries.Count), ("sourceType", ChapterImportFormats.DisplayName(groupToCombine.Entries[0].ChapterSet.ImportFormat)))));
-            return;
-        }
-
-        splitClipGroup = groupToCombine;
-        combinedClipOption = CreateCombinedClipOption(groupToCombine, result.ChapterSet);
-        currentGroup = groupToCombine with { Entries = [combinedClipOption], DefaultEntryIndex = 0 };
-        IsClipCombineChecked = true;
-        currentInfo = result.ChapterSet;
-        currentInfoBelongsToSelectedClip = false;
-        SelectedClipIndex = -1;
-        ClipOptions.Clear();
-        ClipOptions.Add(combinedClipOption);
-        SelectClip(0);
+        workspace.ReplaceSession(transition.Session);
+        ApplyClipSessionUi(transition.Session, selectIndex: transition.Session.SelectedIndex);
         SetStatus("Status.Updated");
-        Log("Log.EditChapters",
-            ("action", Localizer.Format(LocalizedMessage.Create("Action.CombineSegments", ("entries", groupToCombine.Entries.Count), ("sourceType", ChapterImportFormats.DisplayName(groupToCombine.Entries[0].ChapterSet.ImportFormat))))),
-            ("before", groupToCombine.Entries.Sum(static entry => entry.ChapterSet.Chapters.Count)),
-            ("after", currentInfo?.Chapters.Count ?? 0));
+
+        if (transition.Restored)
+        {
+            Log("Log.EditChapters",
+                ("action", Localizer.Format(LocalizedMessage.Create(
+                    "Action.SplitCombinedSegments",
+                    ("entries", workspace.ClipSession.OriginalGroup.Entries.Count),
+                    ("sourceType", ChapterImportFormats.DisplayName(workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat))))),
+                ("before", beforeCount),
+                ("after", currentInfo?.Chapters.Count ?? 0));
+        }
+        else
+        {
+            Log("Log.EditChapters",
+                ("action", Localizer.Format(LocalizedMessage.Create(
+                    "Action.CombineSegments",
+                    ("entries", originalGroup.Entries.Count),
+                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat))))),
+                ("before", beforeCount),
+                ("after", currentInfo?.Chapters.Count ?? 0));
+        }
+
         LogStatus();
         NotifyStateChanged();
     }
@@ -162,14 +181,7 @@ public sealed partial class MainWindowViewModel
             ("fps", $"{result.FramesPerSecond:0.###}"),
             ("round", RoundFrames),
             ("chapters", currentInfo.Chapters.Count));
-        if (currentInfoBelongsToSelectedClip)
-        {
-            UpdateCurrentClipOption(storedInfo);
-        }
-        else if (IsClipCombineChecked)
-        {
-            UpdateCombinedClipOption(storedInfo);
-        }
+        WriteBackCurrentInfo(storedInfo);
         RefreshRows();
         NotifyStateChanged();
     }
@@ -207,98 +219,72 @@ public sealed partial class MainWindowViewModel
         NotifyStateChanged();
     }
 
-    private void UpdateCurrentClipOption(ChapterSet info)
+    /// <summary>
+    /// Writes the working chapter set back into the typed clip session by mode
+    /// (selected split entry vs combined entry).
+    /// </summary>
+    private void WriteBackCurrentInfo(ChapterSet info)
     {
-        if (currentGroup is null)
+        if (workspace.ClipSession is null)
         {
+            workspace.SetCurrentChapterSet(info);
             return;
         }
 
-        var index = SelectedClipIndex;
-        if (index < 0 || index >= ClipOptions.Count)
-        {
-            return;
-        }
-
-        var entries = currentGroup.Entries.ToList();
-        if (index >= entries.Count)
-        {
-            return;
-        }
-
-        var updatedOption = entries[index] with { ChapterSet = info };
-        entries[index] = updatedOption;
-        ClipOptions[index] = updatedOption;
-        currentGroup = currentGroup with { Entries = entries };
-
+        workspace.WriteBackCurrentChapterSet(info);
+        SyncClipOptionsFromSession();
         OnPropertyChanged(nameof(RelatedMediaReferences));
     }
 
-    private void UpdateCombinedClipOption(ChapterSet info)
+    /// <summary>
+    /// Rebuilds bindable clip options / selection after the workspace session was already updated.
+    /// </summary>
+    private void ApplyClipSessionUi(ClipSession session, int selectIndex)
     {
-        if (currentGroup is null || !IsClipCombineChecked)
-        {
-            return;
-        }
-
-        var entry = combinedClipOption ?? ClipOptions.FirstOrDefault();
-        if (entry is null)
-        {
-            return;
-        }
-
-        combinedClipOption = entry with { ChapterSet = info };
-        currentGroup = currentGroup with { Entries = [combinedClipOption] };
-        if (ClipOptions.Count == 1)
-        {
-            ClipOptions[0] = combinedClipOption;
-        }
-
-        OnPropertyChanged(nameof(RelatedMediaReferences));
-    }
-
-    private void RestoreSplitClips()
-    {
-        if (splitClipGroup is null)
-        {
-            return;
-        }
-
-        var combinedChapterCount = combinedClipOption?.ChapterSet.Chapters.Count ?? currentInfo?.Chapters.Count ?? 0;
-        currentGroup = splitClipGroup;
-        splitClipGroup = null;
-        combinedClipOption = null;
-        IsClipCombineChecked = false;
-        currentInfoBelongsToSelectedClip = false;
         SelectedClipIndex = -1;
         ClipOptions.Clear();
-        foreach (var entry in currentGroup.Entries)
+        foreach (var entry in session.ClipOptions)
         {
             ClipOptions.Add(entry);
         }
 
-        SelectClip(Math.Clamp(currentGroup.DefaultEntryIndex, 0, ClipOptions.Count - 1));
-        SetStatus("Status.Updated");
-        Log("Log.EditChapters",
-            ("action", Localizer.Format(LocalizedMessage.Create("Action.SplitCombinedSegments", ("entries", currentGroup.Entries.Count), ("sourceType", ChapterImportFormats.DisplayName(currentGroup.Entries[0].ChapterSet.ImportFormat))))),
-            ("before", combinedChapterCount),
-            ("after", currentInfo?.Chapters.Count ?? 0));
-        LogStatus();
-        NotifyStateChanged();
+        if (ClipOptions.Count == 0)
+        {
+            workspace.SetCurrentChapterSet(null);
+            workspace.ClearProjectionCache();
+            return;
+        }
+
+        SelectClip(Math.Clamp(selectIndex, 0, ClipOptions.Count - 1));
     }
 
-    private static ChapterImportEntry CreateCombinedClipOption(ChapterImportSource sourceGroup, ChapterSet combinedInfo)
+    private void SyncClipOptionsFromSession()
     {
-        var mediaReferences = sourceGroup.Entries
-            .SelectMany(static entry => entry.ReferencedMediaFiles ?? [])
-            .Distinct()
-            .ToArray();
-        return new ChapterImportEntry(
-            "combined",
-            $"{combinedInfo.Title}__{combinedInfo.Chapters.Count}",
-            combinedInfo,
-            CanCombine: true,
-            ReferencedMediaFiles: mediaReferences);
+        if (workspace.ClipSession is null)
+        {
+            return;
+        }
+
+        var options = workspace.ClipSession.ClipOptions;
+        for (var i = 0; i < options.Count; i++)
+        {
+            if (i < ClipOptions.Count)
+            {
+                if (!ReferenceEquals(ClipOptions[i], options[i]))
+                {
+                    ClipOptions[i] = options[i];
+                }
+            }
+            else
+            {
+                ClipOptions.Add(options[i]);
+            }
+        }
+
+        while (ClipOptions.Count > options.Count)
+        {
+            ClipOptions.RemoveAt(ClipOptions.Count - 1);
+        }
     }
 
     private void OnClipOptionsChanged(object? sender, NotifyCollectionChangedEventArgs args)

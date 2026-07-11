@@ -33,6 +33,15 @@ Role split:
   - `.Editing.cs`: clip selection, row edits, combine/split, frame-rate transforms
   - `.StatusLog.cs`: status text, diagnostics localization, logging, localized option refresh
 
+### Session (clip / workspace)
+
+Typed chapter session state lives under Avalonia `Session/` (not Core for this change):
+
+- `src/ChapterTool.Avalonia/Session/ClipSession.cs` — `SplitClipSession` / `CombinedClipSession` and pure transitions (`FromLoad`, `Select`, `ToggleCombine`, `Restore`, `Append`, `WriteBack`)
+- `src/ChapterTool.Avalonia/Session/ChapterWorkspace.cs` — workspace facade: source path, clip session, edit buffer, projection cache, export-preference snapshots, load/append revision + session-token commit APIs
+
+`MainWindowViewModel` is the bindable shell and holds one `ChapterWorkspace`. Load/append progress and results commit only through workspace revision rules; preview uses the composition-injected `ChapterExportService` (same construction path as save), not an ad-hoc export instance.
+
 ### Composition root
 
 Runtime wiring is centralized in:
@@ -130,6 +139,16 @@ Then inspect the matching pair in:
 
 - `src/ChapterTool.Avalonia/Views/Tools/`
 - `src/ChapterTool.Avalonia/ViewModels/`
+
+### Clip combine / multi-entry session
+
+Start with:
+
+- `src/ChapterTool.Avalonia/Session/ClipSession.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Editing.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.ImportExport.cs`
+
+Pure transition coverage: `tests/ChapterTool.Avalonia.Tests/Session/ClipSessionTests.cs`. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
 
 ### Load/save/import behavior exposed in UI
 

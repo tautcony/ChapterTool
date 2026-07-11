@@ -80,7 +80,8 @@ public sealed class AppCompositionRoot : IDisposable
             settingsStore,
             frameRateService,
             localizationManager,
-            expressionEngine);
+            expressionEngine,
+            CreateChapterExportService());
 
     public IApplicationLogService CreateApplicationLogService() => logService;
 
@@ -101,8 +102,10 @@ public sealed class AppCompositionRoot : IDisposable
     public FfprobeMediaChapterReader CreateMediaChapterReader() =>
         new(CreateExternalToolLocator(), CreateProcessRunner());
 
+    public ChapterExportService CreateChapterExportService() => new(formatter, expressionEngine);
+
     public IChapterSaveService CreateChapterSaveService() =>
-        new RuntimeChapterSaveService(new ChapterExportService(formatter, expressionEngine));
+        new RuntimeChapterSaveService(CreateChapterExportService());
 
     public IChapterEditingService CreateChapterEditingService() => new ChapterEditingService(formatter);
 
