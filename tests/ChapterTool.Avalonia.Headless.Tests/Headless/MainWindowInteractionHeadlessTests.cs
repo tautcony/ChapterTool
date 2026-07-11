@@ -3,7 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Controls;
+using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -11,6 +13,46 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowInteractionHeadlessTests
 {
+    [AvaloniaTheory]
+    [InlineData("zh-CN")]
+    [InlineData("en-US")]
+    [InlineData("ja-JP")]
+    public async Task Bound_options_and_stable_column_tags_work_across_ui_languages(string culture)
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro")));
+        host.Localizer.SetCulture(culture);
+        await host.LoadAsync("movie.txt");
+
+        // Bound options are authoritative for save/preview paths.
+        host.ViewModel.SaveFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
+        host.ViewModel.OrderShift = 1;
+        host.ViewModel.ApplyExpression = false;
+        host.ViewModel.SourcePath = "movie.txt";
+
+        var formatBox = host.RequiredControl<ComboBox>("FormatBox");
+        var orderShift = host.RequiredControl<NumericUpDown>("OrderShiftBox");
+        Assert.Equal(host.ViewModel.SaveFormatIndex, formatBox.SelectedIndex);
+        Assert.Equal(1, (int)(orderShift.Value ?? -1));
+
+        await host.Window.SaveCommand.ExecuteAsync();
+        Assert.Equal(1, host.SaveService.Calls);
+
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var tags = grid.Columns
+            .Select(column => column.Tag as string ?? column.Tag?.ToString() ?? string.Empty)
+            .Where(static tag => tag.Length > 0)
+            .ToArray();
+        Assert.Equal(
+            new[] { ChapterGridColumnIds.Time, ChapterGridColumnIds.Name, ChapterGridColumnIds.Frames },
+            tags);
+
+        // Language-independent routing: stable Tag identity, not header text.
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, $"Renamed-{culture}"));
+        Assert.Equal($"Renamed-{culture}", host.ViewModel.Rows[0].Name);
+    }
+
     [AvaloniaFact]
     public async Task Chapter_grid_empty_image_is_visible_until_rows_load()
     {

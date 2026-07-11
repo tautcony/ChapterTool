@@ -8,6 +8,7 @@ using AvaloniaEdit;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Controls;
+using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.Views;
 
@@ -17,7 +18,6 @@ public sealed partial class MainWindow : Window
     private readonly ShortcutRouter shortcutRouter;
     private readonly IFilePickerService filePickerService;
     private readonly string? startupPath;
-    private bool isRefreshing;
     private bool windowCommandRefreshPending;
 
     public MainWindow()
@@ -43,13 +43,11 @@ public sealed partial class MainWindow : Window
         SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
         PreviewCommand = new UiCommand(async (_, _) =>
         {
-            ReadAdvancedOptions();
+            // Options are binding-authoritative; do not scrape controls before preview.
             await viewModel.PreviewCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
         }, _ => viewModel.PreviewCommand.CanExecute());
         RefreshRowsCommand = new UiCommand(async (_, _) =>
         {
-            ReadAdvancedOptions();
-            ReadFrameOptions();
             await viewModel.RefreshCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
         }, _ => viewModel.RefreshCommand.CanExecute());
         InsertSelectedCommand = new UiCommand(async (_, _) =>
@@ -109,15 +107,10 @@ public sealed partial class MainWindow : Window
 
     private async Task LoadAsync()
     {
-        isRefreshing = true;
-        try
-        {
-            await viewModel.LoadCommand.ExecuteAsync(PathBox.Text ?? string.Empty);
-        }
-        finally
-        {
-            isRefreshing = false;
-        }
+        var path = string.IsNullOrWhiteSpace(viewModel.SourcePath)
+            ? viewModel.CurrentPath
+            : viewModel.SourcePath;
+        await viewModel.LoadCommand.ExecuteAsync(path);
     }
 
     private async Task BrowseAndLoadAsync()
@@ -128,22 +121,13 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        PathBox.Text = path;
-        isRefreshing = true;
-        try
-        {
-            await viewModel.LoadCommand.ExecuteAsync(path);
-        }
-        finally
-        {
-            isRefreshing = false;
-        }
+        viewModel.SourcePath = path;
+        await viewModel.LoadCommand.ExecuteAsync(path);
     }
 
     private async Task SaveAsync(string? directoryOverride = null)
     {
-        ReadAdvancedOptions();
-        viewModel.SaveFormatIndex = Math.Max(0, FormatBox.SelectedIndex);
+        // Save format, naming, expression, and order shift are already bound on the ViewModel.
         if (string.IsNullOrWhiteSpace(directoryOverride))
         {
             await viewModel.SaveCommand.ExecuteAsync();
@@ -172,15 +156,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        isRefreshing = true;
-        try
-        {
-            await viewModel.AppendMplsCommand.ExecuteAsync(path);
-        }
-        finally
-        {
-            isRefreshing = false;
-        }
+        await viewModel.AppendMplsCommand.ExecuteAsync(path);
     }
 
     private async Task LoadChapterNameTemplateAsync()
@@ -237,7 +213,7 @@ public sealed partial class MainWindow : Window
         await viewModel.LoadSettingsAsync(CancellationToken.None);
         if (!string.IsNullOrWhiteSpace(startupPath))
         {
-            PathBox.Text = startupPath;
+            viewModel.SourcePath = startupPath;
             await LoadAsync();
         }
     }
@@ -252,11 +228,6 @@ public sealed partial class MainWindow : Window
         ExpressionEditorExpansionChangedEventArgs args)
     {
         Height = Math.Max(MinHeight, Height + args.HeightDelta);
-    }
-
-    private async void OnFrameOptionsChanged(object? sender, RoutedEventArgs args)
-    {
-        await ApplyFrameOptionsAndRefreshAsync();
     }
 
     private async void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args)
@@ -275,16 +246,8 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            PathBox.Text = path;
-            isRefreshing = true;
-            try
-            {
-                await viewModel.DropPathLoadCommand.ExecuteAsync(path);
-            }
-            finally
-            {
-                isRefreshing = false;
-            }
+            viewModel.SourcePath = path;
+            await viewModel.DropPathLoadCommand.ExecuteAsync(path);
         }
         catch (Exception exception)
         {
@@ -322,12 +285,14 @@ public sealed partial class MainWindow : Window
         args.Handled = true;
         if (gesture == "Ctrl+S")
         {
+            // Same save command path as the toolbar (binding-authoritative options).
             await SaveAsync();
             return;
         }
 
         if (gesture == "Ctrl+O")
         {
+            // Picker adapter only; load still goes through ViewModel.LoadCommand.
             await BrowseAndLoadAsync();
             return;
         }
@@ -345,10 +310,9 @@ public sealed partial class MainWindow : Window
 
         if (gesture.StartsWith("Alt+", StringComparison.Ordinal) && int.TryParse(gesture["Alt+".Length..], out var saveIndex))
         {
-            var mapped = saveIndex == 0 ? FormatBox.ItemCount - 1 : saveIndex - 1;
-            if (mapped >= 0 && mapped < FormatBox.ItemCount)
+            var mapped = saveIndex == 0 ? ChapterExportFormats.All.Count - 1 : saveIndex - 1;
+            if (mapped >= 0 && mapped < ChapterExportFormats.All.Count)
             {
-                FormatBox.SelectedIndex = mapped;
                 viewModel.SaveFormatIndex = mapped;
             }
 
@@ -475,19 +439,20 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        var columnIndex = ChapterGrid.Columns.IndexOf(args.Column);
-        var header = args.Column.Header?.ToString();
-        if (columnIndex == 1 || string.Equals(header, "Time", StringComparison.Ordinal) || header == "时间点")
+        // Stable column identity via Tag — not localized header text.
+        var columnId = args.Column.Tag as string
+            ?? args.Column.Tag?.ToString();
+        switch (columnId)
         {
-            await viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText));
-        }
-        else if (columnIndex == 2 || string.Equals(header, "Name", StringComparison.Ordinal) || header == "章节名")
-        {
-            await viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name));
-        }
-        else if (columnIndex == 3 || string.Equals(header, "Frames", StringComparison.Ordinal) || header == "帧数")
-        {
-            await viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
+            case ChapterGridColumnIds.Time:
+                await viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText));
+                break;
+            case ChapterGridColumnIds.Name:
+                await viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name));
+                break;
+            case ChapterGridColumnIds.Frames:
+                await viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
+                break;
         }
     }
 
@@ -511,44 +476,10 @@ public sealed partial class MainWindow : Window
             .Where(static index => index >= 0)
             .ToHashSet();
 
-    private void ReadAdvancedOptions()
-    {
-        viewModel.ChapterNameModeIndex = Math.Max(0, ChapterNameModeBox.SelectedIndex);
-        viewModel.ApplyExpression = ApplyExpressionBox.IsChecked == true;
-        viewModel.Expression = ExpressionBox.Text ?? "t";
-        viewModel.OrderShift = NormalizedOrderShiftValue();
-    }
-
     private void OnOrderShiftValueChanged(object? sender, NumericUpDownValueChangedEventArgs args)
     {
+        // Keep NumericUpDown non-null; binding remains authoritative for OrderShift.
         OrderShiftBox.Value ??= 0;
-    }
-
-    private int NormalizedOrderShiftValue()
-    {
-        if (OrderShiftBox.Value is { } value)
-        {
-            return (int)value;
-        }
-
-        OrderShiftBox.Value = 0;
-        return 0;
-    }
-
-    private void ReadFrameOptions()
-    {
-        viewModel.SetFrameOptions(FrameRateBox.SelectedIndex, RoundFramesBox.IsChecked == true);
-    }
-
-    private async ValueTask ApplyFrameOptionsAndRefreshAsync()
-    {
-        if (isRefreshing)
-        {
-            return;
-        }
-
-        ReadFrameOptions();
-        await viewModel.RefreshCommand.ExecuteAsync();
     }
 
     private void SubscribeViewModelCommandState()

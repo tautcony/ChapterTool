@@ -628,6 +628,65 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task BoundOptionsDriveSaveAndPreviewWithoutControlScrape()
+    {
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        // Authoritative bindable state only — no ReadAdvancedOptions-style scrape.
+        vm.SourcePath = "movie.txt";
+        vm.SaveFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Xml);
+        vm.XmlLanguage = "eng";
+        vm.ChapterNameModeIndex = 0;
+        vm.OrderShift = 5;
+        vm.ApplyExpression = true;
+        vm.Expression = "t + 2";
+        vm.RoundFrames = true;
+
+        var preview = vm.BuildPreview();
+        await vm.SaveCommand.ExecuteAsync("out");
+
+        Assert.Equal("movie.txt", vm.SourcePath);
+        Assert.Equal(ChapterExportFormat.Xml, vm.SaveFormat);
+        Assert.Contains("ChapterTimeStart", preview, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(save.LastOptions);
+        Assert.Equal(ChapterExportFormat.Xml, save.LastOptions.Format);
+        Assert.Equal("eng", save.LastOptions.XmlLanguage);
+        Assert.Equal("t + 2", save.LastOptions.Expression);
+        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo!.Chapters[0].StartTime);
+    }
+
+    [Theory]
+    [InlineData(ChapterGridColumnIds.Time)]
+    [InlineData(ChapterGridColumnIds.Name)]
+    [InlineData(ChapterGridColumnIds.Frames)]
+    public async Task StableColumnIdentityRoutesCellEdits(string columnId)
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        switch (columnId)
+        {
+            case ChapterGridColumnIds.Time:
+                await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "00:00:05.000"));
+                Assert.Equal("00:00:05.000", vm.Rows[0].TimeText);
+                break;
+            case ChapterGridColumnIds.Name:
+                await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Renamed"));
+                Assert.Equal("Renamed", vm.Rows[0].Name);
+                break;
+            case ChapterGridColumnIds.Frames:
+                await vm.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(0, "120"));
+                Assert.Equal("120", vm.Rows[0].FramesInfo);
+                break;
+            default:
+                Assert.Fail($"Unexpected column id '{columnId}'.");
+                break;
+        }
+    }
+
+    [Fact]
     public async Task SaveProjectsChaptersAndDelegatesNeutralOptions()
     {
         var save = new FakeSaveService();
