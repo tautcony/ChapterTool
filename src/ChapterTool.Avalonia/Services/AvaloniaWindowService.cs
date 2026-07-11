@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
 
@@ -23,6 +22,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
+    private readonly IReadOnlyList<ToolWindowRegistration> registrations;
 
     public AvaloniaWindowService(
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
@@ -34,12 +34,14 @@ public sealed class AvaloniaWindowService : IWindowService
         IShellService? shellService = null,
         IFontFamilyCatalog? fontFamilyCatalog = null,
         IFontApplicationService? fontApplicationService = null,
-        string? settingsDirectory = null)
+        string? settingsDirectory = null,
+        IReadOnlyList<ToolWindowRegistration>? registrations = null)
     {
         this.settingsStore = settingsStore;
         this.themeApplicationService = themeApplicationService;
         this.fontFamilyCatalog = fontFamilyCatalog;
         this.fontApplicationService = fontApplicationService;
+        // Composition root always supplies a localizer; fall back only for isolated tests.
         this.localizer = localizer ?? new AppLocalizationManager();
         this.settingsCloseConfirmationService = settingsCloseConfirmationService
             ?? new AvaloniaSettingsCloseConfirmationService(this.localizer);
@@ -47,6 +49,7 @@ public sealed class AvaloniaWindowService : IWindowService
         this.externalToolLocator = externalToolLocator;
         this.shellService = shellService;
         this.settingsDirectory = settingsDirectory;
+        this.registrations = registrations ?? ToolWindowRegistry.DefaultRegistrations;
         this.localizer.CultureChanged += (_, _) =>
         {
             foreach (var (id, window) in windows)
@@ -74,10 +77,13 @@ public sealed class AvaloniaWindowService : IWindowService
             return ValueTask.CompletedTask;
         }
 
+        var registration = ToolWindowRegistry.Find(windowId)
+            ?? this.registrations.FirstOrDefault(entry =>
+                string.Equals(entry.Id, windowId, StringComparison.OrdinalIgnoreCase));
         var window = new Window
         {
             Title = Title(windowId),
-            Width = windowId is "preview" or "log" or "settings" ? 760 : 620,
+            Width = registration?.PreferredWidth ?? 620,
             Height = 460,
             MinWidth = 420,
             MinHeight = 280,
@@ -87,7 +93,7 @@ public sealed class AvaloniaWindowService : IWindowService
         parameters[windowId] = parameter;
         window.Closing += async (sender, args) =>
         {
-            if (closeAccepted || window.Content is not SettingsToolView { DataContext: SettingsToolViewModel settings } || !settings.HasUnsavedChanges)
+            if (closeAccepted || window.Content is not Views.Tools.SettingsToolView { DataContext: SettingsToolViewModel settings } || !settings.HasUnsavedChanges)
             {
                 return;
             }
@@ -142,46 +148,32 @@ public sealed class AvaloniaWindowService : IWindowService
             : Placeholder(PlaceholderText(id));
     }
 
-    private Control CreateContent(Window window, string id, MainWindowViewModel viewModel) =>
-        id switch
+    private Control CreateContent(Window window, string id, MainWindowViewModel viewModel)
+    {
+        var registration = ToolWindowRegistry.Find(id)
+            ?? registrations.FirstOrDefault(entry =>
+                string.Equals(entry.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (registration is null)
         {
-            "preview" => new TextToolView
-            {
-                DataContext = new TextToolViewModel(
-                    viewModel.BuildPreview,
-                    new TextToolOptions { FormatSelector = new TextToolFormatSelector(viewModel) })
-            },
-            "log" => new TextToolView
-            {
-                DataContext = new TextToolViewModel(
-                    viewModel.LogText,
-                    new TextToolOptions
-                    {
-                        ClearAction = viewModel.ClearLog,
-                        LiveRefreshService = viewModel.LogService
-                    })
-            },
-            "settings" => new SettingsToolView
-            {
-                DataContext = new SettingsToolViewModel(
-                    viewModel,
-                    settingsStore,
-                    localizer,
-                    settingsPickerFactory?.Invoke(window),
-                    externalToolLocator,
-                    themeApplicationService,
-                    shellService,
-                    fontFamilyCatalog,
-                    fontApplicationService,
-                    settingsDirectory)
-            },
-            "language" => new LanguageToolView { DataContext = new LanguageToolViewModel(viewModel) },
-            "expression" => new ExpressionToolView { DataContext = new ExpressionToolViewModel(viewModel, new AvaloniaFilePickerService(window, localizer)) },
-            "template-names" => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(viewModel) },
-            "zones" => new TextToolView { DataContext = new TextToolViewModel(viewModel.CreateZonesText) },
-            "forward-shift" => new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(viewModel) },
-            _ => Placeholder(PlaceholderText(id))
+            return Placeholder(PlaceholderText(id));
+        }
+
+        var context = new ToolWindowCreateContext
+        {
+            HostWindow = window,
+            Owner = viewModel,
+            Localizer = localizer,
+            SettingsStore = settingsStore,
+            ThemeApplicationService = themeApplicationService,
+            FontFamilyCatalog = fontFamilyCatalog,
+            FontApplicationService = fontApplicationService,
+            SettingsPickerFactory = settingsPickerFactory,
+            ExternalToolLocator = externalToolLocator,
+            ShellService = shellService,
+            SettingsDirectory = settingsDirectory,
         };
+        return registration.CreateContent(context);
+    }
 
     private static TextBlock Placeholder(string text) =>
         new()
@@ -192,18 +184,15 @@ public sealed class AvaloniaWindowService : IWindowService
             FontSize = 16
         };
 
-    private string Title(string id) => id switch
+    private string Title(string id)
     {
-        "preview" => localizer.GetString("Tool.Preview.Title"),
-        "log" => localizer.GetString("Tool.Log.Title"),
-        "settings" => localizer.GetString("Tool.Settings.Title"),
-        "language" => localizer.GetString("Tool.Language.Title"),
-        "expression" => localizer.GetString("Tool.Expression.Title"),
-        "template-names" => localizer.GetString("Tool.TemplateNames.Title"),
-        "zones" => localizer.GetString("Tool.Zones.Title"),
-        "forward-shift" => localizer.GetString("Tool.ForwardShift.Title"),
-        _ => id
-    };
+        var registration = ToolWindowRegistry.Find(id)
+            ?? registrations.FirstOrDefault(entry =>
+                string.Equals(entry.Id, id, StringComparison.OrdinalIgnoreCase));
+        return registration is null
+            ? id
+            : localizer.GetString(registration.TitleResourceKey);
+    }
 
     private string PlaceholderText(string id) => Title(id);
 

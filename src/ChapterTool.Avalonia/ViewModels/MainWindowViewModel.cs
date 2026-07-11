@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session;
+using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -18,7 +19,13 @@ using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed partial class MainWindowViewModel : ObservableViewModel
+public sealed partial class MainWindowViewModel :
+    ObservableViewModel,
+    IExpressionSessionPort,
+    IPreferenceSink,
+    IExportPreferencePort,
+    INamingPreferencePort,
+    IChapterEditPort
 {
     private readonly IChapterLoadService loadService;
     private readonly IChapterSaveService saveService;

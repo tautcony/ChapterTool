@@ -17,7 +17,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
     private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;
 
-    private readonly MainWindowViewModel owner;
+    private readonly Session.Ports.IPreferenceSink preferenceSink;
     private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
@@ -40,7 +40,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     public SettingsToolViewModel(
-        MainWindowViewModel owner,
+        Session.Ports.IPreferenceSink preferenceSink,
         ISettingsStore<ChapterToolSettings>? settingsStore,
         IAppLocalizer? localizer = null,
         ISettingsPickerService? picker = null,
@@ -52,9 +52,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         string? settingsDirectory = null,
         bool autoLoad = true)
     {
-        this.owner = owner;
+        this.preferenceSink = preferenceSink;
         this.settingsStore = settingsStore;
-        this.localizer = localizer ?? owner.Localizer;
+        this.localizer = localizer ?? preferenceSink.Localizer;
         this.picker = picker;
         this.externalToolLocator = externalToolLocator;
         this.shellService = shellService;
@@ -66,11 +66,11 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             fontApplicationService);
         appearanceChangedHandler = (_, _) => NotifyUnsavedChanges();
         Appearance.Changed += appearanceChangedHandler;
-        selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
-        defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Count - 1);
-        defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
-        outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, owner.OutputTextEncoding));
-        frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(owner.FrameAccuracyTolerance);
+        selectedLanguage = AppLanguage.Normalize(preferenceSink.UiLanguage);
+        defaultSaveFormatIndex = Math.Clamp(preferenceSink.SaveFormatIndex, 0, SaveFormats.Count - 1);
+        defaultXmlLanguageIndex = XmlLanguageIndex(preferenceSink.XmlLanguage);
+        outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, preferenceSink.OutputTextEncoding));
+        frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(preferenceSink.FrameAccuracyTolerance);
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
@@ -780,7 +780,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         NotifyUnsavedChanges();
     }
 
-    private void ApplyCurrentAppSettingsToOwner() => owner.ApplyLivePreferences(CurrentAppSettings());
+    private void ApplyCurrentAppSettingsToOwner() => preferenceSink.ApplyLivePreferences(CurrentAppSettings());
 
     private void NotifyUnsavedChanges() => OnPropertyChanged(nameof(HasUnsavedChanges));
 
