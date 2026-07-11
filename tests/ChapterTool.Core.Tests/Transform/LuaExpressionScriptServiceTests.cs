@@ -17,6 +17,27 @@ public sealed class LuaExpressionScriptServiceTests
         Assert.Contains(service.Presets, preset => preset.Id == "offset-seconds");
         Assert.Contains(service.Presets, preset => preset.Id == "round-to-frame");
         Assert.Contains(service.Presets, preset => preset.Id == "half-frame-earlier");
+        Assert.Contains(service.Presets, preset => preset.Id == "space-consecutive-chapters" && preset.ScriptText.Contains("chapters[previous_index]", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Space_consecutive_chapters_preset_handles_three_chapter_collision()
+    {
+        var preset = Assert.Single(service.Presets, preset => preset.Id == "space-consecutive-chapters");
+        var chapters = new[]
+        {
+            new Chapter(1, TimeSpan.FromSeconds(10), "First"),
+            new Chapter(2, TimeSpan.FromSeconds(10.01), "Second"),
+            new Chapter(3, TimeSpan.FromSeconds(10.02), "Third")
+        };
+
+        var second = service.Evaluate(preset.ScriptText, new ChapterExpressionContext(chapters[1], 2, 3, 10.01m, 24, chapters));
+        var third = service.Evaluate(preset.ScriptText, new ChapterExpressionContext(chapters[2], 3, 3, 10.02m, 24, chapters));
+
+        Assert.True(second.Success, DiagnosticText(second));
+        Assert.True(third.Success, DiagnosticText(third));
+        Assert.Equal(10m + (1m / 24m), second.Value, 10);
+        Assert.Equal(10m + (2m / 24m), third.Value, 10);
     }
 
     [Fact]
@@ -70,6 +91,25 @@ public sealed class LuaExpressionScriptServiceTests
 
         Assert.True(result.Success, DiagnosticText(result));
         Assert.Equal(19, result.Value);
+    }
+
+    [Fact]
+    public void Exposes_all_non_separator_chapters_as_one_based_array()
+    {
+        var chapters = new[]
+        {
+            new Chapter(1, TimeSpan.FromSeconds(2), "Intro", "48"),
+            new Chapter(2, TimeSpan.FromSeconds(10), "Main", "240"),
+            new Chapter(3, TimeSpan.FromSeconds(20), "Credits", "480")
+        };
+        var context = new ChapterExpressionContext(chapters[1], 2, 3, 10, 24, chapters);
+
+        var result = service.Evaluate(
+            "return chapters[index - 1].time + chapters[index + 1].time + (chapters[index] == chapter and 1 or 0)",
+            context);
+
+        Assert.True(result.Success, DiagnosticText(result));
+        Assert.Equal(23, result.Value);
     }
 
     [Fact]
@@ -161,8 +201,13 @@ public sealed class LuaExpressionScriptServiceTests
         Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, Assert.Single(result.Diagnostics).Code);
     }
 
-    private static ChapterExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1) =>
-        new(new Chapter(number, TimeSpan.FromSeconds((double)timeSeconds), "Intro", ""), index, count, timeSeconds, fps);
+    private static ChapterExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1)
+    {
+        var chapters = Enumerable.Range(1, count)
+            .Select(item => new Chapter(item == index ? number : item, TimeSpan.FromSeconds(item == index ? (double)timeSeconds : item), $"Chapter {item}", ""))
+            .ToList();
+        return new ChapterExpressionContext(chapters[index - 1], index, count, timeSeconds, fps, chapters);
+    }
 
     private static string DiagnosticText(ChapterExpressionEvaluationResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));

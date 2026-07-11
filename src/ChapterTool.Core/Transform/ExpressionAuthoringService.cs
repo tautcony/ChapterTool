@@ -149,9 +149,10 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
             return [Diagnostic(ChapterDiagnosticCode.InvalidExpressionLuaUnknownToken, $"Unsupported Lua token '{unknown.Text}'.", "Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.", unknown.Start, unknown.Length)];
         }
 
+        var chapter = new Models.Chapter(1, TimeSpan.FromSeconds((double)timeSeconds), "Chapter");
         var result = expressionEngine.Evaluate(
             expression,
-            new ChapterExpressionContext(new Models.Chapter(1, TimeSpan.FromSeconds((double)timeSeconds), "Chapter"), 1, 1, timeSeconds, framesPerSecond));
+            new ChapterExpressionContext(chapter, 1, 1, timeSeconds, framesPerSecond, [chapter]));
         if (result.Success)
         {
             return [];

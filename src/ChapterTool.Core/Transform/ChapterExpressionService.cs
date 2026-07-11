@@ -36,7 +36,8 @@ public sealed class ChapterExpressionService
         }
 
         var diagnostics = new List<ChapterDiagnostic>();
-        var nonSeparatorCount = info.Chapters.Count(static chapter => !chapter.IsSeparator);
+        var expressionChapters = info.Chapters.Where(static chapter => !chapter.IsSeparator).ToList();
+        var nonSeparatorCount = expressionChapters.Count;
         var nonSeparatorIndex = 0;
         if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var frameRateDiagnostic))
         {
@@ -54,7 +55,7 @@ public sealed class ChapterExpressionService
             var originalSeconds = (decimal)chapter.StartTime.TotalSeconds;
             var evaluated = expressionEngine.Evaluate(
                 expression,
-                new ChapterExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond));
+                new ChapterExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond, expressionChapters));
             diagnostics.AddRange(evaluated.Diagnostics);
             if (!evaluated.Success)
             {

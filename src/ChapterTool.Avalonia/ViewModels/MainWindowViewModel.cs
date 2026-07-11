@@ -1386,7 +1386,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             1,
             Math.Max(1, chapters.Count),
             (decimal)chapter.StartTime.TotalSeconds,
-            fps);
+            fps,
+            chapters.Count > 0 ? chapters : [chapter]);
     }
 
     private ChapterExportOptions CurrentExportOptionsForProjectedInfo() =>

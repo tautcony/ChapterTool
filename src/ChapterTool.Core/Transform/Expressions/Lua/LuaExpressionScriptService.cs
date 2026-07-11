@@ -62,7 +62,12 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
             "half-frame-earlier",
             "Half frame earlier",
             "Move chapter time half a frame earlier for the current frame rate.",
-            "return t - (0.5 / fps)")
+            "return t - (0.5 / fps)"),
+        new(
+            "space-consecutive-chapters",
+            "Space consecutive chapters",
+            "Move chapters forward as needed so every consecutive chapter is at least one frame apart.",
+            "local result = t\n\nfor previous_index = 1, index - 1 do\n    local previous = chapters[previous_index]\n    local minimum = previous.time + ((index - previous_index) / fps)\n    result = math.max(result, minimum)\nend\n\nreturn result")
     ];
 
     /// <summary>
@@ -138,17 +143,18 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         state.Environment["index"] = context.Index;
         state.Environment["count"] = context.Count;
 
-        var chapter = new LuaTable
+        var chapters = new LuaTable();
+        for (var index = 0; index < context.Chapters.Count; index++)
         {
-            ["number"] = context.Chapter.DisplayNumber,
-            ["time"] = (double)context.TimeSeconds,
-            ["name"] = context.Chapter.Name,
-            ["frames"] = context.Chapter.FramesInfo,
-            ["index"] = context.Index,
-            ["count"] = context.Count,
-            ["fps"] = (double)context.FramesPerSecond
-        };
-        state.Environment["chapter"] = chapter;
+            chapters[index + 1] = CreateChapterTable(
+                context.Chapters[index],
+                index + 1,
+                context.Count,
+                context.FramesPerSecond);
+        }
+
+        state.Environment["chapters"] = chapters;
+        state.Environment["chapter"] = chapters[context.Index];
 
         if (state.Environment["math"].TryRead<LuaTable>(out var math))
         {
@@ -172,6 +178,18 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
             return new ValueTask<int>(luaContext.Return(Math.Sign(value)));
         });
     }
+
+    private static LuaTable CreateChapterTable(ChapterTool.Core.Models.Chapter chapter, int index, int count, decimal framesPerSecond) =>
+        new()
+        {
+            ["number"] = chapter.DisplayNumber,
+            ["time"] = chapter.StartTime.TotalSeconds,
+            ["name"] = chapter.Name,
+            ["frames"] = chapter.FramesInfo,
+            ["index"] = index,
+            ["count"] = count,
+            ["fps"] = (double)framesPerSecond
+        };
 
     private static ChapterExpressionEvaluationResult NumericResult(LuaValue value, decimal fallback)
     {

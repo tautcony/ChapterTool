@@ -11,12 +11,14 @@ namespace ChapterTool.Core.Transform.Expressions;
 /// <param name="Count">The total number of non-separator chapters.</param>
 /// <param name="TimeSeconds">The chapter start time in seconds.</param>
 /// <param name="FramesPerSecond">The frame rate available to the expression.</param>
+/// <param name="Chapters">The ordered snapshot of all non-separator chapters available to the expression.</param>
 public sealed record ChapterExpressionContext(
     Chapter Chapter,
     int Index,
     int Count,
     decimal TimeSeconds,
-    decimal FramesPerSecond);
+    decimal FramesPerSecond,
+    IReadOnlyList<Chapter> Chapters);
 
 /// <summary>
 /// Represents the result of expression evaluation.

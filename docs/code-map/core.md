@@ -76,6 +76,8 @@ Frame/time and expression logic:
 - `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 - `src/ChapterTool.Core/Transform/ChapterRounding.cs`
 
+`ChapterExpressionService` evaluates only non-separator chapters. Each expression context carries the ordered non-separator chapter snapshot; the Lua engine exposes it as the 1-based `chapters` array, with `chapter` equal to `chapters[index]`.
+
 ### Exporting
 
 Output projection and format serialization:
