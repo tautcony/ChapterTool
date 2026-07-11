@@ -581,6 +581,12 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         private set => SetProperty(ref field, value);
     } = true;
 
+    public OutputTextEncoding OutputTextEncoding
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = OutputTextEncoding.Utf8;
+
     public UiCommand LoadCommand { get; private set; } = null!;
     public UiCommand ReloadCommand { get; private set; } = null!;
     public UiCommand AppendMplsCommand { get; private set; } = null!;
@@ -653,6 +659,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             ? "und"
             : settings.DefaultXmlLanguage;
         EmitBom = settings.EmitBom;
+        OutputTextEncoding = OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding);
         NotifyStateChanged();
     }
 
@@ -839,6 +846,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             Expression: Expression,
             ExpressionPresetId: ExpressionPresetId,
             ExpressionSourceName: ExpressionSourceName,
+            TextEncoding: OutputTextEncoding,
             EmitBom: EmitBom);
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)

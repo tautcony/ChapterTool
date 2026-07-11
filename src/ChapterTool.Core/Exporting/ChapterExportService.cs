@@ -91,7 +91,7 @@ public sealed partial class ChapterExportService
                 new XElement("ChapterFlagHidden", "0"),
                 new XElement("ChapterFlagEnabled", "1")));
         var document = new XDocument(
-            new XDeclaration("1.0", "utf-8", null),
+            new XDeclaration("1.0", OutputTextEncodings.XmlName(options.TextEncoding), null),
             new XComment("<!DOCTYPE Tags SYSTEM \"matroskatags.dtd\">"),
             new XElement(
                 "Chapters",

@@ -27,6 +27,7 @@ public sealed class SettingsToolViewModelTests
             FfmpegPath: "ffmpeg",
             DefaultSaveFormat: "Xml",
             DefaultXmlLanguage: "ja",
+            OutputTextEncoding: "utf16le",
             EmitBom: true,
             FrameAccuracyTolerance: 0.02m));
         var themeStore = new FakeThemeSettingsState(ThemeSettings.Default);
@@ -42,6 +43,7 @@ public sealed class SettingsToolViewModelTests
         viewModel.FfmpegPath = "new-ffmpeg";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
+        viewModel.OutputTextEncodingIndex = viewModel.OutputTextEncodingOptions.ToList().IndexOf("UTF-32 BE");
         viewModel.EmitBom = false;
         viewModel.FrameAccuracyTolerance = 0.2m;
         SelectPreset(viewModel, "solarized-dark");
@@ -56,10 +58,12 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("new-ffmpeg", appStore.Current.FfmpegPath);
         Assert.Equal("Json", appStore.Current.DefaultSaveFormat);
         Assert.Equal("jpn", appStore.Current.DefaultXmlLanguage);
+        Assert.Equal("utf32be", appStore.Current.OutputTextEncoding);
         Assert.False(appStore.Current.EmitBom);
         Assert.Equal(0.2m, appStore.Current.FrameAccuracyTolerance);
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
         Assert.Equal("jpn", owner.XmlLanguage);
+        Assert.Equal(OutputTextEncoding.Utf32BigEndian, owner.OutputTextEncoding);
         Assert.False(owner.EmitBom);
         Assert.Equal(0.2m, owner.FrameAccuracyTolerance);
         Assert.Equal("new-out", owner.SaveDirectory);

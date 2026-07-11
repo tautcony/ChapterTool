@@ -23,6 +23,7 @@ public sealed class SettingsMigrationTests
         var settings = await documentStore.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ChapterToolSettings.CurrentSchemaVersion, settings.SchemaVersion);
         Assert.Equal("zh-CN", settings.Application.Language);
+        Assert.Equal("utf8", settings.Application.OutputTextEncoding);
         Assert.Equal(@"C:\Tools\ffprobe.exe", settings.Application.FfprobePath);
         Assert.Equal("solarized-dark", settings.Theme.PresetId);
         Assert.Equal(new FontSettings("Noto Sans", "JetBrains Mono"), settings.Font);
@@ -47,6 +48,20 @@ public sealed class SettingsMigrationTests
 
         Assert.Equal(ChapterToolSettings.Default, settings);
         Assert.False(File.Exists(SettingsPath(root)));
+    }
+
+    [Fact]
+    public async Task Non_lowercase_output_text_encoding_falls_back_to_utf8()
+    {
+        var root = CreateTempDirectory();
+        var store = new ChapterToolSettingsStore(root);
+
+        await store.SaveAsync(
+            new ChapterToolSettings { Application = new AppSettings(OutputTextEncoding: "UTF16LE") },
+            TestContext.Current.CancellationToken);
+
+        using var json = await ReadDocumentAsync(root);
+        Assert.Equal("utf8", json.RootElement.GetProperty("application").GetProperty("outputTextEncoding").GetString());
     }
 
     [Fact]

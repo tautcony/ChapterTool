@@ -1,7 +1,6 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
-using System.Text;
 
 namespace ChapterTool.Avalonia.Services;
 
@@ -24,7 +23,7 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
             await File.WriteAllTextAsync(
                 path,
                 result.Content,
-                new UTF8Encoding(encoderShouldEmitUTF8Identifier: options.EmitBom),
+                OutputTextEncodings.Create(options.TextEncoding, options.EmitBom),
                 cancellationToken);
             return result with
             {

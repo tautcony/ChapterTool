@@ -16,6 +16,7 @@ namespace ChapterTool.Avalonia.ViewModels;
 public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
+    private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;
 
     private readonly MainWindowViewModel owner;
     private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
@@ -42,6 +43,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private string selectedLanguage;
     private int defaultSaveFormatIndex;
     private int defaultXmlLanguageIndex;
+    private int outputTextEncodingIndex;
     private decimal frameAccuracyTolerance;
     private double frameAccuracyToleranceSliderValue;
     private bool liveApplyEnabled;
@@ -75,6 +77,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
         defaultSaveFormatIndex = Math.Clamp(owner.SaveFormatIndex, 0, SaveFormats.Count - 1);
         defaultXmlLanguageIndex = XmlLanguageIndex(owner.XmlLanguage);
+        outputTextEncodingIndex = Math.Max(0, OutputEncodings.ToList().IndexOf(owner.OutputTextEncoding));
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(owner.FrameAccuracyTolerance);
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
@@ -138,6 +141,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
 
     public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(ChapterExportFormats.DisplayName).ToArray();
+
+    public IReadOnlyList<string> OutputTextEncodingOptions { get; } = OutputEncodings.Select(OutputTextEncodings.DisplayName).ToArray();
 
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
         XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
@@ -368,6 +373,18 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             }
         }
     } = true;
+
+    public int OutputTextEncodingIndex
+    {
+        get => outputTextEncodingIndex;
+        set
+        {
+            if (SetProperty(ref outputTextEncodingIndex, Math.Clamp(value, 0, OutputEncodings.Count - 1)))
+            {
+                ApplyLiveSettings();
+            }
+        }
+    }
 
     public decimal FrameAccuracyTolerance
     {
@@ -601,6 +618,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FfmpegPath = defaults.FfmpegPath;
         DefaultSaveFormatIndex = SaveFormatIndex(defaults.DefaultSaveFormat);
         DefaultXmlLanguageIndex = XmlLanguageIndex(defaults.DefaultXmlLanguage);
+        OutputTextEncodingIndex = TextEncodingIndex(defaults.OutputTextEncoding);
         EmitBom = defaults.EmitBom;
         FrameAccuracyTolerance = defaults.FrameAccuracyTolerance;
         ApplyThemeSettings(ThemeSettings.Default);
@@ -843,6 +861,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             FfmpegPath = FfmpegPath,
             DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
             DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
+            OutputTextEncoding = OutputTextEncodings.Id(OutputEncodings[OutputTextEncodingIndex]),
             EmitBom = EmitBom,
             FrameAccuracyTolerance = FrameAccuracyTolerance
         };
@@ -857,6 +876,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FfmpegPath = settings.FfmpegPath;
         DefaultSaveFormatIndex = SaveFormatIndex(settings.DefaultSaveFormat);
         DefaultXmlLanguageIndex = XmlLanguageIndex(settings.DefaultXmlLanguage);
+        OutputTextEncodingIndex = TextEncodingIndex(settings.OutputTextEncoding);
         EmitBom = settings.EmitBom;
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
     }
@@ -1052,6 +1072,11 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     {
         var index = XmlLanguageOptions.ToList().FindIndex(entry => string.Equals(entry, value, StringComparison.OrdinalIgnoreCase));
         return Math.Max(0, index);
+    }
+
+    private static int TextEncodingIndex(string? value)
+    {
+        return Math.Max(0, OutputEncodings.ToList().IndexOf(OutputTextEncodings.ParseOrDefault(value)));
     }
 }
 

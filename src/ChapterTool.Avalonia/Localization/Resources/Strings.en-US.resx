@@ -648,8 +648,9 @@
     <value>Default XML language</value>
   </data>
 <data name="Settings.EmitBom" xml:space="preserve">
-    <value>Write UTF-8 BOM</value>
+    <value>Write BOM</value>
   </data>
+<data name="Settings.OutputTextEncoding" xml:space="preserve"><value>Text encoding</value></data>
 <data name="Settings.Eac3toPath" xml:space="preserve">
     <value>eac3to</value>
   </data>

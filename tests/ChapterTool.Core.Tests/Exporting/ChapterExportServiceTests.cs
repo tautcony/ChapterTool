@@ -32,6 +32,19 @@ public sealed class ChapterExportServiceTests
         Assert.Contains(Environment.NewLine, result.Content, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(OutputTextEncoding.Utf8, "utf-8")]
+    [InlineData(OutputTextEncoding.Utf16LittleEndian, "utf-16")]
+    [InlineData(OutputTextEncoding.Utf16BigEndian, "utf-16BE")]
+    [InlineData(OutputTextEncoding.Utf32LittleEndian, "utf-32")]
+    [InlineData(OutputTextEncoding.Utf32BigEndian, "utf-32BE")]
+    public void Xml_export_declaration_matches_selected_encoding(OutputTextEncoding encoding, string xmlName)
+    {
+        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Xml, TextEncoding: encoding));
+
+        Assert.StartsWith($"<?xml version=\"1.0\" encoding=\"{xmlName}\"?>", result.Content, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Qpfile_export_calculates_frames_without_display_markers()
     {

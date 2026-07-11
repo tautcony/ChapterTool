@@ -1,3 +1,5 @@
+using ChapterTool.Core.Exporting;
+
 namespace ChapterTool.Infrastructure.Configuration;
 
 public sealed record ChapterToolSettings
@@ -18,8 +20,17 @@ public sealed record ChapterToolSettings
         new()
         {
             SchemaVersion = CurrentSchemaVersion,
-            Application = settings?.Application ?? new AppSettings(),
+            Application = NormalizeApplication(settings?.Application),
             Theme = ThemePresetCatalog.Normalize(settings?.Theme),
             Font = FontSettings.Normalize(settings?.Font),
         };
+
+    private static AppSettings NormalizeApplication(AppSettings? settings)
+    {
+        settings ??= new AppSettings();
+        return settings with
+        {
+            OutputTextEncoding = OutputTextEncodings.Id(OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding))
+        };
+    }
 }

@@ -3,6 +3,7 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using System.Text;
 
 namespace ChapterTool.Avalonia.Tests.Services;
 
@@ -109,6 +110,52 @@ public sealed class RuntimeChapterSaveServiceTests
             byte[] utf8Bom = [0xEF, 0xBB, 0xBF];
             Assert.True(withBom.Take(3).SequenceEqual(utf8Bom));
             Assert.False(withoutBom.Take(3).SequenceEqual(utf8Bom));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData(OutputTextEncoding.Utf8, true, "EFBBBF")]
+    [InlineData(OutputTextEncoding.Utf16LittleEndian, true, "FFFE")]
+    [InlineData(OutputTextEncoding.Utf16BigEndian, true, "FEFF")]
+    [InlineData(OutputTextEncoding.Utf32LittleEndian, true, "FFFE0000")]
+    [InlineData(OutputTextEncoding.Utf32BigEndian, true, "0000FEFF")]
+    [InlineData(OutputTextEncoding.Utf16LittleEndian, false, "")]
+    public async Task RuntimeSaveHonorsSelectedEncodingAndBom(
+        OutputTextEncoding outputEncoding,
+        bool emitBom,
+        string expectedPreambleHex)
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var info = new ChapterSet(
+            "test",
+            "test.txt",
+            ChapterImportFormat.Ogm,
+            24,
+            TimeSpan.FromMinutes(1),
+            [new Chapter(1, TimeSpan.Zero, "章节")]);
+        var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
+
+        try
+        {
+            await service.SaveAsync(
+                info,
+                new ChapterExportOptions(ChapterExportFormat.Txt, TextEncoding: outputEncoding, EmitBom: emitBom),
+                directory,
+                TestContext.Current.CancellationToken);
+
+            var bytes = await File.ReadAllBytesAsync(Path.Combine(directory, "test.txt"), TestContext.Current.CancellationToken);
+            var expectedPreamble = Convert.FromHexString(expectedPreambleHex);
+            Assert.Equal(expectedPreamble, bytes.Take(expectedPreamble.Length));
+            Assert.Contains("章节", OutputTextEncodings.Create(outputEncoding, emitBom).GetString(bytes), StringComparison.Ordinal);
+            if (!emitBom)
+            {
+                Assert.Empty(expectedPreamble);
+            }
         }
         finally
         {
