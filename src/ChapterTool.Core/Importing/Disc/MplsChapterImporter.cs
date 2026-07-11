@@ -114,7 +114,7 @@ public sealed class MplsChapterImporter : IChapterImporter
         }
 
         var chapters = matchingMarks.Count == 0
-            ? [new Chapter(1, TimeSpan.Zero, "Chapter 1")]
+            ? [new Chapter(1, TimeSpan.Zero, "Chapter 01")]
             : matchingMarks
                 .Select((mark, index) => new Chapter(index + 1, PtsToTime(mark.MarkTimeStamp - offset), $"Chapter {index + 1:D2}"))
                 .ToList();

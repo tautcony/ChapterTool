@@ -61,6 +61,21 @@ public sealed class MplsImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidMpls);
     }
 
+    [Fact]
+    public async Task MenuPlaylistUsesZeroPaddedFallbackChapterNames()
+    {
+        var importer = new MplsChapterImporter();
+
+        var result = await importer.ImportAsync(
+            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00002_Menu.mpls")),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        Assert.All(
+            result.Groups.Single().Entries.Where(static entry => entry.ChapterSet.Chapters.Count == 1),
+            static entry => Assert.Equal("Chapter 01", entry.ChapterSet.Chapters.Single().Name));
+    }
+
     public static TheoryData<SampleExpectation> SampleExpectations() =>
     [
         Sample("00000_HEVC.mpls", [new("00000", 1, 0, Ms(16850), TimeSpan.Zero, TimeSpan.Zero, 1)]),
