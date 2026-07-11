@@ -182,7 +182,7 @@ public sealed class SettingsToolHeadlessTests
             var headers = host.Window.GetVisualDescendants().OfType<DataGridColumnHeader>().ToArray();
             Assert.NotEmpty(headers);
 
-            combo.SelectedIndex = viewModel.ThemePresets.ToList().FindIndex(option => option.Id == "ayu-dark");
+            combo.SelectedIndex = viewModel.Appearance.ThemePresets.ToList().FindIndex(option => option.Id == "ayu-dark");
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
@@ -201,7 +201,7 @@ public sealed class SettingsToolHeadlessTests
             Assert.Equal(Color.Parse(dark.ActiveBackground), ResourceColor(AvaloniaThemeApplicationService.ActiveBackgroundBrushKey));
             Assert.Equal(ThemeSettings.Default, host.SettingsStore.Current.Theme);
 
-            combo.SelectedIndex = viewModel.ThemePresets.ToList().FindIndex(option => option.Id == "solarized-light");
+            combo.SelectedIndex = viewModel.Appearance.ThemePresets.ToList().FindIndex(option => option.Id == "solarized-light");
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
             var light = ThemePresetCatalog.Resolve("solarized-light").Palette;
@@ -271,8 +271,8 @@ public sealed class SettingsToolHeadlessTests
             var previewText = textTool.FindControl<SelectableTextBlock>("ContentText")
                 ?? throw new InvalidOperationException("Text preview content was not found.");
 
-            uiCombo.SelectedIndex = viewModel.UiFontFamilies.ToList().FindIndex(option => option.FamilyName == "ChapterTool UI Test");
-            monoCombo.SelectedIndex = viewModel.MonospaceFontFamilies.ToList().FindIndex(option => option.FamilyName == "ChapterTool Mono Test");
+            uiCombo.SelectedIndex = viewModel.Appearance.UiFontFamilies.ToList().FindIndex(option => option.FamilyName == "ChapterTool UI Test");
+            monoCombo.SelectedIndex = viewModel.Appearance.MonospaceFontFamilies.ToList().FindIndex(option => option.FamilyName == "ChapterTool Mono Test");
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(textWindow);
@@ -298,15 +298,15 @@ public sealed class SettingsToolHeadlessTests
 
             await viewModel.SaveCommand.ExecuteAsync();
             Assert.Equal(new FontSettings("ChapterTool UI Test", "ChapterTool Mono Test"), host.SettingsStore.Current.Font);
-            viewModel.SelectedUiFontFamilyIndex = 0;
-            viewModel.SelectedMonospaceFontFamilyIndex = 0;
+            viewModel.Appearance.SelectedUiFontFamilyIndex = 0;
+            viewModel.Appearance.SelectedMonospaceFontFamilyIndex = 0;
             viewModel.DiscardUnsavedAppearanceChanges();
             Assert.Equal("ChapterTool UI Test", ResourceFont(AvaloniaFontApplicationService.UiFontFamilyKey));
             Assert.Equal("ChapterTool Mono Test", ResourceFont(AvaloniaFontApplicationService.MonospaceFontFamilyKey));
 
             host.Localizer.SetCulture("zh-CN");
             Assert.Contains("界面字体预览", AutomationProperties.GetName(uiPreview), StringComparison.Ordinal);
-            Assert.Contains("章节字幕", viewModel.FontPreviewText, StringComparison.Ordinal);
+            Assert.Contains("章节字幕", viewModel.Appearance.FontPreviewText, StringComparison.Ordinal);
         }
         finally
         {
@@ -350,12 +350,12 @@ public sealed class SettingsToolHeadlessTests
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
-            var realized = Enumerable.Range(0, viewModel.UiFontFamilies.Count)
+            var realized = Enumerable.Range(0, viewModel.Appearance.UiFontFamilies.Count)
                 .Select(combo.ContainerFromIndex)
                 .Where(static container => container is not null)
                 .ToArray();
             Assert.NotEmpty(realized);
-            Assert.True(realized.Length < viewModel.UiFontFamilies.Count);
+            Assert.True(realized.Length < viewModel.Appearance.UiFontFamilies.Count);
             var fontItem = realized
                 .SelectMany(static container => container!.GetVisualDescendants().OfType<TextBlock>())
                 .First(block => block.Text?.StartsWith("ChapterTool Font ", StringComparison.Ordinal) == true);

@@ -35,21 +35,5 @@ public sealed record ChapterToolSettings
         };
     }
 
-    private static string? NormalizeDirectory(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            return null;
-        }
-
-        var trimmed = path.Trim();
-        try
-        {
-            return Path.GetFullPath(trimmed);
-        }
-        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            return trimmed;
-        }
-    }
+    private static string? NormalizeDirectory(string? path) => ChapterSavePath.CleanOptionalPath(path);
 }

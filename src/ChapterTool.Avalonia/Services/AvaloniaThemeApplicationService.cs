@@ -50,11 +50,10 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
         resources[BorderBrushKey] = Brush(palette.Border);
         resources[HoverBackgroundBrushKey] = Brush(palette.HoverBackground);
         resources[ActiveBackgroundBrushKey] = Brush(palette.ActiveBackground);
-        var dark = preset.BaseVariant == ThemeBaseVariant.Dark;
-        resources[FrameNeutralBrushKey] = Brush(dark ? "#F3F4F5" : "#111111");
-        resources[FrameAccurateBrushKey] = Brush(dark ? "#6EE7A0" : "#0F7A2F");
-        resources[FrameInexactBrushKey] = Brush(dark ? "#FF8A80" : "#B42318");
-        resources[DiagnosticErrorBrushKey] = Brush(dark ? "#FF8A80" : "#B42318");
+        resources[FrameNeutralBrushKey] = Brush(palette.FrameNeutral);
+        resources[FrameAccurateBrushKey] = Brush(palette.FrameAccurate);
+        resources[FrameInexactBrushKey] = Brush(palette.FrameInexact);
+        resources[DiagnosticErrorBrushKey] = Brush(palette.DiagnosticError);
         application.RequestedThemeVariant = preset.BaseVariant == ThemeBaseVariant.Dark
             ? ThemeVariant.Dark
             : ThemeVariant.Light;

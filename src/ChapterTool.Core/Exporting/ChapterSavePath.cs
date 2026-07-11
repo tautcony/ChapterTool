@@ -66,22 +66,22 @@ public static class ChapterSavePath
     }
 
     /// <summary>
-    /// Attempts to normalize a directory path to a full path.
+    /// Attempts to normalize any path to a full path.
     /// </summary>
-    /// <param name="directory">The candidate directory.</param>
+    /// <param name="path">The candidate path.</param>
     /// <param name="fullPath">The normalized full path when successful.</param>
     /// <returns><see langword="true"/> when normalization succeeds.</returns>
-    public static bool TryNormalizeDirectory(string? directory, out string? fullPath)
+    public static bool TryGetFullPath(string? path, out string? fullPath)
     {
         fullPath = null;
-        if (string.IsNullOrWhiteSpace(directory))
+        if (string.IsNullOrWhiteSpace(path))
         {
             return false;
         }
 
         try
         {
-            var trimmed = directory.Trim();
+            var trimmed = path.Trim();
             var normalized = Path.GetFullPath(trimmed);
             if (string.IsNullOrWhiteSpace(normalized))
             {
@@ -95,6 +95,34 @@ public static class ChapterSavePath
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Attempts to normalize a directory path to a full path.
+    /// </summary>
+    /// <param name="directory">The candidate directory.</param>
+    /// <param name="fullPath">The normalized full path when successful.</param>
+    /// <returns><see langword="true"/> when normalization succeeds.</returns>
+    public static bool TryNormalizeDirectory(string? directory, out string? fullPath) =>
+        TryGetFullPath(directory, out fullPath);
+
+    /// <summary>
+    /// Trims an optional path and, when possible, expands it to a full path.
+    /// Invalid paths keep their trimmed form so callers can still display or validate them.
+    /// </summary>
+    /// <param name="path">The candidate path.</param>
+    /// <returns>The cleaned path, or <see langword="null"/> when empty.</returns>
+    public static string? CleanOptionalPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var trimmed = path.Trim();
+        return TryGetFullPath(trimmed, out var fullPath) && fullPath is not null
+            ? fullPath
+            : trimmed;
     }
 
     /// <summary>

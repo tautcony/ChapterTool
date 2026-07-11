@@ -34,7 +34,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Equal(Path.GetFullPath("live"), host.ViewModel.SaveDirectory);
         Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
         Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
-        Assert.Equal("ayu-dark", settings.SelectedThemePreset.Id);
+        Assert.Equal("ayu-dark", settings.Appearance.SelectedThemePreset.Id);
     }
 
     [AvaloniaFact]
@@ -59,7 +59,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Equal(Path.GetFullPath("saved"), host.ViewModel.SaveDirectory);
         Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
         Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
-        Assert.Equal("solarized-light", settings.SelectedThemePreset.Id);
+        Assert.Equal("solarized-light", settings.Appearance.SelectedThemePreset.Id);
     }
 
     [AvaloniaFact]
@@ -188,9 +188,9 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
     private static void SelectPreset(SettingsToolViewModel settings, string presetId)
     {
-        var index = settings.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
+        var index = settings.Appearance.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
         Assert.True(index >= 0, $"Preset not found: {presetId}");
-        settings.SelectedThemePresetIndex = index;
+        settings.Appearance.SelectedThemePresetIndex = index;
     }
 
     private static async ValueTask DrainUiAsync()

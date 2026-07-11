@@ -91,7 +91,7 @@ public sealed class SettingsToolViewModelTests
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
-        Assert.Equal(ThemePresetCatalog.DefaultPresetId, viewModel.SelectedThemePreset.Id);
+        Assert.Equal(ThemePresetCatalog.DefaultPresetId, viewModel.Appearance.SelectedThemePreset.Id);
         Assert.Equal(ThemePresetCatalog.DefaultPresetId, themeApplication.LastApplied?.PresetId);
         Assert.True(viewModel.SettingsLoadFailed);
         Assert.Contains("defaults", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
@@ -382,7 +382,7 @@ public sealed class SettingsToolViewModelTests
         SelectPreset(viewModel, "ayu-dark");
         viewModel.DiscardUnsavedAppearanceChanges();
 
-        Assert.Equal("solarized-light", viewModel.SelectedThemePreset.Id);
+        Assert.Equal("solarized-light", viewModel.Appearance.SelectedThemePreset.Id);
         Assert.Equal("solarized-light", themeApplication.LastApplied?.PresetId);
         Assert.Equal("solarized-light", themeStore.Current.PresetId);
         Assert.False(viewModel.HasUnsavedChanges);
@@ -407,7 +407,7 @@ public sealed class SettingsToolViewModelTests
         await viewModel.SaveCommand.ExecuteAsync();
         viewModel.DiscardUnsavedAppearanceChanges();
 
-        Assert.Equal("ayu-dark", viewModel.SelectedThemePreset.Id);
+        Assert.Equal("ayu-dark", viewModel.Appearance.SelectedThemePreset.Id);
         Assert.Equal("ayu-dark", themeApplication.LastApplied?.PresetId);
         Assert.Equal("ayu-dark", themeStore.Current.PresetId);
     }
@@ -428,7 +428,7 @@ public sealed class SettingsToolViewModelTests
 
         await viewModel.ResetCommand.ExecuteAsync();
 
-        Assert.Equal(ThemePresetCatalog.DefaultPresetId, viewModel.SelectedThemePreset.Id);
+        Assert.Equal(ThemePresetCatalog.DefaultPresetId, viewModel.Appearance.SelectedThemePreset.Id);
         Assert.Equal(ThemePresetCatalog.DefaultPresetId, themeApplication.LastApplied?.PresetId);
         Assert.Equal("ayu-dark", themeStore.Current.PresetId);
         Assert.True(viewModel.HasUnsavedChanges);
@@ -447,15 +447,15 @@ public sealed class SettingsToolViewModelTests
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         SelectPreset(viewModel, "ayu-mirage");
 
-        Assert.Equal("Ayu Mirage", viewModel.SelectedThemePreset.DisplayName);
+        Assert.Equal("Ayu Mirage", viewModel.Appearance.SelectedThemePreset.DisplayName);
         localizer.SetCulture("zh-CN");
-        Assert.Equal("ayu-mirage", viewModel.SelectedThemePreset.Id);
-        Assert.Equal("Ayu 幻景", viewModel.SelectedThemePreset.DisplayName);
-        Assert.Contains("Ayu 幻景", viewModel.ThemePreviewAutomationName, StringComparison.Ordinal);
+        Assert.Equal("ayu-mirage", viewModel.Appearance.SelectedThemePreset.Id);
+        Assert.Equal("Ayu 幻景", viewModel.Appearance.SelectedThemePreset.DisplayName);
+        Assert.Contains("Ayu 幻景", viewModel.Appearance.ThemePreviewAutomationName, StringComparison.Ordinal);
 
         localizer.SetCulture("ja-JP");
-        Assert.Equal("ayu-mirage", viewModel.SelectedThemePreset.Id);
-        Assert.Equal("Ayu ミラージュ", viewModel.SelectedThemePreset.DisplayName);
+        Assert.Equal("ayu-mirage", viewModel.Appearance.SelectedThemePreset.Id);
+        Assert.Equal("Ayu ミラージュ", viewModel.Appearance.SelectedThemePreset.DisplayName);
     }
 
     [Fact]
@@ -606,16 +606,16 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal(new FontSettings("UI Two", "Mono Two"), fontStore.Current);
         Assert.False(viewModel.HasUnsavedChanges);
 
-        viewModel.SelectedUiFontFamilyIndex = 0;
-        viewModel.SelectedMonospaceFontFamilyIndex = 0;
+        viewModel.Appearance.SelectedUiFontFamilyIndex = 0;
+        viewModel.Appearance.SelectedMonospaceFontFamilyIndex = 0;
         viewModel.DiscardUnsavedAppearanceChanges();
-        Assert.Equal("UI Two", viewModel.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("Mono Two", viewModel.SelectedMonospaceFontFamily.FamilyName);
+        Assert.Equal("UI Two", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("Mono Two", viewModel.Appearance.SelectedMonospaceFontFamily.FamilyName);
         Assert.False(viewModel.HasUnsavedChanges);
 
         await viewModel.ResetCommand.ExecuteAsync();
-        Assert.True(viewModel.SelectedUiFontFamily.IsDefault);
-        Assert.True(viewModel.SelectedMonospaceFontFamily.IsDefault);
+        Assert.True(viewModel.Appearance.SelectedUiFontFamily.IsDefault);
+        Assert.True(viewModel.Appearance.SelectedMonospaceFontFamily.IsDefault);
         Assert.Equal(new FontSettings("UI Two", "Mono Two"), fontStore.Current);
         Assert.True(viewModel.HasUnsavedChanges);
     }
@@ -637,8 +637,8 @@ public sealed class SettingsToolViewModelTests
 
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
-        Assert.True(viewModel.SelectedUiFontFamily.IsDefault);
-        Assert.Equal("Mono One", viewModel.SelectedMonospaceFontFamily.FamilyName);
+        Assert.True(viewModel.Appearance.SelectedUiFontFamily.IsDefault);
+        Assert.Equal("Mono One", viewModel.Appearance.SelectedMonospaceFontFamily.FamilyName);
         Assert.Equal(new FontSettings("Missing UI", "Mono One"), fontStore.Current);
         Assert.Equal(0, fontStore.Saves);
         Assert.False(viewModel.HasUnsavedChanges);
@@ -659,15 +659,15 @@ public sealed class SettingsToolViewModelTests
 
         SelectUiFont(viewModel, "UI One");
         SelectMonospaceFont(viewModel, "Mono One");
-        Assert.Equal("System default", viewModel.UiFontFamilies[0].DisplayName);
+        Assert.Equal("System default", viewModel.Appearance.UiFontFamilies[0].DisplayName);
 
         localizer.SetCulture("zh-CN");
 
-        Assert.Equal("UI One", viewModel.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("Mono One", viewModel.SelectedMonospaceFontFamily.FamilyName);
-        Assert.Equal("系统默认", viewModel.UiFontFamilies[0].DisplayName);
-        Assert.Contains("界面字体预览", viewModel.UiFontPreviewAutomationName, StringComparison.Ordinal);
-        Assert.Contains("章节字幕", viewModel.FontPreviewText, StringComparison.Ordinal);
+        Assert.Equal("UI One", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("Mono One", viewModel.Appearance.SelectedMonospaceFontFamily.FamilyName);
+        Assert.Equal("系统默认", viewModel.Appearance.UiFontFamilies[0].DisplayName);
+        Assert.Contains("界面字体预览", viewModel.Appearance.UiFontPreviewAutomationName, StringComparison.Ordinal);
+        Assert.Contains("章节字幕", viewModel.Appearance.FontPreviewText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -693,35 +693,35 @@ public sealed class SettingsToolViewModelTests
             fontApplicationService: new FakeFontApplicationService(catalog));
         SelectUiFont(viewModel, "Canonical Family");
 
-        Assert.Equal("Canonical Family", viewModel.SelectedUiFontFamily.DisplayName);
+        Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
         localizer.SetCulture("zh-CN");
-        Assert.Equal("Canonical Family", viewModel.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("简体字体名", viewModel.SelectedUiFontFamily.DisplayName);
+        Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("简体字体名", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
 
         localizer.SetCulture("ja-JP");
-        Assert.Equal("Canonical Family", viewModel.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("日本語フォント名", viewModel.SelectedUiFontFamily.DisplayName);
+        Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+        Assert.Equal("日本語フォント名", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
     }
 
     private static void SelectPreset(SettingsToolViewModel viewModel, string presetId)
     {
-        var index = viewModel.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
+        var index = viewModel.Appearance.ThemePresets.ToList().FindIndex(option => option.Id == presetId);
         Assert.True(index >= 0, $"Preset not found: {presetId}");
-        viewModel.SelectedThemePresetIndex = index;
+        viewModel.Appearance.SelectedThemePresetIndex = index;
     }
 
     private static void SelectUiFont(SettingsToolViewModel viewModel, string familyName)
     {
-        var index = viewModel.UiFontFamilies.ToList().FindIndex(option => option.FamilyName == familyName);
+        var index = viewModel.Appearance.UiFontFamilies.ToList().FindIndex(option => option.FamilyName == familyName);
         Assert.True(index >= 0, $"UI font not found: {familyName}");
-        viewModel.SelectedUiFontFamilyIndex = index;
+        viewModel.Appearance.SelectedUiFontFamilyIndex = index;
     }
 
     private static void SelectMonospaceFont(SettingsToolViewModel viewModel, string familyName)
     {
-        var index = viewModel.MonospaceFontFamilies.ToList().FindIndex(option => option.FamilyName == familyName);
+        var index = viewModel.Appearance.MonospaceFontFamilies.ToList().FindIndex(option => option.FamilyName == familyName);
         Assert.True(index >= 0, $"Monospace font not found: {familyName}");
-        viewModel.SelectedMonospaceFontFamilyIndex = index;
+        viewModel.Appearance.SelectedMonospaceFontFamilyIndex = index;
     }
 
     private static SettingsToolViewModel CreateViewModel(
