@@ -86,6 +86,7 @@ Output projection and format serialization:
 - `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs`
+- `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
 - `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`
@@ -129,4 +130,5 @@ Start with:
 
 - projection before serialization: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - format-specific serialization: `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
+- supported file encodings, display names, BOM-aware encoders, and XML encoding names: `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
 - text-to-QP/celltimes conversion: `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`

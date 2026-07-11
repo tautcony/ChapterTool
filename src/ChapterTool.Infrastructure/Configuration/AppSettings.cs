@@ -10,6 +10,7 @@ public sealed record AppSettings(
     string? FfmpegPath = null,
     string DefaultSaveFormat = "Txt",
     string DefaultXmlLanguage = "und",
+    string OutputTextEncoding = "utf8",
     bool EmitBom = true,
     decimal FrameAccuracyTolerance = 0.15m);
 

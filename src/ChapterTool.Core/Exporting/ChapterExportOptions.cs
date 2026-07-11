@@ -14,7 +14,8 @@ namespace ChapterTool.Core.Exporting;
 /// <param name="Expression">The expression source text used to project chapter times.</param>
 /// <param name="ExpressionPresetId">The selected expression preset identifier, when one is used.</param>
 /// <param name="ExpressionSourceName">The display name of the expression source, when available.</param>
-/// <param name="EmitBom">Whether exported text should include a UTF-8 byte order mark.</param>
+/// <param name="TextEncoding">The encoding used when exported text is written to a file.</param>
+/// <param name="EmitBom">Whether exported text should include the selected encoding's byte order mark.</param>
 /// <param name="ProjectOutput">Whether export should apply output projection before formatting content.</param>
 public sealed record ChapterExportOptions(
     ChapterExportFormat Format,
@@ -28,5 +29,6 @@ public sealed record ChapterExportOptions(
     string Expression = "t",
     string ExpressionPresetId = "",
     string ExpressionSourceName = "",
+    OutputTextEncoding TextEncoding = OutputTextEncoding.Utf8,
     bool EmitBom = true,
     bool ProjectOutput = true);

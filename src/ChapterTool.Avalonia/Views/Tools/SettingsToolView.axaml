@@ -200,7 +200,7 @@
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
         <StackPanel Spacing="12" Margin="4,12,12,4">
           <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.OutputDefaults}" />
-          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DefaultSaveFormat}" />
             <ComboBox x:Name="DefaultSaveFormatCombo"
                       Grid.Row="0"
@@ -226,13 +226,19 @@
                 </DataTemplate>
               </ComboBox.SelectionBoxItemTemplate>
             </ComboBox>
-            <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.EmitBom}" />
-            <CheckBox Grid.Row="2"
+            <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.OutputTextEncoding}" />
+            <ComboBox Grid.Row="2"
+                      Grid.Column="1"
+                      Classes="outputDefaultCombo"
+                      ItemsSource="{Binding OutputTextEncodingOptions}"
+                      SelectedIndex="{Binding OutputTextEncodingIndex}" />
+            <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.EmitBom}" />
+            <CheckBox Grid.Row="3"
                       Grid.Column="1"
                       IsChecked="{Binding EmitBom}"
                       VerticalAlignment="Center" />
-            <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
-            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+            <TextBlock Grid.Row="4" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
+            <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
               <Slider Grid.Column="0"
                       Classes="toleranceSlider"
                       Minimum="0.01"

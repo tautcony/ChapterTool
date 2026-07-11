@@ -648,8 +648,9 @@
     <value>默认 XML 语言</value>
   </data>
 <data name="Settings.EmitBom" xml:space="preserve">
-    <value>写入 UTF-8 BOM</value>
+    <value>写入 BOM</value>
   </data>
+<data name="Settings.OutputTextEncoding" xml:space="preserve"><value>文本编码</value></data>
 <data name="Settings.Eac3toPath" xml:space="preserve">
     <value>eac3to</value>
   </data>

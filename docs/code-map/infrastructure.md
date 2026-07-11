@@ -57,6 +57,8 @@ All runtime consumers receive the same aggregate store. `SettingsToolViewModel` 
 
 `FontSettings` persists independent canonical UI and monospace family names in the unified `font` section. Empty values are stable category defaults; normalization never needs an Avalonia dependency or system-font lookup.
 
+`AppSettings.OutputTextEncoding` persists the lowercase output encoding id (`utf8`, `utf16le`, `utf16be`, `utf32le`, or `utf32be`); UTF-8 is the default.
+
 ### Platform services
 
 - shell/OS launch behavior:
