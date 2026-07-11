@@ -4,6 +4,7 @@ using System.Xml.Linq;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Localization;
+using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Infrastructure.Services;
 
@@ -317,11 +318,11 @@ public sealed class TextToolOptions
     public IApplicationLogService? LiveRefreshService { get; init; }
 }
 
-public sealed class TextToolFormatSelector(MainWindowViewModel owner)
+public sealed class TextToolFormatSelector(IExportPreferencePort exportPreferences)
 {
     private static IReadOnlyList<ChapterExportFormat> Formats => ChapterExportFormats.All;
 
-    private MainWindowViewModel Owner { get; } = owner;
+    private IExportPreferencePort ExportPreferences { get; } = exportPreferences;
 
     public IReadOnlyList<string> Labels { get; } = Formats.Select(ChapterExportFormats.DisplayName).ToArray();
 
@@ -329,14 +330,14 @@ public sealed class TextToolFormatSelector(MainWindowViewModel owner)
     {
         get;
         set => field = Math.Clamp(value, 0, Formats.Count - 1);
-    } = Math.Clamp(owner.SaveFormatIndex, 0, Formats.Count - 1);
+    } = Math.Clamp(exportPreferences.SaveFormatIndex, 0, Formats.Count - 1);
 
     public TextToolKind Kind => KindFor(Formats[SelectedIndex]);
 
     public void Apply(int index)
     {
         SelectedIndex = index;
-        Owner.SaveFormatIndex = SelectedIndex;
+        ExportPreferences.SaveFormatIndex = SelectedIndex;
     }
 
     private static TextToolKind KindFor(ChapterExportFormat format) =>
@@ -350,28 +351,28 @@ public sealed class TextToolFormatSelector(MainWindowViewModel owner)
 
 public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
 {
-    private readonly MainWindowViewModel owner;
+    private readonly IPreferenceSink preferenceSink;
     private readonly EventHandler cultureChangedHandler;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private string selectedLanguage;
     private bool isRefreshingLanguages;
 
-    public LanguageToolViewModel(MainWindowViewModel owner)
+    public LanguageToolViewModel(IPreferenceSink preferenceSink)
     {
-        this.owner = owner;
-        selectedLanguage = AppLanguage.Normalize(owner.UiLanguage);
+        this.preferenceSink = preferenceSink;
+        selectedLanguage = AppLanguage.Normalize(preferenceSink.UiLanguage);
         ReplaceLanguages(BuildLanguages());
         cultureChangedHandler = (_, _) =>
         {
             RefreshLanguages();
         };
-        owner.Localizer.CultureChanged += cultureChangedHandler;
+        preferenceSink.Localizer.CultureChanged += cultureChangedHandler;
         ApplyCommand = new UiCommand(async (parameter, token) =>
         {
             var language = parameter is LanguageToolViewModel viewModel
                 ? viewModel.SelectedLanguage
                 : AppLanguage.Normalize(parameter?.ToString());
-            await owner.SaveUiLanguageAsync(language, token);
+            await preferenceSink.SaveUiLanguageAsync(language, token);
         });
     }
 
@@ -414,7 +415,7 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
 
     public void Dispose()
     {
-        owner.Localizer.CultureChanged -= cultureChangedHandler;
+        preferenceSink.Localizer.CultureChanged -= cultureChangedHandler;
     }
 
     private void RefreshLanguages()
@@ -434,10 +435,10 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
     }
 
     private List<LanguageOptionViewModel> BuildLanguages() =>
-        owner.Localizer.SupportedLanguages
+        preferenceSink.Localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
-                owner.Localizer.GetString(language.DisplayNameKey)))
+                preferenceSink.Localizer.GetString(language.DisplayNameKey)))
             .ToList();
 
     private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> options)
@@ -454,40 +455,40 @@ public sealed record LanguageOptionViewModel(string CultureName, string DisplayN
 
 public sealed class ExpressionToolViewModel : ObservableViewModel
 {
-    private readonly MainWindowViewModel owner;
+    private readonly IExpressionSessionPort expressionSession;
     private readonly IFilePickerService? filePicker;
 
-    public ExpressionToolViewModel(MainWindowViewModel owner, IFilePickerService? filePicker = null)
+    public ExpressionToolViewModel(IExpressionSessionPort expressionSession, IFilePickerService? filePicker = null)
     {
-        this.owner = owner;
+        this.expressionSession = expressionSession;
         this.filePicker = filePicker;
-        Expression = owner.Expression;
-        ApplyExpression = owner.ApplyExpression;
-        ExpressionSourceName = owner.ExpressionSourceName;
-        Presets = owner.ExpressionPresets
+        Expression = expressionSession.Expression;
+        ApplyExpression = expressionSession.ApplyExpression;
+        ExpressionSourceName = expressionSession.ExpressionSourceName;
+        Presets = expressionSession.ExpressionPresets
             .Select(static preset => new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
             .ToList();
-        SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, owner.ExpressionPresetId, StringComparison.Ordinal));
+        SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
         BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null);
         ApplyCommand = new UiCommand((parameter, _) =>
         {
             if (parameter is ExpressionToolViewModel viewModel)
             {
-                var diagnostic = owner.ApplyLuaExpressionSettings(
+                var diagnostic = expressionSession.ApplyLuaExpressionSettings(
                     viewModel.Expression,
                     viewModel.ApplyExpression,
                     viewModel.SelectedPreset?.Id ?? string.Empty,
                     viewModel.ExpressionSourceName);
                 viewModel.StatusText = diagnostic is null
-                    ? owner.Localizer.GetString("Status.Updated")
-                    : owner.FormatDiagnosticForDisplay(diagnostic);
+                    ? expressionSession.Localizer.GetString("Status.Updated")
+                    : expressionSession.FormatDiagnosticForDisplay(diagnostic);
             }
 
             return ValueTask.CompletedTask;
         });
     }
 
-    public IAppLocalizer Localizer => owner.Localizer;
+    public IAppLocalizer Localizer => expressionSession.Localizer;
 
     public IReadOnlyList<ExpressionPresetViewModel> Presets { get; }
 
@@ -509,7 +510,7 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
             {
                 Expression = preset.ScriptText;
                 ExpressionSourceName = preset.DisplayName;
-                StatusText = owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
+                StatusText = expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
             }
         }
     } = -1;
@@ -561,36 +562,36 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         Expression = text;
         ExpressionSourceName = Path.GetFileName(path);
         SelectedPresetIndex = -1;
-        var diagnostic = owner.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+        var diagnostic = expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
         StatusText = diagnostic is null
-            ? owner.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
-            : owner.FormatDiagnosticForDisplay(diagnostic);
+            ? expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
+            : expressionSession.FormatDiagnosticForDisplay(diagnostic);
     }
 }
 
 public sealed record ExpressionPresetViewModel(string Id, string DisplayName, string Description, string ScriptText);
 
-public sealed class TemplateNamesToolViewModel(MainWindowViewModel owner) : ObservableViewModel
+public sealed class TemplateNamesToolViewModel(INamingPreferencePort namingPreferences) : ObservableViewModel
 {
     public bool UseTemplateNames
     {
         get;
         set => SetProperty(ref field, value);
-    } = owner.UseTemplateNames;
+    } = namingPreferences.UseTemplateNames;
 
     public UiCommand ApplyCommand { get; } = new((parameter, _) =>
     {
         if (parameter is TemplateNamesToolViewModel viewModel)
         {
-            owner.AutoGenerateNames = false;
-            owner.UseTemplateNames = viewModel.UseTemplateNames;
+            namingPreferences.AutoGenerateNames = false;
+            namingPreferences.UseTemplateNames = viewModel.UseTemplateNames;
         }
 
         return ValueTask.CompletedTask;
     });
 }
 
-public sealed class ForwardShiftToolViewModel(MainWindowViewModel owner) : ObservableViewModel
+public sealed class ForwardShiftToolViewModel(IChapterEditPort chapterEdit) : ObservableViewModel
 {
     public decimal Frames
     {
@@ -602,7 +603,7 @@ public sealed class ForwardShiftToolViewModel(MainWindowViewModel owner) : Obser
     {
         if (parameter is ForwardShiftToolViewModel viewModel)
         {
-            owner.ShiftFramesForward((int)viewModel.Frames);
+            chapterEdit.ShiftFramesForward((int)viewModel.Frames);
         }
 
         return ValueTask.CompletedTask;

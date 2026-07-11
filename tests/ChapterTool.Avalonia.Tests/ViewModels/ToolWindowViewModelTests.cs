@@ -1,10 +1,12 @@
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Platform;
@@ -111,6 +113,39 @@ public sealed class ToolWindowViewModelTests
         Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
 
+    [Fact]
+    public void ToolsConstructAgainstNarrowPortsWithoutFullMainWindowSurface()
+    {
+        var export = new FakeExportPreferencePort { SaveFormatIndex = 0 };
+        var naming = new FakeNamingPreferencePort();
+        var edit = new FakeChapterEditPort();
+        var language = new FakePreferenceSink(new AppLocalizationManager("en-US"));
+
+        var formatSelector = new TextToolFormatSelector(export);
+        formatSelector.Apply(ChapterExportFormats.IndexOf(ChapterExportFormat.Json));
+        Assert.Equal(ChapterExportFormat.Json, export.SaveFormat);
+
+        var template = new TemplateNamesToolViewModel(naming) { UseTemplateNames = true };
+        Assert.True(template.ApplyCommand.CanExecute(template));
+
+        var forward = new ForwardShiftToolViewModel(edit) { Frames = 12 };
+        Assert.True(forward.ApplyCommand.CanExecute(forward));
+
+        var languageTool = new LanguageToolViewModel(language);
+        Assert.Equal("en-US", languageTool.SelectedLanguage);
+        languageTool.Dispose();
+    }
+
+    [Fact]
+    public void ToolWindowRegistry_registers_known_tool_ids()
+    {
+        Assert.NotNull(ChapterTool.Avalonia.Services.ToolWindowRegistry.Find("preview"));
+        Assert.NotNull(ChapterTool.Avalonia.Services.ToolWindowRegistry.Find("settings"));
+        Assert.NotNull(ChapterTool.Avalonia.Services.ToolWindowRegistry.Find("expression"));
+        Assert.NotNull(ChapterTool.Avalonia.Services.ToolWindowRegistry.Find("language"));
+        Assert.Null(ChapterTool.Avalonia.Services.ToolWindowRegistry.Find("missing-tool"));
+    }
+
 
     [Fact]
     public async Task ExpressionToolAppliesLuaPresetAndExternalScriptToOwner()
@@ -206,6 +241,58 @@ public sealed class ToolWindowViewModelTests
         public ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(luaScriptPath);
 
         public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
+    }
+
+    private sealed class FakeExportPreferencePort : IExportPreferencePort
+    {
+        public int SaveFormatIndex
+        {
+            get => ChapterExportFormats.IndexOf(SaveFormat);
+            set => SaveFormat = ChapterExportFormats.AtIndex(value);
+        }
+
+        public ChapterExportFormat SaveFormat { get; set; } = ChapterExportFormat.Txt;
+    }
+
+    private sealed class FakeNamingPreferencePort : INamingPreferencePort
+    {
+        public bool AutoGenerateNames { get; set; }
+
+        public bool UseTemplateNames { get; set; }
+    }
+
+    private sealed class FakeChapterEditPort : IChapterEditPort
+    {
+        public void ShiftFramesForward(int frames)
+        {
+        }
+    }
+
+    private sealed class FakePreferenceSink(IAppLocalizer localizer) : IPreferenceSink
+    {
+        public IAppLocalizer Localizer { get; } = localizer;
+
+        public string UiLanguage { get; private set; } = localizer.CurrentCultureName;
+
+        public int SaveFormatIndex { get; private set; }
+
+        public string XmlLanguage { get; private set; } = "und";
+
+        public OutputTextEncoding OutputTextEncoding { get; private set; } = OutputTextEncoding.Utf8;
+
+        public decimal FrameAccuracyTolerance { get; private set; } = 0.15m;
+
+        public void ApplyLivePreferences(AppSettings settings)
+        {
+            UiLanguage = AppLanguage.Normalize(settings.Language);
+        }
+
+        public ValueTask SaveUiLanguageAsync(string language, CancellationToken cancellationToken)
+        {
+            UiLanguage = AppLanguage.Normalize(language);
+            Localizer.SetCulture(UiLanguage);
+            return ValueTask.CompletedTask;
+        }
     }
 
     private sealed class FakeWindowService : IWindowService

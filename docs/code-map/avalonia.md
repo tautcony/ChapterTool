@@ -133,7 +133,9 @@ If command execution semantics change:
 
 Start with:
 
-- `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
+- `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs` — tool id → title resource + content factory table
+- `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs` — host lifecycle; iterates registry
+- `src/ChapterTool.Avalonia/Session/Ports/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, `IExportPreferencePort`, …)
 
 Then inspect the matching pair in:
 

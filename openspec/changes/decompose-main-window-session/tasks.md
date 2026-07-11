@@ -38,13 +38,13 @@
 
 ## 4. Slice D — Tool ports and window registry
 
-- [ ] 4.1 Define narrow ports (`IExpressionSessionPort`, `IPreferenceSink` / language controller, `IExportPreferencePort`, and only other ports justified by real tools).
-- [ ] 4.2 Implement ports on workspace/main shell; refactor tool ViewModels to depend on ports instead of concrete `MainWindowViewModel` for unrelated capabilities; keep dedicated Language tool on the shared preference path.
-- [ ] 4.3 Replace `AvaloniaWindowService` title/content/placeholder string switches with a tool-window registration table/factories.
-- [ ] 4.4 Require composition-owned localizer/export/expression instances on production paths; remove silent `new AppLocalizationManager()` / divergent defaults where a real dependency is expected.
-- [ ] 4.5 Add unit tests constructing expression/settings/language/preview tools against fakes/ports; cover tool open/lifecycle where window service behavior changes.
-- [ ] 4.6 Focused verification: Avalonia unit tests, then focused Headless tool-view tests after the unit command finishes.
-- [ ] 4.7 Slice D merge gate: after focused commands complete, build affected projects if needed and run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
+- [x] 4.1 Define narrow ports (`IExpressionSessionPort`, `IPreferenceSink` / language controller, `IExportPreferencePort`, and only other ports justified by real tools).
+- [x] 4.2 Implement ports on workspace/main shell; refactor tool ViewModels to depend on ports instead of concrete `MainWindowViewModel` for unrelated capabilities; keep dedicated Language tool on the shared preference path.
+- [x] 4.3 Replace `AvaloniaWindowService` title/content/placeholder string switches with a tool-window registration table/factories.
+- [x] 4.4 Require composition-owned localizer/export/expression instances on production paths; remove silent `new AppLocalizationManager()` / divergent defaults where a real dependency is expected.
+- [x] 4.5 Add unit tests constructing expression/settings/language/preview tools against fakes/ports; cover tool open/lifecycle where window service behavior changes.
+- [x] 4.6 Focused verification: Avalonia unit tests, then focused Headless tool-view tests after the unit command finishes.
+- [x] 4.7 Slice D merge gate: after focused commands complete, build affected projects if needed and run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
 
 ## 5. Slice E — Settings modules and ExpressionEditor presentation
 
