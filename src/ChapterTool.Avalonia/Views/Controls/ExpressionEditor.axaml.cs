@@ -13,6 +13,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using ChapterTool.Avalonia.Localization;
+using ChapterTool.Avalonia.Views.Controls.Expression;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Views.Controls;
@@ -22,45 +23,11 @@ public sealed class ExpressionEditorExpansionChangedEventArgs(double heightDelta
     public double HeightDelta { get; } = heightDelta;
 }
 
-public sealed class ExpressionCompletionKindBrushConverter : IValueConverter
+
+// Compatibility name used by ExpressionEditor.axaml bindings.
+public sealed class ExpressionCompletionKindBrushConverter : Expression.ExpressionCompletionPresentation
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        var kind = value is ExpressionTokenKind tokenKind ? tokenKind : ExpressionTokenKind.Unknown;
-        return string.Equals(parameter?.ToString(), "icon", StringComparison.OrdinalIgnoreCase)
-            ? Icon(kind)
-            : Foreground(kind);
-    }
-
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotSupportedException();
-
-    private static string Icon(ExpressionTokenKind kind) => kind switch
-    {
-        ExpressionTokenKind.Variable => "◈",
-        ExpressionTokenKind.Constant => "◆",
-        ExpressionTokenKind.Function => "ƒ",
-        ExpressionTokenKind.Keyword => "K",
-        ExpressionTokenKind.Snippet => "◇",
-        ExpressionTokenKind.String => "S",
-        ExpressionTokenKind.Number => "#",
-        _ => "•"
-    };
-
-    private static IBrush Foreground(ExpressionTokenKind kind) => kind switch
-    {
-        ExpressionTokenKind.Variable => Brush("#0550ae"),
-        ExpressionTokenKind.Constant => Brush("#8250df"),
-        ExpressionTokenKind.Function => Brush("#953800"),
-        ExpressionTokenKind.Keyword => Brush("#cf222e"),
-        ExpressionTokenKind.Snippet => Brush("#6f42c1"),
-        ExpressionTokenKind.String => Brush("#0a3069"),
-        ExpressionTokenKind.Number => Brush("#116329"),
-        _ => Brush("#57606a")
-    };
-
-    private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
 }
-
 
 public sealed partial class ExpressionEditor : UserControl
 {
@@ -78,8 +45,8 @@ public sealed partial class ExpressionEditor : UserControl
 
     private readonly IExpressionAuthoringService authoringService = new ExpressionAuthoringService();
     private readonly TextEditor editor;
-    private readonly ExpressionColorizer colorizer;
-    private readonly DiagnosticUnderlineRenderer diagnosticRenderer;
+    private readonly Expression.ExpressionColorizer colorizer;
+    private readonly Expression.ExpressionDiagnosticPresentation diagnosticRenderer;
     private readonly DispatcherTimer diagnosticHideTimer;
     private readonly DispatcherTimer diagnosticRenderTimer;
     private bool updatingText;
@@ -94,8 +61,8 @@ public sealed partial class ExpressionEditor : UserControl
     {
         InitializeComponent();
 
-        colorizer = new ExpressionColorizer([]);
-        diagnosticRenderer = new DiagnosticUnderlineRenderer();
+        colorizer = new Expression.ExpressionColorizer([]);
+        diagnosticRenderer = new Expression.ExpressionDiagnosticPresentation();
         diagnosticHideTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(150)
@@ -113,7 +80,7 @@ public sealed partial class ExpressionEditor : UserControl
             WordWrap = false,
             FontSize = 13,
             Background = Brushes.Transparent,
-            Foreground = Brush("#24292f"),
+            Foreground = Expression.ExpressionThemeBrushes.EditorForeground,
             Padding = new Thickness(6, 3),
             MinHeight = EditorHeight,
             Height = EditorHeight,
@@ -758,105 +725,4 @@ public sealed partial class ExpressionEditor : UserControl
         return string.Equals(message, suggestion.Code, StringComparison.Ordinal) ? suggestion.Message : message;
     }
 
-    private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
-
-    private sealed class ExpressionColorizer(IReadOnlyList<ExpressionTokenSpan> spans) : DocumentColorizingTransformer
-    {
-        private IReadOnlyList<ExpressionTokenSpan> spans = spans;
-
-        public void Update(IReadOnlyList<ExpressionTokenSpan> value) => spans = value;
-
-        protected override void ColorizeLine(DocumentLine line)
-        {
-            var lineStart = line.Offset;
-            var lineEnd = line.EndOffset;
-            foreach (var span in spans)
-            {
-                var start = span.Start;
-                var end = span.Start + span.Length;
-                if (end <= lineStart || start >= lineEnd)
-                {
-                    continue;
-                }
-
-                ChangeLinePart(
-                    Math.Max(start, lineStart),
-                    Math.Min(end, lineEnd),
-                    element => element.TextRunProperties.SetForegroundBrush(ForegroundFor(span.Kind)));
-            }
-        }
-
-        private static IBrush ForegroundFor(ExpressionTokenKind kind) =>
-            kind switch
-            {
-                ExpressionTokenKind.Variable => Brush("#0550ae"),
-                ExpressionTokenKind.Constant => Brush("#8250df"),
-                ExpressionTokenKind.Function => Brush("#953800"),
-                ExpressionTokenKind.Keyword => Brush("#cf222e"),
-                ExpressionTokenKind.Snippet => Brush("#8250df"),
-                ExpressionTokenKind.String => Brush("#0a3069"),
-                ExpressionTokenKind.Operator => Brush("#cf222e"),
-                ExpressionTokenKind.Punctuation => Brush("#57606a"),
-                ExpressionTokenKind.Number => Brush("#116329"),
-                ExpressionTokenKind.Comment => Brush("#6e7781"),
-                ExpressionTokenKind.Unknown => Brush("#b42318"),
-                _ => Brush("#24292f")
-            };
-    }
-    
-    private sealed class DiagnosticUnderlineRenderer : IBackgroundRenderer
-    {
-        private IReadOnlyList<ExpressionAuthoringDiagnostic> diagnostics = [];
-
-        public KnownLayer Layer => KnownLayer.Selection;
-
-        public void Update(IReadOnlyList<ExpressionAuthoringDiagnostic> value) => diagnostics = value;
-
-        public void Draw(TextView textView, DrawingContext drawingContext)
-        {
-            if (diagnostics.Count == 0)
-            {
-                return;
-            }
-
-            textView.EnsureVisualLines();
-            foreach (var diagnostic in diagnostics.Where(static diagnostic => diagnostic.Length > 0))
-            {
-                var rects = BackgroundGeometryBuilder.GetRectsForSegment(
-                    textView,
-                    new Segment(diagnostic.Start, diagnostic.Length),
-                    false);
-
-                foreach (var rect in rects)
-                {
-                    DrawUnderline(drawingContext, rect);
-                }
-            }
-        }
-
-        private static void DrawUnderline(DrawingContext drawingContext, Rect rect)
-        {
-            var pen = new Pen(Brush("#cf222e"), 1);
-            var geometry = new StreamGeometry();
-            using var context = geometry.Open();
-            var startX = rect.X;
-            var y = rect.Bottom - 1;
-            var step = 4d;
-            var up = true;
-
-            context.BeginFigure(new Point(startX, y), false);
-            for (var x = startX + step; x <= rect.Right; x += step)
-            {
-                context.LineTo(new Point(x, y + (up ? -2 : 0)));
-                up = !up;
-            }
-
-            drawingContext.DrawGeometry(null, pen, geometry);
-        }
-
-        private sealed record Segment(int Offset, int Length) : ISegment
-        {
-            public int EndOffset => Offset + Length;
-        }
-    }
 }

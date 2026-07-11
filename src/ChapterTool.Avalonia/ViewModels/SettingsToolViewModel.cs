@@ -12,7 +12,7 @@ using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
+public sealed partial class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
     private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;

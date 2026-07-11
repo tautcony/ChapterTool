@@ -48,12 +48,12 @@
 
 ## 5. Slice E — Settings modules and ExpressionEditor presentation
 
-- [ ] 5.1 Split settings into orchestrator + child modules (output defaults, external tools, appearance already separate, about/runtime) with **no multi-page settings UX redesign**.
-- [ ] 5.2 Split `ToolWindowViewModels.cs` into per-tool files; retain Language tool.
-- [ ] 5.3 Split ExpressionEditor presentation (colorizer, diagnostics, completion) into focused types/files; map themeable chrome/category colors to application theme/semantic resources **in this slice**.
-- [ ] 5.4 Keep or add focused tests for settings live-apply/dirty/close and expression editor authoring behavior; verify category coloring is not locked to a hard-coded private palette.
-- [ ] 5.5 Focused verification: Avalonia unit tests, then focused Headless for settings/expression surfaces after the unit command finishes.
-- [ ] 5.6 Slice E merge gate: after focused commands complete, build affected projects if needed and run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
+- [x] 5.1 Split settings into orchestrator + child modules (output defaults, external tools, appearance already separate, about/runtime) with **no multi-page settings UX redesign**.
+- [x] 5.2 Split `ToolWindowViewModels.cs` into per-tool files; retain Language tool.
+- [x] 5.3 Split ExpressionEditor presentation (colorizer, diagnostics, completion) into focused types/files; map themeable chrome/category colors to application theme/semantic resources **in this slice**.
+- [x] 5.4 Keep or add focused tests for settings live-apply/dirty/close and expression editor authoring behavior; verify category coloring is not locked to a hard-coded private palette.
+- [x] 5.5 Focused verification: Avalonia unit tests, then focused Headless for settings/expression surfaces after the unit command finishes.
+- [x] 5.6 Slice E merge gate: after focused commands complete, build affected projects if needed and run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
 
 ## 6. Slice F — Shared CLI/GUI factories and final validation
 

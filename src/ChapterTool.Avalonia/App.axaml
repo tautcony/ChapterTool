@@ -19,6 +19,18 @@
     <SolidColorBrush x:Key="ChapterTool.FrameAccurateBrush" Color="#0F7A2F" />
     <SolidColorBrush x:Key="ChapterTool.FrameInexactBrush" Color="#B42318" />
     <SolidColorBrush x:Key="ChapterTool.DiagnosticErrorBrush" Color="#B42318" />
+    <!-- Expression editor category/chrome colors (themeable; light defaults) -->
+    <SolidColorBrush x:Key="ChapterTool.Expression.VariableBrush" Color="#0550ae" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.ConstantBrush" Color="#8250df" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.FunctionBrush" Color="#953800" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.KeywordBrush" Color="#cf222e" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.SnippetBrush" Color="#6f42c1" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.StringBrush" Color="#0a3069" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.OperatorBrush" Color="#cf222e" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.PunctuationBrush" Color="#57606a" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.NumberBrush" Color="#116329" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.CommentBrush" Color="#6e7781" />
+    <SolidColorBrush x:Key="ChapterTool.Expression.UnknownBrush" Color="#b42318" />
   </Application.Resources>
   <Application.Styles>
     <FluentTheme />

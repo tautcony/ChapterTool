@@ -168,6 +168,14 @@ If the wiring looks wrong, inspect:
 
 ### Expression editor UI
 
+Presentation types live under `Views/Controls/Expression/`:
+
+- `ExpressionThemeBrushes.cs` — theme resource keys for category/chrome colors
+- `ExpressionColorizer.cs`
+- `ExpressionDiagnosticPresentation.cs`
+- `ExpressionCompletionPresentation.cs`
+- `ExpressionEditor.axaml(.cs)` — control shell
+
 Start with:
 
 - `src/ChapterTool.Avalonia/Views/Tools/ExpressionToolView.axaml`
