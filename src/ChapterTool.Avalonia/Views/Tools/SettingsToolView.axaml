@@ -270,8 +270,8 @@
                         Grid.Column="1"
                         MinWidth="240"
                         HorizontalAlignment="Left"
-                        ItemsSource="{Binding ThemePresets}"
-                        SelectedIndex="{Binding SelectedThemePresetIndex}">
+                        ItemsSource="{Binding Appearance.ThemePresets}"
+                        SelectedIndex="{Binding Appearance.SelectedThemePresetIndex}">
                 <ComboBox.ItemTemplate>
                   <DataTemplate x:DataType="vm:ThemePresetOptionViewModel">
                     <TextBlock Text="{Binding DisplayName}" />
@@ -288,8 +288,8 @@
                             Grid.Row="1"
                             Grid.Column="1"
                             HorizontalAlignment="Left"
-                            ItemsSource="{Binding SelectedThemePreset.PreviewSwatches}"
-                            AutomationProperties.Name="{Binding ThemePreviewAutomationName}">
+                            ItemsSource="{Binding Appearance.SelectedThemePreset.PreviewSwatches}"
+                            AutomationProperties.Name="{Binding Appearance.ThemePreviewAutomationName}">
                 <ItemsControl.ItemsPanel>
                   <ItemsPanelTemplate>
                     <WrapPanel Orientation="Horizontal" />
@@ -307,8 +307,8 @@
                 <ComboBox x:Name="UiFontFamilyCombo"
                           MinWidth="240"
                           HorizontalAlignment="Stretch"
-                          ItemsSource="{Binding UiFontFamilies}"
-                          SelectedIndex="{Binding SelectedUiFontFamilyIndex}">
+                          ItemsSource="{Binding Appearance.UiFontFamilies}"
+                          SelectedIndex="{Binding Appearance.SelectedUiFontFamilyIndex}">
                   <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                       <VirtualizingStackPanel />
@@ -331,9 +331,9 @@
                 </ComboBox>
                 <Border x:Name="UiFontPreview"
                         Classes="fontPreview"
-                        AutomationProperties.Name="{Binding UiFontPreviewAutomationName}">
+                        AutomationProperties.Name="{Binding Appearance.UiFontPreviewAutomationName}">
                   <TextBlock FontFamily="{DynamicResource ChapterTool.UiFontFamily}"
-                             Text="{Binding FontPreviewText}"
+                             Text="{Binding Appearance.FontPreviewText}"
                              TextTrimming="CharacterEllipsis" />
                 </Border>
               </StackPanel>
@@ -343,8 +343,8 @@
                 <ComboBox x:Name="MonospaceFontFamilyCombo"
                           MinWidth="240"
                           HorizontalAlignment="Stretch"
-                          ItemsSource="{Binding MonospaceFontFamilies}"
-                          SelectedIndex="{Binding SelectedMonospaceFontFamilyIndex}">
+                          ItemsSource="{Binding Appearance.MonospaceFontFamilies}"
+                          SelectedIndex="{Binding Appearance.SelectedMonospaceFontFamilyIndex}">
                   <ComboBox.ItemsPanel>
                     <ItemsPanelTemplate>
                       <VirtualizingStackPanel />
@@ -367,9 +367,9 @@
                 </ComboBox>
                 <Border x:Name="MonospaceFontPreview"
                         Classes="fontPreview"
-                        AutomationProperties.Name="{Binding MonospaceFontPreviewAutomationName}">
+                        AutomationProperties.Name="{Binding Appearance.MonospaceFontPreviewAutomationName}">
                   <TextBlock FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
-                             Text="{Binding FontPreviewText}"
+                             Text="{Binding Appearance.FontPreviewText}"
                              TextTrimming="CharacterEllipsis" />
                 </Border>
               </StackPanel>

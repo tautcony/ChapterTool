@@ -6,21 +6,34 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Cli;
 
-public sealed class ChapterToolCliApplication(
-    ICliConsole? console = null,
-    RuntimeChapterImporterRegistry? importerRegistry = null,
-    ChapterExportService? exporter = null,
-    string? configuredSavingPath = null,
-    string? settingsDirectory = null)
+public sealed class ChapterToolCliApplication
 {
-    private readonly ICliConsole console = console ?? new SystemCliConsole();
-    private readonly RuntimeChapterImporterRegistry importerRegistry = importerRegistry ?? CreateImporterRegistry(settingsDirectory);
-    private readonly ChapterExportService exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter());
-    private readonly string? configuredSavingPath = configuredSavingPath;
-    private readonly string settingsDirectory = settingsDirectory ?? DefaultSettingsDirectory();
+    private readonly ICliConsole console;
+    private readonly RuntimeChapterImporterRegistry importerRegistry;
+    private readonly ChapterExportService exporter;
+    private readonly string? configuredSavingPath;
+    private readonly ISettingsStore<ChapterToolSettings> settingsStore;
+
+    public ChapterToolCliApplication(
+        ICliConsole? console = null,
+        RuntimeChapterImporterRegistry? importerRegistry = null,
+        ChapterExportService? exporter = null,
+        string? configuredSavingPath = null,
+        ISettingsStore<ChapterToolSettings>? settingsStore = null,
+        string? settingsDirectory = null)
+    {
+        this.console = console ?? new SystemCliConsole();
+        var directory = settingsDirectory ?? DefaultSettingsDirectory();
+        this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
+        this.importerRegistry = importerRegistry ?? CreateImporterRegistry(this.settingsStore);
+        this.exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter());
+        this.configuredSavingPath = configuredSavingPath;
+    }
 
     public int ShowFormats()
     {
@@ -364,11 +377,10 @@ public sealed class ChapterToolCliApplication(
     {
         try
         {
-            var store = new Infrastructure.Configuration.ChapterToolSettingsStore(settingsDirectory);
-            var settings = await store.LoadAsync(cancellationToken);
+            var settings = await settingsStore.LoadAsync(cancellationToken);
             return settings.Application.SavingPath;
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or Infrastructure.Configuration.CorruptSettingsFileException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or CorruptSettingsFileException)
         {
             return null;
         }
@@ -452,12 +464,9 @@ public sealed class ChapterToolCliApplication(
         }
     }
 
-    private static RuntimeChapterImporterRegistry CreateImporterRegistry(string? settingsDirectory)
+    private static RuntimeChapterImporterRegistry CreateImporterRegistry(ISettingsStore<ChapterToolSettings> settingsStore)
     {
         var formatter = new Core.Transform.ChapterTimeFormatter();
-        var resolvedSettingsDirectory = settingsDirectory ?? DefaultSettingsDirectory();
-        Directory.CreateDirectory(resolvedSettingsDirectory);
-        var settingsStore = new Infrastructure.Configuration.ChapterToolSettingsStore(resolvedSettingsDirectory);
         var toolLocator = new Infrastructure.Tools.ExternalToolLocator(settingsStore, AppCompositionRoot.PathSearchDirectoriesForTests().ToList());
         return new RuntimeChapterImporterRegistry(
             formatter,

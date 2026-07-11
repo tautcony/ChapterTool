@@ -16,7 +16,11 @@ public sealed record ThemePalette(
     string AccentForeground,
     string Border,
     string HoverBackground,
-    string ActiveBackground)
+    string ActiveBackground,
+    string FrameNeutral,
+    string FrameAccurate,
+    string FrameInexact,
+    string DiagnosticError)
 {
     public IReadOnlyList<string> PreviewSwatches =>
     [
@@ -82,8 +86,10 @@ public static class ThemePresetCatalog
         string accentForeground,
         string border,
         string hoverBackground,
-        string activeBackground) =>
-        new(
+        string activeBackground)
+    {
+        var dark = baseVariant == ThemeBaseVariant.Dark;
+        return new(
             id,
             name,
             $"Settings.Appearance.Preset.{id}",
@@ -98,5 +104,10 @@ public static class ThemePresetCatalog
                 accentForeground,
                 border,
                 hoverBackground,
-                activeBackground));
+                activeBackground,
+                FrameNeutral: dark ? "#F3F4F5" : "#111111",
+                FrameAccurate: dark ? "#6EE7A0" : "#0F7A2F",
+                FrameInexact: dark ? "#FF8A80" : "#B42318",
+                DiagnosticError: dark ? "#FF8A80" : "#B42318"));
+    }
 }

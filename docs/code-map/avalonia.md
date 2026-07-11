@@ -14,13 +14,24 @@ Startup and main shell entry points:
 - `src/ChapterTool.Avalonia/App.axaml.cs`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs` (partial shell)
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Settings.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.ImportExport.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Expression.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Editing.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.StatusLog.cs`
 
 Role split:
 
 - `MainWindow.axaml`: shell layout and bindings
 - `MainWindow.axaml.cs`: drag/drop, picker triggers, keyboard/UI-only behavior
-- `MainWindowViewModel.cs`: commands, state, workflow orchestration, status/progress, tool windows
+- `MainWindowViewModel` partials:
+  - `.cs`: fields, ctor, bindable state, command wiring, window/shell helpers
+  - `.Settings.cs`: load/apply preferences and language persistence
+  - `.ImportExport.cs`: load/save/append workflows and export options
+  - `.Expression.cs`: Lua expression apply/validate and output projection
+  - `.Editing.cs`: clip selection, row edits, combine/split, frame-rate transforms
+  - `.StatusLog.cs`: status text, diagnostics localization, logging, localized option refresh
 
 ### Composition root
 
@@ -35,7 +46,6 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
 - `src/ChapterTool.Avalonia/Views/Controls/ExpressionEditor.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/ColorSettingsView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/LanguageToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/ExpressionToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/TemplateNamesToolView.axaml`
@@ -44,8 +54,11 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### ViewModels
 
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs`
+- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel*.cs`
 - `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs`
+- `src/ChapterTool.Avalonia/ViewModels/SettingsAppearanceViewModel.cs`
+- `src/ChapterTool.Avalonia/ViewModels/ChapterExpressionValidation.cs`
+- `src/ChapterTool.Avalonia/ViewModels/ChapterSaveDirectory.cs`
 - `src/ChapterTool.Avalonia/ViewModels/ToolWindowViewModels.cs`
 - `src/ChapterTool.Avalonia/ViewModels/ChapterRowViewModel.cs`
 - `src/ChapterTool.Avalonia/ViewModels/UiCommand.cs`
@@ -62,6 +75,9 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFontApplicationService.cs`
 - `src/ChapterTool.Avalonia/Services/IFontFamilyCatalog.cs`
+- `src/ChapterTool.Avalonia/Services/FontFamilyCatalogEntry.cs`
+- `src/ChapterTool.Avalonia/Services/AvaloniaFontFamilyCatalog.cs`
+- `src/ChapterTool.Avalonia/Services/FontSettingsResolver.cs`
 
 ### CLI
 
@@ -147,19 +163,21 @@ Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWin
 Start with:
 
 - `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs`
+- `src/ChapterTool.Avalonia/ViewModels/SettingsAppearanceViewModel.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFontApplicationService.cs`
 - `src/ChapterTool.Avalonia/Services/IFontFamilyCatalog.cs`
+- `src/ChapterTool.Avalonia/Services/AvaloniaFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
 
-Output defaults such as the configured save directory, save format, XML language, text encoding, BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplySettings`. A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
+Output defaults such as the configured save directory, save format, XML language, text encoding, BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplyLivePreferences` (session save format is applied only via `ApplyLoadedSettings` at startup). A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once, dirty-checks a single `ChapterToolSettings` snapshot, and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
 
 Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together.
 
-Appearance is preset-only. `SettingsToolViewModel` owns localized preset options, live selection, Save/Reset/Discard state, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset, updates semantic application brushes and the Avalonia light/dark variant, while `App.axaml` owns shared control and `DataGridColumnHeader` semantic styles.
+Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset (including semantic frame/diagnostic colors from `ThemePalette`), updates application brushes and the Avalonia light/dark variant, while `App.axaml` owns shared control and `DataGridColumnHeader` semantic styles.
 
 Font appearance is split into independent UI and monospace families. `AvaloniaFontFamilyCatalog` snapshots and canonicalizes system fonts, lazily resolves localized family metadata for the active UI culture, and keeps canonical names for persistence. `AvaloniaFontApplicationService` resolves unavailable choices and updates `ChapterTool.UiFontFamily` and `ChapterTool.MonospaceFontFamily`. `App.axaml` applies the UI family through window inheritance and table headers, while chapter `DataGridCell`, `OrderShiftBox`, `ExpressionEditor`, and `TextToolView` consume the monospace resource so existing surfaces refresh at runtime without changing icon fonts.
 

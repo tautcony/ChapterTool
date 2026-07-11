@@ -57,6 +57,21 @@ public sealed class ChapterSavePathTests
     }
 
     [Fact]
+    public void CleanOptionalPathTrimsAndExpandsWhenPossible()
+    {
+        Assert.Null(ChapterSavePath.CleanOptionalPath(null));
+        Assert.Null(ChapterSavePath.CleanOptionalPath("  "));
+        Assert.Equal(Path.GetFullPath("relative-out"), ChapterSavePath.CleanOptionalPath(" relative-out "));
+    }
+
+    [Fact]
+    public void TryGetFullPathMatchesDirectoryNormalization()
+    {
+        Assert.True(ChapterSavePath.TryGetFullPath("relative-file.txt", out var fullPath));
+        Assert.Equal(Path.GetFullPath("relative-file.txt"), fullPath);
+    }
+
+    [Fact]
     public void DirectoryOfSourcePathResolvesFileAndDirectoryInputs()
     {
         var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
