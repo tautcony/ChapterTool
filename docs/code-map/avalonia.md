@@ -48,6 +48,11 @@ Runtime wiring is centralized in:
 
 - `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs`
 
+Shared CLI/GUI factories:
+
+- `CreateSharedImporterRegistry(ISettingsStore<>)`
+- `CreateSharedExportService(IChapterExpressionEngine?)` — CLI passes `null` expression engine
+
 This is the first file to inspect when dependency wiring or service registration changes.
 
 ### Views

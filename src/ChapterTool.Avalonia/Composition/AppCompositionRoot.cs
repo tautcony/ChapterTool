@@ -6,7 +6,6 @@ using ChapterTool.Avalonia.Views;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing.Media;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Core.Transform.Expressions.Lua;
@@ -14,6 +13,7 @@ using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Processes;
+using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -90,19 +90,39 @@ public sealed class AppCompositionRoot : IDisposable
     public IChapterLoadService CreateChapterLoadService() => new RuntimeChapterLoadService(CreateChapterImporterRegistry());
 
     public IChapterImporterRegistry CreateChapterImporterRegistry() =>
-        new RuntimeChapterImporterRegistry(
-            formatter,
-            CreateExternalToolLocator(),
-            CreateProcessRunner(),
-            CreateMediaChapterReader(),
+        CreateSharedImporterRegistry(settingsStore);
+
+    /// <summary>
+    /// Shared importer-registry factory used by GUI composition and CLI defaults.
+    /// </summary>
+    public static RuntimeChapterImporterRegistry CreateSharedImporterRegistry(
+        ISettingsStore<ChapterToolSettings> settingsStore)
+    {
+        var sharedFormatter = new ChapterTimeFormatter();
+        var toolLocator = new ExternalToolLocator(settingsStore, PathSearchDirectories().ToList());
+        var processRunner = CreateProcessRunner();
+        return new RuntimeChapterImporterRegistry(
+            sharedFormatter,
+            toolLocator,
+            processRunner,
+            new FfprobeMediaChapterReader(toolLocator, processRunner),
             CreateMp4ChapterReader());
+    }
 
     public static IMediaChapterReader CreateMp4ChapterReader() => new AtlMp4ChapterReader();
 
     public FfprobeMediaChapterReader CreateMediaChapterReader() =>
         new(CreateExternalToolLocator(), CreateProcessRunner());
 
-    public ChapterExportService CreateChapterExportService() => new(formatter, expressionEngine);
+    public ChapterExportService CreateChapterExportService() =>
+        CreateSharedExportService(expressionEngine);
+
+    /// <summary>
+    /// Shared export construction for GUI and CLI. CLI omits expression engine (product scope).
+    /// </summary>
+    public static ChapterExportService CreateSharedExportService(
+        IChapterExpressionEngine? expressionEngine = null) =>
+        new(new ChapterTimeFormatter(), expressionEngine);
 
     public IChapterSaveService CreateChapterSaveService() =>
         new RuntimeChapterSaveService(CreateChapterExportService());

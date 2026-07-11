@@ -1,10 +1,47 @@
 using System.Text;
 using ChapterTool.Avalonia.Cli;
+using ChapterTool.Avalonia.Composition;
+using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
+using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Avalonia.Tests.Cli;
 
 public sealed class ChapterToolCliApplicationTests
 {
+    [Fact]
+    public void SharedFactories_are_used_for_default_cli_construction()
+    {
+        var store = new ChapterToolSettingsStore(Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
+        var registry = AppCompositionRoot.CreateSharedImporterRegistry(store);
+        var export = AppCompositionRoot.CreateSharedExportService(expressionEngine: null);
+
+        Assert.NotNull(registry);
+        Assert.NotNull(export);
+
+        // CLI injects overrides; defaults share the same factory methods.
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: registry, exporter: export, settingsStore: store);
+        Assert.Equal(0, app.ShowFormats());
+        Assert.Contains("Output formats", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SharedExportFactory_without_expression_matches_cli_scope()
+    {
+        var export = AppCompositionRoot.CreateSharedExportService();
+        var result = export.Export(
+            new ChapterSet(
+                "t",
+                "s",
+                ChapterImportFormat.Ogm,
+                24,
+                TimeSpan.FromSeconds(1),
+                [new Chapter(1, TimeSpan.Zero, "Intro")]),
+            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: false));
+        Assert.True(result.Success);
+    }
+
     [Fact]
     public void AnalyzeLaunchRecognizesCliTokens()
     {

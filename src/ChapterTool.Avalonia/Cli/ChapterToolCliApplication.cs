@@ -30,8 +30,12 @@ public sealed class ChapterToolCliApplication
         this.console = console ?? new SystemCliConsole();
         var directory = settingsDirectory ?? DefaultSettingsDirectory();
         this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
-        this.importerRegistry = importerRegistry ?? CreateImporterRegistry(this.settingsStore);
-        this.exporter = exporter ?? new ChapterExportService(new Core.Transform.ChapterTimeFormatter());
+        // Shared factories with GUI composition; injection seams remain for tests.
+        // Export defaults omit expression engine (CLI product scope).
+        this.importerRegistry = importerRegistry
+            ?? AppCompositionRoot.CreateSharedImporterRegistry(this.settingsStore);
+        this.exporter = exporter
+            ?? AppCompositionRoot.CreateSharedExportService(expressionEngine: null);
         this.configuredSavingPath = configuredSavingPath;
     }
 
@@ -462,18 +466,6 @@ public sealed class ChapterToolCliApplication
         {
             console.WriteErrorLine($"  {line}");
         }
-    }
-
-    private static RuntimeChapterImporterRegistry CreateImporterRegistry(ISettingsStore<ChapterToolSettings> settingsStore)
-    {
-        var formatter = new Core.Transform.ChapterTimeFormatter();
-        var toolLocator = new Infrastructure.Tools.ExternalToolLocator(settingsStore, AppCompositionRoot.PathSearchDirectoriesForTests().ToList());
-        return new RuntimeChapterImporterRegistry(
-            formatter,
-            toolLocator,
-            AppCompositionRoot.CreateProcessRunner(),
-            new Infrastructure.Importing.Media.FfprobeMediaChapterReader(toolLocator, AppCompositionRoot.CreateProcessRunner()),
-            AppCompositionRoot.CreateMp4ChapterReader());
     }
 
     private static string DefaultSettingsDirectory()

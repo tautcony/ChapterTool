@@ -57,16 +57,16 @@
 
 ## 6. Slice F — Shared CLI/GUI factories and final validation
 
-- [ ] 6.1 Expose composition-root factory methods for importer registry and export construction reusable by CLI and GUI.
-- [ ] 6.2 Point CLI default construction at shared factories while preserving test injection seams and CLI no-expression product scope.
-- [ ] 6.3 Add/update composition and CLI tests proving shared factory use and injectable overrides.
-- [ ] 6.4 Finalize `docs/code-map/avalonia.md` (workspace under Avalonia `Session/`; shared factories).
-- [ ] 6.5 Run `openspec validate "decompose-main-window-session" --strict`.
-- [ ] 6.6 Focused verification: CLI/composition tests + Avalonia unit tests as needed.
-- [ ] 6.7 Slice F / change-complete merge gate: when a focused Headless command is needed, finish it first; then run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
+- [x] 6.1 Expose composition-root factory methods for importer registry and export construction reusable by CLI and GUI.
+- [x] 6.2 Point CLI default construction at shared factories while preserving test injection seams and CLI no-expression product scope.
+- [x] 6.3 Add/update composition and CLI tests proving shared factory use and injectable overrides.
+- [x] 6.4 Finalize `docs/code-map/avalonia.md` (workspace under Avalonia `Session/`; shared factories).
+- [x] 6.5 Run `openspec validate "decompose-main-window-session" --strict`.
+- [x] 6.6 Focused verification: CLI/composition tests + Avalonia unit tests as needed.
+- [x] 6.7 Slice F / change-complete merge gate: when a focused Headless command is needed, finish it first; then run `dotnet test ChapterTool.Avalonia.slnx` as one full-solution command.
 
 ## 7. Shared verification rules (all slices)
 
-- [ ] 7.1 Never treat focused-only green as sufficient for an independently mergeable slice; full `dotnet test ChapterTool.Avalonia.slnx` is required at each slice exit.
-- [ ] 7.2 Do not launch multiple external `dotnet test` processes in parallel. Finish any focused Headless command before starting the full-solution gate. Headless remains process-isolated via its dedicated project/testhost; a single solution-level `dotnet test` that includes Headless is allowed.
-- [ ] 7.3 Do not weaken or delete concurrent load/append anti-stale tests to make a refactor pass.
+- [x] 7.1 Never treat focused-only green as sufficient for an independently mergeable slice; full `dotnet test ChapterTool.Avalonia.slnx` is required at each slice exit.
+- [x] 7.2 Do not launch multiple external `dotnet test` processes in parallel. Finish any focused Headless command before starting the full-solution gate. Headless remains process-isolated via its dedicated project/testhost; a single solution-level `dotnet test` that includes Headless is allowed.
+- [x] 7.3 Do not weaken or delete concurrent load/append anti-stale tests to make a refactor pass.
