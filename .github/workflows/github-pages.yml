@@ -91,12 +91,30 @@ jobs:
         run: |
           set -euo pipefail
           publish_dir="${{ env.PUBLISH_DIR }}"
-          grep -F "href=\"/${{ github.event.repository.name }}/\"" "${publish_dir}/index.html"
+          repo_name="${{ github.event.repository.name }}"
+
+          # Project Pages base href must be present on both entry documents.
+          grep -F "href=\"/${repo_name}/\"" "${publish_dir}/index.html"
+          grep -F "href=\"/${repo_name}/\"" "${publish_dir}/404.html"
+
           test -f "${publish_dir}/.nojekyll"
           test -f "${publish_dir}/404.html"
           test -f "${publish_dir}/js/download.js"
           test -f "${publish_dir}/css/app.css"
-          ls -la "${publish_dir}/_framework" | head
+          test -d "${publish_dir}/_framework"
+
+          # Critical Blazor boot assets (fingerprinted names vary by publish).
+          # Do not use `ls | head` under pipefail: GNU ls exits 2 on SIGPIPE.
+          shopt -s nullglob
+          blazor_js=("${publish_dir}/_framework"/blazor.webassembly*.js)
+          demo_wasm=("${publish_dir}/_framework"/ChapterTool.Core.WasmDemo*.wasm)
+          test "${#blazor_js[@]}" -ge 1
+          test "${#demo_wasm[@]}" -ge 1
+          framework_count="$(find "${publish_dir}/_framework" -type f | wc -l | tr -d ' ')"
+          test "${framework_count}" -ge 10
+          echo "framework_files=${framework_count}"
+          echo "blazor_js=${blazor_js[0]##*/}"
+          echo "demo_wasm=${demo_wasm[0]##*/}"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
