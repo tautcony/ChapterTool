@@ -95,6 +95,24 @@ public sealed class XplImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
     }
 
+    [Fact]
+    public async Task XplImporterRejectsDtdInput()
+    {
+        const string xml = """
+                           <!DOCTYPE Playlist [<!ENTITY injected "untrusted">]>
+                           <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
+                             <TitleSet><Title titleDuration="00:00:00:00"><ChapterList /></Title></TitleSet>
+                           </Playlist>
+                           """;
+        var importer = new XplChapterImporter();
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml));
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("untrusted.xpl", stream), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
+    }
+
     private static string Diagnostics(ChapterImportResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));
 

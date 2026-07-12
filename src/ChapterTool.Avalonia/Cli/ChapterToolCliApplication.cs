@@ -115,7 +115,7 @@ public sealed class ChapterToolCliApplication
         var selection = SelectOption(import.Result.Groups, request);
         if (selection is not { IsSuccess: true })
         {
-            RenderFailure(selection?.Message ?? "Selection failed.", selection?.Diagnostics ?? Array.Empty<ChapterDiagnostic>());
+            RenderFailure(selection?.Message ?? "Selection failed.", selection?.Diagnostics ?? []);
             return 1;
         }
 

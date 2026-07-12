@@ -21,6 +21,13 @@ Startup and main shell entry points:
 - `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Editing.cs`
 - `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.StatusLog.cs`
 
+Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` consume the same `ChapterWorkspace`:
+
+- `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
+- `ClipEditingCoordinator.cs` — clip selection/combine transitions plus cell and frame edits written through the workspace
+- `ProjectionFacade.cs` — workspace-backed projection, preview/save options, and chapter-row materialization
+- `StatusDiagnosticsPresenter.cs` — localized status/progress rendering and structured diagnostic logging
+
 Role split:
 
 - `MainWindow.axaml`: shell layout and bindings
@@ -42,8 +49,9 @@ Typed chapter session state lives under Avalonia `Session/` (not Core for this c
 - `src/ChapterTool.Avalonia/Session/ExportPreferences.cs` — save format, XML language, text encoding, BOM, save directory
 - `src/ChapterTool.Avalonia/Session/ChapterWorkspace.cs` — workspace facade: source path, clip session, edit buffer, owned `ProjectionState` + `ExportPreferences`, load/append revision + session-token commit APIs (`CreateExportOptions` / `CreateExportOptionsForProjectedInfo` read workspace-owned snapshots)
 - `src/ChapterTool.Avalonia/Session/Ports/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
+- `src/ChapterTool.Avalonia/Session/Ports/MainWindowPortAdapters.cs` — concrete main-window adapters that own expression, preference, export, naming, and chapter-edit port behavior
 
-`MainWindowViewModel` is the bindable shell and holds one `ChapterWorkspace`. Bindable projection/export properties facade workspace state (workspace is the owner). Load/append progress and results commit only through workspace revision rules; preview/save use composition-injected `ChapterExportService` with options from the workspace snapshot.
+`MainWindowViewModel` is the bindable shell and holds one `ChapterWorkspace`. Bindable projection/export properties facade workspace state (workspace is the owner) and command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append progress and results commit only through workspace revision rules; preview/save use composition-injected `ChapterExportService` with options from the workspace snapshot.
 
 ### Composition root
 
@@ -55,6 +63,10 @@ Shared CLI/GUI factories:
 
 - `CreateSharedImporterRegistry(ISettingsStore<>)`
 - `CreateSharedExportService(IChapterExpressionEngine?)` — CLI passes `null` expression engine
+
+For GUI production paths, one `AppCompositionRoot` shares its formatter, expression engine and authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through `MainWindowViewModel` or `ToolWindowCreateContext`; its private fallback is limited to direct design-time/test construction.
+
+The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`: formatter, expression authoring, export, and external-tool locator identities are shared within one GUI root, while CLI static factories intentionally have independent lifetimes.
 
 This is the first file to inspect when dependency wiring or service registration changes.
 
@@ -194,6 +206,7 @@ Start with:
 - `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
 
 Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live valid projections, editing-key routing, and single-editor multiline expansion.
+`AppCompositionRootIdentityHeadlessTests` additionally exercises both production XAML editor hosts with a sentinel authoring service, including initial binding and subsequent text edits.
 
 ### Settings / theme / language UI
 
@@ -210,9 +223,11 @@ Start with:
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
 
-Output defaults such as the configured save directory, save format, XML language, text encoding, BOM emission, and frame tolerance live in `SettingsToolViewModel` and flow into `MainWindowViewModel.ApplyLivePreferences` (session save format is applied only via `ApplyLoadedSettings` at startup). A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once, dirty-checks a single `ChapterToolSettings` snapshot, and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
+Output defaults, external-tool paths and statuses, and runtime/footer display state live in `SettingsToolViewModel`; it flows live preferences through `PreferenceSinkAdapter` (session save format is applied only when startup settings are loaded). There are no unused `Settings*Module` placeholder types. A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once, dirty-checks a single `ChapterToolSettings` snapshot, and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
 
-Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together.
+Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together. `DisplayOptionCoordinator` owns localized option construction, clip-list incremental synchronization, and frame-rate index mapping, while `ChapterCellEdit` and `ChapterGridColumnIds` are standalone binding-contract types.
+
+Secondary tool windows consume the stable interfaces in `Session/Ports/ShellPorts.cs` through `MainWindowPortAdapters`. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement those ports.
 
 Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset (including semantic frame/diagnostic colors from `ThemePalette`), updates application brushes and the Avalonia light/dark variant, while `App.axaml` owns shared control and `DataGridColumnHeader` semantic styles.
 

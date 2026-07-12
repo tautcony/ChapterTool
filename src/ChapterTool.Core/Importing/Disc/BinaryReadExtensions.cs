@@ -13,11 +13,27 @@ internal static class BinaryReadExtensions
         /// <returns>The operation result.</returns>
         public byte[] ReadExactBytes(int length)
         {
-            var bytes = new byte[length];
-            var read = stream.Read(bytes, 0, length);
-            if (read != length)
+            if (length is < 0 or > DiscBinaryReadLimits.MaximumExactReadBytes)
             {
-                throw new EndOfStreamException();
+                throw new InvalidDataException($"Requested binary read length {length} is outside the supported range.");
+            }
+
+            if (stream is MplsBoundedStream bounded && length > bounded.Remaining)
+            {
+                throw new InvalidDataException($"Requested binary read length {length} crosses the MPLS container boundary.");
+            }
+
+            var bytes = new byte[length];
+            var offset = 0;
+            while (offset < length)
+            {
+                var read = stream.Read(bytes, offset, length - offset);
+                if (read == 0)
+                {
+                    throw new EndOfStreamException();
+                }
+
+                offset += read;
             }
 
             return bytes;
@@ -38,11 +54,17 @@ internal static class BinaryReadExtensions
         /// <returns>The operation result.</returns>
         public void SkipBytes(long length)
         {
-            stream.Seek(length, SeekOrigin.Current);
-            if (stream.Position > stream.Length)
+            if (length < 0)
+            {
+                throw new InvalidDataException("Cannot skip a negative number of bytes.");
+            }
+
+            if (!stream.CanSeek || stream.Position > stream.Length || length > stream.Length - stream.Position)
             {
                 throw new EndOfStreamException();
             }
+
+            stream.Seek(length, SeekOrigin.Current);
         }
 
         /// <summary>
@@ -65,4 +87,10 @@ internal static class BinaryReadExtensions
             return (ushort)(b[1] + (b[0] << 8));
         }
     }
+}
+
+/// <summary>Shared defensive limits for untrusted disc binary reads.</summary>
+internal static class DiscBinaryReadLimits
+{
+    internal const int MaximumExactReadBytes = 64 * 1024 * 1024;
 }

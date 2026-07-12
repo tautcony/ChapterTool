@@ -1,20 +1,10 @@
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session;
-using ChapterTool.Core.Diagnostics;
+using ChapterTool.Avalonia.Workflows;
 using ChapterTool.Core.Editing;
-using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
-using ChapterTool.Core.Transform.Expressions;
-using ChapterTool.Core.Transform.Expressions.Lua;
-using ChapterTool.Infrastructure.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
@@ -22,13 +12,16 @@ public sealed partial class MainWindowViewModel
 {
     private void SelectClip(int index)
     {
-        if (workspace.ClipSession is null || index < 0 || index >= ClipOptions.Count)
+        if (Workspace.ClipSession is null || index < 0 || index >= ClipOptions.Count)
         {
             return;
         }
 
-        workspace.SelectClip(index);
-        SelectedClipIndex = workspace.ClipSession.SelectedIndex;
+        if (!ClipEditingCoordinator.SelectClip(index))
+        {
+            return;
+        }
+        SelectedClipIndex = Workspace.ClipSession.SelectedIndex;
         if (currentInfo is null)
         {
             return;
@@ -54,31 +47,31 @@ public sealed partial class MainWindowViewModel
             return ValueTask.CompletedTask;
         }
 
-        var result = kind switch
+        var result = ClipEditingCoordinator.Edit(currentInfo, edit, kind switch
         {
-            EditKind.Time => editingService.EditTime(currentInfo, edit.Index, edit.Value),
-            EditKind.Name => editingService.Rename(currentInfo, edit.Index, edit.Value),
-            EditKind.Frame => editingService.EditFrame(currentInfo, edit.Index, edit.Value, (decimal)currentInfo.FramesPerSecond),
-            _ => new ChapterEditResult(currentInfo, [])
-        };
+            EditKind.Time => ChapterEditKind.Time,
+            EditKind.Name => ChapterEditKind.Name,
+            EditKind.Frame => ChapterEditKind.Frame,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
+        });
         ApplyEdit(result, Localizer.Format(LocalizedMessage.Create("Action.EditCell", ("kind", Localizer.GetString($"EditKind.{kind}")), ("row", edit.Index), ("value", edit.Value))));
         return ValueTask.CompletedTask;
     }
 
     private void CombineSegments()
     {
-        if (workspace.ClipSession is null)
+        if (Workspace.ClipSession is null)
         {
             return;
         }
 
-        var originalGroup = workspace.ClipSession.OriginalGroup;
-        var wasCombined = workspace.ClipSession.IsCombined;
+        var originalGroup = Workspace.ClipSession.OriginalGroup;
+        var wasCombined = Workspace.ClipSession.IsCombined;
         var beforeCount = wasCombined
             ? currentInfo?.Chapters.Count ?? 0
             : originalGroup.Entries.Sum(static entry => entry.ChapterSet.Chapters.Count);
 
-        var transition = ClipSessionTransitions.ToggleCombine(workspace.ClipSession);
+        var transition = ClipEditingCoordinator.ToggleCombine();
         if (!transition.Succeeded || transition.Session is null)
         {
             ApplyEdit(
@@ -90,7 +83,6 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        workspace.ReplaceSession(transition.Session);
         ApplyClipSessionUi(transition.Session, selectIndex: transition.Session.SelectedIndex);
         SetStatus("Status.Updated");
 
@@ -99,8 +91,8 @@ public sealed partial class MainWindowViewModel
             Log("Log.EditChapters",
                 ("action", Localizer.Format(LocalizedMessage.Create(
                     "Action.SplitCombinedSegments",
-                    ("entries", workspace.ClipSession.OriginalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat))))),
+                    ("entries", Workspace.ClipSession.OriginalGroup.Entries.Count),
+                    ("sourceType", ChapterImportFormats.DisplayName(Workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat))))),
                 ("before", beforeCount),
                 ("after", currentInfo?.Chapters.Count ?? 0));
         }
@@ -132,6 +124,8 @@ public sealed partial class MainWindowViewModel
         NotifyStateChanged();
     }
 
+    internal void ApplyEditFromPort(ChapterEditResult result, string? action = null) => ApplyEdit(result, action);
+
     private void ApplyFrameInfo()
     {
         if (currentInfo is null)
@@ -140,24 +134,16 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        FrameRateOption appliedOption;
-        FrameRateDetectionResult? detection = null;
-
-        if (selectedFrameRateOption.LegacyMplsCode == 0)
-        {
-            detection = frameRateService.DetectDetailed(currentInfo, FrameAccuracyTolerance);
-            appliedOption = detection.Option;
-        }
-        else
-        {
-            appliedOption = selectedFrameRateOption;
-        }
-
-        var result = frameRateService.UpdateFrames(currentInfo, appliedOption, RoundFrames, FrameAccuracyTolerance);
-        currentInfo = result.Info;
-        var storedInfo = configuredFrameRate is null
-            ? currentInfo
-            : currentInfo with { FramesPerSecond = (double)configuredFrameRate.Value };
+        var outcome = ClipEditingCoordinator.UpdateFrames(
+            currentInfo,
+            selectedFrameRateOption,
+            RoundFrames,
+            FrameAccuracyTolerance,
+            configuredFrameRate);
+        var result = outcome.FrameResult;
+        var detection = outcome.Detection;
+        var appliedOption = outcome.AppliedOption;
+        currentInfo = outcome.CurrentChapterSet;
 
         if (detection is not null)
         {
@@ -181,7 +167,8 @@ public sealed partial class MainWindowViewModel
             ("fps", $"{result.FramesPerSecond:0.###}"),
             ("round", RoundFrames),
             ("chapters", currentInfo.Chapters.Count));
-        WriteBackCurrentInfo(storedInfo);
+        SyncClipOptionsFromSession();
+        OnPropertyChanged(nameof(RelatedMediaReferences));
         RefreshRows();
         NotifyStateChanged();
     }
@@ -220,23 +207,6 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Writes the working chapter set back into the typed clip session by mode
-    /// (selected split entry vs combined entry).
-    /// </summary>
-    private void WriteBackCurrentInfo(ChapterSet info)
-    {
-        if (workspace.ClipSession is null)
-        {
-            workspace.SetCurrentChapterSet(info);
-            return;
-        }
-
-        workspace.WriteBackCurrentChapterSet(info);
-        SyncClipOptionsFromSession();
-        OnPropertyChanged(nameof(RelatedMediaReferences));
-    }
-
-    /// <summary>
     /// Rebuilds bindable clip options / selection after the workspace session was already updated.
     /// </summary>
     private void ApplyClipSessionUi(ClipSession session, int selectIndex)
@@ -250,8 +220,8 @@ public sealed partial class MainWindowViewModel
 
         if (ClipOptions.Count == 0)
         {
-            workspace.SetCurrentChapterSet(null);
-            workspace.ClearProjectionCache();
+            Workspace.SetCurrentChapterSet(null);
+            Workspace.ClearProjectionCache();
             return;
         }
 
@@ -260,12 +230,12 @@ public sealed partial class MainWindowViewModel
 
     private void SyncClipOptionsFromSession()
     {
-        if (workspace.ClipSession is null)
+        if (Workspace.ClipSession is null)
         {
             return;
         }
 
-        var options = workspace.ClipSession.ClipOptions;
+        var options = Workspace.ClipSession.ClipOptions;
         for (var i = 0; i < options.Count; i++)
         {
             if (i < ClipOptions.Count)
@@ -298,111 +268,11 @@ public sealed partial class MainWindowViewModel
     }
 
     private void SyncClipDisplayOptions(NotifyCollectionChangedEventArgs args)
-    {
-        switch (args.Action)
-        {
-            case NotifyCollectionChangedAction.Add:
-                if (args.NewItems is not null)
-                {
-                    var index = args.NewStartingIndex;
-                    foreach (ChapterImportEntry entry in args.NewItems)
-                    {
-                        ClipDisplayOptions.Insert(index++, ToClipDisplayOption(entry));
-                    }
-                }
+        => displayOptionCoordinator.SyncClipDisplayOptions(args, ClipOptions, ClipDisplayOptions);
 
-                break;
-            case NotifyCollectionChangedAction.Remove:
-                if (args.OldItems is not null)
-                {
-                    for (var i = 0; i < args.OldItems.Count; i++)
-                    {
-                        ClipDisplayOptions.RemoveAt(args.OldStartingIndex);
-                    }
-                }
-
-                break;
-            case NotifyCollectionChangedAction.Replace:
-                if (args.NewItems is not null)
-                {
-                    var index = args.NewStartingIndex;
-                    foreach (ChapterImportEntry entry in args.NewItems)
-                    {
-                        ClipDisplayOptions[index++] = ToClipDisplayOption(entry);
-                    }
-                }
-
-                break;
-            case NotifyCollectionChangedAction.Move:
-                if (args is { OldStartingIndex: >= 0, NewStartingIndex: >= 0 })
-                {
-                    ClipDisplayOptions.Move(args.OldStartingIndex, args.NewStartingIndex);
-                }
-
-                break;
-            default:
-                RebuildClipDisplayOptions();
-                break;
-        }
-    }
-
-    private void RebuildClipDisplayOptions()
-    {
-        ClipDisplayOptions.Clear();
-        foreach (var entry in ClipOptions)
-        {
-            ClipDisplayOptions.Add(ToClipDisplayOption(entry));
-        }
-    }
-
-    private static SelectorDisplayOption ToClipDisplayOption(ChapterImportEntry entry)
-    {
-        var mainText = entry.DisplayName;
-        var remarkParts = new List<string>();
-        var markerIndex = entry.DisplayName.LastIndexOf("__", StringComparison.Ordinal);
-        if (markerIndex > 0 && markerIndex + 2 < entry.DisplayName.Length)
-        {
-            mainText = entry.DisplayName[..markerIndex];
-            remarkParts.Add($"{entry.DisplayName[(markerIndex + 2)..]} chapters");
-        }
-        else if (entry.ChapterSet.Chapters.Count > 0)
-        {
-            remarkParts.Add($"{entry.ChapterSet.Chapters.Count} chapters");
-        }
-
-        var remarkText = string.Join(", ", remarkParts.Where(static part => !string.IsNullOrWhiteSpace(part)).Distinct(StringComparer.OrdinalIgnoreCase));
-        var displayText = string.IsNullOrWhiteSpace(remarkText) ? mainText : $"{mainText}（{remarkText}）";
-        return new SelectorDisplayOption(mainText, remarkText, displayText);
-    }
-
-    private static int ComboIndexFor(FrameRateOption entry)
-    {
-        if (entry.LegacyMplsCode == 0)
-        {
-            return 0;
-        }
-
-        return entry.IsValid ? entry.LegacyMplsCode : -1;
-    }
+    private int ComboIndexFor(FrameRateOption entry)
+        => displayOptionCoordinator.ComboIndexFor(entry);
 
     private FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
-    {
-        if (frameRateIndex == 0)
-        {
-            return frameRateService.Options[0];
-        }
-
-        if (frameRateIndex < 1)
-        {
-            return null;
-        }
-
-        var legacyCode = frameRateIndex;
-        if (legacyCode == 5)
-        {
-            return null;
-        }
-
-        return frameRateService.Options.FirstOrDefault(entry => entry.LegacyMplsCode == legacyCode);
-    }
+        => displayOptionCoordinator.FrameRateOptionForComboIndex(frameRateIndex);
 }

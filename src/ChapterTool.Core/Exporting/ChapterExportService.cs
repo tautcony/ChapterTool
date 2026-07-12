@@ -263,7 +263,5 @@ public sealed partial class ChapterExportService
     [JsonSourceGenerationOptions(
         PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     [JsonSerializable(typeof(JsonPayload))]
-    private sealed partial class ExportJsonSerializerContext : JsonSerializerContext
-    {
-    }
+    private sealed partial class ExportJsonSerializerContext : JsonSerializerContext;
 }

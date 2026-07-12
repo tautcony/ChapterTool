@@ -4,8 +4,8 @@ using Avalonia.Controls.Documents;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using ChapterTool.Avalonia.ViewModels;
 using System.ComponentModel;
+using ChapterTool.Avalonia.ViewModels.Tools;
 
 namespace ChapterTool.Avalonia.Views.Tools;
 

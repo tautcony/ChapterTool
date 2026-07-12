@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
@@ -181,7 +180,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        await viewModel.LoadLuaExpressionScriptAsync(path, CancellationToken.None);
+        await viewModel.PortAdapters.Expression.LoadScriptAsync(path, CancellationToken.None);
     }
 
     private async Task OpenRelatedMediaAsync()

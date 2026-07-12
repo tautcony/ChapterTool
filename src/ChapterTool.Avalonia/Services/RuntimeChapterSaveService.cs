@@ -6,6 +6,8 @@ namespace ChapterTool.Avalonia.Services;
 
 public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : IChapterSaveService
 {
+    internal ChapterExportService Exporter => exporter;
+
     public async ValueTask<ChapterExportResult> SaveAsync(
         ChapterSet info,
         ChapterExportOptions options,

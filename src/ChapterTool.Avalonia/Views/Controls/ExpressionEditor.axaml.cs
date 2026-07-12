@@ -1,9 +1,7 @@
-using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Data;
-using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -13,7 +11,6 @@ using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.Views.Controls.Expression;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Views.Controls;
@@ -25,9 +22,7 @@ public sealed class ExpressionEditorExpansionChangedEventArgs(double heightDelta
 
 
 // Compatibility name used by ExpressionEditor.axaml bindings.
-public sealed class ExpressionCompletionKindBrushConverter : Expression.ExpressionCompletionPresentation
-{
-}
+public sealed class ExpressionCompletionKindBrushConverter : Expression.ExpressionCompletionPresentation;
 
 public sealed partial class ExpressionEditor : UserControl
 {
@@ -37,13 +32,15 @@ public sealed partial class ExpressionEditor : UserControl
     public static readonly StyledProperty<IAppLocalizer?> LocalizerProperty =
         AvaloniaProperty.Register<ExpressionEditor, IAppLocalizer?>(nameof(Localizer));
 
+    public static readonly StyledProperty<IExpressionAuthoringService?> AuthoringServiceProperty =
+        AvaloniaProperty.Register<ExpressionEditor, IExpressionAuthoringService?>(nameof(AuthoringService));
+
     public static readonly StyledProperty<double> EditorHeightProperty =
         AvaloniaProperty.Register<ExpressionEditor, double>(nameof(EditorHeight), 25.6);
 
     public static readonly StyledProperty<bool> IsMultilineExpandableProperty =
         AvaloniaProperty.Register<ExpressionEditor, bool>(nameof(IsMultilineExpandable));
 
-    private readonly IExpressionAuthoringService authoringService = new ExpressionAuthoringService();
     private readonly TextEditor editor;
     private readonly Expression.ExpressionColorizer colorizer;
     private readonly Expression.ExpressionDiagnosticPresentation diagnosticRenderer;
@@ -54,7 +51,6 @@ public sealed partial class ExpressionEditor : UserControl
     private bool shouldShowCompletion;
     private bool isPointerOverDiagnosticPopup;
     private bool isMultilineExpanded;
-    private string diagnosticTooltipText = string.Empty;
     private ExpressionAuthoringDiagnostic? primaryDiagnostic;
 
     public ExpressionEditor()
@@ -118,6 +114,17 @@ public sealed partial class ExpressionEditor : UserControl
         set => SetValue(LocalizerProperty, value);
     }
 
+    public IExpressionAuthoringService? AuthoringService
+    {
+        get => GetValue(AuthoringServiceProperty);
+        set => SetValue(AuthoringServiceProperty, value);
+    }
+
+    private IExpressionAuthoringService EffectiveAuthoringService
+    {
+        get => AuthoringService ?? field;
+    } = new ExpressionAuthoringService();
+
     public double EditorHeight
     {
         get => GetValue(EditorHeightProperty);
@@ -136,9 +143,9 @@ public sealed partial class ExpressionEditor : UserControl
 
     public string EditorText => editor.Text;
 
-    public string DiagnosticTooltipText => diagnosticTooltipText;
+    public string DiagnosticTooltipText { get; private set; } = string.Empty;
 
-    public bool HasDiagnostic => !string.IsNullOrWhiteSpace(diagnosticTooltipText);
+    public bool HasDiagnostic => !string.IsNullOrWhiteSpace(DiagnosticTooltipText);
 
     public bool IsCompletionOpen => CompletionPopup.IsOpen;
 
@@ -217,6 +224,12 @@ public sealed partial class ExpressionEditor : UserControl
         else if (change.Property == LocalizerProperty)
         {
             AnalyzeAndRender();
+        }
+        else if (change.Property == AuthoringServiceProperty)
+        {
+            diagnosticHideTimer.Stop();
+            diagnosticRenderTimer.Stop();
+            AnalyzeAndRender(renderDiagnosticsImmediately: true);
         }
         else if (change.Property == EditorHeightProperty && editor is not null)
         {
@@ -425,7 +438,7 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void AnalyzeAndRender(bool renderDiagnosticsImmediately = true)
     {
-        var result = authoringService.Analyze(editor.Text, editor.CaretOffset);
+        var result = EffectiveAuthoringService.Analyze(editor.Text, editor.CaretOffset);
         CurrentCompletions = result.Completions;
         colorizer.Update(result.Spans);
         editor.TextArea.TextView.Redraw();
@@ -446,7 +459,7 @@ public sealed partial class ExpressionEditor : UserControl
     private void OnDiagnosticRenderTimerTick(object? sender, EventArgs args)
     {
         diagnosticRenderTimer.Stop();
-        var result = authoringService.Analyze(editor.Text, editor.CaretOffset);
+        var result = EffectiveAuthoringService.Analyze(editor.Text, editor.CaretOffset);
         RenderDiagnostics(result);
     }
 
@@ -456,10 +469,10 @@ public sealed partial class ExpressionEditor : UserControl
         editor.TextArea.TextView.Redraw();
         primaryDiagnostic = result.Diagnostics.FirstOrDefault(static diagnostic => diagnostic.Length > 0) ?? result.Diagnostics.FirstOrDefault();
         var hasDiagnostic = primaryDiagnostic is not null;
-        diagnosticTooltipText = hasDiagnostic
+        DiagnosticTooltipText = hasDiagnostic
             ? LocalizeDiagnostic(primaryDiagnostic!.Diagnostic.DisplayCode, primaryDiagnostic.Diagnostic.Message, primaryDiagnostic.Diagnostic.Arguments) + Environment.NewLine + LocalizeSuggestion(primaryDiagnostic.Suggestion)
             : string.Empty;
-        DiagnosticTextBlock.Text = diagnosticTooltipText;
+        DiagnosticTextBlock.Text = DiagnosticTooltipText;
         if (!hasDiagnostic)
         {
             CloseDiagnosticPopup();

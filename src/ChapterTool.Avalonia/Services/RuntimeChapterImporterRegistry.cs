@@ -33,6 +33,10 @@ public sealed class RuntimeChapterImporterRegistry(
     private readonly MediaChapterImporter mediaImporter = new(mediaChapterReader);
     private readonly MediaChapterImporter mp4FallbackImporter = new(mp4FallbackChapterReader, [".mp4", ".m4a", ".m4v"]);
 
+    internal IChapterTimeFormatter Formatter => formatter;
+
+    internal IExternalToolLocator ToolLocator => toolLocator;
+
     public IChapterImporter? Resolve(string path)
     {
         if (Directory.Exists(path) && Directory.Exists(Path.Combine(path, "BDMV", "PLAYLIST")))

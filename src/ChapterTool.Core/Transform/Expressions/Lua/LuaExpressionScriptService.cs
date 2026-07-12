@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
 using Lua;
@@ -179,7 +180,7 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         });
     }
 
-    private static LuaTable CreateChapterTable(ChapterTool.Core.Models.Chapter chapter, int index, int count, decimal framesPerSecond) =>
+    private static LuaTable CreateChapterTable(Models.Chapter chapter, int index, int count, decimal framesPerSecond) =>
         new()
         {
             ["number"] = chapter.DisplayNumber,

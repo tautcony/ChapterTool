@@ -381,6 +381,43 @@ public sealed class TextImporterTests
     }
 
     [Fact]
+    public async Task XmlImporterRejectsDtdInputFromTextStreamAndPath()
+    {
+        const string xml = """
+                           <!DOCTYPE Chapters [<!ENTITY injected "untrusted">]>
+                           <Chapters>
+                             <EditionEntry>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>&injected;</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                           </Chapters>
+                           """;
+        var importer = new XmlChapterImporter(formatter);
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml));
+        var path = Path.Combine(Path.GetTempPath(), $"chaptertool-{Guid.NewGuid():N}.xml");
+
+        try
+        {
+            await File.WriteAllTextAsync(path, xml, TestContext.Current.CancellationToken);
+            var textResult = importer.ImportText(xml);
+            var streamResult = await importer.ImportAsync(new ChapterImportRequest("untrusted.xml", stream), TestContext.Current.CancellationToken);
+            var pathResult = await importer.ImportAsync(new ChapterImportRequest(path), TestContext.Current.CancellationToken);
+
+            Assert.All([textResult, streamResult, pathResult], result =>
+            {
+                Assert.False(result.Success);
+                Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidXml);
+            });
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task XmlLiveSamplePreservesUtf8ChapterNames()
     {
         var importer = new XmlChapterImporter(formatter);
@@ -419,8 +456,6 @@ public sealed class TextImporterTests
         var importer = new XmlChapterImporter(formatter);
         const string xmlText = """
                                <?xml version="1.0" encoding="ISO-8859-1"?>
-
-                               <!DOCTYPE Chapters SYSTEM "matroskachapters.dtd">
 
                                <Chapters>
                                  <EditionEntry>
@@ -482,31 +517,56 @@ public sealed class TextImporterTests
     }
 
     [Fact]
-    public async Task XmlNestedChapterSampleFlattensSubChapters()
+    public async Task XmlImporterFlattensDtdFreeNestedChapters()
     {
         var importer = new XmlChapterImporter(formatter);
 
-        var result = await importer.ImportAsync(
-            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Text", "Xml", "example-chapters-2_sub_chapter.xml")),
-            TestContext.Current.CancellationToken);
+        var result = importer.ImportText(
+            """
+            <Chapters>
+              <EditionEntry>
+                <ChapterAtom>
+                  <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
+                  <ChapterTimeEnd>00:06:24.000</ChapterTimeEnd>
+                  <ChapterDisplay><ChapterString>Overture</ChapterString></ChapterDisplay>
+                  <ChapterAtom>
+                    <ChapterTimeStart>00:06:24.000</ChapterTimeStart>
+                    <ChapterDisplay><ChapterString>Dialog</ChapterString></ChapterDisplay>
+                  </ChapterAtom>
+                </ChapterAtom>
+              </EditionEntry>
+            </Chapters>
+            """);
 
         Assert.True(result.Success, Diagnostics(result));
         var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(6, chapters.Count);
-        Assert.Equal("Ouvertüre", chapters[0].Name);
+        Assert.Equal(2, chapters.Count);
+        Assert.Equal("Overture", chapters[0].Name);
         Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
         Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[0].EndTime);
-        Assert.Equal("Dialog: Er erwacht!", chapters[^1].Name);
-        Assert.Equal(TimeSpan.FromMinutes(27).Add(TimeSpan.FromSeconds(27)), chapters[^1].StartTime);
+        Assert.Equal("Dialog", chapters[^1].Name);
+        Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[^1].StartTime);
     }
 
     [Fact]
-    public async Task XmlImporterPreservesIso88591EncodingFromDeclaration()
+    public async Task XmlImporterPreservesIso88591EncodingFromDeclarationWithoutDtd()
     {
         var importer = new XmlChapterImporter(formatter);
+        const string xml = """
+                           <?xml version="1.0" encoding="ISO-8859-1"?>
+                           <Chapters>
+                             <EditionEntry>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>Schätzchen</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                           </Chapters>
+                           """;
+        using var stream = new MemoryStream(System.Text.Encoding.Latin1.GetBytes(xml));
 
         var result = await importer.ImportAsync(
-            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Text", "Xml", "example-chapters-2_sub_chapter.xml")),
+            new ChapterImportRequest("latin1.xml", stream),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, Diagnostics(result));
@@ -518,25 +578,25 @@ public sealed class TextImporterTests
     public async Task XmlImporterSetsDefaultEntryIndexFromEditionFlagDefault()
     {
         var importer = new XmlChapterImporter(formatter);
-        var xml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <Chapters>
-              <EditionEntry>
-                <EditionFlagDefault>0</EditionFlagDefault>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>First Edition</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-              <EditionEntry>
-                <EditionFlagDefault>1</EditionFlagDefault>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>Default Edition</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-            </Chapters>
-            """;
+        const string xml = """
+                           <?xml version="1.0" encoding="UTF-8"?>
+                           <Chapters>
+                             <EditionEntry>
+                               <EditionFlagDefault>0</EditionFlagDefault>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>First Edition</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                             <EditionEntry>
+                               <EditionFlagDefault>1</EditionFlagDefault>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>Default Edition</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                           </Chapters>
+                           """;
 
         var result = importer.ImportText(xml);
 
@@ -551,25 +611,25 @@ public sealed class TextImporterTests
     public async Task XmlImporterKeepsFirstDefaultEditionWhenMultipleEditionsAreDefault()
     {
         var importer = new XmlChapterImporter(formatter);
-        var xml = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <Chapters>
-              <EditionEntry>
-                <EditionFlagDefault>1</EditionFlagDefault>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>First Default</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-              <EditionEntry>
-                <EditionFlagDefault>1</EditionFlagDefault>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>Second Default</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-            </Chapters>
-            """;
+        const string xml = """
+                           <?xml version="1.0" encoding="UTF-8"?>
+                           <Chapters>
+                             <EditionEntry>
+                               <EditionFlagDefault>1</EditionFlagDefault>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>First Default</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                             <EditionEntry>
+                               <EditionFlagDefault>1</EditionFlagDefault>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>Second Default</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                           </Chapters>
+                           """;
 
         var result = importer.ImportText(xml);
 

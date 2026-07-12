@@ -624,6 +624,7 @@
                                      MultilineExpansionChanged="OnExpressionEditorMultilineExpansionChanged"
                                      Text="{Binding Expression, Mode=TwoWay}"
                                      Localizer="{Binding Localizer}"
+                                     AuthoringService="{Binding ExpressionAuthoringService}"
                                      AutomationProperties.AutomationId="ExpressionText" />
           <Button Grid.Column="3"
                   Width="30"

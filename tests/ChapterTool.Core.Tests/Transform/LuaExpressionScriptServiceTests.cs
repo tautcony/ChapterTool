@@ -85,7 +85,7 @@ public sealed class LuaExpressionScriptServiceTests
     [Fact]
     public void Evaluates_transform_function_with_chapter_context()
     {
-        var script = "function transform(chapter) return chapter.time + index + count + chapter.number end";
+        const string script = "function transform(chapter) return chapter.time + index + count + chapter.number end";
 
         var result = service.Evaluate(script, Context(timeSeconds: 10, fps: 24, index: 2, count: 4, number: 3));
 
@@ -200,6 +200,52 @@ public sealed class LuaExpressionScriptServiceTests
         Assert.False(result.Success);
         Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, Assert.Single(result.Diagnostics).Code);
     }
+
+    [Theory]
+    [InlineData("os.execute('rm -rf /')")]
+    [InlineData("os.exit(1)")]
+    [InlineData("os.getenv('HOME')")]
+    [InlineData("os.remove('/tmp/test')")]
+    [InlineData("os.rename('/tmp/a', '/tmp/b')")]
+    [InlineData("os.tmpname()")]
+    [InlineData("os.clock()")]
+    [InlineData("os.date()")]
+    [InlineData("os.time()")]
+    [InlineData("os.difftime(1, 0)")]
+    public void Script_cannot_use_os_library_functions(string expression)
+    {
+        var result = service.Evaluate(expression, Context(timeSeconds: 10, fps: 24));
+
+        Assert.False(result.Success);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, Assert.Single(result.Diagnostics).Code);
+    }
+
+    [Theory]
+    [InlineData("require('some.module')")]
+    [InlineData("package.loadlib('lib.so', 'init')")]
+    [InlineData("package.searchpath('foo', package.path)")]
+    public void Script_cannot_use_package_library_functions(string expression)
+    {
+        var result = service.Evaluate(expression, Context(timeSeconds: 10, fps: 24));
+
+        Assert.False(result.Success);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, Assert.Single(result.Diagnostics).Code);
+    }
+
+    [Theory]
+    [InlineData("io.read()")]
+    [InlineData("io.write('data')")]
+    [InlineData("io.lines('file.txt')")]
+    [InlineData("io.popen('cmd')")]
+    [InlineData("io.tmpfile()")]
+    public void Script_cannot_use_io_library_functions(string expression)
+    {
+        var result = service.Evaluate(expression, Context(timeSeconds: 10, fps: 24));
+
+        Assert.False(result.Success);
+        Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, Assert.Single(result.Diagnostics).Code);
+    }
+
 
     private static ChapterExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1)
     {

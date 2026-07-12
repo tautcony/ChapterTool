@@ -4,6 +4,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Configuration;
 

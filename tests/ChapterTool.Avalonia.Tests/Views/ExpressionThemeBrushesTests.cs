@@ -11,7 +11,7 @@ public sealed class ExpressionThemeBrushesTests
     {
         // When Application resources are unavailable (unit host), fallbacks still produce brushes.
         // Production colors resolve from ChapterTool.Expression.* theme resources in App.axaml.
-        foreach (ExpressionTokenKind kind in Enum.GetValues<ExpressionTokenKind>())
+        foreach (var kind in Enum.GetValues<ExpressionTokenKind>())
         {
             var brush = ExpressionThemeBrushes.ForTokenKind(kind);
             Assert.NotNull(brush);

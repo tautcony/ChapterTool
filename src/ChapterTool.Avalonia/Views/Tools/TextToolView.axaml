@@ -2,8 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.TextToolView"
-             x:DataType="vm:TextToolViewModel"
+             x:DataType="tools:TextToolViewModel"
              x:CompileBindings="True">
   <UserControl.Styles>
     <Style Selector="StackPanel#LineNumbersHost > TextBlock">
