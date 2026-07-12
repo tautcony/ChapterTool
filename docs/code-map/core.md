@@ -92,6 +92,21 @@ Output projection and format serialization:
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`
 
+## Browser / WebAssembly
+
+`ChapterTool.Core` is a pure managed library with `SupportedPlatform` including `browser`. It multi-targets `net8.0;net9.0;net10.0` and is intended for desktop hosts and browser WASM hosts such as **Blazor WebAssembly**.
+
+WASM integration rules:
+
+- Prefer `ChapterImportRequest.Content` (streams) or importer `ImportText` helpers; browser sandboxes do not provide a real filesystem for path-only imports.
+- Export is already content-based (`ChapterExportResult.Content`); no disk writes are required.
+- Expression evaluation uses managed Lua (`LuaCSharp`) and does not require native runtimes.
+
+Sample host:
+
+- `samples/ChapterTool.Core.WasmDemo` — Blazor WebAssembly standalone demo (`Microsoft.NET.Sdk.BlazorWebAssembly`) with Avalonia-like load/grid/options/save zones (`Services/DemoWorkspace`, `Pages/Home.razor`).
+- Deployed to GitHub Pages by `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
+
 ## Feature Lookup
 
 ### Import behavior

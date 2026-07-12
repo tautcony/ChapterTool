@@ -5,6 +5,11 @@
 .gitattributes text eol=lf
 *.sh text eol=lf
 
+# Blazor / GitHub Pages: keep JS binary so publish integrity hashes stay stable
+# if assets are ever committed or mirrored through git (see MS Blazor GH Pages docs).
+*.js binary
+*.wasm binary
+
 ###############################################################################
 # Set default behavior for command prompt diff.
 #

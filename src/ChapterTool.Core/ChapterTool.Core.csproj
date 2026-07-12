@@ -4,14 +4,17 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Pure managed library; usable from browser/Node WASM hosts via Microsoft.NET.Sdk.WebAssembly. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>ChapterTool.Core</PackageId>
-    <Description>A library for parsing, editing, transforming, and exporting multimedia chapter files.</Description>
+    <Description>A library for parsing, editing, transforming, and exporting multimedia chapter files. Works on desktop runtimes and browser WebAssembly hosts when content is supplied as streams or text.</Description>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>chapters;multimedia;video;matroska;cue;ogm;webvtt;qpfile</PackageTags>
+    <PackageTags>chapters;multimedia;video;matroska;cue;ogm;webvtt;qpfile;wasm;browser</PackageTags>
     <PackageProjectUrl>https://github.com/tautcony/ChapterTool</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -19,6 +22,10 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="" />

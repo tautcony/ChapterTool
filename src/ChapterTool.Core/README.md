@@ -8,6 +8,20 @@ A .NET library for parsing, editing, transforming, and exporting multimedia chap
 dotnet add package ChapterTool.Core
 ```
 
+## Browser / WebAssembly
+
+`ChapterTool.Core` is pure managed code and declares browser as a supported platform. It can run inside Blazor WebAssembly (and other .NET browser WASM hosts). See the sample at `samples/ChapterTool.Core.WasmDemo`.
+
+When hosting in the browser:
+
+1. Supply chapter bytes through `ChapterImportRequest.Content` (or use text `ImportText` helpers) instead of relying on filesystem paths alone.
+2. Consume `ChapterExportResult.Content` directly — no disk write is required.
+3. Optional time expressions still use the built-in managed Lua engine.
+
+```bash
+dotnet run --project samples/ChapterTool.Core.WasmDemo/ChapterTool.Core.WasmDemo.csproj
+```
+
 ## Features
 
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers

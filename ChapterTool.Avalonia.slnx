@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/ChapterTool.Core.WasmDemo/ChapterTool.Core.WasmDemo.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj" />
     <Project Path="src/ChapterTool.Core/ChapterTool.Core.csproj" />

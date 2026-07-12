@@ -208,3 +208,4 @@ artifacts/
 log*.txt
 .omo/
 .omx/
+.run/

@@ -2,7 +2,9 @@
 
 [![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg)](LICENSE)
 [![.NET 10 CI](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml)
+[![GitHub Pages](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml)
 [![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
+[![WASM Demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
 
 ChapterTool is a cross-platform Avalonia desktop chapter editor for importing, adjusting, combining, and exporting chapter lists from text, disc playlist, and media container sources.
 
@@ -65,6 +67,14 @@ dotnet test ChapterTool.Avalonia.slnx --no-restore
 ```
 
 The CI workflow is `.github/workflows/dotnet-ci.yml` and runs on Linux with .NET 10, FFmpeg, and MKVToolNix.
+
+### Browser WASM demo (GitHub Pages)
+
+`samples/ChapterTool.Core.WasmDemo` is a Blazor WebAssembly host for `ChapterTool.Core` (load / chapter grid / save). It is published by `.github/workflows/github-pages.yml` to:
+
+**https://tautcony.github.io/ChapterTool/**
+
+Enable once: **Settings → Pages → Source → GitHub Actions**, then run the **Deploy WASM Demo (GitHub Pages)** workflow (or push to `master` under the watched paths).
 
 ## Publish
 

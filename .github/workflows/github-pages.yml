@@ -1,0 +1,111 @@
+# Deploy the Blazor WebAssembly Core demo to GitHub Pages.
+# Site URL (project pages): https://<owner>.github.io/<repo>/
+#
+# One-time repo settings:
+#   Settings → Pages → Build and deployment → Source: GitHub Actions
+# Optional: Settings → Actions → General → allow SteveSandersonMS/ghaction-rewrite-base-href
+name: Deploy WASM Demo (GitHub Pages)
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "samples/ChapterTool.Core.WasmDemo/**"
+      - "src/ChapterTool.Core/**"
+      - ".github/workflows/github-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  PROJECT: samples/ChapterTool.Core.WasmDemo/ChapterTool.Core.WasmDemo.csproj
+  PUBLISH_DIR: samples/ChapterTool.Core.WasmDemo/bin/Release/net10.0/publish/wwwroot
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Publish Blazor WASM demo
+        run: |
+          set -euo pipefail
+          dotnet publish "${{ env.PROJECT }}" \
+            --configuration Release \
+            --nologo
+
+      - name: Prepare GitHub Pages assets
+        run: |
+          set -euo pipefail
+          publish_dir="${{ env.PUBLISH_DIR }}"
+          test -f "${publish_dir}/index.html"
+          test -d "${publish_dir}/_framework"
+
+          # Prevent Jekyll from ignoring underscore folders such as _framework.
+          touch "${publish_dir}/.nojekyll"
+
+          # GitHub Pages serves 404.html for unknown paths (SPA deep links).
+          cp "${publish_dir}/index.html" "${publish_dir}/404.html"
+
+          # Record deploy metadata for troubleshooting.
+          {
+            echo "repository=${{ github.repository }}"
+            echo "sha=${{ github.sha }}"
+            echo "ref=${{ github.ref }}"
+            echo "base_href=/${{ github.event.repository.name }}/"
+            date -u +'built_at=%Y-%m-%dT%H:%M:%SZ'
+          } > "${publish_dir}/deploy-info.txt"
+
+      - name: Rewrite base href (index.html)
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@5b54862a8831e012d4f1a8b2660894415fdde8ec # v1.1.0
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/index.html
+          base_href: /${{ github.event.repository.name }}/
+
+      - name: Rewrite base href (404.html)
+        uses: SteveSandersonMS/ghaction-rewrite-base-href@5b54862a8831e012d4f1a8b2660894415fdde8ec # v1.1.0
+        with:
+          html_path: ${{ env.PUBLISH_DIR }}/404.html
+          base_href: /${{ github.event.repository.name }}/
+
+      - name: Verify published site layout
+        run: |
+          set -euo pipefail
+          publish_dir="${{ env.PUBLISH_DIR }}"
+          grep -F "href=\"/${{ github.event.repository.name }}/\"" "${publish_dir}/index.html"
+          test -f "${publish_dir}/.nojekyll"
+          test -f "${publish_dir}/404.html"
+          test -f "${publish_dir}/js/download.js"
+          test -f "${publish_dir}/css/app.css"
+          ls -la "${publish_dir}/_framework" | head
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ env.PUBLISH_DIR }}
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
