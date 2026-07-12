@@ -48,10 +48,11 @@ Important format entry points:
 - OGM text: `src/ChapterTool.Core/Importing/Text/OgmChapterImporter.cs`
 - Premiere marker CSV: `src/ChapterTool.Core/Importing/Text/PremiereMarkerListImporter.cs`
 - Matroska XML: `src/ChapterTool.Core/Importing/Text/XmlChapterImporter.cs`
+- Secure XML loading policy: `src/ChapterTool.Core/Importing/SecureXmlLoader.cs` (DTD and external entity resolution prohibited for XML importers)
 - WebVTT: `src/ChapterTool.Core/Importing/Text/WebVttChapterImporter.cs`
 - CUE sheet parsing: `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs`
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
-- DVD/Blu-ray playlist parsing: `src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs`, `src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs`, `src/ChapterTool.Core/Importing/Disc/MplsPlaylistFile.cs`, `src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs`
+- DVD/Blu-ray playlist parsing: `src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs`, `src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs`, `src/ChapterTool.Core/Importing/Disc/MplsPlaylistFile.cs`, `src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs`; generic exact-read ceilings are in `src/ChapterTool.Core/Importing/Disc/BinaryReadExtensions.cs`, semantic MPLS limits are in `src/ChapterTool.Core/Importing/Disc/MplsParseLimits.cs`, and `MplsBoundedStream.cs` enforces each declared parent-container byte budget while nested entries are parsed.
 - Media normalization contract: `src/ChapterTool.Core/Importing/Media/MediaChapterImporter.cs`, `src/ChapterTool.Core/Importing/Media/IMediaChapterReader.cs`
 
 ### Editing

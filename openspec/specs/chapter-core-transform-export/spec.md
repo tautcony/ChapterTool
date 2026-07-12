@@ -54,7 +54,7 @@ The system SHALL provide deterministic time parsing, formatting, frame-rate sele
 - **THEN** Core SHALL return the default `Fps23976` option with `FrameRateConfidence.Low` and an evaluated chapter count of zero
 
 ### Requirement: Expression transforms
-The system SHALL transform chapter times through Lua scripts using structured success or failure results.
+The system SHALL transform chapter times through Lua scripts using structured success or failure results. The Lua evaluation host SHALL open only math, string, and table standard libraries (plus explicit safe host helpers such as `round`/`sign` aliases) and SHALL NOT expose host I/O, OS, or package-loading libraries to expression scripts.
 
 #### Scenario: Lua script receives chapter time and fps
 - **WHEN** a Lua expression script references `t` or `fps`
@@ -98,6 +98,11 @@ The system SHALL transform chapter times through Lua scripts using structured su
 - **WHEN** a Lua script returns nil, a string, a boolean, NaN, infinity, or another non-finite non-numeric result
 - **THEN** Core SHALL report an `InvalidExpression.Lua*` diagnostic
 - **AND** the original chapter time SHALL be preserved for that chapter
+
+#### Scenario: Lua host does not expose OS or package libraries
+- **WHEN** a Lua expression attempts to call host OS, I/O, or package-loading APIs that are not part of the documented safe expression surface
+- **THEN** evaluation SHALL fail with a Lua compile/runtime diagnostic rather than performing host I/O
+- **AND** successful evaluations SHALL continue to allow documented math/string/table helpers and chapter globals
 
 ### Requirement: Chapter editing operations
 The system SHALL expose chapter editing as Core operations callable by ViewModels.

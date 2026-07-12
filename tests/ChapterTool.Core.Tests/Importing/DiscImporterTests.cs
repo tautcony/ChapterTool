@@ -77,6 +77,52 @@ public sealed class DiscImporterTests
         Assert.Equal([195654375U, 216264339U], marksByPlayItem[2]);
     }
 
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(int.MaxValue)]
+    public void ExactBinaryReadRejectsNegativeAndOversizedLengthsBeforeAllocation(int length)
+    {
+        using var stream = new MemoryStream();
+
+        Assert.Throws<InvalidDataException>(() => stream.ReadExactBytes(length));
+    }
+
+    [Fact]
+    public void MplsPlaylistFileRejectsOversizedPlaylistAndSubpathCounts()
+    {
+        using var playItemCountStream = new MemoryStream(MinimalMpls(
+            numberOfPlayItems: checked(MplsParseLimits.MaximumPlayItems + 1)));
+        using var subpathCountStream = new MemoryStream(MinimalMpls(
+            numberOfSubPaths: checked(MplsParseLimits.MaximumSubPaths + 1)));
+
+        Assert.Throws<InvalidDataException>(() => MplsPlaylistFile.Read(playItemCountStream));
+        Assert.Throws<InvalidDataException>(() => MplsPlaylistFile.Read(subpathCountStream));
+    }
+
+    [Fact]
+    public void MplsPlaylistFileRejectsContainerLengthSmallerThanConsumedContent()
+    {
+        using var stream = new MemoryStream(MinimalMpls(playlistLength: 5));
+
+        Assert.Throws<InvalidDataException>(() => MplsPlaylistFile.Read(stream));
+    }
+
+    [Fact]
+    public void MplsPlaylistFileRejectsChildReadsPastPlaylistParentBoundary()
+    {
+        using var stream = new MemoryStream(MinimalMpls(playlistLength: 6, numberOfPlayItems: 1));
+
+        Assert.ThrowsAny<InvalidDataException>(() => MplsPlaylistFile.Read(stream));
+    }
+
+    [Fact]
+    public void MplsPlaylistFileRejectsOversizedExtensionDataBeforeAllocation()
+    {
+        using var stream = new MemoryStream(MinimalMpls(extensionLength: checked(MplsParseLimits.MaximumExtensionDataLength + 1)));
+
+        Assert.Throws<InvalidDataException>(() => MplsPlaylistFile.Read(stream));
+    }
+
     [Fact]
     public async Task MplsImporterReadsSinglePlayItemSample()
     {
@@ -335,6 +381,59 @@ public sealed class DiscImporterTests
 
     private static byte ToBcd(int value) =>
         (byte)(((value / 10) << 4) | (value % 10));
+
+    private static byte[] MinimalMpls(
+        uint playlistLength = 6,
+        ushort numberOfPlayItems = 0,
+        ushort numberOfSubPaths = 0,
+        uint? extensionLength = null)
+    {
+        const uint playlistAddress = 64;
+        const uint playlistMarkAddress = 80;
+        const uint extensionAddress = 96;
+        using var stream = new MemoryStream();
+        stream.Write("MPLS"u8);
+        stream.Write("0200"u8);
+        WriteUInt32BigEndian(stream, playlistAddress);
+        WriteUInt32BigEndian(stream, playlistMarkAddress);
+        WriteUInt32BigEndian(stream, extensionLength is null ? 0 : extensionAddress);
+        stream.Write(new byte[20]);
+
+        WriteUInt32BigEndian(stream, 14);
+        stream.Write(new byte[14]);
+
+        stream.Position = playlistAddress;
+        WriteUInt32BigEndian(stream, playlistLength);
+        WriteUInt16BigEndian(stream, 0);
+        WriteUInt16BigEndian(stream, numberOfPlayItems);
+        WriteUInt16BigEndian(stream, numberOfSubPaths);
+
+        stream.Position = playlistMarkAddress;
+        WriteUInt32BigEndian(stream, 2);
+        WriteUInt16BigEndian(stream, 0);
+
+        if (extensionLength is not null)
+        {
+            stream.Position = extensionAddress;
+            WriteUInt32BigEndian(stream, extensionLength.Value);
+        }
+
+        return stream.ToArray();
+    }
+
+    private static void WriteUInt16BigEndian(Stream stream, ushort value)
+    {
+        stream.WriteByte((byte)(value >> 8));
+        stream.WriteByte((byte)value);
+    }
+
+    private static void WriteUInt32BigEndian(Stream stream, uint value)
+    {
+        stream.WriteByte((byte)(value >> 24));
+        stream.WriteByte((byte)(value >> 16));
+        stream.WriteByte((byte)(value >> 8));
+        stream.WriteByte((byte)value);
+    }
 
     private static double MplsFrameRate(MplsPlayItem playItem)
     {

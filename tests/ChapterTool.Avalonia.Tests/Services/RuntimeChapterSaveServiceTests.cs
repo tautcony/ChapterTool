@@ -3,7 +3,6 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
-using System.Text;
 
 namespace ChapterTool.Avalonia.Tests.Services;
 

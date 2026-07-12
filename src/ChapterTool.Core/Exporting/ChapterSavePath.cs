@@ -172,6 +172,6 @@ public static class ChapterSavePath
             return string.Empty;
         }
 
-        return extension.StartsWith(".", StringComparison.Ordinal) ? extension : "." + extension;
+        return extension.StartsWith('.') ? extension : "." + extension;
     }
 }

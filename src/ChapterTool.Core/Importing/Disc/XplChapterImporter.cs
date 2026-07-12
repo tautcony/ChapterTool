@@ -39,11 +39,11 @@ public sealed class XplChapterImporter : IChapterImporter
             if (request.Content is null)
             {
                 await using var file = File.OpenRead(request.Path);
-                document = await XDocument.LoadAsync(file, LoadOptions.None, cancellationToken);
+                document = await SecureXmlLoader.LoadXDocumentAsync(file, cancellationToken);
             }
             else
             {
-                document = await XDocument.LoadAsync(request.Content, LoadOptions.None, cancellationToken);
+                document = await SecureXmlLoader.LoadXDocumentAsync(request.Content, cancellationToken);
             }
 
             var entries = Parse(document, request.Path).ToList();

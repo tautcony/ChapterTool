@@ -11,6 +11,4 @@ namespace ChapterTool.Infrastructure.Configuration;
 [JsonSerializable(typeof(ThemeSettings))]
 [JsonSerializable(typeof(ChapterToolSettings))]
 [JsonSerializable(typeof(FfprobeChapterOutput))]
-internal sealed partial class AppJsonSerializerContext : JsonSerializerContext
-{
-}
+internal sealed partial class AppJsonSerializerContext : JsonSerializerContext;

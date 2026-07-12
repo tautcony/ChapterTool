@@ -337,7 +337,7 @@ public sealed class SettingsToolViewModelTests
             }
         };
 
-        (viewModel as IDisposable)?.Dispose();
+        viewModel.Dispose();
         localizer.SetCulture("zh-CN");
 
         Assert.Equal(0, notifications);
@@ -748,7 +748,7 @@ public sealed class SettingsToolViewModelTests
         }
 
         return new SettingsToolViewModel(
-            owner,
+            owner.PortAdapters.Preferences,
             settingsStore,
             localizer,
             picker,

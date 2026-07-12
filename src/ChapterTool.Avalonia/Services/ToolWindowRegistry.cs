@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.ViewModels.Tools;
+using ChapterTool.Core.Transform;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
@@ -31,6 +33,8 @@ public sealed class ToolWindowCreateContext
     public IShellService? ShellService { get; init; }
 
     public string? SettingsDirectory { get; init; }
+
+    public IExpressionAuthoringService? ExpressionAuthoringService { get; init; }
 }
 
 /// <summary>Descriptor for a secondary tool window.</summary>
@@ -52,7 +56,7 @@ public static class ToolWindowRegistry
             {
                 DataContext = new TextToolViewModel(
                     context.Owner.BuildPreview,
-                    new TextToolOptions { FormatSelector = new TextToolFormatSelector(context.Owner) })
+                    new TextToolOptions { FormatSelector = new TextToolFormatSelector(context.Owner.PortAdapters.ExportPreferences) })
             },
             PreferredWidth: 760),
         new(
@@ -75,7 +79,7 @@ public static class ToolWindowRegistry
             context => new SettingsToolView
             {
                 DataContext = new SettingsToolViewModel(
-                    context.Owner,
+                    context.Owner.PortAdapters.Preferences,
                     context.SettingsStore,
                     context.Localizer,
                     context.SettingsPickerFactory?.Invoke(context.HostWindow),
@@ -90,20 +94,21 @@ public static class ToolWindowRegistry
         new(
             "language",
             "Tool.Language.Title",
-            context => new LanguageToolView { DataContext = new LanguageToolViewModel(context.Owner) }),
+            context => new LanguageToolView { DataContext = new LanguageToolViewModel(context.Owner.PortAdapters.Preferences) }),
         new(
             "expression",
             "Tool.Expression.Title",
             context => new ExpressionToolView
             {
                 DataContext = new ExpressionToolViewModel(
-                    context.Owner,
-                    new AvaloniaFilePickerService(context.HostWindow, context.Localizer))
+                    context.Owner.PortAdapters.Expression,
+                    new AvaloniaFilePickerService(context.HostWindow, context.Localizer),
+                    context.ExpressionAuthoringService)
             }),
         new(
             "template-names",
             "Tool.TemplateNames.Title",
-            context => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(context.Owner) }),
+            context => new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(context.Owner.PortAdapters.NamingPreferences) }),
         new(
             "zones",
             "Tool.Zones.Title",
@@ -111,7 +116,7 @@ public static class ToolWindowRegistry
         new(
             "forward-shift",
             "Tool.ForwardShift.Title",
-            context => new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(context.Owner) }),
+            context => new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(context.Owner.PortAdapters.ChapterEdit) }),
     ];
 
     public static ToolWindowRegistration? Find(string id) =>

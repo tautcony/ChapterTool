@@ -27,11 +27,12 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly string? startupPath;
     private readonly string settingsDirectory;
     private readonly ChapterTimeFormatter formatter = new();
-    private readonly IChapterExpressionEngine expressionEngine = new LuaExpressionScriptService();
+    private readonly IExpressionAuthoringService expressionAuthoringService;
+    private readonly ChapterExportService exportService;
+    private readonly IProcessRunner processRunner;
     private readonly FrameRateService frameRateService = new();
     private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
     private readonly AppLocalizationManager localizationManager = new();
-    private readonly ChapterToolSettingsStore settingsStore;
     private readonly AvaloniaFontFamilyCatalog fontFamilyCatalog = new();
     private readonly AvaloniaFontApplicationService fontApplicationService;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
@@ -39,11 +40,23 @@ public sealed class AppCompositionRoot : IDisposable
     private bool disposed;
 
     public AppCompositionRoot(string? startupPath = null, string? settingsDirectory = null)
+        : this(startupPath, settingsDirectory, expressionAuthoringServiceOverride: null)
+    {
+    }
+
+    internal AppCompositionRoot(
+        string? startupPath,
+        string? settingsDirectory,
+        IExpressionAuthoringService? expressionAuthoringServiceOverride)
     {
         this.startupPath = startupPath;
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         this.settingsDirectory = resolvedSettingsDirectory;
-        settingsStore = new ChapterToolSettingsStore(resolvedSettingsDirectory);
+        SettingsStore = new ChapterToolSettingsStore(resolvedSettingsDirectory);
+        expressionAuthoringService = expressionAuthoringServiceOverride ?? new ExpressionAuthoringService(ExpressionEngine);
+        exportService = new ChapterExportService(formatter, ExpressionEngine);
+        ExternalToolLocator = new ExternalToolLocator(SettingsStore, PathSearchDirectories().ToList());
+        processRunner = CreateProcessRunner();
         fontApplicationService = new AvaloniaFontApplicationService(fontFamilyCatalog);
         var serilogLogger = CreateSerilogLogger(resolvedSettingsDirectory);
         loggerFactory = LoggerFactory.Create(builder =>
@@ -78,10 +91,11 @@ public sealed class AppCompositionRoot : IDisposable
             loggerFactory.CreateLogger<MainWindowViewModel>(),
             frameRateService,
             localizationManager,
-            expressionEngine,
+            ExpressionEngine,
             CreateChapterExportService(),
             CreateShellService(),
-            settingsStore);
+            SettingsStore,
+            expressionAuthoringService);
 
     public IApplicationLogService CreateApplicationLogService() => logService;
 
@@ -90,7 +104,12 @@ public sealed class AppCompositionRoot : IDisposable
     public IChapterLoadService CreateChapterLoadService() => new RuntimeChapterLoadService(CreateChapterImporterRegistry());
 
     public IChapterImporterRegistry CreateChapterImporterRegistry() =>
-        CreateSharedImporterRegistry(settingsStore);
+        new RuntimeChapterImporterRegistry(
+            formatter,
+            ExternalToolLocator,
+            processRunner,
+            new FfprobeMediaChapterReader(ExternalToolLocator, processRunner),
+            CreateMp4ChapterReader());
 
     /// <summary>
     /// Shared importer-registry factory used by GUI composition and CLI defaults.
@@ -112,10 +131,9 @@ public sealed class AppCompositionRoot : IDisposable
     public static IMediaChapterReader CreateMp4ChapterReader() => new AtlMp4ChapterReader();
 
     public FfprobeMediaChapterReader CreateMediaChapterReader() =>
-        new(CreateExternalToolLocator(), CreateProcessRunner());
+        new(ExternalToolLocator, processRunner);
 
-    public ChapterExportService CreateChapterExportService() =>
-        CreateSharedExportService(expressionEngine);
+    public ChapterExportService CreateChapterExportService() => exportService;
 
     /// <summary>
     /// Shared export construction for GUI and CLI. CLI omits expression engine (product scope).
@@ -134,24 +152,34 @@ public sealed class AppCompositionRoot : IDisposable
     public IWindowService CreateWindowService() =>
         new AvaloniaWindowService(
             localizationManager,
-            settingsStore,
+            SettingsStore,
             themeApplicationService,
             owner => new AvaloniaSettingsPickerService(owner, localizationManager),
-            CreateExternalToolLocator(),
+            ExternalToolLocator,
             new AvaloniaSettingsCloseConfirmationService(localizationManager),
             shellService: CreateShellService(),
             fontFamilyCatalog: fontFamilyCatalog,
             fontApplicationService: fontApplicationService,
-            settingsDirectory: settingsDirectory);
+            settingsDirectory: settingsDirectory,
+            expressionAuthoringService: expressionAuthoringService);
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
+
+    public IExpressionAuthoringService CreateExpressionAuthoringService() => expressionAuthoringService;
+
+    internal IChapterTimeFormatter Formatter => formatter;
+
+    internal IChapterExpressionEngine ExpressionEngine { get; } = new LuaExpressionScriptService();
+
+    internal ChapterToolSettingsStore SettingsStore { get; }
+
+    internal IExternalToolLocator ExternalToolLocator { get; }
 
     public static IShellService CreateShellService() => new ShellService();
 
     public IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner, localizationManager);
 
-    public IExternalToolLocator CreateExternalToolLocator() =>
-        new ExternalToolLocator(settingsStore, PathSearchDirectories().ToList());
+    public IExternalToolLocator CreateExternalToolLocator() => ExternalToolLocator;
 
     public static IProcessRunner CreateProcessRunner() => new ProcessRunner();
 
@@ -162,7 +190,7 @@ public sealed class AppCompositionRoot : IDisposable
     {
         try
         {
-            var settings = await settingsStore.LoadAsync(CancellationToken.None);
+            var settings = await SettingsStore.LoadAsync(CancellationToken.None);
             themeApplicationService.Apply(settings.Theme);
             fontApplicationService.Apply(settings.Font);
         }

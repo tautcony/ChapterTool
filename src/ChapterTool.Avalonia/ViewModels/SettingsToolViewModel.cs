@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
@@ -18,11 +19,9 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;
 
     private readonly Session.Ports.IPreferenceSink preferenceSink;
-    private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private readonly ISettingsPickerService? picker;
-    private readonly IExternalToolLocator? externalToolLocator;
     private readonly IShellService? shellService;
     private readonly string? settingsDirectory;
     private readonly EventHandler cultureChangedHandler;
@@ -53,10 +52,10 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         bool autoLoad = true)
     {
         this.preferenceSink = preferenceSink;
-        this.settingsStore = settingsStore;
+        this.SettingsStoreForTesting = settingsStore;
         this.localizer = localizer ?? preferenceSink.Localizer;
         this.picker = picker;
-        this.externalToolLocator = externalToolLocator;
+        this.ExternalToolLocatorForTesting = externalToolLocator;
         this.shellService = shellService;
         this.settingsDirectory = settingsDirectory;
         Appearance = new SettingsAppearanceViewModel(
@@ -114,6 +113,10 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     }
 
     internal Task InitializationTask { get; }
+
+    internal ISettingsStore<ChapterToolSettings>? SettingsStoreForTesting { get; }
+
+    internal IExternalToolLocator? ExternalToolLocatorForTesting { get; }
 
     public SettingsAppearanceViewModel Appearance { get; }
 
@@ -324,7 +327,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         FrameAccuracyTolerance.ToString("0.###", CultureInfo.InvariantCulture);
 
     public bool HasUnsavedChanges =>
-        settingsStore is not null && CurrentSettings() != savedSettings;
+        SettingsStoreForTesting is not null && CurrentSettings() != savedSettings;
 
     public bool SettingsLoadFailed
     {
@@ -399,7 +402,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         Appearance.SetLiveApplyEnabled(false);
         try
         {
-            if (settingsStore is not null)
+            if (SettingsStoreForTesting is not null)
             {
                 var settings = await LoadSettingsOrDefaultAsync(cancellationToken);
                 savedSettings = ChapterToolSettings.Normalize(settings);
@@ -427,7 +430,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     {
         try
         {
-            return await settingsStore!.LoadAsync(cancellationToken);
+            return await SettingsStoreForTesting!.LoadAsync(cancellationToken);
         }
         catch (IOException)
         {
@@ -456,10 +459,10 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             return;
         }
 
-        if (settingsStore is not null)
+        if (SettingsStoreForTesting is not null)
         {
             var settings = CurrentSettings();
-            await settingsStore.SaveAsync(settings, cancellationToken);
+            await SettingsStoreForTesting.SaveAsync(settings, cancellationToken);
             savedSettings = settings;
             Appearance.ApplyThemeSettings(settings.Theme);
             Appearance.ApplyFontSettings(settings.Font);
@@ -637,7 +640,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     private async ValueTask DiscoverAndFillToolPathsAsync(CancellationToken cancellationToken)
     {
-        if (externalToolLocator is null)
+        if (ExternalToolLocatorForTesting is null)
         {
             RefreshToolStatuses();
             return;
@@ -665,7 +668,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             return current.ResolvedPath ?? currentPath;
         }
 
-        var location = await externalToolLocator!.LocateAsync(toolId, cancellationToken);
+        var location = await ExternalToolLocatorForTesting!.LocateAsync(toolId, cancellationToken);
         return location.Found ? location.Path : currentPath;
     }
 

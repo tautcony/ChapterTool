@@ -1,15 +1,16 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
+             xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.LanguageToolView"
-             x:DataType="vm:LanguageToolViewModel"
+             x:DataType="tools:LanguageToolViewModel"
              x:CompileBindings="True">
   <StackPanel Margin="16" Spacing="10">
     <TextBlock Text="{DynamicResource Tool.Language.Title}" FontSize="18" />
     <ComboBox ItemsSource="{Binding Languages}"
               SelectedIndex="{Binding SelectedLanguageIndex}">
       <ComboBox.ItemTemplate>
-        <DataTemplate DataType="vm:LanguageOptionViewModel">
+        <DataTemplate DataType="tools:LanguageOptionViewModel">
           <TextBlock Text="{Binding DisplayName}" />
         </DataTemplate>
       </ComboBox.ItemTemplate>

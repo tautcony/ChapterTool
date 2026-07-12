@@ -1,31 +1,17 @@
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Text.RegularExpressions;
-using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.Session;
+using ChapterTool.Avalonia.Workflows;
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
-using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
-using ChapterTool.Core.Transform;
-using ChapterTool.Core.Transform.Expressions;
-using ChapterTool.Core.Transform.Expressions.Lua;
-using ChapterTool.Infrastructure.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
 public sealed partial class MainWindowViewModel
 {
     private ChapterExportOptions CurrentExportOptions() =>
-        workspace.CreateExportOptions();
+        projectionFacade.CreateExportOptions();
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {
-        var operationId = workspace.BeginLoadOperation();
         if (string.IsNullOrWhiteSpace(path))
         {
             SetStatus("Status.NoSourceSelected");
@@ -37,27 +23,30 @@ public sealed partial class MainWindowViewModel
         Log("Log.LoadingSource", ("path", path));
         Progress = 0.05;
         SetProgressStatus(ChapterImportProgressPhase.LoadingSource);
-        var progress = new ChapterImportProgressSink(update =>
+        var outcome = await loadSaveWorkflow.LoadAsync(path, update =>
         {
-            if (!workspace.IsCurrentRevision(operationId))
-            {
-                return;
-            }
-
             Progress = Math.Clamp(update.Fraction ?? Progress, 0, 0.98);
             SetProgressStatus(update.Phase);
-        });
-        var result = await loadService.LoadAsync(path, progress, cancellationToken);
-        if (!workspace.IsCurrentRevision(operationId))
+        }, cancellationToken);
+        if (outcome.State == LoadWorkflowState.Stale)
         {
             return;
         }
 
+        if (outcome.State == LoadWorkflowState.EmptyPath)
+        {
+            SetStatus("Status.NoSourceSelected");
+            LogStatus();
+            NotifyStateChanged();
+            return;
+        }
+
+        var result = outcome.Result!;
         LogImportSummary("Load", result);
-        if (!result.Success || result.Groups.Count == 0)
+        if (outcome.State == LoadWorkflowState.Failed)
         {
             SetStatus("Status.LoadFailed", diagnostic: result.Diagnostics.FirstOrDefault());
-            currentProgressMessage = null;
+            ClearProgressStatus();
             Progress = 0;
             LogStatus();
             LogDiagnostics(Localizer.GetString("Operation.Load"), result.Diagnostics);
@@ -65,19 +54,13 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        // Load always starts in split mode; previous combined backup/mode is discarded.
-        var session = ClipSessionTransitions.FromLoad(result.Groups[0]);
-        if (!workspace.TryCommitLoad(operationId, path, session))
-        {
-            return;
-        }
-
+        var session = outcome.Session!;
         SourcePath = path;
         OnPropertyChanged(nameof(CurrentPath));
         OnPropertyChanged(nameof(DisplayPath));
         ApplyClipSessionUi(session, selectIndex: session.SelectedIndex);
         SetStatus("Status.LoadedChapters", ("count", Rows.Count));
-        currentProgressMessage = null;
+        ClearProgressStatus();
         Progress = 1;
         Log("Log.StatusFromPath", ("status", StatusText), ("path", path));
         LogDiagnostics(Localizer.GetString("Operation.Load"), result.Diagnostics);
@@ -102,7 +85,7 @@ public sealed partial class MainWindowViewModel
             ("applyExpression", ApplyExpression),
             ("expression", Expression));
         LogDiagnostics(Localizer.GetString("Operation.OutputProjection"), projection.Diagnostics);
-        var result = await saveService.SaveAsync(projection.Info, entries, directory, cancellationToken, CurrentPath);
+        var result = await loadSaveWorkflow.SaveAsync(projection.Info, entries, directory, cancellationToken);
         ApplySaveStatus(result);
         LogStatus();
         LogDiagnostics(Localizer.GetString("Operation.Save"), result.Diagnostics);
@@ -132,16 +115,12 @@ public sealed partial class MainWindowViewModel
     internal string? ResolveSaveDirectory(string? directoryOverride) =>
         ChapterSaveDirectory.Resolve(directoryOverride, SaveDirectory, CurrentPath);
 
-    private static string? NormalizeConfiguredDirectory(string? path) =>
+    internal static string? NormalizeConfiguredDirectory(string? path) =>
         ChapterSavePath.CleanOptionalPath(path);
 
     private async ValueTask AppendMplsAsync(string path, CancellationToken cancellationToken)
     {
-        var operationId = workspace.CaptureRevision();
-        // Session-token identity: discard late append if load/combine/restore replaced the session.
-        var expectedSession = workspace.ClipSession;
-        var expectedSessionId = expectedSession?.SessionId;
-        if (expectedSession is null || expectedSessionId is null)
+        if (Workspace.ClipSession is null)
         {
             SetStatus("Status.NoCurrentMplsGroup");
             LogStatus();
@@ -150,15 +129,23 @@ public sealed partial class MainWindowViewModel
         }
 
         Log("Log.AppendingMpls", ("path", path));
-        var result = await loadService.LoadAsync(path, cancellationToken);
-        if (!workspace.IsCurrentRevision(operationId)
-            || workspace.ClipSession?.SessionId != expectedSessionId)
+        var outcome = await loadSaveWorkflow.AppendAsync(path, cancellationToken);
+        if (outcome.State == AppendWorkflowState.Stale)
         {
             return;
         }
 
+        if (outcome.State == AppendWorkflowState.NoSession)
+        {
+            SetStatus("Status.NoCurrentMplsGroup");
+            LogStatus();
+            NotifyStateChanged();
+            return;
+        }
+
+        var result = outcome.ImportResult!;
         LogImportSummary("Append load", result);
-        if (!result.Success || result.Groups.Count == 0)
+        if (outcome.State == AppendWorkflowState.FailedLoad)
         {
             SetStatus("Status.AppendFailed", diagnostic: result.Diagnostics.FirstOrDefault());
             LogStatus();
@@ -167,10 +154,8 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        // Use the live session snapshot only when identity still matches (select/write-back may have updated entries).
-        var sessionForAppend = workspace.ClipSession ?? expectedSession;
-        var transition = ClipSessionTransitions.Append(sessionForAppend, result.Groups[0]);
-        if (!transition.Succeeded || transition.Session is null)
+        var transition = outcome.Transition!;
+        if (outcome.State == AppendWorkflowState.FailedTransition)
         {
             SetStatus(null, diagnostic: transition.EditResult.Diagnostics.FirstOrDefault());
             LogStatus();
@@ -179,12 +164,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        if (!workspace.TryCommitAppend(operationId, expectedSessionId.Value, transition.Session))
-        {
-            return;
-        }
-
-        ApplyClipSessionUi(transition.Session, selectIndex: 0);
+        ApplyClipSessionUi(outcome.Session!, selectIndex: 0);
         SetStatus("Status.AppendedMplsSegments", ("count", result.Groups[0].Entries.Count));
         LogStatus();
         LogDiagnostics(Localizer.GetString("Operation.AppendLoad"), result.Diagnostics);

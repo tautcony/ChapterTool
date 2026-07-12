@@ -1,14 +1,11 @@
-using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Xml.Linq;
 using Avalonia.Threading;
-using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Infrastructure.Services;
 
-namespace ChapterTool.Avalonia.ViewModels;
+namespace ChapterTool.Avalonia.ViewModels.Tools;
 
 public sealed class TextToolViewModel : ObservableViewModel
 {
@@ -49,9 +46,9 @@ public sealed class TextToolViewModel : ObservableViewModel
 
     public void DetachLiveRefresh()
     {
-        if (liveRefreshService is { } service)
+        if (liveRefreshService != null)
         {
-            service.EntryAdded -= OnEntryAdded;
+            liveRefreshService.EntryAdded -= OnEntryAdded;
         }
     }
 

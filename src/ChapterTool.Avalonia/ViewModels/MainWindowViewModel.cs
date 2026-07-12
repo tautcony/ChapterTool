@@ -1,14 +1,12 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session;
 using ChapterTool.Avalonia.Session.Ports;
-using ChapterTool.Core.Diagnostics;
+using ChapterTool.Avalonia.Workflows;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
@@ -18,13 +16,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed partial class MainWindowViewModel :
-    ObservableViewModel,
-    IExpressionSessionPort,
-    IPreferenceSink,
-    IExportPreferencePort,
-    INamingPreferencePort,
-    IChapterEditPort
+public sealed partial class MainWindowViewModel : ObservableViewModel
 {
     private readonly IChapterLoadService loadService;
     private readonly IChapterSaveService saveService;
@@ -33,30 +25,26 @@ public sealed partial class MainWindowViewModel :
     private readonly IWindowService windowService;
     private readonly IChapterTimeFormatter formatter;
     private readonly IFrameRateService frameRateService;
-    private readonly IChapterExpressionEngine expressionEngine;
-    private readonly ChapterOutputProjectionService outputProjectionService;
     private readonly ChapterExportService exportService;
-    private readonly ChapterWorkspace workspace = new();
-    private readonly IApplicationLogService logService;
     private readonly ILogger<MainWindowViewModel> logger;
     private readonly IShellService? shellService;
-    private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
+    private readonly LoadSaveWorkflow loadSaveWorkflow;
+    private readonly ProjectionFacade projectionFacade;
+    private readonly StatusDiagnosticsPresenter statusDiagnosticsPresenter;
+    private readonly DisplayOptionCoordinator displayOptionCoordinator;
 
     private FrameRateOption selectedFrameRateOption;
     private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
-    private bool isMutatingExpressionState;
     private string chapterNameTemplateStatus;
     private string statusText;
-    private LocalizedMessage? currentStatusMessage;
-    private LocalizedMessage? currentProgressMessage;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
     private string? lastExpressionDiagnosticSignature;
 
     private ChapterSet? currentInfo
     {
-        get => workspace.CurrentChapterSet;
-        set => workspace.SetCurrentChapterSet(value);
+        get => Workspace.CurrentChapterSet;
+        set => Workspace.SetCurrentChapterSet(value);
     }
 
     public MainWindowViewModel(
@@ -73,7 +61,8 @@ public sealed partial class MainWindowViewModel :
         IChapterExpressionEngine expressionEngine,
         ChapterExportService exportService,
         IShellService? shellService = null,
-        ISettingsStore<ChapterToolSettings>? settingsStore = null)
+        ISettingsStore<ChapterToolSettings>? settingsStore = null,
+        IExpressionAuthoringService? expressionAuthoringService = null)
     {
         ArgumentNullException.ThrowIfNull(loadService);
         ArgumentNullException.ThrowIfNull(saveService);
@@ -95,14 +84,20 @@ public sealed partial class MainWindowViewModel :
         this.windowService = windowService;
         this.formatter = formatter;
         this.frameRateService = frameRateService;
-        this.expressionEngine = expressionEngine;
-        outputProjectionService = new ChapterOutputProjectionService(this.expressionEngine);
+        this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
-        this.logService = logService;
+        this.LogService = logService;
         this.logger = logger;
         Localizer = localizer;
         this.shellService = shellService;
-        this.settingsStore = settingsStore;
+        this.SettingsStore = settingsStore;
+        ExpressionAuthoringService = expressionAuthoringService ?? new ExpressionAuthoringService(this.ExpressionEngine);
+        loadSaveWorkflow = new LoadSaveWorkflow(Workspace, this.loadService, this.saveService);
+        ClipEditingCoordinator = new ClipEditingCoordinator(Workspace, this.editingService, this.frameRateService);
+        projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, this.formatter);
+        statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, this.logger, value => StatusText = value);
+        displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
+        PortAdapters = new MainWindowPortAdapters(this);
         chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
         statusText = Localizer.GetString("Status.Ready");
         RefreshXmlLanguageDisplayOptions(notify: false);
@@ -117,7 +112,19 @@ public sealed partial class MainWindowViewModel :
     }
 
     /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
-    internal ChapterWorkspace Workspace => workspace;
+    internal ChapterWorkspace Workspace { get; } = new();
+
+    internal MainWindowPortAdapters PortAdapters { get; }
+
+    internal IChapterExpressionEngine ExpressionEngine { get; }
+
+    internal ChapterSet? CurrentChapterSet => currentInfo;
+
+    internal ClipEditingCoordinator ClipEditingCoordinator { get; }
+
+    internal ISettingsStore<ChapterToolSettings>? SettingsStore { get; }
+
+    internal void NotifyPropertyChanged(string propertyName) => OnPropertyChanged(propertyName);
 
     private void InitializeCommands()
     {
@@ -176,7 +183,7 @@ public sealed partial class MainWindowViewModel :
         {
             if (currentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(editingService.Delete(currentInfo, indexes), Localizer.Format(LocalizedMessage.Create("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order())))));
+                ApplyEdit(ClipEditingCoordinator.Delete(currentInfo, indexes), Localizer.Format(LocalizedMessage.Create("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order())))));
             }
 
             return ValueTask.CompletedTask;
@@ -186,7 +193,7 @@ public sealed partial class MainWindowViewModel :
             if (currentInfo is not null)
             {
                 var index = parameter is int value ? value : Rows.Count;
-                ApplyEdit(editingService.InsertBefore(currentInfo, index), Localizer.Format(LocalizedMessage.Create("Action.InsertRow", ("index", index))));
+                ApplyEdit(ClipEditingCoordinator.InsertBefore(currentInfo, index), Localizer.Format(LocalizedMessage.Create("Action.InsertRow", ("index", index))));
             }
 
             return ValueTask.CompletedTask;
@@ -206,9 +213,9 @@ public sealed partial class MainWindowViewModel :
         OpenRelatedMediaCommand = new UiCommand(async (parameter, token) => await OpenRelatedMediaAsync(parameter, token), _ => RelatedMediaReferences.Count > 0);
     }
 
-    public string CurrentPath => workspace.CurrentPath;
+    public string CurrentPath => Workspace.CurrentPath;
 
-    public string DisplayPath => workspace.DisplayPath;
+    public string DisplayPath => Workspace.DisplayPath;
 
     /// <summary>
     /// Authoritative path text for the source path box and reload/load adapters.
@@ -265,7 +272,7 @@ public sealed partial class MainWindowViewModel :
     {
         get;
         set => SetProperty(ref field, value);
-    } = new();
+    } = [];
 
     private bool suppressFrameOptionsRefresh;
 
@@ -320,7 +327,7 @@ public sealed partial class MainWindowViewModel :
     public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombineChecked;
 
     /// <summary>Derived from typed clip session mode (combined vs split).</summary>
-    public bool IsClipCombineChecked => workspace.ClipSession?.IsCombined == true;
+    public bool IsClipCombineChecked => Workspace.ClipSession?.IsCombined == true;
 
     public bool IsAdvancedPanelExpanded
     {
@@ -330,10 +337,10 @@ public sealed partial class MainWindowViewModel :
 
     public ChapterExportFormat SaveFormat
     {
-        get => workspace.ExportPreferences.Format;
+        get => Workspace.ExportPreferences.Format;
         set
         {
-            if (workspace.ExportPreferences.SetFormat(value))
+            if (Workspace.ExportPreferences.SetFormat(value))
             {
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SaveFormatIndex));
@@ -383,10 +390,10 @@ public sealed partial class MainWindowViewModel :
 
     public string XmlLanguage
     {
-        get => workspace.ExportPreferences.XmlLanguage;
+        get => Workspace.ExportPreferences.XmlLanguage;
         set
         {
-            if (workspace.ExportPreferences.SetXmlLanguage(value))
+            if (Workspace.ExportPreferences.SetXmlLanguage(value))
             {
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(XmlLanguageIndex));
@@ -418,23 +425,23 @@ public sealed partial class MainWindowViewModel :
     public string UiLanguage
     {
         get;
-        private set => SetProperty(ref field, value);
+        internal set => SetProperty(ref field, value);
     } = "";
 
     public IAppLocalizer Localizer { get; }
 
-    public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => expressionEngine.Presets;
+    public IExpressionAuthoringService ExpressionAuthoringService { get; }
 
     public bool AutoGenerateNames
     {
-        get => workspace.Projection.AutoGenerateNames;
+        get => Workspace.Projection.AutoGenerateNames;
         set
         {
-            var previousTemplate = workspace.Projection.UseTemplateNames;
-            if (workspace.Projection.SetAutoGenerateNames(value))
+            var previousTemplate = Workspace.Projection.UseTemplateNames;
+            if (Workspace.Projection.SetAutoGenerateNames(value))
             {
                 OnPropertyChanged();
-                if (previousTemplate != workspace.Projection.UseTemplateNames)
+                if (previousTemplate != Workspace.Projection.UseTemplateNames)
                 {
                     OnPropertyChanged(nameof(UseTemplateNames));
                 }
@@ -447,14 +454,14 @@ public sealed partial class MainWindowViewModel :
 
     public bool UseTemplateNames
     {
-        get => workspace.Projection.UseTemplateNames;
+        get => Workspace.Projection.UseTemplateNames;
         set
         {
-            var previousAuto = workspace.Projection.AutoGenerateNames;
-            if (workspace.Projection.SetUseTemplateNames(value))
+            var previousAuto = Workspace.Projection.AutoGenerateNames;
+            if (Workspace.Projection.SetUseTemplateNames(value))
             {
                 OnPropertyChanged();
-                if (previousAuto != workspace.Projection.AutoGenerateNames)
+                if (previousAuto != Workspace.Projection.AutoGenerateNames)
                 {
                     OnPropertyChanged(nameof(AutoGenerateNames));
                 }
@@ -467,10 +474,10 @@ public sealed partial class MainWindowViewModel :
 
     public string ChapterNameTemplateText
     {
-        get => workspace.Projection.ChapterNameTemplateText;
+        get => Workspace.Projection.ChapterNameTemplateText;
         set
         {
-            if (workspace.Projection.SetChapterNameTemplateText(value))
+            if (Workspace.Projection.SetChapterNameTemplateText(value))
             {
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
@@ -522,10 +529,10 @@ public sealed partial class MainWindowViewModel :
 
     public int OrderShift
     {
-        get => workspace.Projection.OrderShift;
+        get => Workspace.Projection.OrderShift;
         set
         {
-            if (workspace.Projection.SetOrderShift(value))
+            if (Workspace.Projection.SetOrderShift(value))
             {
                 OnPropertyChanged();
                 RefreshRows();
@@ -535,42 +542,36 @@ public sealed partial class MainWindowViewModel :
 
     public bool ApplyExpression
     {
-        get => workspace.Projection.ApplyExpression;
+        get => Workspace.Projection.ApplyExpression;
         set
         {
-            if (workspace.Projection.SetApplyExpression(value))
+            if (Workspace.Projection.SetApplyExpression(value))
             {
                 OnPropertyChanged();
-                if (!isMutatingExpressionState)
-                {
-                    RefreshRows();
-                }
+                RefreshRows();
             }
         }
     }
 
     public string Expression
     {
-        get => workspace.Projection.Expression;
+        get => Workspace.Projection.Expression;
         set
         {
-            if (workspace.Projection.SetExpression(value))
+            if (Workspace.Projection.SetExpression(value))
             {
                 OnPropertyChanged();
-                if (!isMutatingExpressionState)
-                {
-                    RefreshRows();
-                }
+                RefreshRows();
             }
         }
     }
 
     public string ExpressionPresetId
     {
-        get => workspace.Projection.ExpressionPresetId;
+        get => Workspace.Projection.ExpressionPresetId;
         set
         {
-            if (workspace.Projection.SetExpressionPresetId(value))
+            if (Workspace.Projection.SetExpressionPresetId(value))
             {
                 OnPropertyChanged();
             }
@@ -579,10 +580,10 @@ public sealed partial class MainWindowViewModel :
 
     public string ExpressionSourceName
     {
-        get => workspace.Projection.ExpressionSourceName;
+        get => Workspace.Projection.ExpressionSourceName;
         set
         {
-            if (workspace.Projection.SetExpressionSourceName(value))
+            if (Workspace.Projection.SetExpressionSourceName(value))
             {
                 OnPropertyChanged();
             }
@@ -591,10 +592,10 @@ public sealed partial class MainWindowViewModel :
 
     public string? SaveDirectory
     {
-        get => workspace.ExportPreferences.SaveDirectory;
-        private set
+        get => Workspace.ExportPreferences.SaveDirectory;
+        internal set
         {
-            if (workspace.ExportPreferences.SetSaveDirectory(value))
+            if (Workspace.ExportPreferences.SetSaveDirectory(value))
             {
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
@@ -626,11 +627,11 @@ public sealed partial class MainWindowViewModel :
     }
 
     public IReadOnlyList<ReferencedMediaFile> RelatedMediaReferences =>
-        workspace.ClipSession?.RelatedMedia ?? [];
+        Workspace.ClipSession?.RelatedMedia ?? [];
 
-    public bool CanAppendMpls => workspace.ClipSession?.CanAppendMpls == true;
+    public bool CanAppendMpls => Workspace.ClipSession?.CanAppendMpls == true;
 
-    public bool CanCombine => workspace.ClipSession?.CanCombine == true;
+    public bool CanCombine => Workspace.ClipSession?.CanCombine == true;
 
     public bool CanSave => currentInfo is not null;
 
@@ -642,10 +643,10 @@ public sealed partial class MainWindowViewModel :
 
     public bool EmitBom
     {
-        get => workspace.ExportPreferences.EmitBom;
-        private set
+        get => Workspace.ExportPreferences.EmitBom;
+        internal set
         {
-            if (workspace.ExportPreferences.SetEmitBom(value))
+            if (Workspace.ExportPreferences.SetEmitBom(value))
             {
                 OnPropertyChanged();
             }
@@ -654,10 +655,10 @@ public sealed partial class MainWindowViewModel :
 
     public OutputTextEncoding OutputTextEncoding
     {
-        get => workspace.ExportPreferences.TextEncoding;
-        private set
+        get => Workspace.ExportPreferences.TextEncoding;
+        internal set
         {
-            if (workspace.ExportPreferences.SetTextEncoding(value))
+            if (Workspace.ExportPreferences.SetTextEncoding(value))
             {
                 OnPropertyChanged();
             }
@@ -759,11 +760,11 @@ public sealed partial class MainWindowViewModel :
         return result.Content;
     }
 
-    public string LogText() => logService.Format(FormatLogEntry);
+    public string LogText() => LogService.Format(FormatLogEntry);
 
-    public IApplicationLogService LogService => logService;
+    public IApplicationLogService LogService { get; }
 
-    public void ClearLog() => logService.Clear();
+    public void ClearLog() => LogService.Clear();
 
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
@@ -790,23 +791,13 @@ public sealed partial class MainWindowViewModel :
         return result.Zones;
     }
 
-    public void ShiftFramesForward(int frames)
-    {
-        if (currentInfo is null)
-        {
-            return;
-        }
-
-        ApplyEdit(editingService.ShiftFramesForward(currentInfo, frames, (decimal)currentInfo.FramesPerSecond), Localizer.Format(LocalizedMessage.Create("Action.ShiftFramesForward", ("frames", frames))));
-    }
-
     private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
         OnPropertyChanged(nameof(IsChapterGridEmpty));
         NotifyCommandStates();
     }
 
-    private void NotifyStateChanged()
+    internal void NotifyStateChanged()
     {
         OnPropertyChanged(nameof(IsClipSelectionVisible));
         OnPropertyChanged(nameof(IsClipCombineChecked));
@@ -919,52 +910,4 @@ public sealed partial class MainWindowViewModel :
         Frame
     }
 
-    private sealed class ChapterImportProgressSink(Action<ChapterImportProgress> handler) : IChapterImportProgressReporter
-    {
-        public void Report(ChapterImportProgress progress) => handler(progress);
-    }
-}
-
-public sealed record ChapterCellEdit(int Index, string Value);
-
-/// <summary>Stable chapter-grid column identities (not localized header text).</summary>
-public static class ChapterGridColumnIds
-{
-    public const string Time = "Time";
-    public const string Name = "Name";
-    public const string Frames = "Frames";
-}
-
-public sealed class SelectorDisplayOption(string mainText, string remarkText, string displayText) : ObservableViewModel
-{
-    private string mainText = mainText;
-    private string remarkText = remarkText;
-    private string displayText = displayText;
-
-    public string MainText
-    {
-        get => mainText;
-        private set => SetProperty(ref mainText, value);
-    }
-
-    public string RemarkText
-    {
-        get => remarkText;
-        private set => SetProperty(ref remarkText, value);
-    }
-
-    public string DisplayText
-    {
-        get => displayText;
-        private set => SetProperty(ref displayText, value);
-    }
-
-    public void UpdateFrom(SelectorDisplayOption entry)
-    {
-        MainText = entry.MainText;
-        RemarkText = entry.RemarkText;
-        DisplayText = entry.DisplayText;
-    }
-
-    public override string ToString() => DisplayText;
 }

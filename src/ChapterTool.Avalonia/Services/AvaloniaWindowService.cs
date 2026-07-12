@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
 
@@ -19,6 +20,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly IExternalToolLocator? externalToolLocator;
     private readonly IShellService? shellService;
     private readonly string? settingsDirectory;
+    private readonly IExpressionAuthoringService? expressionAuthoringService;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
@@ -35,6 +37,7 @@ public sealed class AvaloniaWindowService : IWindowService
         IFontFamilyCatalog? fontFamilyCatalog = null,
         IFontApplicationService? fontApplicationService = null,
         string? settingsDirectory = null,
+        IExpressionAuthoringService? expressionAuthoringService = null,
         IReadOnlyList<ToolWindowRegistration>? registrations = null)
     {
         ArgumentNullException.ThrowIfNull(localizer);
@@ -49,6 +52,7 @@ public sealed class AvaloniaWindowService : IWindowService
         this.externalToolLocator = externalToolLocator;
         this.shellService = shellService;
         this.settingsDirectory = settingsDirectory;
+        this.expressionAuthoringService = expressionAuthoringService;
         this.registrations = registrations ?? ToolWindowRegistry.DefaultRegistrations;
         this.localizer.CultureChanged += (_, _) =>
         {
@@ -93,7 +97,10 @@ public sealed class AvaloniaWindowService : IWindowService
         parameters[windowId] = parameter;
         window.Closing += async (sender, args) =>
         {
-            if (closeAccepted || window.Content is not Views.Tools.SettingsToolView { DataContext: SettingsToolViewModel settings } || !settings.HasUnsavedChanges)
+            if (closeAccepted || window.Content is not Views.Tools.SettingsToolView { DataContext: SettingsToolViewModel
+                {
+                    HasUnsavedChanges: true
+                } settings })
             {
                 return;
             }
@@ -171,6 +178,7 @@ public sealed class AvaloniaWindowService : IWindowService
             ExternalToolLocator = externalToolLocator,
             ShellService = shellService,
             SettingsDirectory = settingsDirectory,
+            ExpressionAuthoringService = expressionAuthoringService,
         };
         return registration.CreateContent(context);
     }

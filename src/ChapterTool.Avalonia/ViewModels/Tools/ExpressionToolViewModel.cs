@@ -1,24 +1,23 @@
-using System.Collections.ObjectModel;
-using System.Text.Json;
-using System.Xml.Linq;
-using Avalonia.Threading;
-using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Localization;
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session.Ports;
-using ChapterTool.Core.Exporting;
-using ChapterTool.Infrastructure.Services;
+using ChapterTool.Core.Transform;
 
-namespace ChapterTool.Avalonia.ViewModels;
+namespace ChapterTool.Avalonia.ViewModels.Tools;
 
 public sealed class ExpressionToolViewModel : ObservableViewModel
 {
     private readonly IExpressionSessionPort expressionSession;
     private readonly IFilePickerService? filePicker;
 
-    public ExpressionToolViewModel(IExpressionSessionPort expressionSession, IFilePickerService? filePicker = null)
+    public ExpressionToolViewModel(
+        IExpressionSessionPort expressionSession,
+        IFilePickerService? filePicker = null,
+        IExpressionAuthoringService? expressionAuthoringService = null)
     {
         this.expressionSession = expressionSession;
         this.filePicker = filePicker;
+        ExpressionAuthoringService = expressionAuthoringService;
         Expression = expressionSession.Expression;
         ApplyExpression = expressionSession.ApplyExpression;
         ExpressionSourceName = expressionSession.ExpressionSourceName;
@@ -46,6 +45,8 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
     }
 
     public IAppLocalizer Localizer => expressionSession.Localizer;
+
+    public IExpressionAuthoringService? ExpressionAuthoringService { get; }
 
     public IReadOnlyList<ExpressionPresetViewModel> Presets { get; }
 
@@ -127,4 +128,3 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
 }
 
 public sealed record ExpressionPresetViewModel(string Id, string DisplayName, string Description, string ScriptText);
-

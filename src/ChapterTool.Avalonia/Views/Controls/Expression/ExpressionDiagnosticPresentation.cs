@@ -44,7 +44,7 @@ public sealed class ExpressionDiagnosticPresentation : IBackgroundRenderer
         using var context = geometry.Open();
         var startX = rect.X;
         var y = rect.Bottom - 1;
-        var step = 4d;
+        const double step = 4d;
         var up = true;
 
         context.BeginFigure(new Point(startX, y), false);

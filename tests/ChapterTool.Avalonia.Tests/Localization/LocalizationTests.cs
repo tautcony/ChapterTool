@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
@@ -95,7 +96,7 @@ public sealed partial class LocalizationTests
     public void LanguageToolListsAllSupportedLanguages()
     {
         var owner = CreateViewModel(new AppLocalizationManager("en-US"));
-        var tool = new LanguageToolViewModel(owner);
+        var tool = new LanguageToolViewModel(owner.PortAdapters.Preferences);
 
         Assert.Equal(["zh-CN", "en-US", "ja-JP"], tool.Languages.Select(static language => language.CultureName).ToArray());
         Assert.Contains(

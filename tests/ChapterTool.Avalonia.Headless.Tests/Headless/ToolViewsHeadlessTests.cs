@@ -3,7 +3,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Core.Transform;

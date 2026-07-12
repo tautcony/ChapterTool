@@ -111,7 +111,7 @@ The Avalonia application SHALL support default Chinese and `en-US` resources wit
 - **THEN** icons and required images SHALL be available through Avalonia-compatible resource packaging
 
 ### Requirement: Application composition root
-The Avalonia application SHALL centralize construction of services, ViewModels, and windows in application startup composition.
+The Avalonia application SHALL centralize construction of services, ViewModels, and windows in application startup composition, including shared settings, localization, expression, export, and import factories used by GUI and CLI consumers.
 
 #### Scenario: Main window is resolved from composition
 - **WHEN** the application starts normally
@@ -125,12 +125,18 @@ The Avalonia application SHALL centralize construction of services, ViewModels, 
 - **WHEN** a composition smoke test resolves the main window, primary ViewModels, window service, and importer registry
 - **THEN** missing required services SHALL be detected before user workflows are exercised manually
 
+#### Scenario: Shared factories serve CLI and GUI
+- **WHEN** CLI commands need importer registry or export construction outside the desktop main window
+- **THEN** they SHALL use composition-root factory methods or an equivalent shared factory surface
+- **AND** they SHALL NOT permanently maintain a second complete private service graph that silently drifts from GUI wiring
+
 ### Requirement: Secondary windows use dedicated views and ViewModels
-Auxiliary UI tools SHALL be implemented as dedicated Avalonia views with ViewModels instead of large imperatively generated control trees.
+Auxiliary UI tools SHALL be implemented as dedicated Avalonia views with ViewModels instead of large imperatively generated control trees, and tool construction SHALL use registered factories plus narrow session ports rather than requiring the full main-window ViewModel for every tool capability.
 
 #### Scenario: Window service displays views
 - **WHEN** preview, log, color, language, expression, template, zones, or forward-shift tools are opened
 - **THEN** the window service SHALL show the corresponding view and coordinate owner/result behavior without constructing that tool's internal controls inline
+- **AND** title/content resolution SHALL come from the tool registration model
 
 #### Scenario: Secondary window behavior is bindable
 - **WHEN** a secondary tool displays state, accepts input, or invokes actions
@@ -144,6 +150,50 @@ Auxiliary UI tools SHALL be implemented as dedicated Avalonia views with ViewMod
 - **WHEN** a secondary window closes or the window service replaces its content
 - **THEN** any disposable DataContext SHALL be disposed
 - **AND** tool ViewModels that subscribe to localization or other long-lived services SHALL unsubscribe during disposal
+
+#### Scenario: Tools depend on narrow session ports
+- **WHEN** expression, language, template, forward-shift, settings live-apply, or preview-format tools are constructed
+- **THEN** each SHALL depend on a narrow workspace/session or preference port for the capability it needs
+- **AND** it SHALL NOT require the full main-window command surface solely to mutate one related preference or expression field
+
+### Requirement: Secondary tool windows are registered by descriptor
+The window service SHALL open secondary tool windows through an explicit registration/descriptor model rather than an open-coded string switch that independently encodes title, content factory, and placeholder text for each tool id.
+
+#### Scenario: Known tool opens from a registry entry
+- **WHEN** the shell requests a registered tool window such as preview, log, settings, language, expression, template names, zones, or forward shift
+- **THEN** the window service SHALL resolve title and content factory from the tool registration
+- **AND** a later addition of another tool SHALL require adding a registration entry rather than expanding multiple independent switch statements as the only extension path
+
+#### Scenario: Unknown tool remains safe
+- **WHEN** the shell requests an unregistered tool id
+- **THEN** the window service SHALL show a localized placeholder or no-op failure path
+- **AND** it SHALL NOT throw an unhandled exception that closes the main window
+
+### Requirement: Composition root owns shared service instances
+The application composition root SHALL own the shared localization manager, expression engine, export service construction, settings store, and load/import registry factories used by the GUI shell. Production construction paths SHALL NOT silently create replacement default instances of those shared services when a real dependency was expected.
+
+#### Scenario: Window service uses the composition localizer
+- **WHEN** secondary tool windows are created during normal GUI startup
+- **THEN** they SHALL use the same localization manager instance owned by composition
+- **AND** they SHALL NOT create a private default localizer that can diverge from the main window culture
+
+#### Scenario: Preview and save share export construction
+- **WHEN** the GUI constructs save and preview export behavior
+- **THEN** both SHALL obtain export/projection services from composition-owned construction
+- **AND** preview SHALL NOT silently fall back to a separately constructed default export service with different dependencies
+
+### Requirement: CLI and GUI share load and export factories
+CLI conversion workflows and the GUI shell SHALL obtain importer-registry and export-service construction through shared composition factories or equivalent shared factory methods, instead of maintaining fully divergent private wiring that can drift.
+
+#### Scenario: CLI importer registry matches GUI construction rules
+- **WHEN** CLI inspect/convert and GUI load construct importer registries
+- **THEN** both SHALL use the same factory rules for formatter, tool locator, process runner, and media readers
+- **AND** adding a new importer registration SHALL not require two independent private wiring lists as the only path
+
+#### Scenario: CLI export construction is composition-aligned
+- **WHEN** CLI convert constructs an exporter
+- **THEN** it SHALL use the shared export factory path or an explicitly injected exporter provided by tests
+- **AND** it SHALL NOT rely on a one-off default constructor path that can diverge from GUI export dependency choices
 
 ### Requirement: Avalonia localization resources are complete
 The application SHALL package complete Simplified Chinese, English, and Japanese localization resources for Avalonia UI, prompts, and user-facing message formatting.
@@ -385,3 +435,27 @@ The Avalonia application SHALL store translated UI, prompt, status, and user-fac
 #### Scenario: Fallback behavior remains stable
 - **WHEN** a supported resource set is missing a key or settings contain an unsupported language tag
 - **THEN** localization SHALL use the Simplified Chinese fallback value and keep the application usable
+
+### Requirement: Composition root shares long-lived core services
+The application composition root SHALL reuse shared instances for long-lived pure services that have no per-window state—at minimum the chapter time formatter, expression engine (or authoring service wrapping it), chapter export service construction inputs, and external tool locator bound to the settings store—rather than silently constructing divergent instances on every factory call in production paths.
+
+#### Scenario: Export and load paths share formatter and expression policy
+- **WHEN** the GUI constructs load, save, and export services through the composition root
+- **THEN** those services SHALL observe the same time-formatter and expression-engine instances (or equivalent single-policy factories) configured for that root
+- **AND** production paths SHALL NOT create a second default expression engine only for save while the shell uses another for preview
+
+#### Scenario: External tool locator is not recreated without need
+- **WHEN** the composition root builds the importer registry and the settings window service that also resolve external tools
+- **THEN** both paths SHALL use the same settings store and SHALL reuse a shared tool-locator instance for that root unless a documented lifetime reason requires otherwise
+
+### Requirement: Production shell dependencies that the product always needs are required
+Production construction of the main window ViewModel and settings tool SHALL supply non-null shell and settings-store services when those capabilities are always present in the shipping application. Optional nullability MAY remain only for deliberately partial test doubles, not as the normal product contract.
+
+#### Scenario: Production main window receives shell and settings store
+- **WHEN** `AppCompositionRoot` creates the production `MainWindowViewModel`
+- **THEN** it SHALL pass non-null `IShellService` and `ISettingsStore<ChapterToolSettings>` instances
+- **AND** production “open related media” and settings persistence paths SHALL NOT permanently depend on null-checks that encode missing product capabilities
+
+#### Scenario: Tests still substitute fakes
+- **WHEN** unit or Headless tests construct the main ViewModel or settings tool
+- **THEN** they SHALL still be able to inject fake shell, settings, picker, and window services

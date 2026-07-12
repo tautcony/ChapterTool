@@ -36,8 +36,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         {
             try
             {
-                var document = new XmlDocument();
-                document.Load(request.Content);
+                var document = SecureXmlLoader.LoadXmlDocument(request.Content);
                 request.Content.Position = 0;
                 return ParseDocument(document, request.Path);
             }
@@ -49,9 +48,8 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
 
         try
         {
-            var document = new XmlDocument();
             await using var stream = File.OpenRead(request.Path);
-            document.Load(stream);
+            var document = SecureXmlLoader.LoadXmlDocument(stream);
             return ParseDocument(document, request.Path);
         }
         catch (XmlException exception)
@@ -68,17 +66,15 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
     /// <returns>The operation result.</returns>
     public ChapterImportResult ImportText(string text, string path = "")
     {
-        var document = new XmlDocument();
         try
         {
-            document.LoadXml(text);
+            var document = SecureXmlLoader.LoadXmlDocument(text);
+            return ParseDocument(document, path);
         }
         catch (XmlException exception)
         {
             return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidXml, exception.Message));
         }
-
-        return ParseDocument(document, path);
     }
 
     private ChapterImportResult ParseDocument(XmlDocument document, string path)

@@ -1,6 +1,5 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
-using Avalonia.Media;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Views.Controls.Expression;

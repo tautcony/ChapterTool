@@ -15,33 +15,33 @@ public sealed class CueImporterTests
     public async Task CueImporterReadsExistingSample()
     {
         var importer = new CueChapterImporter();
-        var cueText = """
-            CATALOG 4988102645625
-            PERFORMER "　"
-            TITLE "とある科学の超電磁砲 ARCHIVES 2"
-            FILE "ARCHIVES 2.flac" WAVE
-              TRACK 01 AUDIO
-                TITLE "オーディオドラマ・1stパート"
-                ISRC JPPI01051100
-                INDEX 01 00:00:00
-              TRACK 02 AUDIO
-                TITLE "初色bloomy"
-                PERFORMER "初春飾利(豊崎愛生)"
-                ISRC JPPI01051110
-                INDEX 00 15:17:52
-                INDEX 01 15:19:21
-              TRACK 03 AUDIO
-                TITLE "オーディオドラマ・2ndパート"
-                ISRC JPPI01051170
-                INDEX 00 19:13:38
-                INDEX 01 19:15:07
-              TRACK 04 AUDIO
-                TITLE "ナミダ御免のGirls Beat"
-                PERFORMER "佐天涙子(伊藤かな恵)"
-                ISRC JPPI01051120
-                INDEX 00 32:10:44
-                INDEX 01 32:12:13
-            """;
+        const string cueText = """
+                               CATALOG 4988102645625
+                               PERFORMER "　"
+                               TITLE "とある科学の超電磁砲 ARCHIVES 2"
+                               FILE "ARCHIVES 2.flac" WAVE
+                                 TRACK 01 AUDIO
+                                   TITLE "オーディオドラマ・1stパート"
+                                   ISRC JPPI01051100
+                                   INDEX 01 00:00:00
+                                 TRACK 02 AUDIO
+                                   TITLE "初色bloomy"
+                                   PERFORMER "初春飾利(豊崎愛生)"
+                                   ISRC JPPI01051110
+                                   INDEX 00 15:17:52
+                                   INDEX 01 15:19:21
+                                 TRACK 03 AUDIO
+                                   TITLE "オーディオドラマ・2ndパート"
+                                   ISRC JPPI01051170
+                                   INDEX 00 19:13:38
+                                   INDEX 01 19:15:07
+                                 TRACK 04 AUDIO
+                                   TITLE "ナミダ御免のGirls Beat"
+                                   PERFORMER "佐天涙子(伊藤かな恵)"
+                                   ISRC JPPI01051120
+                                   INDEX 00 32:10:44
+                                   INDEX 01 32:12:13
+                               """;
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(cueText));
         var result = await importer.ImportAsync(new ChapterImportRequest("ARCHIVES 2.cue", stream), TestContext.Current.CancellationToken);
 

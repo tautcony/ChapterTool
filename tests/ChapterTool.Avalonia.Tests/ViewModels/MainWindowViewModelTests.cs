@@ -998,7 +998,7 @@ public sealed class MainWindowViewModelTests
         vm.UpdateSelectedRows(new HashSet<int> { 0 });
 
         var zones = vm.CreateZonesText();
-        vm.ShiftFramesForward(24);
+        vm.PortAdapters.ChapterEdit.ShiftFramesForward(24);
 
         Assert.StartsWith("--zones ", zones, StringComparison.Ordinal);
         Assert.Single(vm.Rows);
@@ -1104,7 +1104,7 @@ public sealed class MainWindowViewModelTests
         var store = new FakeSettingsStore(new AppSettings(Language: ""));
         var vm = CreateViewModel(settingsStore: store);
 
-        await vm.SaveUiLanguageAsync("en-US", TestContext.Current.CancellationToken);
+        await vm.PortAdapters.Preferences.SaveUiLanguageAsync("en-US", TestContext.Current.CancellationToken);
 
         Assert.Equal("en-US", vm.UiLanguage);
         Assert.Equal("en-US", store.Current.Application.Language);
@@ -1169,7 +1169,7 @@ public sealed class MainWindowViewModelTests
         await File.WriteAllTextAsync(scriptPath, "return (");
         try
         {
-            var diagnostic = await vm.LoadLuaExpressionScriptAsync(scriptPath, CancellationToken.None);
+            var diagnostic = await vm.PortAdapters.Expression.LoadScriptAsync(scriptPath, CancellationToken.None);
 
             Assert.NotNull(diagnostic);
             Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
@@ -1190,7 +1190,7 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(logService: log);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        vm.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
+        vm.PortAdapters.Expression.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
 
         Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
         Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
@@ -1311,7 +1311,7 @@ public sealed class MainWindowViewModelTests
             progressReporters[path] = progress;
             startedSource.TrySetResult();
             progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ParsingChapters, 0.25));
-            using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
+            await using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
             return await completion.Task;
         }
 
