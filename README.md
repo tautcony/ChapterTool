@@ -2,6 +2,8 @@
 
 [![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg)](LICENSE)
 [![.NET 10 CI](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml)
+[![NuGet](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
+[![NuGet downloads](https://img.shields.io/nuget/dt/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
 [![GitHub Pages](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml)
 [![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
 [![WASM Demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
@@ -17,6 +19,18 @@ ChapterTool is a cross-platform Avalonia desktop chapter editor for importing, a
 - Combine supported multi-segment sources such as MPLS and IFO.
 - Export chapters as `.txt`, `.xml`, `.qpf`, `.TimeCodes.txt`, `.TsMuxeR_Meta.txt`, `.cue`, `.json`, `.vtt`, and Celltimes output.
 - Use the CLI to list supported formats, inspect selectable chapter groups, and convert chapter sources without launching the desktop UI.
+
+## NuGet Package
+
+The reusable chapter parsing and transformation library is published as [`ChapterTool.Core`](https://www.nuget.org/packages/ChapterTool.Core/) for .NET 8, .NET 9, and .NET 10 applications, including browser WebAssembly hosts.
+
+Install it from NuGet.org:
+
+```bash
+dotnet add package ChapterTool.Core
+```
+
+Tagged releases are also published to [GitHub Packages](https://github.com/tautcony/ChapterTool/pkgs/nuget/ChapterTool.Core) by the [package workflow](.github/workflows/nuget-publish.yml). The workflow publishes a version when a `v*` tag is pushed, and can also be started manually from the Actions tab.
 
 ## Supported Import Sources
 

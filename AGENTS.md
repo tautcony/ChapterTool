@@ -14,6 +14,7 @@
   - `samples/ChapterTool.Core.WasmDemo` (Blazor WebAssembly standalone demo for Core)
 - Prefer `rg` for searching files and text.
 - Use `docs/code-map/` as the primary navigation index for the current codebase. Update the relevant files there when feature work changes module ownership, entry points, runtime wiring, or the main tests a maintainer should inspect.
+- For product-agnostic WinForms→Avalonia migration methodology (phased skills A–G), start at `.agents/skills/README-winforms-to-avalonia.md` and the orchestrator skill `winforms-to-avalonia`. Rules of thumb: `reusable-learnings.md`; agent correction patterns from real sessions: `execution-corrections.md` under the same skill `references/`.
 - Keep user-facing Chinese strings as valid UTF-8. Validate localization through behavior, rendered UI, or resource-level checks rather than hard-coding incidental mojibake examples.
 - CLI argument entry points must be defined, parsed, and bound through `DotMake.CommandLine`; do not hand-write logic in `Program.cs` or CLI support code to iterate, recognize, or dispatch raw `args`.
 - Keep this file focused on durable repository guidance. Do not add one-off implementation notes, completed change records, or transient archive paths here.

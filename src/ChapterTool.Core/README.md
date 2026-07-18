@@ -2,6 +2,9 @@
 
 A .NET library for parsing, editing, transforming, and exporting multimedia chapter files.
 
+[![NuGet](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
+[![GitHub Packages](https://img.shields.io/badge/GitHub%20Packages-ChapterTool.Core-181717?logo=github)](https://github.com/tautcony/ChapterTool/pkgs/nuget/ChapterTool.Core)
+
 ## Installation
 
 ```bash
