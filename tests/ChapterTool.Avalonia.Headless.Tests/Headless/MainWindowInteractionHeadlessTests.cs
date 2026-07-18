@@ -205,7 +205,6 @@ public sealed class MainWindowInteractionHeadlessTests
         host.ViewModel.Expression = "t + 2";
         Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
 
-        await Task.Delay(600);
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
         Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
     }

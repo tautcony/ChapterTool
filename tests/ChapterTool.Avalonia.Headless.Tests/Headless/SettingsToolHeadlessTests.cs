@@ -26,7 +26,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost(
             localizer: localizer,
             appSettings: new AppSettings(Language: "en-US", DefaultXmlLanguage: "jpn"));
-        var viewModel = new SettingsToolViewModel(host.ViewModel.PortAdapters.Preferences, host.SettingsStore, host.Localizer, autoLoad: false);
+        using var viewModel = new SettingsToolViewModel(host.ViewModel.PortAdapters.Preferences, host.SettingsStore, host.Localizer, autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var window = new Window
         {
@@ -67,7 +67,7 @@ public sealed class SettingsToolHeadlessTests
     public async Task Icon_only_settings_buttons_have_accessible_names()
     {
         using var host = new MainWindowHeadlessTestHost();
-        var viewModel = new SettingsToolViewModel(
+        using var viewModel = new SettingsToolViewModel(
             host.ViewModel.PortAdapters.Preferences,
             host.SettingsStore,
             host.Localizer,
@@ -110,7 +110,7 @@ public sealed class SettingsToolHeadlessTests
         var shellService = new MainWindowHeadlessTestHost.FakeShellService();
         using var host = new MainWindowHeadlessTestHost(shellService: shellService);
         var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool-settings-folder-test");
-        var viewModel = new SettingsToolViewModel(
+        using var viewModel = new SettingsToolViewModel(
             host.ViewModel.PortAdapters.Preferences,
             host.SettingsStore,
             host.Localizer,
@@ -157,7 +157,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost();
         await host.LayoutAsync();
         var themeService = new AvaloniaThemeApplicationService();
-        var viewModel = new SettingsToolViewModel(
+        using var viewModel = new SettingsToolViewModel(
             host.ViewModel.PortAdapters.Preferences,
             host.SettingsStore,
             host.Localizer,
@@ -222,7 +222,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost();
         await host.LoadAsync("movie.txt");
         var fontService = host.FontApplicationService;
-        var viewModel = new SettingsToolViewModel(
+        using var viewModel = new SettingsToolViewModel(
             host.ViewModel.PortAdapters.Preferences,
             host.SettingsStore,
             host.Localizer,
@@ -324,7 +324,7 @@ public sealed class SettingsToolHeadlessTests
         var familyNames = Enumerable.Range(1, 160).Select(index => $"ChapterTool Font {index:000}").ToArray();
         var catalog = new AvaloniaFontFamilyCatalog(familyNames);
         var fontService = new AvaloniaFontApplicationService(catalog);
-        var viewModel = new SettingsToolViewModel(
+        using var viewModel = new SettingsToolViewModel(
             host.ViewModel.PortAdapters.Preferences,
             host.SettingsStore,
             host.Localizer,
@@ -338,6 +338,7 @@ public sealed class SettingsToolHeadlessTests
             Width = 760,
             Height = 620
         };
+        ComboBox? combo = null;
 
         try
         {
@@ -345,7 +346,7 @@ public sealed class SettingsToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             window.GetVisualDescendants().OfType<TabControl>().Single().SelectedIndex = 3;
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
-            var combo = window.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "UiFontFamilyCombo");
+            combo = window.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "UiFontFamilyCombo");
 
             combo.IsDropDownOpen = true;
             Dispatcher.UIThread.RunJobs();
@@ -364,6 +365,11 @@ public sealed class SettingsToolHeadlessTests
         }
         finally
         {
+            if (combo is not null)
+            {
+                combo.IsDropDownOpen = false;
+            }
+            Dispatcher.UIThread.RunJobs();
             fontService.Apply(FontSettings.Default);
             window.Close();
         }

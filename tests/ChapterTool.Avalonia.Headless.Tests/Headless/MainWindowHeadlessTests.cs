@@ -213,6 +213,9 @@ public sealed class MainWindowHeadlessTests
         Assert.True(
             host.ContainsRenderedText(expectedLabel),
             $"Expected selector to render '{expectedLabel}'. Rendered window texts:{Environment.NewLine}{host.DescribeRenderedTexts(host.Window)}");
+
+        clipSelector.IsDropDownOpen = false;
+        await host.LayoutAsync();
     }
 
     private static async Task AssertDefaultSelectionDisplaysLabelAsync(

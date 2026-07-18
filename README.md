@@ -82,6 +82,20 @@ dotnet test ChapterTool.Avalonia.slnx --no-restore
 
 The CI workflow is `.github/workflows/dotnet-ci.yml` and runs on Linux with .NET 10, FFmpeg, and MKVToolNix.
 
+To collect test coverage and generate a browsable HTML report:
+
+```bash
+./scripts/test-coverage.sh
+```
+
+The script runs the four test projects sequentially, excludes generated `*.g.cs` files through `scripts/coverage.runsettings`, then writes Cobertura XML and the HTML report under `artifacts/coverage`. HTML generation requires the ReportGenerator global tool:
+
+```bash
+dotnet tool install -g dotnet-reportgenerator-globaltool
+```
+
+Use `./scripts/test-coverage.sh -SkipHtml` when only the XML coverage files are needed.
+
 ### Browser WASM demo (GitHub Pages)
 
 `samples/ChapterTool.Core.WasmDemo` is a Blazor WebAssembly host for `ChapterTool.Core` (load / chapter grid / save). It is published by `.github/workflows/github-pages.yml` to:

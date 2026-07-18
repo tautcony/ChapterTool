@@ -30,12 +30,21 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         window.Close();
         await DrainUiAsync();
 
-        Assert.Equal(1, confirmation.Calls);
-        Assert.True(window.IsVisible);
-        Assert.Equal(Path.GetFullPath("live"), host.ViewModel.SaveDirectory);
-        Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
-        Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
-        Assert.Equal("ayu-dark", settings.Appearance.SelectedThemePreset.Id);
+        try
+        {
+            Assert.Equal(1, confirmation.Calls);
+            Assert.True(window.IsVisible);
+            Assert.Equal(Path.GetFullPath("live"), host.ViewModel.SaveDirectory);
+            Assert.Equal("saved", host.SettingsStore.Current.Application.SavingPath);
+            Assert.Equal("solarized-light", host.SettingsStore.Current.Theme.PresetId);
+            Assert.Equal("ayu-dark", settings.Appearance.SelectedThemePreset.Id);
+        }
+        finally
+        {
+            settings.DiscardUnsavedChanges();
+            window.Close();
+            await DrainUiAsync();
+        }
     }
 
     [AvaloniaFact]
@@ -154,18 +163,27 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             .Single(box => ReferenceEquals(box.ItemsSource, settings.Languages));
         var selectedItem = Assert.IsType<LanguageOptionViewModel>(languageBox.SelectedItem);
 
-        Assert.Same(originalSettings, SettingsViewModel(SettingsWindow(service)));
-        Assert.Equal("ja-JP", settings.SelectedLanguage);
-        Assert.Equal("ja-JP", host.ViewModel.UiLanguage);
-        Assert.Equal(japaneseIndex, settings.SelectedLanguageIndex);
-        Assert.Equal(japaneseIndex, languageBox.SelectedIndex);
-        Assert.Equal("ja-JP", selectedItem.CultureName);
-        Assert.Equal("日本語", selectedItem.DisplayName);
-        Assert.True(host.ContainsRenderedText("チャプター名"));
-        Assert.Contains(
-            settings.Languages,
-            language => language is { CultureName: "en-US", DisplayName: "英語" });
-        Assert.Equal("en-US", host.SettingsStore.Current.Application.Language);
+        try
+        {
+            Assert.Same(originalSettings, SettingsViewModel(SettingsWindow(service)));
+            Assert.Equal("ja-JP", settings.SelectedLanguage);
+            Assert.Equal("ja-JP", host.ViewModel.UiLanguage);
+            Assert.Equal(japaneseIndex, settings.SelectedLanguageIndex);
+            Assert.Equal(japaneseIndex, languageBox.SelectedIndex);
+            Assert.Equal("ja-JP", selectedItem.CultureName);
+            Assert.Equal("日本語", selectedItem.DisplayName);
+            Assert.True(host.ContainsRenderedText("チャプター名"));
+            Assert.Contains(
+                settings.Languages,
+                language => language is { CultureName: "en-US", DisplayName: "英語" });
+            Assert.Equal("en-US", host.SettingsStore.Current.Application.Language);
+        }
+        finally
+        {
+            settings.DiscardUnsavedChanges();
+            window.Close();
+            await DrainUiAsync();
+        }
     }
 
     private static AvaloniaWindowService CreateService(

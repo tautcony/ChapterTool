@@ -35,7 +35,7 @@ public sealed class AppCompositionRootFontTests
             TestContext.Current.CancellationToken);
 
         using var composition = new AppCompositionRoot(settingsDirectory: root);
-        await WaitForFontResourcesAsync(ui, mono);
+        await composition.AppearanceSettingsInitialization;
 
         Assert.Equal(ui, ResourceFont(AvaloniaFontApplicationService.UiFontFamilyKey));
         Assert.Equal(mono, ResourceFont(AvaloniaFontApplicationService.MonospaceFontFamilyKey));
@@ -66,21 +66,6 @@ public sealed class AppCompositionRootFontTests
         finally
         {
             window.Close();
-        }
-    }
-
-    private static async Task WaitForFontResourcesAsync(string ui, string mono)
-    {
-        for (var attempt = 0; attempt < 40; attempt++)
-        {
-            Dispatcher.UIThread.RunJobs();
-            if (string.Equals(ResourceFont(AvaloniaFontApplicationService.UiFontFamilyKey), ui, StringComparison.Ordinal)
-                && string.Equals(ResourceFont(AvaloniaFontApplicationService.MonospaceFontFamilyKey), mono, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            await Task.Delay(25);
         }
     }
 

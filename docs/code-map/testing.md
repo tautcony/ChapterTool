@@ -118,6 +118,10 @@ The settings Headless workflows verify the footer settings-folder action, includ
 
 Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
 
+Headless tests share one Avalonia UI session inside their test process. Close Popup/ContextMenu surfaces in `finally`, dispose directly constructed `IDisposable` DataContexts, and use `MainWindowHeadlessTestHost` so window disposal also detaches its content tree. Await a real initialization task for asynchronous startup behavior; do not use fixed delays or polling to infer completion.
+
+The diagnosis, timing comparisons, affected tests, and repeatable triage procedure are recorded in `docs/testing/headless-performance.md`.
+
 ## Quick Routing
 
 - parsing or export semantics changed: start in `tests/ChapterTool.Core.Tests`
@@ -126,6 +130,10 @@ Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `Avalo
 - XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
 
 ## Distribution Verification
+
+Coverage entry point:
+
+- `scripts/test-coverage.sh` runs the four test projects sequentially with Coverlet collection configured by `scripts/coverage.runsettings`, excluding generated `*.g.cs` files and writing XML/HTML output under `artifacts/coverage`.
 
 - Maintained publish entry points:
   - `scripts/publish.sh`

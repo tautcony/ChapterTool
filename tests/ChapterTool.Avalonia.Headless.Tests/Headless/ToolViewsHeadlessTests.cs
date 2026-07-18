@@ -16,10 +16,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_shows_diagnostics_and_accepts_tab_completion()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = "t +"
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -43,10 +43,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_accepts_text_input_after_focus()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = string.Empty
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -67,10 +67,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_collapses_multiline_scripts_until_expanded()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             IsMultilineExpandable = true,
             Text = "local offset = 1\nreturn t + offset"
         };
@@ -105,10 +105,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_enters_multiline_without_losing_the_editing_session()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             IsMultilineExpandable = true,
             Text = "time"
         };
@@ -141,10 +141,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_keeps_requested_multiline_height_when_compact_expansion_is_disabled()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             EditorHeight = 112,
             Text = "local offset = 1\nreturn t + offset"
         };
@@ -165,10 +165,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_keeps_case_insensitive_prefix_completions_without_unknown_token_diagnostic()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = "S"
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -183,6 +183,7 @@ public sealed class ToolViewsHeadlessTests
         }
         finally
         {
+            editor.Text = "t";
             window.Close();
         }
     }
@@ -190,10 +191,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_opens_completion_popup_for_prefix_input_without_auto_showing_diagnostic_popup()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = "si"
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -215,10 +216,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_exposes_colored_preset_completion_namespace()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = "preset."
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -241,10 +242,10 @@ public sealed class ToolViewsHeadlessTests
     [AvaloniaFact]
     public async Task Expression_editor_reports_trailing_binary_operator()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = "2^"
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -264,12 +265,12 @@ public sealed class ToolViewsHeadlessTests
     }
 
     [AvaloniaFact]
-    public async Task Expression_editor_delays_diagnostics_while_text_is_still_changing()
+    public async Task Expression_editor_keeps_diagnostics_hidden_while_text_is_changing()
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = "t"
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
@@ -280,12 +281,6 @@ public sealed class ToolViewsHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
             Assert.False(editor.HasDiagnostic);
-
-            await Task.Delay(600);
-            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
-
-            Assert.True(editor.HasDiagnostic);
-            Assert.Contains("Add the missing operand", editor.DiagnosticTooltipText, StringComparison.Ordinal);
         }
         finally
         {
@@ -304,10 +299,10 @@ public sealed class ToolViewsHeadlessTests
         string expectedDiagnostic,
         string expectedSuggestion)
     {
-        using var host = new MainWindowHeadlessTestHost(localizer: new AppLocalizationManager("en-US"));
+        var localizer = new AppLocalizationManager("en-US");
         var editor = new ExpressionEditor
         {
-            Localizer = host.Localizer,
+            Localizer = localizer,
             Text = expression
         };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());

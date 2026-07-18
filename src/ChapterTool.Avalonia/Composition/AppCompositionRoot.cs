@@ -70,8 +70,10 @@ public sealed class AppCompositionRoot : IDisposable
         // macOS single-file startup before Avalonia has shown the first window.
         themeApplicationService.Apply(ThemeSettings.Default);
         fontApplicationService.Apply(FontSettings.Default);
-        _ = ApplyAppearanceSettingsAsync();
+        AppearanceSettingsInitialization = ApplyAppearanceSettingsAsync();
     }
+
+    internal Task AppearanceSettingsInitialization { get; }
 
     public MainWindow CreateMainWindow()
     {

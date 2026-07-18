@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -20,6 +21,7 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
 internal sealed class MainWindowHeadlessTestHost : IDisposable
 {
+    private static readonly ConditionalWeakTable<Window, object> InitialLayouts = new();
     private readonly ApplicationLogPanelProvider logService;
 
     public MainWindowHeadlessTestHost(
@@ -158,7 +160,12 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         Dispatcher.UIThread.RunJobs();
         var layoutManager = window.GetLayoutManager()
             ?? throw new InvalidOperationException("Window layout manager was not available.");
-        layoutManager.ExecuteInitialLayoutPass();
+        if (!InitialLayouts.TryGetValue(window, out _))
+        {
+            layoutManager.ExecuteInitialLayoutPass();
+            InitialLayouts.Add(window, new object());
+        }
+
         layoutManager.ExecuteLayoutPass();
         Dispatcher.UIThread.RunJobs();
         await Task.Yield();
@@ -227,18 +234,25 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         await LayoutAsync(Window.Width, Window.Height);
     }
 
-    public IReadOnlyList<MenuItem> OpenContextMenu(Control control)
+    public MenuItem RequiredMenuItem(Control control, string name)
     {
         var menu = control.ContextMenu ?? throw new InvalidOperationException($"Control '{control.Name}' does not have a context menu.");
         menu.PlacementTarget = control;
         menu.Open();
-        Dispatcher.UIThread.RunJobs();
-        return menu.Items.OfType<MenuItem>().ToArray();
+        try
+        {
+            Dispatcher.UIThread.RunJobs();
+            return menu.Items
+                .OfType<MenuItem>()
+                .FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))
+                ?? throw new InvalidOperationException($"Menu item '{name}' was not found on '{control.Name}'.");
+        }
+        finally
+        {
+            menu.Close();
+            Dispatcher.UIThread.RunJobs();
+        }
     }
-
-    public MenuItem RequiredMenuItem(Control control, string name) =>
-        OpenContextMenu(control).FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))
-        ?? throw new InvalidOperationException($"Menu item '{name}' was not found on '{control.Name}'.");
 
     public void SelectRows(params int[] indexes)
     {
@@ -268,7 +282,12 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
     }
 
-    public void Dispose() => Window.Close();
+    public void Dispose()
+    {
+        Window.Close();
+        Window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+    }
 
     internal sealed class FakeLoadService(IReadOnlyList<ChapterImportResult> results) : IChapterLoadService
     {
