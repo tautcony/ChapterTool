@@ -51,6 +51,7 @@ jobs:
             --configuration Release
             --no-restore
             --output artifacts/nuget
+            /p:ContinuousIntegrationBuild=true
           )
           if [[ -n "${{ steps.version.outputs.package-version }}" ]]; then
             args+=(/p:PackageVersion=${{ steps.version.outputs.package-version }})

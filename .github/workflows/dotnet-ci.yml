@@ -40,7 +40,7 @@ jobs:
             [ref]$null)
 
       - name: Pack ChapterTool.Core
-        run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore --output artifacts/nuget
+        run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
 
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v4
