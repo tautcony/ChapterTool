@@ -1,0 +1,53 @@
+{
+  "skill_name": "winforms-to-avalonia",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "We have a .NET Framework 4.8 WinForms desktop application with several Forms and no migration documentation. Inventory the repository and prepare the first artifacts for moving it to Avalonia, but do not write XAML yet.",
+      "expected_output": "Route to Phase A, inspect the actual repository, and produce repository-specific behavior contracts, responsibility coverage, decisions, and acceptance scenarios without inventing product capabilities.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Continue our WinForms-to-Avalonia migration. Business validation and multi-step operations are still implemented in Form event handlers. Extract a UI-independent application layer with tests.",
+      "expected_output": "Route to Phase B, preserve observed behavior, define only the boundary ports required by the legacy call graph, and include untrusted-input bounds before release.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "In our WinForms-to-Avalonia port, the application core still calls static dialogs, filesystem APIs, and a child process directly. Move those dependencies behind testable platform adapters.",
+      "expected_output": "Route to Phase C, implement only discovered adapters, define cancellation/failure/resource ownership, and use durable persisted-state rules only if persistence is present.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "The core of our WinForms replacement is ready. Build the Avalonia main window with MVVM commands, responsive layout, accessibility, localization boundaries, and isolated Headless behavior tests.",
+      "expected_output": "Route to Phase D and bind Phase A/B/C contracts into an accessible, responsive Avalonia shell without moving application rules into code-behind.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "Compare our legacy WinForms application with the new Avalonia implementation and decide whether the legacy tree can be frozen. We support Windows and Linux packages.",
+      "expected_output": "Route to Phase E, derive the matrix from captured contracts, verify both supported targets and failure paths, and require explicit decisions before any legacy deletion.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Our completed WinForms-to-Avalonia migration now has an oversized MainViewModel, stale async operations, and Headless tests mixed into the unit-test process. Decompose and harden it.",
+      "expected_output": "Route to Phase G, introduce state/workflow collaborators only where evidence supports them, add anti-stale tests, and restore process isolation.",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Migrate our database schema from version 4 to version 5 and preserve rollback compatibility.",
+      "expected_output": "Recognize that this is not a WinForms-to-Avalonia migration and do not route through phases A-G.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "Add a settings screen to an existing Avalonia application that has never used WinForms.",
+      "expected_output": "Recognize that this is ordinary Avalonia feature work, not a WinForms-to-Avalonia migration, and do not invoke this suite.",
+      "files": []
+    }
+  ]
+}
