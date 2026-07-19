@@ -71,31 +71,56 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ steps.ci-run.outputs.run-id }}
         run: |
-          mkdir -p release-assets/downloaded release-assets/files
-          gh run download "$RUN_ID" \
-            --repo "$GITHUB_REPOSITORY" \
-            --dir release-assets/downloaded
-          find release-assets/downloaded -type f -exec cp {} release-assets/files/ \;
+          mkdir -p release-assets/publish release-assets/staging
 
-          expected=(
-            "ChapterTool.Core.*.nupkg"
-            "ChapterTool.Core.*.snupkg"
-            "ChapterTool.Avalonia*"
-            "ChapterTool-osx-arm64.dmg"
+          artifact_names=()
+          while IFS= read -r artifact_name; do
+            [[ -n "$artifact_name" ]] && artifact_names+=("$artifact_name")
+          done < <(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?per_page=100" \
+            | jq -r '.artifacts[] | select(.expired == false) | .name'
           )
-          for pattern in "${expected[@]}"; do
-            if ! compgen -G "release-assets/files/$pattern" > /dev/null; then
-              echo "Missing release artifact matching $pattern" >&2
-              find release-assets/downloaded -type f -print >&2
-              exit 1
+
+          if (( ${#artifact_names[@]} == 0 )); then
+            echo "No non-expired artifacts found for CI run $RUN_ID" >&2
+            exit 1
+          fi
+
+          for artifact_name in "${artifact_names[@]}"; do
+            staging_dir="release-assets/staging/$artifact_name"
+            mkdir -p "$staging_dir"
+            gh run download "$RUN_ID" \
+              --repo "$GITHUB_REPOSITORY" \
+              --name "$artifact_name" \
+              --dir "$staging_dir"
+
+            if find "$staging_dir" -type f \( -name '*.nupkg' -o -name '*.snupkg' \) -print -quit | grep -q .; then
+              find "$staging_dir" -type f \
+                \( -name '*.nupkg' -o -name '*.snupkg' \) \
+                -exec cp {} release-assets/publish/ \;
+            fi
+
+            if find "$staging_dir" -type f ! \( -name '*.nupkg' -o -name '*.snupkg' \) -print -quit | grep -q .; then
+              (
+                cd "$staging_dir"
+                zip -q -r "$GITHUB_WORKSPACE/release-assets/publish/$artifact_name.zip" . \
+                  -x '*.nupkg' '*.snupkg'
+              )
             fi
           done
 
-          find release-assets/files -maxdepth 1 -type f -print | sort
+          if [[ -z "$(find release-assets/publish -maxdepth 1 -type f -print -quit)" ]]; then
+            echo "No publishable files were produced from CI artifacts" >&2
+            exit 1
+          fi
+
+          find release-assets/publish -maxdepth 1 -type f -print | sort
 
       - name: Prepare release notes
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
         run: |
           version="${TAG#v}"
@@ -110,18 +135,55 @@ jobs:
             exit 1
           fi
 
+          previous_tag="$(
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/tags?per_page=100" \
+              --jq '.[].name' \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$' \
+            | sort -V \
+            | awk -v current="$TAG" '$0 == current { print previous; exit } { previous=$0 }'
+          )"
+
+          {
+            printf '\n**Full Changelog**: '
+            if [[ -n "$previous_tag" ]]; then
+              printf 'https://github.com/%s/compare/%s...%s\n' \
+                "$GITHUB_REPOSITORY" "$previous_tag" "$TAG"
+            else
+              printf 'https://github.com/%s/releases/tag/%s\n' \
+                "$GITHUB_REPOSITORY" "$TAG"
+            fi
+          } >> release-notes.md
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            echo "Release already exists: $TAG" >&2
-            exit 1
+            echo "Updating existing release: $TAG"
+            gh api --paginate \
+              "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" \
+              --jq '.assets[]? | [.id, .name] | @tsv' \
+            | while IFS=$'\t' read -r asset_id asset_name; do
+                [[ -z "$asset_id" ]] && continue
+                echo "Deleting old asset: $asset_name"
+                gh api --method DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$asset_id"
+              done
+
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "ChapterTool ${TAG#v}" \
+              --notes-file release-notes.md
+            gh release upload "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber \
+              release-assets/publish/*
+            exit 0
           fi
 
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "ChapterTool ${TAG#v}" \
             --notes-file release-notes.md \
-            release-assets/files/*
+            release-assets/publish/*

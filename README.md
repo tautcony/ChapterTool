@@ -125,6 +125,8 @@ Framework-dependent artifacts are written under `artifacts/publish/framework-dep
 
 The GitHub Actions publish job currently builds single-file framework-dependent artifacts for `win-x64`, `linux-x64`, and `osx-arm64`; the macOS job also packages the app as a `.dmg`.
 
+To publish a GitHub Release from the artifacts produced by a tag's successful CI run, open the `Publish GitHub Release` workflow, choose `Run workflow`, and enter the tag. The workflow packages each desktop runtime, extracts the corresponding `ChangeLog.md` section, and creates or updates the release automatically.
+
 ## Project Layout
 
 - `src/ChapterTool.Core`: chapter models, transformations, import contracts, and exporters.
