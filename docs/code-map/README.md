@@ -15,9 +15,9 @@ Use it when you need to quickly locate the code behind a feature without reposit
 - `testing.md`
   - which test project and test files verify each code area
 
-## Samples
+## Browser Host
 
-- `samples/ChapterTool.Core.WasmDemo`
+- `src/ChapterTool.Wasm`
   - Blazor WebAssembly standalone host for `ChapterTool.Core` (client-side import/export UI)
 
 ## How To Use

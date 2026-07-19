@@ -6,7 +6,7 @@
 [![NuGet downloads](https://img.shields.io/nuget/dt/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
 [![GitHub Pages](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml)
 [![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
-[![WASM Demo](https://img.shields.io/badge/demo-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
+[![WASM](https://img.shields.io/badge/wasm-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
 
 ChapterTool is a cross-platform Avalonia desktop chapter editor for importing, adjusting, combining, and exporting chapter lists from text, disc playlist, and media container sources.
 
@@ -96,13 +96,13 @@ dotnet tool install -g dotnet-reportgenerator-globaltool
 
 Use `./scripts/test-coverage.sh -SkipHtml` when only the XML coverage files are needed.
 
-### Browser WASM demo (GitHub Pages)
+### Browser WASM app (GitHub Pages)
 
-`samples/ChapterTool.Core.WasmDemo` is a Blazor WebAssembly host for `ChapterTool.Core` (load / chapter grid / save). It is published by `.github/workflows/github-pages.yml` to:
+`src/ChapterTool.Wasm` is a browser WebAssembly workspace for `ChapterTool.Core` (byte import, reload/append, chapter grid editing, templates, multi-select actions, preview, export download, drag and drop, settings, and `en-US`/`zh-CN`/`ja-JP` localization). It is published by `.github/workflows/github-pages.yml` to:
 
 **https://tautcony.github.io/ChapterTool/**
 
-Enable once: **Settings → Pages → Source → GitHub Actions**, then run the **Deploy WASM Demo (GitHub Pages)** workflow (or push to `master` under the watched paths).
+Enable once: **Settings → Pages → Source → GitHub Actions**, then run the **Deploy WASM (GitHub Pages)** workflow (or push to `master` under the watched paths).
 
 ## Publish
 
@@ -125,7 +125,7 @@ Framework-dependent artifacts are written under `artifacts/publish/framework-dep
 
 The GitHub Actions publish job currently builds single-file framework-dependent artifacts for `win-x64`, `linux-x64`, and `osx-arm64`; the macOS job also packages the app as a `.dmg`.
 
-To publish a GitHub Release from the artifacts produced by a tag's successful CI run, open the `Publish GitHub Release` workflow, choose `Run workflow`, and enter the tag. The workflow packages each desktop runtime, extracts the corresponding `ChangeLog.md` section, and creates or updates the release automatically.
+Pushing a version tag runs the full CI and NuGet publication workflows first; after `Publish to NuGet` succeeds, `Publish GitHub Release` automatically packages the CI artifacts, extracts the corresponding `ChangeLog.md` section, and creates or updates the GitHub Release. The release workflow can also be run manually with an existing tag to retry or repair a release.
 
 ## Project Layout
 

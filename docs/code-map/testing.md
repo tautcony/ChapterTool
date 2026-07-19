@@ -6,6 +6,8 @@ This file maps production areas to the test projects and high-signal test files 
 
 - Core behavior:
   - `tests/ChapterTool.Core.Tests`
+- Browser WebAssembly workspace behavior:
+  - `tests/ChapterTool.Wasm.Tests`
 - Infrastructure behavior:
   - `tests/ChapterTool.Infrastructure.Tests`
 - Avalonia ViewModels, runtime UI services, localization, CLI:
@@ -16,6 +18,8 @@ This file maps production areas to the test projects and high-signal test files 
 ## Core Test Map
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
+
+Use `tests/ChapterTool.Wasm.Tests` when changing browser workspace orchestration, byte-based loading/reload, templates, selection actions, preview/save projection, or browser localization. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
 
 High-signal test files:
 

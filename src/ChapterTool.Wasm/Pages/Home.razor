@@ -1,0 +1,1532 @@
+@page "/"
+@implements IDisposable
+@using System.Text
+@using System.Text.Json
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+@inject IJSRuntime Js
+
+<PageTitle>@L.T("App.Title")</PageTitle>
+
+<div id="chaptertool-shell"
+     class="shell @(isDragOver ? "drag-over" : null)"
+     tabindex="0"
+     @onkeydown="OnKeyDownAsync"
+     @onclick="OnShellClick">
+    <div class="main">
+        <!-- Top: load/save + clip + frame tools (Avalonia zone) -->
+        <div class="top-bar">
+            <div class="top-actions">
+                <div class="load-group">
+                    <button type="button"
+                            class="primary"
+                            disabled="@Workspace.IsBusy"
+                            @onclick="TriggerLoad"
+                            @oncontextmenu="OpenLoadContextMenu"
+                            @oncontextmenu:preventDefault
+                            title="@L.T("Title.Load")">
+                        @L.T("Action.Load")
+                    </button>
+                </div>
+                <button type="button"
+                        class="primary"
+                        disabled="@(!Workspace.CanSave)"
+                        @onclick="SaveAsync"
+                        title="@L.T("Title.Save")">
+                    @L.T("Action.Save")
+                </button>
+                <InputFile id="loadFileInput"
+                           class="hidden-file"
+                           OnChange="OnFileSelected"
+                           accept=".txt,.vtt,.xml,.cue,.mpls,.ifo,.csv,text/*,application/xml" />
+                <InputFile id="appendMplsInput"
+                           class="hidden-file"
+                           OnChange="OnAppendMplsSelected"
+                           accept=".mpls,application/octet-stream" />
+                <InputFile id="templateFileInput"
+                           class="hidden-file"
+                           OnChange="OnTemplateSelected"
+                           accept=".txt,.text,text/*" />
+            </div>
+
+            <div class="top-clip">
+                @if (Workspace.IsClipSelectionVisible)
+                {
+                    <select class="clip-box"
+                            value="@Workspace.SelectedClipId"
+                            disabled="@Workspace.IsBusy"
+                            @onchange="OnClipChanged"
+                            @oncontextmenu="OpenClipContextMenu"
+                            @oncontextmenu:preventDefault
+                            title="@L.T("Label.Clip")">
+                        @foreach (var clip in Workspace.ClipOptions)
+                        {
+                            <option value="@clip.Id">@clip.DisplayText</option>
+                        }
+                    </select>
+                }
+            </div>
+
+            <div class="top-tools">
+                <div class="top-tool-actions">
+                    <label class="check">
+                        <input type="checkbox"
+                               checked="@roundFrames"
+                               disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
+                               @onchange="OnRoundFramesChanged" />
+                        @L.T("Label.RoundFrames")
+                    </label>
+                    <button type="button"
+                            class="icon-button tool-icon-button"
+                            disabled="@(!Workspace.CanPreview)"
+                            @onclick="PreviewAsync"
+                            title="@L.T("Title.Preview")"
+                            aria-label="@L.T("Action.Preview")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                            <circle cx="12" cy="12" r="2.75" />
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="icon-button tool-icon-button"
+                            disabled="@(!Workspace.CanRefreshRows)"
+                            @onclick="RefreshRows"
+                            title="@L.T("Title.Refresh")"
+                            aria-label="@L.T("Action.Refresh")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M20 11a8 8 0 0 0-14.9-3.9L3 9" />
+                            <path d="M3 4v5h5" />
+                            <path d="M4 13a8 8 0 0 0 14.9 3.9L21 15" />
+                            <path d="M21 20v-5h-5" />
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="icon-button"
+                            @onclick="OpenSettings"
+                            title="@L.T("Action.Settings")"
+                            aria-label="@L.T("Action.Settings")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" />
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.09a2 2 0 0 1 1 1.74v.5a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z" />
+                        </svg>
+                    </button>
+                </div>
+                <select class="fps-box"
+                        value="@selectedFrameRateIndex"
+                        disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
+                        @onchange="OnFrameRateChanged"
+                        @oncontextmenu="OpenFrameRateContextMenu"
+                        @oncontextmenu:preventDefault
+                        title="@L.T("Label.FrameRate")">
+                    @if (Workspace.FrameRateChoices.Count == 0)
+                    {
+                        <option value="0">—</option>
+                    }
+                    else
+                    {
+                        @foreach (var choice in Workspace.FrameRateChoices)
+                        {
+                            <option value="@choice.Index">@choice.DisplayName</option>
+                        }
+                    }
+                </select>
+            </div>
+        </div>
+
+        <!-- Center: chapter grid -->
+        <div class="grid-zone">
+            @if (!string.IsNullOrEmpty(Workspace.SourcePath))
+            {
+                <div class="path-line" title="@Workspace.SourcePath">
+                    @Workspace.SourcePath
+                    @if (Workspace.FramesPerSecond > 0)
+                    {
+                        <span class="path-fps"> · @Workspace.FramesPerSecondDisplay fps</span>
+                    }
+                </div>
+            }
+
+            <div class="grid-wrap">
+                @if (Workspace.IsChapterGridEmpty)
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">∅</div>
+                        <p>@L.T("Empty.Title")</p>
+                        <p class="hint">@L.T("Empty.Hint")</p>
+                        <button type="button" class="secondary" disabled="@Workspace.IsBusy" @onclick="LoadSampleAsync">
+                            @L.T("Action.LoadSample")
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <table class="chapter-grid">
+                        <thead>
+                        <tr>
+                            <th class="col-num">@L.T("Grid.Number")</th>
+                            <th class="col-time">@L.T("Grid.Time")</th>
+                            <th class="col-name">@L.T("Grid.Name")</th>
+                            <th class="col-frames">@L.T("Grid.Frames")</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @for (var i = 0; i < Workspace.Rows.Count; i++)
+                        {
+                            var index = i;
+                            var row = Workspace.Rows[i];
+                            <tr class="@(row.IsSeparator ? "separator" : null) @(Workspace.IsRowSelected(index) ? "selected" : null)"
+                                @onclick="e => OnRowClick(index, e)"
+                                @oncontextmenu="e => OpenContextMenu(index, e)"
+                                @oncontextmenu:preventDefault>
+                                <td class="col-num">@(row.IsSeparator ? "—" : row.Number.ToString())</td>
+                                <td class="col-time">
+                                    @if (row.IsSeparator)
+                                    {
+                                        <span></span>
+                                    }
+                                    else
+                                    {
+                                        <input class="cell-edit"
+                                               value="@row.TimeText"
+                                               disabled="@Workspace.IsBusy"
+                                               @onchange="e => OnTimeChanged(index, e)"
+                                               @onclick:stopPropagation />
+                                    }
+                                </td>
+                                <td class="col-name">
+                                    <input class="cell-edit"
+                                           value="@row.Name"
+                                           disabled="@Workspace.IsBusy"
+                                           @onchange="e => OnNameChanged(index, e)"
+                                           @onclick:stopPropagation />
+                                </td>
+                                <td class="col-frames">
+                                    <span class="frame-text @(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")">
+                                        @(string.IsNullOrEmpty(row.FramesInfo) ? "—" : row.FramesInfo)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <!-- Bottom: export / projection options (Avalonia zone) -->
+        <div class="options-zone">
+            <div class="option-cell">
+                <label class="option-label" for="saveFormat">@L.T("Label.SaveAs")</label>
+                <select id="saveFormat"
+                        @bind="saveFormatIndex"
+                        @bind:after="OnExportOptionsChanged"
+                        disabled="@Workspace.IsBusy">
+                    @foreach (var format in Workspace.SaveFormats)
+                    {
+                        <option value="@format.Index">@format.DisplayName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="option-cell option-name-mode">
+                <label class="option-label" for="nameMode">@L.T("Label.ChapterName")</label>
+                <div class="name-mode-controls">
+                    <select id="nameMode"
+                            @bind="chapterNameModeIndex"
+                            @bind:after="OnProjectionOptionsChanged"
+                            disabled="@Workspace.IsBusy">
+                        @for (var i = 0; i < L.ChapterNameModes.Count; i++)
+                        {
+                            <option value="@i">@L.ChapterNameModes[i]</option>
+                        }
+                    </select>
+                    <button type="button"
+                            class="secondary template-button"
+                            disabled="@Workspace.IsBusy"
+                            @onclick="TriggerTemplateLoad"
+                            title="@L.T("Action.BrowseTemplate")">
+                        @L.T("Action.BrowseTemplate")
+                    </button>
+                </div>
+                @if (chapterNameModeIndex == 2 || !string.IsNullOrWhiteSpace(Workspace.ChapterNameTemplateStatus))
+                {
+                    <span class="template-status" title="@Workspace.ChapterNameTemplateStatus">
+                        @L.T("Label.TemplateStatus"): @Workspace.ChapterNameTemplateStatus
+                    </span>
+                }
+            </div>
+
+            <div class="option-cell">
+                <label class="option-label" for="xmlLang">@L.T("Label.XmlLang")</label>
+                <select id="xmlLang"
+                        @bind="xmlLanguage"
+                        @bind:after="OnExportOptionsChanged"
+                        disabled="@(Workspace.IsBusy || !Workspace.IsXmlLanguageEnabled)">
+                    @foreach (var language in Workspace.XmlLanguages)
+                    {
+                        <option value="@language">@language</option>
+                    }
+                </select>
+            </div>
+
+            <div class="option-cell">
+                <label class="option-label" for="orderShift">@L.T("Label.OrderShift")</label>
+                <input id="orderShift"
+                       type="number"
+                       min="-1000"
+                       max="1000"
+                       step="1"
+                       @bind="orderShift"
+                       @bind:after="OnProjectionOptionsChanged"
+                       disabled="@Workspace.IsBusy" />
+            </div>
+
+            <div class="option-cell option-expression">
+                <label class="option-label">@L.T("Label.Expression")</label>
+                <label class="check">
+                    <input type="checkbox"
+                           checked="@applyExpression"
+                           disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
+                           @onchange="OnApplyExpressionChanged" />
+                    @L.T("Label.UseExpression")
+                </label>
+                <input class="expression-input"
+                       value="@expression"
+                       disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
+                       spellcheck="false"
+                       title="@L.T("Title.Expression")"
+                       @oninput="OnExpressionInput"
+                       @onchange="OnExpressionCommit" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Status / progress strip -->
+    <footer class="status-bar">
+        <span class="status-text" title="@Workspace.StatusText">@Workspace.StatusText</span>
+        <button type="button" class="secondary log-toggle" @onclick="OpenLogs" title="@L.T("Modal.LogTitle")">@L.T("Action.Log")</button>
+        <progress class="status-progress"
+                  max="1"
+                  value="@(Workspace.Progress > 0 ? Workspace.Progress : 0)"
+                  style="@(Workspace.IsBusy || Workspace.Progress > 0 ? null : "visibility:hidden")"></progress>
+    </footer>
+</div>
+
+@if (contextMenuTarget == "load")
+{
+    <div class="context-menu" style="left:@contextMenuXpx; top:@contextMenuYpx" @onclick:stopPropagation>
+        <button type="button" @onclick="ReloadAsync" disabled="@(!Workspace.CanReload)">@L.T("Action.Reload")</button>
+        <button type="button" @onclick="TriggerAppendMpls" disabled="@(!Workspace.CanAppendMpls)">@L.T("Action.AppendMpls")</button>
+    </div>
+}
+
+@if (contextMenuTarget == "row" && contextMenuIndex >= 0)
+{
+    <div class="context-menu" style="left:@contextMenuXpx; top:@contextMenuYpx" @onclick:stopPropagation>
+        <button type="button" @onclick="SelectContextRow">@L.T("Menu.Select")</button>
+        <button type="button" @onclick="InsertContextRow">@L.T("Menu.Insert")</button>
+        <button type="button" @onclick="DuplicateContextRow">@L.T("Menu.Duplicate")</button>
+        <button type="button" @onclick="CopyContextRow">@L.T("Menu.CopyRow")</button>
+        <button type="button" @onclick="CopyContextName">@L.T("Menu.CopyName")</button>
+        <button type="button" @onclick="CopyContextZones" disabled="@(Workspace.FramesPerSecond <= 0 || !Workspace.HasRowSelection)">@L.T("Menu.CopyZones")</button>
+        <button type="button" @onclick="PreviewFromMenu" disabled="@(!Workspace.CanPreview)">@L.T("Menu.Preview")</button>
+        <button type="button" @onclick="ZonesFromMenu" disabled="@(Workspace.FramesPerSecond <= 0 || !Workspace.HasRowSelection)">@L.T("Menu.Zones")</button>
+        <button type="button" @onclick="OpenForwardModal" disabled="@(!Workspace.CanRefreshRows)">@L.T("Menu.ForwardTranslation")</button>
+        <button type="button" @onclick="OpenRelatedMedia" disabled="@(!Workspace.CanOpenRelatedMedia)">@L.T("Menu.RelatedMedia")</button>
+        <button type="button" class="danger" @onclick="DeleteContextRow" disabled="@(!Workspace.HasRowSelection)">@L.T("Menu.Delete")</button>
+    </div>
+}
+
+@if (contextMenuTarget == "clip")
+{
+    <div class="context-menu" style="left:@contextMenuXpx; top:@contextMenuYpx" @onclick:stopPropagation>
+        <button type="button"
+                @onclick="ToggleClipCombineContext"
+                disabled="@(!Workspace.CanToggleClipCombine)">
+            @(Workspace.IsClipCombined ? L.T("Menu.Split") : L.T("Menu.Combine"))
+        </button>
+    </div>
+}
+
+@if (contextMenuTarget == "fps")
+{
+    <div class="context-menu" style="left:@contextMenuXpx; top:@contextMenuYpx" @onclick:stopPropagation>
+        <button type="button"
+                @onclick="ChangeFrameRateContext"
+                disabled="@(!Workspace.CanChangeSelectedFrameRate)">@L.T("Menu.ChangeFps")</button>
+    </div>
+}
+
+@if (showLogModal)
+{
+    <div class="modal-backdrop" @onclick="CloseLogs">
+        <section class="modal-dialog log-modal" role="dialog" aria-modal="true" aria-labelledby="log-title" @onclick:stopPropagation>
+            <header class="modal-header">
+                <h2 id="log-title">@L.T("Modal.LogTitle")</h2>
+                <button type="button" class="modal-close" @onclick="CloseLogs" title="@L.T("Action.Close")">×</button>
+            </header>
+            <div class="modal-body log-list">
+                @if (Workspace.Logs.Count == 0)
+                {
+                    <span class="log-empty">@L.T("Modal.LogEmpty")</span>
+                }
+                else
+                {
+                    @foreach (var entry in Workspace.Logs.Reverse())
+                    {
+                        <div class="log-entry">
+                            <time>@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</time>
+                            <span class="log-level @entry.Level.ToLowerInvariant()">@entry.Level</span>
+                            <span title="@entry.Details">@entry.Message</span>
+                        </div>
+                    }
+                }
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="secondary" @onclick="Workspace.ClearLogs">@L.T("Action.Clear")</button>
+                <button type="button" class="secondary" @onclick="CloseLogs">@L.T("Action.Close")</button>
+            </footer>
+        </section>
+    </div>
+}
+
+@if (showPreviewModal)
+{
+    <div class="modal-backdrop" @onclick="ClosePreview">
+        <section class="modal-dialog preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" @onclick:stopPropagation>
+            <header class="modal-header">
+                <h2 id="preview-title">@L.T("Modal.PreviewTitle")</h2>
+                <button type="button" class="modal-close" @onclick="ClosePreview" title="@L.T("Action.Close")">×</button>
+            </header>
+            <div class="modal-body">
+                <pre class="preview-text">@previewText</pre>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="secondary" @onclick="CopyPreviewAsync" disabled="@(previewText.Length == 0)">@L.T("Action.Copy")</button>
+                <button type="button" class="secondary" @onclick="DownloadPreviewAsync" disabled="@(previewText.Length == 0)">@L.T("Action.Download")</button>
+                <span class="modal-spacer"></span>
+                <button type="button" class="secondary" @onclick="ClosePreview">@L.T("Action.Close")</button>
+            </footer>
+        </section>
+    </div>
+}
+
+@if (showForwardModal)
+{
+    <div class="modal-backdrop" @onclick="CloseForwardModal">
+        <section class="modal-dialog forward-modal" role="dialog" aria-modal="true" aria-labelledby="forward-title" @onclick:stopPropagation>
+            <header class="modal-header">
+                <h2 id="forward-title">@L.T("Modal.ForwardTitle")</h2>
+                <button type="button" class="modal-close" @onclick="CloseForwardModal" title="@L.T("Action.Close")">×</button>
+            </header>
+            <div class="modal-body">
+                <div class="settings-grid">
+                    <label for="forward-frames">@L.T("Modal.Frames")</label>
+                    <input id="forward-frames" type="number" min="1" max="100000" step="1" @bind="forwardFrames" />
+                </div>
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="secondary" @onclick="CloseForwardModal">@L.T("Action.Cancel")</button>
+                <button type="button" class="secondary" @onclick="ApplyForwardShift">@L.T("Modal.ApplyShift")</button>
+            </footer>
+        </section>
+    </div>
+}
+
+@if (showRelatedModal)
+{
+    <div class="modal-backdrop" @onclick="CloseRelatedModal">
+        <section class="modal-dialog related-modal" role="dialog" aria-modal="true" aria-labelledby="related-title" @onclick:stopPropagation>
+            <header class="modal-header">
+                <h2 id="related-title">@L.T("Modal.RelatedTitle")</h2>
+                <button type="button" class="modal-close" @onclick="CloseRelatedModal" title="@L.T("Action.Close")">×</button>
+            </header>
+            <div class="modal-body">
+                @if (Workspace.RelatedMediaReferences.Count == 0)
+                {
+                    <p class="settings-note">@L.T("Status.NoRelatedMedia")</p>
+                }
+                else
+                {
+                    <ul class="related-list">
+                        @foreach (var media in Workspace.RelatedMediaReferences)
+                        {
+                            <li>
+                                <strong>@media.DisplayName</strong>
+                                <div class="related-path">
+                                    @L.T("Related.Relative"):
+                                    @if (!string.IsNullOrWhiteSpace(media.RelativePath))
+                                    {
+                                        <a href="@media.RelativePath" target="_blank" rel="noopener">@media.RelativePath</a>
+                                    }
+                                    else
+                                    {
+                                        <code>—</code>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(media.AbsolutePath))
+                                {
+                                    <div class="related-path">@L.T("Related.Absolute"): <code>@media.AbsolutePath</code></div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                    <p class="settings-note">@L.T("Related.BrowserLimit")</p>
+                }
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="secondary" @onclick="CloseRelatedModal">@L.T("Action.Close")</button>
+            </footer>
+        </section>
+    </div>
+}
+
+@if (showSettingsModal)
+{
+    <div class="modal-backdrop" @onclick="CancelSettings">
+        <section class="modal-dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" @onclick:stopPropagation>
+            <header class="modal-header">
+                <h2 id="settings-title">@L.T("Modal.SettingsTitle")</h2>
+                <button type="button" class="modal-close" @onclick="CancelSettings" title="@L.T("Action.Close")">×</button>
+            </header>
+            <nav class="settings-tabs" aria-label="@L.T("Modal.SettingsTitle")">
+                @for (var tab = 0; tab < L.SettingsTabs.Count; tab++)
+                {
+                    var tabIndex = tab;
+                    <button type="button"
+                            class="settings-tab @(settingsTab == tabIndex ? "active" : null)"
+                            @onclick="() => settingsTab = tabIndex">@L.SettingsTabs[tabIndex]</button>
+                }
+            </nav>
+            <div class="modal-body settings-page">
+                @if (settingsTab == 0)
+                {
+                    <h3>@L.T("Settings.General")</h3>
+                    <div class="settings-grid">
+                        <label for="settings-ui-language">@L.T("Settings.UiLanguage")</label>
+                        <select id="settings-ui-language" @bind="draftUiLanguage">
+                            @foreach (var language in UiLanguages)
+                            {
+                                <option value="@language.Code">@language.DisplayName</option>
+                            }
+                        </select>
+                        <label for="settings-save-directory">@L.T("Settings.SaveDirectory")</label>
+                        <input id="settings-save-directory" value="@L.T("Settings.SaveDirectoryValue")" disabled title="@L.T("Settings.SaveDirectoryNote")" />
+                    </div>
+                    <p class="settings-note">@L.T("Settings.SaveDirectoryNote")</p>
+                }
+                else if (settingsTab == 1)
+                {
+                    <h3>@L.T("Settings.Tools")</h3>
+                    <div class="settings-grid settings-disabled-page">
+                        @foreach (var tool in ExternalToolIds)
+                        {
+                            <label for="tool-@tool">@L.T($"Tool.{tool}")</label>
+                            <div class="tool-setting">
+                                <input id="tool-@tool" value="@L.T("Settings.ToolUnavailable")" disabled />
+                                <span>@L.T("Settings.ToolNote")</span>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="secondary" disabled title="@L.T("Settings.ToolUnavailable")">@L.T("Settings.ValidateTools")</button>
+                }
+                else if (settingsTab == 2)
+                {
+                    <h3>@L.T("Settings.Output")</h3>
+                    <div class="settings-grid">
+                        <label for="settings-save-format">@L.T("Settings.DefaultSaveFormat")</label>
+                        <select id="settings-save-format" @bind="draftSaveFormatIndex">
+                            @foreach (var format in Workspace.SaveFormats)
+                            {
+                                <option value="@format.Index">@format.DisplayName</option>
+                            }
+                        </select>
+                        <label for="settings-xml-language">@L.T("Settings.DefaultXmlLanguage")</label>
+                        <select id="settings-xml-language" @bind="draftXmlLanguage">
+                            @foreach (var language in Workspace.XmlLanguages)
+                            {
+                                <option value="@language">@language</option>
+                            }
+                        </select>
+                        <label for="settings-encoding">@L.T("Settings.TextEncoding")</label>
+                        <select id="settings-encoding" @bind="draftOutputTextEncodingIndex">
+                            @for (var encodingIndex = 0; encodingIndex < OutputTextEncodings.All.Count; encodingIndex++)
+                            {
+                                <option value="@encodingIndex">@OutputTextEncodings.DisplayName(OutputTextEncodings.All[encodingIndex])</option>
+                            }
+                        </select>
+                        <label>@L.T("Settings.EmitBom")</label>
+                        <label class="settings-check"><input type="checkbox" @bind="draftEmitBom" /> @L.T("Settings.EmitBomLabel")</label>
+                        <label for="settings-tolerance">@L.T("Settings.Tolerance")</label>
+                        <div class="range-setting">
+                            <input id="settings-tolerance" type="range" min="0.01" max="0.30" step="0.01" @bind="draftFrameAccuracyTolerance" />
+                            <output>@draftFrameAccuracyTolerance.ToString("0.##")</output>
+                        </div>
+                    </div>
+                }
+                else if (settingsTab == 3)
+                {
+                    <h3>@L.T("Settings.Appearance")</h3>
+                    <div class="settings-grid">
+                        <label for="settings-theme">@L.T("Settings.Preset")</label>
+                        <select id="settings-theme" @bind="draftThemePresetId">
+                            @foreach (var theme in ThemeOptions)
+                            {
+                                <option value="@theme.Id">@theme.DisplayName</option>
+                            }
+                        </select>
+                        <label>@L.T("Settings.Preview")</label>
+                        <div class="theme-swatches">
+                            @foreach (var swatch in SelectedTheme.PreviewSwatches)
+                            {
+                                <span style="background:@swatch" title="@swatch"></span>
+                            }
+                        </div>
+                        <label for="settings-ui-font">@L.T("Settings.UiFont")</label>
+                        <div class="font-setting">
+                            <select id="settings-ui-font" @bind="draftUiFontFamily">
+                                @foreach (var font in UiFontOptions)
+                                {
+                                    <option value="@font.Value">@font.Name</option>
+                                }
+                            </select>
+                            <div class="font-preview" style="font-family:@draftUiFontFamily">ChapterTool UI preview</div>
+                        </div>
+                        <label for="settings-mono-font">@L.T("Settings.MonoFont")</label>
+                        <div class="font-setting">
+                            <select id="settings-mono-font" @bind="draftMonospaceFontFamily">
+                                @foreach (var font in MonospaceFontOptions)
+                                {
+                                    <option value="@font.Value">@font.Name</option>
+                                }
+                            </select>
+                            <div class="font-preview mono-preview" style="font-family:@draftMonospaceFontFamily">00:00:00.000  Chapter</div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <h3>@L.T("Settings.About")</h3>
+                    <div class="about-body">
+                        <p>@L.T("Settings.AboutBody")</p>
+                        <p class="settings-note">@L.T("Settings.AboutRuntime")</p>
+                        <p class="settings-note">@L.T("Settings.AboutLicense")</p>
+                        <a href="https://github.com/tautcony/ChapterTool" target="_blank" rel="noreferrer">github.com/tautcony/ChapterTool</a>
+                    </div>
+                }
+            </div>
+            <footer class="modal-footer">
+                <button type="button" class="secondary" @onclick="ResetSettings">@L.T("Action.RestoreDefaults")</button>
+                <span class="modal-spacer"></span>
+                <button type="button" class="secondary" @onclick="CancelSettings">@L.T("Action.Cancel")</button>
+                <button type="button" class="secondary" @onclick="ApplySettingsAsync">@L.T("Action.Apply")</button>
+            </footer>
+        </section>
+    </div>
+}
+
+@code {
+    private const string SettingsStorageKey = "chaptertool.wasm.settings";
+    private static readonly string[] LegacySettingsStorageKeys =
+    [
+        "chaptertool.core.wasm-demo.settings",
+        "chaptertool.core.wasm-demo.settings.v1",
+        "chaptertool.core.wasm-demo.settings.v2",
+        "chaptertool.core.wasm.settings"
+    ];
+    private static readonly JsonSerializerOptions SettingsJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true
+    };
+    private static readonly WasmLanguageOption[] UiLanguages =
+    [
+        new("zh-CN", "Chinese (Simplified)"),
+        new("en-US", "English"),
+        new("ja-JP", "Japanese")
+    ];
+    private static readonly string[] ExternalToolIds = ["mkvtoolnix", "eac3to", "ffprobe", "ffmpeg"];
+    private static readonly WasmFontOption[] UiFontOptions =
+    [
+        new("system-ui", "System UI"),
+        new("Segoe UI, system-ui, sans-serif", "Segoe UI"),
+        new("Arial, sans-serif", "Arial")
+    ];
+    private static readonly WasmFontOption[] MonospaceFontOptions =
+    [
+        new("ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", "System monospace"),
+        new("Menlo, Consolas, monospace", "Menlo / Consolas"),
+        new("Courier New, monospace", "Courier New")
+    ];
+    private static readonly WasmThemeOption[] ThemeOptions =
+    [
+        new("avalonia-default", "Avalonia Default", ["#F0F0F0", "#F7F7F7", "#FFFFFF", "#111111", "#0067C0", "#767676", "#D6E9F8", "#CCE4F7"]),
+        new("solarized-light", "Solarized Light", ["#FDF6E3", "#EEE8D5", "#FFFDF5", "#002B36", "#006C75", "#657B83", "#E1DABF", "#C8BE9F"]),
+        new("solarized-dark", "Solarized Dark", ["#002B36", "#073642", "#0B414D", "#FDF6E3", "#D9A400", "#839496", "#155766", "#1E6675"]),
+        new("gruvbox-light", "Gruvbox Light", ["#FBF1C7", "#EBDBB2", "#FFF8D9", "#282828", "#9D0006", "#7C6F64", "#D5C4A1", "#BDAE93"]),
+        new("gruvbox-dark", "Gruvbox Dark", ["#282828", "#3C3836", "#32302F", "#FBF1C7", "#D79921", "#A89984", "#504945", "#665C54"]),
+        new("ayu-light", "Ayu Light", ["#FAFAFA", "#F3F4F5", "#FFFFFF", "#242936", "#006D77", "#6C7680", "#E1E7EA", "#CBD3D8"]),
+        new("ayu-mirage", "Ayu Mirage", ["#1F2430", "#242936", "#2A3141", "#F3F4F5", "#FFCC66", "#8A919F", "#343D50", "#475268"]),
+        new("ayu-dark", "Ayu Dark", ["#0B0E14", "#11151C", "#151A23", "#E6E1CF", "#FFB454", "#7A8494", "#242B38", "#343D4D"])
+    ];
+    private int saveFormatIndex;
+    private int chapterNameModeIndex;
+    private int orderShift;
+    private int selectedFrameRateIndex;
+    private string xmlLanguage = "eng";
+    private bool applyExpression;
+    private string expression = "t";
+    private bool roundFrames = true;
+    private string uiLanguage = "en-US";
+    private int outputTextEncodingIndex;
+    private bool emitBom = true;
+    private decimal frameAccuracyTolerance = 0.15m;
+    private string themePresetId = "avalonia-default";
+    private string uiFontFamily = "system-ui";
+    private string monospaceFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    private bool showLogModal;
+    private bool showSettingsModal;
+    private bool showPreviewModal;
+    private bool showForwardModal;
+    private bool showRelatedModal;
+    private bool isDragOver;
+    private int settingsTab;
+    private int draftSaveFormatIndex;
+    private int draftChapterNameModeIndex;
+    private int draftOrderShift;
+    private int draftFrameRateIndex;
+    private string draftXmlLanguage = "eng";
+    private bool draftApplyExpression;
+    private string draftExpression = "t";
+    private bool draftRoundFrames = true;
+    private string draftUiLanguage = "en-US";
+    private int draftOutputTextEncodingIndex;
+    private bool draftEmitBom = true;
+    private decimal draftFrameAccuracyTolerance = 0.15m;
+    private string draftThemePresetId = "avalonia-default";
+    private string draftUiFontFamily = "system-ui";
+    private string draftMonospaceFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    private int contextMenuIndex = -1;
+    private string contextMenuXpx = "0px";
+    private string contextMenuYpx = "0px";
+    private string? contextMenuTarget;
+    private string previewText = string.Empty;
+    private string? previewFileName;
+    private int forwardFrames = 1;
+    private DotNetObjectReference<Home>? dropZoneRef;
+
+    private WasmThemeOption SelectedTheme =>
+        ThemeOptions.FirstOrDefault(theme => string.Equals(theme.Id, draftThemePresetId, StringComparison.OrdinalIgnoreCase)) ?? ThemeOptions[0];
+
+    protected override void OnInitialized()
+    {
+        Workspace.Changed += OnWorkspaceChanged;
+        L.CultureChanged += OnCultureChanged;
+        PullOptionsFromWorkspace();
+        Workspace.SetStatusMessage(L.T("Status.Ready"));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        dropZoneRef = DotNetObjectReference.Create(this);
+        await Js.InvokeVoidAsync("chapterToolWasm.registerDropZone", "chaptertool-shell", dropZoneRef);
+
+        string? json = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", SettingsStorageKey);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            foreach (var legacyKey in LegacySettingsStorageKeys)
+            {
+                var legacyJson = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", legacyKey);
+                if (!string.IsNullOrWhiteSpace(legacyJson))
+                {
+                    json = legacyJson;
+                    await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, legacyJson);
+                    break;
+                }
+            }
+        }
+
+        foreach (var legacyKey in LegacySettingsStorageKeys)
+        {
+            await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", legacyKey);
+        }
+
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                var settings = JsonSerializer.Deserialize<WasmSettings>(json, SettingsJsonOptions);
+                if (settings is { SchemaVersion: 1, Application: not null, Theme: not null, Font: not null })
+                {
+                    ApplySettingsToWorkspace(settings);
+                    await ApplyAppearanceAsync();
+                    PullOptionsFromWorkspace();
+                    StateHasChanged();
+                }
+                else
+                {
+                    await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", SettingsStorageKey);
+                }
+            }
+            catch (JsonException)
+            {
+                await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", SettingsStorageKey);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        Workspace.Changed -= OnWorkspaceChanged;
+        L.CultureChanged -= OnCultureChanged;
+        dropZoneRef?.Dispose();
+    }
+
+    [JSInvokable]
+    public void OnDragStateChanged(bool over)
+    {
+        if (isDragOver == over)
+        {
+            return;
+        }
+
+        isDragOver = over;
+        if (over)
+        {
+            Workspace.SetStatusMessage(L.T("Status.DropReady"));
+        }
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnBrowserFileDropped(string name, byte[] bytes)
+    {
+        isDragOver = false;
+        CloseContextMenu();
+        if (string.IsNullOrWhiteSpace(name) || bytes is null || bytes.Length == 0)
+        {
+            Workspace.SetStatusMessage(L.T("Status.DropEmpty"));
+            Workspace.RecordAction(L.T("Status.DropEmpty"));
+            StateHasChanged();
+            return;
+        }
+
+        if (bytes.LongLength > WasmWorkspace.MaxLoadBytes)
+        {
+            Workspace.SetStatusMessage(L.T("Status.DropTooLarge"));
+            Workspace.RecordAction(L.T("Status.DropTooLarge"));
+            StateHasChanged();
+            return;
+        }
+
+        PushExportOptions();
+        PushProjectionOptions();
+        await Workspace.LoadAsync(name, bytes);
+        PullOptionsFromWorkspace();
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnBrowserFileDropRejected(string reason)
+    {
+        isDragOver = false;
+        var message = string.Equals(reason, "too-large", StringComparison.OrdinalIgnoreCase)
+            ? L.T("Status.DropTooLarge")
+            : L.T("Status.DropBlocked");
+        Workspace.SetStatusMessage(message);
+        Workspace.RecordAction(message);
+        StateHasChanged();
+    }
+
+    private void OnWorkspaceChanged() => InvokeAsync(() =>
+    {
+        PullOptionsFromWorkspace();
+        StateHasChanged();
+    });
+
+    private void OnCultureChanged() => InvokeAsync(StateHasChanged);
+
+    private void PullOptionsFromWorkspace()
+    {
+        saveFormatIndex = Workspace.SaveFormatIndex;
+        chapterNameModeIndex = Workspace.ChapterNameModeIndex;
+        orderShift = Workspace.OrderShift;
+        xmlLanguage = Workspace.XmlLanguage;
+        applyExpression = Workspace.ApplyExpression;
+        expression = Workspace.Expression;
+        roundFrames = Workspace.RoundFrames;
+        selectedFrameRateIndex = Workspace.SelectedFrameRateIndex;
+        outputTextEncodingIndex = OutputTextEncodings.All.ToList().IndexOf(Workspace.TextEncoding);
+        emitBom = Workspace.EmitBom;
+        frameAccuracyTolerance = Workspace.FrameAccuracyTolerance;
+    }
+
+    private void PushExportOptions()
+    {
+        Workspace.SaveFormatIndex = saveFormatIndex;
+        Workspace.XmlLanguage = xmlLanguage;
+        Workspace.TextEncoding = OutputTextEncodings.All[Math.Clamp(outputTextEncodingIndex, 0, OutputTextEncodings.All.Count - 1)];
+        Workspace.EmitBom = emitBom;
+        Workspace.FrameAccuracyTolerance = frameAccuracyTolerance;
+    }
+
+    private void PushProjectionOptions()
+    {
+        Workspace.ChapterNameModeIndex = chapterNameModeIndex;
+        Workspace.OrderShift = orderShift;
+        Workspace.ApplyExpression = applyExpression;
+        Workspace.Expression = expression;
+        Workspace.RoundFrames = roundFrames;
+    }
+
+    private async Task OnExportOptionsChanged()
+    {
+        PushExportOptions();
+        StateHasChanged();
+        await PersistSettingsAsync();
+    }
+
+    private async Task OnProjectionOptionsChanged()
+    {
+        PushProjectionOptions();
+        if (chapterNameModeIndex != 2 && !string.IsNullOrEmpty(Workspace.ChapterNameTemplateText) && chapterNameModeIndex != 2)
+        {
+            // Switching away from Template keeps stored text until a new template is loaded,
+            // but export options only project template text in Template mode.
+        }
+
+        Workspace.ApplyOptionsAndRefresh();
+        await PersistSettingsAsync();
+    }
+
+    private async Task OnRoundFramesChanged(ChangeEventArgs args)
+    {
+        roundFrames = args.Value is bool b
+            ? b
+            : string.Equals(args.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        Workspace.RoundFrames = roundFrames;
+        Workspace.ApplyOptionsAndRefresh();
+        await PersistSettingsAsync();
+    }
+
+    private async Task OnFrameRateChanged(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var index))
+        {
+            selectedFrameRateIndex = index;
+            Workspace.PreferredFrameRateIndex = index;
+            Workspace.SelectedFrameRateIndex = index;
+            await PersistSettingsAsync();
+        }
+    }
+
+    private async Task OnApplyExpressionChanged(ChangeEventArgs args)
+    {
+        applyExpression = args.Value is bool b
+            ? b
+            : string.Equals(args.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
+        Workspace.ApplyExpression = applyExpression;
+        Workspace.Expression = expression;
+        Workspace.ApplyOptionsAndRefresh();
+        await PersistSettingsAsync();
+    }
+
+    private void OnExpressionInput(ChangeEventArgs args)
+    {
+        expression = args.Value?.ToString() ?? "t";
+        Workspace.Expression = expression;
+        if (applyExpression)
+        {
+            Workspace.ApplyOptionsAndRefresh();
+        }
+    }
+
+    private async Task OnExpressionCommit(ChangeEventArgs args)
+    {
+        expression = args.Value?.ToString() ?? "t";
+        Workspace.Expression = expression;
+        if (applyExpression)
+        {
+            Workspace.ApplyOptionsAndRefresh();
+        }
+
+        await PersistSettingsAsync();
+    }
+
+    private async Task TriggerLoad()
+    {
+        CloseContextMenu();
+        await Js.InvokeVoidAsync("chapterToolWasm.click", "loadFileInput");
+    }
+
+    private async Task TriggerAppendMpls()
+    {
+        CloseContextMenu();
+        await Js.InvokeVoidAsync("chapterToolWasm.click", "appendMplsInput");
+    }
+
+    private async Task TriggerTemplateLoad()
+    {
+        await Js.InvokeVoidAsync("chapterToolWasm.click", "templateFileInput");
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        await LoadFileAsync(file);
+    }
+
+    private async Task OnAppendMplsSelected(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        await AppendMplsFileAsync(file);
+    }
+
+    private async Task OnTemplateSelected(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            var text = await reader.ReadToEndAsync();
+            if (Workspace.SetChapterNameTemplate(file.Name, text))
+            {
+                chapterNameModeIndex = 2;
+                PullOptionsFromWorkspace();
+            }
+        }
+        catch (Exception)
+        {
+            Workspace.SetStatusMessage(L.T("Status.TemplateFailed"));
+            Workspace.RecordAction(L.T("Status.TemplateFailed"));
+        }
+    }
+
+    private async Task LoadFileAsync(IBrowserFile file)
+    {
+        try
+        {
+            await using var stream = file.OpenReadStream(maxAllowedSize: WasmWorkspace.MaxLoadBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            PushExportOptions();
+            PushProjectionOptions();
+            await Workspace.LoadAsync(file.Name, memory.ToArray());
+            PullOptionsFromWorkspace();
+        }
+        catch (IOException)
+        {
+            Workspace.SetStatusMessage(L.T("Status.DropTooLarge"));
+            Workspace.RecordAction(L.T("Status.DropTooLarge"));
+        }
+        catch (Exception ex)
+        {
+            Workspace.SetStatusMessage(ex.Message);
+            await Js.InvokeVoidAsync("console.error", ex.Message);
+        }
+    }
+
+    private async Task AppendMplsFileAsync(IBrowserFile file)
+    {
+        try
+        {
+            await using var stream = file.OpenReadStream(maxAllowedSize: WasmWorkspace.MaxLoadBytes);
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory);
+            PushExportOptions();
+            PushProjectionOptions();
+            await Workspace.AppendMplsAsync(file.Name, memory.ToArray());
+            PullOptionsFromWorkspace();
+        }
+        catch (Exception ex)
+        {
+            Workspace.SetStatusMessage(ex.Message);
+            Workspace.RecordAction(ex.Message);
+        }
+    }
+
+    private async Task LoadSampleAsync()
+    {
+        PushExportOptions();
+        PushProjectionOptions();
+        await Workspace.LoadSampleAsync();
+        PullOptionsFromWorkspace();
+    }
+
+    private async Task ReloadAsync()
+    {
+        CloseContextMenu();
+        PushExportOptions();
+        PushProjectionOptions();
+        await Workspace.ReloadAsync();
+        PullOptionsFromWorkspace();
+    }
+
+    private async Task SaveAsync()
+    {
+        PushExportOptions();
+        PushProjectionOptions();
+        var result = Workspace.Save();
+        if (result.Success && result.Content is not null && result.FileName is not null)
+        {
+            await Js.InvokeVoidAsync(
+                "chapterToolWasm.downloadText",
+                result.FileName,
+                result.Content,
+                Workspace.OutputTextEncodingId,
+                Workspace.EmitBom);
+        }
+    }
+
+    private Task PreviewAsync()
+    {
+        PushExportOptions();
+        PushProjectionOptions();
+        var result = Workspace.Preview();
+        if (result.Success)
+        {
+            previewText = result.Content;
+            previewFileName = result.FileName;
+            showPreviewModal = true;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task PreviewFromMenu()
+    {
+        CloseContextMenu();
+        await PreviewAsync();
+    }
+
+    private void RefreshRows()
+    {
+        PushExportOptions();
+        PushProjectionOptions();
+        Workspace.RefreshRows();
+    }
+
+    private void ClosePreview() => showPreviewModal = false;
+
+    private async Task CopyPreviewAsync()
+    {
+        if (previewText.Length == 0)
+        {
+            return;
+        }
+
+        await CopyTextAsync(previewText, L.T("Copy.Preview"));
+    }
+
+    private async Task DownloadPreviewAsync()
+    {
+        if (previewText.Length == 0)
+        {
+            return;
+        }
+
+        await Js.InvokeVoidAsync(
+            "chapterToolWasm.downloadText",
+            previewFileName ?? "preview.txt",
+            previewText,
+            Workspace.OutputTextEncodingId,
+            Workspace.EmitBom);
+        Workspace.RecordAction(L.T("Action.Download"));
+    }
+
+    private void OnClipChanged(ChangeEventArgs args)
+    {
+        Workspace.SelectClip(args.Value?.ToString());
+    }
+
+    private void OnRowClick(int index, MouseEventArgs args)
+    {
+        CloseContextMenu();
+        Workspace.SelectRow(index, ctrl: args.CtrlKey || args.MetaKey, shift: args.ShiftKey);
+    }
+
+    private void OnTimeChanged(int index, ChangeEventArgs args) =>
+        Workspace.UpdateRow(index, args.Value?.ToString(), null);
+
+    private void OnNameChanged(int index, ChangeEventArgs args) =>
+        Workspace.UpdateRow(index, null, args.Value?.ToString());
+
+    private void OpenLogs() => showLogModal = true;
+
+    private void CloseLogs() => showLogModal = false;
+
+    private void OpenSettings()
+    {
+        draftSaveFormatIndex = saveFormatIndex;
+        draftChapterNameModeIndex = chapterNameModeIndex;
+        draftOrderShift = orderShift;
+        draftFrameRateIndex = selectedFrameRateIndex;
+        draftXmlLanguage = xmlLanguage;
+        draftApplyExpression = applyExpression;
+        draftExpression = expression;
+        draftRoundFrames = roundFrames;
+        draftUiLanguage = uiLanguage;
+        draftOutputTextEncodingIndex = outputTextEncodingIndex;
+        draftEmitBom = emitBom;
+        draftFrameAccuracyTolerance = frameAccuracyTolerance;
+        draftThemePresetId = themePresetId;
+        draftUiFontFamily = uiFontFamily;
+        draftMonospaceFontFamily = monospaceFontFamily;
+        settingsTab = 0;
+        showSettingsModal = true;
+    }
+
+    private void CancelSettings() => showSettingsModal = false;
+
+    private void ResetSettings()
+    {
+        draftSaveFormatIndex = 0;
+        draftChapterNameModeIndex = 0;
+        draftOrderShift = 0;
+        draftFrameRateIndex = 0;
+        draftXmlLanguage = Workspace.XmlLanguages.FirstOrDefault("und");
+        draftApplyExpression = false;
+        draftExpression = "t";
+        draftRoundFrames = true;
+        draftUiLanguage = "en-US";
+        draftOutputTextEncodingIndex = 0;
+        draftEmitBom = true;
+        draftFrameAccuracyTolerance = 0.15m;
+        draftThemePresetId = "avalonia-default";
+        draftUiFontFamily = "system-ui";
+        draftMonospaceFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    }
+
+    private async Task ApplySettingsAsync()
+    {
+        var settings = CreateSettingsDocumentFromDraft();
+        ApplySettingsToWorkspace(settings);
+        ApplySessionDraft();
+        await ApplyAppearanceAsync();
+        await PersistSettingsAsync();
+        showSettingsModal = false;
+        StateHasChanged();
+    }
+
+    private void ApplySettingsToWorkspace(WasmSettings settings)
+    {
+        var application = settings.Application ?? new WasmApplicationSettings();
+        var theme = settings.Theme ?? new WasmThemeSettings();
+        var font = settings.Font ?? new WasmFontSettings();
+        var parsedFormat = Enum.TryParse<ChapterExportFormat>(application.DefaultSaveFormat, true, out var format)
+            ? format
+            : ChapterExportFormat.Txt;
+
+        saveFormatIndex = Math.Clamp(ChapterExportFormats.IndexOf(parsedFormat), 0, Math.Max(0, Workspace.SaveFormats.Count - 1));
+        xmlLanguage = Workspace.XmlLanguages.Contains(application.DefaultXmlLanguage, StringComparer.OrdinalIgnoreCase)
+            ? application.DefaultXmlLanguage
+            : Workspace.XmlLanguages.FirstOrDefault("und");
+        uiLanguage = UiLanguages.Any(language => string.Equals(language.Code, application.Language, StringComparison.OrdinalIgnoreCase))
+            ? application.Language
+            : "en-US";
+        L.SetCulture(uiLanguage);
+        outputTextEncodingIndex = Math.Max(0, OutputTextEncodings.All.ToList().IndexOf(OutputTextEncodings.ParseOrDefault(application.OutputTextEncoding)));
+        emitBom = application.EmitBom;
+        frameAccuracyTolerance = Math.Clamp(application.FrameAccuracyTolerance <= 0 ? 0.15m : application.FrameAccuracyTolerance, 0.01m, 0.30m);
+        themePresetId = ThemeOptions.Any(option => string.Equals(option.Id, theme.PresetId, StringComparison.OrdinalIgnoreCase))
+            ? theme.PresetId
+            : "avalonia-default";
+        uiFontFamily = string.IsNullOrWhiteSpace(font.UiFontFamily) ? "system-ui" : font.UiFontFamily;
+        monospaceFontFamily = string.IsNullOrWhiteSpace(font.MonospaceFontFamily)
+            ? "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+            : font.MonospaceFontFamily;
+        PushExportOptions();
+        Workspace.ApplyOptionsAndRefresh();
+    }
+
+    private async Task PersistSettingsAsync()
+    {
+        var settings = CreateSettingsDocument();
+        await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, JsonSerializer.Serialize(settings, SettingsJsonOptions));
+    }
+
+    private WasmSettings CreateSettingsDocumentFromDraft() =>
+        new(
+            SchemaVersion: 1,
+            Application: new WasmApplicationSettings(
+                Language: draftUiLanguage,
+                DefaultSaveFormat: ChapterExportFormats.AtIndex(draftSaveFormatIndex).ToString(),
+                DefaultXmlLanguage: draftXmlLanguage,
+                OutputTextEncoding: OutputTextEncodings.Id(OutputTextEncodings.All[Math.Clamp(draftOutputTextEncodingIndex, 0, OutputTextEncodings.All.Count - 1)]),
+                EmitBom: draftEmitBom,
+                FrameAccuracyTolerance: draftFrameAccuracyTolerance),
+            Theme: new WasmThemeSettings(draftThemePresetId),
+            Font: new WasmFontSettings(
+                UiFontFamily: draftUiFontFamily == "system-ui" ? string.Empty : draftUiFontFamily,
+                MonospaceFontFamily: draftMonospaceFontFamily == "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" ? string.Empty : draftMonospaceFontFamily));
+
+    private WasmSettings CreateSettingsDocument() =>
+        new(
+            SchemaVersion: 1,
+            Application: new WasmApplicationSettings(
+                Language: uiLanguage,
+                DefaultSaveFormat: ChapterExportFormats.AtIndex(saveFormatIndex).ToString(),
+                DefaultXmlLanguage: xmlLanguage,
+                OutputTextEncoding: Workspace.OutputTextEncodingId,
+                EmitBom: emitBom,
+                FrameAccuracyTolerance: frameAccuracyTolerance),
+            Theme: new WasmThemeSettings(themePresetId),
+            Font: new WasmFontSettings(
+                UiFontFamily: uiFontFamily == "system-ui" ? string.Empty : uiFontFamily,
+                MonospaceFontFamily: monospaceFontFamily == "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" ? string.Empty : monospaceFontFamily));
+
+    private void ApplySessionDraft()
+    {
+        chapterNameModeIndex = Math.Clamp(draftChapterNameModeIndex, 0, 2);
+        orderShift = Math.Max(0, draftOrderShift);
+        selectedFrameRateIndex = Math.Max(0, draftFrameRateIndex);
+        applyExpression = draftApplyExpression;
+        expression = string.IsNullOrWhiteSpace(draftExpression) ? "t" : draftExpression.Trim();
+        roundFrames = draftRoundFrames;
+        PushProjectionOptions();
+        Workspace.SelectedFrameRateIndex = selectedFrameRateIndex;
+        Workspace.PreferredFrameRateIndex = selectedFrameRateIndex;
+        Workspace.ApplyOptionsAndRefresh();
+    }
+
+    private async Task ApplyAppearanceAsync()
+    {
+        await Js.InvokeVoidAsync("chapterToolWasm.applyAppearance", themePresetId, uiLanguage, uiFontFamily, monospaceFontFamily);
+    }
+
+    private void OpenLoadContextMenu(MouseEventArgs args)
+    {
+        contextMenuTarget = "load";
+        contextMenuIndex = -1;
+        contextMenuXpx = $"{args.ClientX}px";
+        contextMenuYpx = $"{args.ClientY}px";
+    }
+
+    private void OpenContextMenu(int index, MouseEventArgs args)
+    {
+        contextMenuTarget = "row";
+        contextMenuIndex = index;
+        contextMenuXpx = $"{args.ClientX}px";
+        contextMenuYpx = $"{args.ClientY}px";
+        Workspace.EnsureRowSelected(index);
+    }
+
+    private void OpenClipContextMenu(MouseEventArgs args)
+    {
+        contextMenuTarget = "clip";
+        contextMenuIndex = -1;
+        contextMenuXpx = $"{args.ClientX}px";
+        contextMenuYpx = $"{args.ClientY}px";
+    }
+
+    private void OpenFrameRateContextMenu(MouseEventArgs args)
+    {
+        contextMenuTarget = "fps";
+        contextMenuIndex = -1;
+        contextMenuXpx = $"{args.ClientX}px";
+        contextMenuYpx = $"{args.ClientY}px";
+    }
+
+    private void CloseContextMenu()
+    {
+        contextMenuTarget = null;
+        contextMenuIndex = -1;
+    }
+
+    private void OnShellClick()
+    {
+        if (contextMenuTarget is not null)
+        {
+            CloseContextMenu();
+        }
+    }
+
+    private void ToggleClipCombineContext()
+    {
+        Workspace.ToggleClipCombine();
+        CloseContextMenu();
+    }
+
+    private void ChangeFrameRateContext()
+    {
+        Workspace.ChangeSelectedFrameRate();
+        CloseContextMenu();
+    }
+
+    private void SelectContextRow()
+    {
+        Workspace.SelectRow(contextMenuIndex);
+        CloseContextMenu();
+    }
+
+    private void InsertContextRow()
+    {
+        Workspace.InsertBefore(contextMenuIndex);
+        CloseContextMenu();
+    }
+
+    private void DuplicateContextRow()
+    {
+        Workspace.DuplicateRow(contextMenuIndex);
+        CloseContextMenu();
+    }
+
+    private void DeleteContextRow()
+    {
+        Workspace.DeleteSelectedRows();
+        CloseContextMenu();
+    }
+
+    private async Task CopyContextRow() => await CopyTextAsync(Workspace.SelectedRowsText(), L.T("Copy.Row"));
+
+    private async Task CopyContextName() => await CopyTextAsync(Workspace.SelectedRowsText(includeTime: false), L.T("Copy.Name"));
+
+    private async Task CopyContextZones()
+    {
+        var zones = Workspace.CreateZonesForSelection();
+        if (zones.Length > 0)
+        {
+            await CopyTextAsync(zones, L.T("Copy.Zones"));
+        }
+
+        CloseContextMenu();
+    }
+
+    private async Task ZonesFromMenu()
+    {
+        await CopyContextZones();
+    }
+
+    private void OpenForwardModal()
+    {
+        CloseContextMenu();
+        forwardFrames = 1;
+        showForwardModal = true;
+    }
+
+    private void CloseForwardModal() => showForwardModal = false;
+
+    private void ApplyForwardShift()
+    {
+        Workspace.ShiftFramesForward(forwardFrames);
+        showForwardModal = false;
+    }
+
+    private void OpenRelatedMedia()
+    {
+        CloseContextMenu();
+        if (!Workspace.CanOpenRelatedMedia)
+        {
+            Workspace.SetStatusMessage(L.T("Status.NoRelatedMedia"));
+            Workspace.RecordAction(L.T("Status.NoRelatedMedia"));
+            return;
+        }
+
+        showRelatedModal = true;
+        Workspace.RecordAction(L.T("Status.RelatedMediaNote"));
+    }
+
+    private void CloseRelatedModal() => showRelatedModal = false;
+
+    private async Task CopyTextAsync(string text, string action)
+    {
+        if (text.Length > 0)
+        {
+            await Js.InvokeVoidAsync("chapterToolWasm.copyText", text);
+            Workspace.RecordAction(action);
+        }
+
+        CloseContextMenu();
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        var typing = false;
+        try
+        {
+            typing = await Js.InvokeAsync<bool>("chapterToolWasm.isEditableTarget");
+        }
+        catch (JSException)
+        {
+            typing = false;
+        }
+
+        if (typing)
+        {
+            return;
+        }
+
+        if (showSettingsModal || showLogModal || showPreviewModal || showForwardModal || showRelatedModal)
+        {
+            if (args.Key is "Escape")
+            {
+                showSettingsModal = false;
+                showLogModal = false;
+                showPreviewModal = false;
+                showForwardModal = false;
+                showRelatedModal = false;
+                CloseContextMenu();
+            }
+
+            return;
+        }
+
+        var key = args.Key;
+        var ctrl = args.CtrlKey || args.MetaKey;
+        if (ctrl && string.Equals(key, "o", StringComparison.OrdinalIgnoreCase))
+        {
+            await TriggerLoad();
+            return;
+        }
+
+        if (ctrl && string.Equals(key, "s", StringComparison.OrdinalIgnoreCase))
+        {
+            await SaveAsync();
+            return;
+        }
+
+        if ((ctrl && string.Equals(key, "r", StringComparison.OrdinalIgnoreCase)) || string.Equals(key, "F5", StringComparison.OrdinalIgnoreCase))
+        {
+            await ReloadAsync();
+            return;
+        }
+
+        if (string.Equals(key, "F11", StringComparison.OrdinalIgnoreCase))
+        {
+            await PreviewAsync();
+            return;
+        }
+
+        if (ctrl && string.Equals(key, "l", StringComparison.OrdinalIgnoreCase))
+        {
+            OpenLogs();
+            return;
+        }
+
+        if (!ctrl && string.Equals(key, "F9", StringComparison.OrdinalIgnoreCase))
+        {
+            RefreshRows();
+        }
+    }
+}

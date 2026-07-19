@@ -13,7 +13,7 @@ dotnet add package ChapterTool.Core
 
 ## Browser / WebAssembly
 
-`ChapterTool.Core` is pure managed code and declares browser as a supported platform. It can run inside Blazor WebAssembly (and other .NET browser WASM hosts). See the sample at `samples/ChapterTool.Core.WasmDemo`.
+`ChapterTool.Core` is pure managed code and declares browser as a supported platform. It can run inside Blazor WebAssembly (and other .NET browser WASM hosts). See the browser host at `src/ChapterTool.Wasm`.
 
 When hosting in the browser:
 
@@ -22,7 +22,7 @@ When hosting in the browser:
 3. Optional time expressions still use the built-in managed Lua engine.
 
 ```bash
-dotnet run --project samples/ChapterTool.Core.WasmDemo/ChapterTool.Core.WasmDemo.csproj
+dotnet run --project src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
 ```
 
 ## Features

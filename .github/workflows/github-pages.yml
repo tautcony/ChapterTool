@@ -1,18 +1,20 @@
-# Deploy the Blazor WebAssembly Core demo to GitHub Pages.
+# Deploy the Blazor WebAssembly app to GitHub Pages.
 # Site URL (project pages): https://<owner>.github.io/<repo>/
 #
 # One-time repo settings:
 #   Settings → Pages → Build and deployment → Source: GitHub Actions
 # Optional: Settings → Actions → General → allow SteveSandersonMS/ghaction-rewrite-base-href
-name: Deploy WASM Demo (GitHub Pages)
+name: Deploy WASM (GitHub Pages)
 
 on:
   push:
     branches:
       - master
     paths:
-      - "samples/ChapterTool.Core.WasmDemo/**"
+      - "src/ChapterTool.Wasm/**"
       - "src/ChapterTool.Core/**"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
       - ".github/workflows/github-pages.yml"
   workflow_dispatch:
 
@@ -26,8 +28,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PROJECT: samples/ChapterTool.Core.WasmDemo/ChapterTool.Core.WasmDemo.csproj
-  PUBLISH_DIR: samples/ChapterTool.Core.WasmDemo/bin/Release/net10.0/publish/wwwroot
+  PROJECT: src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+  PUBLISH_DIR: src/ChapterTool.Wasm/bin/Release/net10.0/publish/wwwroot
 
 jobs:
   deploy:
@@ -46,7 +48,7 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Publish Blazor WASM demo
+      - name: Publish Blazor WASM app
         run: |
           set -euo pipefail
           dotnet publish "${{ env.PROJECT }}" \
@@ -107,14 +109,14 @@ jobs:
           # Do not use `ls | head` under pipefail: GNU ls exits 2 on SIGPIPE.
           shopt -s nullglob
           blazor_js=("${publish_dir}/_framework"/blazor.webassembly*.js)
-          demo_wasm=("${publish_dir}/_framework"/ChapterTool.Core.WasmDemo*.wasm)
+          wasm_binary=("${publish_dir}/_framework"/ChapterTool.Wasm*.wasm)
           test "${#blazor_js[@]}" -ge 1
-          test "${#demo_wasm[@]}" -ge 1
+          test "${#wasm_binary[@]}" -ge 1
           framework_count="$(find "${publish_dir}/_framework" -type f | wc -l | tr -d ' ')"
           test "${framework_count}" -ge 10
           echo "framework_files=${framework_count}"
           echo "blazor_js=${blazor_js[0]##*/}"
-          echo "demo_wasm=${demo_wasm[0]##*/}"
+          echo "wasm_binary=${wasm_binary[0]##*/}"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

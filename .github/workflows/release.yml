@@ -1,6 +1,11 @@
 name: Publish GitHub Release
 
 on:
+  workflow_run:
+    workflows:
+      - Publish to NuGet
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       tag:
@@ -14,13 +19,24 @@ permissions:
 
 jobs:
   publish:
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          startsWith(github.event.workflow_run.head_branch, 'v')
+        )
+      }}
     runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
 
     steps:
       - name: Validate tag
         shell: bash
         env:
-          TAG: ${{ inputs.tag }}
+          TAG: ${{ env.TAG }}
         run: |
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
             echo "Invalid release tag: $TAG" >&2
@@ -31,14 +47,14 @@ jobs:
       - name: Checkout release source
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ env.TAG }}
 
       - name: Locate successful CI run
         id: ci-run
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
+          TAG: ${{ env.TAG }}
         run: |
           run_id="$(
             gh run list \
@@ -121,7 +137,7 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
+          TAG: ${{ env.TAG }}
         run: |
           version="${TAG#v}"
           awk -v version="$version" '
@@ -158,7 +174,7 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ inputs.tag }}
+          TAG: ${{ env.TAG }}
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
             echo "Updating existing release: $TAG"

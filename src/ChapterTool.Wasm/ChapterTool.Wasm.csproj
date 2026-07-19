@@ -5,10 +5,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
-    <!-- Sample is intentionally not published as a NuGet package. -->
+    <!-- Browser app is intentionally not published as a NuGet package. -->
     <IsPackable>false</IsPackable>
-    <RootNamespace>ChapterTool.Core.WasmDemo</RootNamespace>
-    <AssemblyName>ChapterTool.Core.WasmDemo</AssemblyName>
+    <RootNamespace>ChapterTool.Wasm</RootNamespace>
+    <AssemblyName>ChapterTool.Wasm</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

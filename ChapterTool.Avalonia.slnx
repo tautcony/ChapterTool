@@ -1,16 +1,15 @@
 <Solution>
-  <Folder Name="/samples/">
-    <Project Path="samples/ChapterTool.Core.WasmDemo/ChapterTool.Core.WasmDemo.csproj" />
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj" />
     <Project Path="src/ChapterTool.Core/ChapterTool.Core.csproj" />
     <Project Path="src/ChapterTool.Infrastructure/ChapterTool.Infrastructure.csproj" />
+    <Project Path="src/ChapterTool.Wasm/ChapterTool.Wasm.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj" />
     <Project Path="tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj" />
     <Project Path="tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj" />
+    <Project Path="tests/ChapterTool.Wasm.Tests/ChapterTool.Wasm.Tests.csproj" />
     <Project Path="tests/ChapterTool.Infrastructure.Tests/ChapterTool.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

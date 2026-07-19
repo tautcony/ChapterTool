@@ -102,9 +102,10 @@ WASM integration rules:
 - Export is already content-based (`ChapterExportResult.Content`); no disk writes are required.
 - Expression evaluation uses managed Lua (`LuaCSharp`) and does not require native runtimes.
 
-Sample host:
+Browser host:
 
-- `samples/ChapterTool.Core.WasmDemo` — Blazor WebAssembly standalone demo (`Microsoft.NET.Sdk.BlazorWebAssembly`) with Avalonia-like load/grid/options/save zones (`Services/DemoWorkspace`, `Pages/Home.razor`).
+- `src/ChapterTool.Wasm` — browser WebAssembly workspace (`Microsoft.NET.Sdk.BlazorWebAssembly`) with Avalonia-like load/grid/options/save zones (`Services/WasmWorkspace`, `Pages/Home.razor`). `WasmWorkspace` owns byte-based load/reload/append session state, multi-select and chapter-row actions, projection/export orchestration, diagnostics, activity logs, and localized status strings; Core editing/segment/projection/export services remain the behavior owners. Settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document (schema `1`) in browser `localStorage` through `wwwroot/js/download.js`; UI strings are in `Services/WasmLocalizer`.
+- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` — focused browser-workspace behavior coverage for reload, append gating, templates, selection/zones/delete, forward shifting, preview/save parity, auto naming, and localization refresh.
 - Deployed to GitHub Pages by `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 
 ## Feature Lookup

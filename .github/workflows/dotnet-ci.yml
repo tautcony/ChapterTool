@@ -2,7 +2,30 @@ name: .NET 10 CI
 
 on:
   push:
+    paths:
+      - ".github/workflows/dotnet-ci.yml"
+      - ".github/workflows/nuget-publish.yml"
+      - ".github/workflows/release.yml"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "ChapterTool.Avalonia.slnx"
+      - "ChangeLog.md"
+      - "src/**"
+      - "tests/**"
+      - "samples/**"
+      - "scripts/**"
   pull_request:
+    paths:
+      - ".github/workflows/dotnet-ci.yml"
+      - ".github/workflows/nuget-publish.yml"
+      - ".github/workflows/release.yml"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "ChapterTool.Avalonia.slnx"
+      - "src/**"
+      - "tests/**"
+      - "samples/**"
+      - "scripts/**"
 
 jobs:
   build-test:

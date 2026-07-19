@@ -5,13 +5,13 @@
 - This repo is the current .NET 10 ChapterTool codebase. Use `ChapterTool.Avalonia.slnx` as the main solution.
 - Main projects:
   - `src/ChapterTool.Core` (pure managed; browser WASM-capable via stream/text import APIs)
+  - `src/ChapterTool.Wasm` (Blazor WebAssembly browser application for Core)
   - `src/ChapterTool.Infrastructure`
   - `src/ChapterTool.Avalonia`
   - `tests/ChapterTool.Core.Tests`
   - `tests/ChapterTool.Infrastructure.Tests`
   - `tests/ChapterTool.Avalonia.Tests` (ViewModel/CLI/service unit tests)
   - `tests/ChapterTool.Avalonia.Headless.Tests` (Avalonia Headless UI tests; separate process from unit tests)
-  - `samples/ChapterTool.Core.WasmDemo` (Blazor WebAssembly standalone demo for Core)
 - Prefer `rg` for searching files and text.
 - Use `docs/code-map/` as the primary navigation index for the current codebase. Update the relevant files there when feature work changes module ownership, entry points, runtime wiring, or the main tests a maintainer should inspect.
 - For product-agnostic WinForms→Avalonia migration methodology (phased skills A–G), start at `.agents/skills/README-winforms-to-avalonia.md` and the orchestrator skill `winforms-to-avalonia`. Rules of thumb: `reusable-learnings.md`; agent correction patterns from real sessions: `execution-corrections.md` under the same skill `references/`.

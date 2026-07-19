@@ -7,12 +7,12 @@ using ChapterTool.Core.Importing.Text;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
-namespace ChapterTool.Core.WasmDemo.Services;
+namespace ChapterTool.Wasm.Services;
 
 /// <summary>
 /// Thin Core import/export adapter used by the Blazor WASM workspace.
 /// </summary>
-public sealed class ChapterDemoService
+public sealed class WasmChapterService
 {
     private static readonly string[] BinaryExtensions = [".mpls", ".ifo"];
 
@@ -25,7 +25,7 @@ public sealed class ChapterDemoService
     private readonly MplsChapterImporter mplsImporter = new();
     private readonly IfoChapterImporter ifoImporter = new();
 
-    public ChapterDemoService()
+    public WasmChapterService()
     {
         exportService = new ChapterExportService(timeFormatter);
         textImporter = new TextChapterImporter(timeFormatter);
@@ -46,7 +46,8 @@ public sealed class ChapterDemoService
     public IReadOnlyList<string> ChapterNameModes { get; } =
     [
         "As is",
-        "Auto generate"
+        "Auto generate",
+        "Template"
     ];
 
     public IReadOnlyList<string> XmlLanguages { get; } =
