@@ -12,6 +12,8 @@ Use it when you need to quickly locate the code behind a feature without reposit
   - external tools, process execution, settings persistence, platform services
 - `avalonia.md`
   - desktop shell, CLI entrypoints, view/viewmodel/runtime service wiring
+- `avalonia-infrastructure-wasm.md`
+  - Avalonia, Infrastructure, and WASM mapping, feature parity, known boundaries, and change tracking
 - `testing.md`
   - which test project and test files verify each code area
 
