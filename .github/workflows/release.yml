@@ -1,0 +1,127 @@
+name: Publish GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag whose successful CI artifacts should be published
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Validate tag
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: $TAG" >&2
+            echo "Expected a tag such as v23.2.0 or v23.2.0-rc.1" >&2
+            exit 1
+          fi
+
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Locate successful CI run
+        id: ci-run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          run_id="$(
+            gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow dotnet-ci.yml \
+              --limit 100 \
+              --json databaseId,headBranch,event,status,conclusion,createdAt \
+            | jq -r --arg tag "$TAG" '
+                [.[]
+                  | select(.headBranch == $tag)
+                  | select(.event == "push")
+                  | select(.status == "completed" and .conclusion == "success")
+                ]
+                | sort_by(.createdAt)
+                | last
+                | .databaseId // empty
+              '
+          )"
+
+          if [[ -z "$run_id" ]]; then
+            echo "No successful dotnet-ci.yml run found for $TAG" >&2
+            exit 1
+          fi
+
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "Using CI run $run_id for $TAG"
+
+      - name: Download CI artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.ci-run.outputs.run-id }}
+        run: |
+          mkdir -p release-assets/downloaded release-assets/files
+          gh run download "$RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir release-assets/downloaded
+          find release-assets/downloaded -type f -exec cp {} release-assets/files/ \;
+
+          expected=(
+            "ChapterTool.Core.*.nupkg"
+            "ChapterTool.Core.*.snupkg"
+            "ChapterTool.Avalonia*"
+            "ChapterTool-osx-arm64.dmg"
+          )
+          for pattern in "${expected[@]}"; do
+            if ! compgen -G "release-assets/files/$pattern" > /dev/null; then
+              echo "Missing release artifact matching $pattern" >&2
+              find release-assets/downloaded -type f -print >&2
+              exit 1
+            fi
+          done
+
+          find release-assets/files -maxdepth 1 -type f -print | sort
+
+      - name: Prepare release notes
+        shell: bash
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          version="${TAG#v}"
+          awk -v version="$version" '
+            $0 ~ "^## \\[" version "\\]" { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' ChangeLog.md | sed '/^[[:space:]]*$/N;/^\n$/D' > release-notes.md
+
+          if [[ ! -s release-notes.md ]]; then
+            echo "No changelog section found for $version" >&2
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release already exists: $TAG" >&2
+            exit 1
+          fi
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "ChapterTool ${TAG#v}" \
+            --notes-file release-notes.md \
+            release-assets/files/*
