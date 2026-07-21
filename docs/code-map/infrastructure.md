@@ -17,6 +17,17 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - BDMV / eac3to path:
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs`
 
+### Runtime importer composition
+
+- registry contract:
+  - `src/ChapterTool.Infrastructure/Importing/Runtime/IChapterImporterRegistry.cs`
+- runtime routing and fallback:
+  - `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
+- shared host factories and policies:
+  - `src/ChapterTool.Infrastructure/Importing/Runtime/ChapterToolRuntimeComposition.cs`
+
+`ChapterToolRuntimeComposition` owns the default settings directory, `PATH` search directories, external-tool locator, process runner, media readers, importer registry, and CLI export service construction. Avalonia can pass existing GUI services to preserve their lifetime.
+
 ### External tool discovery and process execution
 
 - tool lookup:

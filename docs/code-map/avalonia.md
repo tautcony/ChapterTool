@@ -1,6 +1,6 @@
 # Avalonia Code Map
 
-`src/ChapterTool.Avalonia` owns the desktop shell, CLI entrypoints, view/viewmodel coordination, runtime orchestration, localization, and theme application.
+`src/ChapterTool.Avalonia` owns the desktop shell, GUI launch compatibility, view/viewmodel coordination, runtime orchestration, localization, and theme application.
 
 Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
 
@@ -61,14 +61,11 @@ Runtime wiring is centralized in:
 
 - `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs`
 
-Shared CLI/GUI factories:
-
-- `CreateSharedImporterRegistry(ISettingsStore<>)`
-- `CreateSharedExportService(IChapterExpressionEngine?)` — CLI passes the shared Lua expression engine so opt-in expression projection matches the GUI
+The GUI composition root uses `ChapterToolRuntimeComposition` for runtime importer construction. It passes its formatter, tool locator, process runner, and media readers to preserve shared GUI service instances.
 
 For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through `MainWindowViewModel` or `ToolWindowCreateContext`. Its private fallback is limited to direct design-time or test construction.
 
-The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`: formatter, expression authoring, export, and external-tool locator identities are shared within one GUI root, while CLI static factories intentionally have independent lifetimes.
+The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`: formatter, expression authoring, export, and external-tool locator identities are shared within one GUI root.
 
 This is the first file to inspect when dependency wiring or service registration changes.
 
@@ -99,7 +96,7 @@ This is the first file to inspect when dependency wiring or service registration
 
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs`
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
-- `src/ChapterTool.Avalonia/Services/RuntimeChapterImporterRegistry.cs`
+- `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFilePickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaSettingsPickerService.cs`
@@ -112,10 +109,10 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### CLI
 
-- `src/ChapterTool.Avalonia/Cli/ChapterToolCliApplication.cs`
-- `src/ChapterTool.Avalonia/Cli/ChapterToolCliCommands.cs`
-- `src/ChapterTool.Avalonia/Cli/ChapterToolCliSupport.cs`
-- `src/ChapterTool.Avalonia/Cli/CliConsole.cs`
+- `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
+- `src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs`
+- `src/ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs`
+- `src/ChapterTool.CommandLine/Cli/CliConsole.cs`
 
 ### Localization
 
@@ -180,7 +177,7 @@ Start with:
 
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs`
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
-- `src/ChapterTool.Avalonia/Services/RuntimeChapterImporterRegistry.cs`
+- `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
 
 `RuntimeChapterSaveService` applies UI save-file concerns such as output directory selection, generated file path diagnostics, and the selected `ChapterExportOptions.TextEncoding` / `EmitBom` behavior around Core export content.
 
@@ -239,10 +236,12 @@ Font appearance is split into independent UI and monospace families. `AvaloniaFo
 
 Start with:
 
+- `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
+- `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
+- `src/ChapterTool.Cli/Program.cs`
 - `src/ChapterTool.Avalonia/Program.cs`
-- `src/ChapterTool.Avalonia/Cli/ChapterToolCliApplication.cs`
 
-Use `ChapterToolCliCommands.cs` and `ChapterToolCliSupport.cs` for DotMake.CommandLine command definitions, bound launch-plan analysis, and supported format definitions.
+Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs` for DotMake command definitions, bound launch-plan analysis, and supported format definitions. The Avalonia program uses the typed facade for GUI compatibility. The standalone program delegates process startup to the same facade.
 
 ### Localization changes
 

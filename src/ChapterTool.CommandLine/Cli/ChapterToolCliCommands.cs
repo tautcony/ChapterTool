@@ -1,6 +1,6 @@
 using DotMake.CommandLine;
 
-namespace ChapterTool.Avalonia.Cli;
+namespace ChapterTool.CommandLine;
 
 [CliCommand(
     Description = "ChapterTool command-line workflows",

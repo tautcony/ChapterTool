@@ -1,4 +1,4 @@
-namespace ChapterTool.Avalonia.Cli;
+namespace ChapterTool.CommandLine;
 
 public interface ICliConsole
 {

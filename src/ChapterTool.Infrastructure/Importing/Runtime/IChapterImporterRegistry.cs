@@ -1,6 +1,6 @@
 using ChapterTool.Core.Importing;
 
-namespace ChapterTool.Avalonia.Services;
+namespace ChapterTool.Infrastructure.Importing.Runtime;
 
 public interface IChapterImporterRegistry
 {

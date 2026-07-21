@@ -9,6 +9,7 @@ using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Core.Transform;
+using ChapterTool.Infrastructure.Importing.Runtime;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Composition;
 

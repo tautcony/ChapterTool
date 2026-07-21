@@ -18,8 +18,8 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
   - external tools, process execution, settings persistence, platform services
 - `avalonia.md`
   - desktop shell, CLI entrypoints, view/viewmodel/runtime service wiring
-- `avalonia-infrastructure-wasm.md`
-  - Avalonia, Infrastructure, and WASM mapping, feature parity, known boundaries, and change tracking
+- `program-form-capability-map.md`
+  - all program forms, shared layers, capability comparison, known boundaries, and change tracking
 - `testing.md`
   - which test project and test files verify each code area
 

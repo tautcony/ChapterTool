@@ -1,7 +1,5 @@
 using System.Globalization;
 using System.Text;
-using ChapterTool.Avalonia.Composition;
-using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -9,14 +7,15 @@ using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Services;
 
-namespace ChapterTool.Avalonia.Cli;
+namespace ChapterTool.CommandLine;
 
 public sealed class ChapterToolCliApplication
 {
     private readonly ICliConsole console;
-    private readonly RuntimeChapterImporterRegistry importerRegistry;
+    private readonly IChapterImporterRegistry importerRegistry;
     private readonly ChapterExportService exporter;
     private readonly IChapterExpressionEngine expressionEngine;
     private readonly string? configuredSavingPath;
@@ -24,7 +23,7 @@ public sealed class ChapterToolCliApplication
 
     public ChapterToolCliApplication(
         ICliConsole? console = null,
-        RuntimeChapterImporterRegistry? importerRegistry = null,
+        IChapterImporterRegistry? importerRegistry = null,
         ChapterExportService? exporter = null,
         string? configuredSavingPath = null,
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
@@ -32,14 +31,14 @@ public sealed class ChapterToolCliApplication
         IChapterExpressionEngine? expressionEngine = null)
     {
         this.console = console ?? new SystemCliConsole();
-        var directory = settingsDirectory ?? DefaultSettingsDirectory();
+        var directory = ChapterToolRuntimeComposition.ResolveSettingsDirectory(settingsDirectory);
         this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
         // Shared factories with GUI composition; injection seams remain for tests.
         this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
         this.importerRegistry = importerRegistry
-            ?? AppCompositionRoot.CreateSharedImporterRegistry(this.settingsStore);
+            ?? ChapterToolRuntimeComposition.CreateImporterRegistry(this.settingsStore);
         this.exporter = exporter
-            ?? AppCompositionRoot.CreateSharedExportService(this.expressionEngine);
+            ?? ChapterToolRuntimeComposition.CreateExportService(this.expressionEngine);
         this.configuredSavingPath = configuredSavingPath;
     }
 
@@ -532,14 +531,6 @@ public sealed class ChapterToolCliApplication
         {
             console.WriteErrorLine($"  {line}");
         }
-    }
-
-    private static string DefaultSettingsDirectory()
-    {
-        var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return string.IsNullOrWhiteSpace(root)
-            ? Path.Combine(Environment.CurrentDirectory, "settings")
-            : Path.Combine(root, "ChapterTool");
     }
 
     private sealed record CliImportExecution(bool Success, IChapterImporter Importer, ChapterImportResult Result)

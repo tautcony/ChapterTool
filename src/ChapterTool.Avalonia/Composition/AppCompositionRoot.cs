@@ -10,6 +10,7 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Processes;
@@ -106,43 +107,18 @@ public sealed class AppCompositionRoot : IDisposable
     public IChapterLoadService CreateChapterLoadService() => new RuntimeChapterLoadService(CreateChapterImporterRegistry());
 
     public IChapterImporterRegistry CreateChapterImporterRegistry() =>
-        new RuntimeChapterImporterRegistry(
+        ChapterToolRuntimeComposition.CreateImporterRegistry(
+            SettingsStore,
             formatter,
             ExternalToolLocator,
             processRunner,
             new FfprobeMediaChapterReader(ExternalToolLocator, processRunner),
-            CreateMp4ChapterReader());
-
-    /// <summary>
-    /// Shared importer-registry factory used by GUI composition and CLI defaults.
-    /// </summary>
-    public static RuntimeChapterImporterRegistry CreateSharedImporterRegistry(
-        ISettingsStore<ChapterToolSettings> settingsStore)
-    {
-        var sharedFormatter = new ChapterTimeFormatter();
-        var toolLocator = new ExternalToolLocator(settingsStore, PathSearchDirectories().ToList());
-        var processRunner = CreateProcessRunner();
-        return new RuntimeChapterImporterRegistry(
-            sharedFormatter,
-            toolLocator,
-            processRunner,
-            new FfprobeMediaChapterReader(toolLocator, processRunner),
-            CreateMp4ChapterReader());
-    }
-
-    public static IMediaChapterReader CreateMp4ChapterReader() => new AtlMp4ChapterReader();
+            new AtlMp4ChapterReader());
 
     public FfprobeMediaChapterReader CreateMediaChapterReader() =>
         new(ExternalToolLocator, processRunner);
 
     public ChapterExportService CreateChapterExportService() => exportService;
-
-    /// <summary>
-    /// Shared export construction for GUI and CLI.
-    /// </summary>
-    public static ChapterExportService CreateSharedExportService(
-        IChapterExpressionEngine? expressionEngine = null) =>
-        new(new ChapterTimeFormatter(), expressionEngine);
 
     public IChapterSaveService CreateChapterSaveService() =>
         new RuntimeChapterSaveService(CreateChapterExportService());
@@ -243,19 +219,12 @@ public sealed class AppCompositionRoot : IDisposable
 
     private static string SettingsDirectory()
     {
-        var root = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return string.IsNullOrWhiteSpace(root)
-            ? Path.Combine(Environment.CurrentDirectory, "settings")
-            : Path.Combine(root, "ChapterTool");
+        return ChapterToolRuntimeComposition.ResolveSettingsDirectory();
     }
 
     private static IEnumerable<string> PathSearchDirectories()
     {
-        var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        foreach (var part in path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            yield return part;
-        }
+        return ChapterToolRuntimeComposition.PathSearchDirectories();
     }
 
     internal static IEnumerable<string> PathSearchDirectoriesForTests() => PathSearchDirectories();

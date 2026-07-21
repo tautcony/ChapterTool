@@ -1,20 +1,48 @@
 using System.Text;
-using ChapterTool.Avalonia.Cli;
-using ChapterTool.Avalonia.Composition;
+using ChapterTool.CommandLine;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Importing.Runtime;
 
 namespace ChapterTool.Avalonia.Tests.Cli;
 
 public sealed class ChapterToolCliApplicationTests
 {
     [Fact]
+    public void Product_facade_keeps_desktop_and_standalone_launch_policies_distinct()
+    {
+        var existingPath = Path.GetTempFileName();
+        try
+        {
+            var desktopWithoutArguments = ChapterToolCliHost.AnalyzeDesktopLaunch([]);
+            var desktopWithPath = ChapterToolCliHost.AnalyzeDesktopLaunch([existingPath]);
+            var standaloneWithPath = ChapterToolCliHost.Run([existingPath]);
+
+            Assert.True(desktopWithoutArguments.LaunchGui);
+            Assert.False(desktopWithoutArguments.RunCli);
+            Assert.True(desktopWithPath.LaunchGui);
+            Assert.Equal(existingPath, desktopWithPath.GuiStartupPath);
+            Assert.Equal(1, standaloneWithPath);
+        }
+        finally
+        {
+            File.Delete(existingPath);
+        }
+    }
+
+    [Fact]
+    public void Standalone_facade_rejects_gui_only_load_command()
+    {
+        Assert.Equal(1, ChapterToolCliHost.Run(["load", "input.xml"]));
+    }
+
+    [Fact]
     public void SharedFactories_are_used_for_default_cli_construction()
     {
         var store = new ChapterToolSettingsStore(Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
-        var registry = AppCompositionRoot.CreateSharedImporterRegistry(store);
-        var export = AppCompositionRoot.CreateSharedExportService(expressionEngine: null);
+        var registry = ChapterToolRuntimeComposition.CreateImporterRegistry(store);
+        var export = ChapterToolRuntimeComposition.CreateExportService(expressionEngine: null);
 
         Assert.NotNull(registry);
         Assert.NotNull(export);
@@ -29,7 +57,7 @@ public sealed class ChapterToolCliApplicationTests
     [Fact]
     public void SharedExportFactory_without_expression_matches_cli_scope()
     {
-        var export = AppCompositionRoot.CreateSharedExportService();
+        var export = ChapterToolRuntimeComposition.CreateExportService();
         var result = export.Export(
             new ChapterSet(
                 "t",

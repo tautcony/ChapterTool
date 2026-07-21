@@ -4,6 +4,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Services;
+using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Tests.Services;

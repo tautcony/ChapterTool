@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj" />
+    <Project Path="src/ChapterTool.Cli/ChapterTool.Cli.csproj" />
+    <Project Path="src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj" />
     <Project Path="src/ChapterTool.Core/ChapterTool.Core.csproj" />
     <Project Path="src/ChapterTool.Infrastructure/ChapterTool.Infrastructure.csproj" />
     <Project Path="src/ChapterTool.Wasm/ChapterTool.Wasm.csproj" />

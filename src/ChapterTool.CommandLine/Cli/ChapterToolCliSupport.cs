@@ -1,7 +1,7 @@
 using ChapterTool.Core.Exporting;
 using DotMake.CommandLine;
 
-namespace ChapterTool.Avalonia.Cli;
+namespace ChapterTool.CommandLine;
 
 internal static class ChapterToolCliSupport
 {
@@ -10,7 +10,7 @@ internal static class ChapterToolCliSupport
         EnableDefaultExceptionHandler = false
     };
 
-    public static CliLaunchPlan AnalyzeLaunch(IReadOnlyList<string> args)
+    internal static CliLaunchPlan AnalyzeLaunch(IReadOnlyList<string> args)
     {
         var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
         if (parsed.IsCalled<LoadCliCommand>())
@@ -36,6 +36,20 @@ internal static class ChapterToolCliSupport
             || parsed.IsCalled<FormatsCliCommand>()
             || parsed.HasTokens;
         return shouldRunCli ? CliLaunchPlan.Cli(parsed) : CliLaunchPlan.None;
+    }
+
+    internal static CliLaunchPlan AnalyzeDesktopLaunch(IReadOnlyList<string> args) => AnalyzeLaunch(args);
+
+    internal static int Run(IReadOnlyList<string> args)
+    {
+        var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
+        if (parsed.IsCalled<LoadCliCommand>())
+        {
+            Console.Error.WriteLine("The `load` command is available only in the Avalonia host. Use an explicit CLI command such as `inspect` or `convert`.");
+            return 1;
+        }
+
+        return parsed.Run();
     }
 
     private static bool IsExistingPath(string value) => File.Exists(value) || Directory.Exists(value);

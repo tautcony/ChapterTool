@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ChapterTool.Core\ChapterTool.Core.csproj" />
     <ProjectReference Include="..\ChapterTool.Infrastructure\ChapterTool.Infrastructure.csproj" />
+    <ProjectReference Include="..\ChapterTool.CommandLine\ChapterTool.CommandLine.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -16,7 +17,6 @@
     <PackageReference Include="Avalonia.Desktop" Version="12.1.0" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
     <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
-    <PackageReference Include="DotMake.CommandLine" Version="3.5.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.10" />
     <PackageReference Include="Optris.Icons.Avalonia" Version="12.0.7" />
     <PackageReference Include="Optris.Icons.Avalonia.FontAwesome" Version="12.0.7" />

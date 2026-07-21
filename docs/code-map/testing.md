@@ -91,7 +91,7 @@ Fixtures:
 
 ## Avalonia Test Map
 
-Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, localization, and CLI. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI and interaction workflows. The Headless project uses a separate testhost process. Non-UI unit tests do not share that process.
+Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, localization, and CommandLine behavior. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI and interaction workflows. The Headless project uses a separate testhost process. Non-UI unit tests do not share that process.
 
 High-signal test files:
 
@@ -105,6 +105,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
 - CLI
   - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
+  - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
+  - `src/ChapterTool.Cli/Program.cs`
 - localization
   - `tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs`
 - headless shell/interaction/integration

@@ -1,5 +1,5 @@
 using Avalonia;
-using ChapterTool.Avalonia.Cli;
+using ChapterTool.CommandLine;
 using ChapterTool.Avalonia.Diagnostics;
 using Optris.Icons.Avalonia;
 using Optris.Icons.Avalonia.FontAwesome;
@@ -13,20 +13,20 @@ internal static class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        SetupSentry();
-        var launchPlan = ChapterToolCliSupport.AnalyzeLaunch(args);
+        var launchPlan = ChapterToolCliHost.AnalyzeDesktopLaunch(args);
         GuiStartupPath = launchPlan.GuiStartupPath;
         if (launchPlan.LaunchGui)
         {
+            SetupSentry();
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
             return;
         }
 
-        if (launchPlan.CliResult is not null)
+        if (launchPlan.RunCli)
         {
             try
             {
-                var exitCode = launchPlan.CliResult.Run();
+                var exitCode = ChapterToolCliHost.Run(args);
                 Environment.ExitCode = exitCode;
                 return;
             }

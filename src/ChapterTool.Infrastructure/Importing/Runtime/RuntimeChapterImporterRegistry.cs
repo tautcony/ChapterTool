@@ -9,7 +9,7 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Bdmv;
 using ChapterTool.Infrastructure.Importing.Matroska;
 
-namespace ChapterTool.Avalonia.Services;
+namespace ChapterTool.Infrastructure.Importing.Runtime;
 
 public sealed class RuntimeChapterImporterRegistry(
     IChapterTimeFormatter formatter,
