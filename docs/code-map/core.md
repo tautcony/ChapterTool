@@ -2,7 +2,9 @@
 
 `src/ChapterTool.Core` owns the chapter domain model and pure business behavior.
 
-This layer is where import normalization, chapter editing, frame/time transforms, and export formatting belong.
+This layer contains import normalization, chapter editing, frame/time transforms, and export formatting.
+
+Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
 
 ## Ownership
 
@@ -31,7 +33,7 @@ Shared diagnostic contracts:
 - `src/ChapterTool.Core/Diagnostics/ChapterDiagnosticCodeExtensions.cs`
 - `src/ChapterTool.Core/Diagnostics/DiagnosticSeverity.cs`
 
-`ChapterDiagnostic.Code` is structured as `ChapterDiagnosticSource + ChapterDiagnosticReason`; `DisplayCode` renders the stable localization/log code as `Source.Reason`.
+`ChapterDiagnostic.Code` combines `ChapterDiagnosticSource` and `ChapterDiagnosticReason`. `DisplayCode` renders the stable localization and log code as `Source.Reason`.
 
 ### Importing
 
@@ -52,7 +54,10 @@ Important format entry points:
 - WebVTT: `src/ChapterTool.Core/Importing/Text/WebVttChapterImporter.cs`
 - CUE sheet parsing: `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs`
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
-- DVD/Blu-ray playlist parsing: `src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs`, `src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs`, `src/ChapterTool.Core/Importing/Disc/MplsPlaylistFile.cs`, `src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs`; generic exact-read ceilings are in `src/ChapterTool.Core/Importing/Disc/BinaryReadExtensions.cs`, semantic MPLS limits are in `src/ChapterTool.Core/Importing/Disc/MplsParseLimits.cs`, and `MplsBoundedStream.cs` enforces each declared parent-container byte budget while nested entries are parsed.
+- DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, `MplsPlaylistFile.cs`, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
+- `BinaryReadExtensions.cs` defines generic exact-read ceilings.
+- `MplsParseLimits.cs` defines semantic MPLS limits.
+- `MplsBoundedStream.cs` enforces each declared parent-container byte budget while it parses nested entries.
 - Media normalization contract: `src/ChapterTool.Core/Importing/Media/MediaChapterImporter.cs`, `src/ChapterTool.Core/Importing/Media/IMediaChapterReader.cs`
 
 ### Editing
@@ -77,7 +82,7 @@ Frame/time and expression logic:
 - `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 - `src/ChapterTool.Core/Transform/ChapterRounding.cs`
 
-`ChapterExpressionService` evaluates only non-separator chapters. Each expression context carries the ordered non-separator chapter snapshot; the Lua engine exposes it as the 1-based `chapters` array, with `chapter` equal to `chapters[index]`.
+`ChapterExpressionService` evaluates only non-separator chapters. Each expression context contains the ordered non-separator chapter snapshot. The Lua engine exposes this snapshot as the one-based `chapters` array. The `chapter` value equals `chapters[index]`.
 
 ### Exporting
 
@@ -94,7 +99,7 @@ Output projection and format serialization:
 
 ## Browser / WebAssembly
 
-`ChapterTool.Core` is a pure managed library with `SupportedPlatform` including `browser`. It multi-targets `net8.0;net9.0;net10.0` and is intended for desktop hosts and browser WASM hosts such as **Blazor WebAssembly**.
+`ChapterTool.Core` is a pure managed library. `SupportedPlatform` includes `browser`. The library targets `net8.0;net9.0;net10.0`. Desktop hosts and browser WebAssembly hosts can use it.
 
 WASM integration rules:
 
@@ -104,7 +109,11 @@ WASM integration rules:
 
 Browser host:
 
-- `src/ChapterTool.Wasm` — browser WebAssembly workspace (`Microsoft.NET.Sdk.BlazorWebAssembly`) with Avalonia-like load/grid/options/save zones (`Services/WasmWorkspace`, `Pages/Home.razor`). `WasmWorkspace` owns byte-based load/reload/append session state, multi-select and chapter-row actions, projection/export orchestration, diagnostics, activity logs, and localized status strings; Core editing/segment/projection/export services remain the behavior owners. Settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document (schema `1`) in browser `localStorage` through `wwwroot/js/download.js`; UI strings are in `Services/WasmLocalizer`.
+- `src/ChapterTool.Wasm` is a browser WebAssembly workspace. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
+- `Services/WasmWorkspace` and `Pages/Home.razor` provide the load, grid, options, and save zones.
+- `WasmWorkspace` owns byte-based load, reload, and append state. It also owns selection actions, projection and export orchestration, diagnostics, activity logs, and localized status strings.
+- Core editing, segment, projection, and export services remain the behavior owners.
+- Browser settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document with schema `1`. `wwwroot/js/download.js` stores this document in `localStorage`. `Services/WasmLocalizer` stores UI strings.
 - `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` — focused browser-workspace behavior coverage for reload, append gating, templates, selection/zones/delete, forward shifting, preview/save parity, auto naming, and localization refresh.
 - Deployed to GitHub Pages by `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 

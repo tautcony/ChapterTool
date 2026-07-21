@@ -2,6 +2,8 @@
 
 `src/ChapterTool.Avalonia` owns the desktop shell, CLI entrypoints, view/viewmodel coordination, runtime orchestration, localization, and theme application.
 
+Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
+
 ## Ownership
 
 ### Application shell
@@ -21,7 +23,7 @@ Startup and main shell entry points:
 - `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Editing.cs`
 - `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.StatusLog.cs`
 
-Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` consume the same `ChapterWorkspace`:
+Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` use the same `ChapterWorkspace`:
 
 - `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
 - `ClipEditingCoordinator.cs` — clip selection/combine transitions plus cell and frame edits written through the workspace
@@ -64,7 +66,7 @@ Shared CLI/GUI factories:
 - `CreateSharedImporterRegistry(ISettingsStore<>)`
 - `CreateSharedExportService(IChapterExpressionEngine?)` — CLI passes `null` expression engine
 
-For GUI production paths, one `AppCompositionRoot` shares its formatter, expression engine and authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through `MainWindowViewModel` or `ToolWindowCreateContext`; its private fallback is limited to direct design-time/test construction.
+For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through `MainWindowViewModel` or `ToolWindowCreateContext`. Its private fallback is limited to direct design-time or test construction.
 
 The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`: formatter, expression authoring, export, and external-tool locator identities are shared within one GUI root, while CLI static factories intentionally have independent lifetimes.
 

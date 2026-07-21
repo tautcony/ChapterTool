@@ -2,6 +2,8 @@
 
 `src/ChapterTool.Infrastructure` owns process execution, external tool discovery, settings persistence, filesystem/platform integration, and import adapters that depend on native tools or container libraries.
 
+Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
+
 ## Ownership
 
 ### Media and tool-backed import adapters
@@ -49,9 +51,9 @@
 - JSON source generation:
   - `src/ChapterTool.Infrastructure/Configuration/AppJsonSerializerContext.cs`
 
-`ChapterToolSettingsStore` is the only settings persistence implementation and implements `ISettingsStore<ChapterToolSettings>`. It persists schema-versioned `application`, `theme`, and `font` child content in `settings.json`, serializes atomic read-modify-write operations by canonical path, upgrades known older unified shapes, rejects future versions without overwriting them, and ignores predecessor settings files when the unified document is absent.
+`ChapterToolSettingsStore` is the only settings persistence implementation. It implements `ISettingsStore<ChapterToolSettings>`. It stores schema-versioned `application`, `theme`, and `font` content in `settings.json`. It serializes atomic read-modify-write operations by canonical path. It upgrades known older unified shapes. It rejects future versions without overwriting them. It ignores predecessor settings files when the unified document is absent.
 
-All runtime consumers receive the same aggregate store. `SettingsToolViewModel` loads the document once and saves all changed child content with one aggregate write; isolated changes use `UpdateAsync` for one lock-scoped read-modify-write. The store caches the normalized aggregate by file timestamp and length, so unchanged subsequent loads do not reopen or reparse JSON. New settings areas should extend `ChapterToolSettings` and add a schema upgrade when the persisted structure changes instead of adding a store or file.
+All runtime consumers receive the same aggregate store. `SettingsToolViewModel` loads the document once. It saves changed child content with one aggregate write. Isolated changes use `UpdateAsync` for one lock-scoped read-modify-write. The store caches the normalized aggregate by file timestamp and length. Unchanged loads do not reopen or reparse JSON. Extend `ChapterToolSettings` for a new settings area. Add a schema upgrade when the persisted structure changes. Do not add another store or file.
 
 `ThemeSettings` persists only a stable built-in preset id in the unified `theme` section. `ThemePresetCatalog` owns preset identity, light/dark base variants, semantic palettes, preview swatches, and default fallback; the legacy `theme-colors.json` file remains intentionally ignored.
 

@@ -2,7 +2,11 @@
 
 This directory is the maintainer navigation index for the current codebase.
 
-Use it when you need to quickly locate the code behind a feature without repository-wide searching first.
+Use it to locate the code behind a feature before you search the full repository.
+
+## Writing Standard
+
+Use ASD-STE100 principles in every code-map document. Write short, direct sentences. Use one idea per sentence. Use active voice and a specific subject. Use the same term for the same concept. Define abbreviations before use, except for code-defined names. Keep paths, commands, and identifiers exact. Keep Chinese feature-matrix text concise when a Chinese label is required.
 
 ## Documents
 
@@ -22,16 +26,16 @@ Use it when you need to quickly locate the code behind a feature without reposit
 - `src/ChapterTool.Wasm`
   - Blazor WebAssembly standalone host for `ChapterTool.Core` (client-side import/export UI)
 
-## How To Use
+## Use This Map
 
-1. Start from the feature you need to change or debug.
-2. Open the module document that owns the behavior.
-3. Follow the listed entry points before using repository-wide search.
-4. Use `testing.md` to find the fastest verification path.
+1. Start with the feature that you need to change or debug.
+2. Open the document for the module that owns the behavior.
+3. Follow the listed entry points before you search the full repository.
+4. Use `testing.md` to select the verification path.
 
 ## Maintenance Rule
 
-Update these documents in the same change when feature work alters:
+Update these documents in the same change when feature work changes:
 
 - module ownership
 - key entry points

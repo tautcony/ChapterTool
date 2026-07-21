@@ -2,6 +2,8 @@
 
 This file maps production areas to the test projects and high-signal test files that verify them.
 
+Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
+
 ## Test Projects
 
 - Core behavior:
@@ -19,7 +21,7 @@ This file maps production areas to the test projects and high-signal test files 
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
-Use `tests/ChapterTool.Wasm.Tests` when changing browser workspace orchestration, byte-based loading/reload, templates, selection actions, preview/save projection, or browser localization. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
+Use `tests/ChapterTool.Wasm.Tests` when you change browser workspace orchestration, byte-based load or reload, templates, selection actions, preview or save projection, or browser localization. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
 
 High-signal test files:
 
@@ -81,7 +83,7 @@ High-signal test files:
   - `tests/ChapterTool.Infrastructure.Tests/ChapterToolSettingsFontTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ThemePresetCatalogTests.cs`
 
-`SettingsMigrationTests` is the primary behavioral coverage for the single versioned `settings.json` document: aggregate persistence, unchanged-file snapshot caching, ignored predecessor files, version-zero upgrade, current-version no-rewrite behavior, invalid/future-version handling, corrupt active-file preservation, and concurrent aggregate updates. `ChapterToolSettingsFontTests` keeps focused coverage of font normalization through the unified `font` child content.
+`SettingsMigrationTests` is the primary behavior coverage for the versioned `settings.json` document. It covers aggregate persistence, snapshot caching, ignored predecessor files, version-zero upgrade, current-version no-rewrite behavior, invalid and future versions, corrupt active-file preservation, and concurrent aggregate updates. `ChapterToolSettingsFontTests` covers font normalization in the unified `font` content.
 
 Fixtures:
 
@@ -89,7 +91,7 @@ Fixtures:
 
 ## Avalonia Test Map
 
-Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, localization, and CLI. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI shell and interaction workflows. Headless lives in its own project so Avalonia UI session work never shares a testhost process with non-UI unit tests.
+Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, localization, and CLI. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI and interaction workflows. The Headless project uses a separate testhost process. Non-UI unit tests do not share that process.
 
 High-signal test files:
 
@@ -116,13 +118,13 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootFontTests.cs`
 
-Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light/dark presets and verifies the live palette preview, application variant, semantic resources, and existing DataGrid column-header brushes.
+Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
 
 The settings Headless workflows verify the footer settings-folder action, including its left-side placement, accessible label, and routed shell target.
 
-Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog/ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects different UI/monospace families and verifies virtualized per-family options, live semantic resources, existing normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift numeric entry, accessible previews, Save/Discard outcomes, and icon visibility.
+Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog and ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects UI and monospace families. It verifies per-family options, live semantic resources, normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift input, accessible previews, Save and Discard outcomes, and icon visibility.
 
-Headless tests share one Avalonia UI session inside their test process. Close Popup/ContextMenu surfaces in `finally`, dispose directly constructed `IDisposable` DataContexts, and use `MainWindowHeadlessTestHost` so window disposal also detaches its content tree. Await a real initialization task for asynchronous startup behavior; do not use fixed delays or polling to infer completion.
+Headless tests share one Avalonia UI session in their test process. Close `Popup` and `ContextMenu` surfaces in `finally`. Dispose directly constructed `IDisposable` DataContexts. Use `MainWindowHeadlessTestHost` so window disposal also detaches its content tree. Await a real initialization task for asynchronous startup. Do not use fixed delays or polling to infer completion.
 
 The diagnosis, timing comparisons, affected tests, and repeatable triage procedure are recorded in `docs/testing/headless-performance.md`.
 
@@ -137,7 +139,7 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 
 Coverage entry point:
 
-- `scripts/test-coverage.sh` runs the four test projects sequentially with Coverlet collection configured by `scripts/coverage.runsettings`, excluding generated `*.g.cs` files and writing XML/HTML output under `artifacts/coverage`.
+- `scripts/test-coverage.sh` runs the four test projects in sequence. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
 
 - Maintained publish entry points:
   - `scripts/publish.sh`
