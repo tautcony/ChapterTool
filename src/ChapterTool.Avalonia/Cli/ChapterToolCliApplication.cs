@@ -6,6 +6,8 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Transform.Expressions;
+using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
 
@@ -16,6 +18,7 @@ public sealed class ChapterToolCliApplication
     private readonly ICliConsole console;
     private readonly RuntimeChapterImporterRegistry importerRegistry;
     private readonly ChapterExportService exporter;
+    private readonly IChapterExpressionEngine expressionEngine;
     private readonly string? configuredSavingPath;
     private readonly ISettingsStore<ChapterToolSettings> settingsStore;
 
@@ -25,17 +28,18 @@ public sealed class ChapterToolCliApplication
         ChapterExportService? exporter = null,
         string? configuredSavingPath = null,
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
-        string? settingsDirectory = null)
+        string? settingsDirectory = null,
+        IChapterExpressionEngine? expressionEngine = null)
     {
         this.console = console ?? new SystemCliConsole();
         var directory = settingsDirectory ?? DefaultSettingsDirectory();
         this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
         // Shared factories with GUI composition; injection seams remain for tests.
-        // Export defaults omit expression engine (CLI product scope).
+        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
         this.importerRegistry = importerRegistry
             ?? AppCompositionRoot.CreateSharedImporterRegistry(this.settingsStore);
         this.exporter = exporter
-            ?? AppCompositionRoot.CreateSharedExportService(expressionEngine: null);
+            ?? AppCompositionRoot.CreateSharedExportService(this.expressionEngine);
         this.configuredSavingPath = configuredSavingPath;
     }
 
@@ -57,7 +61,7 @@ public sealed class ChapterToolCliApplication
         console.WriteLine();
         console.WriteLine("Scope");
         console.WriteLine("  Basic import/export and terminal output are supported.");
-        console.WriteLine("  Expression and other advanced transforms are intentionally disabled in CLI.");
+        console.WriteLine("  Convert supports optional Lua expressions and built-in expression presets.");
         return 0;
     }
 
@@ -105,6 +109,11 @@ public sealed class ChapterToolCliApplication
             return errorCode;
         }
 
+        if (!TryResolveExpression(request, out var expression, out var expressionPresetId, out var expressionSourceName))
+        {
+            return 1;
+        }
+
         var import = await ImportAsync(request.InputPath, cancellationToken);
         if (!import.Success)
         {
@@ -129,7 +138,10 @@ public sealed class ChapterToolCliApplication
                 format.Format,
                 XmlLanguage: request.XmlLanguage,
                 SourceFileName: request.SourceFileName,
-                ApplyExpression: false,
+                ApplyExpression: expression is not null,
+                Expression: expression ?? "t",
+                ExpressionPresetId: expressionPresetId,
+                ExpressionSourceName: expressionSourceName,
                 ProjectOutput: true));
 
         if (!export.Success)
@@ -171,6 +183,51 @@ public sealed class ChapterToolCliApplication
         return true;
     }
 
+    private bool TryResolveExpression(
+        CliConvertRequest request,
+        out string? expression,
+        out string expressionPresetId,
+        out string expressionSourceName)
+    {
+        expression = null;
+        expressionPresetId = string.Empty;
+        expressionSourceName = string.Empty;
+
+        var hasExpression = !string.IsNullOrWhiteSpace(request.Expression);
+        var hasPreset = !string.IsNullOrWhiteSpace(request.ExpressionPreset);
+        if (hasExpression && hasPreset)
+        {
+            console.WriteErrorLine("Options --expression and --expression-preset cannot be used together.");
+            return false;
+        }
+
+        if (hasExpression)
+        {
+            expression = request.Expression;
+            expressionSourceName = "CLI expression";
+            return true;
+        }
+
+        if (!hasPreset)
+        {
+            return true;
+        }
+
+        var preset = expressionEngine.Presets.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, request.ExpressionPreset, StringComparison.OrdinalIgnoreCase));
+        if (preset is null)
+        {
+            console.WriteErrorLine($"Unknown expression preset '{request.ExpressionPreset}'.");
+            console.WriteErrorLine("Available presets: " + string.Join(", ", expressionEngine.Presets.Select(static candidate => candidate.Id)));
+            return false;
+        }
+
+        expression = preset.ScriptText;
+        expressionPresetId = preset.Id;
+        expressionSourceName = preset.DisplayName;
+        return true;
+    }
+
     private async Task<int> WriteExportOutputAsync(
         CliConvertRequest request,
         CliOutputFormatDefinition format,
@@ -181,6 +238,7 @@ public sealed class ChapterToolCliApplication
         if (request.Stdout)
         {
             console.Write(export.Content);
+            WriteDiagnosticsToError(export.Diagnostics);
             return 0;
         }
 
@@ -209,6 +267,14 @@ public sealed class ChapterToolCliApplication
         }
 
         return 0;
+    }
+
+    private void WriteDiagnosticsToError(IEnumerable<ChapterDiagnostic> diagnostics)
+    {
+        foreach (var line in FormatDiagnostics(diagnostics))
+        {
+            console.WriteErrorLine(line);
+        }
     }
 
     private async Task<CliImportExecution> ImportAsync(string inputPath, CancellationToken cancellationToken)
@@ -505,7 +571,9 @@ public sealed record CliConvertRequest(
     string? EntryId,
     string? XmlLanguage,
     string? SourceFileName,
-    double? FrameRate);
+    double? FrameRate,
+    string? Expression = null,
+    string? ExpressionPreset = null);
 
 public sealed record CliSelectionResult(bool IsSuccess, ChapterImportEntry? Entry, string Message, IReadOnlyList<ChapterDiagnostic> Diagnostics)
 {

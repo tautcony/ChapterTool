@@ -1,51 +1,4 @@
-# command-line-conversion-workflows Specification
-
-## Purpose
-Define the maintained ChapterTool CLI surface for inspecting supported formats and converting chapter sources without launching the desktop UI.
-
-## Requirements
-
-### Requirement: CLI command tree
-The system SHALL expose a maintained command-line interface for ChapterTool through structured commands instead of ad-hoc argument branching.
-
-#### Scenario: Root command shows help
-- **WHEN** the user runs ChapterTool with `--help`, `-h`, or `-?`
-- **THEN** the CLI SHALL show generated usage/help output for the root command
-
-#### Scenario: Version is available from CLI
-- **WHEN** the user runs ChapterTool with the CLI version option
-- **THEN** the process SHALL print the application version to stdout and exit without launching the GUI
-
-#### Scenario: Existing startup paths stay on the GUI path
-- **WHEN** the user launches ChapterTool with a single existing file-system path and no CLI subcommand or switch
-- **THEN** the application SHALL treat that argument as GUI startup input instead of forcing CLI parsing
-
-### Requirement: Supported formats are discoverable
-The system SHALL provide a CLI command that lists supported input and output formats for basic conversion workflows.
-
-#### Scenario: Formats command lists stable conversion surface
-- **WHEN** the user runs the `formats` command
-- **THEN** stdout SHALL list the basic input families supported by the runtime importer registry
-- **AND** stdout SHALL list the output formats supported by CLI conversion
-- **AND** the output SHALL not advertise expression or other high-order transforms as implemented CLI features
-
-### Requirement: CLI inspection reports import structure
-The system SHALL provide a CLI command that inspects an input source and reports selectable chapter sets and diagnostics in terminal-friendly text.
-
-#### Scenario: Inspect reports available chapter options
-- **WHEN** the user runs `inspect <input>`
-- **THEN** stdout SHALL include each imported group and selectable option with stable group/index identifiers
-- **AND** the output SHALL identify the default option for each group when one exists
-
-#### Scenario: Inspect reports import diagnostics
-- **WHEN** an importer returns warnings, partial results, or informational diagnostics during `inspect`
-- **THEN** the CLI SHALL print those diagnostics with severity and code
-- **AND** the process SHALL still succeed when at least one selectable chapter option was produced
-
-#### Scenario: Inspect fails structurally when import fails
-- **WHEN** the input path is unsupported, missing, or the importer reports import failure
-- **THEN** the CLI SHALL print a failure summary and diagnostics to stderr
-- **AND** the process SHALL exit with a non-zero code
+## MODIFIED Requirements
 
 ### Requirement: CLI convert performs basic file conversion
 The system SHALL provide a CLI command that imports a chapter source, selects one chapter option, and exports it in a supported output format without launching the GUI. The command SHALL accept optional expression text or a built-in expression preset and SHALL apply the selected expression before formatting the output.
@@ -89,32 +42,6 @@ The system SHALL provide a CLI command that imports a chapter source, selects on
 - **WHEN** the user provides an expression preset identifier that the shared expression engine does not expose
 - **THEN** the CLI SHALL print a validation error to stderr
 - **AND** it SHALL exit with code `1` without exporting content
-
-#### Scenario: Convert fails on ambiguous selection
-- **WHEN** the importer returns multiple selectable chapter options and the user did not provide enough selection information
-- **THEN** the CLI SHALL exit with a non-zero code
-- **AND** stderr SHALL list the available group and option identifiers needed to rerun the command deterministically
-
-#### Scenario: Convert fails on unsupported output format
-- **WHEN** the user requests an output format that the CLI does not support
-- **THEN** the CLI SHALL print a validation error to stderr
-- **AND** the process SHALL exit with a non-zero code without launching the GUI
-
-### Requirement: CLI diagnostics and exit codes
-The system SHALL provide deterministic console diagnostics and exit codes for CLI workflows.
-
-#### Scenario: Successful command exits zero
-- **WHEN** `formats`, `inspect`, or `convert` completes successfully
-- **THEN** the process SHALL exit with code `0`
-
-#### Scenario: User-facing CLI failure exits non-zero
-- **WHEN** CLI argument validation fails, import/export fails, or selection is ambiguous
-- **THEN** the process SHALL exit with code `1`
-
-#### Scenario: Unhandled runtime failure exits with exception code
-- **WHEN** a CLI command throws an unhandled exception
-- **THEN** the process SHALL print the exception summary to stderr
-- **AND** it SHALL exit with code `2`
 
 ### Requirement: CLI construction reuses shared composition factories
 CLI inspect and convert workflows SHALL obtain importer-registry and export-service construction through the shared application composition factories or an equivalent shared factory surface, rather than permanently maintaining a fully independent private wiring path. The default CLI export service SHALL use the shared Lua expression engine so opt-in expression projection has the same semantics as the GUI.

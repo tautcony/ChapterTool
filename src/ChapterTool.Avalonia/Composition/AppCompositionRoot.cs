@@ -138,7 +138,7 @@ public sealed class AppCompositionRoot : IDisposable
     public ChapterExportService CreateChapterExportService() => exportService;
 
     /// <summary>
-    /// Shared export construction for GUI and CLI. CLI omits expression engine (product scope).
+    /// Shared export construction for GUI and CLI.
     /// </summary>
     public static ChapterExportService CreateSharedExportService(
         IChapterExpressionEngine? expressionEngine = null) =>

@@ -3,110 +3,82 @@
 [![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg)](LICENSE)
 [![.NET 10 CI](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
-[![NuGet downloads](https://img.shields.io/nuget/dt/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
-[![GitHub Pages](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/github-pages.yml)
 [![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
 [![WASM](https://img.shields.io/badge/wasm-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
 
-ChapterTool is a cross-platform Avalonia desktop chapter editor for importing, adjusting, combining, and exporting chapter lists from text, disc playlist, and media container sources.
+ChapterTool is a cross-platform chapter editor for desktop and browser. It imports chapter data, edits names and times, applies time transforms, and exports the result.
 
 ## Features
 
-- Import chapter data from text files, disc playlist formats, BDMV folders, and media containers.
-- Edit chapter names and timestamps in a cross-platform Avalonia UI.
-- Apply time adjustments with a Lua expression/script editor that supports diagnostics, completion, and syntax highlighting.
-- Calculate frame information from chapter times and frame rate settings.
+- Import text, XML, WebVTT, CUE, Blu-ray, DVD, HD-DVD, Matroska, and other media chapter sources.
 - Combine supported multi-segment sources such as MPLS and IFO.
-- Export chapters as `.txt`, `.xml`, `.qpf`, `.TimeCodes.txt`, `.TsMuxeR_Meta.txt`, `.cue`, `.json`, `.vtt`, and Celltimes output.
-- Use the CLI to list supported formats, inspect selectable chapter groups, and convert chapter sources without launching the desktop UI.
+- Edit chapter names and timestamps.
+- Calculate frame numbers from chapter times and frame-rate settings.
+- Apply Lua time transforms with diagnostics, completion, and syntax highlighting.
+- Export TXT, XML, QPFile, TimeCodes, TsMuxeR, CUE, JSON, WebVTT, and Celltimes files.
 
-## NuGet Package
+The command-line interface (CLI) can list formats, inspect imported groups, and convert sources without opening the desktop app.
 
-The reusable chapter parsing and transformation library is published as [`ChapterTool.Core`](https://www.nuget.org/packages/ChapterTool.Core/) for .NET 8, .NET 9, and .NET 10 applications, including browser WebAssembly hosts.
+## Requirements
 
-Install it from NuGet.org:
+- .NET 10 runtime for framework-dependent releases.
+- .NET 10 SDK to build from source.
+- `ffprobe` from FFmpeg for media-container chapters.
+- `mkvextract` from MKVToolNix for Matroska chapters.
+- `eac3to` for Blu-ray `BDMV` folders.
+
+Configure external tool paths in the application settings. ChapterTool also searches supported platform locations.
+
+## Install The Core Library
+
+[`ChapterTool.Core`](https://www.nuget.org/packages/ChapterTool.Core/) provides chapter parsing, transformation, and export APIs for .NET 8, .NET 9, .NET 10, and browser WebAssembly applications.
 
 ```bash
 dotnet add package ChapterTool.Core
 ```
 
-Tagged releases are also published to [GitHub Packages](https://github.com/tautcony/ChapterTool/pkgs/nuget/ChapterTool.Core) by the [package workflow](.github/workflows/nuget-publish.yml). The workflow publishes a version when a `v*` tag is pushed, and can also be started manually from the Actions tab.
+## CLI Examples
 
-## Supported Import Sources
-
-- OGM-style text chapters: `.txt`
-- Adobe Premiere Pro chapter marker lists: `.csv`, and detected marker tables in `.txt`
-- Matroska chapter XML: `.xml`
-- WebVTT chapter cues: `.vtt`
-- Cue sheets and embedded cues: `.cue`, `.flac`, `.tak`
-- Blu-ray playlists: `.mpls`
-- Blu-ray `BDMV` folders through `eac3to`
-- DVD IFO files: `.ifo`
-- HD-DVD playlists: `.xpl`
-- Matroska containers through `mkvextract`, with ffprobe fallback when the tool cannot be invoked: `.mkv`, `.mka`, `.mks`, `.webm`
-- MP4/QuickTime/media files through ffprobe: `.mp4`, `.m4a`, `.m4v`, `.mov`, `.qt`, `.3gp`, `.3g2`, `.asf`, `.wmv`, `.wma`, `.mp3`, `.aac`, `.ogg`, `.oga`, `.ogv`, `.opus`, `.wav`, `.nut`, `.aa`, `.aax`, `.ffmetadata`, `.ffmeta`
-
-## Requirements
-
-- .NET 10 runtime for framework-dependent release builds.
-- .NET 10 SDK for building from source.
-- `ffprobe` from FFmpeg for media-container chapter import.
-- `mkvextract` from MKVToolNix for primary Matroska chapter extraction.
-- `eac3to` for importing Blu-ray `BDMV` folders.
-
-External tool paths can be configured in the app settings. ChapterTool also searches common configured paths and platform tool locations where supported.
-
-## Command Line
-
-The Avalonia executable also exposes maintained CLI workflows. Run these from a published artifact or from the project with `dotnet run --project src/ChapterTool.Avalonia --`.
+Run the CLI from a published application or with `dotnet run`:
 
 ```powershell
-ChapterTool.Avalonia formats
-ChapterTool.Avalonia inspect input.mpls
-ChapterTool.Avalonia convert input.xml --format txt --output chapters.txt
-ChapterTool.Avalonia convert input.xml --format vtt --stdout
-ChapterTool.Avalonia load input.xml
+dotnet run --project src/ChapterTool.Avalonia -- formats
+dotnet run --project src/ChapterTool.Avalonia -- inspect input.mpls
+dotnet run --project src/ChapterTool.Avalonia -- convert input.xml --format txt --output chapters.txt
+dotnet run --project src/ChapterTool.Avalonia -- convert input.xml --format vtt --stdout
 ```
 
-`formats` lists the stable CLI import/export surface. `inspect` reports imported groups, selectable options, and diagnostics. `convert` supports file output, stdout output, explicit group/option selection, XML language, CUE source file name, and frame-rate override. GUI-only expression transforms are intentionally not applied by CLI conversion.
+`formats` lists supported import and export formats. `inspect` reports groups, selectable options, and diagnostics. `convert` supports file output, standard output, group selection, XML language, CUE source names, and frame-rate overrides.
+
+The CLI can apply the same Lua expression transforms as the GUI with `--expression` or `--expression-preset`. Use `--frame-rate` when the input does not provide a valid frame rate.
+
+## Browser App
+
+The Blazor WebAssembly app runs `ChapterTool.Core` in the browser. It supports byte-based imports, chapter editing, templates, multi-selection, previews, exports, drag and drop, settings, and `en-US`, `zh-CN`, and `ja-JP` localization.
+
+Open the deployed app at [tautcony.github.io/ChapterTool](https://tautcony.github.io/ChapterTool/).
+
+Run it locally:
+
+```bash
+dotnet run --project src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --launch-profile ChapterTool.Wasm
+```
+
+The browser app does not run desktop tools or access local files after import. See [the WASM README](src/ChapterTool.Wasm/README.md) for its boundaries and deployment details.
 
 ## Build And Test
 
-Restore, build, and test the current solution:
+Use the main solution for local development:
 
-```powershell
+```bash
 dotnet restore ChapterTool.Avalonia.slnx
 dotnet build ChapterTool.Avalonia.slnx --no-restore
 dotnet test ChapterTool.Avalonia.slnx --no-restore
 ```
 
-The CI workflow is `.github/workflows/dotnet-ci.yml` and runs on Linux with .NET 10, FFmpeg, and MKVToolNix.
+Run coverage with `./scripts/test-coverage.sh`. The script writes reports to `artifacts/coverage`.
 
-To collect test coverage and generate a browsable HTML report:
-
-```bash
-./scripts/test-coverage.sh
-```
-
-The script runs the four test projects sequentially, excludes generated `*.g.cs` files through `scripts/coverage.runsettings`, then writes Cobertura XML and the HTML report under `artifacts/coverage`. HTML generation requires the ReportGenerator global tool:
-
-```bash
-dotnet tool install -g dotnet-reportgenerator-globaltool
-```
-
-Use `./scripts/test-coverage.sh -SkipHtml` when only the XML coverage files are needed.
-
-### Browser WASM app (GitHub Pages)
-
-`src/ChapterTool.Wasm` is a browser WebAssembly workspace for `ChapterTool.Core` (byte import, reload/append, chapter grid editing, templates, multi-select actions, preview, export download, drag and drop, settings, and `en-US`/`zh-CN`/`ja-JP` localization). It is published by `.github/workflows/github-pages.yml` to:
-
-**https://tautcony.github.io/ChapterTool/**
-
-Enable once: **Settings → Pages → Source → GitHub Actions**, then run the **Deploy WASM (GitHub Pages)** workflow (or push to `master` under the watched paths).
-
-## Publish
-
-Use the publish helpers for local artifacts:
+Publish a local desktop artifact:
 
 ```bash
 ./scripts/publish.sh -Runtime linux-x64
@@ -114,41 +86,20 @@ Use the publish helpers for local artifacts:
 ./scripts/publish.sh -Runtime win-x64 -SelfContained
 ```
 
-`scripts/publish.ps1` is available for Windows publishing only:
-
-```powershell
-./scripts/publish.ps1 -Runtime win-x64
-./scripts/publish.ps1 -Runtime win-x64 -SelfContained
-```
-
-Framework-dependent artifacts are written under `artifacts/publish/framework-dependent/<runtime>`. Self-contained artifacts are written under `artifacts/publish/self-contained/<runtime>`.
-
-The GitHub Actions publish job currently builds single-file framework-dependent artifacts for `win-x64`, `linux-x64`, and `osx-arm64`; the macOS job also packages the app as a `.dmg`.
-
-Pushing a version tag runs the full CI and NuGet publication workflows first; after `Publish to NuGet` succeeds, `Publish GitHub Release` automatically packages the CI artifacts, extracts the corresponding `ChangeLog.md` section, and creates or updates the GitHub Release. The release workflow can also be run manually with an existing tag to retry or repair a release.
+Use `scripts/publish.ps1` on Windows.
 
 ## Project Layout
 
-- `src/ChapterTool.Core`: chapter models, transformations, import contracts, and exporters.
-- `src/ChapterTool.Infrastructure`: external tool discovery, process execution, settings, and infrastructure-backed importers.
-- `src/ChapterTool.Avalonia`: desktop UI and runtime composition.
-- `tests/`: Core, Infrastructure, and Avalonia test projects.
-- `openspec/specs/`: current behavior specifications.
-- `openspec/changes/`: active and archived OpenSpec changes.
+| Path | Responsibility |
+| --- | --- |
+| `src/ChapterTool.Core` | Chapter models, importers, transformations, and exporters |
+| `src/ChapterTool.Infrastructure` | External tools, process execution, settings, and platform services |
+| `src/ChapterTool.Avalonia` | Desktop UI, CLI, and runtime composition |
+| `src/ChapterTool.Wasm` | Browser host for `ChapterTool.Core` |
+| `tests/` | Core, Infrastructure, Avalonia, and Headless Avalonia tests |
 
-## Thanks
-
-- [Chapters file time Editor](https://www.nmm-hd.org/newbbs/viewtopic.php?f=16&t=24)
-- [BD Chapters MOD](https://www.nmm-hd.org/newbbs/viewtopic.php?f=16&t=517)
-- [gMKVExtractGUI](http://sourceforge.net/projects/gmkvextractgui/)
-- [Chapter Grabber](http://jvance.com/pages/ChapterGrabber.xhtml)
-- [MKVToolNix](https://mkvtoolnix.download/)
-- [libbluray](https://www.videolan.org/developers/libbluray.html)
-- [BDedit](http://pel.hu/bdedit/)
-- [Knuckleball](https://github.com/jimevans/knuckleball)
-- [BluRay](https://github.com/lerks/BluRay)
-- [IfoEdit](http://www.ifoedit.com/index.html)
+Use [the code map](docs/code-map/README.md) to find module entry points and test ownership.
 
 ## License
 
-Distributed under the GPLv3+ license. See [LICENSE](LICENSE) for details.
+ChapterTool is distributed under the GPLv3+ license. See [LICENSE](LICENSE).

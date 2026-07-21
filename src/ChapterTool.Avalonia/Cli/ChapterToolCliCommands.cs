@@ -71,6 +71,12 @@ public sealed class ConvertCliCommand
     [CliOption(Description = "Override frame rate for frame-based exports.", Required = false)]
     public double? FrameRate { get; set; }
 
+    [CliOption(Description = "Lua expression used to transform chapter times before export.", Required = false)]
+    public string? Expression { get; set; }
+
+    [CliOption(Description = "Built-in expression preset id used to transform chapter times before export.", Required = false)]
+    public string? ExpressionPreset { get; set; }
+
     public async Task<int> RunAsync()
     {
         var app = new ChapterToolCliApplication();
@@ -85,7 +91,9 @@ public sealed class ConvertCliCommand
                 EntryId,
                 XmlLanguage,
                 SourceFileName,
-                FrameRate),
+                FrameRate,
+                Expression,
+                ExpressionPreset),
             CancellationToken.None);
     }
 }

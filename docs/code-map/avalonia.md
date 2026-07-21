@@ -64,7 +64,7 @@ Runtime wiring is centralized in:
 Shared CLI/GUI factories:
 
 - `CreateSharedImporterRegistry(ISettingsStore<>)`
-- `CreateSharedExportService(IChapterExpressionEngine?)` — CLI passes `null` expression engine
+- `CreateSharedExportService(IChapterExpressionEngine?)` — CLI passes the shared Lua expression engine so opt-in expression projection matches the GUI
 
 For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through `MainWindowViewModel` or `ToolWindowCreateContext`. Its private fallback is limited to direct design-time or test construction.
 

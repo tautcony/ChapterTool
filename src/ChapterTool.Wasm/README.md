@@ -1,13 +1,15 @@
 # ChapterTool WASM (Blazor)
 
-Blazor WebAssembly standalone browser workspace that hosts `ChapterTool.Core` with an **Avalonia-like main workflow**:
+ChapterTool WASM is a Blazor WebAssembly browser app that runs `ChapterTool.Core` in the browser.
+
+The app provides chapter import, editing, time transforms, preview, and export. Its main workflow has these zones:
 
 1. **Top** — Load / Save, optional clip selector, frame rate readout
 2. **Center** — chapter grid (`#`, Time, Name, Frames)
 3. **Bottom** — save format, chapter name mode, order shift, XML language, expression
 4. **Status strip** — status text + progress
 
-Load imports immediately into the grid. Save and Preview use the same Core projection/export options. Reload reuses the last successful file bytes; Append MPLS combines another playlist through Core's segment service. There is no separate “paste source → convert” pipeline.
+Load imports data into the grid. Save and Preview use the Core projection and export options. Reload reuses the last successful file bytes. Append MPLS combines another playlist through the Core segment service.
 
 ## Prerequisites
 
@@ -29,7 +31,7 @@ Default URL: `http://localhost:5261`
 2. Browser: **Chrome** or **Edge** (not Default)  
 3. If profile missing: right-click `launchSettings.json` → **Generate Configurations**
 
-## Interaction (same idea as Avalonia)
+## Interaction
 
 | Action | Behavior |
 |--------|----------|
@@ -52,7 +54,7 @@ Default URL: `http://localhost:5261`
 
 Empty grid offers **Load OGM sample** for a quick smoke path.
 
-## Architecture
+## Main Components
 
 | Piece | Role |
 |-------|------|
@@ -62,11 +64,11 @@ Empty grid offers **Load OGM sample** for a quick smoke path.
 | `Pages/Home.razor` | Main shell UI zones |
 | `wwwroot/js/download.js` | File picker trigger, encoded export download, appearance application, and localStorage persistence |
 
-Browser note: always pass chapter bytes via `ChapterImportRequest.Content` (no real filesystem).
+Pass chapter bytes through `ChapterImportRequest.Content`. The browser app does not use local file paths for import.
 
 ## Feature boundaries
 
-Implemented browser behavior includes text/XML/CUE/WebVTT/MPLS/IFO byte imports, chapter editing, managed Lua expressions over chapter data, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
+The browser app imports text, XML, CUE, WebVTT, MPLS, and IFO data from bytes. It supports chapter editing, managed Lua expressions, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
 
 The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`eac3to`/`ffprobe`/`ffmpeg`, importing external-tool media/BDMV sources, opening local Related Media through a desktop shell, or loading Lua script files and the Lua editor/completion workflow.
 

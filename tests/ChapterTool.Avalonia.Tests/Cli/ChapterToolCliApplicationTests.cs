@@ -177,7 +177,7 @@ public sealed class ChapterToolCliApplicationTests
         Assert.Contains("Output formats", console.Stdout, StringComparison.Ordinal);
         Assert.Contains("txt", console.Stdout, StringComparison.Ordinal);
         Assert.Contains("xml", console.Stdout, StringComparison.Ordinal);
-        Assert.Contains("Expression and other advanced transforms are intentionally disabled in CLI.", console.Stdout, StringComparison.Ordinal);
+        Assert.Contains("Convert supports optional Lua expressions and built-in expression presets.", console.Stdout, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -219,6 +219,107 @@ public sealed class ChapterToolCliApplicationTests
         Assert.Contains("CHAPTER01=", console.Stdout, StringComparison.Ordinal);
         Assert.Contains("CHAPTER01NAME=", console.Stdout, StringComparison.Ordinal);
         Assert.Equal(string.Empty, console.Stderr);
+    }
+
+    [Fact]
+    public async Task ConvertAppliesInlineExpressionBeforeExport()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(
+                XmlFixture(),
+                "txt",
+                OutputPath: null,
+                Stdout: true,
+                GroupIndex: 0,
+                EntryIndex: 0,
+                EntryId: null,
+                XmlLanguage: null,
+                SourceFileName: null,
+                FrameRate: 24,
+                Expression: "t + 1"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01=00:00:01.000", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertAppliesBuiltInExpressionPresetBeforeExport()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(
+                XmlFixture(),
+                "txt",
+                OutputPath: null,
+                Stdout: true,
+                GroupIndex: 0,
+                EntryIndex: 0,
+                EntryId: null,
+                XmlLanguage: null,
+                SourceFileName: null,
+                FrameRate: 24,
+                ExpressionPreset: "offset-seconds"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01=00:00:01.000", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertRejectsConflictingExpressionOptions()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(
+                Path.Combine(Path.GetTempPath(), "missing-expression-input.xml"),
+                "txt",
+                OutputPath: null,
+                Stdout: true,
+                GroupIndex: 0,
+                EntryIndex: 0,
+                EntryId: null,
+                XmlLanguage: null,
+                SourceFileName: null,
+                FrameRate: null,
+                Expression: "t",
+                ExpressionPreset: "identity"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("cannot be used together", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertRejectsUnknownExpressionPreset()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(
+                Path.Combine(Path.GetTempPath(), "missing-expression-input.xml"),
+                "txt",
+                OutputPath: null,
+                Stdout: true,
+                GroupIndex: 0,
+                EntryIndex: 0,
+                EntryId: null,
+                XmlLanguage: null,
+                SourceFileName: null,
+                FrameRate: null,
+                ExpressionPreset: "missing-preset"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Unknown expression preset", console.Stderr, StringComparison.Ordinal);
     }
 
     [Fact]

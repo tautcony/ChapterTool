@@ -4,6 +4,8 @@ This directory is the maintainer navigation index for the current codebase.
 
 Use it to locate the code behind a feature before you search the full repository.
 
+ChapterTool is a cross-platform chapter editor for desktop and browser. The code map covers the Core library, platform services, Avalonia desktop app, browser host, and test projects.
+
 ## Writing Standard
 
 Use ASD-STE100 principles in every code-map document. Write short, direct sentences. Use one idea per sentence. Use active voice and a specific subject. Use the same term for the same concept. Define abbreviations before use, except for code-defined names. Keep paths, commands, and identifiers exact. Keep Chinese feature-matrix text concise when a Chinese label is required.
@@ -24,7 +26,7 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 ## Browser Host
 
 - `src/ChapterTool.Wasm`
-  - Blazor WebAssembly standalone host for `ChapterTool.Core` (client-side import/export UI)
+  - Blazor WebAssembly browser host for `ChapterTool.Core`
 
 ## Use This Map
 

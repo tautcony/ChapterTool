@@ -1,6 +1,6 @@
 # ChapterTool.Core
 
-A .NET library for parsing, editing, transforming, and exporting multimedia chapter files.
+`ChapterTool.Core` is the reusable .NET library for chapter import, editing, time transforms, and export.
 
 [![NuGet](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
 [![GitHub Packages](https://img.shields.io/badge/GitHub%20Packages-ChapterTool.Core-181717?logo=github)](https://github.com/tautcony/ChapterTool/pkgs/nuget/ChapterTool.Core)
@@ -11,21 +11,7 @@ A .NET library for parsing, editing, transforming, and exporting multimedia chap
 dotnet add package ChapterTool.Core
 ```
 
-## Browser / WebAssembly
-
-`ChapterTool.Core` is pure managed code and declares browser as a supported platform. It can run inside Blazor WebAssembly (and other .NET browser WASM hosts). See the browser host at `src/ChapterTool.Wasm`.
-
-When hosting in the browser:
-
-1. Supply chapter bytes through `ChapterImportRequest.Content` (or use text `ImportText` helpers) instead of relying on filesystem paths alone.
-2. Consume `ChapterExportResult.Content` directly — no disk write is required.
-3. Optional time expressions still use the built-in managed Lua engine.
-
-```bash
-dotnet run --project src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
-```
-
-## Features
+## Capabilities
 
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers
 - **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes
@@ -34,7 +20,7 @@ dotnet run --project src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
 - **Transform** chapter times: pluggable expression engines, frame rate detection and conversion
 - **Combine & append** chapter segments from multipart sources (MPLS/DVD)
 
-## Quick Start
+## API Examples
 
 ### Import Chapters
 
