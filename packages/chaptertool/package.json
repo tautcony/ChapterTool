@@ -1,6 +1,6 @@
 {
   "name": "@chaptertool/node",
-  "version": "23.2.0",
+  "version": "23.2.1",
   "description": "Portable ChapterTool Core API for Node.js through .NET WebAssembly.",
   "type": "module",
   "exports": {
