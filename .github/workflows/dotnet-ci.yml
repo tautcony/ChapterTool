@@ -115,15 +115,15 @@ jobs:
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v5
         with:
-          name: ChapterTool.Core.nupkg
+          name: ChapterTool-Core-nuget
           path: |
             artifacts/nuget/*.nupkg
             artifacts/nuget/*.snupkg
           if-no-files-found: error
 
-  publish-app:
+  pack-dotnet:
     needs: build-test
-    name: Publish App (${{ matrix.runtime }})
+    name: Pack .NET (${{ matrix.runtime }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -156,20 +156,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore
-        run: dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
+      - name: Restore .NET projects
+        run: |
+          dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
+          dotnet restore src/ChapterTool.Cli/ChapterTool.Cli.csproj
 
-      - name: Publish
+      - name: Publish Avalonia
         run: ./scripts/publish.sh -Runtime ${{ matrix.runtime }} -NoRestore -PublishSingleFile
 
-      - name: Verify publish artifact
-        run: ./scripts/verify-publish-artifact.sh -Runtime ${{ matrix.runtime }} -Path artifacts/publish/framework-dependent/${{ matrix.runtime }}
+      - name: Pack ChapterTool
+        run: dotnet pack src/ChapterTool.Cli/ChapterTool.Cli.csproj --configuration Release --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
 
-      - name: Upload artifact
+      - name: Upload .NET package
         uses: actions/upload-artifact@v5
         with:
-          name: ChapterTool-Avalonia-${{ matrix.runtime }}
-          path: ${{ matrix.artifact-path }}
+          name: ChapterTool-dotnet-${{ matrix.runtime }}
+          path: |
+            ${{ matrix.artifact-path }}
+            artifacts/nuget/*.nupkg
+            artifacts/nuget/*.snupkg
           if-no-files-found: error
 
   pack-nodejs:

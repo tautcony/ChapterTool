@@ -9,6 +9,23 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>ChapterTool</AssemblyName>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>chaptertool</ToolCommandName>
+    <PackageId>ChapterTool</PackageId>
+    <Description>Cross-platform command-line tools for inspecting and converting multimedia chapter files.</Description>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>chapters;multimedia;video;cli;dotnet-tool;matroska;cue;ogm;webvtt</PackageTags>
+    <PackageProjectUrl>https://github.com/tautcony/ChapterTool</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
 
 </Project>

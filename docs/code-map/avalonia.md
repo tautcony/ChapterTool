@@ -109,10 +109,14 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### CLI
 
+- `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs`
 - `src/ChapterTool.CommandLine/Cli/CliConsole.cs`
+- `src/ChapterTool.Cli/Program.cs`
+- `src/ChapterTool.Cli/ChapterTool.Cli.csproj`
+- `src/ChapterTool.Cli/README.md`
 
 ### Localization
 
@@ -242,6 +246,8 @@ Start with:
 - `src/ChapterTool.Avalonia/Program.cs`
 
 Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs` for DotMake command definitions, bound launch-plan analysis, and supported format definitions. The Avalonia program uses the typed facade for GUI compatibility. The standalone program delegates process startup to the same facade.
+
+`src/ChapterTool.Cli/ChapterTool.Cli.csproj` owns the `ChapterTool` NuGet package metadata. The package installs the `chaptertool` command. `.github/workflows/dotnet-ci.yml` publishes the Avalonia runtime output and packages the CLI in each `pack-dotnet` runtime job. `.github/workflows/nuget-publish.yml` publishes the tool and `ChapterTool.Core` from the same version tag.
 
 ### Localization changes
 

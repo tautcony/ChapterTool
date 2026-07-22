@@ -2,7 +2,8 @@
 
 [![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg)](LICENSE)
 [![.NET 10 CI](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml)
-[![NuGet](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
+[![NuGet tool](https://img.shields.io/nuget/v/ChapterTool?logo=nuget)](https://www.nuget.org/packages/ChapterTool/)
+[![NuGet Core](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
 [![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
 [![WASM](https://img.shields.io/badge/wasm-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
 
@@ -29,6 +30,23 @@ The command-line interface (CLI) can list formats, inspect imported groups, and 
 
 Configure external tool paths in the application settings. ChapterTool also searches supported platform locations.
 
+## Install The CLI
+
+Install the `ChapterTool` .NET Tool globally. The package provides the `chaptertool` command.
+
+```bash
+dotnet tool install --global ChapterTool
+```
+
+Update or remove the tool with these commands:
+
+```bash
+dotnet tool update --global ChapterTool
+dotnet tool uninstall --global ChapterTool
+```
+
+The tool requires a compatible .NET 10 runtime. You can also install it in a local tool manifest with `dotnet tool install ChapterTool`.
+
 ## Install The Core Library
 
 [`ChapterTool.Core`](https://www.nuget.org/packages/ChapterTool.Core/) provides chapter parsing, transformation, and export APIs for .NET 8, .NET 9, .NET 10, and browser WebAssembly applications.
@@ -39,18 +57,24 @@ dotnet add package ChapterTool.Core
 
 ## CLI Examples
 
-Run the CLI from a published application or with `dotnet run`:
+Run the installed tool:
 
-```powershell
-dotnet run --project src/ChapterTool.Avalonia -- formats
-dotnet run --project src/ChapterTool.Avalonia -- inspect input.mpls
-dotnet run --project src/ChapterTool.Avalonia -- convert input.xml --format txt --output chapters.txt
-dotnet run --project src/ChapterTool.Avalonia -- convert input.xml --format vtt --stdout
+```bash
+chaptertool formats
+chaptertool inspect input.mpls
+chaptertool convert input.xml --format txt --output chapters.txt
+chaptertool convert input.xml --format vtt --stdout
 ```
 
 `formats` lists supported import and export formats. `inspect` reports groups, selectable options, and diagnostics. `convert` supports file output, standard output, group selection, XML language, CUE source names, and frame-rate overrides.
 
 The CLI can apply the same Lua expression transforms as the GUI with `--expression` or `--expression-preset`. Use `--frame-rate` when the input does not provide a valid frame rate.
+
+Run the standalone project during development:
+
+```bash
+dotnet run --project src/ChapterTool.Cli -- formats
+```
 
 ## Browser App
 
@@ -120,7 +144,9 @@ Use `scripts/publish.ps1` on Windows.
 | --- | --- |
 | `src/ChapterTool.Core` | Chapter models, importers, transformations, and exporters |
 | `src/ChapterTool.Infrastructure` | External tools, process execution, settings, and platform services |
-| `src/ChapterTool.Avalonia` | Desktop UI, CLI, and runtime composition |
+| `src/ChapterTool.CommandLine` | Shared CLI commands, argument binding, and workflow composition |
+| `src/ChapterTool.Cli` | Standalone `chaptertool` host and NuGet Tool package |
+| `src/ChapterTool.Avalonia` | Desktop UI, GUI launch compatibility, and runtime composition |
 | `src/ChapterTool.Wasm` | Browser host for `ChapterTool.Core` |
 | `src/ChapterTool.Node` | Pure .NET WebAssembly host for the Node.js package |
 | `packages/chaptertool` | Node.js package entry point, type declarations, and runtime packaging |
