@@ -117,11 +117,17 @@ jobs:
                 -exec cp {} release-assets/publish/ \;
             fi
 
-            if find "$staging_dir" -type f ! \( -name '*.nupkg' -o -name '*.snupkg' \) -print -quit | grep -q .; then
+            if find "$staging_dir" -type f -name '*.tgz' -print -quit | grep -q .; then
+              find "$staging_dir" -type f \
+                -name '*.tgz' \
+                -exec cp {} release-assets/publish/ \;
+            fi
+
+            if find "$staging_dir" -type f ! \( -name '*.nupkg' -o -name '*.snupkg' -o -name '*.tgz' \) -print -quit | grep -q .; then
               (
                 cd "$staging_dir"
                 zip -q -r "$GITHUB_WORKSPACE/release-assets/publish/$artifact_name.zip" . \
-                  -x '*.nupkg' '*.snupkg'
+                  -x '*.nupkg' '*.snupkg' '*.tgz'
               )
             fi
           done
