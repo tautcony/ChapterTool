@@ -31,23 +31,45 @@ on:
       - "scripts/**"
       - "packages/chaptertool/**"
 
+concurrency:
+  group: dotnet-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-test:
+    name: Build and test
     runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
 
-      - name: Install external tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg mkvtoolnix
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Install .NET wasm-tools workload
+        run: dotnet workload install wasm-tools
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: packages/chaptertool/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: packages/chaptertool
+        run: npm ci
 
       - name: Restore
         run: dotnet restore ChapterTool.Avalonia.slnx
@@ -55,8 +77,9 @@ jobs:
       - name: Build
         run: dotnet build ChapterTool.Avalonia.slnx --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test ChapterTool.Avalonia.slnx --configuration Release --no-build --blame-hang --blame-hang-timeout 10m --blame-hang-dump-type full
+      - name: Build Node.js package
+        working-directory: packages/chaptertool
+        run: npm run build
 
       - name: Validate PowerShell publish script
         shell: pwsh
@@ -67,54 +90,35 @@ jobs:
             [ref]$null)
 
       - name: Pack ChapterTool.Core
-        run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
+        run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-build --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
+
+      - name: Install external tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg mkvtoolnix
+
+      - name: Test .NET
+        run: dotnet test ChapterTool.Avalonia.slnx --configuration Release --no-build --no-restore --blame-hang --blame-hang-timeout 10m --blame-hang-dump-type full
+
+      - name: Test Node.js package
+        working-directory: packages/chaptertool
+        run: npm run typecheck && npm run test:built
+
+      - name: Upload Node.js build output
+        uses: actions/upload-artifact@v5
+        with:
+          name: ChapterTool-node-dist
+          path: packages/chaptertool/dist
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Upload NuGet artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ChapterTool.Core.nupkg
           path: |
             artifacts/nuget/*.nupkg
             artifacts/nuget/*.snupkg
-          if-no-files-found: error
-
-  node-package:
-    name: Test and pack Node.js package
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install .NET 10
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: npm
-          cache-dependency-path: packages/chaptertool/package-lock.json
-
-      - name: Install npm dependencies
-        working-directory: packages/chaptertool
-        run: npm ci
-
-      - name: Test Node.js package
-        working-directory: packages/chaptertool
-        run: npm test
-
-      - name: Pack and verify npm tarball
-        working-directory: packages/chaptertool
-        run: npm run pack:verify
-
-      - name: Upload npm artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ChapterTool-node-package
-          path: artifacts/npm/*.tgz
           if-no-files-found: error
 
   publish-app:
@@ -137,12 +141,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install .NET 10
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
       - name: Restore
         run: dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
@@ -154,8 +166,39 @@ jobs:
         run: ./scripts/verify-publish-artifact.sh -Runtime ${{ matrix.runtime }} -Path artifacts/publish/framework-dependent/${{ matrix.runtime }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ChapterTool-Avalonia-${{ matrix.runtime }}
           path: ${{ matrix.artifact-path }}
+          if-no-files-found: error
+
+  pack-nodejs:
+    needs: build-test
+    name: Pack Node.js package
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
+
+      - name: Download Node.js build output
+        uses: actions/download-artifact@v5
+        with:
+          name: ChapterTool-node-dist
+          path: packages/chaptertool/dist
+
+      - name: Pack and verify npm tarball
+        working-directory: packages/chaptertool
+        run: npm run pack:verify
+
+      - name: Upload npm artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ChapterTool-node-package
+          path: artifacts/npm/*.tgz
           if-no-files-found: error

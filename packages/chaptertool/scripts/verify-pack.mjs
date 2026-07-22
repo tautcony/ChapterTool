@@ -2,18 +2,20 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
-const packageDirectory = fileURLToPath(new URL("..", import.meta.url));
-const repositoryDirectory = resolve(packageDirectory, "../..");
-const packageOutputDirectory = join(repositoryDirectory, "artifacts", "npm");
+import { inspectRepositoryLayout, resolveBuildPaths } from "./check-environment.mjs";
+
+const paths = resolveBuildPaths();
+const { packageDirectory, packageOutputDirectory } = paths;
+
+inspectRepositoryLayout(paths);
 
 rmSync(packageOutputDirectory, { recursive: true, force: true });
 mkdirSync(packageOutputDirectory, { recursive: true });
 
 const packOutput = execFileSync(
   "npm",
-  ["pack", "--json", "--pack-destination", packageOutputDirectory],
+  ["pack", "--ignore-scripts", "--json", "--pack-destination", packageOutputDirectory],
   { cwd: packageDirectory, encoding: "utf8" }
 ).trim();
 
@@ -53,9 +55,9 @@ try {
   );
 
   const checkScript = `
-    import { importChapters } from "@chaptertool/node";
+    import { ChapterTool } from "@chaptertool/node";
 
-    const result = await importChapters(
+    const result = await new ChapterTool().import(
       "CHAPTER01=00:00:00.000\\nCHAPTER01NAME=Package check\\n",
       { fileName: "package-check.txt" }
     );

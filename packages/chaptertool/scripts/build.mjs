@@ -1,28 +1,29 @@
-import { cpSync, mkdirSync, readdirSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import fsExtra from "fs-extra";
+import { build as bundle } from "tsdown";
 
-import { inspectBuildEnvironment, reportBuildEnvironment } from "./check-environment.mjs";
+import {
+  inspectBuildEnvironment,
+  reportBuildEnvironment,
+  resolveBuildPaths
+} from "./check-environment.mjs";
 
-const packageDirectory = fileURLToPath(new URL("..", import.meta.url));
-const repositoryDirectory = resolve(packageDirectory, "../..");
-const projectPath = join(repositoryDirectory, "src", "ChapterTool.Node", "ChapterTool.Node.csproj");
-const publishDirectory = join(repositoryDirectory, "artifacts", "node-package-runtime");
-const sourceDirectory = join(packageDirectory, "src");
-const distributionDirectory = join(packageDirectory, "dist");
-const legacyRuntimeDirectory = join(packageDirectory, "runtime");
+const paths = resolveBuildPaths();
+const {
+  repositoryDirectory,
+  projectPath,
+  publishDirectory,
+  sourceDirectory,
+  distributionDirectory
+} = paths;
 const runtimeDirectory = join(distributionDirectory, "runtime");
 const frameworkSourceDirectory = join(publishDirectory, "wwwroot", "_framework");
 const frameworkDirectory = join(runtimeDirectory, "_framework");
+const { copy } = fsExtra;
 
-const environment = inspectBuildEnvironment();
+const environment = inspectBuildEnvironment(paths);
 reportBuildEnvironment(environment);
-
-rmSync(publishDirectory, { recursive: true, force: true });
-rmSync(distributionDirectory, { recursive: true, force: true });
-rmSync(legacyRuntimeDirectory, { recursive: true, force: true });
-mkdirSync(distributionDirectory, { recursive: true });
 
 const publishArguments = [
   "publish",
@@ -42,15 +43,28 @@ if (!environment.hasWasmTools) {
 
 execFileSync("dotnet", publishArguments, { cwd: repositoryDirectory, stdio: "inherit" });
 
-cpSync(join(sourceDirectory, "index.mjs"), join(distributionDirectory, "index.mjs"));
-cpSync(join(sourceDirectory, "index.d.ts"), join(distributionDirectory, "index.d.ts"));
-mkdirSync(frameworkDirectory, { recursive: true });
-cpSync(frameworkSourceDirectory, frameworkDirectory, { recursive: true });
-
-for (const fileName of readdirSync(frameworkDirectory)) {
-  if (fileName.endsWith(".br") || fileName.endsWith(".gz")) {
-    rmSync(join(frameworkDirectory, fileName));
+await bundle({
+  entry: [join(sourceDirectory, "index.ts")],
+  format: "esm",
+  outDir: distributionDirectory,
+  target: "es2022",
+  platform: "node",
+  fixedExtension: true,
+  outExtensions: () => ({ js: ".mjs", dts: ".d.ts" }),
+  dts: true,
+  sourcemap: true,
+  treeshake: true,
+  clean: true,
+  deps: {
+    neverBundle: (id) => id.includes("/runtime/") || id.startsWith("./runtime/"),
+    dts: {
+      neverBundle: (id) => id.includes("/runtime/") || id.startsWith("./runtime/")
+    }
   }
-}
+});
+
+await copy(frameworkSourceDirectory, frameworkDirectory, {
+  filter: (source) => !source.endsWith(".br") && !source.endsWith(".gz")
+});
 
 console.log(`ChapterTool Node package written to ${distributionDirectory}`);

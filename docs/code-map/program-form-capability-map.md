@@ -74,7 +74,7 @@ packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 | Standalone CLI | `src/ChapterTool.Cli/Program.cs` | `src/ChapterTool.CommandLine/ChapterToolCliHost.cs` | `ChapterToolCliApplication.ImportAsync` | `ChapterToolCliApplication.ConvertAsync` | `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs` |
 | Avalonia desktop | `src/ChapterTool.Avalonia/Program.cs` | `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs` | `tests/ChapterTool.Avalonia.Tests` and `tests/ChapterTool.Avalonia.Headless.Tests` |
 | WASM browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Pages/Home.razor` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` and `src/ChapterTool.Wasm/wwwroot/js/download.js` | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` |
-| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.mjs` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs` |
+| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs` |
 
 ### 2.1 Host Defaults
 
@@ -294,11 +294,16 @@ Start with these paths for Node.js package behavior:
 
 - WebAssembly host: `src/ChapterTool.Node/NodeApi.cs`
 - Core operation exports: `src/ChapterTool.Node/NodeCoreApi.cs`
-- JavaScript API source: `packages/chaptertool/src/index.mjs`
-- Type declaration source: `packages/chaptertool/src/index.d.ts`
+- TypeScript API source and `ChapterTool` class: `packages/chaptertool/src/index.ts`
+- TypeScript type model: `packages/chaptertool/src/types.ts`
+- TypeScript initialization helper: `packages/chaptertool/src/api-loader.ts`
+- TypeScript input conversion: `packages/chaptertool/src/utils/input.ts`
+- TypeScript argument validation: `packages/chaptertool/src/utils/validation.ts`
+- TypeScript JSON boundary mapping: `packages/chaptertool/src/utils/json.ts`
+- Generated declaration output: `packages/chaptertool/dist/index.d.ts`
 - Runtime build: `packages/chaptertool/scripts/build.mjs`
-- Environment check: `packages/chaptertool/scripts/check-environment.mjs`
-- Package tests: `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs`
+- Environment and repository layout check: `packages/chaptertool/scripts/check-environment.mjs`
+- Package tests: `packages/chaptertool/test/chaptertool.test.mjs`, `core-api.test.mjs`, and `api-loader.test.mjs`
 
 The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input.
 
@@ -309,6 +314,8 @@ The package does not expose browser workspace state or UI actions.
 The package does not reference Blazor or desktop infrastructure.
 
 The package build copies the pure .NET WebAssembly runtime into the npm package.
+
+The environment check validates repository anchors and owned output paths before a build script removes an output directory.
 
 ## 5. Shared Behavior Rules
 

@@ -203,45 +203,5 @@ export interface OutputEncoding {
   xmlName: string;
 }
 
+/** UTF-8 text or raw chapter bytes accepted by the import API. */
 export type ChapterInput = string | Uint8Array;
-
-export interface ChapterTool {
-  import(content: ChapterInput, options?: { fileName?: string }): Promise<ChapterImportResult>;
-  export(chapterSet: ChapterSet, options: ChapterExportOptions): Promise<ChapterExportResult>;
-  formats(): Promise<ChapterExportFormat[]>;
-  importFormats(): Promise<ChapterImportFormat[]>;
-  isBinaryExtension(extension: string): Promise<boolean>;
-  editTime(chapterSet: ChapterSet, index: number, text: string): Promise<ChapterEditResult>;
-  editFrame(chapterSet: ChapterSet, index: number, text: string, framesPerSecond: number): Promise<ChapterEditResult>;
-  rename(chapterSet: ChapterSet, index: number, name: string): Promise<ChapterEditResult>;
-  delete(chapterSet: ChapterSet, indexes: number[]): Promise<ChapterEditResult>;
-  insertBefore(chapterSet: ChapterSet, index: number): Promise<ChapterEditResult>;
-  applyOrderShift(chapterSet: ChapterSet, shift: number): Promise<ChapterEditResult>;
-  applyTemplate(chapterSet: ChapterSet, templateText: string): Promise<ChapterEditResult>;
-  shiftFramesForward(chapterSet: ChapterSet, frames: number, framesPerSecond: number): Promise<ChapterEditResult>;
-  createZones(chapterSet: ChapterSet, indexes: number[], framesPerSecond: number): Promise<ChapterZonesResult>;
-  combine(source: ChapterImportGroup): Promise<ChapterEditResult>;
-  append(existing: ChapterImportGroup, appended: ChapterImportGroup): Promise<ChapterEditResult>;
-  frameRates(): Promise<FrameRateOption[]>;
-  findFrameRate(framesPerSecond: number): Promise<FrameRateOption>;
-  detectFrameRate(chapterSet: ChapterSet, tolerance?: number): Promise<FrameRateDetectionResult>;
-  updateFrames(chapterSet: ChapterSet, options?: { optionCode?: string; round?: boolean; tolerance?: number }): Promise<FrameInfoResult>;
-  changeFrameRate(chapterSet: ChapterSet, sourceFps: number, targetFps: number): Promise<ChapterTransformResult>;
-  applyExpression(chapterSet: ChapterSet, expression: string, enabled?: boolean): Promise<ChapterEditResult>;
-  project(chapterSet: ChapterSet, options: ChapterExportOptions): Promise<ChapterProjectionResult>;
-  analyzeExpression(expression: string, options?: { caretIndex?: number; timeSeconds?: number; framesPerSecond?: number }): Promise<ExpressionAnalysisResult>;
-  expressionSymbols(): Promise<ExpressionSymbol[]>;
-  expressionPresets(): Promise<ExpressionPreset[]>;
-  parseTime(text: string): Promise<TimeParseResult>;
-  parseTimeOrZero(text: string): Promise<number>;
-  formatTime(seconds: number): Promise<string>;
-  formatCueTime(seconds: number): Promise<string>;
-  toCelltimes(chapterSet: ChapterSet, framesPerSecond: number): Promise<ChapterConversionResult>;
-  chapterTextToQpfile(chapterText: string, framesPerSecond: number, timecodeText?: string | null): Promise<ChapterConversionResult>;
-  xmlLanguages(): Promise<XmlLanguage[]>;
-  outputEncodings(): Promise<OutputEncoding[]>;
-}
-
-export function createChapterTool(): Promise<ChapterTool>;
-export function importChapters(content: ChapterInput, options?: { fileName?: string }): Promise<ChapterImportResult>;
-export function exportChapters(chapterSet: ChapterSet, options: ChapterExportOptions): Promise<ChapterExportResult>;
