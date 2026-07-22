@@ -56,6 +56,7 @@ jobs:
 
       - name: Build
         run: |
+          dotnet build src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore
           dotnet build tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj --configuration Release --no-restore
           dotnet build src/ChapterTool.Cli/ChapterTool.Cli.csproj --configuration Release --no-restore
 
