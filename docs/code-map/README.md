@@ -4,7 +4,7 @@ This directory is the maintainer navigation index for the current codebase.
 
 Use it to locate the code behind a feature before you search the full repository.
 
-ChapterTool is a cross-platform chapter editor for desktop and browser. The code map covers the Core library, platform services, Avalonia desktop app, browser host, and test projects.
+ChapterTool is a cross-platform chapter editor for desktop and browser. The code map covers the Core library, platform services, Avalonia desktop app, browser hosts, Node.js package, and test projects.
 
 ## Writing Standard
 
@@ -23,10 +23,14 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 - `testing.md`
   - which test project and test files verify each code area
 
-## Browser Host
+## WebAssembly Hosts
 
 - `src/ChapterTool.Wasm`
   - Blazor WebAssembly browser host for `ChapterTool.Core`
+- `src/ChapterTool.Node`
+  - Pure .NET WebAssembly host for Node.js
+- `packages/chaptertool`
+  - JavaScript source, build scripts, type declarations, and generated npm distribution
 
 ## Use This Map
 

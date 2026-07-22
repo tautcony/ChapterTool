@@ -10,6 +10,9 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `tests/ChapterTool.Core.Tests`
 - Browser WebAssembly workspace behavior:
   - `tests/ChapterTool.Wasm.Tests`
+- Node.js package behavior:
+  - `packages/chaptertool/test/chaptertool.test.mjs`
+  - `packages/chaptertool/test/core-api.test.mjs`
 - Infrastructure behavior:
   - `tests/ChapterTool.Infrastructure.Tests`
 - Avalonia ViewModels, runtime UI services, localization, CLI:
@@ -22,6 +25,10 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
 Use `tests/ChapterTool.Wasm.Tests` when you change browser workspace orchestration, byte-based load or reload, templates, selection actions, preview or save projection, or browser localization. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
+
+Use `packages/chaptertool/test/chaptertool.test.mjs` when you change the Node.js package entry point, JavaScript input conversion, .NET WebAssembly startup, or npm runtime packaging. Use `packages/chaptertool/test/core-api.test.mjs` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command generates `dist/` before it runs the Node.js tests through the package export map.
+
+The `.NET 10 CI` workflow runs `npm test` and `npm run pack:verify` for changes under `packages/chaptertool`. The pack check installs the generated tarball into a temporary consumer and calls the published import API. The `Publish to npm` workflow uses npm Trusted Publishing after a successful version tag run. Configure the GitHub Actions trusted publisher for this workflow and the `npm` environment on npmjs.com.
 
 High-signal test files:
 
@@ -136,6 +143,7 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 - external tool, settings, process, or platform boundary changed: start in `tests/ChapterTool.Infrastructure.Tests`
 - viewmodel, CLI, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
 - XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
+- Node.js package or npm runtime packaging changed: start in `packages/chaptertool/test/chaptertool.test.mjs`
 
 ## Distribution Verification
 
@@ -147,6 +155,7 @@ Coverage entry point:
   - `scripts/publish.sh`
   - `scripts/publish.ps1`
   - `.github/workflows/dotnet-ci.yml`
+  - `.github/workflows/npm-publish.yml`
 - Current distribution notes:
   - `dist/README.md`
 - The legacy Windows NSIS installer inputs are retired. Future installer work should consume the `src/ChapterTool.Avalonia` publish output and derive version metadata from `Directory.Build.props`.

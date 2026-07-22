@@ -1,5 +1,7 @@
 namespace ChapterTool.Wasm.Services;
 
+using ChapterTool.Core.Exporting;
+
 /// <summary>
 /// One editable chapter grid row, matching Avalonia's chapter table columns.
 /// </summary>
@@ -26,11 +28,6 @@ public sealed class ChapterRowModel
 /// Clip/entry option for multi-playlist imports (Avalonia clip combo).
 /// </summary>
 public sealed record ClipOption(string Id, string DisplayText, int GroupIndex, int EntryIndex);
-
-/// <summary>
-/// Save-format option for the bottom format combo.
-/// </summary>
-public sealed record SaveFormatOption(int Index, string Code, string DisplayName, string Extension);
 
 /// <summary>
 /// Result of a save/export operation ready for browser download.

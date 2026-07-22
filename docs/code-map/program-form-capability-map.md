@@ -6,7 +6,9 @@ The command-line interface (CLI) is the standalone terminal program.
 
 The WebAssembly (WASM) application is the browser program.
 
-The program forms are the standalone CLI, the Avalonia desktop application, and the WASM browser application.
+The program forms are the standalone CLI, the Avalonia desktop application, the WASM browser application, and the Node.js package.
+
+The Node.js package provides JavaScript access to portable Core operations.
 
 The shared layers are Core, Infrastructure, and CommandLine.
 
@@ -27,6 +29,7 @@ Last reviewed: 2026-07-21
 | `ChapterTool.Cli` | `net10.0` executable | Terminal user or automation | Inspect and convert chapter sources | Uses local files, settings, external tools, and standard streams |
 | `ChapterTool.Avalonia` | `net10.0` desktop executable | Desktop user | Edit, inspect, convert, and save chapter sources | Uses Avalonia, local files, settings, external tools, shell services, and Sentry GUI telemetry |
 | `ChapterTool.Wasm` | Blazor WebAssembly application | Browser user | Load, edit, preview, and download chapter sources | Uses browser file input, browser memory, `localStorage`, JavaScript downloads, and browser APIs |
+| `@chaptertool/node` | npm package backed by pure .NET WebAssembly | Node.js application or automation | Import, edit, transform, and export chapter data | Uses Node.js JavaScript and the packaged .NET WebAssembly runtime |
 
 ### 1.2 Shared Layers
 
@@ -52,6 +55,8 @@ ChapterTool.Avalonia ------> ChapterTool.CommandLine
        +-------------------> ChapterTool.Core
 
 ChapterTool.Wasm ----------> ChapterTool.Core
+
+packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 ```
 
 `ChapterTool.Cli` does not reference Avalonia.
@@ -60,6 +65,8 @@ ChapterTool.Wasm ----------> ChapterTool.Core
 
 `ChapterTool.Wasm` does not reference Infrastructure or CommandLine.
 
+`ChapterTool.Node` does not reference `ChapterTool.Wasm`, Blazor, Infrastructure, or CommandLine.
+
 ## 2. Host Entry Points
 
 | Program form | Process entry point | Main application entry point | Import entry point | Export entry point | Test entry point |
@@ -67,6 +74,7 @@ ChapterTool.Wasm ----------> ChapterTool.Core
 | Standalone CLI | `src/ChapterTool.Cli/Program.cs` | `src/ChapterTool.CommandLine/ChapterToolCliHost.cs` | `ChapterToolCliApplication.ImportAsync` | `ChapterToolCliApplication.ConvertAsync` | `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs` |
 | Avalonia desktop | `src/ChapterTool.Avalonia/Program.cs` | `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs` | `tests/ChapterTool.Avalonia.Tests` and `tests/ChapterTool.Avalonia.Headless.Tests` |
 | WASM browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Pages/Home.razor` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` and `src/ChapterTool.Wasm/wwwroot/js/download.js` | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` |
+| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.mjs` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs` |
 
 ### 2.1 Host Defaults
 
@@ -278,6 +286,30 @@ WASM stores settings in `localStorage`.
 
 WASM sends exported content to the browser download bridge.
 
+### 4.6 Node.js Package
+
+The Node.js package owns JavaScript input conversion, .NET WebAssembly startup, and JSON mapping for the Core API.
+
+Start with these paths for Node.js package behavior:
+
+- WebAssembly host: `src/ChapterTool.Node/NodeApi.cs`
+- Core operation exports: `src/ChapterTool.Node/NodeCoreApi.cs`
+- JavaScript API source: `packages/chaptertool/src/index.mjs`
+- Type declaration source: `packages/chaptertool/src/index.d.ts`
+- Runtime build: `packages/chaptertool/scripts/build.mjs`
+- Environment check: `packages/chaptertool/scripts/check-environment.mjs`
+- Package tests: `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs`
+
+The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input.
+
+The package exposes portable Core editing, transformation, projection, conversion, and metadata operations.
+
+The package does not expose browser workspace state or UI actions.
+
+The package does not reference Blazor or desktop infrastructure.
+
+The package build copies the pure .NET WebAssembly runtime into the npm package.
+
 ## 5. Shared Behavior Rules
 
 Use these rules when you change a capability:
@@ -287,9 +319,10 @@ Use these rules when you change a capability:
 3. Put DotMake command definitions, CLI options, CLI selection rules, terminal diagnostics, and CLI output paths in CommandLine.
 4. Put desktop controls, desktop session state, Avalonia resources, system fonts, and desktop localization in Avalonia.
 5. Put browser file input, browser downloads, browser storage, browser limits, and CSS presentation in WASM.
-6. Keep the standalone CLI free of Avalonia references.
-7. When a shared Core behavior changes, test the Core path and one regression path in each applicable program form.
-8. When a host feature changes, update this matrix and the host code map.
+6. Put Node.js API mapping and packaged runtime startup in `ChapterTool.Node` and `packages/chaptertool`.
+7. Keep the standalone CLI free of Avalonia references.
+8. When a shared Core behavior changes, test the Core path and one regression path in each applicable program form.
+9. When a host feature changes, update this matrix and the host code map.
 
 ## 6. Verification Matrix
 
@@ -301,6 +334,7 @@ Use these rules when you change a capability:
 | Avalonia ViewModel or service behavior | `tests/ChapterTool.Avalonia.Tests` | Check the GUI workflow when the change affects desktop behavior |
 | Avalonia XAML or interaction behavior | `tests/ChapterTool.Avalonia.Headless.Tests` | Check user actions and workflow results |
 | WASM workspace or browser behavior | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` | Build `src/ChapterTool.Wasm/ChapterTool.Wasm.csproj` when project assets change |
+| Node.js package or npm runtime packaging | `packages/chaptertool/test/chaptertool.test.mjs` | Run `npm test` from `packages/chaptertool` |
 | Cross-form behavior | All applicable test projects | Run `dotnet test ChapterTool.Avalonia.slnx --no-restore` sequentially |
 
 Do not use source-text assertions to test code or configuration.

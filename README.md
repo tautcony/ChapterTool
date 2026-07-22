@@ -66,6 +66,32 @@ dotnet run --project src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --launch-profi
 
 The browser app does not run desktop tools or access local files after import. See [the WASM README](src/ChapterTool.Wasm/README.md) for its boundaries and deployment details.
 
+## Node.js Package
+
+The `@chaptertool/node` package exposes the portable Core API to Node.js through a pure .NET WebAssembly host. It does not use Blazor or a browser UI.
+
+Build and test the package from its directory:
+
+```bash
+cd packages/chaptertool
+npm test
+```
+
+Use the package from another JavaScript project:
+
+```js
+import { createChapterTool } from "@chaptertool/node";
+
+const tool = await createChapterTool();
+const imported = await tool.import(chapterText, { fileName: "chapters.txt" });
+const chapterSet = imported.groups[0].entries[0].chapterSet;
+const exported = await tool.export(chapterSet, { format: "xml" });
+```
+
+The package provides Core import, export, editing, frame rate, expression, projection, time, conversion, and metadata operations. It does not provide UI workspace state or browser actions.
+
+The package build requires the .NET 10 SDK. The build generates and includes the .NET WebAssembly runtime in the npm package.
+
 ## Build And Test
 
 Use the main solution for local development:
@@ -96,6 +122,8 @@ Use `scripts/publish.ps1` on Windows.
 | `src/ChapterTool.Infrastructure` | External tools, process execution, settings, and platform services |
 | `src/ChapterTool.Avalonia` | Desktop UI, CLI, and runtime composition |
 | `src/ChapterTool.Wasm` | Browser host for `ChapterTool.Core` |
+| `src/ChapterTool.Node` | Pure .NET WebAssembly host for the Node.js package |
+| `packages/chaptertool` | Node.js package entry point, type declarations, and runtime packaging |
 | `tests/` | Core, Infrastructure, Avalonia, and Headless Avalonia tests |
 
 Use [the code map](docs/code-map/README.md) to find module entry points and test ownership.

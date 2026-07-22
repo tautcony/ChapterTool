@@ -1,0 +1,31 @@
+{
+  "name": "@chaptertool/node",
+  "version": "23.2.0",
+  "description": "Portable ChapterTool Core API for Node.js through .NET WebAssembly.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "doctor": "node ./scripts/check-environment.mjs",
+    "build": "node ./scripts/build.mjs",
+    "test": "npm run build && node --test ./test/*.test.mjs",
+    "pack:verify": "node ./scripts/verify-pack.mjs",
+    "prepack": "npm run build"
+  },
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tautcony/ChapterTool.git"
+  }
+}

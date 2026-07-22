@@ -41,6 +41,7 @@ Import contracts and format-specific parsers:
 
 - `src/ChapterTool.Core/Importing/IChapterImporter.cs`
 - `src/ChapterTool.Core/Importing/ChapterImportRequest.cs`
+- `src/ChapterTool.Core/Importing/ChapterContentService.cs`: byte-based host adapter for import and export
 - `src/ChapterTool.Core/Importing/ChapterImportResult.cs`
 - `src/ChapterTool.Core/Importing/ChapterImportProgress.cs`
 
@@ -89,6 +90,7 @@ Frame/time and expression logic:
 Output projection and format serialization:
 
 - `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
+- `src/ChapterTool.Core/Exporting/SaveFormatOption.cs`: host-facing export format metadata
 - `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs`

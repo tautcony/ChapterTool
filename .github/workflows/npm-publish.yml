@@ -1,0 +1,124 @@
+name: Publish to npm
+
+on:
+  workflow_run:
+    workflows:
+      - .NET 10 CI
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag whose successful CI npm artifact should be published
+        required: true
+        type: string
+
+jobs:
+  publish-npm:
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          startsWith(github.event.workflow_run.head_branch, 'v')
+        )
+      }}
+    runs-on: ubuntu-24.04
+    environment: npm
+    permissions:
+      id-token: write
+      contents: read
+      actions: read
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
+
+    steps:
+      - name: Validate release tag
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release tag: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+      - name: Checkout release source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org
+
+      - name: Install npm Trusted Publishing client
+        run: npm install --global npm@11.5.1
+
+      - name: Resolve successful CI run
+        id: ci-run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            echo "run-id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          run_id="$({
+            gh run list \
+              --repo "$GITHUB_REPOSITORY" \
+              --workflow dotnet-ci.yml \
+              --limit 100 \
+              --json databaseId,headBranch,event,status,conclusion,createdAt
+          } | jq -r --arg tag "$RELEASE_TAG" '
+              [.[]
+                | select(.headBranch == $tag)
+                | select(.event == "push")
+                | select(.status == "completed" and .conclusion == "success")
+              ]
+              | sort_by(.createdAt)
+              | last
+              | .databaseId // empty
+            ')
+
+          if [[ -z "$run_id" ]]; then
+            echo "No successful .NET CI run found for $RELEASE_TAG" >&2
+            exit 1
+          fi
+          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download tested npm artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.ci-run.outputs.run-id }}
+        run: |
+          mkdir -p artifacts/npm
+          gh run download "$RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name ChapterTool-node-package \
+            --dir artifacts/npm
+
+          archives=(artifacts/npm/*.tgz)
+          if [[ ! -f "${archives[0]}" || "${archives[1]}" != "" ]]; then
+            echo "Expected exactly one npm tarball in the CI artifact" >&2
+            exit 1
+          fi
+
+          package_version="$(node -p "require('./packages/chaptertool/package.json').version")"
+          tag_version="${RELEASE_TAG#v}"
+          if [[ "$package_version" != "$tag_version" ]]; then
+            echo "Tag $RELEASE_TAG does not match npm package version $package_version" >&2
+            exit 1
+          fi
+
+          archive_version="$(basename "${archives[0]}" | sed -E 's/^chaptertool-node-(.+)\.tgz$/\1/')"
+          if [[ "$archive_version" != "$package_version" ]]; then
+            echo "CI artifact version $archive_version does not match npm package version $package_version" >&2
+            exit 1
+          fi
+
+      - name: Publish package to npm
+        run: npm publish artifacts/npm/*.tgz --access public

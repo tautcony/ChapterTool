@@ -6,6 +6,7 @@ on:
       - ".github/workflows/dotnet-ci.yml"
       - ".github/workflows/nuget-publish.yml"
       - ".github/workflows/release.yml"
+      - ".github/workflows/npm-publish.yml"
       - "Directory.Build.props"
       - "Directory.Build.targets"
       - "ChapterTool.Avalonia.slnx"
@@ -14,11 +15,13 @@ on:
       - "tests/**"
       - "samples/**"
       - "scripts/**"
+      - "packages/chaptertool/**"
   pull_request:
     paths:
       - ".github/workflows/dotnet-ci.yml"
       - ".github/workflows/nuget-publish.yml"
       - ".github/workflows/release.yml"
+      - ".github/workflows/npm-publish.yml"
       - "Directory.Build.props"
       - "Directory.Build.targets"
       - "ChapterTool.Avalonia.slnx"
@@ -26,6 +29,7 @@ on:
       - "tests/**"
       - "samples/**"
       - "scripts/**"
+      - "packages/chaptertool/**"
 
 jobs:
   build-test:
@@ -72,6 +76,45 @@ jobs:
           path: |
             artifacts/nuget/*.nupkg
             artifacts/nuget/*.snupkg
+          if-no-files-found: error
+
+  node-package:
+    name: Test and pack Node.js package
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: packages/chaptertool/package-lock.json
+
+      - name: Install npm dependencies
+        working-directory: packages/chaptertool
+        run: npm ci
+
+      - name: Test Node.js package
+        working-directory: packages/chaptertool
+        run: npm test
+
+      - name: Pack and verify npm tarball
+        working-directory: packages/chaptertool
+        run: npm run pack:verify
+
+      - name: Upload npm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChapterTool-node-package
+          path: artifacts/npm/*.tgz
           if-no-files-found: error
 
   publish-app:
