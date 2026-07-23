@@ -1,7 +1,7 @@
 using ChapterTool.Core.Exporting;
 using DotMake.CommandLine;
 
-namespace ChapterTool.CommandLine;
+namespace ChapterTool.CommandLine.Cli;
 
 internal static class ChapterToolCliSupport
 {
@@ -24,8 +24,7 @@ internal static class ChapterToolCliSupport
         if (!parsed.IsCalled<ConvertCliCommand>()
             && !parsed.IsCalled<InspectCliCommand>()
             && !parsed.IsCalled<FormatsCliCommand>()
-            && parsed.Bind<ChapterToolRootCliCommand>() is ChapterToolRootCliCommand inputCommand
-            && inputCommand.Input.Length > 0
+            && parsed.Bind<ChapterToolRootCliCommand>() is { Input.Length: > 0 } inputCommand
             && IsExistingPath(inputCommand.Input))
         {
             return CliLaunchPlan.Gui(inputCommand.Input);

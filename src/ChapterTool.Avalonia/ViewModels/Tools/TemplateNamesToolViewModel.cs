@@ -21,4 +21,3 @@ public sealed class TemplateNamesToolViewModel(INamingPreferencePort namingPrefe
         return ValueTask.CompletedTask;
     });
 }
-

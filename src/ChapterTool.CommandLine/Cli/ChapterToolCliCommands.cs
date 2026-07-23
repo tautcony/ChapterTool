@@ -1,6 +1,6 @@
 using DotMake.CommandLine;
 
-namespace ChapterTool.CommandLine;
+namespace ChapterTool.CommandLine.Cli;
 
 [CliCommand(
     Description = "ChapterTool command-line workflows",

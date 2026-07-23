@@ -345,4 +345,3 @@ public sealed class TextToolFormatSelector(IExportPreferencePort exportPreferenc
             _ => TextToolKind.Plain
         };
 }
-

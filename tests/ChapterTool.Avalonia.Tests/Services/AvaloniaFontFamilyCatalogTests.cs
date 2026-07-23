@@ -10,7 +10,7 @@ public sealed class AvaloniaFontFamilyCatalogTests
     public void Catalog_filters_deduplicates_and_orders_canonical_names()
     {
         var catalog = new AvaloniaFontFamilyCatalog(
-            [" zeta ", "Alpha", "alpha", "", null, "Beta"],
+            [" zeta ", "Alpha", "alpha", string.Empty, null, "Beta"],
             CultureInfo.InvariantCulture);
 
         Assert.Equal(["Alpha", "Beta", "zeta"], catalog.Families.Select(static entry => entry.FamilyName));
@@ -24,10 +24,10 @@ public sealed class AvaloniaFontFamilyCatalogTests
         var catalog = new AvaloniaFontFamilyCatalog(["Ui Family", "Mono Family"], CultureInfo.InvariantCulture);
 
         Assert.Equal(
-            new FontSettings("Ui Family", ""),
+            new FontSettings("Ui Family", string.Empty),
             FontSettingsResolver.Resolve(new FontSettings("ui family", "Missing"), catalog));
         Assert.Equal(
-            new FontSettings("", "Mono Family"),
+            new FontSettings(string.Empty, "Mono Family"),
             FontSettingsResolver.Resolve(new FontSettings("Missing", "mono family"), catalog));
     }
 

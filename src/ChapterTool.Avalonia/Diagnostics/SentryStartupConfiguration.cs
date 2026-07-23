@@ -101,12 +101,7 @@ internal static class SentryStartupConfiguration
 
     private static double? ParseSampleRate(string? value, double? defaultValue)
     {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return defaultValue;
-        }
-
-        if (!double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+        if (string.IsNullOrWhiteSpace(value) || !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
         {
             return defaultValue;
         }

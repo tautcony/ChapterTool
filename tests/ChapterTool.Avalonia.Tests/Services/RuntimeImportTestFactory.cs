@@ -1,10 +1,10 @@
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Infrastructure.Importing.Runtime;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
+using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Processes;
+using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Avalonia.Tests.Services;
@@ -20,6 +20,7 @@ internal static class RuntimeImportTestFactory
     private static readonly IExternalToolLocator ToolLocator = new ExternalToolLocator(
         new ChapterToolSettingsStore(SettingsDirectory),
         PathSearchDirectories().ToList());
+
     private static readonly ProcessRunner ProcessRunner = new();
     private static readonly FfprobeMediaChapterReader MediaChapterReader = new(ToolLocator, ProcessRunner);
     private static readonly AtlMp4ChapterReader Mp4ChapterReader = new();
@@ -29,6 +30,7 @@ internal static class RuntimeImportTestFactory
         ProcessRunner,
         MediaChapterReader,
         Mp4ChapterReader);
+
     private static readonly RuntimeChapterLoadService LoadService = new(Registry);
 
     public static RuntimeChapterImporterRegistry CreateRegistry() => Registry;

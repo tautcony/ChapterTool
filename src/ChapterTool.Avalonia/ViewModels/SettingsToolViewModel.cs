@@ -7,15 +7,17 @@ using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Core.Exporting;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Provides settings state and commands for the settings tool.</summary>
 public sealed partial class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
+
     private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;
 
     private readonly Session.Ports.IPreferenceSink preferenceSink;
@@ -26,6 +28,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private readonly string? settingsDirectory;
     private readonly EventHandler cultureChangedHandler;
     private readonly EventHandler appearanceChangedHandler;
+    private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
     private ChapterToolSettings savedSettings = ChapterToolSettings.Default;
     private string selectedLanguage;
     private int defaultSaveFormatIndex;
@@ -36,7 +39,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private bool liveApplyEnabled;
     private bool isApplyingSnapshot;
     private bool isRefreshingLanguages;
-    private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     public SettingsToolViewModel(
         Session.Ports.IPreferenceSink preferenceSink,
@@ -150,6 +152,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
                 ? null
                 : entries[DefaultXmlLanguageIndex];
         }
+
         set
         {
             var index = value is null
@@ -410,6 +413,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
                 Appearance.ApplyThemeSettings(savedSettings.Theme);
                 Appearance.ApplyFontSettings(savedSettings.Font);
                 Appearance.ApplyToServices(savedSettings.Theme, savedSettings.Font);
+
                 // Capture the post-apply UI snapshot so resolved fonts/paths are not marked dirty.
                 savedSettings = CurrentSettings();
             }

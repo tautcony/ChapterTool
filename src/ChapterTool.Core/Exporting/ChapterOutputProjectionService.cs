@@ -75,7 +75,7 @@ public sealed class ChapterOutputProjectionService
         return 0;
     }
 
-    private static List<string> TemplateNames(string templateText) =>
+    private static List<string> TemplateNames(string? templateText) =>
         string.IsNullOrWhiteSpace(templateText)
             ? []
             : templateText

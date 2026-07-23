@@ -1,3 +1,5 @@
+using ChapterTool.CommandLine.Cli;
+
 namespace ChapterTool.CommandLine;
 
 public static class ChapterToolCliHost

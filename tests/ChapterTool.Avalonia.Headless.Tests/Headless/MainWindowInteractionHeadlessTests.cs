@@ -84,10 +84,10 @@ public sealed class MainWindowInteractionHeadlessTests
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
 
         Assert.Same(host.ViewModel.Rows[1], Assert.Single(grid.SelectedItems.Cast<object>()));
-        Assert.True(host.RequiredMenuItem(grid, "InsertMenuItem").IsEnabled);
-        Assert.True(host.RequiredMenuItem(grid, "DeleteMenuItem").IsEnabled);
-        Assert.NotNull(host.RequiredMenuItem(grid, "ZonesMenuItem").Command);
-        Assert.NotNull(host.RequiredMenuItem(grid, "ForwardShiftMenuItem").Command);
+        Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "InsertMenuItem").IsEnabled);
+        Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "DeleteMenuItem").IsEnabled);
+        Assert.NotNull(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "ZonesMenuItem").Command);
+        Assert.NotNull(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "ForwardShiftMenuItem").Command);
     }
 
     [AvaloniaFact]
@@ -232,12 +232,12 @@ public sealed class MainWindowInteractionHeadlessTests
             var clipBox = host.RequiredControl<ComboBox>("ClipBox");
             var grid = host.RequiredControl<DataGrid>("ChapterGrid");
 
-            Assert.True(host.RequiredMenuItem(loadButton, "AppendLoadMenuItem").IsEnabled);
-            Assert.True(host.RequiredMenuItem(clipBox, "ClipCombineMenuItem").IsEnabled);
-            Assert.True(host.RequiredMenuItem(grid, "GridCombineMenuItem").IsEnabled);
-            Assert.True(host.RequiredMenuItem(grid, "OpenMediaMenuItem").IsEnabled);
-            Assert.True(host.RequiredMenuItem(grid, "InsertMenuItem").IsEnabled);
-            Assert.True(host.RequiredMenuItem(grid, "DeleteMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(loadButton, "AppendLoadMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(clipBox, "ClipCombineMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "GridCombineMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "OpenMediaMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "InsertMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "DeleteMenuItem").IsEnabled);
         }
         finally
         {
@@ -249,8 +249,8 @@ public sealed class MainWindowInteractionHeadlessTests
         var emptyLoadButton = emptyHost.RequiredControl<Button>("LoadButton");
         var emptyGrid = emptyHost.RequiredControl<DataGrid>("ChapterGrid");
 
-        Assert.False(emptyHost.RequiredMenuItem(emptyLoadButton, "AppendLoadMenuItem").IsEnabled);
-        Assert.False(emptyHost.RequiredMenuItem(emptyGrid, "InsertMenuItem").IsEnabled);
-        Assert.False(emptyHost.RequiredMenuItem(emptyGrid, "DeleteMenuItem").IsEnabled);
+        Assert.False(MainWindowHeadlessTestHost.RequiredMenuItem(emptyLoadButton, "AppendLoadMenuItem").IsEnabled);
+        Assert.False(MainWindowHeadlessTestHost.RequiredMenuItem(emptyGrid, "InsertMenuItem").IsEnabled);
+        Assert.False(MainWindowHeadlessTestHost.RequiredMenuItem(emptyGrid, "DeleteMenuItem").IsEnabled);
     }
 }

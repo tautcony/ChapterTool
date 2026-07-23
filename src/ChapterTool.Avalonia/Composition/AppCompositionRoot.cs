@@ -5,13 +5,12 @@ using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.Views;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
-using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Importing.Media;
+using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Processes;
 using ChapterTool.Infrastructure.Services;
@@ -147,7 +146,7 @@ public sealed class AppCompositionRoot : IDisposable
 
     internal IChapterTimeFormatter Formatter => formatter;
 
-    internal IChapterExpressionEngine ExpressionEngine { get; } = new LuaExpressionScriptService();
+    private IChapterExpressionEngine ExpressionEngine { get; } = new LuaExpressionScriptService();
 
     internal ChapterToolSettingsStore SettingsStore { get; }
 

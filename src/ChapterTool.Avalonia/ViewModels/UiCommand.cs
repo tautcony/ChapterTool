@@ -1,5 +1,5 @@
-using System.Windows.Input;
 using System.ComponentModel;
+using System.Windows.Input;
 
 namespace ChapterTool.Avalonia.ViewModels;
 

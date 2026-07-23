@@ -1,8 +1,8 @@
-using ChapterTool.Core.Models;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using ChapterTool.Avalonia.Views.Controls;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 

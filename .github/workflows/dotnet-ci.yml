@@ -92,6 +92,9 @@ jobs:
       - name: Pack ChapterTool.Core
         run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-build --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
 
+      - name: Pack ChapterTool CLI
+        run: dotnet pack src/ChapterTool.Cli/ChapterTool.Cli.csproj --configuration Release --no-build --no-restore --output artifacts/cli-nuget /p:ContinuousIntegrationBuild=true
+
       - name: Install external tools
         run: |
           sudo apt-get update
@@ -121,9 +124,18 @@ jobs:
             artifacts/nuget/*.snupkg
           if-no-files-found: error
 
+      - name: Upload CLI NuGet artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: ChapterTool-Cli-nuget
+          path: |
+            artifacts/cli-nuget/*.nupkg
+            artifacts/cli-nuget/*.snupkg
+          if-no-files-found: error
+
   pack-dotnet:
     needs: build-test
-    name: Pack .NET (${{ matrix.runtime }})
+    name: Pack Avalonia (${{ matrix.runtime }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -159,22 +171,15 @@ jobs:
       - name: Restore .NET projects
         run: |
           dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
-          dotnet restore src/ChapterTool.Cli/ChapterTool.Cli.csproj
 
       - name: Publish Avalonia
         run: ./scripts/publish.sh -Runtime ${{ matrix.runtime }} -NoRestore -PublishSingleFile
 
-      - name: Pack ChapterTool
-        run: dotnet pack src/ChapterTool.Cli/ChapterTool.Cli.csproj --configuration Release --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
-
-      - name: Upload .NET package
+      - name: Upload Avalonia artifact
         uses: actions/upload-artifact@v5
         with:
-          name: ChapterTool-dotnet-${{ matrix.runtime }}
-          path: |
-            ${{ matrix.artifact-path }}
-            artifacts/nuget/*.nupkg
-            artifacts/nuget/*.snupkg
+          name: ChapterTool-Avalonia-${{ matrix.runtime }}
+          path: ${{ matrix.artifact-path }}
           if-no-files-found: error
 
   pack-nodejs:

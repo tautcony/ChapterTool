@@ -23,7 +23,7 @@ public sealed record ChapterExportOptions(
     string? SourceFileName = null,
     bool AutoGenerateNames = false,
     bool UseTemplateNames = false,
-    string ChapterNameTemplateText = "",
+    string? ChapterNameTemplateText = "",
     int OrderShift = 0,
     bool ApplyExpression = false,
     string Expression = "t",

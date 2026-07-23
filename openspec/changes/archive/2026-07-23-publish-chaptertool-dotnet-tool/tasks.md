@@ -6,9 +6,9 @@
 
 ## 2. Release Automation
 
-- [x] 2.1 Rename `publish-app` to `pack-dotnet` and publish Avalonia plus the CLI package in each runtime matrix job.
+- [x] 2.1 Rename `publish-app` to `pack-dotnet`, pack the CLI once in the build job, and publish Avalonia in each runtime matrix job.
 - [x] 2.2 Remove temporary CLI installation from CI and the tag-triggered NuGet workflow.
-- [x] 2.3 Upload both outputs in one named CI artifact for each runtime.
+- [x] 2.3 Upload the CLI package as `ChapterTool-Cli-nuget` and each Avalonia output as `ChapterTool-Avalonia-<runtime>`.
 
 ## 3. Documentation
 

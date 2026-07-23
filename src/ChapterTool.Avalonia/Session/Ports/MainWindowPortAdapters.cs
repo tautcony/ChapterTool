@@ -20,19 +20,28 @@ internal sealed class MainWindowPortAdapters
     }
 
     public ExpressionSessionPortAdapter Expression { get; }
+
     public PreferenceSinkAdapter Preferences { get; }
+
     public ExportPreferencePortAdapter ExportPreferences { get; }
+
     public NamingPreferencePortAdapter NamingPreferences { get; }
+
     public ChapterEditPortAdapter ChapterEdit { get; }
 }
 
 internal sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IExpressionSessionPort
 {
     public IAppLocalizer Localizer => owner.Localizer;
+
     public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => owner.ExpressionEngine.Presets;
+
     public string Expression => owner.Workspace.Projection.Expression;
+
     public bool ApplyExpression => owner.Workspace.Projection.ApplyExpression;
+
     public string ExpressionPresetId => owner.Workspace.Projection.ExpressionPresetId;
+
     public string ExpressionSourceName => owner.Workspace.Projection.ExpressionSourceName;
 
     public async ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken)
@@ -114,10 +123,15 @@ internal sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : 
 internal sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferenceSink
 {
     public IAppLocalizer Localizer => owner.Localizer;
+
     public string UiLanguage => owner.UiLanguage;
+
     public int SaveFormatIndex => owner.SaveFormatIndex;
+
     public string XmlLanguage => owner.XmlLanguage;
+
     public OutputTextEncoding OutputTextEncoding => owner.OutputTextEncoding;
+
     public decimal FrameAccuracyTolerance => owner.FrameAccuracyTolerance;
 
     public void ApplyLoadedSettings(AppSettings settings) => ApplyPreferences(settings, applyDefaultSaveFormat: true);

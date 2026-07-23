@@ -1,5 +1,6 @@
 using System.Text;
 using ChapterTool.CommandLine;
+using ChapterTool.CommandLine.Cli;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;

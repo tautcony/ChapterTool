@@ -38,16 +38,16 @@ The `ChapterTool` package version SHALL derive from the repository version sourc
 
 ### Requirement: CLI package is a .NET packaging artifact
 
-The `pack-dotnet` CI job SHALL pack the `ChapterTool` NuGet package for each declared runtime after the build and test job succeeds. Each runtime artifact SHALL contain the CLI package and the matching Avalonia output.
+The CI workflow SHALL pack the platform-neutral `ChapterTool` NuGet package once after the build and test job succeeds. The workflow SHALL upload that package as `ChapterTool-Cli-nuget`. The `pack-dotnet` job SHALL upload one Avalonia artifact for each declared runtime.
 
 #### Scenario: .NET packaging job creates the CLI package
 
 - **WHEN** the build and test job succeeds
-- **THEN** the `pack-dotnet` job SHALL create `ChapterTool.<version>.nupkg`
-- **AND** it SHALL upload the package with the matching Avalonia output as one named runtime artifact
+- **THEN** the build job SHALL create `ChapterTool.<version>.nupkg`
+- **AND** it SHALL upload the package as `ChapterTool-Cli-nuget`
 
 #### Scenario: CLI artifact is independent from Avalonia artifacts
 
-- **WHEN** the `pack-dotnet` job uploads the CLI package
-- **THEN** the CLI package SHALL remain a separate file from the Avalonia output
-- **AND** both files SHALL be present in the named runtime artifact
+- **WHEN** CI uploads the CLI package and Avalonia runtime outputs
+- **THEN** the CLI package SHALL be present in `ChapterTool-Cli-nuget`
+- **AND** each `ChapterTool-Avalonia-<runtime>` artifact SHALL contain only the matching Avalonia output

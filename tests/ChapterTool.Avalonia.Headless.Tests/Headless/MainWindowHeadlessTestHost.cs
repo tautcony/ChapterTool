@@ -11,11 +11,11 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
@@ -201,7 +201,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public bool ContainsRenderedText(string text) =>
         ContainsRenderedText(Window, text);
 
-    public bool ContainsRenderedText(Control scope, string text) =>
+    public static bool ContainsRenderedText(Control scope, string text) =>
         RenderedTexts(scope).Any(rendered => string.Equals(rendered, text, StringComparison.Ordinal));
 
     public static bool ContainsRenderedTextStatic(Control scope, string text) =>
@@ -217,7 +217,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             .Where(static text => !string.IsNullOrWhiteSpace(text))
             .ToArray()!;
 
-    public string DescribeRenderedTexts(Control scope) =>
+    public static string DescribeRenderedTexts(Control scope) =>
         RenderedTexts(scope)
             .Aggregate(string.Empty, static (current, text) => string.IsNullOrEmpty(current) ? text : current + Environment.NewLine + text);
 
@@ -234,7 +234,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         await LayoutAsync(Window.Width, Window.Height);
     }
 
-    public MenuItem RequiredMenuItem(Control control, string name)
+    public static MenuItem RequiredMenuItem(Control control, string name)
     {
         var menu = control.ContextMenu ?? throw new InvalidOperationException($"Control '{control.Name}' does not have a context menu.");
         menu.PlacementTarget = control;
@@ -311,8 +311,11 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeSaveService : IChapterSaveService
     {
         public ChapterSet? LastInfo { get; private set; }
+
         public ChapterExportOptions? LastOptions { get; private set; }
+
         public string? LastDirectory { get; private set; }
+
         public int Calls { get; private set; }
 
         public ValueTask<ChapterExportResult> SaveAsync(
@@ -333,6 +336,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeWindowService : IWindowService
     {
         public List<string> Opened { get; } = [];
+
         public List<object?> Parameters { get; } = [];
 
         public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
@@ -348,12 +352,17 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeFilePickerService : IFilePickerService
     {
         public string? SourcePath { get; set; }
+
         public string? MplsPath { get; set; }
+
         public string? ChapterNameTemplatePath { get; set; }
+
         public string? SaveDirectoryPath { get; set; }
+
         public string? LuaExpressionScriptPath { get; set; }
 
         public int SourcePickCount { get; private set; }
+
         public int SaveDirectoryPickCount { get; private set; }
 
         public ValueTask<string?> PickSourceAsync(CancellationToken cancellationToken)
@@ -378,6 +387,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeSettingsPickerService : ISettingsPickerService
     {
         public string? DirectoryPath { get; set; }
+
         public string? ExecutablePath { get; set; }
 
         public ValueTask<string?> PickDirectoryAsync(string title, CancellationToken cancellationToken) => ValueTask.FromResult(DirectoryPath);
@@ -388,8 +398,11 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeSettingsStore(ChapterToolSettings current) : ISettingsStore<ChapterToolSettings>
     {
         public ChapterToolSettings Current { get; private set; } = current;
+
         public int Loads { get; private set; }
+
         public int Saves { get; private set; }
+
         public int Updates { get; private set; }
 
         public ValueTask<ChapterToolSettings> LoadAsync(CancellationToken cancellationToken)
@@ -418,7 +431,9 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     internal sealed class FakeShellService : IShellService
     {
         public List<string> Opened { get; } = [];
+
         public List<string> RevealedInFolder { get; } = [];
+
         public List<string> TerminalsOpened { get; } = [];
 
         public ValueTask OpenAsync(string target, CancellationToken cancellationToken)

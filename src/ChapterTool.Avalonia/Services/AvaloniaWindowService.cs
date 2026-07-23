@@ -4,8 +4,8 @@ using Avalonia.Media;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Transform;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Services;
 
@@ -59,13 +59,14 @@ public sealed class AvaloniaWindowService : IWindowService
             foreach (var (id, window) in windows)
             {
                 window.Title = Title(id);
-                if (window.Content is TextBlock placeholder)
+                switch (window.Content)
                 {
-                    placeholder.Text = PlaceholderText(id);
-                }
-                else if (window.Content is null)
-                {
-                    Refresh(window, id, parameters.GetValueOrDefault(id));
+                    case TextBlock placeholder:
+                        placeholder.Text = PlaceholderText(id);
+                        break;
+                    case null:
+                        Refresh(window, id, parameters.GetValueOrDefault(id));
+                        break;
                 }
             }
         };
@@ -121,6 +122,8 @@ public sealed class AvaloniaWindowService : IWindowService
                     break;
                 case SettingsCloseAction.Cancel:
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         };
         window.Closed += (_, _) =>

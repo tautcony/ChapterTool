@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Contains status and application-log behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     internal void SetStatus(string? key, params (string Name, object? Value)[] arguments)

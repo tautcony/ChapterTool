@@ -52,6 +52,7 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
             var index = Languages.ToList().FindIndex(option => string.Equals(option.CultureName, SelectedLanguage, StringComparison.OrdinalIgnoreCase));
             return index;
         }
+
         set
         {
             if (isRefreshingLanguages)
@@ -107,4 +108,3 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
 }
 
 public sealed record LanguageOptionViewModel(string CultureName, string DisplayName);
-

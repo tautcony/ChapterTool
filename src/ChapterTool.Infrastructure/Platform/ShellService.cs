@@ -24,7 +24,7 @@ public sealed class ShellService : IShellService
     public ValueTask OpenAsync(string target, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        using var _ = Start(new ProcessStartInfo
+        using var p = Start(new ProcessStartInfo
         {
             FileName = target,
             UseShellExecute = true

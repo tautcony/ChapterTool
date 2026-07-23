@@ -3,18 +3,19 @@ using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.ViewModels.Tools;
-using ChapterTool.Core.Editing;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Tests.Localization;
 
+/// <summary>Verifies localization resources and localized text behavior.</summary>
 public sealed partial class LocalizationTests
 {
     [Fact]

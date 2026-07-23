@@ -10,7 +10,7 @@ using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Services;
 
-namespace ChapterTool.CommandLine;
+namespace ChapterTool.CommandLine.Cli;
 
 public sealed class ChapterToolCliApplication
 {
@@ -33,6 +33,7 @@ public sealed class ChapterToolCliApplication
         this.console = console ?? new SystemCliConsole();
         var directory = ChapterToolRuntimeComposition.ResolveSettingsDirectory(settingsDirectory);
         this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
+
         // Shared factories with GUI composition; injection seams remain for tests.
         this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
         this.importerRegistry = importerRegistry
@@ -497,7 +498,7 @@ public sealed class ChapterToolCliApplication
         yield return "bdmv-directory       BDMV/PLAYLIST directory";
     }
 
-    private IReadOnlyList<ChapterDiagnostic> AmbiguousSelectionDiagnostics(IReadOnlyList<ChapterImportSource> groups, int groupOffset = 0)
+    private static IReadOnlyList<ChapterDiagnostic> AmbiguousSelectionDiagnostics(IReadOnlyList<ChapterImportSource> groups, int groupOffset = 0)
     {
         var diagnostics = new List<ChapterDiagnostic>();
         for (var localGroupIndex = 0; localGroupIndex < groups.Count; localGroupIndex++)
@@ -521,7 +522,7 @@ public sealed class ChapterToolCliApplication
         return diagnostics;
     }
 
-    private IEnumerable<string> FormatDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
+    private static IEnumerable<string> FormatDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
         diagnostics.Select(static diagnostic => $"{diagnostic.Severity.ToString().ToUpperInvariant()} {diagnostic.DisplayCode}: {diagnostic.Message}");
 
     private void RenderFailure(string message, IReadOnlyList<ChapterDiagnostic> diagnostics)

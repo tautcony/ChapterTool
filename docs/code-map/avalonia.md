@@ -247,7 +247,7 @@ Start with:
 
 Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs` for DotMake command definitions, bound launch-plan analysis, and supported format definitions. The Avalonia program uses the typed facade for GUI compatibility. The standalone program delegates process startup to the same facade.
 
-`src/ChapterTool.Cli/ChapterTool.Cli.csproj` owns the `ChapterTool` NuGet package metadata. The package installs the `chaptertool` command. `.github/workflows/dotnet-ci.yml` publishes the Avalonia runtime output and packages the CLI in each `pack-dotnet` runtime job. `.github/workflows/nuget-publish.yml` publishes the tool and `ChapterTool.Core` from the same version tag.
+`src/ChapterTool.Cli/ChapterTool.Cli.csproj` owns the `ChapterTool` NuGet package metadata. The package installs the `chaptertool` command. `.github/workflows/dotnet-ci.yml` uploads the CLI package as `ChapterTool-Cli-nuget` and uploads each Avalonia runtime output as `ChapterTool-Avalonia-<runtime>`. `.github/workflows/nuget-publish.yml` publishes the tool and `ChapterTool.Core` from the same version tag.
 
 ### Localization changes
 

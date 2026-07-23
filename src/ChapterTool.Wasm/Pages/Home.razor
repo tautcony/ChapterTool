@@ -735,7 +735,7 @@
         dropZoneRef = DotNetObjectReference.Create(this);
         await Js.InvokeVoidAsync("chapterToolWasm.registerDropZone", "chaptertool-shell", dropZoneRef);
 
-        string? json = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", SettingsStorageKey);
+        var json = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", SettingsStorageKey);
         if (string.IsNullOrWhiteSpace(json))
         {
             foreach (var legacyKey in LegacySettingsStorageKeys)
@@ -1088,7 +1088,7 @@
         PushExportOptions();
         PushProjectionOptions();
         var result = Workspace.Save();
-        if (result.Success && result.Content is not null && result.FileName is not null)
+        if (result is { Success: true, Content: not null, FileName: not null })
         {
             await Js.InvokeVoidAsync(
                 "chapterToolWasm.downloadText",

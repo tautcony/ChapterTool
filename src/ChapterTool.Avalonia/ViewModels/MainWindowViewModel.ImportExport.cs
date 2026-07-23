@@ -5,6 +5,7 @@ using ChapterTool.Core.Importing;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Contains chapter load and save behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     private ChapterExportOptions CurrentExportOptions() =>
@@ -69,7 +70,7 @@ public sealed partial class MainWindowViewModel
 
     private async ValueTask SaveAsync(string? directoryOverride, CancellationToken cancellationToken)
     {
-        if (currentInfo is null)
+        if (CurrentInfo is null)
         {
             return;
         }
@@ -80,7 +81,7 @@ public sealed partial class MainWindowViewModel
         Log("Log.SavingChapters",
             ("format", entries.Format),
             ("directory", directory ?? string.Empty),
-            ("source", currentInfo.SourceName ?? string.Empty),
+            ("source", CurrentInfo.SourceName ?? string.Empty),
             ("chapters", projection.Info.Chapters.Count),
             ("applyExpression", ApplyExpression),
             ("expression", Expression));

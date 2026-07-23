@@ -1,10 +1,10 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Matroska;
 using ChapterTool.Infrastructure.Processes;
+using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Infrastructure.Tests.Importing;
@@ -19,7 +19,7 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
 
-        var pathDirs = (Environment.GetEnvironmentVariable("PATH") ?? "")
+        var pathDirs = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
             .Split(Path.PathSeparator)
             .Where(static directory => !string.IsNullOrWhiteSpace(directory))
             .ToArray();

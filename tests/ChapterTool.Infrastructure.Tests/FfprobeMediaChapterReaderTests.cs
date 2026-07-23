@@ -1,6 +1,6 @@
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Importing.Media;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Tests;
 
@@ -82,7 +82,7 @@ public sealed class FfprobeMediaChapterReaderTests
     {
         var reader = new FfprobeMediaChapterReader(
             new FakeToolLocator(new ExternalToolLocation(true, "ffprobe")),
-            new FakeProcessRunner(new ProcessRunResult(null, "", "", timedOut, cancelled, "ffprobe", [], null)));
+            new FakeProcessRunner(new ProcessRunResult(null, string.Empty, string.Empty, timedOut, cancelled, "ffprobe", [], null)));
 
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
@@ -95,7 +95,7 @@ public sealed class FfprobeMediaChapterReaderTests
     {
         var reader = new FfprobeMediaChapterReader(
             new FakeToolLocator(new ExternalToolLocation(true, "ffprobe")),
-            new FakeProcessRunner(new ProcessRunResult(1, "", "错误", false, false, "ffprobe", [], null)));
+            new FakeProcessRunner(new ProcessRunResult(1, string.Empty, "错误", false, false, "ffprobe", [], null)));
 
         var result = await reader.ReadAsync("movie.mp4", TestContext.Current.CancellationToken);
 
@@ -134,7 +134,7 @@ public sealed class FfprobeMediaChapterReaderTests
     }
 
     private static ProcessRunResult SuccessfulJson(string stdout) =>
-        new(0, stdout, "", false, false, "ffprobe", [], null);
+        new(0, stdout, string.Empty, false, false, "ffprobe", [], null);
 
     private sealed class FakeToolLocator(ExternalToolLocation location) : IExternalToolLocator
     {

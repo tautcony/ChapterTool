@@ -3,37 +3,25 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
-public sealed class ChapterRowViewModel
+public sealed class ChapterRowViewModel(
+    Chapter chapter,
+    IChapterTimeFormatter formatter,
+    int? number = null,
+    string? name = null)
 {
-    public ChapterRowViewModel(
-        Chapter chapter,
-        IChapterTimeFormatter formatter,
-        int? number = null,
-        string? name = null)
-    {
-        Chapter = chapter;
-        Number = number ?? chapter.DisplayNumber;
-        TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.StartTime);
-        Name = name ?? chapter.Name;
-        FramesInfo = chapter.FramesInfo;
-        IsFrameAccurate = chapter.FrameAccuracy == FrameAccuracy.Accurate;
-        IsFrameInexact = chapter.FrameAccuracy == FrameAccuracy.Inexact;
-        IsFrameNeutral = chapter.FrameAccuracy == FrameAccuracy.Neutral;
-    }
+    public Chapter Chapter { get; } = chapter;
 
-    public Chapter Chapter { get; }
+    public int Number { get; } = number ?? chapter.DisplayNumber;
 
-    public int Number { get; }
+    public string TimeText { get; set; } = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.StartTime);
 
-    public string TimeText { get; set; }
+    public string Name { get; set; } = name ?? chapter.Name;
 
-    public string Name { get; set; }
+    public string FramesInfo { get; set; } = chapter.FramesInfo;
 
-    public string FramesInfo { get; set; }
+    public bool IsFrameAccurate { get; } = chapter.FrameAccuracy == FrameAccuracy.Accurate;
 
-    public bool IsFrameAccurate { get; }
+    public bool IsFrameInexact { get; } = chapter.FrameAccuracy == FrameAccuracy.Inexact;
 
-    public bool IsFrameInexact { get; }
-
-    public bool IsFrameNeutral { get; }
+    public bool IsFrameNeutral { get; } = chapter.FrameAccuracy == FrameAccuracy.Neutral;
 }

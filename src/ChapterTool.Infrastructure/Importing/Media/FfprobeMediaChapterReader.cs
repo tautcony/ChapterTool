@@ -2,8 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Media;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Importing.Media;
 

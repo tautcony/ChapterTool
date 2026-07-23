@@ -1,6 +1,6 @@
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Infrastructure.Tests;

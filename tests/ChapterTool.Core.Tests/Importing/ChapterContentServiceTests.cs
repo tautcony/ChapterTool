@@ -1,4 +1,3 @@
-using System.Text;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
@@ -21,11 +20,10 @@ public sealed class ChapterContentServiceTests
     public async Task ImportAsyncDetectsXmlWhenFileNameHasNoExtension()
     {
         var service = new ChapterContentService();
-        var content = Encoding.UTF8.GetBytes(
-            """
-            <?xml version="1.0"?>
-            <Chapters><EditionEntry><ChapterAtom><ChapterTimeStart>00:00:00.000</ChapterTimeStart></ChapterAtom></EditionEntry></Chapters>
-            """);
+        var content = """
+                      <?xml version="1.0"?>
+                      <Chapters><EditionEntry><ChapterAtom><ChapterTimeStart>00:00:00.000</ChapterTimeStart></ChapterAtom></EditionEntry></Chapters>
+                      """u8.ToArray();
 
         var result = await service.ImportAsync("chapters", content);
 
@@ -38,13 +36,12 @@ public sealed class ChapterContentServiceTests
     public async Task ImportedChapterSetCanBeExportedThroughSharedService()
     {
         var service = new ChapterContentService();
-        var content = Encoding.UTF8.GetBytes(
-            """
-            CHAPTER01=00:00:00.000
-            CHAPTER01NAME=Opening
-            CHAPTER02=00:01:00.000
-            CHAPTER02NAME=Middle
-            """);
+        var content = """
+                      CHAPTER01=00:00:00.000
+                      CHAPTER01NAME=Opening
+                      CHAPTER02=00:01:00.000
+                      CHAPTER02NAME=Middle
+                      """u8.ToArray();
         var imported = await service.ImportAsync("chapters.txt", content);
         var chapterSet = imported.Groups.Single().Entries.Single().ChapterSet;
 

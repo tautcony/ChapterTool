@@ -9,6 +9,7 @@ using ChapterTool.Avalonia.ViewModels.Tools;
 
 namespace ChapterTool.Avalonia.Views.Tools;
 
+/// <summary>Provides the text tool view.</summary>
 public sealed partial class TextToolView : UserControl
 {
     private TextToolViewModel? subscribedViewModel;

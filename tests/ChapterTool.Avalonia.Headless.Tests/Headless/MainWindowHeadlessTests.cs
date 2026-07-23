@@ -1,9 +1,9 @@
-using ChapterTool.Core.Models;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -61,8 +61,8 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(1, host.ViewModel.SelectedClipIndex);
         Assert.Equal("00002（2 chapters）", clipSelector.SelectionBoxItem?.ToString());
         Assert.True(
-            host.ContainsRenderedText(clipSelector, "00002（2 chapters）"),
-            $"Expected selected clip label to remain visible. Rendered selector texts:{Environment.NewLine}{host.DescribeRenderedTexts(clipSelector)}");
+            MainWindowHeadlessTestHost.ContainsRenderedText(clipSelector, "00002（2 chapters）"),
+            $"Expected selected clip label to remain visible. Rendered selector texts:{Environment.NewLine}{MainWindowHeadlessTestHost.DescribeRenderedTexts(clipSelector)}");
     }
 
     [AvaloniaFact]
@@ -212,7 +212,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(selectedIndex, host.ViewModel.SelectedClipIndex);
         Assert.True(
             host.ContainsRenderedText(expectedLabel),
-            $"Expected selector to render '{expectedLabel}'. Rendered window texts:{Environment.NewLine}{host.DescribeRenderedTexts(host.Window)}");
+            $"Expected selector to render '{expectedLabel}'. Rendered window texts:{Environment.NewLine}{MainWindowHeadlessTestHost.DescribeRenderedTexts(host.Window)}");
 
         clipSelector.IsDropDownOpen = false;
         await host.LayoutAsync();
@@ -231,7 +231,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(0, host.ViewModel.SelectedClipIndex);
         Assert.Equal(expectedLabel, clipSelector.SelectionBoxItem?.ToString());
         Assert.True(
-            host.ContainsRenderedText(clipSelector, expectedLabel),
-            $"Expected default selected label '{expectedLabel}'. Rendered selector texts:{Environment.NewLine}{host.DescribeRenderedTexts(clipSelector)}");
+            MainWindowHeadlessTestHost.ContainsRenderedText(clipSelector, expectedLabel),
+            $"Expected default selected label '{expectedLabel}'. Rendered selector texts:{Environment.NewLine}{MainWindowHeadlessTestHost.DescribeRenderedTexts(clipSelector)}");
     }
 }

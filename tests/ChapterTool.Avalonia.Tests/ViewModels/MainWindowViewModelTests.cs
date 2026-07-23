@@ -7,11 +7,11 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
@@ -1058,7 +1058,7 @@ public sealed class MainWindowViewModelTests
     {
         var configured = Path.GetFullPath("out");
         var store = new FakeSettingsStore(new AppSettings(SavingPath: configured, Language: "en-US"));
-        var save = new FakeSaveService { Result = new ChapterExportResult(false, "", "", []) };
+        var save = new FakeSaveService { Result = new ChapterExportResult(false, string.Empty, string.Empty, []) };
         var vm = CreateViewModel(saveService: save, settingsStore: store);
 
         await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
@@ -1101,7 +1101,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task UiLanguagePersistsThroughSettingsStore()
     {
-        var store = new FakeSettingsStore(new AppSettings(Language: ""));
+        var store = new FakeSettingsStore(new AppSettings(Language: string.Empty));
         var vm = CreateViewModel(settingsStore: store);
 
         await vm.PortAdapters.Preferences.SaveUiLanguageAsync("en-US", TestContext.Current.CancellationToken);
@@ -1113,7 +1113,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task BlankUiLanguageFallsBackToSimplifiedChinese()
     {
-        var store = new FakeSettingsStore(new AppSettings(Language: ""));
+        var store = new FakeSettingsStore(new AppSettings(Language: string.Empty));
         var localizer = new AppLocalizationManager("en-US");
         var vm = CreateViewModel(settingsStore: store, localizer: localizer);
 
@@ -1358,8 +1358,11 @@ public sealed class MainWindowViewModelTests
     private sealed class FakeSaveService : IChapterSaveService
     {
         public ChapterSet? LastInfo { get; private set; }
+
         public ChapterExportOptions? LastOptions { get; private set; }
+
         public string? LastDirectory { get; private set; }
+
         public ChapterExportResult Result { get; init; } = new(true, "ok", ".txt", []);
 
         public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null)
@@ -1387,7 +1390,9 @@ public sealed class MainWindowViewModelTests
     private sealed class FakeShellService : IShellService
     {
         public List<string> Opened { get; } = [];
+
         public List<string> RevealedInFolder { get; } = [];
+
         public List<string> TerminalsOpened { get; } = [];
 
         public ValueTask OpenAsync(string target, CancellationToken cancellationToken)

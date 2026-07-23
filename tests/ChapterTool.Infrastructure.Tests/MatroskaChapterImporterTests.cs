@@ -1,8 +1,8 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Matroska;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Tests;
 
@@ -88,7 +88,7 @@ public sealed class MatroskaChapterImporterTests
     {
         var importer = NewImporter(result: new ProcessRunResult(
             2,
-            "",
+            string.Empty,
             "bad file",
             false,
             false,
@@ -109,7 +109,7 @@ public sealed class MatroskaChapterImporterTests
     {
         var importer = NewImporter(result: new ProcessRunResult(
             2,
-            "",
+            string.Empty,
             "错误: 无法读取章节",
             false,
             false,
@@ -128,7 +128,7 @@ public sealed class MatroskaChapterImporterTests
     [Fact]
     public async Task ImportAsyncFailsTimeout()
     {
-        var importer = NewImporter(result: new ProcessRunResult(null, "", "", true, false, "mkvextract", ["chapters", "movie.mkv"], null));
+        var importer = NewImporter(result: new ProcessRunResult(null, string.Empty, string.Empty, true, false, "mkvextract", ["chapters", "movie.mkv"], null));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 
@@ -139,7 +139,7 @@ public sealed class MatroskaChapterImporterTests
     [Fact]
     public async Task ImportAsyncFailsCancellation()
     {
-        var importer = NewImporter(result: new ProcessRunResult(null, "", "", false, true, "mkvextract", ["chapters", "movie.mkv"], null));
+        var importer = NewImporter(result: new ProcessRunResult(null, string.Empty, string.Empty, false, true, "mkvextract", ["chapters", "movie.mkv"], null));
 
         var result = await importer.ImportAsync(new ChapterImportRequest("movie.mkv"), TestContext.Current.CancellationToken);
 

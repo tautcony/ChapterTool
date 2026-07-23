@@ -1,6 +1,6 @@
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Tools;
 
@@ -16,6 +16,7 @@ public sealed class ExternalToolLocator(
     private readonly IMkvToolNixInstallProbe mkvToolNixInstallProbe = mkvToolNixInstallProbe ?? MkvToolNixInstallProbe.CreateDefault();
     private readonly IExternalToolDefaultCandidateProvider defaultCandidateProvider =
         defaultCandidateProvider ?? ExternalToolDefaultCandidateProvider.Instance;
+
     private readonly Lock cacheSyncRoot = new();
     private readonly Dictionary<ToolCacheKey, CachedToolLocation> locationCache = [];
 

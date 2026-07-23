@@ -1,4 +1,4 @@
-namespace ChapterTool.CommandLine;
+namespace ChapterTool.CommandLine.Cli;
 
 public interface ICliConsole
 {

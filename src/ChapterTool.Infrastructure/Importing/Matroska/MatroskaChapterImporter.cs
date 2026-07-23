@@ -1,8 +1,8 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Text;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Importing.Matroska;
 

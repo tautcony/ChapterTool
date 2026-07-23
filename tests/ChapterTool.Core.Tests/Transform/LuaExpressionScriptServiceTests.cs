@@ -13,7 +13,7 @@ public sealed class LuaExpressionScriptServiceTests
     [Fact]
     public void Presets_include_common_lua_transforms()
     {
-        Assert.Contains(service.Presets, preset => preset.Id == "identity" && preset.ScriptText == "t");
+        Assert.Contains(service.Presets, preset => preset is { Id: "identity", ScriptText: "t" });
         Assert.Contains(service.Presets, preset => preset.Id == "offset-seconds");
         Assert.Contains(service.Presets, preset => preset.Id == "round-to-frame");
         Assert.Contains(service.Presets, preset => preset.Id == "half-frame-earlier");
@@ -36,8 +36,8 @@ public sealed class LuaExpressionScriptServiceTests
 
         Assert.True(second.Success, DiagnosticText(second));
         Assert.True(third.Success, DiagnosticText(third));
-        Assert.Equal(10m + (1m / 24m), second.Value, 10);
-        Assert.Equal(10m + (2m / 24m), third.Value, 10);
+        Assert.Equal(10m + 1m / 24m, second.Value, 10);
+        Assert.Equal(10m + 2m / 24m, third.Value, 10);
     }
 
     [Fact]
@@ -250,7 +250,7 @@ public sealed class LuaExpressionScriptServiceTests
     private static ChapterExpressionContext Context(decimal timeSeconds, decimal fps, int index = 1, int count = 1, int number = 1)
     {
         var chapters = Enumerable.Range(1, count)
-            .Select(item => new Chapter(item == index ? number : item, TimeSpan.FromSeconds(item == index ? (double)timeSeconds : item), $"Chapter {item}", ""))
+            .Select(item => new Chapter(item == index ? number : item, TimeSpan.FromSeconds(item == index ? (double)timeSeconds : item), $"Chapter {item}", string.Empty))
             .ToList();
         return new ChapterExpressionContext(chapters[index - 1], index, count, timeSeconds, fps, chapters);
     }

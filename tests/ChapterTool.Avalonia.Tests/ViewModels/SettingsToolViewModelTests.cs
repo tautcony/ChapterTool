@@ -6,11 +6,11 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -62,6 +62,7 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("utf32be", appStore.Current.OutputTextEncoding);
         Assert.False(appStore.Current.EmitBom);
         Assert.Equal(0.2m, appStore.Current.FrameAccuracyTolerance);
+
         // Default save format is a startup preference and must not rewrite the live session format.
         Assert.Equal(ChapterExportFormat.Txt, owner.SaveFormat);
         Assert.Equal("jpn", owner.XmlLanguage);
@@ -480,7 +481,7 @@ public sealed class SettingsToolViewModelTests
         Directory.CreateDirectory(root);
         var executableName = OperatingSystem.IsWindows() ? "ffprobe.exe" : "ffprobe";
         var executable = Path.Combine(root, executableName);
-        await File.WriteAllTextAsync(executable, "");
+        await File.WriteAllTextAsync(executable, string.Empty);
         var appStore = new FakeSettingsStore(new AppSettings(FfprobePath: root));
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
@@ -503,7 +504,7 @@ public sealed class SettingsToolViewModelTests
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
-        await File.WriteAllTextAsync(ffprobe, "");
+        await File.WriteAllTextAsync(ffprobe, string.Empty);
         var appStore = new FakeSettingsStore(new AppSettings(FfmpegPath: ffprobe));
         var owner = CreateOwner(appStore);
         var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
@@ -528,9 +529,9 @@ public sealed class SettingsToolViewModelTests
         var mkvextract = Path.Combine(root, ToolExecutable("mkvextract"));
         var eac3to = Path.Combine(root, ToolExecutable("eac3to"));
         var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
-        await File.WriteAllTextAsync(mkvextract, "");
-        await File.WriteAllTextAsync(eac3to, "");
-        await File.WriteAllTextAsync(ffprobe, "");
+        await File.WriteAllTextAsync(mkvextract, string.Empty);
+        await File.WriteAllTextAsync(eac3to, string.Empty);
+        await File.WriteAllTextAsync(ffprobe, string.Empty);
         var appStore = new FakeSettingsStore(new AppSettings());
         var owner = CreateOwner(appStore);
         var locator = new FakeExternalToolLocator(new Dictionary<string, ExternalToolLocation>(StringComparer.OrdinalIgnoreCase)
@@ -646,62 +647,78 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
-    public async Task Font_default_labels_refresh_without_changing_canonical_selections()
+    public Task Font_default_labels_refresh_without_changing_canonical_selections()
     {
-        var localizer = new AppLocalizationManager("en-US");
-        var catalog = new AvaloniaFontFamilyCatalog(["UI One", "Mono One"]);
-        var viewModel = CreateViewModel(
-            CreateOwner(localizer: localizer),
-            null,
-            null,
-            localizer,
-            fontFamilyCatalog: catalog,
-            fontApplicationService: new FakeFontApplicationService(catalog));
+        try
+        {
+            var localizer = new AppLocalizationManager("en-US");
+            var catalog = new AvaloniaFontFamilyCatalog(["UI One", "Mono One"]);
+            var viewModel = CreateViewModel(
+                CreateOwner(localizer: localizer),
+                null,
+                null,
+                localizer,
+                fontFamilyCatalog: catalog,
+                fontApplicationService: new FakeFontApplicationService(catalog));
 
-        SelectUiFont(viewModel, "UI One");
-        SelectMonospaceFont(viewModel, "Mono One");
-        Assert.Equal("System default", viewModel.Appearance.UiFontFamilies[0].DisplayName);
+            SelectUiFont(viewModel, "UI One");
+            SelectMonospaceFont(viewModel, "Mono One");
+            Assert.Equal("System default", viewModel.Appearance.UiFontFamilies[0].DisplayName);
 
-        localizer.SetCulture("zh-CN");
+            localizer.SetCulture("zh-CN");
 
-        Assert.Equal("UI One", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("Mono One", viewModel.Appearance.SelectedMonospaceFontFamily.FamilyName);
-        Assert.Equal("系统默认", viewModel.Appearance.UiFontFamilies[0].DisplayName);
-        Assert.Contains("界面字体预览", viewModel.Appearance.UiFontPreviewAutomationName, StringComparison.Ordinal);
-        Assert.Contains("章节字幕", viewModel.Appearance.FontPreviewText, StringComparison.Ordinal);
+            Assert.Equal("UI One", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+            Assert.Equal("Mono One", viewModel.Appearance.SelectedMonospaceFontFamily.FamilyName);
+            Assert.Equal("系统默认", viewModel.Appearance.UiFontFamilies[0].DisplayName);
+            Assert.Contains("界面字体预览", viewModel.Appearance.UiFontPreviewAutomationName, StringComparison.Ordinal);
+            Assert.Contains("章节字幕", viewModel.Appearance.FontPreviewText, StringComparison.Ordinal);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task Localized_font_family_names_follow_language_without_changing_canonical_identity()
+    public Task Localized_font_family_names_follow_language_without_changing_canonical_identity()
     {
-        var localizer = new AppLocalizationManager("en-US");
-        var catalog = AvaloniaFontFamilyCatalog.FromEntries(
-        [
-            new FontFamilyCatalogEntry(
-                "Canonical Family",
-                new Dictionary<string, string>
-                {
-                    ["zh-CN"] = "简体字体名",
-                    ["ja-JP"] = "日本語フォント名"
-                })
-        ]);
-        var viewModel = CreateViewModel(
-            CreateOwner(localizer: localizer),
-            null,
-            null,
-            localizer,
-            fontFamilyCatalog: catalog,
-            fontApplicationService: new FakeFontApplicationService(catalog));
-        SelectUiFont(viewModel, "Canonical Family");
+        try
+        {
+            var localizer = new AppLocalizationManager("en-US");
+            var catalog = AvaloniaFontFamilyCatalog.FromEntries(
+            [
+                new FontFamilyCatalogEntry(
+                    "Canonical Family",
+                    new Dictionary<string, string>
+                    {
+                        ["zh-CN"] = "简体字体名",
+                        ["ja-JP"] = "日本語フォント名"
+                    })
+            ]);
+            var viewModel = CreateViewModel(
+                CreateOwner(localizer: localizer),
+                null,
+                null,
+                localizer,
+                fontFamilyCatalog: catalog,
+                fontApplicationService: new FakeFontApplicationService(catalog));
+            SelectUiFont(viewModel, "Canonical Family");
 
-        Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
-        localizer.SetCulture("zh-CN");
-        Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("简体字体名", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
+            Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
+            localizer.SetCulture("zh-CN");
+            Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+            Assert.Equal("简体字体名", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
 
-        localizer.SetCulture("ja-JP");
-        Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
-        Assert.Equal("日本語フォント名", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
+            localizer.SetCulture("ja-JP");
+            Assert.Equal("Canonical Family", viewModel.Appearance.SelectedUiFontFamily.FamilyName);
+            Assert.Equal("日本語フォント名", viewModel.Appearance.SelectedUiFontFamily.DisplayName);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     private static void SelectPreset(SettingsToolViewModel viewModel, string presetId)
@@ -843,6 +860,7 @@ public sealed class SettingsToolViewModelTests
     private sealed class FakeFontSettingsState(FontSettings initial)
     {
         public FontSettings Current { get; private set; } = initial;
+
         public int Saves { get; private set; }
 
         public void SetCurrent(FontSettings settings, bool saved)

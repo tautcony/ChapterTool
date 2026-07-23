@@ -3,8 +3,8 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.Composition;
-using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Headless.Tests.Headless;
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Composition;

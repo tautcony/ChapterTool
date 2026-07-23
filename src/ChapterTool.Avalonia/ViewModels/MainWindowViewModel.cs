@@ -8,14 +8,15 @@ using ChapterTool.Avalonia.Workflows;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Coordinates the main window state, commands, and chapter workflows.</summary>
 public sealed partial class MainWindowViewModel : ObservableViewModel
 {
     private readonly IChapterLoadService loadService;
@@ -32,16 +33,16 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private readonly ProjectionFacade projectionFacade;
     private readonly StatusDiagnosticsPresenter statusDiagnosticsPresenter;
     private readonly DisplayOptionCoordinator displayOptionCoordinator;
+    private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     private FrameRateOption selectedFrameRateOption;
     private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
     private string chapterNameTemplateStatus;
     private string statusText;
-    private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
     private string? lastExpressionDiagnosticSignature;
 
-    private ChapterSet? currentInfo
+    private ChapterSet? CurrentInfo
     {
         get => Workspace.CurrentChapterSet;
         set => Workspace.SetCurrentChapterSet(value);
@@ -118,7 +119,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     internal IChapterExpressionEngine ExpressionEngine { get; }
 
-    internal ChapterSet? CurrentChapterSet => currentInfo;
+    internal ChapterSet? CurrentChapterSet => CurrentInfo;
 
     internal ClipEditingCoordinator ClipEditingCoordinator { get; }
 
@@ -151,7 +152,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             }
         }, parameter => CanAppendMpls && parameter is string path && !string.IsNullOrWhiteSpace(path));
         DropPathLoadCommand = new UiCommand(async (parameter, token) => await LoadPathAsync(parameter?.ToString() ?? string.Empty, token));
-        SaveCommand = new UiCommand(async (parameter, token) => await SaveAsync(parameter?.ToString(), token), _ => currentInfo is not null);
+        SaveCommand = new UiCommand(async (parameter, token) => await SaveAsync(parameter?.ToString(), token), _ => CurrentInfo is not null);
     }
 
     private void InitializeEditCommands()
@@ -160,12 +161,12 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         {
             ApplyFrameInfo();
             return ValueTask.CompletedTask;
-        }, _ => currentInfo is not null);
+        }, _ => CurrentInfo is not null);
         ChangeFpsCommand = new UiCommand((_, _) =>
         {
             ChangeFpsToSelectedOption();
             return ValueTask.CompletedTask;
-        }, _ => currentInfo is not null && selectedFrameRateOption.IsValid);
+        }, _ => CurrentInfo is not null && selectedFrameRateOption.IsValid);
         SelectClipCommand = new UiCommand((parameter, _) =>
         {
             SelectClip(Convert.ToInt32(parameter));
@@ -181,28 +182,28 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         EditFrameCommand = new UiCommand(parameter => EditCell(parameter, EditKind.Frame));
         DeleteCommand = new UiCommand(parameter =>
         {
-            if (currentInfo is not null && parameter is IReadOnlySet<int> indexes)
+            if (CurrentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(ClipEditingCoordinator.Delete(currentInfo, indexes), Localizer.Format(LocalizedMessage.Create("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order())))));
+                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes), Localizer.Format(LocalizedMessage.Create("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order())))));
             }
 
             return ValueTask.CompletedTask;
-        }, _ => currentInfo is not null);
+        }, _ => CurrentInfo is not null);
         InsertCommand = new UiCommand(parameter =>
         {
-            if (currentInfo is not null)
+            if (CurrentInfo is not null)
             {
                 var index = parameter is int value ? value : Rows.Count;
-                ApplyEdit(ClipEditingCoordinator.InsertBefore(currentInfo, index), Localizer.Format(LocalizedMessage.Create("Action.InsertRow", ("index", index))));
+                ApplyEdit(ClipEditingCoordinator.InsertBefore(CurrentInfo, index), Localizer.Format(LocalizedMessage.Create("Action.InsertRow", ("index", index))));
             }
 
             return ValueTask.CompletedTask;
-        }, _ => currentInfo is not null);
+        }, _ => CurrentInfo is not null);
     }
 
     private void InitializeWindowCommands()
     {
-        PreviewCommand = WindowCommand("preview", () => currentInfo is not null);
+        PreviewCommand = WindowCommand("preview", () => CurrentInfo is not null);
         LogCommand = WindowCommand("log");
         SettingsCommand = WindowCommand("settings");
         LanguageCommand = WindowCommand("language");
@@ -375,6 +376,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
                 ? null
                 : entries[XmlLanguageIndex];
         }
+
         set
         {
             var index = value is null
@@ -411,6 +413,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
                 .ToDictionary(static item => item.entry, static item => item.index, StringComparer.OrdinalIgnoreCase);
             return xmlLanguageIndexes.GetValueOrDefault(XmlLanguage, 0);
         }
+
         set
         {
             if (value >= 0 && value < XmlLanguageOptions.Count)
@@ -426,7 +429,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     {
         get;
         internal set => SetProperty(ref field, value);
-    } = "";
+    } = string.Empty;
 
     public IAppLocalizer Localizer { get; }
 
@@ -508,6 +511,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
             return 0;
         }
+
         set
         {
             if (isRefreshingChapterNameModeOptions)
@@ -633,11 +637,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public bool CanCombine => Workspace.ClipSession?.CanCombine == true;
 
-    public bool CanSave => currentInfo is not null;
+    public bool CanSave => CurrentInfo is not null;
 
-    public bool CanRefreshRows => currentInfo is not null;
+    public bool CanRefreshRows => CurrentInfo is not null;
 
-    public bool CanEditRows => currentInfo is not null;
+    public bool CanEditRows => CurrentInfo is not null;
 
     public bool CanOpenRelatedMedia => RelatedMediaReferences.Count > 0;
 
@@ -666,27 +670,49 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     }
 
     public UiCommand LoadCommand { get; private set; } = null!;
+
     public UiCommand ReloadCommand { get; private set; } = null!;
+
     public UiCommand AppendMplsCommand { get; private set; } = null!;
+
     public UiCommand DropPathLoadCommand { get; private set; } = null!;
+
     public UiCommand SaveCommand { get; private set; } = null!;
+
     public UiCommand RefreshCommand { get; private set; } = null!;
+
     public UiCommand ChangeFpsCommand { get; private set; } = null!;
+
     public UiCommand SelectClipCommand { get; private set; } = null!;
+
     public UiCommand CombineCommand { get; private set; } = null!;
+
     public UiCommand EditTimeCommand { get; private set; } = null!;
+
     public UiCommand EditNameCommand { get; private set; } = null!;
+
     public UiCommand EditFrameCommand { get; private set; } = null!;
+
     public UiCommand DeleteCommand { get; private set; } = null!;
+
     public UiCommand InsertCommand { get; private set; } = null!;
+
     public UiCommand PreviewCommand { get; private set; } = null!;
+
     public UiCommand LogCommand { get; private set; } = null!;
+
     public UiCommand SettingsCommand { get; private set; } = null!;
+
     public UiCommand LanguageCommand { get; private set; } = null!;
+
     public UiCommand ExpressionCommand { get; private set; } = null!;
+
     public UiCommand TemplateNamesCommand { get; private set; } = null!;
+
     public UiCommand ZonesCommand { get; private set; } = null!;
+
     public UiCommand ForwardShiftCommand { get; private set; } = null!;
+
     public UiCommand OpenRelatedMediaCommand { get; private set; } = null!;
 
     public void SetFrameOptions(int frameRateIndex, bool roundFrames)
@@ -703,9 +729,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
                 return;
             }
 
-            selectedFrameRateOption = currentInfo is null
+            selectedFrameRateOption = CurrentInfo is null
                 ? frameRateService.Options[0]
-                : frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
+                : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
             SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
         }
         finally
@@ -716,7 +742,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     private void OnFrameOptionsChangedFromBinding()
     {
-        if (suppressFrameOptionsRefresh || currentInfo is null)
+        if (suppressFrameOptionsRefresh || CurrentInfo is null)
         {
             return;
         }
@@ -743,13 +769,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public string BuildPreview()
     {
-        if (currentInfo is null)
+        if (CurrentInfo is null)
         {
             return string.Empty;
         }
 
         var projection = CurrentOutputProjection();
         var entries = CurrentExportOptionsForProjectedInfo();
+
         // Use composition-injected export service (same path family as save), not ad-hoc construction.
         var result = exportService.Export(projection.Info, entries);
         if (!result.Success)
@@ -774,17 +801,17 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public string CreateZonesText()
     {
-        if (currentInfo is null)
+        if (CurrentInfo is null)
         {
             return string.Empty;
         }
 
         var indexes = SelectedRowIndexes.Count == 0
-            ? Enumerable.Range(0, currentInfo.Chapters.Count).ToHashSet()
+            ? Enumerable.Range(0, CurrentInfo.Chapters.Count).ToHashSet()
             : SelectedRowIndexes;
-        var result = editingService.CreateZones(currentInfo, indexes, (decimal)currentInfo.FramesPerSecond);
+        var result = editingService.CreateZones(CurrentInfo, indexes, (decimal)CurrentInfo.FramesPerSecond);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", currentInfo.Chapters.Count));
+        Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", CurrentInfo.Chapters.Count));
         LogDiagnostics(Localizer.GetString("Operation.CreateZones"), result.Diagnostics);
         LogStatus();
         NotifyStateChanged();

@@ -9,9 +9,9 @@ The rewrite SHALL use .NET CLI based CI.
 
 #### Scenario: CI packages Avalonia and CLI artifacts
 - **WHEN** CI builds a revision that changes the .NET product
-- **THEN** each `pack-dotnet` runtime matrix job SHALL publish the Avalonia application
-- **AND** it SHALL pack the `ChapterTool` .NET Tool
-- **AND** it SHALL upload both outputs as one named artifact for that runtime
+- **THEN** the build job SHALL pack and upload the `ChapterTool` .NET Tool as `ChapterTool-Cli-nuget`
+- **AND** each `pack-dotnet` runtime matrix job SHALL publish the Avalonia application
+- **AND** it SHALL upload one `ChapterTool-Avalonia-<runtime>` artifact for that runtime
 
 #### Scenario: Version release publishes both NuGet packages
 - **WHEN** the NuGet workflow processes a successful version-tag build

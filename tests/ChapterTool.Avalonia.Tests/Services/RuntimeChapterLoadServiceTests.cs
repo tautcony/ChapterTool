@@ -324,7 +324,7 @@ public sealed class RuntimeChapterLoadServiceTests
 
     private sealed class StubRegistry(IChapterImporter primary, IChapterImporter? fallback) : IChapterImporterRegistry
     {
-        public IChapterImporter? Resolve(string path) => primary;
+        public IChapterImporter Resolve(string path) => primary;
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) =>
             primaryResult.Diagnostics.Any(static diagnostic =>

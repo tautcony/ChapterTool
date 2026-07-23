@@ -1,9 +1,9 @@
-using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
-using ChapterTool.Infrastructure.Services;
+using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Processes;
+using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Infrastructure.Tests.Importing;

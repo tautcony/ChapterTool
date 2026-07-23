@@ -1,14 +1,15 @@
 using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing;
+using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Importing.Bdmv;
 
+/// <summary>Imports chapter data from Blu-ray BDMV sources.</summary>
 public sealed partial class BdmvChapterImporter : IChapterImporter
 {
     private readonly IExternalToolLocator toolLocator;

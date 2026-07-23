@@ -1,7 +1,5 @@
 namespace ChapterTool.Wasm.Services;
 
-using ChapterTool.Core.Exporting;
-
 /// <summary>
 /// One editable chapter grid row, matching Avalonia's chapter table columns.
 /// </summary>

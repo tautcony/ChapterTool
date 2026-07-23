@@ -1,9 +1,9 @@
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Core.Models;
 using ChapterTool.Core.Importing;
-using ChapterTool.Infrastructure.Services;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Bdmv;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Tests;
 
@@ -22,7 +22,7 @@ public sealed class BdmvChapterImporterTests
                 1) 00001.mpls, 00001.m2ts, 01:00:20
                    - Chapters, 9 chapters
                 """),
-            new ProcessRunResult(0, "", "status output", false, false, "eac3to", [], null)
+            new ProcessRunResult(0, string.Empty, "status output", false, false, "eac3to", [], null)
         ], ExportText("""
             CHAPTER01=00:00:00.000
             CHAPTER01NAME=Opening
@@ -79,7 +79,7 @@ public sealed class BdmvChapterImporterTests
                     1) 00001.mpls, 00001.m2ts, 01:00:20
                        - Chapters, 9 chapters
                     """),
-                new ProcessRunResult(0, "", "", false, false, "eac3to", [], null)
+                new ProcessRunResult(0, string.Empty, string.Empty, false, false, "eac3to", [], null)
             ], ExportText("""
                 CHAPTER01=00:00:00.000
                 CHAPTER01NAME=Opening
@@ -115,7 +115,7 @@ public sealed class BdmvChapterImporterTests
     {
         var resultToReturn = stderr.Length == 0
             ? Success("not a playlist")
-            : new ProcessRunResult(0, "", stderr, false, false, "eac3to", [], null);
+            : new ProcessRunResult(0, string.Empty, stderr, false, false, "eac3to", [], null);
         var importer = NewImporter(new FakeRunner([resultToReturn]));
 
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
@@ -130,11 +130,8 @@ public sealed class BdmvChapterImporterTests
         var importer = NewImporter(new FakeRunner([
             new ProcessRunResult(
                 0,
-                """
-                1) 00001.mpls, 00001.m2ts, 01:00:20
-                   - Chapters, 9 chapters
-                """,
-                "",
+                "1) 00001.mpls, 00001.m2ts, 01:00:20\n   - Chapters, 9 chapters",
+                string.Empty,
                 false,
                 false,
                 "eac3to",
@@ -206,7 +203,7 @@ public sealed class BdmvChapterImporterTests
                 1) 00001.mpls, 00001.m2ts, 01:00:20
                    - Chapters, 9 chapters
                 """),
-            new ProcessRunResult(7, "", "export failed", false, false, "eac3to", [], null)
+            new ProcessRunResult(7, string.Empty, "export failed", false, false, "eac3to", [], null)
         ], ExportText("""
             CHAPTER01=00:00:00.000
             CHAPTER01NAME=Opening
@@ -225,7 +222,7 @@ public sealed class BdmvChapterImporterTests
     public async Task ImportAsyncDiagnosesListTimeoutAndCancellation(bool timedOut, bool cancelled, ChapterDiagnosticReason reason)
     {
         var importer = NewImporter(new FakeRunner([
-            new ProcessRunResult(null, "", "", timedOut, cancelled, "eac3to", [], null)
+            new ProcessRunResult(null, string.Empty, string.Empty, timedOut, cancelled, "eac3to", [], null)
         ]));
 
         var result = await importer.ImportAsync(new ChapterImportRequest(CreateBdmvRoot()), TestContext.Current.CancellationToken);
@@ -248,7 +245,7 @@ public sealed class BdmvChapterImporterTests
                 1) 00001.mpls, 00001.m2ts, 01:00:20
                    - Chapters, 9 chapters
                 """),
-            new ProcessRunResult(null, "", "", timedOut, cancelled, "eac3to", [], null)
+            new ProcessRunResult(null, string.Empty, string.Empty, timedOut, cancelled, "eac3to", [], null)
         ]);
         var importer = NewImporter(runner);
 
@@ -273,9 +270,9 @@ public sealed class BdmvChapterImporterTests
         new(new FakeLocator(new ExternalToolLocation(true, "eac3to")), runner, new ChapterTimeFormatter());
 
     private static ProcessRunResult Success(string stdout) =>
-        new(0, stdout, "", false, false, "eac3to", [], null);
+        new(0, stdout, string.Empty, false, false, "eac3to", [], null);
 
-    private static Func<ProcessRunRequest, Task>? ExportText(string text) =>
+    private static Func<ProcessRunRequest, Task> ExportText(string text) =>
         request =>
         {
             var exportArgument = request.Arguments.FirstOrDefault(static argument => argument.StartsWith("1:", StringComparison.Ordinal));

@@ -24,6 +24,7 @@ public sealed class ExpressionEditorExpansionChangedEventArgs(double heightDelta
 // Compatibility name used by ExpressionEditor.axaml bindings.
 public sealed class ExpressionCompletionKindBrushConverter : Expression.ExpressionCompletionPresentation;
 
+/// <summary>Provides an expression editor with completion and diagnostic presentation.</summary>
 public sealed partial class ExpressionEditor : UserControl
 {
     public static readonly StyledProperty<string> TextProperty =
@@ -231,14 +232,14 @@ public sealed partial class ExpressionEditor : UserControl
             diagnosticRenderTimer.Stop();
             AnalyzeAndRender(renderDiagnosticsImmediately: true);
         }
-        else if (change.Property == EditorHeightProperty && editor is not null)
+        else if (change.Property == EditorHeightProperty)
         {
             var height = Math.Max(25.6, change.GetNewValue<double>());
             editor.MinHeight = height;
             editor.Height = height;
             UpdateMultilineState();
         }
-        else if (change.Property == IsMultilineExpandableProperty && editor is not null)
+        else if (change.Property == IsMultilineExpandableProperty)
         {
             UpdateMultilineState();
         }
@@ -284,11 +285,6 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void UpdateMultilineState()
     {
-        if (editor is null)
-        {
-            return;
-        }
-
         var hasMultipleLines = HasMultipleLines(editor.Text);
         SetMultilineExpanded(isMultilineExpanded && IsMultilineExpandable && hasMultipleLines);
     }

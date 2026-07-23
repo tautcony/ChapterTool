@@ -60,8 +60,11 @@ public abstract record ClipSession
 public sealed record SplitClipSession(ChapterImportSource Group, int SelectedClipIndex) : ClipSession
 {
     public override ChapterImportSource OriginalGroup => Group;
+
     public override IReadOnlyList<ChapterImportEntry> ClipOptions => Group.Entries;
+
     public override int SelectedIndex => SelectedClipIndex;
+
     public override bool IsCombined => false;
 }
 
@@ -71,8 +74,11 @@ public sealed record CombinedClipSession(
     ChapterImportEntry CombinedEntry) : ClipSession
 {
     public override ChapterImportSource OriginalGroup => OriginalMultiEntryGroup;
+
     public override IReadOnlyList<ChapterImportEntry> ClipOptions => [CombinedEntry];
+
     public override int SelectedIndex => 0;
+
     public override bool IsCombined => true;
 }
 
@@ -209,6 +215,7 @@ public static class ClipSessionTransitions
             CombinedClipSession combined => combined with
             {
                 CombinedEntry = combined.CombinedEntry with { ChapterSet = info }
+
                 // SessionId preserved via record `with`
             },
             _ => session
@@ -224,6 +231,7 @@ public static class ClipSessionTransitions
 
         var entries = split.Group.Entries.ToList();
         entries[index] = entries[index] with { ChapterSet = info };
+
         // SessionId preserved via record `with`
         return split with { Group = split.Group with { Entries = entries } };
     }

@@ -159,7 +159,7 @@ Coverage entry point:
   - `.github/workflows/nuget-publish.yml`
   - `.github/workflows/npm-publish.yml`
 - The `ChapterTool` NuGet package installs the `chaptertool` command. `src/ChapterTool.Cli/ChapterTool.Cli.csproj` owns its package metadata.
-- `.github/workflows/dotnet-ci.yml` packs `ChapterTool.Core` in the build job. Each `pack-dotnet` runtime matrix job publishes Avalonia and packs `ChapterTool.nupkg`, then uploads both in one runtime artifact.
+- `.github/workflows/dotnet-ci.yml` packs `ChapterTool.Core` and `ChapterTool` in the build job. It uploads the packages as `ChapterTool-Core-nuget` and `ChapterTool-Cli-nuget`. Each `pack-dotnet` runtime matrix job uploads one `ChapterTool-Avalonia-<runtime>` artifact.
 - `.github/workflows/nuget-publish.yml` applies one release version to both NuGet packages and publishes them. It does not install the CLI package during CI.
 - Use `src/ChapterTool.Cli/README.md` for the NuGet Tool installation and external-tool requirements.
 - The legacy Windows NSIS installer inputs are retired. Future installer work should consume the `src/ChapterTool.Avalonia` publish output and derive version metadata from `Directory.Build.props`.

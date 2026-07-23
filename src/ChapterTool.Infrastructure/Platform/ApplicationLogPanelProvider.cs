@@ -133,7 +133,7 @@ public sealed class ApplicationLogPanelProvider(
 
     private sealed class ApplicationLogPanelLogger(ApplicationLogPanelProvider owner, string category) : ILogger
     {
-        public IDisposable? BeginScope<TState>(TState state)
+        public IDisposable BeginScope<TState>(TState state)
             where TState : notnull =>
             NullScope.Instance;
 

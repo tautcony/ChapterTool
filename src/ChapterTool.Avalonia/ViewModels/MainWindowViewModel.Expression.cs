@@ -3,6 +3,7 @@ using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Contains expression projection behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     private void RefreshRows()

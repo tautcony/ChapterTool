@@ -11,6 +11,7 @@ using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.Views;
 
+/// <summary>Provides the main ChapterTool application window.</summary>
 public sealed partial class MainWindow : Window
 {
     private readonly MainWindowViewModel viewModel;
@@ -262,18 +263,16 @@ public sealed partial class MainWindow : Window
         }
 
         var gesture = Gesture(args);
-        if (args.Key == Key.Insert)
+        switch (args.Key)
         {
-            args.Handled = true;
-            await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
-            return;
-        }
-
-        if (args.Key == Key.Delete)
-        {
-            args.Handled = true;
-            await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
-            return;
+            case Key.Insert:
+                args.Handled = true;
+                await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
+                return;
+            case Key.Delete:
+                args.Handled = true;
+                await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
+                return;
         }
 
         if (gesture is null)
@@ -282,29 +281,26 @@ public sealed partial class MainWindow : Window
         }
 
         args.Handled = true;
-        if (gesture == "Ctrl+S")
+        switch (gesture)
         {
-            // Same save command path as the toolbar (binding-authoritative options).
-            await SaveAsync();
-            return;
-        }
-
-        if (gesture == "Ctrl+O")
-        {
-            // Picker adapter only; load still goes through ViewModel.LoadCommand.
-            await BrowseAndLoadAsync();
-            return;
-        }
-
-        if (gesture is "PageUp" or "PageDown")
-        {
-            var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
-            if (viewModel.SelectClipCommand.CanExecute(next))
+            case "Ctrl+S":
+                // Same save command path as the toolbar (binding-authoritative options).
+                await SaveAsync();
+                return;
+            case "Ctrl+O":
+                // Picker adapter only; load still goes through ViewModel.LoadCommand.
+                await BrowseAndLoadAsync();
+                return;
+            case "PageUp" or "PageDown":
             {
-                await viewModel.SelectClipCommand.ExecuteAsync(next);
-            }
+                var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
+                if (viewModel.SelectClipCommand.CanExecute(next))
+                {
+                    await viewModel.SelectClipCommand.ExecuteAsync(next);
+                }
 
-            return;
+                return;
+            }
         }
 
         if (gesture.StartsWith("Alt+", StringComparison.Ordinal) && int.TryParse(gesture["Alt+".Length..], out var saveIndex))

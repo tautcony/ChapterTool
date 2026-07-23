@@ -1,17 +1,17 @@
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Configuration;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
+using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -22,6 +22,8 @@ public sealed class ToolWindowViewModelTests
     {
         var text = "one";
         var cleared = false;
+
+        // ReSharper disable once AccessToModifiedClosure
         var vm = new TextToolViewModel(() => text, new TextToolOptions { ClearAction = () => cleared = true });
 
         text = "two";

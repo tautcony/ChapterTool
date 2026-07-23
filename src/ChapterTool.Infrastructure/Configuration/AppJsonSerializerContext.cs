@@ -3,6 +3,7 @@ using ChapterTool.Infrastructure.Importing.Media;
 
 namespace ChapterTool.Infrastructure.Configuration;
 
+/// <summary>Provides source-generated JSON metadata for application settings and probe output.</summary>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
     WriteIndented = true)]

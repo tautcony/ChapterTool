@@ -35,7 +35,7 @@ internal sealed class ClipEditingCoordinator(
         }
 
         var transition = ClipSessionTransitions.ToggleCombine(workspace.ClipSession);
-        if (transition.Succeeded && transition.Session is not null)
+        if (transition is { Succeeded: true, Session: not null })
         {
             workspace.ReplaceSession(transition.Session);
         }

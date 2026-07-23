@@ -822,7 +822,7 @@ internal sealed record MplsPlayListMark(
         using var container = stream.CreateMplsContainer(length, 2, MplsParseLimits.MaximumMarkTableLength, "playlist mark table");
         var numberOfPlayListMarks = container.ReadUInt16BigEndian();
         MplsParseLimits.ValidateCount(numberOfPlayListMarks, MplsParseLimits.MaximumPlayListMarks, "playlist mark");
-        if (2L + (numberOfPlayListMarks * 14L) > length)
+        if (2L + numberOfPlayListMarks * 14L > length)
         {
             throw new InvalidDataException("MPLS playlist mark table length cannot contain its declared marks.");
         }
@@ -887,7 +887,7 @@ internal sealed record MplsExtensionData(
         container.SkipBytes(3);
         var numberOfExtDataEntries = container.ReadByteChecked();
         MplsParseLimits.ValidateCount(numberOfExtDataEntries, MplsParseLimits.MaximumExtensionEntries, "extension data entry");
-        if (8L + (numberOfExtDataEntries * 12L) > length)
+        if (8L + numberOfExtDataEntries * 12L > length)
         {
             throw new InvalidDataException("MPLS extension data length cannot contain its declared entries.");
         }
@@ -898,7 +898,7 @@ internal sealed record MplsExtensionData(
             entries.Add(MplsExtDataEntry.Read(container));
         }
 
-        if (dataBlockStartAddress > length || dataBlockStartAddress < 8L + (numberOfExtDataEntries * 12L))
+        if (dataBlockStartAddress > length || dataBlockStartAddress < 8L + numberOfExtDataEntries * 12L)
         {
             throw new InvalidDataException("MPLS extension data block start address exceeds extension length.");
         }

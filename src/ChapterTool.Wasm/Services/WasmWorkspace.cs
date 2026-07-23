@@ -21,6 +21,8 @@ public sealed class WasmWorkspace : IDisposable
     private readonly ChapterOutputProjectionService projectionService = new();
     private readonly ChapterEditingService editingService;
     private readonly WasmLocalizer localizer;
+    private readonly List<WasmLogEntry> logs = [];
+    private readonly HashSet<int> selectedRowIndexes = [];
 
     private ChapterImportResult? importResult;
     private ChapterSet? baseChapterSet;
@@ -31,12 +33,10 @@ public sealed class WasmWorkspace : IDisposable
     private bool isClipCombined;
     private List<ChapterRowModel> rows = [];
     private int selectedFrameRateIndex;
-    private readonly List<WasmLogEntry> logs = [];
-    private readonly HashSet<int> selectedRowIndexes = [];
     private int selectionAnchor = -1;
     private LoadedSourceSnapshot? lastLoadedSource;
     private string chapterNameTemplateText = string.Empty;
-    private string chapterNameTemplateStatus = string.Empty;
+    private string chapterNameTemplateStatus;
     private string? statusLocalizationKey;
     private object[] statusLocalizationArgs = [];
 
@@ -152,13 +152,13 @@ public sealed class WasmWorkspace : IDisposable
 
     public bool AutoGenerateNames => ChapterNameModeIndex == 1;
 
-    public string ChapterNameTemplateText
+    public string? ChapterNameTemplateText
     {
         get => chapterNameTemplateText;
         private set => chapterNameTemplateText = value ?? string.Empty;
     }
 
-    public string ChapterNameTemplateStatus
+    public string? ChapterNameTemplateStatus
     {
         get => chapterNameTemplateStatus;
         private set => chapterNameTemplateStatus = value ?? string.Empty;
@@ -324,7 +324,7 @@ public sealed class WasmWorkspace : IDisposable
         }
 
         SelectedRowIndex = selectedRowIndexes.Count > 0
-            ? (selectedRowIndexes.Contains(index) ? index : selectedRowIndexes.Max())
+            ? selectedRowIndexes.Contains(index) ? index : selectedRowIndexes.Max()
             : -1;
         SetLocalizedStatus("Status.SelectedRows", selectedRowIndexes.Count);
         AddLog("Info", StatusText);
@@ -1091,6 +1091,7 @@ public sealed class WasmWorkspace : IDisposable
     private FrameInfoResult ApplyFrames(ChapterSet info)
     {
         var option = ResolveSelectedFrameRateOption();
+
         // Auto (LegacyMplsCode == 0): detect when rounding, otherwise still need a valid option for fps.
         return frameRateService.UpdateFrames(info, option, RoundFrames, FrameAccuracyTolerance);
     }
@@ -1119,7 +1120,7 @@ public sealed class WasmWorkspace : IDisposable
                 continue;
             }
 
-            if (!option.IsValid && option.LegacyMplsCode == 5)
+            if (option is { IsValid: false, LegacyMplsCode: 5 })
             {
                 // Skip reserved placeholder (matches Avalonia combo useful entries).
                 continue;

@@ -137,7 +137,7 @@ public sealed class SettingsMigrationTests
         var settings = await new ChapterToolSettingsStore(root).LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(ThemeSettings.Default, settings.Theme);
-        Assert.Equal(new FontSettings("Inter", ""), settings.Font);
+        Assert.Equal(new FontSettings("Inter", string.Empty), settings.Font);
         Assert.Equal(originalWriteTime, File.GetLastWriteTimeUtc(path));
     }
 

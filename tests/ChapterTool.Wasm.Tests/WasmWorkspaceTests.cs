@@ -1,4 +1,3 @@
-using System.Text;
 using System.Runtime.Versioning;
 using ChapterTool.Core.Models;
 using ChapterTool.Wasm.Services;
@@ -12,12 +11,12 @@ public sealed class WasmWorkspaceTests
     public async Task LoadAndReloadRestoresLastSuccessfulSource()
     {
         var workspace = CreateWorkspace();
-        var first = Encoding.UTF8.GetBytes("""
-            CHAPTER01=00:00:00.000
-            CHAPTER01NAME=Opening
-            CHAPTER02=00:01:00.000
-            CHAPTER02NAME=Middle
-            """);
+        var first = """
+                    CHAPTER01=00:00:00.000
+                    CHAPTER01NAME=Opening
+                    CHAPTER02=00:01:00.000
+                    CHAPTER02NAME=Middle
+                    """u8.ToArray();
         await workspace.LoadAsync("first.txt", first);
         Assert.Equal(2, workspace.Rows.Count);
         Assert.True(workspace.CanReload);
@@ -40,15 +39,15 @@ public sealed class WasmWorkspaceTests
         // Seed via public load of text first, then inject MPLS groups through Append path by loading synthetic binary is hard.
         // Instead exercise Append against a workspace prepared with a successful text load and replace via Append failure path,
         // then verify non-MPLS append is rejected without clearing the session.
-        await workspace.LoadAsync("sample.txt", Encoding.UTF8.GetBytes("""
-            CHAPTER01=00:00:00.000
-            CHAPTER01NAME=Opening
-            CHAPTER02=00:01:00.000
-            CHAPTER02NAME=Middle
-            """));
+        await workspace.LoadAsync("sample.txt", """
+                                                CHAPTER01=00:00:00.000
+                                                CHAPTER01NAME=Opening
+                                                CHAPTER02=00:01:00.000
+                                                CHAPTER02NAME=Middle
+                                                """u8.ToArray());
         Assert.False(workspace.CanAppendMpls);
         var beforeCount = workspace.Rows.Count;
-        await workspace.AppendMplsAsync("not-mpls.txt", Encoding.UTF8.GetBytes("CHAPTER01=00:00:00.000\nCHAPTER01NAME=X\n"));
+        await workspace.AppendMplsAsync("not-mpls.txt", "CHAPTER01=00:00:00.000\nCHAPTER01NAME=X\n"u8.ToArray());
         Assert.Equal(beforeCount, workspace.Rows.Count);
         Assert.False(string.IsNullOrWhiteSpace(workspace.SourcePath));
 
@@ -103,10 +102,11 @@ public sealed class WasmWorkspaceTests
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
+
         // Force a known FPS via fixed frame rate option when present.
         if (workspace.FrameRateChoices.Count > 1)
         {
-            workspace.SelectedFrameRateIndex = workspace.FrameRateChoices.First(choice => choice.Index > 0 && choice.Option.IsValid).Index;
+            workspace.SelectedFrameRateIndex = workspace.FrameRateChoices.First(choice => choice is { Index: > 0, Option.IsValid: true }).Index;
         }
 
         var before = workspace.Rows[1].TimeText;

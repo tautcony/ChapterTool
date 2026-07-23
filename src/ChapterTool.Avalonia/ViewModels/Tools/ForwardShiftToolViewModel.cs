@@ -20,4 +20,3 @@ public sealed class ForwardShiftToolViewModel(IChapterEditPort chapterEdit) : Ob
         return ValueTask.CompletedTask;
     });
 }
-

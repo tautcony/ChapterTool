@@ -135,7 +135,7 @@ public sealed class ExternalToolLocatorTests
     {
         var root = CreateTempDirectory();
         var configuredPath = Path.Combine(root, OperatingSystem.IsWindows() ? "ffprobe.txt" : "ffprobe");
-        await File.WriteAllTextAsync(configuredPath, "");
+        await File.WriteAllTextAsync(configuredPath, string.Empty);
         var settingsStore = new ChapterToolSettingsStore(root);
         await settingsStore.SaveAsync(new AppSettings(FfprobePath: configuredPath), TestContext.Current.CancellationToken);
         var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [], new FakeMkvToolNixInstallProbe());
@@ -389,13 +389,13 @@ public sealed class ExternalToolLocatorTests
 
     private static async Task CreateToolFileAsync(string path)
     {
-        await File.WriteAllTextAsync(path, "");
+        await File.WriteAllTextAsync(path, string.Empty);
         MarkExecutable(path);
     }
 
     private static void CreateToolFile(string path)
     {
-        File.WriteAllText(path, "");
+        File.WriteAllText(path, string.Empty);
         MarkExecutable(path);
     }
 
@@ -408,9 +408,7 @@ public sealed class ExternalToolLocatorTests
 
         File.SetUnixFileMode(
             path,
-            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
-            UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
-            UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+            UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
     }
 
     private static ExternalToolLocator CreateLocatorWithoutDefaultCandidates(

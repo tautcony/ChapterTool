@@ -1,9 +1,9 @@
-using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Models;
-using ChapterTool.Core.Transform;
 using System.Globalization;
 using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Exporting;
 

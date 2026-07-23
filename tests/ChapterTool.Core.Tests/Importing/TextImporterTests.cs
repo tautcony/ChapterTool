@@ -1,7 +1,8 @@
-using ChapterTool.Core.Models;
+using System.Diagnostics.CodeAnalysis;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Text;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Importing;
@@ -11,84 +12,117 @@ public sealed class TextImporterTests
     private readonly ChapterTimeFormatter formatter = new();
 
     [Fact]
-    public async Task OgmImporterReadsExistingSampleLeniently()
+    [SuppressMessage("StyleCop.CSharp.SpacingRules", "SA1027:Use tabs correctly", Justification = "Test methods require for tab")]
+    public Task OgmImporterReadsExistingSampleLeniently()
     {
-        var importer = new OgmChapterImporter(formatter);
-        const string ogmText = """
+        try
+        {
+            var importer = new OgmChapterImporter(formatter);
+            const string ogmText = """
 
 
 
 
-                               CHAPTER01 = 00:00:00.000
-                               CHAPTER01NAME=	Chapter 01
+                                   CHAPTER01 = 00:00:00.000
+                                   CHAPTER01NAME=	Chapter 01
 
-                               CHAPTER02=00:00:41.041
-                               CHAPTER02NAME=Chapter 02
-                               CHAPTER03=00:02:12.799
-                               CHAPTER03NAME=Chapter 03
-                               CHAPTER04=00:03:36.258
+                                   CHAPTER02=00:00:41.041
+                                   CHAPTER02NAME=Chapter 02
+                                   CHAPTER03=00:02:12.799
+                                   CHAPTER03NAME=Chapter 03
+                                   CHAPTER04=00:03:36.258
 
-                               CHAPTER04NAME=Chapter 04
-                               CHAPTER05=00:04:37.944
-                               CHAPTER05NAME=Chapter 05
-                               CHAPTER06=00:05:44.928
-                               CHAPTER06NAME=Chapter 06
+                                   CHAPTER04NAME=Chapter 04
+                                   CHAPTER05=00:04:37.944
+                                   CHAPTER05NAME=Chapter 05
+                                   CHAPTER06=00:05:44.928
+                                   CHAPTER06NAME=Chapter 06
 
-                               CHAPTER07=00:08:59.247
-                               """;
-        var result = importer.ImportText(ogmText);
+                                   CHAPTER07=00:08:59.247
+                                   """;
+            var result = importer.ImportText(ogmText);
 
-        Assert.True(result.Success);
-        Assert.True(result.IsPartial);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.PartialParse);
-        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(6, chapters.Count);
-        Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
-        Assert.Equal("Chapter 06", chapters[5].Name);
+            Assert.True(result.Success);
+            Assert.True(result.IsPartial);
+            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.PartialParse);
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
+            Assert.Equal(6, chapters.Count);
+            Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
+            Assert.Equal("Chapter 06", chapters[5].Name);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task OgmImporterNormalizesFirstTimestamp()
+    public Task OgmImporterNormalizesFirstTimestamp()
     {
-        var importer = new OgmChapterImporter(formatter);
-        var result = importer.ImportText(
-            """
-            CHAPTER01=00:01:00.000
-            CHAPTER01NAME=Intro
-            CHAPTER02=00:01:30.000
-            CHAPTER02NAME=Middle
-            """);
+        try
+        {
+            var importer = new OgmChapterImporter(formatter);
+            var result = importer.ImportText(
+                """
+                CHAPTER01=00:01:00.000
+                CHAPTER01NAME=Intro
+                CHAPTER02=00:01:30.000
+                CHAPTER02NAME=Middle
+                """);
 
-        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
-        Assert.Equal(TimeSpan.FromSeconds(30), chapters[1].StartTime);
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
+            Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
+            Assert.Equal(TimeSpan.FromSeconds(30), chapters[1].StartTime);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task OgmImporterFailsInvalidFirstLine()
+    public Task OgmImporterFailsInvalidFirstLine()
     {
-        var importer = new OgmChapterImporter(formatter);
-        var result = importer.ImportText("CHAPTER01NAME=Intro");
+        try
+        {
+            var importer = new OgmChapterImporter(formatter);
+            var result = importer.ImportText("CHAPTER01NAME=Intro");
 
-        Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OgmInvalidFirstLine);
+            Assert.False(result.Success);
+            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OgmInvalidFirstLine);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task OgmImporterReturnsPartialAfterMalformedLaterContent()
+    public Task OgmImporterReturnsPartialAfterMalformedLaterContent()
     {
-        var importer = new OgmChapterImporter(formatter);
-        var result = importer.ImportText(
-            """
-            CHAPTER01=00:00:00.000
-            CHAPTER01NAME=Intro
-            unexpected
-            """);
+        try
+        {
+            var importer = new OgmChapterImporter(formatter);
+            var result = importer.ImportText(
+                """
+                CHAPTER01=00:00:00.000
+                CHAPTER01NAME=Intro
+                unexpected
+                """);
 
-        Assert.True(result.Success);
-        Assert.True(result.IsPartial);
-        Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Warning);
+            Assert.True(result.Success);
+            Assert.True(result.IsPartial);
+            Assert.Single(result.Groups.Single().Entries.Single().ChapterSet.Chapters);
+            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Severity == DiagnosticSeverity.Warning);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
@@ -211,173 +245,229 @@ public sealed class TextImporterTests
     }
 
     [Fact]
-    public async Task WebVttImporterReadsExistingSample()
+    public Task WebVttImporterReadsExistingSample()
     {
-        var importer = new WebVttChapterImporter();
-        const string vttText = """
-            WEBVTT
+        try
+        {
+            var importer = new WebVttChapterImporter();
+            const string vttText = """
+                                   WEBVTT
 
-            chapter-1
-            00:00:00.000 --> 00:00:26.000
-            Introduction
+                                   chapter-1
+                                   00:00:00.000 --> 00:00:26.000
+                                   Introduction
 
-            chapter-2
-            00:00:28.206 --> 00:01:02.000
-            Watch out!
+                                   chapter-2
+                                   00:00:28.206 --> 00:01:02.000
+                                   Watch out!
 
-            chapter-3
-            00:01:02.034 --> 00:03:10.000
-            Let's go
+                                   chapter-3
+                                   00:01:02.034 --> 00:03:10.000
+                                   Let's go
 
-            chapter-4
-            00:03:10.014 --> 00:05:40.000
-            The machine
+                                   chapter-4
+                                   00:03:10.014 --> 00:05:40.000
+                                   The machine
 
-            chapter-5
-            00:05:41.208 --> 00:07:26.000
-            Close your eyes
+                                   chapter-5
+                                   00:05:41.208 --> 00:07:26.000
+                                   Close your eyes
 
-            chapter-6
-            00:07:27.125 --> 00:08:12.000
-            There's nothing there
+                                   chapter-6
+                                   00:07:27.125 --> 00:08:12.000
+                                   There's nothing there
 
-            chapter-7
-            00:08:13.000 --> 00:09:07.500
-            The Colossus of Rhodes
-            """;
-        var result = WebVttChapterImporter.ImportText(vttText);
+                                   chapter-7
+                                   00:08:13.000 --> 00:09:07.500
+                                   The Colossus of Rhodes
+                                   """;
+            var result = WebVttChapterImporter.ImportText(vttText);
 
-        Assert.True(result.Success);
-        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(7, chapters.Count);
-        Assert.Equal("Introduction", chapters[0].Name);
-        Assert.Equal(TimeSpan.FromMilliseconds(28206), chapters[1].StartTime);
-        Assert.Equal(TimeSpan.FromSeconds(26), chapters[0].EndTime);
-        Assert.Equal(TimeSpan.FromMilliseconds(547500), chapters[^1].EndTime);
-        Assert.Equal(TimeSpan.FromMilliseconds(547500), result.Groups.Single().Entries.Single().ChapterSet.Duration);
+            Assert.True(result.Success);
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
+            Assert.Equal(7, chapters.Count);
+            Assert.Equal("Introduction", chapters[0].Name);
+            Assert.Equal(TimeSpan.FromMilliseconds(28206), chapters[1].StartTime);
+            Assert.Equal(TimeSpan.FromSeconds(26), chapters[0].EndTime);
+            Assert.Equal(TimeSpan.FromMilliseconds(547500), chapters[^1].EndTime);
+            Assert.Equal(TimeSpan.FromMilliseconds(547500), result.Groups.Single().Entries.Single().ChapterSet.Duration);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task WebVttImporterSkipsCueIds()
+    public Task WebVttImporterSkipsCueIds()
     {
-        var result = WebVttChapterImporter.ImportText(
-            """
-            WEBVTT
+        try
+        {
+            var result = WebVttChapterImporter.ImportText(
+                """
+                WEBVTT
 
-            cue-1
-            00:00:03.000 --> 00:00:05.000
-            Intro
-            """);
+                cue-1
+                00:00:03.000 --> 00:00:05.000
+                Intro
+                """);
 
-        Assert.True(result.Success);
-        Assert.Equal("Intro", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+            Assert.True(result.Success);
+            Assert.Equal("Intro", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Theory]
     [InlineData("BAD\n\n00:00:00.000 --> 00:00:01.000\nIntro", ChapterDiagnosticSource.WebVttHeader, ChapterDiagnosticReason.Invalid)]
     [InlineData("WEBVTT\n\nbad timing\nIntro", ChapterDiagnosticSource.WebVttCue, ChapterDiagnosticReason.Malformed)]
     [InlineData("WEBVTT\n\n00:00:00.000 --> 00:00:01.000 align:start\nIntro", ChapterDiagnosticSource.WebVttTimingSettings, ChapterDiagnosticReason.Unsupported)]
-    public async Task WebVttImporterFailsMalformedInput(string text, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
+    public Task WebVttImporterFailsMalformedInput(string text, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
-        var importer = new WebVttChapterImporter();
-        var result = WebVttChapterImporter.ImportText(text);
+        try
+        {
+            var importer = new WebVttChapterImporter();
+            var result = WebVttChapterImporter.ImportText(text);
 
-        Assert.False(result.Success);
-        Assert.Empty(result.Groups);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
+            Assert.False(result.Success);
+            Assert.Empty(result.Groups);
+            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task XmlImporterCreatesOneOptionPerEdition()
+    public Task XmlImporterCreatesOneOptionPerEdition()
     {
-        var importer = new XmlChapterImporter(formatter);
-        var result = importer.ImportText(
-            """
-            <Chapters>
-              <EditionEntry>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>Edition 1</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-              <EditionEntry>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>Edition 2</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-            </Chapters>
-            """);
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            var result = importer.ImportText(
+                """
+                <Chapters>
+                  <EditionEntry>
+                    <ChapterAtom>
+                      <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                      <ChapterDisplay><ChapterString>Edition 1</ChapterString></ChapterDisplay>
+                    </ChapterAtom>
+                  </EditionEntry>
+                  <EditionEntry>
+                    <ChapterAtom>
+                      <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                      <ChapterDisplay><ChapterString>Edition 2</ChapterString></ChapterDisplay>
+                    </ChapterAtom>
+                  </EditionEntry>
+                </Chapters>
+                """);
 
-        Assert.True(result.Success);
-        Assert.Equal(2, result.Groups.Single().Entries.Count);
-        Assert.Equal("Edition 1", result.Groups.Single().Entries[0].ChapterSet.Chapters.Single().Name);
-        Assert.Equal("Edition 2", result.Groups.Single().Entries[1].ChapterSet.Chapters.Single().Name);
+            Assert.True(result.Success);
+            Assert.Equal(2, result.Groups.Single().Entries.Count);
+            Assert.Equal("Edition 1", result.Groups.Single().Entries[0].ChapterSet.Chapters.Single().Name);
+            Assert.Equal("Edition 2", result.Groups.Single().Entries[1].ChapterSet.Chapters.Single().Name);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task XmlImporterFlattensNestedAtomsAndPreservesEndMetadata()
+    public Task XmlImporterFlattensNestedAtomsAndPreservesEndMetadata()
     {
-        var importer = new XmlChapterImporter(formatter);
-        var result = importer.ImportText(
-            """
-            <Chapters>
-              <EditionEntry>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                  <ChapterTimeEnd>00:00:30.000000000</ChapterTimeEnd>
-                  <ChapterDisplay><ChapterString>Parent</ChapterString></ChapterDisplay>
-                  <ChapterAtom>
-                    <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
-                    <ChapterDisplay><ChapterString>Child</ChapterString></ChapterDisplay>
-                  </ChapterAtom>
-                </ChapterAtom>
-              </EditionEntry>
-            </Chapters>
-            """);
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            var result = importer.ImportText(
+                """
+                <Chapters>
+                  <EditionEntry>
+                    <ChapterAtom>
+                      <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                      <ChapterTimeEnd>00:00:30.000000000</ChapterTimeEnd>
+                      <ChapterDisplay><ChapterString>Parent</ChapterString></ChapterDisplay>
+                      <ChapterAtom>
+                        <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                        <ChapterDisplay><ChapterString>Child</ChapterString></ChapterDisplay>
+                      </ChapterAtom>
+                    </ChapterAtom>
+                  </EditionEntry>
+                </Chapters>
+                """);
 
-        Assert.True(result.Success);
-        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(["Parent", "Child"], chapters.Select(chapter => chapter.Name));
-        Assert.Equal(TimeSpan.FromSeconds(30), chapters[0].EndTime);
-        Assert.Null(chapters[1].EndTime);
+            Assert.True(result.Success);
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
+            Assert.Equal(["Parent", "Child"], chapters.Select(chapter => chapter.Name));
+            Assert.Equal(TimeSpan.FromSeconds(30), chapters[0].EndTime);
+            Assert.Null(chapters[1].EndTime);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task XmlImporterRemovesAdjacentDuplicateTimes()
+    public Task XmlImporterRemovesAdjacentDuplicateTimes()
     {
-        var importer = new XmlChapterImporter(formatter);
-        var result = importer.ImportText(
-            """
-            <Chapters>
-              <EditionEntry>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>Duplicate</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                  <ChapterDisplay><ChapterString>Kept</ChapterString></ChapterDisplay>
-                </ChapterAtom>
-              </EditionEntry>
-            </Chapters>
-            """);
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            var result = importer.ImportText(
+                """
+                <Chapters>
+                  <EditionEntry>
+                    <ChapterAtom>
+                      <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                      <ChapterDisplay><ChapterString>Duplicate</ChapterString></ChapterDisplay>
+                    </ChapterAtom>
+                    <ChapterAtom>
+                      <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                      <ChapterDisplay><ChapterString>Kept</ChapterString></ChapterDisplay>
+                    </ChapterAtom>
+                  </EditionEntry>
+                </Chapters>
+                """);
 
-        var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
-        Assert.Equal("Kept", chapter.Name);
-        Assert.Equal(1, chapter.DisplayNumber);
+            var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
+            Assert.Equal("Kept", chapter.Name);
+            Assert.Equal(1, chapter.DisplayNumber);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Theory]
     [InlineData("<NotChapters />", ChapterDiagnosticSource.XmlRoot, ChapterDiagnosticReason.Invalid)]
     [InlineData("<Chapters><EditionEntry><ChapterAtom><ChapterDisplay><ChapterString>No Time</ChapterString></ChapterDisplay></ChapterAtom></EditionEntry></Chapters>", ChapterDiagnosticSource.XmlChapters, ChapterDiagnosticReason.None)]
-    public async Task XmlImporterFailsInvalidDocuments(string xml, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
+    public Task XmlImporterFailsInvalidDocuments(string xml, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
-        var importer = new XmlChapterImporter(formatter);
-        var result = importer.ImportText(xml);
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            var result = importer.ImportText(xml);
 
-        Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
+            Assert.False(result.Success);
+            Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
@@ -451,101 +541,117 @@ public sealed class TextImporterTests
     }
 
     [Fact]
-    public async Task XmlHiddenChapterSampleImportsBothEditionsWithEndTimes()
+    public Task XmlHiddenChapterSampleImportsBothEditionsWithEndTimes()
     {
-        var importer = new XmlChapterImporter(formatter);
-        const string xmlText = """
-                               <?xml version="1.0" encoding="ISO-8859-1"?>
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            const string xmlText = """
+                                   <?xml version="1.0" encoding="ISO-8859-1"?>
 
-                               <Chapters>
-                                 <EditionEntry>
-                                   <ChapterAtom>
-                                     <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
-                                     <ChapterDisplay>
-                                       <ChapterString>Intro</ChapterString>
-                                       <ChapterLanguage>eng</ChapterLanguage>
-                                     </ChapterDisplay>
-                                   </ChapterAtom>
-                                   <ChapterAtom>
-                                     <ChapterTimeStart>00:01:00.000</ChapterTimeStart>
-                                     <ChapterDisplay>
-                                       <ChapterString>Act 1</ChapterString>
-                                       <ChapterLanguage>eng</ChapterLanguage>
-                                     </ChapterDisplay>
-                                   </ChapterAtom>
-                                   <ChapterAtom>
-                                     <ChapterTimeStart>00:05:30.000</ChapterTimeStart>
-                                     <ChapterDisplay>
-                                       <ChapterString>Act 2</ChapterString>
-                                       <ChapterLanguage>eng</ChapterLanguage>
-                                     </ChapterDisplay>
-                                   </ChapterAtom>
-                                   <ChapterAtom>
-                                     <ChapterTimeStart>00:12:20.000</ChapterTimeStart>
-                                     <ChapterTimeEnd>00:12:55.000</ChapterTimeEnd>
-                                     <ChapterDisplay>
-                                       <ChapterString>Credits</ChapterString>
-                                       <ChapterLanguage>eng</ChapterLanguage>
-                                     </ChapterDisplay>
-                                   </ChapterAtom>
-                                 </EditionEntry>
+                                   <Chapters>
+                                     <EditionEntry>
+                                       <ChapterAtom>
+                                         <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
+                                         <ChapterDisplay>
+                                           <ChapterString>Intro</ChapterString>
+                                           <ChapterLanguage>eng</ChapterLanguage>
+                                         </ChapterDisplay>
+                                       </ChapterAtom>
+                                       <ChapterAtom>
+                                         <ChapterTimeStart>00:01:00.000</ChapterTimeStart>
+                                         <ChapterDisplay>
+                                           <ChapterString>Act 1</ChapterString>
+                                           <ChapterLanguage>eng</ChapterLanguage>
+                                         </ChapterDisplay>
+                                       </ChapterAtom>
+                                       <ChapterAtom>
+                                         <ChapterTimeStart>00:05:30.000</ChapterTimeStart>
+                                         <ChapterDisplay>
+                                           <ChapterString>Act 2</ChapterString>
+                                           <ChapterLanguage>eng</ChapterLanguage>
+                                         </ChapterDisplay>
+                                       </ChapterAtom>
+                                       <ChapterAtom>
+                                         <ChapterTimeStart>00:12:20.000</ChapterTimeStart>
+                                         <ChapterTimeEnd>00:12:55.000</ChapterTimeEnd>
+                                         <ChapterDisplay>
+                                           <ChapterString>Credits</ChapterString>
+                                           <ChapterLanguage>eng</ChapterLanguage>
+                                         </ChapterDisplay>
+                                       </ChapterAtom>
+                                     </EditionEntry>
 
-                                 <EditionEntry>
-                                   <ChapterAtom>
-                                     <ChapterTimeStart>00:02:00.000</ChapterTimeStart>
-                                     <ChapterTimeEnd>00:04:00.000</ChapterTimeEnd>
-                                     <ChapterDisplay>
-                                       <ChapterString>A hidden and not enabled chapter.</ChapterString>
-                                       <ChapterLanguage>eng</ChapterLanguage>
-                                     </ChapterDisplay>
-                                     <ChapterFlagHidden>1</ChapterFlagHidden>
-                                     <ChapterFlagEnabled>0</ChapterFlagEnabled>
-                                   </ChapterAtom>
-                                 </EditionEntry>
-                               </Chapters>
-                               """;
+                                     <EditionEntry>
+                                       <ChapterAtom>
+                                         <ChapterTimeStart>00:02:00.000</ChapterTimeStart>
+                                         <ChapterTimeEnd>00:04:00.000</ChapterTimeEnd>
+                                         <ChapterDisplay>
+                                           <ChapterString>A hidden and not enabled chapter.</ChapterString>
+                                           <ChapterLanguage>eng</ChapterLanguage>
+                                         </ChapterDisplay>
+                                         <ChapterFlagHidden>1</ChapterFlagHidden>
+                                         <ChapterFlagEnabled>0</ChapterFlagEnabled>
+                                       </ChapterAtom>
+                                     </EditionEntry>
+                                   </Chapters>
+                                   """;
 
-        var result = importer.ImportText(xmlText);
+            var result = importer.ImportText(xmlText);
 
-        Assert.True(result.Success, Diagnostics(result));
-        var entries = result.Groups.Single().Entries;
-        Assert.Equal(2, entries.Count);
-        Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], entries[0].ChapterSet.Chapters.Select(static chapter => chapter.Name));
-        Assert.Equal(TimeSpan.FromMinutes(2), entries[1].ChapterSet.Chapters.Single().StartTime);
-        Assert.Equal(TimeSpan.FromMinutes(4), entries[1].ChapterSet.Chapters.Single().EndTime);
-        Assert.Equal("A hidden and not enabled chapter.", entries[1].ChapterSet.Chapters.Single().Name);
+            Assert.True(result.Success, Diagnostics(result));
+            var entries = result.Groups.Single().Entries;
+            Assert.Equal(2, entries.Count);
+            Assert.Equal(["Intro", "Act 1", "Act 2", "Credits"], entries[0].ChapterSet.Chapters.Select(static chapter => chapter.Name));
+            Assert.Equal(TimeSpan.FromMinutes(2), entries[1].ChapterSet.Chapters.Single().StartTime);
+            Assert.Equal(TimeSpan.FromMinutes(4), entries[1].ChapterSet.Chapters.Single().EndTime);
+            Assert.Equal("A hidden and not enabled chapter.", entries[1].ChapterSet.Chapters.Single().Name);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task XmlImporterFlattensDtdFreeNestedChapters()
+    public Task XmlImporterFlattensDtdFreeNestedChapters()
     {
-        var importer = new XmlChapterImporter(formatter);
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
 
-        var result = importer.ImportText(
-            """
-            <Chapters>
-              <EditionEntry>
-                <ChapterAtom>
-                  <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
-                  <ChapterTimeEnd>00:06:24.000</ChapterTimeEnd>
-                  <ChapterDisplay><ChapterString>Overture</ChapterString></ChapterDisplay>
-                  <ChapterAtom>
-                    <ChapterTimeStart>00:06:24.000</ChapterTimeStart>
-                    <ChapterDisplay><ChapterString>Dialog</ChapterString></ChapterDisplay>
-                  </ChapterAtom>
-                </ChapterAtom>
-              </EditionEntry>
-            </Chapters>
-            """);
+            var result = importer.ImportText(
+                """
+                <Chapters>
+                  <EditionEntry>
+                    <ChapterAtom>
+                      <ChapterTimeStart>00:00:00.000</ChapterTimeStart>
+                      <ChapterTimeEnd>00:06:24.000</ChapterTimeEnd>
+                      <ChapterDisplay><ChapterString>Overture</ChapterString></ChapterDisplay>
+                      <ChapterAtom>
+                        <ChapterTimeStart>00:06:24.000</ChapterTimeStart>
+                        <ChapterDisplay><ChapterString>Dialog</ChapterString></ChapterDisplay>
+                      </ChapterAtom>
+                    </ChapterAtom>
+                  </EditionEntry>
+                </Chapters>
+                """);
 
-        Assert.True(result.Success, Diagnostics(result));
-        var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
-        Assert.Equal(2, chapters.Count);
-        Assert.Equal("Overture", chapters[0].Name);
-        Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
-        Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[0].EndTime);
-        Assert.Equal("Dialog", chapters[^1].Name);
-        Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[^1].StartTime);
+            Assert.True(result.Success, Diagnostics(result));
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
+            Assert.Equal(2, chapters.Count);
+            Assert.Equal("Overture", chapters[0].Name);
+            Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
+            Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[0].EndTime);
+            Assert.Equal("Dialog", chapters[^1].Name);
+            Assert.Equal(TimeSpan.FromMinutes(6).Add(TimeSpan.FromSeconds(24)), chapters[^1].StartTime);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
@@ -575,68 +681,84 @@ public sealed class TextImporterTests
     }
 
     [Fact]
-    public async Task XmlImporterSetsDefaultEntryIndexFromEditionFlagDefault()
+    public Task XmlImporterSetsDefaultEntryIndexFromEditionFlagDefault()
     {
-        var importer = new XmlChapterImporter(formatter);
-        const string xml = """
-                           <?xml version="1.0" encoding="UTF-8"?>
-                           <Chapters>
-                             <EditionEntry>
-                               <EditionFlagDefault>0</EditionFlagDefault>
-                               <ChapterAtom>
-                                 <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                                 <ChapterDisplay><ChapterString>First Edition</ChapterString></ChapterDisplay>
-                               </ChapterAtom>
-                             </EditionEntry>
-                             <EditionEntry>
-                               <EditionFlagDefault>1</EditionFlagDefault>
-                               <ChapterAtom>
-                                 <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
-                                 <ChapterDisplay><ChapterString>Default Edition</ChapterString></ChapterDisplay>
-                               </ChapterAtom>
-                             </EditionEntry>
-                           </Chapters>
-                           """;
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            const string xml = """
+                               <?xml version="1.0" encoding="UTF-8"?>
+                               <Chapters>
+                                 <EditionEntry>
+                                   <EditionFlagDefault>0</EditionFlagDefault>
+                                   <ChapterAtom>
+                                     <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                                     <ChapterDisplay><ChapterString>First Edition</ChapterString></ChapterDisplay>
+                                   </ChapterAtom>
+                                 </EditionEntry>
+                                 <EditionEntry>
+                                   <EditionFlagDefault>1</EditionFlagDefault>
+                                   <ChapterAtom>
+                                     <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                                     <ChapterDisplay><ChapterString>Default Edition</ChapterString></ChapterDisplay>
+                                   </ChapterAtom>
+                                 </EditionEntry>
+                               </Chapters>
+                               """;
 
-        var result = importer.ImportText(xml);
+            var result = importer.ImportText(xml);
 
-        Assert.True(result.Success, Diagnostics(result));
-        var group = result.Groups.Single();
-        Assert.Equal(2, group.Entries.Count);
-        Assert.Equal(1, group.DefaultEntryIndex);
-        Assert.Equal("Default Edition", group.Entries[1].ChapterSet.Chapters.Single().Name);
+            Assert.True(result.Success, Diagnostics(result));
+            var group = result.Groups.Single();
+            Assert.Equal(2, group.Entries.Count);
+            Assert.Equal(1, group.DefaultEntryIndex);
+            Assert.Equal("Default Edition", group.Entries[1].ChapterSet.Chapters.Single().Name);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]
-    public async Task XmlImporterKeepsFirstDefaultEditionWhenMultipleEditionsAreDefault()
+    public Task XmlImporterKeepsFirstDefaultEditionWhenMultipleEditionsAreDefault()
     {
-        var importer = new XmlChapterImporter(formatter);
-        const string xml = """
-                           <?xml version="1.0" encoding="UTF-8"?>
-                           <Chapters>
-                             <EditionEntry>
-                               <EditionFlagDefault>1</EditionFlagDefault>
-                               <ChapterAtom>
-                                 <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                                 <ChapterDisplay><ChapterString>First Default</ChapterString></ChapterDisplay>
-                               </ChapterAtom>
-                             </EditionEntry>
-                             <EditionEntry>
-                               <EditionFlagDefault>1</EditionFlagDefault>
-                               <ChapterAtom>
-                                 <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
-                                 <ChapterDisplay><ChapterString>Second Default</ChapterString></ChapterDisplay>
-                               </ChapterAtom>
-                             </EditionEntry>
-                           </Chapters>
-                           """;
+        try
+        {
+            var importer = new XmlChapterImporter(formatter);
+            const string xml = """
+                               <?xml version="1.0" encoding="UTF-8"?>
+                               <Chapters>
+                                 <EditionEntry>
+                                   <EditionFlagDefault>1</EditionFlagDefault>
+                                   <ChapterAtom>
+                                     <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                                     <ChapterDisplay><ChapterString>First Default</ChapterString></ChapterDisplay>
+                                   </ChapterAtom>
+                                 </EditionEntry>
+                                 <EditionEntry>
+                                   <EditionFlagDefault>1</EditionFlagDefault>
+                                   <ChapterAtom>
+                                     <ChapterTimeStart>00:00:10.000000000</ChapterTimeStart>
+                                     <ChapterDisplay><ChapterString>Second Default</ChapterString></ChapterDisplay>
+                                   </ChapterAtom>
+                                 </EditionEntry>
+                               </Chapters>
+                               """;
 
-        var result = importer.ImportText(xml);
+            var result = importer.ImportText(xml);
 
-        Assert.True(result.Success, Diagnostics(result));
-        var group = result.Groups.Single();
-        Assert.Equal(0, group.DefaultEntryIndex);
-        Assert.Equal("First Default", group.Entries[group.DefaultEntryIndex].ChapterSet.Chapters.Single().Name);
+            Assert.True(result.Success, Diagnostics(result));
+            var group = result.Groups.Single();
+            Assert.Equal(0, group.DefaultEntryIndex);
+            Assert.Equal("First Default", group.Entries[group.DefaultEntryIndex].ChapterSet.Chapters.Single().Name);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
     }
 
     [Fact]

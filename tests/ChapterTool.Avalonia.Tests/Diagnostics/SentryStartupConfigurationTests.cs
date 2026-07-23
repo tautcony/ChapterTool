@@ -44,7 +44,7 @@ public sealed class SentryStartupConfigurationTests
         };
 
         var options = SentryStartupConfiguration.FromEnvironment(
-            name => values.GetValueOrDefault(name),
+            values.GetValueOrDefault,
             typeof(SentryStartupConfiguration).Assembly,
             "/tmp/local",
             debugBuild: false);
@@ -72,7 +72,7 @@ public sealed class SentryStartupConfigurationTests
         };
 
         var options = SentryStartupConfiguration.FromEnvironment(
-            name => values.GetValueOrDefault(name),
+            values.GetValueOrDefault,
             typeof(SentryStartupConfiguration).Assembly,
             "/tmp/local",
             debugBuild: false);

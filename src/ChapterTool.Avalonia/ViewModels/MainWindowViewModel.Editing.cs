@@ -8,6 +8,7 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Contains chapter editing and clip-selection behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     private void SelectClip(int index)
@@ -22,32 +23,32 @@ public sealed partial class MainWindowViewModel
             return;
         }
         SelectedClipIndex = Workspace.ClipSession.SelectedIndex;
-        if (currentInfo is null)
+        if (CurrentInfo is null)
         {
             return;
         }
 
-        configuredFrameRate = (decimal)currentInfo.FramesPerSecond;
+        configuredFrameRate = (decimal)CurrentInfo.FramesPerSecond;
         Log("Log.SelectedSourceOption",
             ("index", index),
             ("label", ClipOptions[index].DisplayName),
-            ("source", currentInfo.SourceName ?? string.Empty),
-            ("sourceType", ChapterImportFormats.DisplayName(currentInfo.ImportFormat)),
-            ("chapters", currentInfo.Chapters.Count),
-            ("fps", $"{currentInfo.FramesPerSecond:0.###}"));
-        selectedFrameRateOption = frameRateService.FindByValue((decimal)currentInfo.FramesPerSecond);
+            ("source", CurrentInfo.SourceName ?? string.Empty),
+            ("sourceType", ChapterImportFormats.DisplayName(CurrentInfo.ImportFormat)),
+            ("chapters", CurrentInfo.Chapters.Count),
+            ("fps", $"{CurrentInfo.FramesPerSecond:0.###}"));
+        selectedFrameRateOption = frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
         SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
         ApplyFrameInfo();
     }
 
     private ValueTask EditCell(object? parameter, EditKind kind)
     {
-        if (currentInfo is null || parameter is not ChapterCellEdit edit)
+        if (CurrentInfo is null || parameter is not ChapterCellEdit edit)
         {
             return ValueTask.CompletedTask;
         }
 
-        var result = ClipEditingCoordinator.Edit(currentInfo, edit, kind switch
+        var result = ClipEditingCoordinator.Edit(CurrentInfo, edit, kind switch
         {
             EditKind.Time => ChapterEditKind.Time,
             EditKind.Name => ChapterEditKind.Name,
@@ -68,7 +69,7 @@ public sealed partial class MainWindowViewModel
         var originalGroup = Workspace.ClipSession.OriginalGroup;
         var wasCombined = Workspace.ClipSession.IsCombined;
         var beforeCount = wasCombined
-            ? currentInfo?.Chapters.Count ?? 0
+            ? CurrentInfo?.Chapters.Count ?? 0
             : originalGroup.Entries.Sum(static entry => entry.ChapterSet.Chapters.Count);
 
         var transition = ClipEditingCoordinator.ToggleCombine();
@@ -94,7 +95,7 @@ public sealed partial class MainWindowViewModel
                     ("entries", Workspace.ClipSession.OriginalGroup.Entries.Count),
                     ("sourceType", ChapterImportFormats.DisplayName(Workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat))))),
                 ("before", beforeCount),
-                ("after", currentInfo?.Chapters.Count ?? 0));
+                ("after", CurrentInfo?.Chapters.Count ?? 0));
         }
         else
         {
@@ -104,7 +105,7 @@ public sealed partial class MainWindowViewModel
                     ("entries", originalGroup.Entries.Count),
                     ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat))))),
                 ("before", beforeCount),
-                ("after", currentInfo?.Chapters.Count ?? 0));
+                ("after", CurrentInfo?.Chapters.Count ?? 0));
         }
 
         LogStatus();
@@ -114,11 +115,11 @@ public sealed partial class MainWindowViewModel
     private void ApplyEdit(ChapterEditResult result, string? action = null)
     {
         var effectiveAction = action ?? Localizer.GetString("Action.EditChapters");
-        var before = currentInfo?.Chapters.Count ?? 0;
-        currentInfo = result.ChapterSet;
+        var before = CurrentInfo?.Chapters.Count ?? 0;
+        CurrentInfo = result.ChapterSet;
         ApplyFrameInfo();
         SetStatus(result.Diagnostics.Count == 0 ? "Status.Updated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log("Log.EditChapters", ("action", effectiveAction), ("before", before), ("after", currentInfo.Chapters.Count));
+        Log("Log.EditChapters", ("action", effectiveAction), ("before", before), ("after", CurrentInfo.Chapters.Count));
         LogDiagnostics(effectiveAction, result.Diagnostics);
         LogStatus();
         NotifyStateChanged();
@@ -128,14 +129,14 @@ public sealed partial class MainWindowViewModel
 
     private void ApplyFrameInfo()
     {
-        if (currentInfo is null)
+        if (CurrentInfo is null)
         {
             RefreshRows();
             return;
         }
 
         var outcome = ClipEditingCoordinator.UpdateFrames(
-            currentInfo,
+            CurrentInfo,
             selectedFrameRateOption,
             RoundFrames,
             FrameAccuracyTolerance,
@@ -143,7 +144,7 @@ public sealed partial class MainWindowViewModel
         var result = outcome.FrameResult;
         var detection = outcome.Detection;
         var appliedOption = outcome.AppliedOption;
-        currentInfo = outcome.CurrentChapterSet;
+        CurrentInfo = outcome.CurrentChapterSet;
 
         if (detection is not null)
         {
@@ -166,7 +167,7 @@ public sealed partial class MainWindowViewModel
             ("entry", appliedOption.DisplayName),
             ("fps", $"{result.FramesPerSecond:0.###}"),
             ("round", RoundFrames),
-            ("chapters", currentInfo.Chapters.Count));
+            ("chapters", CurrentInfo.Chapters.Count));
         SyncClipOptionsFromSession();
         OnPropertyChanged(nameof(RelatedMediaReferences));
         RefreshRows();
@@ -175,15 +176,15 @@ public sealed partial class MainWindowViewModel
 
     private void ChangeFpsToSelectedOption()
     {
-        if (currentInfo is null || !selectedFrameRateOption.IsValid)
+        if (CurrentInfo is null || !selectedFrameRateOption.IsValid)
         {
             return;
         }
 
-        var sourceFps = configuredFrameRate ?? (decimal)currentInfo.FramesPerSecond;
+        var sourceFps = configuredFrameRate ?? (decimal)CurrentInfo.FramesPerSecond;
         var targetOption = selectedFrameRateOption;
         var targetFps = targetOption.Value;
-        var result = ChapterFpsTransformService.ChangeFps(currentInfo, sourceFps, targetFps);
+        var result = ChapterFpsTransformService.ChangeFps(CurrentInfo, sourceFps, targetFps);
         if (!result.Success)
         {
             SetStatus(null, diagnostic: result.Diagnostics.FirstOrDefault());
@@ -192,8 +193,8 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        var beforeCount = currentInfo.Chapters.Count;
-        currentInfo = result.Info;
+        var beforeCount = CurrentInfo.Chapters.Count;
+        CurrentInfo = result.Info;
         configuredFrameRate = targetFps;
         ApplyFrameInfo();
         SetStatus("Status.Updated");
@@ -271,7 +272,7 @@ public sealed partial class MainWindowViewModel
         => displayOptionCoordinator.SyncClipDisplayOptions(args, ClipOptions, ClipDisplayOptions);
 
     private int ComboIndexFor(FrameRateOption entry)
-        => displayOptionCoordinator.ComboIndexFor(entry);
+        => DisplayOptionCoordinator.ComboIndexFor(entry);
 
     private FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
         => displayOptionCoordinator.FrameRateOptionForComboIndex(frameRateIndex);

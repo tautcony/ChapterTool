@@ -34,9 +34,9 @@ Keep `TargetFramework` at `net10.0`. The package reuses the existing Core, Infra
 
 The alternative was a runtime-specific self-contained package. A .NET Tool package is platform-neutral and follows the standard `dotnet tool` lifecycle. Self-contained desktop artifacts remain available through the existing release workflow.
 
-### Package Avalonia and CLI in one .NET packaging job
+### Publish CLI and Avalonia as separate CI artifacts
 
-Rename the `publish-app` job to `pack-dotnet`. Keep one matrix entry for each Avalonia runtime. Each runtime entry publishes Avalonia, packs `ChapterTool.nupkg`, and uploads both outputs as one named runtime artifact.
+Rename the `publish-app` job to `pack-dotnet`. Keep one matrix entry for each Avalonia runtime. The build-test job packs the platform-neutral `ChapterTool.nupkg` once and uploads it as `ChapterTool-Cli-nuget`. Each runtime entry publishes only Avalonia and uploads one `ChapterTool-Avalonia-<runtime>` artifact.
 
 The job will not install the packed CLI. Build and pack success provide the required CI gate. CLI behavior remains covered by the existing unit tests.
 
@@ -51,15 +51,16 @@ The alternative was a CLI-specific version and workflow. That would create versi
 - [The `ChapterTool` package ID can be claimed before the first release] -> Reserve or publish the first package promptly. Change the ID only if NuGet.org rejects ownership.
 - [Users without .NET 10 cannot start the tool] -> State the runtime requirement next to the install command.
 - [A wildcard push can include both packages and symbol packages] -> Keep all expected NuGet artifacts in one release directory and use `--skip-duplicate` for retry safety.
-- [The same CLI package is produced once per runtime] -> Keep the package in each runtime artifact as the release contract requires. NuGet publication remains deduplicated by `--skip-duplicate`.
+- [The CLI package and desktop artifacts can be confused in the CI artifact list] -> Use separate artifact names for the CLI package and each Avalonia runtime.
 
 ## Migration Plan
 
 1. Add the tool package metadata and package README to `ChapterTool.Cli`.
 2. Pack the tool into a dedicated NuGet output directory.
-3. Add the CLI to the `pack-dotnet` CI matrix with the Avalonia packages.
-4. Extend the tag-triggered NuGet workflow to build and pack both packages.
-5. Publish a version tag after the NuGet.org trusted publisher permits the `ChapterTool` package.
+3. Pack the CLI once in the build-test job and upload it as a separate NuGet artifact.
+4. Keep one `pack-dotnet` runtime artifact for each Avalonia runtime.
+5. Extend the tag-triggered NuGet workflow to build and pack both packages.
+6. Publish a version tag after the NuGet.org trusted publisher permits the `ChapterTool` package.
 
 Rollback removes or unlists the affected `ChapterTool` package version. `ChapterTool.Core` and desktop releases remain independent artifacts.
 

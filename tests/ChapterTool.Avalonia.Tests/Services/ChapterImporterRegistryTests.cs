@@ -3,9 +3,9 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Services;
-using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Core.Transform;
+using ChapterTool.Infrastructure.Importing.Runtime;
+using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Tests.Services;
 
@@ -204,7 +204,7 @@ public sealed class ChapterImporterRegistryTests
     {
         public string? LastPath { get; private set; }
 
-        public IChapterImporter? Resolve(string path)
+        public IChapterImporter Resolve(string path)
         {
             LastPath = path;
             return importer;

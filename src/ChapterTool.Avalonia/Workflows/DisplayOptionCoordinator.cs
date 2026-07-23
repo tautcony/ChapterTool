@@ -8,17 +8,8 @@ using ChapterTool.Core.Transform;
 namespace ChapterTool.Avalonia.Workflows;
 
 /// <summary>Builds and synchronizes localized selector projections used by the shell.</summary>
-internal sealed class DisplayOptionCoordinator
+internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRateService frameRateService)
 {
-    private readonly IAppLocalizer localizer;
-    private readonly IFrameRateService frameRateService;
-
-    public DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRateService frameRateService)
-    {
-        this.localizer = localizer;
-        this.frameRateService = frameRateService;
-    }
-
     public void SyncClipDisplayOptions(
         NotifyCollectionChangedEventArgs args,
         IReadOnlyList<ChapterImportEntry> clipOptions,
@@ -56,13 +47,14 @@ internal sealed class DisplayOptionCoordinator
             case NotifyCollectionChangedAction.Move when args is { OldStartingIndex: >= 0, NewStartingIndex: >= 0 }:
                 displayOptions.Move(args.OldStartingIndex, args.NewStartingIndex);
                 break;
+            case NotifyCollectionChangedAction.Reset:
             default:
                 RebuildClipDisplayOptions(clipOptions, displayOptions);
                 break;
         }
     }
 
-    public void RebuildClipDisplayOptions(
+    public static void RebuildClipDisplayOptions(
         IReadOnlyList<ChapterImportEntry> clipOptions,
         ObservableCollection<SelectorDisplayOption> displayOptions)
     {
@@ -97,7 +89,7 @@ internal sealed class DisplayOptionCoordinator
     public void RefreshXmlLanguageDisplayOptions(ObservableCollection<SelectorDisplayOption> options) =>
         UpdateOptions(options, XmlLanguageDisplay.Options(localizer));
 
-    public int ComboIndexFor(FrameRateOption entry) =>
+    public static int ComboIndexFor(FrameRateOption entry) =>
         entry.LegacyMplsCode == 0 ? 0 : entry.IsValid ? entry.LegacyMplsCode : -1;
 
     public FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)

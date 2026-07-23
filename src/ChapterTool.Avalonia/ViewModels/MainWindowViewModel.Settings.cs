@@ -1,5 +1,6 @@
 namespace ChapterTool.Avalonia.ViewModels;
 
+/// <summary>Contains settings loading behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     public async ValueTask LoadSettingsAsync(CancellationToken cancellationToken)

@@ -111,6 +111,7 @@ internal sealed record LoadWorkflowResult(
     ClipSession? Session)
 {
     public static LoadWorkflowResult EmptyPath { get; } = new(LoadWorkflowState.EmptyPath, null, null);
+
     public static LoadWorkflowResult Stale { get; } = new(LoadWorkflowState.Stale, null, null);
 }
 
@@ -130,5 +131,6 @@ internal sealed record AppendWorkflowResult(
     ClipSession? Session)
 {
     public static AppendWorkflowResult NoSession { get; } = new(AppendWorkflowState.NoSession, null, null, null);
+
     public static AppendWorkflowResult Stale { get; } = new(AppendWorkflowState.Stale, null, null, null);
 }

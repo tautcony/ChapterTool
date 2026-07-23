@@ -1,6 +1,6 @@
 using Avalonia;
-using ChapterTool.CommandLine;
 using ChapterTool.Avalonia.Diagnostics;
+using ChapterTool.CommandLine;
 using Optris.Icons.Avalonia;
 using Optris.Icons.Avalonia.FontAwesome;
 
