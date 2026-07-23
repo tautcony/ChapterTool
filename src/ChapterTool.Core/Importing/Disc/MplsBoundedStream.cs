@@ -58,7 +58,7 @@ internal sealed class MplsBoundedStream : Stream
         ArgumentNullException.ThrowIfNull(buffer);
         if (offset < 0 || count < 0 || offset > buffer.Length - count)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(nameof(offset));
         }
 
         var boundedCount = (int)Math.Min(count, Remaining);

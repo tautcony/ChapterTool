@@ -66,7 +66,7 @@ public sealed class ProjectionState
         return true;
     }
 
-    public bool SetChapterNameTemplateText(string value)
+    public bool SetChapterNameTemplateText(string? value)
     {
         value ??= string.Empty;
         if (string.Equals(ChapterNameTemplateText, value, StringComparison.Ordinal))
@@ -112,7 +112,7 @@ public sealed class ProjectionState
         return true;
     }
 
-    public bool SetExpressionPresetId(string value)
+    public bool SetExpressionPresetId(string? value)
     {
         value ??= string.Empty;
         if (string.Equals(ExpressionPresetId, value, StringComparison.Ordinal))
@@ -124,7 +124,7 @@ public sealed class ProjectionState
         return true;
     }
 
-    public bool SetExpressionSourceName(string value)
+    public bool SetExpressionSourceName(string? value)
     {
         value ??= string.Empty;
         if (string.Equals(ExpressionSourceName, value, StringComparison.Ordinal))
@@ -142,8 +142,8 @@ public sealed class ProjectionState
     public void ApplyExpressionFields(
         string expression,
         bool applyExpression,
-        string expressionPresetId,
-        string expressionSourceName)
+        string? expressionPresetId,
+        string? expressionSourceName)
     {
         Expression = string.IsNullOrWhiteSpace(expression) ? "t" : expression;
         ApplyExpression = applyExpression;

@@ -151,6 +151,7 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 Coverage entry point:
 
 - `scripts/test-coverage.sh` runs the four test projects in sequence. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
+- `scripts/analyzer-report.sh` builds the main solution with the compiler `ErrorLog` property. It parses the SARIF report with `jq`. It prints all diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to select StyleCop diagnostics. The script writes the raw report under `artifacts/analyzers`.
 
 - Maintained publish entry points:
   - `scripts/publish.sh`

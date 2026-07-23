@@ -324,7 +324,7 @@ public sealed partial class MainWindow : Window
             return true;
         }
 
-        return FocusManager?.GetFocusedElement() is Visual focused
+        return FocusManager.GetFocusedElement() is Visual focused
             && IsTextInputVisual(focused);
     }
 
@@ -342,44 +342,28 @@ public sealed partial class MainWindow : Window
         var control = args.KeyModifiers.HasFlag(KeyModifiers.Control);
         var alt = args.KeyModifiers.HasFlag(KeyModifiers.Alt);
 
-        if (control && args.Key == Key.S)
+        switch (control)
         {
-            return "Ctrl+S";
+            case true when args.Key == Key.S:
+                return "Ctrl+S";
+            case true when args.Key == Key.O:
+                return "Ctrl+O";
+            case true when args.Key == Key.R:
+                return "Ctrl+R";
+            case true when args.Key == Key.L:
+                return "Ctrl+L";
         }
 
-        if (control && args.Key == Key.O)
+        switch (args.Key)
         {
-            return "Ctrl+O";
-        }
-
-        if (control && args.Key == Key.R)
-        {
-            return "Ctrl+R";
-        }
-
-        if (control && args.Key == Key.L)
-        {
-            return "Ctrl+L";
-        }
-
-        if (args.Key == Key.F5)
-        {
-            return "F5";
-        }
-
-        if (args.Key == Key.F11)
-        {
-            return "F11";
-        }
-
-        if (args.Key == Key.PageUp)
-        {
-            return "PageUp";
-        }
-
-        if (args.Key == Key.PageDown)
-        {
-            return "PageDown";
+            case Key.F5:
+                return "F5";
+            case Key.F11:
+                return "F11";
+            case Key.PageUp:
+                return "PageUp";
+            case Key.PageDown:
+                return "PageDown";
         }
 
         if (alt)

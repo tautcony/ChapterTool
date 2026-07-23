@@ -365,10 +365,7 @@ public sealed class SettingsToolHeadlessTests
         }
         finally
         {
-            if (combo is not null)
-            {
-                combo.IsDropDownOpen = false;
-            }
+            combo?.IsDropDownOpen = false;
             Dispatcher.UIThread.RunJobs();
             fontService.Apply(FontSettings.Default);
             window.Close();

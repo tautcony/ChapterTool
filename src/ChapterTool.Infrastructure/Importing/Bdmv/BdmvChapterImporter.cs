@@ -10,18 +10,13 @@ using ChapterTool.Infrastructure.Services;
 namespace ChapterTool.Infrastructure.Importing.Bdmv;
 
 /// <summary>Imports chapter data from Blu-ray BDMV sources.</summary>
-public sealed partial class BdmvChapterImporter : IChapterImporter
+public sealed partial class BdmvChapterImporter(
+    IExternalToolLocator toolLocator,
+    IProcessRunner processRunner,
+    IChapterTimeFormatter formatter)
+    : IChapterImporter
 {
-    private readonly IExternalToolLocator toolLocator;
-    private readonly IProcessRunner processRunner;
-    private readonly OgmChapterImporter ogmChapterImporter;
-
-    public BdmvChapterImporter(IExternalToolLocator toolLocator, IProcessRunner processRunner, IChapterTimeFormatter formatter)
-    {
-        this.toolLocator = toolLocator;
-        this.processRunner = processRunner;
-        ogmChapterImporter = new OgmChapterImporter(formatter);
-    }
+    private readonly OgmChapterImporter ogmChapterImporter = new(formatter);
 
     public string Id => "bdmv";
 

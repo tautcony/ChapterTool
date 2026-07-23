@@ -10,7 +10,7 @@ namespace ChapterTool.Avalonia.Workflows;
 /// <summary>
 /// Owns localized status/progress rendering and structured diagnostic logging for the main shell.
 /// </summary>
-internal sealed class StatusDiagnosticsPresenter(
+internal sealed partial class StatusDiagnosticsPresenter(
     IAppLocalizer localizer,
     ILogger logger,
     Action<string> setStatusText)
@@ -59,7 +59,7 @@ internal sealed class StatusDiagnosticsPresenter(
             arguments = new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = diagnostic.Message };
         }
 
-        return Regex.Replace(localizer.Format(key, arguments), @"\{[^}]+\}", "[?]");
+        return LocalizerRegex().Replace(localizer.Format(key, arguments), "[?]");
     }
 
     public void Log(LogLevel level, string key, string? technicalDetail = null, params (string Name, object? Value)[] arguments)
@@ -141,4 +141,7 @@ internal sealed class StatusDiagnosticsPresenter(
         ChapterImportProgressPhase.ParsingChapters => "Status.LoadingSource.Parse",
         _ => "Status.LoadingSource"
     };
+
+    [GeneratedRegex(@"\{[^}]+\}")]
+    private static partial Regex LocalizerRegex();
 }

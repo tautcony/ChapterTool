@@ -94,17 +94,12 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
 
     public FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
     {
-        if (frameRateIndex == 0)
+        return frameRateIndex switch
         {
-            return frameRateService.Options[0];
-        }
-
-        if (frameRateIndex is < 1 or 5)
-        {
-            return null;
-        }
-
-        return frameRateService.Options.FirstOrDefault(entry => entry.LegacyMplsCode == frameRateIndex);
+            0 => frameRateService.Options[0],
+            < 1 or 5 => null,
+            _ => frameRateService.Options.FirstOrDefault(entry => entry.LegacyMplsCode == frameRateIndex)
+        };
     }
 
     private static void UpdateOptions(

@@ -87,6 +87,7 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
             ConfigureState(state, context);
 
             var results = state.DoStringAsync(source, "chapter-expression.lua", timeout.Token)
+                .AsTask()
                 .GetAwaiter()
                 .GetResult();
 
@@ -99,6 +100,7 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
             if (transform.TryRead<LuaFunction>(out _))
             {
                 var callResults = state.CallAsync(transform, [state.Environment["chapter"]], timeout.Token)
+                    .AsTask()
                     .GetAwaiter()
                     .GetResult();
                 return callResults.Length == 0

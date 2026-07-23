@@ -30,7 +30,6 @@ public sealed class WasmWorkspace : IDisposable
     private IReadOnlyList<ClipOption>? splitClipOptions;
     private string? splitSelectedClipId;
     private int activeGroupIndex;
-    private bool isClipCombined;
     private List<ChapterRowModel> rows = [];
     private int selectedFrameRateIndex;
     private int selectionAnchor = -1;
@@ -85,15 +84,15 @@ public sealed class WasmWorkspace : IDisposable
 
     public string? SelectedClipId { get; private set; }
 
-    public bool IsClipSelectionVisible => ClipOptions.Count > 1 || isClipCombined;
+    public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombined;
 
-    public bool IsClipCombined => isClipCombined;
+    public bool IsClipCombined { get; private set; }
 
     public bool CanToggleClipCombine
     {
         get
         {
-            if (isClipCombined)
+            if (IsClipCombined)
             {
                 return true;
             }
@@ -232,7 +231,7 @@ public sealed class WasmWorkspace : IDisposable
     {
         get
         {
-            if (importResult is null || isClipCombined)
+            if (importResult is null || IsClipCombined)
             {
                 // Combined view may still expose media from the original group entries.
                 var group = ResolveActiveGroup();
@@ -631,7 +630,7 @@ public sealed class WasmWorkspace : IDisposable
 
             splitClipOptions = null;
             splitSelectedClipId = null;
-            isClipCombined = true;
+            IsClipCombined = true;
             combinedChapterSet = edit.ChapterSet;
             SelectedClipId = $"combined:{activeGroupIndex}";
             ClipOptions = [new ClipOption(SelectedClipId, $"{mergedEntries[0].DisplayName} (Combined)", activeGroupIndex, -1)];
@@ -658,7 +657,7 @@ public sealed class WasmWorkspace : IDisposable
 
     public void SelectClip(string? clipId)
     {
-        if (isClipCombined)
+        if (IsClipCombined)
         {
             return;
         }
@@ -684,9 +683,9 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        if (isClipCombined)
+        if (IsClipCombined)
         {
-            isClipCombined = false;
+            IsClipCombined = false;
             combinedChapterSet = null;
             ClipOptions = splitClipOptions ?? [];
             SelectedClipId = splitSelectedClipId ?? ClipOptions.FirstOrDefault()?.Id;
@@ -714,7 +713,7 @@ public sealed class WasmWorkspace : IDisposable
         splitSelectedClipId = SelectedClipId;
         activeGroupIndex = clip.GroupIndex;
         combinedChapterSet = result.ChapterSet;
-        isClipCombined = true;
+        IsClipCombined = true;
         SelectedClipId = $"combined:{clip.GroupIndex}";
         ClipOptions = [new ClipOption(SelectedClipId, $"{group.Entries[0].DisplayName} (Combined)", clip.GroupIndex, -1)];
         SetBaseChapterSet(combinedChapterSet);
@@ -961,7 +960,7 @@ public sealed class WasmWorkspace : IDisposable
     {
         lastLoadedSource = new LoadedSourceSnapshot(fileName, content);
         importResult = result;
-        isClipCombined = false;
+        IsClipCombined = false;
         combinedChapterSet = null;
         splitClipOptions = null;
         splitSelectedClipId = null;
@@ -986,7 +985,7 @@ public sealed class WasmWorkspace : IDisposable
 
     private void LoadBaseFromSelectedClip()
     {
-        if (isClipCombined && combinedChapterSet is not null)
+        if (IsClipCombined && combinedChapterSet is not null)
         {
             SetBaseChapterSet(combinedChapterSet);
             RebuildFrameRateChoices(combinedChapterSet);
@@ -1013,7 +1012,7 @@ public sealed class WasmWorkspace : IDisposable
             return null;
         }
 
-        if (isClipCombined)
+        if (IsClipCombined)
         {
             return importResult.Groups[Math.Clamp(activeGroupIndex, 0, importResult.Groups.Count - 1)];
         }
@@ -1163,7 +1162,7 @@ public sealed class WasmWorkspace : IDisposable
         combinedChapterSet = null;
         splitClipOptions = null;
         splitSelectedClipId = null;
-        isClipCombined = false;
+        IsClipCombined = false;
         activeGroupIndex = 0;
         rows = [];
         ClipOptions = [];
@@ -1249,9 +1248,12 @@ public sealed class WasmWorkspace : IDisposable
             diagnostic.Message,
             diagnostic.Details)).ToArray();
 
-    private static string? FirstError(IEnumerable<ChapterDiagnostic> diagnostics) =>
-        diagnostics.FirstOrDefault(static d => d.Severity == DiagnosticSeverity.Error)?.Message
-        ?? diagnostics.FirstOrDefault()?.Message;
+    private static string? FirstError(IEnumerable<ChapterDiagnostic> diagnostics)
+    {
+        var chapterDiagnostics = diagnostics.ToList();
+        return chapterDiagnostics.FirstOrDefault(static d => d.Severity == DiagnosticSeverity.Error)?.Message
+               ?? chapterDiagnostics.FirstOrDefault()?.Message;
+    }
 
     private void BeginBusy(string status)
     {
@@ -1327,7 +1329,7 @@ public sealed class WasmWorkspace : IDisposable
     private void SetBaseChapterSet(ChapterSet value)
     {
         baseChapterSet = value;
-        if (isClipCombined)
+        if (IsClipCombined)
         {
             combinedChapterSet = value;
         }

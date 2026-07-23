@@ -27,8 +27,7 @@ public sealed class ExpressionDiagnosticPresentation : IBackgroundRenderer
         {
             var rects = BackgroundGeometryBuilder.GetRectsForSegment(
                 textView,
-                new Segment(diagnostic.Start, diagnostic.Length),
-                false);
+                new Segment(diagnostic.Start, diagnostic.Length));
 
             foreach (var rect in rects)
             {
@@ -39,7 +38,7 @@ public sealed class ExpressionDiagnosticPresentation : IBackgroundRenderer
 
     private static void DrawUnderline(DrawingContext drawingContext, Rect rect)
     {
-        var pen = new Pen(ExpressionThemeBrushes.DiagnosticUnderline, 1);
+        var pen = new Pen(ExpressionThemeBrushes.DiagnosticUnderline);
         var geometry = new StreamGeometry();
         using var context = geometry.Open();
         var startX = rect.X;

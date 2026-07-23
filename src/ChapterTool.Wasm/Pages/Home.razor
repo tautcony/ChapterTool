@@ -804,7 +804,7 @@
     }
 
     [JSInvokable]
-    public async Task OnBrowserFileDropped(string name, byte[] bytes)
+    public async Task OnBrowserFileDropped(string name, byte[]? bytes)
     {
         isDragOver = false;
         CloseContextMenu();
@@ -978,10 +978,6 @@
     private async Task OnFileSelected(InputFileChangeEventArgs args)
     {
         var file = args.File;
-        if (file is null)
-        {
-            return;
-        }
 
         await LoadFileAsync(file);
     }
@@ -989,10 +985,6 @@
     private async Task OnAppendMplsSelected(InputFileChangeEventArgs args)
     {
         var file = args.File;
-        if (file is null)
-        {
-            return;
-        }
 
         await AppendMplsFileAsync(file);
     }
@@ -1000,10 +992,6 @@
     private async Task OnTemplateSelected(InputFileChangeEventArgs args)
     {
         var file = args.File;
-        if (file is null)
-        {
-            return;
-        }
 
         try
         {

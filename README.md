@@ -128,6 +128,8 @@ dotnet test ChapterTool.Avalonia.slnx --no-restore
 
 Run coverage with `./scripts/test-coverage.sh`. The script writes reports to `artifacts/coverage`.
 
+Inspect compiler and analyzer diagnostics with `./scripts/analyzer-report.sh`. The script builds the solution, writes the raw SARIF report to `artifacts/analyzers/analyzers.sarif`, and prints diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to keep only StyleCop diagnostics.
+
 Publish a local desktop artifact:
 
 ```bash

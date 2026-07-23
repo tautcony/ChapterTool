@@ -339,7 +339,7 @@ public sealed class ChapterToolCliApplication
         return ResolveEntryFromGroup(group, request);
     }
 
-    private bool TryResolveGroupIndex(
+    private static bool TryResolveGroupIndex(
         IReadOnlyList<ChapterImportSource> groups,
         CliConvertRequest request,
         out ChapterImportSource? group,
@@ -360,7 +360,7 @@ public sealed class ChapterToolCliApplication
         return true;
     }
 
-    private CliSelectionResult ResolveEntryFromGroup(ChapterImportSource group, CliConvertRequest request)
+    private static CliSelectionResult ResolveEntryFromGroup(ChapterImportSource group, CliConvertRequest request)
     {
         var groupIndex = request.GroupIndex ?? 0;
 
@@ -384,7 +384,7 @@ public sealed class ChapterToolCliApplication
             AmbiguousSelectionDiagnostics([group], groupIndex));
     }
 
-    private CliSelectionResult ResolveEntryById(ChapterImportSource group, string entryId, int groupIndex)
+    private static CliSelectionResult ResolveEntryById(ChapterImportSource group, string entryId, int groupIndex)
     {
         var entry = group.Entries.FirstOrDefault(candidate =>
             string.Equals(candidate.Id, entryId, StringComparison.OrdinalIgnoreCase));
@@ -398,7 +398,7 @@ public sealed class ChapterToolCliApplication
         return CliSelectionResult.Success(entry);
     }
 
-    private CliSelectionResult ResolveEntryByIndex(ChapterImportSource group, int entryIndex, int groupIndex)
+    private static CliSelectionResult ResolveEntryByIndex(ChapterImportSource group, int entryIndex, int groupIndex)
     {
         if (entryIndex < 0 || entryIndex >= group.Entries.Count)
         {

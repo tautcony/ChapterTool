@@ -193,23 +193,20 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
             return '\t';
         }
 
-        if (headerLine.Count(static character => character == ',') >= 1)
+        if (headerLine.Any(static character => character == ','))
         {
             return ',';
         }
 
-        return headerLine.Count(static character => character == ';') >= 1 ? ';' : '\0';
+        return headerLine.Any(static character => character == ';') ? ';' : '\0';
     }
 
     private static string NormalizeHeader(string header)
     {
         var builder = new StringBuilder(header.Length);
-        foreach (var character in header.Trim())
+        foreach (var character in header.Trim().Where(char.IsLetterOrDigit))
         {
-            if (char.IsLetterOrDigit(character))
-            {
-                builder.Append(char.ToLowerInvariant(character));
-            }
+            builder.Append(char.ToLowerInvariant(character));
         }
 
         return builder.ToString();

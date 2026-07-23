@@ -35,7 +35,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
     /// <param name="timeSeconds">The chapter time in seconds.</param>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The operation result.</returns>
-    public ExpressionAnalysisResult Analyze(string expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24)
+    public ExpressionAnalysisResult Analyze(string? expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24)
     {
         expression ??= string.Empty;
         caretIndex = Math.Clamp(caretIndex, 0, expression.Length);
@@ -258,21 +258,20 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
                 continue;
             }
 
-            if (c is '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']')
+            switch (c)
             {
-                spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation));
-                i++;
-                continue;
+                case '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']':
+                    spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation));
+                    i++;
+                    continue;
+                case '\'' or '"':
+                    spans.Add(ReadString(expression, ref i));
+                    continue;
+                default:
+                    spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown));
+                    i++;
+                    break;
             }
-
-            if (c is '\'' or '"')
-            {
-                spans.Add(ReadString(expression, ref i));
-                continue;
-            }
-
-            spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown));
-            i++;
         }
 
         return spans;

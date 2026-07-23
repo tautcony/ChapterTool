@@ -148,7 +148,6 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         var window = SettingsWindow(service);
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
         var settings = SettingsViewModel(window);
-        var originalSettings = settings;
         var japaneseIndex = settings.Languages.ToList().FindIndex(language => language.CultureName == "ja-JP");
 
         Assert.True(host.ContainsRenderedText("Chapter name"));
@@ -165,7 +164,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
         try
         {
-            Assert.Same(originalSettings, SettingsViewModel(SettingsWindow(service)));
+            Assert.Same(settings, SettingsViewModel(SettingsWindow(service)));
             Assert.Equal("ja-JP", settings.SelectedLanguage);
             Assert.Equal("ja-JP", host.ViewModel.UiLanguage);
             Assert.Equal(japaneseIndex, settings.SelectedLanguageIndex);

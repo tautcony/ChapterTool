@@ -29,17 +29,21 @@ public sealed partial class MainWindowViewModel
             Progress = Math.Clamp(update.Fraction ?? Progress, 0, 0.98);
             SetProgressStatus(update.Phase);
         }, cancellationToken);
-        if (outcome.State == LoadWorkflowState.Stale)
+        switch (outcome.State)
         {
-            return;
-        }
-
-        if (outcome.State == LoadWorkflowState.EmptyPath)
-        {
-            SetStatus("Status.NoSourceSelected");
-            LogStatus();
-            NotifyStateChanged();
-            return;
+            case LoadWorkflowState.Stale:
+                return;
+            case LoadWorkflowState.EmptyPath:
+                SetStatus("Status.NoSourceSelected");
+                LogStatus();
+                NotifyStateChanged();
+                return;
+            case LoadWorkflowState.Failed:
+                break;
+            case LoadWorkflowState.Succeeded:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         var result = outcome.Result!;
@@ -131,17 +135,23 @@ public sealed partial class MainWindowViewModel
 
         Log("Log.AppendingMpls", ("path", path));
         var outcome = await loadSaveWorkflow.AppendAsync(path, cancellationToken);
-        if (outcome.State == AppendWorkflowState.Stale)
+        switch (outcome.State)
         {
-            return;
-        }
-
-        if (outcome.State == AppendWorkflowState.NoSession)
-        {
-            SetStatus("Status.NoCurrentMplsGroup");
-            LogStatus();
-            NotifyStateChanged();
-            return;
+            case AppendWorkflowState.Stale:
+                return;
+            case AppendWorkflowState.NoSession:
+                SetStatus("Status.NoCurrentMplsGroup");
+                LogStatus();
+                NotifyStateChanged();
+                return;
+            case AppendWorkflowState.FailedLoad:
+                break;
+            case AppendWorkflowState.FailedTransition:
+                break;
+            case AppendWorkflowState.Succeeded:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         var result = outcome.ImportResult!;

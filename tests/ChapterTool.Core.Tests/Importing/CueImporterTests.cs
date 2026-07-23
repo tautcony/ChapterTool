@@ -345,16 +345,13 @@ public sealed class CueImporterTests
         using var stream = new MemoryStream();
         stream.Write("fLaC"u8);
         using var block = new MemoryStream();
-        if (negativeVendorLength)
-        {
-            WriteLittleEndianInt32(block, -1);
-        }
-        else
+        if (!negativeVendorLength)
         {
             WriteLittleEndianInt32(block, 0);
             WriteLittleEndianInt32(block, 1);
-            WriteLittleEndianInt32(block, -1);
         }
+
+        WriteLittleEndianInt32(block, -1);
 
         WriteBlock(stream, type: 4, isLast: true, block.ToArray());
         return stream.ToArray();

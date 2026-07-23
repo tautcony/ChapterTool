@@ -19,15 +19,11 @@ namespace ChapterTool.Avalonia.ViewModels;
 /// <summary>Coordinates the main window state, commands, and chapter workflows.</summary>
 public sealed partial class MainWindowViewModel : ObservableViewModel
 {
-    private readonly IChapterLoadService loadService;
-    private readonly IChapterSaveService saveService;
     private readonly IChapterEditingService editingService;
     private readonly ChapterSegmentService segmentService;
     private readonly IWindowService windowService;
-    private readonly IChapterTimeFormatter formatter;
     private readonly IFrameRateService frameRateService;
     private readonly ChapterExportService exportService;
-    private readonly ILogger<MainWindowViewModel> logger;
     private readonly IShellService? shellService;
     private readonly LoadSaveWorkflow loadSaveWorkflow;
     private readonly ProjectionFacade projectionFacade;
@@ -78,25 +74,21 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         ArgumentNullException.ThrowIfNull(expressionEngine);
         ArgumentNullException.ThrowIfNull(exportService);
 
-        this.loadService = loadService;
-        this.saveService = saveService;
         this.editingService = editingService;
         this.segmentService = segmentService;
         this.windowService = windowService;
-        this.formatter = formatter;
         this.frameRateService = frameRateService;
         this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
         this.LogService = logService;
-        this.logger = logger;
         Localizer = localizer;
         this.shellService = shellService;
         this.SettingsStore = settingsStore;
         ExpressionAuthoringService = expressionAuthoringService ?? new ExpressionAuthoringService(this.ExpressionEngine);
-        loadSaveWorkflow = new LoadSaveWorkflow(Workspace, this.loadService, this.saveService);
+        loadSaveWorkflow = new LoadSaveWorkflow(Workspace, loadService, saveService);
         ClipEditingCoordinator = new ClipEditingCoordinator(Workspace, this.editingService, this.frameRateService);
-        projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, this.formatter);
-        statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, this.logger, value => StatusText = value);
+        projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, formatter);
+        statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, logger, value => StatusText = value);
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
         PortAdapters = new MainWindowPortAdapters(this);
         chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
