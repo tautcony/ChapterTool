@@ -801,6 +801,18 @@
 <data name="Status.TemplateNotSelected" xml:space="preserve">
     <value>未選択</value>
   </data>
+  <data name="Status.TemplateLoaded" xml:space="preserve">
+    <value>テンプレート {name} を読み込みました</value>
+  </data>
+  <data name="Status.TemplateLoadFailed" xml:space="preserve">
+    <value>チャプター名テンプレートの読み込みに失敗しました</value>
+  </data>
+  <data name="Log.TemplateLoaded" xml:space="preserve">
+    <value>チャプター名テンプレート '{name}' を '{path}' から読み込みました</value>
+  </data>
+  <data name="Log.TemplateLoadFailed" xml:space="preserve">
+    <value>'{path}' からチャプター名テンプレートを読み込めませんでした</value>
+  </data>
 <data name="Status.Updated" xml:space="preserve">
     <value>更新しました</value>
   </data>

@@ -165,6 +165,73 @@ public sealed class WasmWorkspaceTests
         Assert.Contains("选择", workspace.StatusText, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task RejectsLoadsAboveMaxByteLimitAndKeepsEmptySession()
+    {
+        // Use a tiny limit so the test does not allocate a 64 MiB buffer.
+        var workspace = new WasmWorkspace(new WasmChapterService(), maxLoadBytes: 8);
+        await workspace.LoadAsync("huge.bin", "0123456789"u8.ToArray());
+
+        Assert.Empty(workspace.Rows);
+        Assert.False(workspace.CanSave);
+        Assert.Contains("64", workspace.StatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ExpressionModeProjectsTimesThroughPreview()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.ApplyExpression = true;
+        workspace.Expression = "t + 1";
+        workspace.ApplyOptionsAndRefresh();
+
+        var preview = workspace.Preview();
+        Assert.True(preview.Success);
+        Assert.Contains("00:00:01", preview.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InsertAndDuplicateAffectRowCount()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        var before = workspace.Rows.Count;
+
+        workspace.InsertBefore(0);
+        Assert.Equal(before + 1, workspace.Rows.Count);
+
+        workspace.DuplicateRow(0);
+        Assert.Equal(before + 2, workspace.Rows.Count);
+    }
+
+    [Fact]
+    public async Task DeleteSelectedWithoutSelectionDoesNotChangeRows()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        var before = workspace.Rows.Count;
+        Assert.False(workspace.HasRowSelection);
+        workspace.DeleteSelectedRows();
+        Assert.Equal(before, workspace.Rows.Count);
+    }
+
+    [Fact]
+    public void LocalizerTablesShareTheSameEnglishKeySetAcrossCultures()
+    {
+        var localizer = new WasmLocalizer();
+        foreach (var culture in new[] { "en-US", "zh-CN", "ja-JP" })
+        {
+            localizer.SetCulture(culture);
+            foreach (var key in WasmLocalizer.EnglishKeys)
+            {
+                var value = localizer.T(key);
+                Assert.False(string.IsNullOrWhiteSpace(value), $"Missing/blank translation for {key} in {culture}");
+                Assert.NotEqual(key, value);
+            }
+        }
+    }
+
     private static WasmWorkspace CreateWorkspace() => new(new WasmChapterService());
 
     private static ChapterImportSource CreateMplsImport(string path, string name, TimeSpan chapterTime, TimeSpan duration) =>

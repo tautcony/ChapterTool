@@ -78,13 +78,13 @@ public sealed class MainWindowHeadlessTests
 
         Assert.False(menuItem.IsChecked);
 
-        await host.Window.CombineCommand.ExecuteAsync();
+        await host.ViewModel.CombineCommand.ExecuteAsync();
         await host.LayoutAsync();
 
         Assert.True(host.ViewModel.IsClipCombineChecked);
         Assert.True(menuItem.IsChecked);
 
-        await host.Window.CombineCommand.ExecuteAsync();
+        await host.ViewModel.CombineCommand.ExecuteAsync();
         await host.LayoutAsync();
 
         Assert.False(host.ViewModel.IsClipCombineChecked);

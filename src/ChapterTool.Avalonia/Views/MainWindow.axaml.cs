@@ -34,37 +34,18 @@ public sealed partial class MainWindow : Window
         this.startupPath = startupPath;
         filePickerService = filePickerServiceFactory(this);
         shortcutRouter = new ShortcutRouter(viewModel);
+
+        // UI-only adapter commands: pickers and DataGrid selection. All other
+        // commands bind to MainWindowViewModel so CanExecute has a single owner.
         BrowseAndLoadCommand = new UiCommand(async (_, _) => await BrowseAndLoadAsync());
-        ReloadCommand = new UiCommand(async (_, _) => await LoadAsync(), _ => viewModel.ReloadCommand.CanExecute());
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
         LoadChapterNameTemplateCommand = new UiCommand(async (_, _) => await LoadChapterNameTemplateAsync());
         LoadLuaExpressionScriptCommand = new UiCommand(async (_, _) => await LoadLuaExpressionScriptAsync());
-        SaveCommand = new UiCommand(async (_, _) => await SaveAsync(null), _ => viewModel.SaveCommand.CanExecute());
         SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
-        PreviewCommand = new UiCommand(async (_, _) =>
-        {
-            // Options are binding-authoritative; do not scrape controls before preview.
-            await viewModel.PreviewCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
-        }, _ => viewModel.PreviewCommand.CanExecute());
-        RefreshRowsCommand = new UiCommand(async (_, _) =>
-        {
-            await viewModel.RefreshCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
-        }, _ => viewModel.RefreshCommand.CanExecute());
-        InsertSelectedCommand = new UiCommand(async (_, _) =>
-        {
-            await InsertSelectedAsync();
-        }, _ => viewModel.InsertCommand.CanExecute());
-        DeleteSelectedCommand = new UiCommand(async (_, _) =>
-        {
-            await DeleteSelectedAsync();
-        }, _ => viewModel.DeleteCommand.CanExecute());
-        OpenRelatedMediaCommand = new UiCommand(async (_, _) => await OpenRelatedMediaAsync(), _ => viewModel.OpenRelatedMediaCommand.CanExecute());
+        InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute());
+        DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute());
         OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
         OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
-        CombineCommand = new UiCommand(async (_, _) =>
-        {
-            await viewModel.CombineCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
-        }, _ => viewModel.CombineCommand.CanExecute());
 
         InitializeComponent();
         DataContext = viewModel;
@@ -77,33 +58,21 @@ public sealed partial class MainWindow : Window
 
     public UiCommand BrowseAndLoadCommand { get; }
 
-    public UiCommand ReloadCommand { get; }
-
     public UiCommand AppendMplsCommand { get; }
 
     public UiCommand LoadChapterNameTemplateCommand { get; }
 
     public UiCommand LoadLuaExpressionScriptCommand { get; }
 
-    public UiCommand SaveCommand { get; }
-
     public UiCommand SaveToCommand { get; }
-
-    public UiCommand PreviewCommand { get; }
-
-    public UiCommand RefreshRowsCommand { get; }
 
     public UiCommand InsertSelectedCommand { get; }
 
     public UiCommand DeleteSelectedCommand { get; }
 
-    public UiCommand OpenRelatedMediaCommand { get; }
-
     public UiCommand OpenZonesCommand { get; }
 
     public UiCommand OpenForwardShiftCommand { get; }
-
-    public UiCommand CombineCommand { get; }
 
     private async Task LoadAsync()
     {
@@ -125,18 +94,6 @@ public sealed partial class MainWindow : Window
         await viewModel.LoadCommand.ExecuteAsync(path);
     }
 
-    private async Task SaveAsync(string? directoryOverride = null)
-    {
-        // Save format, naming, expression, and order shift are already bound on the ViewModel.
-        if (string.IsNullOrWhiteSpace(directoryOverride))
-        {
-            await viewModel.SaveCommand.ExecuteAsync();
-            return;
-        }
-
-        await viewModel.SaveCommand.ExecuteAsync(directoryOverride);
-    }
-
     private async Task SaveToAsync()
     {
         var directory = await filePickerService.PickSaveDirectoryAsync(CancellationToken.None);
@@ -145,7 +102,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        await SaveAsync(directory);
+        await viewModel.SaveCommand.ExecuteAsync(directory);
     }
 
     private async Task AppendMplsAsync()
@@ -167,10 +124,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        var text = await ChapterNameTemplateReader.ReadAsync(path, CancellationToken.None);
-        viewModel.ChapterNameTemplateText = text;
-        viewModel.ChapterNameTemplateStatus = Path.GetFileName(path);
-        viewModel.ChapterNameModeIndex = 2;
+        await viewModel.LoadChapterNameTemplateFromPathAsync(path, CancellationToken.None);
     }
 
     private async Task LoadLuaExpressionScriptAsync()
@@ -182,11 +136,6 @@ public sealed partial class MainWindow : Window
         }
 
         await viewModel.PortAdapters.Expression.LoadScriptAsync(path, CancellationToken.None);
-    }
-
-    private async Task OpenRelatedMediaAsync()
-    {
-        await viewModel.OpenRelatedMediaCommand.ExecuteAsync();
     }
 
     private async Task OpenZonesAsync()
@@ -284,11 +233,9 @@ public sealed partial class MainWindow : Window
         switch (gesture)
         {
             case "Ctrl+S":
-                // Same save command path as the toolbar (binding-authoritative options).
-                await SaveAsync();
+                await viewModel.SaveCommand.ExecuteAsync();
                 return;
             case "Ctrl+O":
-                // Picker adapter only; load still goes through ViewModel.LoadCommand.
                 await BrowseAndLoadAsync();
                 return;
             case "PageUp" or "PageDown":
@@ -463,7 +410,7 @@ public sealed partial class MainWindow : Window
 
     private void SubscribeViewModelCommandState()
     {
-        foreach (var command in ViewModelCommands())
+        foreach (var command in ViewModelCommandsForAdapterRefresh())
         {
             command.CanExecuteChanged += ScheduleWindowCommandRefresh;
         }
@@ -473,7 +420,7 @@ public sealed partial class MainWindow : Window
 
     private void UnsubscribeViewModelCommandState()
     {
-        foreach (var command in ViewModelCommands())
+        foreach (var command in ViewModelCommandsForAdapterRefresh())
         {
             command.CanExecuteChanged -= ScheduleWindowCommandRefresh;
         }
@@ -487,40 +434,24 @@ public sealed partial class MainWindow : Window
         base.OnClosed(args);
     }
 
-    private IEnumerable<UiCommand> ViewModelCommands()
+    private IEnumerable<UiCommand> ViewModelCommandsForAdapterRefresh()
     {
-        yield return viewModel.ReloadCommand;
         yield return viewModel.AppendMplsCommand;
         yield return viewModel.SaveCommand;
-        yield return viewModel.RefreshCommand;
-        yield return viewModel.ChangeFpsCommand;
-        yield return viewModel.SelectClipCommand;
-        yield return viewModel.CombineCommand;
         yield return viewModel.InsertCommand;
         yield return viewModel.DeleteCommand;
-        yield return viewModel.OpenRelatedMediaCommand;
-        yield return viewModel.PreviewCommand;
-        yield return viewModel.SettingsCommand;
-        yield return viewModel.ExpressionCommand;
-        yield return viewModel.TemplateNamesCommand;
         yield return viewModel.ZonesCommand;
         yield return viewModel.ForwardShiftCommand;
     }
 
     private void RaiseCommandStates()
     {
-        ReloadCommand.RaiseCanExecuteChanged();
         AppendMplsCommand.RaiseCanExecuteChanged();
-        SaveCommand.RaiseCanExecuteChanged();
         SaveToCommand.RaiseCanExecuteChanged();
-        PreviewCommand.RaiseCanExecuteChanged();
-        RefreshRowsCommand.RaiseCanExecuteChanged();
         InsertSelectedCommand.RaiseCanExecuteChanged();
         DeleteSelectedCommand.RaiseCanExecuteChanged();
-        OpenRelatedMediaCommand.RaiseCanExecuteChanged();
         OpenZonesCommand.RaiseCanExecuteChanged();
         OpenForwardShiftCommand.RaiseCanExecuteChanged();
-        CombineCommand.RaiseCanExecuteChanged();
     }
 
     private void ScheduleWindowCommandRefresh(object? sender, EventArgs e)
@@ -571,15 +502,5 @@ public sealed partial class MainWindow : Window
         Grid.SetRow(control, row);
         Grid.SetColumn(control, column);
         Grid.SetColumnSpan(control, columnSpan);
-    }
-
-    private static string SelectedComboText(ComboBox comboBox, string fallback)
-    {
-        return comboBox.SelectedItem switch
-        {
-            ComboBoxItem { Content: not null } item => item.Content.ToString() ?? fallback,
-            string text when !string.IsNullOrWhiteSpace(text) => text,
-            _ => fallback
-        };
     }
 }

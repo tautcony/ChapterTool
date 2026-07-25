@@ -801,6 +801,18 @@
 <data name="Status.TemplateNotSelected" xml:space="preserve">
     <value>未选择</value>
   </data>
+  <data name="Status.TemplateLoaded" xml:space="preserve">
+    <value>已加载模板 {name}</value>
+  </data>
+  <data name="Status.TemplateLoadFailed" xml:space="preserve">
+    <value>加载章节名称模板失败</value>
+  </data>
+  <data name="Log.TemplateLoaded" xml:space="preserve">
+    <value>已从 '{path}' 加载章节名称模板 '{name}'</value>
+  </data>
+  <data name="Log.TemplateLoadFailed" xml:space="preserve">
+    <value>无法从 '{path}' 加载章节名称模板</value>
+  </data>
 <data name="Status.Updated" xml:space="preserve">
     <value>已更新</value>
   </data>

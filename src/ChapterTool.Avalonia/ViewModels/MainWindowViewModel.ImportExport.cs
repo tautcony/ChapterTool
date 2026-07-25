@@ -1,7 +1,9 @@
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Workflows;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
@@ -10,6 +12,52 @@ public sealed partial class MainWindowViewModel
 {
     private ChapterExportOptions CurrentExportOptions() =>
         projectionFacade.CreateExportOptions();
+
+    /// <summary>
+    /// Loads a chapter name template from a path selected by the UI.
+    /// Owns file read, naming mode, status, and failure handling.
+    /// </summary>
+    public async ValueTask LoadChapterNameTemplateFromPathAsync(string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        var previousText = ChapterNameTemplateText;
+        var previousStatus = ChapterNameTemplateStatus;
+        var previousMode = ChapterNameModeIndex;
+
+        try
+        {
+            var text = await ChapterNameTemplateReader.ReadAsync(path, cancellationToken);
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                SetStatus("Status.TemplateLoadFailed", ("path", Path.GetFileName(path)));
+                Log(LogLevel.Warning, "Log.TemplateLoadFailed", ("path", path), ("reason", "empty"));
+                LogStatus(LogLevel.Warning);
+                return;
+            }
+
+            ChapterNameTemplateText = text;
+            ChapterNameTemplateStatus = Path.GetFileName(path);
+            ChapterNameModeIndex = 2;
+            SetStatus("Status.TemplateLoaded", ("name", ChapterNameTemplateStatus));
+            Log("Log.TemplateLoaded", ("path", path), ("name", ChapterNameTemplateStatus));
+            LogStatus();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            // Restore mode first: a non-template mode clears template fields in the mode setter.
+            ChapterNameModeIndex = previousMode;
+            ChapterNameTemplateText = previousText;
+            ChapterNameTemplateStatus = previousStatus;
+
+            SetStatus("Status.TemplateLoadFailed", ("path", Path.GetFileName(path)));
+            Log(LogLevel.Warning, "Log.TemplateLoadFailed", exception.Message, ("path", path));
+            LogStatus(LogLevel.Warning);
+        }
+    }
 
     private async ValueTask LoadPathAsync(string path, CancellationToken cancellationToken)
     {

@@ -210,7 +210,7 @@
                   Command="{Binding #RootWindow.BrowseAndLoadCommand}">
             <Button.ContextMenu>
               <ContextMenu>
-                <MenuItem x:Name="ReloadMenuItem" Header="{DynamicResource Main.Reload}" Command="{Binding #RootWindow.ReloadCommand}" />
+                <MenuItem x:Name="ReloadMenuItem" Header="{DynamicResource Main.Reload}" Command="{Binding ReloadCommand}" />
                 <MenuItem x:Name="AppendLoadMenuItem" Header="{DynamicResource Main.AppendMpls}" IsEnabled="{Binding CanAppendMpls}" Command="{Binding #RootWindow.AppendMplsCommand}" />
               </ContextMenu>
             </Button.ContextMenu>
@@ -220,7 +220,7 @@
                   AutomationProperties.AutomationId="SaveButton"
                   Content="{DynamicResource Common.Save}"
                   IsEnabled="{Binding CanSave}"
-                  Command="{Binding #RootWindow.SaveCommand}"
+                  Command="{Binding SaveCommand}"
                   ToolTip.Tip="{Binding EffectiveSaveDirectoryDisplay}">
             <Button.ContextMenu>
               <ContextMenu>
@@ -266,7 +266,7 @@
                         ToggleType="CheckBox"
                         IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                         IsEnabled="{Binding CanCombine}"
-                        Command="{Binding #RootWindow.CombineCommand}" />
+                        Command="{Binding CombineCommand}" />
             </ContextMenu>
           </ComboBox.ContextMenu>
         </ComboBox>
@@ -284,7 +284,7 @@
                     Classes="iconAction"
                     AutomationProperties.AutomationId="PreviewWindow"
                     AutomationProperties.Name="{DynamicResource Main.Preview}"
-                    Command="{Binding #RootWindow.PreviewCommand}"
+                    Command="{Binding PreviewCommand}"
                     ToolTip.Tip="{DynamicResource Main.Preview}">
               <i:Icon Value="fa-solid fa-eye" FontSize="13.6" />
             </Button>
@@ -293,7 +293,7 @@
                     AutomationProperties.AutomationId="RefreshRows"
                     AutomationProperties.Name="{DynamicResource Common.Refresh}"
                     IsEnabled="{Binding CanRefreshRows}"
-                    Command="{Binding #RootWindow.RefreshRowsCommand}"
+                    Command="{Binding RefreshCommand}"
                     ToolTip.Tip="{DynamicResource Common.Refresh}">
               <i:Icon Value="fa-solid fa-rotate" FontSize="13.6" />
             </Button>
@@ -358,11 +358,11 @@
                           ToggleType="CheckBox"
                           IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                           IsEnabled="{Binding CanCombine}"
-                          Command="{Binding #RootWindow.CombineCommand}" />
-                <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding #RootWindow.OpenRelatedMediaCommand}" />
+                          Command="{Binding CombineCommand}" />
+                <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding OpenRelatedMediaCommand}" />
                 <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootWindow.OpenZonesCommand}" />
                 <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootWindow.OpenForwardShiftCommand}" />
-                <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" Command="{Binding #RootWindow.PreviewCommand}" />
+                <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" Command="{Binding PreviewCommand}" />
               </ContextMenu>
             </DataGrid.ContextMenu>
             <DataGrid.Columns>

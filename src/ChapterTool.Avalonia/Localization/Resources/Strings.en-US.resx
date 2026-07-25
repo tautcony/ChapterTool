@@ -801,6 +801,18 @@
 <data name="Status.TemplateNotSelected" xml:space="preserve">
     <value>Not selected</value>
   </data>
+  <data name="Status.TemplateLoaded" xml:space="preserve">
+    <value>Loaded template {name}</value>
+  </data>
+  <data name="Status.TemplateLoadFailed" xml:space="preserve">
+    <value>Failed to load chapter name template</value>
+  </data>
+  <data name="Log.TemplateLoaded" xml:space="preserve">
+    <value>Loaded chapter name template '{name}' from '{path}'</value>
+  </data>
+  <data name="Log.TemplateLoadFailed" xml:space="preserve">
+    <value>Failed to load chapter name template from '{path}'</value>
+  </data>
 <data name="Status.Updated" xml:space="preserve">
     <value>Updated</value>
   </data>

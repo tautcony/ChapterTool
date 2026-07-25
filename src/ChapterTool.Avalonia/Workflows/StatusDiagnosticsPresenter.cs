@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +15,7 @@ namespace ChapterTool.Avalonia.Workflows;
 internal sealed partial class StatusDiagnosticsPresenter(
     IAppLocalizer localizer,
     ILogger logger,
+    IChapterTimeFormatter timeFormatter,
     Action<string> setStatusText)
 {
     private LocalizedMessage? statusMessage;
@@ -87,6 +90,33 @@ internal sealed partial class StatusDiagnosticsPresenter(
         Log(result.Success ? LogLevel.Information : LogLevel.Error, "Log.ImportSummary", null,
             ("operation", operation), ("success", result.Success), ("partial", result.IsPartial), ("groups", result.Groups.Count),
             ("entries", entryCount), ("chapters", chapterCount), ("diagnostics", result.Diagnostics.Count));
+
+        for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
+        {
+            var group = result.Groups[groupIndex];
+            Log(LogLevel.Information, "Log.ImportGroup", null,
+                ("operation", operation),
+                ("groupIndex", groupIndex + 1),
+                ("sourcePath", group.SourcePath),
+                ("defaultEntryIndex", group.DefaultEntryIndex),
+                ("entries", group.Entries.Count));
+
+            for (var entryIndex = 0; entryIndex < group.Entries.Count; entryIndex++)
+            {
+                var entry = group.Entries[entryIndex];
+                var info = entry.ChapterSet;
+                Log(LogLevel.Information, "Log.ImportEntry", null,
+                    ("operation", operation),
+                    ("entryIndex", entryIndex + 1),
+                    ("id", entry.Id),
+                    ("label", entry.DisplayName),
+                    ("source", info.SourceName ?? string.Empty),
+                    ("sourceType", ChapterImportFormats.DisplayName(info.ImportFormat)),
+                    ("chapters", info.Chapters.Count),
+                    ("duration", timeFormatter.Format(info.Duration)),
+                    ("fps", $"{info.FramesPerSecond:0.###}"));
+            }
+        }
     }
 
     public void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)

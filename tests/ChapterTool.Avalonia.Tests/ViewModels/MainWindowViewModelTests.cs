@@ -487,6 +487,78 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task LoadChapterNameTemplateFromPathUpdatesNamingState()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "names.txt");
+        await File.WriteAllTextAsync(path, "Opening\nMiddle\nFinale");
+        var log = new ApplicationLogPanelProvider();
+        var vm = CreateViewModel(logService: log);
+
+        try
+        {
+            await vm.LoadChapterNameTemplateFromPathAsync(path, TestContext.Current.CancellationToken);
+
+            Assert.Equal("Opening\nMiddle\nFinale", vm.ChapterNameTemplateText);
+            Assert.Equal("names.txt", vm.ChapterNameTemplateStatus);
+            Assert.Equal(2, vm.ChapterNameModeIndex);
+            Assert.True(vm.UseTemplateNames);
+            Assert.Contains("Loaded template", vm.StatusText, StringComparison.Ordinal);
+            Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoaded");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LoadChapterNameTemplateFromMissingPathKeepsPreviousTemplateState()
+    {
+        var log = new ApplicationLogPanelProvider();
+        var vm = CreateViewModel(logService: log);
+        vm.ChapterNameTemplateText = "KeepMe";
+        vm.ChapterNameTemplateStatus = "keep.txt";
+        vm.ChapterNameModeIndex = 2;
+
+        await vm.LoadChapterNameTemplateFromPathAsync(
+            Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "missing.txt"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("KeepMe", vm.ChapterNameTemplateText);
+        Assert.Equal("keep.txt", vm.ChapterNameTemplateStatus);
+        Assert.Equal(2, vm.ChapterNameModeIndex);
+        Assert.Contains("Failed to load chapter name template", vm.StatusText, StringComparison.Ordinal);
+        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoadFailed");
+    }
+
+    [Fact]
+    public async Task LoadImportSummaryEmitsGroupAndEntryRecords()
+    {
+        var log = new ApplicationLogPanelProvider();
+        var load = new FakeLoadService(ImportResult(
+            "movie.mpls",
+            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")),
+            Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(10), "B"))));
+        var vm = CreateViewModel(load, logService: log);
+
+        await vm.LoadCommand.ExecuteAsync("movie.mpls");
+
+        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
+        var group = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportGroup");
+        Assert.Equal("movie.mpls", group.Arguments?["sourcePath"]);
+        Assert.Equal(2, group.Arguments?["entries"]);
+        Assert.Equal(2, log.Entries.Count(static entry => entry.MessageKey == "Log.ImportEntry"));
+        Assert.Contains(
+            log.Entries,
+            static entry => entry.MessageKey == "Log.ImportEntry" && Equals(entry.Arguments?["id"], "entry-0"));
+        Assert.Contains(
+            log.Entries,
+            static entry => entry.MessageKey == "Log.ImportEntry" && Equals(entry.Arguments?["id"], "entry-1"));
+    }
+
+    [Fact]
     public async Task LoadRaisesCommandAvailabilityChanges()
     {
         var vm = CreateViewModel();

@@ -515,4 +515,7 @@ public sealed class WasmLocalizer
             "ja-JP" or "ja" => "ja-JP",
             _ => "en-US"
         };
+
+    /// <summary>Keys present in the English table. Used for host localization inventory tests.</summary>
+    public static IReadOnlyCollection<string> EnglishKeys { get; } = English.Keys.ToArray();
 }

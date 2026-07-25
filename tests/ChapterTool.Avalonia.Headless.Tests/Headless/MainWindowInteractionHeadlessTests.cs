@@ -35,7 +35,7 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.Equal(host.ViewModel.SaveFormatIndex, formatBox.SelectedIndex);
         Assert.Equal(1, (int)(orderShift.Value ?? -1));
 
-        await host.Window.SaveCommand.ExecuteAsync();
+        await host.ViewModel.SaveCommand.ExecuteAsync();
         Assert.Equal(1, host.SaveService.Calls);
 
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");

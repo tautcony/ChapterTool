@@ -173,6 +173,10 @@ internal sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPrefer
     }
 }
 
+/// <summary>
+/// Export format port backed by workspace export preferences.
+/// Uses ViewModel property setters so bindable notifications stay correct.
+/// </summary>
 internal sealed class ExportPreferencePortAdapter(MainWindowViewModel owner) : IExportPreferencePort
 {
     public int SaveFormatIndex
@@ -188,6 +192,9 @@ internal sealed class ExportPreferencePortAdapter(MainWindowViewModel owner) : I
     }
 }
 
+/// <summary>
+/// Naming mode port backed by workspace projection state through ViewModel setters.
+/// </summary>
 internal sealed class NamingPreferencePortAdapter(MainWindowViewModel owner) : INamingPreferencePort
 {
     public bool AutoGenerateNames
@@ -203,6 +210,9 @@ internal sealed class NamingPreferencePortAdapter(MainWindowViewModel owner) : I
     }
 }
 
+/// <summary>
+/// Chapter edit port that applies frame shifts through the clip editing coordinator.
+/// </summary>
 internal sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapterEditPort
 {
     public void ShiftFramesForward(int frames)

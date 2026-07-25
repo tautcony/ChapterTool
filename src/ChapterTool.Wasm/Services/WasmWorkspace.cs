@@ -21,6 +21,7 @@ public sealed class WasmWorkspace : IDisposable
     private readonly ChapterOutputProjectionService projectionService = new();
     private readonly ChapterEditingService editingService;
     private readonly WasmLocalizer localizer;
+    private readonly long maxLoadBytes;
     private readonly List<WasmLogEntry> logs = [];
     private readonly HashSet<int> selectedRowIndexes = [];
 
@@ -39,11 +40,12 @@ public sealed class WasmWorkspace : IDisposable
     private string? statusLocalizationKey;
     private object[] statusLocalizationArgs = [];
 
-    public WasmWorkspace(WasmChapterService wasmChapterService, WasmLocalizer? localizer = null)
+    public WasmWorkspace(WasmChapterService wasmChapterService, WasmLocalizer? localizer = null, long? maxLoadBytes = null)
     {
         this.wasmChapterService = wasmChapterService;
         this.localizer = localizer ?? new WasmLocalizer();
         this.localizer.CultureChanged += OnCultureChanged;
+        this.maxLoadBytes = maxLoadBytes is > 0 and var limit ? limit : MaxLoadBytes;
         editingService = new ChapterEditingService(wasmChapterService.TimeFormatter);
         SaveFormatIndex = 0;
         ChapterNameModeIndex = 0;
@@ -513,7 +515,7 @@ public sealed class WasmWorkspace : IDisposable
                 return;
             }
 
-            if (content.LongLength > MaxLoadBytes)
+            if (content.LongLength > maxLoadBytes)
             {
                 SetLocalizedStatus("Status.DropTooLarge");
                 AddLog("Error", StatusText);

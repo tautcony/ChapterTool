@@ -82,13 +82,17 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         this.exportService = exportService;
         this.LogService = logService;
         Localizer = localizer;
+
+        // Production composition always supplies shell and settings. Null remains valid for unit tests only.
         this.shellService = shellService;
         this.SettingsStore = settingsStore;
+
+        // Production injects the composition-owned authoring service. The fallback shares this engine instance.
         ExpressionAuthoringService = expressionAuthoringService ?? new ExpressionAuthoringService(this.ExpressionEngine);
         loadSaveWorkflow = new LoadSaveWorkflow(Workspace, loadService, saveService);
         ClipEditingCoordinator = new ClipEditingCoordinator(Workspace, this.editingService, this.frameRateService);
         projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, formatter);
-        statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, logger, value => StatusText = value);
+        statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, logger, formatter, value => StatusText = value);
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
         PortAdapters = new MainWindowPortAdapters(this);
         chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");

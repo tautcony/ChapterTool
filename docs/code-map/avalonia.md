@@ -33,11 +33,12 @@ Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` use the 
 Role split:
 
 - `MainWindow.axaml`: shell layout and bindings
-- `MainWindow.axaml.cs`: drag/drop, picker triggers, keyboard/UI-only behavior
+- `MainWindow.axaml.cs`: drag/drop, keyboard routing, and UI-only adapter commands (file pickers, DataGrid selection for insert/delete/zones/forward-shift)
+- Pure workflow commands bind to `MainWindowViewModel` (`SaveCommand`, `ReloadCommand`, `PreviewCommand`, `RefreshCommand`, `CombineCommand`, `OpenRelatedMediaCommand`, and tool-window commands)
 - `MainWindowViewModel` partials:
   - `.cs`: fields, ctor, bindable state, command wiring, window/shell helpers
   - `.Settings.cs`: load/apply preferences and language persistence
-  - `.ImportExport.cs`: load/save/append workflows and export options
+  - `.ImportExport.cs`: load/save/append workflows, export options, and chapter-name template path application (`LoadChapterNameTemplateFromPathAsync`)
   - `.Expression.cs`: Lua expression apply/validate and output projection
   - `.Editing.cs`: clip selection, row edits, combine/split, frame-rate transforms
   - `.StatusLog.cs`: status text, diagnostics localization, logging, localized option refresh
@@ -83,7 +84,7 @@ This is the first file to inspect when dependency wiring or service registration
 ### ViewModels
 
 - `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel*.cs`
-- `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs`
+- `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs` (settings monologue by design; appearance lives in `SettingsAppearanceViewModel`)
 - `src/ChapterTool.Avalonia/ViewModels/SettingsAppearanceViewModel.cs`
 - `src/ChapterTool.Avalonia/ViewModels/ChapterExpressionValidation.cs`
 - `src/ChapterTool.Avalonia/ViewModels/ChapterSaveDirectory.cs`
@@ -96,6 +97,7 @@ This is the first file to inspect when dependency wiring or service registration
 
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs`
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
+- `src/ChapterTool.Avalonia/Services/ChapterNameTemplateReader.cs`
 - `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFilePickerService.cs`

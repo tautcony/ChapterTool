@@ -121,10 +121,12 @@ public sealed partial class ExpressionEditor : UserControl
         set => SetValue(AuthoringServiceProperty, value);
     }
 
-    private IExpressionAuthoringService EffectiveAuthoringService
-    {
-        get => AuthoringService ?? field;
-    } = new ExpressionAuthoringService();
+    // Design-time / direct-test construction only. Production XAML binds AuthoringService
+    // from the composition root; OnPropertyChanged re-analyzes when the binding arrives.
+    private IExpressionAuthoringService? fallbackAuthoringService;
+
+    private IExpressionAuthoringService EffectiveAuthoringService =>
+        AuthoringService ?? (fallbackAuthoringService ??= new ExpressionAuthoringService());
 
     public double EditorHeight
     {
