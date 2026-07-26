@@ -77,7 +77,7 @@ done
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_root="$(cd "$script_dir/.." && pwd -P)"
-solution="$repo_root/ChapterTool.Avalonia.slnx"
+solution="$repo_root/ChapterTool.slnx"
 report="${Output:-$repo_root/artifacts/analyzers/analyzers.sarif}"
 
 if ! command -v dotnet >/dev/null 2>&1; then

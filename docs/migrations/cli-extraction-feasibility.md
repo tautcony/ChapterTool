@@ -324,7 +324,7 @@ It must also define the CLI publish artifact and its version source.
 
 ### Phase 6: Publish and Document
 
-1. Add both new projects to `ChapterTool.Avalonia.slnx`.
+1. Add both new projects to `ChapterTool.slnx`.
 2. Publish a distinct CLI artifact for each supported runtime identifier.
 3. Verify executable files, runtime configuration, help, and exit codes.
 4. Update the release workflow and artifact names.
@@ -354,7 +354,7 @@ dotnet test tests/ChapterTool.CommandLine.Tests/ChapterTool.CommandLine.Tests.cs
 dotnet test tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj --no-restore
 dotnet build src/ChapterTool.Cli/ChapterTool.Cli.csproj --no-restore
 dotnet build src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --no-restore
-dotnet test ChapterTool.Avalonia.slnx --no-restore
+dotnet test ChapterTool.slnx --no-restore
 openspec validate --all
 ```
 
@@ -408,7 +408,7 @@ The extraction is complete when all these statements are true:
 
 ## Files That a Future Change Must Update
 
-- `ChapterTool.Avalonia.slnx`
+- `ChapterTool.slnx`
 - `src/ChapterTool.Avalonia/Program.cs`
 - `src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj`
 - `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs`

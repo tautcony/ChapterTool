@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -19,6 +20,19 @@ public static partial class NodeApi
     public static string Import(string fileName, string contentBase64)
     {
         ArgumentNullException.ThrowIfNull(contentBase64);
+
+        if (!PortableInputPolicy.TryGetBase64DecodedLength(contentBase64, out var contentLength))
+        {
+            return SerializeImportFailure("INVALID_BASE64", "Input content is not valid Base64.");
+        }
+
+        if (!PortableInputPolicy.IsWithinLimit(contentLength))
+        {
+            return SerializeImportFailure(
+                "INPUT_TOO_LARGE",
+                $"Input content exceeds the {PortableInputPolicy.MaxBytes:N0}-byte limit.");
+        }
+
         var content = Convert.FromBase64String(contentBase64);
         var result = ChapterService.ImportAsync(fileName, content).GetAwaiter().GetResult();
         return JsonSerializer.Serialize(ToImportResponse(result), NodeJsonContext.Default.NodeImportResponse);
@@ -81,6 +95,15 @@ public static partial class NodeApi
                         media.AbsolutePath)).ToArray())).ToArray(),
                 group.DefaultEntryIndex)).ToArray(),
             result.Diagnostics.Select(ToDiagnostic).ToArray());
+
+    private static string SerializeImportFailure(string code, string message) =>
+        JsonSerializer.Serialize(
+            new NodeImportResponse(
+                false,
+                false,
+                [],
+                [new NodeDiagnostic("Error", code, message, null, null)]),
+            NodeJsonContext.Default.NodeImportResponse);
 
     private static NodeChapterSet ToNodeChapterSet(ChapterSet chapterSet) =>
         new(

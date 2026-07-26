@@ -80,7 +80,7 @@ export function resolveBuildPaths() {
   return {
     packageDirectory,
     repositoryDirectory,
-    solutionPath: join(repositoryDirectory, "ChapterTool.Avalonia.slnx"),
+    solutionPath: join(repositoryDirectory, "ChapterTool.slnx"),
     projectPath: join(repositoryDirectory, "src", "ChapterTool.Node", "ChapterTool.Node.csproj"),
     packageJsonPath: join(packageDirectory, "package.json"),
     sourceDirectory,

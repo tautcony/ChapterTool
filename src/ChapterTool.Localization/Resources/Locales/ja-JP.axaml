@@ -240,6 +240,7 @@
   <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">ソースオプションを選択: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, fps={fps}</x:String>
   <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">設定を読み込みました: savingPath='{savingPath}', language='{language}'</x:String>
   <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
+  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">ユーザーインターフェイス操作に予期しない失敗が発生しました</x:String>
   <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status}: {path}</x:String>
   <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">'{path}' からチャプター名テンプレートを読み込めませんでした</x:String>
   <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">チャプター名テンプレート '{name}' を '{path}' から読み込みました</x:String>
@@ -443,6 +444,7 @@
   <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">テンプレート {name} を読み込みました</x:String>
   <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">未選択</x:String>
   <x:String x:Key="Status.Updated" xml:space="preserve">更新しました</x:String>
+  <x:String x:Key="Status.UnexpectedError" xml:space="preserve">操作に失敗しました。詳細はログを確認してください。</x:String>
   <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">zones は生成されませんでした。</x:String>
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones を生成しました</x:String>
   <x:String x:Key="Title.Expression" xml:space="preserve">チャプター時刻に対する Lua 式。例: t + 1 または t * 25 / 24</x:String>

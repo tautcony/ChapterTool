@@ -34,6 +34,7 @@ Role split:
 
 - `MainWindow.axaml`: shell layout and bindings
 - `MainWindow.axaml.cs`: drag/drop, keyboard routing, and UI-only adapter commands (file pickers, DataGrid selection for insert/delete/zones/forward-shift)
+- `UiOperationBoundary.cs`: common asynchronous UI exception and cancellation boundary
 - Pure workflow commands bind to `MainWindowViewModel` (`SaveCommand`, `ReloadCommand`, `PreviewCommand`, `RefreshCommand`, `CombineCommand`, `OpenRelatedMediaCommand`, and tool-window commands)
 - `MainWindowViewModel` partials:
   - `.cs`: fields, ctor, bindable state, command wiring, window/shell helpers

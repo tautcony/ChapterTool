@@ -30,6 +30,30 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task SelectAndCombineMplsClipsUsesSharedSessionTransitions()
+    {
+        var workspace = CreateWorkspace();
+        var path = LocateFixture("Importing", "Disc", "Mpls", "00001_Hidan_no_Aria_AA.mpls");
+        await workspace.LoadAsync(path, await File.ReadAllBytesAsync(path));
+
+        Assert.Equal(2, workspace.ClipOptions.Count);
+        Assert.False(workspace.IsClipCombined);
+        var secondClip = workspace.ClipOptions[1];
+
+        workspace.SelectClip(secondClip.Id);
+
+        Assert.Equal(secondClip.Id, workspace.SelectedClipId);
+        Assert.Contains(secondClip.DisplayText, workspace.StatusText, StringComparison.Ordinal);
+        Assert.Equal(6, workspace.Rows.Count);
+
+        workspace.ToggleClipCombine();
+
+        Assert.True(workspace.IsClipCombined);
+        Assert.Single(workspace.ClipOptions);
+        Assert.Equal(12, workspace.Rows.Count);
+    }
+
+    [Fact]
     public async Task AppendMplsMergesGroupsAndKeepsSessionOnFailure()
     {
         var workspace = CreateWorkspace();
@@ -174,6 +198,21 @@ public sealed class WasmWorkspaceTests
 
         Assert.Empty(workspace.Rows);
         Assert.False(workspace.CanSave);
+        Assert.Contains("64", workspace.StatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RejectsAppendsAboveMaxByteLimitBeforeImport()
+    {
+        var workspace = new WasmWorkspace(new WasmChapterService(), maxLoadBytes: 512);
+        var sourcePath = LocateFixture("Importing", "Disc", "Mpls", "00000_HEVC.mpls");
+        await workspace.LoadAsync(sourcePath, await File.ReadAllBytesAsync(sourcePath));
+        Assert.True(workspace.CanAppendMpls);
+        var before = workspace.Rows.Select(row => row.Name).ToArray();
+
+        await workspace.AppendMplsAsync("huge.mpls", new byte[513]);
+
+        Assert.Equal(before, workspace.Rows.Select(row => row.Name).ToArray());
         Assert.Contains("64", workspace.StatusText, StringComparison.Ordinal);
     }
 
@@ -338,7 +377,7 @@ public sealed class WasmWorkspaceTests
         directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
+            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.slnx")))
             {
                 return Path.Combine(new[] { directory.FullName, "tests", "ChapterTool.Core.Tests", "Fixtures" }.Concat(segments).ToArray());
             }

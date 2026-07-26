@@ -3,7 +3,7 @@
 ## Repository Overview
 
 - This repository contains the current .NET 10 ChapterTool codebase.
-- Use `ChapterTool.Avalonia.slnx` as the main solution.
+- Use `ChapterTool.slnx` as the main solution.
 - Main projects:
   - `src/ChapterTool.Core` (pure managed and browser WebAssembly-capable through stream and text import APIs)
   - `src/ChapterTool.Wasm` (Blazor WebAssembly browser application for Core)
@@ -75,7 +75,7 @@
 - Run focused Avalonia Headless tests after XAML or UI shell changes:
   - `dotnet test tests\ChapterTool.Avalonia.Headless.Tests\ChapterTool.Avalonia.Headless.Tests.csproj --no-restore`
 - Run the full solution tests before finalizing broader changes:
-  - `dotnet test ChapterTool.Avalonia.slnx --no-restore`
+  - `dotnet test ChapterTool.slnx --no-restore`
 - Build the Avalonia app when changing app project files:
   - `dotnet build src\ChapterTool.Avalonia\ChapterTool.Avalonia.csproj --no-restore`
 - If dependencies, target frameworks, or generated project assets change, run restore or build once.

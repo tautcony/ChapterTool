@@ -18,6 +18,7 @@ public sealed partial class MainWindow : Window
     private readonly ShortcutRouter shortcutRouter;
     private readonly IFilePickerService filePickerService;
     private readonly string? startupPath;
+    private readonly UiOperationBoundary uiOperationBoundary;
     private bool windowCommandRefreshPending;
 
     public MainWindow()
@@ -34,6 +35,7 @@ public sealed partial class MainWindow : Window
         this.startupPath = startupPath;
         filePickerService = filePickerServiceFactory(this);
         shortcutRouter = new ShortcutRouter(viewModel);
+        uiOperationBoundary = new UiOperationBoundary(viewModel.ReportUnexpectedUiException);
 
         // UI-only adapter commands: pickers and DataGrid selection. All other
         // commands bind to MainWindowViewModel so CanExecute has a single owner.
@@ -46,6 +48,12 @@ public sealed partial class MainWindow : Window
         DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute());
         OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
         OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
+
+        viewModel.SetUiErrorHandler(viewModel.ReportUnexpectedUiException);
+        foreach (var command in UiAdapterCommands())
+        {
+            command.ErrorHandler = viewModel.ReportUnexpectedUiException;
+        }
 
         InitializeComponent();
         DataContext = viewModel;
@@ -157,7 +165,7 @@ public sealed partial class MainWindow : Window
         Title = $"{baseTitle} v{version?.ToString(3) ?? "0.0.0"}";
     }
 
-    private async void OnOpened(object? sender, EventArgs args)
+    private async void OnOpened(object? sender, EventArgs args) => await uiOperationBoundary.RunAsync(async () =>
     {
         await viewModel.LoadSettingsAsync(CancellationToken.None);
         if (!string.IsNullOrWhiteSpace(startupPath))
@@ -165,7 +173,7 @@ public sealed partial class MainWindow : Window
             viewModel.SourcePath = startupPath;
             await LoadAsync();
         }
-    }
+    });
 
     private void OnSizeChanged(object? sender, SizeChangedEventArgs args)
     {
@@ -179,32 +187,23 @@ public sealed partial class MainWindow : Window
         Height = Math.Max(MinHeight, Height + args.HeightDelta);
     }
 
-    private async void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args)
+    private async void OnChapterGridCellEditEnded(object? sender, DataGridCellEditEndedEventArgs args) =>
+        await uiOperationBoundary.RunAsync(async () => await CommitCellEditAsync(args).AsTask());
+
+    private async void OnDrop(object? sender, DragEventArgs args) => await uiOperationBoundary.RunAsync(async () =>
     {
-        await CommitCellEditAsync(args);
-    }
-
-    private async void OnDrop(object? sender, DragEventArgs args)
-    {
-        try
+        var files = args.DataTransfer.TryGetFiles()?.ToArray();
+        var path = files?.FirstOrDefault()?.Path.LocalPath;
+        if (string.IsNullOrWhiteSpace(path))
         {
-            var files = args.DataTransfer.TryGetFiles()?.ToArray();
-            var path = files?.FirstOrDefault()?.Path.LocalPath;
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return;
-            }
-
-            viewModel.SourcePath = path;
-            await viewModel.DropPathLoadCommand.ExecuteAsync(path);
+            return;
         }
-        catch (Exception exception)
-        {
-            StatusBlock.Text = exception.Message;
-        }
-    }
 
-    private async void OnKeyDown(object? sender, KeyEventArgs args)
+        viewModel.SourcePath = path;
+        await viewModel.DropPathLoadCommand.ExecuteAsync(path);
+    });
+
+    private async void OnKeyDown(object? sender, KeyEventArgs args) => await uiOperationBoundary.RunAsync(async () =>
     {
         if (IsTextInputKeyScope(args.Source as Visual))
         {
@@ -262,7 +261,7 @@ public sealed partial class MainWindow : Window
         }
 
         await shortcutRouter.RouteAsync(gesture);
-    }
+    });
 
     private bool IsTextInputKeyScope(Visual? source)
     {
@@ -442,6 +441,19 @@ public sealed partial class MainWindow : Window
         yield return viewModel.DeleteCommand;
         yield return viewModel.ZonesCommand;
         yield return viewModel.ForwardShiftCommand;
+    }
+
+    private IEnumerable<UiCommand> UiAdapterCommands()
+    {
+        yield return BrowseAndLoadCommand;
+        yield return AppendMplsCommand;
+        yield return LoadChapterNameTemplateCommand;
+        yield return LoadLuaExpressionScriptCommand;
+        yield return SaveToCommand;
+        yield return InsertSelectedCommand;
+        yield return DeleteSelectedCommand;
+        yield return OpenZonesCommand;
+        yield return OpenForwardShiftCommand;
     }
 
     private void RaiseCommandStates()

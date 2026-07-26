@@ -123,11 +123,46 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     internal void NotifyPropertyChanged(string propertyName) => OnPropertyChanged(propertyName);
 
+    internal void SetUiErrorHandler(Func<Exception, ValueTask> errorHandler)
+    {
+        foreach (var command in AllCommands())
+        {
+            command.ErrorHandler = errorHandler;
+        }
+    }
+
     private void InitializeCommands()
     {
         InitializeFileCommands();
         InitializeEditCommands();
         InitializeWindowCommands();
+    }
+
+    private IEnumerable<UiCommand> AllCommands()
+    {
+        yield return LoadCommand;
+        yield return ReloadCommand;
+        yield return AppendMplsCommand;
+        yield return DropPathLoadCommand;
+        yield return SaveCommand;
+        yield return RefreshCommand;
+        yield return ChangeFpsCommand;
+        yield return SelectClipCommand;
+        yield return CombineCommand;
+        yield return EditTimeCommand;
+        yield return EditNameCommand;
+        yield return EditFrameCommand;
+        yield return DeleteCommand;
+        yield return InsertCommand;
+        yield return OpenRelatedMediaCommand;
+        yield return PreviewCommand;
+        yield return LogCommand;
+        yield return SettingsCommand;
+        yield return LanguageCommand;
+        yield return ExpressionCommand;
+        yield return TemplateNamesCommand;
+        yield return ZonesCommand;
+        yield return ForwardShiftCommand;
     }
 
     private void InitializeFileCommands()

@@ -13,7 +13,7 @@ Automated build and tests pass. The IFO crash caused by clip-selection refresh r
 Current verification:
 
 ```powershell
-dotnet test ChapterTool.Avalonia.slnx --no-restore
+dotnet test ChapterTool.slnx --no-restore
 openspec validate rewrite-avalonia-dotnet10 --strict
 ```
 

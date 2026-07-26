@@ -9,7 +9,7 @@ public static class FixtureResolver
             var directory = new DirectoryInfo(AppContext.BaseDirectory);
             while (directory is not null)
             {
-                if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
+                if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.slnx")))
                 {
                     return directory.FullName;
                 }

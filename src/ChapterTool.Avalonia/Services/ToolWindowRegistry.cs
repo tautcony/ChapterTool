@@ -56,7 +56,11 @@ public static class ToolWindowRegistry
             {
                 DataContext = new TextToolViewModel(
                     context.Owner.BuildPreview,
-                    new TextToolOptions { FormatSelector = new TextToolFormatSelector(context.Owner.PortAdapters.ExportPreferences) })
+                    new TextToolOptions
+                    {
+                        FormatSelector = new TextToolFormatSelector(context.Owner.PortAdapters.ExportPreferences),
+                        ErrorHandler = context.Owner.ReportUnexpectedUiException
+                    })
             },
             PreferredWidth: 760),
         new(
@@ -69,7 +73,8 @@ public static class ToolWindowRegistry
                     new TextToolOptions
                     {
                         ClearAction = context.Owner.ClearLog,
-                        LiveRefreshService = context.Owner.LogService
+                        LiveRefreshService = context.Owner.LogService,
+                        ErrorHandler = context.Owner.ReportUnexpectedUiException
                     })
             },
             PreferredWidth: 760),
@@ -112,7 +117,12 @@ public static class ToolWindowRegistry
         new(
             "zones",
             "Tool.Zones.Title",
-            context => new TextToolView { DataContext = new TextToolViewModel(context.Owner.CreateZonesText) }),
+            context => new TextToolView
+            {
+                DataContext = new TextToolViewModel(
+                    context.Owner.CreateZonesText,
+                    new TextToolOptions { ErrorHandler = context.Owner.ReportUnexpectedUiException })
+            }),
         new(
             "forward-shift",
             "Tool.ForwardShift.Title",

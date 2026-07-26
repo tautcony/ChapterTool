@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ChapterTool } from "@chaptertool/node";
+import { MAX_INPUT_BYTES } from "@chaptertool/node";
 
 const chapterText = `CHAPTER01=00:00:00.000
 CHAPTER01NAME=Opening
@@ -60,6 +61,17 @@ it("rejects unsupported JavaScript input", async () => {
   await expect(tool.import(42)).rejects.toMatchObject({
     name: "TypeError",
     message: "Chapter content must be a string, Buffer, or Uint8Array."
+  });
+});
+
+it("rejects input above the shared byte limit before the WASM boundary", async () => {
+  const tool = new ChapterTool();
+
+  await expect(tool.import("a".repeat(MAX_INPUT_BYTES + 1))).rejects.toMatchObject({
+    name: "RangeError",
+    code: "INPUT_TOO_LARGE",
+    maxBytes: MAX_INPUT_BYTES,
+    actualBytes: MAX_INPUT_BYTES + 1
   });
 });
 

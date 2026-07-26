@@ -75,7 +75,7 @@ In-memory chapter mutations:
 Host-agnostic interactive session state shared by Avalonia and WASM:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — path, edit buffer, revision and session-token commit rules
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — host-neutral session state, edit buffer, revision and session-token commit rules for Avalonia and WASM
 - `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
 

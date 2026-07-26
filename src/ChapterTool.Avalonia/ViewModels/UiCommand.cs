@@ -8,6 +8,7 @@ public sealed class UiCommand(
     Func<object?, bool>? canExecute = null)
     : ICommand, INotifyPropertyChanged
 {
+    private const string UiErrorHandledKey = "ChapterTool.UiCommand.ErrorHandled";
     private readonly Func<object?, bool> canExecute = canExecute ?? (_ => true);
 
     public UiCommand(Func<object?, ValueTask> execute, Func<object?, bool>? canExecute = null)
@@ -18,6 +19,9 @@ public sealed class UiCommand(
     public event EventHandler? CanExecuteChanged;
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Optional host boundary for unexpected command failures.</summary>
+    public Func<Exception, ValueTask>? ErrorHandler { get; set; }
 
     public bool IsExecuting
     {
@@ -65,9 +69,19 @@ public sealed class UiCommand(
         {
             await execute(parameter, cancellationToken);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             ExecutionError = exception;
+            if (ErrorHandler is not null)
+            {
+                exception.Data[UiErrorHandledKey] = true;
+                await ErrorHandler(exception);
+            }
+
             throw;
         }
         finally
@@ -89,4 +103,7 @@ public sealed class UiCommand(
     }
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+
+    internal static bool WasReportedToUiBoundary(Exception exception) =>
+        exception.Data[UiErrorHandledKey] is true;
 }

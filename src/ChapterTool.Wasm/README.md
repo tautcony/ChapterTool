@@ -58,13 +58,15 @@ Empty grid offers **Load OGM sample** for a quick smoke path.
 
 | Piece | Role |
 |-------|------|
-| `Services/WasmWorkspace` | Browser session state: load/reload/append, clip selection, multi-select editing, projection, diagnostics, logs, and save/preview |
+| `Services/WasmWorkspace` | Browser presentation state for load/reload/append, clip selection, multi-select editing, projection, diagnostics, logs, and save/preview. `ChapterWorkspace` owns the shared clip session and edit buffer. |
 | `Services/WasmChapterService` | Byte-based Core importers + `ChapterExportService` |
 | `Services/WasmLocalizer` | `en-US` / `zh-CN` / `ja-JP` UI and workspace status strings |
 | `Pages/Home.razor` | Main shell UI zones |
 | `wwwroot/js/download.js` | File picker trigger, encoded export download, appearance application, and localStorage persistence |
 
 Pass chapter bytes through `ChapterImportRequest.Content`. The browser app does not use local file paths for import.
+
+Portable browser imports use the shared 64 MiB byte limit in `ChapterTool.Core.Boundaries.PortableInputPolicy`. The limit applies to load, reload, and MPLS append.
 
 ## Feature boundaries
 

@@ -98,5 +98,12 @@ public sealed partial class MainWindowViewModel
     internal void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
         => statusDiagnosticsPresenter.LogDiagnostics(operation, diagnostics);
 
+    internal ValueTask ReportUnexpectedUiException(Exception exception)
+    {
+        SetStatus("Status.UnexpectedError");
+        Log(LogLevel.Error, "Log.UnexpectedError", exception.ToString());
+        return ValueTask.CompletedTask;
+    }
+
     internal static LogLevel LogLevelFor(DiagnosticSeverity severity) => StatusDiagnosticsPresenter.LogLevelFor(severity);
 }

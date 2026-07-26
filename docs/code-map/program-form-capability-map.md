@@ -139,7 +139,7 @@ They do not describe product priority.
 | --- | --- | --- | --- | --- | --- |
 | Inspect groups and entries | Provides import result groups | Provides `inspect` | Shows groups through the GUI load workflow | Shows groups through the workspace | `ChapterToolCliApplication.InspectAsync` and `WasmWorkspace` `[Host variant]` |
 | Select a group or entry | Provides ordered import result entries | Uses `--group-index`, `--entry-index`, and `--entry-id` | Uses clip and entry controls | Uses clip and entry controls | Core import result plus each host selection layer `[Host variant]` |
-| Interactive chapter session | Provides shared `ChapterWorkspace` and `ClipSession` kernel | Does not provide an interactive session | Uses Core session kernel plus Avalonia shell | Uses Core `ClipSession` transitions inside `WasmWorkspace` | `src/ChapterTool.Core/Session/` and host shells `[Shared]` kernel with `[Host variant]` presentation |
+| Interactive chapter session | Provides shared `ChapterWorkspace` and `ClipSession` kernel | Does not provide an interactive session | Uses Core session kernel plus Avalonia shell | Uses `ChapterWorkspace` for the clip session and edit buffer plus browser presentation state | `src/ChapterTool.Core/Session/` and host shells `[Shared]` kernel with `[Host variant]` presentation |
 | Edit chapter time | Provides `ChapterEditingService` | Does not edit rows interactively | Uses DataGrid editing | Uses browser input editing | `src/ChapterTool.Core/Editing/ChapterEditingService.cs` `[Host variant]` |
 | Edit chapter name | Provides `ChapterEditingService` | Does not edit rows interactively | Uses DataGrid editing | Uses browser input editing | `src/ChapterTool.Core/Editing/ChapterEditingService.cs` `[Host variant]` |
 | Insert and delete rows | Provides edit operations | Does not provide row commands | Provides insert and delete commands | Provides insert and delete actions | Core editing service plus host command layer `[Host variant]` |
@@ -183,7 +183,7 @@ They do not describe product priority.
 | Application telemetry | Provides no telemetry startup | Does not initialize Sentry | Initializes Sentry for GUI startup when configured | Does not use the desktop Sentry startup | `src/ChapterTool.Avalonia/Program.cs` `[Desktop only]` |
 | Logs and diagnostics | Provides structured diagnostics | Writes diagnostics to terminal streams | Uses the application log panel and localized UI messages | Uses in-memory logs and localized UI messages | `ChapterDiagnostic`, `ApplicationLogPanelProvider`, and `WasmWorkspace` `[Host variant]` |
 | Progress | Provides import progress contracts | Does not render interactive progress | Renders import progress in the desktop workflow | Reports browser load and import progress | `ChapterImportProgress` and host workflows `[Host variant]` |
-| Input size limit | Provides parser limits | Has no shared 64 MB browser limit | Has no shared 64 MB browser limit | Enforces `WasmWorkspace.MaxLoadBytes` at 64 MiB | `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` `[Browser only]` |
+| Input size limit | Defines the portable 64 MiB byte budget | Uses local file boundaries | Uses local file boundaries | Enforces the shared budget for load, reload, and append | `src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs`, `WasmWorkspace.cs`, `NodeApi.cs`, and `packages/chaptertool/src/utils/input.ts` `[Shared portable boundary]` |
 
 ## 4. Ownership and Lookup
 
@@ -274,7 +274,8 @@ Start with these paths for browser behavior:
 - Application startup: `src/ChapterTool.Wasm/Program.cs`
 - Page and browser actions: `src/ChapterTool.Wasm/Pages/Home.razor`
 - Core import and export adapter: `src/ChapterTool.Wasm/Services/WasmChapterService.cs`
-- Workspace state and workflows: `src/ChapterTool.Wasm/Services/WasmWorkspace.cs`
+- Workspace presentation state and workflows: `src/ChapterTool.Wasm/Services/WasmWorkspace.cs`
+- Shared session state: `src/ChapterTool.Core/Session/ChapterWorkspace.cs`
 - Browser settings and localization: `src/ChapterTool.Wasm/Services/WasmModels.cs` and `WasmLocalizer.cs`
 - Download bridge: `src/ChapterTool.Wasm/wwwroot/js/download.js`
 
@@ -342,7 +343,7 @@ Use these rules when you change a capability:
 | Avalonia XAML or interaction behavior | `tests/ChapterTool.Avalonia.Headless.Tests` | Check user actions and workflow results |
 | WASM workspace or browser behavior | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` | Build `src/ChapterTool.Wasm/ChapterTool.Wasm.csproj` when project assets change |
 | Node.js package or npm runtime packaging | `packages/chaptertool/test/chaptertool.test.mjs` | Run `npm test` from `packages/chaptertool` |
-| Cross-form behavior | All applicable test projects | Run `dotnet test ChapterTool.Avalonia.slnx --no-restore` sequentially |
+| Cross-form behavior | All applicable test projects | Run `dotnet test ChapterTool.slnx --no-restore` sequentially |
 
 Do not use source-text assertions to test code or configuration.
 

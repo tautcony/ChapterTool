@@ -121,9 +121,9 @@ The package build requires the .NET 10 SDK. The build generates and includes the
 Use the main solution for local development:
 
 ```bash
-dotnet restore ChapterTool.Avalonia.slnx
-dotnet build ChapterTool.Avalonia.slnx --no-restore
-dotnet test ChapterTool.Avalonia.slnx --no-restore
+dotnet restore ChapterTool.slnx
+dotnet build ChapterTool.slnx --no-restore
+dotnet test ChapterTool.slnx --no-restore
 ```
 
 Run coverage with `./scripts/test-coverage.sh`. The script writes reports to `artifacts/coverage`.

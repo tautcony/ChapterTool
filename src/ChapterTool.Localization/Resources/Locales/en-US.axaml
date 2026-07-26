@@ -240,6 +240,7 @@
   <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">Selected source option: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, fps={fps}</x:String>
   <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">Settings loaded: savingPath='{savingPath}', language='{language}'</x:String>
   <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
+  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">Unexpected UI operation failure</x:String>
   <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status} from {path}</x:String>
   <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">Failed to load chapter name template from '{path}'</x:String>
   <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">Loaded chapter name template '{name}' from '{path}'</x:String>
@@ -443,6 +444,7 @@
   <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">Loaded template {name}</x:String>
   <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">Not selected</x:String>
   <x:String x:Key="Status.Updated" xml:space="preserve">Updated</x:String>
+  <x:String x:Key="Status.UnexpectedError" xml:space="preserve">The operation failed unexpectedly. Check the log for details.</x:String>
   <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">No zones generated.</x:String>
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones generated</x:String>
   <x:String x:Key="Title.Expression" xml:space="preserve">Lua expression over chapter time, e.g. t + 1 or t * 25 / 24</x:String>

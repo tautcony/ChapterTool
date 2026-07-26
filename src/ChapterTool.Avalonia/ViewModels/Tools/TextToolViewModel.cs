@@ -80,6 +80,8 @@ public sealed class TextToolViewModel : ObservableViewModel
 
     public bool CanSelectFormat => options.FormatSelector is not null;
 
+    public Func<Exception, ValueTask>? ErrorHandler => options.ErrorHandler;
+
     public IReadOnlyList<string> FormatOptions => options.FormatSelector?.Labels ?? [];
 
     public int SelectedFormatIndex
@@ -313,6 +315,8 @@ public sealed class TextToolOptions
     public TextToolFormatSelector? FormatSelector { get; init; }
 
     public IApplicationLogService? LiveRefreshService { get; init; }
+
+    public Func<Exception, ValueTask>? ErrorHandler { get; init; }
 }
 
 public sealed class TextToolFormatSelector(IExportPreferencePort exportPreferences)

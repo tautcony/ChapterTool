@@ -11,8 +11,8 @@ This document records the module-by-module verification pass after the Avalonia 
 ## Verification Commands
 
 ```powershell
-dotnet build ChapterTool.Avalonia.slnx --no-restore
-dotnet test ChapterTool.Avalonia.slnx --no-restore
+dotnet build ChapterTool.slnx --no-restore
+dotnet test ChapterTool.slnx --no-restore
 openspec validate rewrite-avalonia-dotnet10 --strict
 ```
 

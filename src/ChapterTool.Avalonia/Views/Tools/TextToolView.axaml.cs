@@ -13,6 +13,7 @@ namespace ChapterTool.Avalonia.Views.Tools;
 public sealed partial class TextToolView : UserControl
 {
     private TextToolViewModel? subscribedViewModel;
+    private UiOperationBoundary? uiOperationBoundary;
 
     public TextToolView()
     {
@@ -21,7 +22,8 @@ public sealed partial class TextToolView : UserControl
         DetachedFromVisualTree += OnDetachedFromVisualTree;
     }
 
-    private async void OnCopyClicked(object? sender, RoutedEventArgs args)
+    private async void OnCopyClicked(object? sender, RoutedEventArgs args) =>
+        await (uiOperationBoundary ??= new UiOperationBoundary(ReportUnexpectedException)).RunAsync(async () =>
     {
         if (DataContext is not TextToolViewModel viewModel)
         {
@@ -33,7 +35,7 @@ public sealed partial class TextToolView : UserControl
         {
             await window.Clipboard.SetTextAsync(viewModel.Text);
         }
-    }
+    });
 
     private void OnDataContextChanged(object? sender, EventArgs args)
     {
@@ -46,6 +48,7 @@ public sealed partial class TextToolView : UserControl
         subscribedViewModel = DataContext as TextToolViewModel;
         if (subscribedViewModel is not null)
         {
+            uiOperationBoundary = new UiOperationBoundary(subscribedViewModel.ErrorHandler ?? ReportUnexpectedException);
             subscribedViewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
@@ -141,4 +144,14 @@ public sealed partial class TextToolView : UserControl
         };
 
     private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
+
+    private ValueTask ReportUnexpectedException(Exception exception)
+    {
+        if (subscribedViewModel?.ErrorHandler is { } handler)
+        {
+            return handler(exception);
+        }
+
+        return ValueTask.CompletedTask;
+    }
 }

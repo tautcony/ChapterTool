@@ -37,6 +37,7 @@ import type {
 } from "./types.js";
 
 export type * from "./types.js";
+export { MAX_INPUT_BYTES } from "./utils/input.js";
 
 interface NodeApi {
   [operation: string]: (...arguments_: unknown[]) => unknown;

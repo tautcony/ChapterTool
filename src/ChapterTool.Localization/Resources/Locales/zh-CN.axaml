@@ -240,6 +240,7 @@
   <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">已选择源选项：index={index}，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，fps={fps}</x:String>
   <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">已载入设置：保存目录='{savingPath}'，语言='{language}'</x:String>
   <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
+  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">用户界面操作意外失败</x:String>
   <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status}，来源：{path}</x:String>
   <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">无法从 '{path}' 加载章节名称模板</x:String>
   <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">已从 '{path}' 加载章节名称模板 '{name}'</x:String>
@@ -443,6 +444,7 @@
   <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">已加载模板 {name}</x:String>
   <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">未选择</x:String>
   <x:String x:Key="Status.Updated" xml:space="preserve">已更新</x:String>
+  <x:String x:Key="Status.UnexpectedError" xml:space="preserve">操作意外失败。请查看日志了解详细信息。</x:String>
   <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">未生成 zones。</x:String>
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones 已生成</x:String>
   <x:String x:Key="Title.Expression" xml:space="preserve">基于章节时间的 Lua 表达式，例如 t + 1 或 t * 25 / 24</x:String>

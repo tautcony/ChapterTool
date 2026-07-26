@@ -93,6 +93,13 @@ public sealed class ChapterWorkspace
         CurrentChapterSet = session.CurrentChapterSet;
     }
 
+    /// <summary>Clears the loaded session and edit buffer.</summary>
+    public void ClearSession()
+    {
+        ClipSession = null;
+        CurrentChapterSet = null;
+    }
+
     /// <summary>Updates the working edit buffer without changing clip ownership.</summary>
     public void SetCurrentChapterSet(ChapterSet? chapterSet) => CurrentChapterSet = chapterSet;
 

@@ -56,7 +56,7 @@ The rewrite SHALL migrate and strengthen existing MSTest coverage into .NET 10 t
 - **AND** they SHALL invoke CLI services or command definitions without starting the Avalonia desktop lifetime
 
 #### Scenario: xUnit v3 test suite runs through dotnet test
-- **WHEN** `dotnet test ChapterTool.Avalonia.slnx --no-restore` runs after restore
+- **WHEN** `dotnet test ChapterTool.slnx --no-restore` runs after restore
 - **THEN** Core, Infrastructure, and Avalonia test assemblies SHALL execute under xUnit v3 without framework discovery failures
 
 ### Requirement: Avalonia Headless UI tests run in a dedicated test process
@@ -256,7 +256,7 @@ Each mergeable slice of this change SHALL run focused tests for touched projects
 
 #### Scenario: Security slices gate Core tests then full solution
 - **WHEN** XML/binary hardening or Lua sandbox tests change Core
-- **THEN** the slice SHALL run focused Core tests and then `dotnet test ChapterTool.Avalonia.slnx` (or the documented full-solution command) as a single gate before merge
+- **THEN** the slice SHALL run focused Core tests and then `dotnet test ChapterTool.slnx` (or the documented full-solution command) as a single gate before merge
 
 #### Scenario: Shell slices gate Avalonia unit then Headless then full solution
 - **WHEN** ViewModel/coordinator or XAML shell behavior changes
@@ -289,12 +289,12 @@ The Avalonia unit-test project SHALL cover chapter workspace/session transitions
 - **AND** those scenarios SHALL be treated as merge blockers for the migrating slice, not deferred to final cleanup
 
 ### Requirement: Each mergeable slice has proportional verification gates
-Every independently mergeable decomposition slice SHALL run focused tests for the changed surface plus a full-solution verification gate before merge. Maintainers SHALL NOT launch multiple external `dotnet test` commands in parallel. Avalonia Headless UI tests SHALL remain in the dedicated `ChapterTool.Avalonia.Headless.Tests` project so they keep a separate testhost from non-UI Avalonia unit tests. A single `dotnet test ChapterTool.Avalonia.slnx` invocation is an allowed full-solution gate and may include the Headless project; that is not the same as starting multiple concurrent `dotnet test` processes.
+Every independently mergeable decomposition slice SHALL run focused tests for the changed surface plus a full-solution verification gate before merge. Maintainers SHALL NOT launch multiple external `dotnet test` commands in parallel. Avalonia Headless UI tests SHALL remain in the dedicated `ChapterTool.Avalonia.Headless.Tests` project so they keep a separate testhost from non-UI Avalonia unit tests. A single `dotnet test ChapterTool.slnx` invocation is an allowed full-solution gate and may include the Headless project; that is not the same as starting multiple concurrent `dotnet test` processes.
 
 #### Scenario: Session-heavy slices run full solution tests before merge
 - **WHEN** Slice A or Slice B is proposed for merge
 - **THEN** verification SHALL include focused Avalonia unit tests for load/clip/edit/expression paths
-- **AND** verification SHALL include `dotnet test ChapterTool.Avalonia.slnx` after any required restore/build
+- **AND** verification SHALL include `dotnet test ChapterTool.slnx` after any required restore/build
 - **AND** if a focused Headless command is also run for that slice, it SHALL complete before the full-solution command starts
 - **AND** multiple external `dotnet test` processes SHALL NOT be started in parallel
 
@@ -302,14 +302,14 @@ Every independently mergeable decomposition slice SHALL run focused tests for th
 - **WHEN** Slice C, D, or E is proposed for merge
 - **THEN** verification SHALL include the focused unit tests for that slice
 - **AND** when UI shell, tool windows, settings, or expression editor presentation changed, verification SHALL include a focused Headless project run that finishes before the full-solution gate
-- **AND** verification SHALL include `dotnet test ChapterTool.Avalonia.slnx` before merge
+- **AND** verification SHALL include `dotnet test ChapterTool.slnx` before merge
 - **AND** Headless SHALL remain hosted by its dedicated test project/testhost rather than being merged into the non-UI Avalonia unit-test project
 
 #### Scenario: Factory/CLI slice includes CLI coverage and full solution gate
 - **WHEN** Slice F is proposed for merge or the overall change is completed
 - **THEN** verification SHALL include CLI/composition tests for shared factories
 - **AND** verification SHALL include `openspec validate "decompose-main-window-session" --strict` when OpenSpec artifacts changed
-- **AND** verification SHALL include `dotnet test ChapterTool.Avalonia.slnx`
+- **AND** verification SHALL include `dotnet test ChapterTool.slnx`
 - **AND** any preceding focused `dotnet test` commands SHALL have completed before that full-solution command starts
 
 ### Requirement: Binding-authority and grid-edit routing regressions are covered
