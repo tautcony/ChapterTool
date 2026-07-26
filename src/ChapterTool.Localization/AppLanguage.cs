@@ -1,4 +1,4 @@
-namespace ChapterTool.Avalonia.Localization;
+namespace ChapterTool.Localization;
 
 public sealed record AppLanguage(string CultureName, string DisplayNameKey)
 {
@@ -18,8 +18,9 @@ public sealed record AppLanguage(string CultureName, string DisplayNameKey)
             return DefaultCultureName;
         }
 
-        return Supported.Any(language => string.Equals(language.CultureName, cultureName, StringComparison.OrdinalIgnoreCase))
-            ? Supported.First(language => string.Equals(language.CultureName, cultureName, StringComparison.OrdinalIgnoreCase)).CultureName
-            : DefaultCultureName;
+        return Supported.FirstOrDefault(language =>
+                   string.Equals(language.CultureName, cultureName.Trim(), StringComparison.OrdinalIgnoreCase))
+               ?.CultureName
+            ?? DefaultCultureName;
     }
 }

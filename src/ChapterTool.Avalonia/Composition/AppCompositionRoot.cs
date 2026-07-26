@@ -15,6 +15,7 @@ using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Processes;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
+using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
@@ -33,6 +34,7 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly FrameRateService frameRateService = new();
     private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
     private readonly AppLocalizationManager localizationManager = new();
+    private readonly AvaloniaLocalizationResourceAdapter localizationResourceAdapter;
     private readonly AvaloniaFontFamilyCatalog fontFamilyCatalog = new();
     private readonly AvaloniaFontApplicationService fontApplicationService;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
@@ -52,6 +54,7 @@ public sealed class AppCompositionRoot : IDisposable
         this.startupPath = startupPath;
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         this.settingsDirectory = resolvedSettingsDirectory;
+        localizationResourceAdapter = new AvaloniaLocalizationResourceAdapter(localizationManager);
         SettingsStore = new ChapterToolSettingsStore(resolvedSettingsDirectory);
         expressionAuthoringService = expressionAuthoringServiceOverride ?? new ExpressionAuthoringService(ExpressionEngine);
         exportService = new ChapterExportService(formatter, ExpressionEngine);
@@ -196,6 +199,7 @@ public sealed class AppCompositionRoot : IDisposable
         }
 
         disposed = true;
+        localizationResourceAdapter.Dispose();
         loggerFactory.Dispose();
     }
 

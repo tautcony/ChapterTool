@@ -1,7 +1,7 @@
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Core.Transform;
+using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.ViewModels.Tools;
 

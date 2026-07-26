@@ -1,11 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
+using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Services;
 

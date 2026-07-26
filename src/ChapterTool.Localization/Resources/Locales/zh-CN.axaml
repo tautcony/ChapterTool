@@ -1,0 +1,472 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
+  <x:String x:Key="Action.AppendMpls" xml:space="preserve">追加 MPLS…</x:String>
+  <x:String x:Key="Action.Apply" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">浏览模板…</x:String>
+  <x:String x:Key="Action.Cancel" xml:space="preserve">取消</x:String>
+  <x:String x:Key="Action.Clear" xml:space="preserve">清空</x:String>
+  <x:String x:Key="Action.Close" xml:space="preserve">关闭</x:String>
+  <x:String x:Key="Action.CombineSegments" xml:space="preserve">合并段落：选项数={entries}，源类型={sourceType}</x:String>
+  <x:String x:Key="Action.Copy" xml:space="preserve">复制</x:String>
+  <x:String x:Key="Action.DeleteRows" xml:space="preserve">删除行：索引={indexes}</x:String>
+  <x:String x:Key="Action.Download" xml:space="preserve">下载</x:String>
+  <x:String x:Key="Action.EditCell" xml:space="preserve">编辑{kind}：行={row}，值='{value}'</x:String>
+  <x:String x:Key="Action.EditChapters" xml:space="preserve">编辑章节</x:String>
+  <x:String x:Key="Action.InsertRow" xml:space="preserve">插入行：索引={index}</x:String>
+  <x:String x:Key="Action.Load" xml:space="preserve">加载</x:String>
+  <x:String x:Key="Action.LoadSample" xml:space="preserve">加载 OGM 示例</x:String>
+  <x:String x:Key="Action.Log" xml:space="preserve">日志</x:String>
+  <x:String x:Key="Action.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Action.Refresh" xml:space="preserve">刷新行</x:String>
+  <x:String x:Key="Action.Reload" xml:space="preserve">重新加载</x:String>
+  <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">恢复默认</x:String>
+  <x:String x:Key="Action.Save" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Action.Settings" xml:space="preserve">设置</x:String>
+  <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">帧数前移：帧数={frames}</x:String>
+  <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">拆分已合并段落：选项数={entries}，源类型={sourceType}</x:String>
+  <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
+  <x:String x:Key="Cli.Error.AvailablePresets" xml:space="preserve">可用预设：{presets}</x:String>
+  <x:String x:Key="Cli.Error.EmptyGroup" xml:space="preserve">组 {group} 不包含可选择的章节条目。</x:String>
+  <x:String x:Key="Cli.Error.EntryIndex" xml:space="preserve">条目索引 {entry} 超出组 {group} 的范围。</x:String>
+  <x:String x:Key="Cli.Error.EntryNotFound" xml:space="preserve">在组 {group} 中找不到条目 ID“{entry}”。</x:String>
+  <x:String x:Key="Cli.Error.ExportFailed" xml:space="preserve">导出失败。</x:String>
+  <x:String x:Key="Cli.Error.ExpressionConflict" xml:space="preserve">不能同时使用 --expression 和 --expression-preset。</x:String>
+  <x:String x:Key="Cli.Error.FormatsHint" xml:space="preserve">运行 `formats` 查看支持的 CLI 转换目标。</x:String>
+  <x:String x:Key="Cli.Error.FrameRatePositive" xml:space="preserve">指定 --frame-rate 时，帧率必须大于零。</x:String>
+  <x:String x:Key="Cli.Error.GuiOnlyLoad" xml:space="preserve">`load` 命令只能在 Avalonia 主机中使用。请使用明确的 CLI 命令，例如 `inspect` 或 `convert`。</x:String>
+  <x:String x:Key="Cli.Error.ImportFailed" xml:space="preserve">导入失败。</x:String>
+  <x:String x:Key="Cli.Error.InputNotFound" xml:space="preserve">找不到输入路径“{path}”。</x:String>
+  <x:String x:Key="Cli.Error.InputRequired" xml:space="preserve">必须提供输入路径。</x:String>
+  <x:String x:Key="Cli.Error.MultipleEntries" xml:space="preserve">组 {group} 包含多个条目。请指定 --entry-id 或 --entry-index。</x:String>
+  <x:String x:Key="Cli.Error.MultipleGroups" xml:space="preserve">存在多个组。请指定 --group-index。</x:String>
+  <x:String x:Key="Cli.Error.NoGroups" xml:space="preserve">没有导入章节组。</x:String>
+  <x:String x:Key="Cli.Error.OutputDirectory" xml:space="preserve">无法确定输出目录。请提供 --output，或在设置中配置默认保存目录。</x:String>
+  <x:String x:Key="Cli.Error.SelectionFailed" xml:space="preserve">选择失败。</x:String>
+  <x:String x:Key="Cli.Error.StdoutOutputConflict" xml:space="preserve">不能同时使用 --stdout 和 --output。</x:String>
+  <x:String x:Key="Cli.Error.UnknownExpressionPreset" xml:space="preserve">未知表达式预设“{preset}”。</x:String>
+  <x:String x:Key="Cli.Error.UnsupportedFormat" xml:space="preserve">不支持输出格式“{format}”。</x:String>
+  <x:String x:Key="Cli.Error.UnsupportedInput" xml:space="preserve">没有可用于“{path}”的导入器。</x:String>
+  <x:String x:Key="Cli.Header.Diagnostics" xml:space="preserve">诊断</x:String>
+  <x:String x:Key="Cli.Header.Groups" xml:space="preserve">组</x:String>
+  <x:String x:Key="Cli.Header.Importer" xml:space="preserve">导入器</x:String>
+  <x:String x:Key="Cli.Header.InputFormats" xml:space="preserve">输入格式</x:String>
+  <x:String x:Key="Cli.Header.OutputFormats" xml:space="preserve">输出格式</x:String>
+  <x:String x:Key="Cli.Header.Scope" xml:space="preserve">范围</x:String>
+  <x:String x:Key="Cli.Header.Source" xml:space="preserve">源</x:String>
+  <x:String x:Key="Cli.Scope.Basic" xml:space="preserve">支持基本的导入、导出和终端输出。</x:String>
+  <x:String x:Key="Cli.Scope.Expression" xml:space="preserve">convert 支持可选的 Lua 表达式和内置表达式预设。</x:String>
+  <x:String x:Key="Common.Apply" xml:space="preserve">应用</x:String>
+  <x:String x:Key="Common.Cancel" xml:space="preserve">取消</x:String>
+  <x:String x:Key="Common.Clear" xml:space="preserve">清空</x:String>
+  <x:String x:Key="Common.Copy" xml:space="preserve">复制</x:String>
+  <x:String x:Key="Common.Refresh" xml:space="preserve">刷新</x:String>
+  <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">此构建未启用该平台相关功能。</x:String>
+  <x:String x:Key="Common.Use" xml:space="preserve">使用</x:String>
+  <x:String x:Key="Copy.Name" xml:space="preserve">已复制章节名称到剪贴板。</x:String>
+  <x:String x:Key="Copy.Preview" xml:space="preserve">已复制预览文本到剪贴板。</x:String>
+  <x:String x:Key="Copy.Row" xml:space="preserve">已复制行内容到剪贴板。</x:String>
+  <x:String x:Key="Copy.Zones" xml:space="preserve">已复制 --zones 到剪贴板。</x:String>
+  <x:String x:Key="Diagnostic.AppendSource.Unsupported" xml:space="preserve">仅支持追加 MPLS 章节组。</x:String>
+  <x:String x:Key="Diagnostic.ChapterIndex.Invalid" xml:space="preserve">章节索引 {index} 超出范围。</x:String>
+  <x:String x:Key="Diagnostic.ChapterPair.Invalid" xml:space="preserve">无法解析章节行：{line}</x:String>
+  <x:String x:Key="Diagnostic.ChapterText.Invalid" xml:space="preserve">章节文本为空，或没有有效条目。</x:String>
+  <x:String x:Key="Diagnostic.ChapterTimestamp.Invalid" xml:space="preserve">媒体章节没有有效的非负起始时间戳。</x:String>
+  <x:String x:Key="Diagnostic.Chapters.Empty" xml:space="preserve">未解析到任何章节。</x:String>
+  <x:String x:Key="Diagnostic.Chapters.None" xml:space="preserve">没有可导出的章节。</x:String>
+  <x:String x:Key="Diagnostic.Chapters.NotFound" xml:space="preserve">未找到章节。</x:String>
+  <x:String x:Key="Diagnostic.CombineSource.Unsupported" xml:space="preserve">仅支持合并 MPLS 与 DVD 章节组。</x:String>
+  <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">该文件不是受支持的容器。</x:String>
+  <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE 文本为空，或未解析到章节。</x:String>
+  <x:String x:Key="Diagnostic.CueSyntax.Malformed" xml:space="preserve">CUE 索引语法不受支持或格式错误。</x:String>
+  <x:String x:Key="Diagnostic.Dependency.Missing" xml:space="preserve">未找到 eac3to。</x:String>
+  <x:String x:Key="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">操作已取消。</x:String>
+  <x:String x:Key="Diagnostic.DependencyExecution.Failed" xml:space="preserve">操作失败：{message}</x:String>
+  <x:String x:Key="Diagnostic.DependencyExecution.TimedOut" xml:space="preserve">操作超时。</x:String>
+  <x:String x:Key="Diagnostic.DependencyOutput.Empty" xml:space="preserve">章节导出文件为空。</x:String>
+  <x:String x:Key="Diagnostic.DependencyOutput.Missing" xml:space="preserve">未生成章节导出文件。</x:String>
+  <x:String x:Key="Diagnostic.DependencyOutput.Unrecognized" xml:space="preserve">无法识别播放列表输出。</x:String>
+  <x:String x:Key="Diagnostic.EmbeddedCue.NotFound" xml:space="preserve">未找到内嵌的 cuesheet。</x:String>
+  <x:String x:Key="Diagnostic.EntryElement.Invalid" xml:space="preserve">应为 EditionEntry，实际为 {name}。</x:String>
+  <x:String x:Key="Diagnostic.ExportFormat.Unsupported" xml:space="preserve">不受支持的导出格式。</x:String>
+  <x:String x:Key="Diagnostic.Expression.Incomplete" xml:space="preserve">表达式未能归约为单个值。</x:String>
+  <x:String x:Key="Diagnostic.Expression.InsufficientOperands" xml:space="preserve">标记 '{token}' 需要更多操作数。</x:String>
+  <x:String x:Key="Diagnostic.Expression.Invalid" xml:space="preserve">表达式无效：{message}</x:String>
+  <x:String x:Key="Diagnostic.ExpressionCharacter.Invalid" xml:space="preserve">无效字符 '{character}'。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionComma.Misplaced" xml:space="preserve">逗号位置错误。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionFunction.Unsupported" xml:space="preserve">不受支持的函数 '{function}'。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionOperandBeforeParen.Missing" xml:space="preserve">')' 前缺少操作数。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionOperator.Missing" xml:space="preserve">'{token}' 前缺少运算符。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionOperator.RequiresLeftOperand" xml:space="preserve">运算符 '{token}' 需要左操作数。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionOperator.Unsupported" xml:space="preserve">不受支持的运算符 '{token}'。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionOperatorBeforeFunction.Missing" xml:space="preserve">函数 '{token}' 前缺少运算符。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionOperatorBeforeParen.Missing" xml:space="preserve">'(' 前缺少运算符。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionParentheses.Unbalanced" xml:space="preserve">括号不匹配。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionTernaryColon.Unmatched" xml:space="preserve">运算符 ':' 需要匹配的 '?'。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionTernaryCondition.Missing" xml:space="preserve">运算符 '?' 需要条件。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionTernaryQuestion.Unmatched" xml:space="preserve">运算符 '?' 需要匹配的 ':'。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionTernaryTrueExpression.Missing" xml:space="preserve">运算符 ':' 需要真值表达式。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionTime.Invalid" xml:space="preserve">表达式时间无效：{message}</x:String>
+  <x:String x:Key="Diagnostic.ExpressionToken.Unknown" xml:space="preserve">未知标记 '{token}'。</x:String>
+  <x:String x:Key="Diagnostic.ExpressionToken.Unsupported" xml:space="preserve">不受支持的标记 '{token}'。</x:String>
+  <x:String x:Key="Diagnostic.Ffprobe.CannotStart" xml:space="preserve">无法启动 ffprobe：{message}</x:String>
+  <x:String x:Key="Diagnostic.Ffprobe.MissingDependency" xml:space="preserve">未找到 ffprobe。</x:String>
+  <x:String x:Key="Diagnostic.Ffprobe.ParseFailed" xml:space="preserve">无法解析 ffprobe 输出：{message}</x:String>
+  <x:String x:Key="Diagnostic.FfprobeOutput.Empty" xml:space="preserve">ffprobe 未返回章节 JSON。</x:String>
+  <x:String x:Key="Diagnostic.FfprobeProcess.Cancelled" xml:space="preserve">ffprobe 已取消。</x:String>
+  <x:String x:Key="Diagnostic.FfprobeProcess.Failed" xml:space="preserve">ffprobe 以非零代码退出。</x:String>
+  <x:String x:Key="Diagnostic.FfprobeProcess.TimedOut" xml:space="preserve">ffprobe 超时。</x:String>
+  <x:String x:Key="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">未找到 Vorbis cuesheet 注释。</x:String>
+  <x:String x:Key="Diagnostic.FrameRate.Invalid" xml:space="preserve">帧率必须大于零。</x:String>
+  <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">帧文本未包含帧编号，或帧率无效。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Invalid" xml:space="preserve">IFO 文件无效：{message}</x:String>
+  <x:String x:Key="Diagnostic.ImporterFallback.Used" xml:space="preserve">主导入器不可用，已使用备用导入器。</x:String>
+  <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua 表达式已取消。</x:String>
+  <x:String x:Key="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">Lua 表达式语法错误：{message}</x:String>
+  <x:String x:Key="Diagnostic.LuaExpression.Invalid" xml:space="preserve">Lua 表达式失败：{message}</x:String>
+  <x:String x:Key="Diagnostic.LuaExpression.RuntimeFailed" xml:space="preserve">Lua 表达式运行错误：{message}</x:String>
+  <x:String x:Key="Diagnostic.LuaExpressionReturn.Invalid" xml:space="preserve">Lua 表达式必须返回有限数字。</x:String>
+  <x:String x:Key="Diagnostic.LuaExpressionReturn.Missing" xml:space="preserve">Lua 表达式没有返回值。</x:String>
+  <x:String x:Key="Diagnostic.LuaExpressionToken.Unknown" xml:space="preserve">未知 Lua 标记：{message}</x:String>
+  <x:String x:Key="Diagnostic.Matroska.CannotStart" xml:space="preserve">无法启动 mkvextract：{message}</x:String>
+  <x:String x:Key="Diagnostic.Matroska.MissingDependency" xml:space="preserve">未找到 mkvextract。</x:String>
+  <x:String x:Key="Diagnostic.MatroskaChapters.None" xml:space="preserve">mkvextract 未返回章节 XML。</x:String>
+  <x:String x:Key="Diagnostic.MatroskaProcess.Cancelled" xml:space="preserve">mkvextract 已取消：{message}</x:String>
+  <x:String x:Key="Diagnostic.MatroskaProcess.Failed" xml:space="preserve">mkvextract 执行失败：{message}</x:String>
+  <x:String x:Key="Diagnostic.MatroskaProcess.TimedOut" xml:space="preserve">mkvextract 超时：{message}</x:String>
+  <x:String x:Key="Diagnostic.MediaRead.Failed" xml:space="preserve">无法读取媒体章节：{message}</x:String>
+  <x:String x:Key="Diagnostic.Mp4File.Inaccessible" xml:space="preserve">无法访问 MP4 文件：{message}</x:String>
+  <x:String x:Key="Diagnostic.Mp4File.NotFound" xml:space="preserve">未找到 MP4 文件：{message}</x:String>
+  <x:String x:Key="Diagnostic.Mp4Metadata.Malformed" xml:space="preserve">MP4 章节元数据格式错误。</x:String>
+  <x:String x:Key="Diagnostic.Mp4Metadata.Unsupported" xml:space="preserve">MP4 章节元数据不受支持。</x:String>
+  <x:String x:Key="Diagnostic.Mp4Path.Invalid" xml:space="preserve">MP4 路径为空。</x:String>
+  <x:String x:Key="Diagnostic.Mp4Read.Failed" xml:space="preserve">无法读取 MP4 文件：{message}</x:String>
+  <x:String x:Key="Diagnostic.Mpls.Invalid" xml:space="preserve">MPLS 文件无效：{message}</x:String>
+  <x:String x:Key="Diagnostic.NativeLibrary.Missing" xml:space="preserve">未找到本地依赖：{message}</x:String>
+  <x:String x:Key="Diagnostic.OgmFirstLine.Invalid" xml:space="preserve">缺少或无效的首行 OGM 章节行。</x:String>
+  <x:String x:Key="Diagnostic.OrderShift.Normalized" xml:space="preserve">章节编号位移 {shift} 会产生非正的章节编号，已归一化为 0。</x:String>
+  <x:String x:Key="Diagnostic.Parse.Partial" xml:space="preserve">解析在消耗全部输入前停止。</x:String>
+  <x:String x:Key="Diagnostic.Path.Invalid" xml:space="preserve">无法解析输出目录。请在设置中指定默认保存目录，或加载带有效路径的源文件。</x:String>
+  <x:String x:Key="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">无法解析 Adobe Premiere Pro 章节标记列表。</x:String>
+  <x:String x:Key="Diagnostic.Rows.NoneSelected" xml:space="preserve">请先选择一个或多个章节行。</x:String>
+  <x:String x:Key="Diagnostic.Save.Failed" xml:space="preserve">保存失败：{message}</x:String>
+  <x:String x:Key="Diagnostic.Save.Succeeded" xml:space="preserve">已保存：{path}</x:String>
+  <x:String x:Key="Diagnostic.Segments.None" xml:space="preserve">没有可用的章节段落。</x:String>
+  <x:String x:Key="Diagnostic.Source.Unsupported" xml:space="preserve">不受支持的来源扩展名：{extension}</x:String>
+  <x:String x:Key="Diagnostic.StandardOutput.Captured" xml:space="preserve">命令输出：{output}</x:String>
+  <x:String x:Key="Diagnostic.Structure.Invalid" xml:space="preserve">未找到 Blu-ray BDMV/PLAYLIST 目录。</x:String>
+  <x:String x:Key="Diagnostic.TimeText.Invalid" xml:space="preserve">时间文本为空，或不符合预期格式。</x:String>
+  <x:String x:Key="Diagnostic.TimecodeText.Invalid" xml:space="preserve">未找到有效的时间码条目。</x:String>
+  <x:String x:Key="Diagnostic.WebVttCue.Malformed" xml:space="preserve">无法解析 WebVTT 提示。</x:String>
+  <x:String x:Key="Diagnostic.WebVttHeader.Invalid" xml:space="preserve">缺少 WebVTT 头。</x:String>
+  <x:String x:Key="Diagnostic.WebVttTimingSettings.Unsupported" xml:space="preserve">不受支持的 WebVTT 时间设置。</x:String>
+  <x:String x:Key="Diagnostic.Xml.Empty" xml:space="preserve">XML 文档没有根元素。</x:String>
+  <x:String x:Key="Diagnostic.Xml.Invalid" xml:space="preserve">无法解析 XML：{message}</x:String>
+  <x:String x:Key="Diagnostic.XmlChapters.None" xml:space="preserve">未解析到 Matroska XML 章节。</x:String>
+  <x:String x:Key="Diagnostic.XmlRoot.Invalid" xml:space="preserve">应为 Chapters 根节点，实际为 {name}。</x:String>
+  <x:String x:Key="Diagnostic.XplChapters.None" xml:space="preserve">未解析到 HD-DVD 章节。</x:String>
+  <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">无法解析 XPL 播放列表：{message}</x:String>
+  <x:String x:Key="EditKind.Frame" xml:space="preserve">帧</x:String>
+  <x:String x:Key="EditKind.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="EditKind.StartTime" xml:space="preserve">时间</x:String>
+  <x:String x:Key="Empty.Hint" xml:space="preserve">加载文件、拖放到此处，或加载示例以计算帧与表达式。</x:String>
+  <x:String x:Key="Empty.Title" xml:space="preserve">尚未加载章节</x:String>
+  <x:String x:Key="Expression.Suggestion.AddLeftOperand" xml:space="preserve">在此运算符前添加左侧操作数。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">在应用此记号前补充缺失的操作数。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddOperandBeforeParen" xml:space="preserve">在右括号前添加操作数。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddOperator" xml:space="preserve">在相邻的值之间添加运算符。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddOperatorBeforeFunction" xml:space="preserve">在函数调用前添加运算符。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddOperatorBeforeParen" xml:space="preserve">在左括号前添加运算符。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddTernaryCondition" xml:space="preserve">在 '?' 前添加条件表达式。</x:String>
+  <x:String x:Key="Expression.Suggestion.AddTernaryTrueExpression" xml:space="preserve">在 '?' 与 ':' 之间添加真值表达式。</x:String>
+  <x:String x:Key="Expression.Suggestion.BalanceParentheses" xml:space="preserve">添加或移除括号，使每个 '(' 都有匹配的 ')'。</x:String>
+  <x:String x:Key="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">检查引用的 Lua 变量和函数是否存在。</x:String>
+  <x:String x:Key="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">检查 Lua 表达式语法。</x:String>
+  <x:String x:Key="Expression.Suggestion.CheckSyntax" xml:space="preserve">检查表达式语法。</x:String>
+  <x:String x:Key="Expression.Suggestion.CompleteExpression" xml:space="preserve">补全表达式，使其能生成一个值。</x:String>
+  <x:String x:Key="Expression.Suggestion.FixComma" xml:space="preserve">逗号只能用于分隔函数参数。</x:String>
+  <x:String x:Key="Expression.Suggestion.MatchTernaryColon" xml:space="preserve">添加匹配的 ':' 和假值表达式。</x:String>
+  <x:String x:Key="Expression.Suggestion.MatchTernaryQuestion" xml:space="preserve">在此 ':' 前添加匹配的 '?'。</x:String>
+  <x:String x:Key="Expression.Suggestion.RemoveInvalidCharacter" xml:space="preserve">移除无效字符，或替换为支持的记号。</x:String>
+  <x:String x:Key="Expression.Suggestion.ReturnNumber" xml:space="preserve">返回一个有限的秒数数值。</x:String>
+  <x:String x:Key="Expression.Suggestion.UseKnownToken" xml:space="preserve">使用受支持的变量、常量、函数或运算符。</x:String>
+  <x:String x:Key="Expression.Suggestion.UseSupportedFunction" xml:space="preserve">替换为受支持的表达式函数。</x:String>
+  <x:String x:Key="Expression.Suggestion.UseSupportedOperator" xml:space="preserve">替换为受支持的表达式运算符。</x:String>
+  <x:String x:Key="Expression.Suggestion.UseSupportedToken" xml:space="preserve">替换为受支持的表达式记号。</x:String>
+  <x:String x:Key="ExpressionPreset.Custom" xml:space="preserve">自定义</x:String>
+  <x:String x:Key="FilePicker.AppendMpls.Title" xml:space="preserve">追加 MPLS</x:String>
+  <x:String x:Key="FilePicker.ExecutableFiles" xml:space="preserve">可执行文件</x:String>
+  <x:String x:Key="FilePicker.LuaScriptFiles" xml:space="preserve">Lua 脚本文件</x:String>
+  <x:String x:Key="FilePicker.MplsPlaylist" xml:space="preserve">MPLS 播放列表</x:String>
+  <x:String x:Key="FilePicker.OpenChapterNameTemplate.Title" xml:space="preserve">打开章节名称模板</x:String>
+  <x:String x:Key="FilePicker.OpenLuaExpressionScript.Title" xml:space="preserve">打开 Lua 表达式脚本</x:String>
+  <x:String x:Key="FilePicker.OpenSource.Title" xml:space="preserve">打开源文件</x:String>
+  <x:String x:Key="FilePicker.SaveChaptersTo.Title" xml:space="preserve">保存章节到</x:String>
+  <x:String x:Key="FilePicker.SourceFiles" xml:space="preserve">章节和媒体文件</x:String>
+  <x:String x:Key="FilePicker.TextFiles" xml:space="preserve">文本文件</x:String>
+  <x:String x:Key="Grid.Frames" xml:space="preserve">帧</x:String>
+  <x:String x:Key="Grid.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="Grid.Number" xml:space="preserve">#</x:String>
+  <x:String x:Key="Grid.Time" xml:space="preserve">时间</x:String>
+  <x:String x:Key="Label.ChapterName" xml:space="preserve">章节名</x:String>
+  <x:String x:Key="Label.Clip" xml:space="preserve">片段 / 播放列表项</x:String>
+  <x:String x:Key="Label.Expression" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">预设</x:String>
+  <x:String x:Key="Label.FrameRate" xml:space="preserve">用于帧列的帧率</x:String>
+  <x:String x:Key="Label.OrderShift" xml:space="preserve">序号 +</x:String>
+  <x:String x:Key="Label.RoundFrames" xml:space="preserve">帧取整</x:String>
+  <x:String x:Key="Label.SaveAs" xml:space="preserve">保存为</x:String>
+  <x:String x:Key="Label.TemplateStatus" xml:space="preserve">模板</x:String>
+  <x:String x:Key="Label.UseExpression" xml:space="preserve">启用</x:String>
+  <x:String x:Key="Label.XmlLang" xml:space="preserve">XML 语言</x:String>
+  <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">简体中文</x:String>
+  <x:String x:Key="Language.English" xml:space="preserve">英语</x:String>
+  <x:String x:Key="Language.Japanese" xml:space="preserve">日语</x:String>
+  <x:String x:Key="Log.AppendingMpls" xml:space="preserve">正在追加 MPLS：path='{path}'</x:String>
+  <x:String x:Key="Log.AutoFrameRateDetection" xml:space="preserve">自动帧率检测：option={option}，confidence={confidence}，accurate={accurate}/{evaluated}，deviation={deviation}</x:String>
+  <x:String x:Key="Log.ChangeFps" xml:space="preserve">转换至当前帧率：源配置={sourceFps}，目标配置={targetFps}，章节数 {before} -&gt; {after}</x:String>
+  <x:String x:Key="Log.CreateZones" xml:space="preserve">生成 Zones：选中行={selectedRows}，章节数={chapters}</x:String>
+  <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} 诊断：severity={severity}，code={code}{location} message='{message}'{details}</x:String>
+  <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}：章节数 {before} -&gt; {after}</x:String>
+  <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">帧信息已更新：option={option}，fps={fps}，round={round}，chapters={chapters}</x:String>
+  <x:String x:Key="Log.ImportEntry" xml:space="preserve">{operation} 条目 {entryIndex}：id='{id}'，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，duration={duration}，fps={fps}</x:String>
+  <x:String x:Key="Log.ImportGroup" xml:space="preserve">{operation} 分组 {groupIndex}：sourcePath='{sourcePath}'，defaultEntryIndex={defaultEntryIndex}，entries={entries}</x:String>
+  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} 结果：success={success}，partial={partial}，groups={groups}，entries={entries}，chapters={chapters}，diagnostics={diagnostics}</x:String>
+  <x:String x:Key="Log.LanguageSet" xml:space="preserve">语言已设置为 {language}</x:String>
+  <x:String x:Key="Log.LoadingSource" xml:space="preserve">正在载入源：path='{path}'</x:String>
+  <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}：path='{path}'</x:String>
+  <x:String x:Key="Log.RelatedMediaNotFound" xml:space="preserve">{status}：reference='{reference}'，resolved='{resolved}'</x:String>
+  <x:String x:Key="Log.SavingChapters" xml:space="preserve">正在保存章节：格式={format}，目录='{directory}'，来源='{source}'，章节数={chapters}，应用表达式={applyExpression}，表达式='{expression}'</x:String>
+  <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">已选择源选项：index={index}，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，fps={fps}</x:String>
+  <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">已载入设置：保存目录='{savingPath}'，语言='{language}'</x:String>
+  <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
+  <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status}，来源：{path}</x:String>
+  <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">无法从 '{path}' 加载章节名称模板</x:String>
+  <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">已从 '{path}' 加载章节名称模板 '{name}'</x:String>
+  <x:String x:Key="Main.AppendMpls" xml:space="preserve">追加合并 MPLS</x:String>
+  <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自动</x:String>
+  <x:String x:Key="Main.ChangeFps" xml:space="preserve">转换至当前帧率</x:String>
+  <x:String x:Key="Main.ChapterName" xml:space="preserve">章节名</x:String>
+  <x:String x:Key="Main.ColumnFrames" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="Main.ColumnName" xml:space="preserve">章节名</x:String>
+  <x:String x:Key="Main.ColumnNumber" xml:space="preserve">#</x:String>
+  <x:String x:Key="Main.ColumnTime" xml:space="preserve">时间点</x:String>
+  <x:String x:Key="Main.Combine" xml:space="preserve">合并</x:String>
+  <x:String x:Key="Main.CreateZones" xml:space="preserve">生成 Zones</x:String>
+  <x:String x:Key="Main.Delete" xml:space="preserve">删除</x:String>
+  <x:String x:Key="Main.Expression" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">前移帧</x:String>
+  <x:String x:Key="Main.Insert" xml:space="preserve">插入</x:String>
+  <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">保留原名</x:String>
+  <x:String x:Key="Main.Load" xml:space="preserve">载入</x:String>
+  <x:String x:Key="Main.Log" xml:space="preserve">日志</x:String>
+  <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">打开相关媒体</x:String>
+  <x:String x:Key="Main.OrderShift" xml:space="preserve">平移章节号</x:String>
+  <x:String x:Key="Main.OutputDirectoryUnresolved" xml:space="preserve">输出目录未解析</x:String>
+  <x:String x:Key="Main.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Main.PreviewShort" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Main.Reload" xml:space="preserve">重新载入</x:String>
+  <x:String x:Key="Main.RoundFrames" xml:space="preserve">帧数取整</x:String>
+  <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存格式</x:String>
+  <x:String x:Key="Main.SaveTo" xml:space="preserve">保存到目录…</x:String>
+  <x:String x:Key="Main.SaveToShort" xml:space="preserve">另存到…</x:String>
+  <x:String x:Key="Main.SettingsShort" xml:space="preserve">设置</x:String>
+  <x:String x:Key="Main.StandardTemplate" xml:space="preserve">统一模板</x:String>
+  <x:String x:Key="Main.TemplateFile" xml:space="preserve">模板文件</x:String>
+  <x:String x:Key="Main.XmlLanguage" xml:space="preserve">XML语言</x:String>
+  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">更改帧率</x:String>
+  <x:String x:Key="Menu.Combine" xml:space="preserve">合并片段</x:String>
+  <x:String x:Key="Menu.CopyName" xml:space="preserve">复制名称</x:String>
+  <x:String x:Key="Menu.CopyRow" xml:space="preserve">复制行内容</x:String>
+  <x:String x:Key="Menu.CopyZones" xml:space="preserve">复制 --zones</x:String>
+  <x:String x:Key="Menu.Delete" xml:space="preserve">删除</x:String>
+  <x:String x:Key="Menu.Duplicate" xml:space="preserve">复制行</x:String>
+  <x:String x:Key="Menu.ForwardTranslation" xml:space="preserve">前移翻译…</x:String>
+  <x:String x:Key="Menu.Insert" xml:space="preserve">在此之前插入</x:String>
+  <x:String x:Key="Menu.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Menu.RelatedMedia" xml:space="preserve">打开关联媒体…</x:String>
+  <x:String x:Key="Menu.Select" xml:space="preserve">选择行</x:String>
+  <x:String x:Key="Menu.Split" xml:space="preserve">拆分已合并片段</x:String>
+  <x:String x:Key="Menu.Zones" xml:space="preserve">Zones</x:String>
+  <x:String x:Key="Modal.ApplyShift" xml:space="preserve">应用</x:String>
+  <x:String x:Key="Modal.ForwardTitle" xml:space="preserve">前移翻译</x:String>
+  <x:String x:Key="Modal.Frames" xml:space="preserve">前移帧数</x:String>
+  <x:String x:Key="Modal.LogEmpty" xml:space="preserve">暂无活动。</x:String>
+  <x:String x:Key="Modal.LogTitle" xml:space="preserve">活动日志</x:String>
+  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Modal.RelatedTitle" xml:space="preserve">关联媒体</x:String>
+  <x:String x:Key="Modal.SettingsTitle" xml:space="preserve">设置</x:String>
+  <x:String x:Key="NameMode.AsIs" xml:space="preserve">保持原名</x:String>
+  <x:String x:Key="NameMode.Auto" xml:space="preserve">自动生成</x:String>
+  <x:String x:Key="NameMode.Template" xml:space="preserve">模板</x:String>
+  <x:String x:Key="Operation.AppendEdit" xml:space="preserve">追加编辑</x:String>
+  <x:String x:Key="Operation.AppendLoad" xml:space="preserve">追加加载</x:String>
+  <x:String x:Key="Operation.CreateZones" xml:space="preserve">创建 Zone</x:String>
+  <x:String x:Key="Operation.Load" xml:space="preserve">加载</x:String>
+  <x:String x:Key="Operation.LuaExpressionScript" xml:space="preserve">Lua 表达式脚本</x:String>
+  <x:String x:Key="Operation.OutputProjection" xml:space="preserve">输出投影</x:String>
+  <x:String x:Key="Operation.Save" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Related.Absolute" xml:space="preserve">绝对路径</x:String>
+  <x:String x:Key="Related.BrowserLimit" xml:space="preserve">浏览器无法打开本地绝对路径。相对路径仅供参考，除非主机实际提供这些资源。</x:String>
+  <x:String x:Key="Related.Relative" xml:space="preserve">相对路径</x:String>
+  <x:String x:Key="Settings.About" xml:space="preserve">关于</x:String>
+  <x:String x:Key="Settings.About.Description" xml:space="preserve">ChapterTool 是一个基于 Avalonia 的跨平台章节编辑器，用于从文本、光盘播放列表和媒体容器来源导入、调整、合并并导出章节列表。</x:String>
+  <x:String x:Key="Settings.About.License" xml:space="preserve">许可证：GPLv3+。详见仓库中的 LICENSE。</x:String>
+  <x:String x:Key="Settings.About.OpenRepository" xml:space="preserve">打开项目仓库</x:String>
+  <x:String x:Key="Settings.About.RepositoryUrl" xml:space="preserve">https://github.com/tautcony/ChapterTool</x:String>
+  <x:String x:Key="Settings.AboutBody" xml:space="preserve">ChapterTool Core 浏览器工作台：在 WebAssembly 中导入、编辑、投影并导出章节数据。</x:String>
+  <x:String x:Key="Settings.AboutLicense" xml:space="preserve">核心功能遵循项目许可证提供。</x:String>
+  <x:String x:Key="Settings.AboutRuntime" xml:space="preserve">Blazor WebAssembly · .NET 10</x:String>
+  <x:String x:Key="Settings.Appearance" xml:space="preserve">外观</x:String>
+  <x:String x:Key="Settings.Appearance.FontPreviewSample" xml:space="preserve">Aa 章节字幕 0123456789 !? [] {}</x:String>
+  <x:String x:Key="Settings.Appearance.MonospaceFont" xml:space="preserve">等宽字体</x:String>
+  <x:String x:Key="Settings.Appearance.MonospaceFontPreviewFor" xml:space="preserve">{name} 的等宽字体预览</x:String>
+  <x:String x:Key="Settings.Appearance.Preset" xml:space="preserve">主题预设</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.avalonia-default" xml:space="preserve">Avalonia 默认</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.ayu-dark" xml:space="preserve">Ayu 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.ayu-light" xml:space="preserve">Ayu 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve">Ayu 幻景</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve">Gruvbox 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve">Gruvbox 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.solarized-dark" xml:space="preserve">Solarized 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.solarized-light" xml:space="preserve">Solarized 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preview" xml:space="preserve">配色预览</x:String>
+  <x:String x:Key="Settings.Appearance.PreviewFor" xml:space="preserve">{name} 的配色预览</x:String>
+  <x:String x:Key="Settings.Appearance.SystemMonospaceFont" xml:space="preserve">系统等宽默认</x:String>
+  <x:String x:Key="Settings.Appearance.SystemUiFont" xml:space="preserve">系统默认</x:String>
+  <x:String x:Key="Settings.Appearance.UiFont" xml:space="preserve">界面字体</x:String>
+  <x:String x:Key="Settings.Appearance.UiFontPreviewFor" xml:space="preserve">{name} 的界面字体预览</x:String>
+  <x:String x:Key="Settings.BrowseDirectory" xml:space="preserve">选择目录</x:String>
+  <x:String x:Key="Settings.BrowseExecutable" xml:space="preserve">选择可执行文件</x:String>
+  <x:String x:Key="Settings.DefaultSaveFormat" xml:space="preserve">默认保存格式</x:String>
+  <x:String x:Key="Settings.DefaultXmlLanguage" xml:space="preserve">默认 XML 语言</x:String>
+  <x:String x:Key="Settings.Eac3toPath" xml:space="preserve">eac3to</x:String>
+  <x:String x:Key="Settings.EmitBom" xml:space="preserve">写入 BOM</x:String>
+  <x:String x:Key="Settings.EmitBomLabel" xml:space="preserve">在文本下载中包含字节顺序标记</x:String>
+  <x:String x:Key="Settings.EmptyUsesSource" xml:space="preserve">留空则使用源文件目录</x:String>
+  <x:String x:Key="Settings.ExternalTools" xml:space="preserve">外部工具</x:String>
+  <x:String x:Key="Settings.FfmpegPath" xml:space="preserve">FFmpeg bin 目录（包含 ffprobe）</x:String>
+  <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
+  <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">帧误差阈值</x:String>
+  <x:String x:Key="Settings.General" xml:space="preserve">常规</x:String>
+  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix / mkvextract</x:String>
+  <x:String x:Key="Settings.MonoFont" xml:space="preserve">等宽字体</x:String>
+  <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">打开设置文件夹</x:String>
+  <x:String x:Key="Settings.Output" xml:space="preserve">输出默认值</x:String>
+  <x:String x:Key="Settings.OutputDefaults" xml:space="preserve">输出默认值</x:String>
+  <x:String x:Key="Settings.OutputTextEncoding" xml:space="preserve">文本编码</x:String>
+  <x:String x:Key="Settings.Preset" xml:space="preserve">预设</x:String>
+  <x:String x:Key="Settings.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Settings.ResetDefaults" xml:space="preserve">恢复默认</x:String>
+  <x:String x:Key="Settings.SaveDirectory" xml:space="preserve">默认保存目录</x:String>
+  <x:String x:Key="Settings.SaveDirectoryNote" xml:space="preserve">下载目录由浏览器控制。界面语言会写入设置快照。</x:String>
+  <x:String x:Key="Settings.SaveDirectoryValue" xml:space="preserve">浏览器默认下载文件夹</x:String>
+  <x:String x:Key="Settings.Status.LoadedDefaults" xml:space="preserve">设置无法载入，当前显示默认值</x:String>
+  <x:String x:Key="Settings.Status.Ready" xml:space="preserve">设置已载入</x:String>
+  <x:String x:Key="Settings.Status.Reset" xml:space="preserve">已恢复默认值</x:String>
+  <x:String x:Key="Settings.Status.Saved" xml:space="preserve">设置已保存</x:String>
+  <x:String x:Key="Settings.TextEncoding" xml:space="preserve">文本编码</x:String>
+  <x:String x:Key="Settings.Tolerance" xml:space="preserve">帧精度容差</x:String>
+  <x:String x:Key="Settings.ToolNote" xml:space="preserve">本浏览器工作台无法配置本机可执行文件路径。</x:String>
+  <x:String x:Key="Settings.ToolStatus.Discovery" xml:space="preserve">未配置，将使用 PATH 或平台发现</x:String>
+  <x:String x:Key="Settings.ToolStatus.Found" xml:space="preserve">已找到：{path}</x:String>
+  <x:String x:Key="Settings.ToolStatus.InvalidPath" xml:space="preserve">路径不存在</x:String>
+  <x:String x:Key="Settings.ToolStatus.Missing" xml:space="preserve">目录中未找到 {name}</x:String>
+  <x:String x:Key="Settings.ToolStatus.NotDirectory" xml:space="preserve">路径必须是目录</x:String>
+  <x:String x:Key="Settings.ToolStatus.Unsupported" xml:space="preserve">当前平台不支持</x:String>
+  <x:String x:Key="Settings.ToolUnavailable" xml:space="preserve">浏览器 WASM 不可用</x:String>
+  <x:String x:Key="Settings.Tools" xml:space="preserve">外部工具</x:String>
+  <x:String x:Key="Settings.UiFont" xml:space="preserve">界面字体</x:String>
+  <x:String x:Key="Settings.UiLanguage" xml:space="preserve">界面语言</x:String>
+  <x:String x:Key="Settings.Unsaved.Discard" xml:space="preserve">放弃</x:String>
+  <x:String x:Key="Settings.Unsaved.Message" xml:space="preserve">设置修改已实时应用到当前会话，但尚未保存。关闭前要保存吗？</x:String>
+  <x:String x:Key="Settings.Unsaved.Title" xml:space="preserve">设置尚未保存</x:String>
+  <x:String x:Key="Settings.ValidateTools" xml:space="preserve">检查工具</x:String>
+  <x:String x:Key="Status.AppendFailed" xml:space="preserve">追加失败</x:String>
+  <x:String x:Key="Status.Appended" xml:space="preserve">已从 {1} 追加 {0} 个 MPLS 片段。</x:String>
+  <x:String x:Key="Status.AppendedMplsSegments" xml:space="preserve">已追加 {count} 个 MPLS 片段</x:String>
+  <x:String x:Key="Status.Appending" xml:space="preserve">正在追加 MPLS…</x:String>
+  <x:String x:Key="Status.CannotAppend" xml:space="preserve">仅在已打开的 MPLS 会话中可追加 MPLS。</x:String>
+  <x:String x:Key="Status.CannotShift" xml:space="preserve">要前移的帧数必须大于零。</x:String>
+  <x:String x:Key="Status.ChangeFpsFailed" xml:space="preserve">无法更改帧率。</x:String>
+  <x:String x:Key="Status.ChangedFps" xml:space="preserve">已将帧率从 {0:0.###} 更改为 {1:0.###}。</x:String>
+  <x:String x:Key="Status.ChangedFpsTo" xml:space="preserve">已将帧率更改为 {0}。</x:String>
+  <x:String x:Key="Status.CombineFailed" xml:space="preserve">无法合并剪辑。</x:String>
+  <x:String x:Key="Status.Combined" xml:space="preserve">已合并 {0} 个剪辑。</x:String>
+  <x:String x:Key="Status.CombinedDone" xml:space="preserve">已合并剪辑。</x:String>
+  <x:String x:Key="Status.Deleted" xml:space="preserve">已删除 {0} 行。</x:String>
+  <x:String x:Key="Status.DetectedFrameRate" xml:space="preserve">已检测到 {displayName}（置信度：{confidence}）</x:String>
+  <x:String x:Key="Status.DropBlocked" xml:space="preserve">浏览器禁止读取该拖放文件。</x:String>
+  <x:String x:Key="Status.DropEmpty" xml:space="preserve">拖放的文件为空。</x:String>
+  <x:String x:Key="Status.DropReady" xml:space="preserve">松开以加载章节文件。</x:String>
+  <x:String x:Key="Status.DropTooLarge" xml:space="preserve">文件过大（最大 64 MB）。</x:String>
+  <x:String x:Key="Status.Duplicated" xml:space="preserve">已复制第 {0} 行。</x:String>
+  <x:String x:Key="Status.ExpressionApplied" xml:space="preserve">已应用表达式 · {0} fps · {1} 行</x:String>
+  <x:String x:Key="Status.ExpressionPresetApplied" xml:space="preserve">已应用表达式预设：{0}</x:String>
+  <x:String x:Key="Status.ExpressionPresetUnknown" xml:space="preserve">未知表达式预设：{0}</x:String>
+  <x:String x:Key="Status.FramesUpdated" xml:space="preserve">已更新帧 · {0} fps · {1} 行</x:String>
+  <x:String x:Key="Status.Inserted" xml:space="preserve">已插入新章节。</x:String>
+  <x:String x:Key="Status.LoadFailed" xml:space="preserve">载入失败</x:String>
+  <x:String x:Key="Status.Loaded" xml:space="preserve">已从 {1} 加载 {0} 个章节。</x:String>
+  <x:String x:Key="Status.LoadedChapters" xml:space="preserve">已载入 {count} 个章节</x:String>
+  <x:String x:Key="Status.Loading" xml:space="preserve">加载中…</x:String>
+  <x:String x:Key="Status.LoadingSource" xml:space="preserve">正在加载...</x:String>
+  <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">正在定位 eac3to...</x:String>
+  <x:String x:Key="Status.LoadingSource.Export" xml:space="preserve">正在导出章节文本...</x:String>
+  <x:String x:Key="Status.LoadingSource.Parse" xml:space="preserve">正在解析章节文本...</x:String>
+  <x:String x:Key="Status.LoadingSource.Validate" xml:space="preserve">正在校验源结构...</x:String>
+  <x:String x:Key="Status.LuaExpressionPresetSelected" xml:space="preserve">已选择 Lua 预设：{preset}</x:String>
+  <x:String x:Key="Status.LuaExpressionScriptLoaded" xml:space="preserve">已加载 Lua 脚本：{path}</x:String>
+  <x:String x:Key="Status.NoCurrentMplsGroup" xml:space="preserve">未载入当前 MPLS 分组</x:String>
+  <x:String x:Key="Status.NoPreview" xml:space="preserve">没有可预览的内容。</x:String>
+  <x:String x:Key="Status.NoRelatedMedia" xml:space="preserve">当前片段没有关联媒体引用。</x:String>
+  <x:String x:Key="Status.NoReload" xml:space="preserve">没有可重新加载的文件。</x:String>
+  <x:String x:Key="Status.NoSelection" xml:space="preserve">请先选择一个或多个章节行。</x:String>
+  <x:String x:Key="Status.NoSourceSelected" xml:space="preserve">未选择源文件</x:String>
+  <x:String x:Key="Status.NothingToSave" xml:space="preserve">没有可保存的内容。</x:String>
+  <x:String x:Key="Status.OpenedFile" xml:space="preserve">已打开 {fileName}</x:String>
+  <x:String x:Key="Status.PreviewFailed" xml:space="preserve">预览失败。</x:String>
+  <x:String x:Key="Status.Previewed" xml:space="preserve">预览 {0} · {1:N0} 个字符</x:String>
+  <x:String x:Key="Status.Ready" xml:space="preserve">就绪</x:String>
+  <x:String x:Key="Status.RelatedMediaNotFound" xml:space="preserve">未找到相关媒体文件</x:String>
+  <x:String x:Key="Status.RelatedMediaNote" xml:space="preserve">浏览器无法打开本地媒体路径；可用时仅以下载/链接方式展示引用。</x:String>
+  <x:String x:Key="Status.RestoredClips" xml:space="preserve">已恢复分开的剪辑。</x:String>
+  <x:String x:Key="Status.RowsRefreshed" xml:space="preserve">已刷新行 · {0} fps · {1} 行</x:String>
+  <x:String x:Key="Status.SaveFailed" xml:space="preserve">保存失败</x:String>
+  <x:String x:Key="Status.Saved" xml:space="preserve">已保存</x:String>
+  <x:String x:Key="Status.SelectedClip" xml:space="preserve">已选择剪辑：{0}</x:String>
+  <x:String x:Key="Status.SelectedRows" xml:space="preserve">已选择 {0} 行。</x:String>
+  <x:String x:Key="Status.ShellUnavailable" xml:space="preserve">Shell 服务不可用</x:String>
+  <x:String x:Key="Status.Shifted" xml:space="preserve">已将章节前移 {0} 帧。</x:String>
+  <x:String x:Key="Status.TemplateFailed" xml:space="preserve">无法读取模板文件。</x:String>
+  <x:String x:Key="Status.TemplateLoadFailed" xml:space="preserve">加载章节名称模板失败</x:String>
+  <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">已加载模板 {name}</x:String>
+  <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">未选择</x:String>
+  <x:String x:Key="Status.Updated" xml:space="preserve">已更新</x:String>
+  <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">未生成 zones。</x:String>
+  <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones 已生成</x:String>
+  <x:String x:Key="Title.Expression" xml:space="preserve">基于章节时间的 Lua 表达式，例如 t + 1 或 t * 25 / 24</x:String>
+  <x:String x:Key="Title.Load" xml:space="preserve">加载章节文件</x:String>
+  <x:String x:Key="Title.Preview" xml:space="preserve">预览投影后的导出文本</x:String>
+  <x:String x:Key="Title.Refresh" xml:space="preserve">按当前选项刷新表格</x:String>
+  <x:String x:Key="Title.Save" xml:space="preserve">按当前选项导出并下载</x:String>
+  <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">应用表达式</x:String>
+  <x:String x:Key="Tool.Expression.BrowseLuaScript" xml:space="preserve">浏览 Lua...</x:String>
+  <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">加载 Lua...</x:String>
+  <x:String x:Key="Tool.Expression.Placeholder" xml:space="preserve">表达式，例如 t + 1</x:String>
+  <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">预设</x:String>
+  <x:String x:Key="Tool.Expression.Title" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="Tool.ForwardShift.Title" xml:space="preserve">前移帧</x:String>
+  <x:String x:Key="Tool.Language.Title" xml:space="preserve">语言</x:String>
+  <x:String x:Key="Tool.Log.Title" xml:space="preserve">日志</x:String>
+  <x:String x:Key="Tool.Preview.Title" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Tool.Settings.Title" xml:space="preserve">设置</x:String>
+  <x:String x:Key="Tool.TemplateNames.Title" xml:space="preserve">模板名称</x:String>
+  <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">使用标准模板名称</x:String>
+  <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
+  <x:String x:Key="Tool.eac3to" xml:space="preserve">Eac3to 路径</x:String>
+  <x:String x:Key="Tool.ffmpeg" xml:space="preserve">Ffmpeg 路径</x:String>
+  <x:String x:Key="Tool.ffprobe" xml:space="preserve">Ffprobe 路径</x:String>
+  <x:String x:Key="Tool.mkvtoolnix" xml:space="preserve">MkvToolnix 路径</x:String>
+  <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">未确定</x:String>
+</ResourceDictionary>

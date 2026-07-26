@@ -1,4 +1,5 @@
-using ChapterTool.Core.Exporting;
+﻿using ChapterTool.Core.Exporting;
+using ChapterTool.Localization;
 using DotMake.CommandLine;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -44,7 +45,7 @@ internal static class ChapterToolCliSupport
         var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
         if (parsed.IsCalled<LoadCliCommand>())
         {
-            Console.Error.WriteLine("The `load` command is available only in the Avalonia host. Use an explicit CLI command such as `inspect` or `convert`.");
+            Console.Error.WriteLine(new AppLocalizationManager("en-US").GetString("Cli.Error.GuiOnlyLoad"));
             return 1;
         }
 

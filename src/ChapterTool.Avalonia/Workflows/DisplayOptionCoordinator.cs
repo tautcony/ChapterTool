@@ -1,9 +1,9 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Workflows;
 

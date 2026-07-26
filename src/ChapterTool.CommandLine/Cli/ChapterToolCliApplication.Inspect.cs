@@ -13,13 +13,13 @@ public sealed partial class ChapterToolCliApplication
         var import = await ImportAsync(request.InputPath, cancellationToken);
         if (!import.Success)
         {
-            RenderFailure("Import failed.", import.Result.Diagnostics);
+            RenderFailure(localizer.GetString("Cli.Error.ImportFailed"), import.Result.Diagnostics);
             return 1;
         }
 
-        console.WriteLine($"Source: {Path.GetFullPath(request.InputPath)}");
-        console.WriteLine($"Importer: {import.Importer.Id}");
-        console.WriteLine($"Groups: {import.Result.Groups.Count}");
+        console.WriteLine($"{localizer.GetString("Cli.Header.Source")}: {Path.GetFullPath(request.InputPath)}");
+        console.WriteLine($"{localizer.GetString("Cli.Header.Importer")}: {import.Importer.Id}");
+        console.WriteLine($"{localizer.GetString("Cli.Header.Groups")}: {import.Result.Groups.Count}");
 
         for (var groupIndex = 0; groupIndex < import.Result.Groups.Count; groupIndex++)
         {
@@ -35,7 +35,7 @@ public sealed partial class ChapterToolCliApplication
         if (import.Result.Diagnostics.Count > 0)
         {
             console.WriteLine();
-            console.WriteLine("Diagnostics");
+            console.WriteLine(localizer.GetString("Cli.Header.Diagnostics"));
             foreach (var line in FormatDiagnostics(import.Result.Diagnostics))
             {
                 console.WriteLine($"  {line}");

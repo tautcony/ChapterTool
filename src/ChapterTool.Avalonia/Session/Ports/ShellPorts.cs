@@ -1,8 +1,8 @@
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Session.Ports;
 

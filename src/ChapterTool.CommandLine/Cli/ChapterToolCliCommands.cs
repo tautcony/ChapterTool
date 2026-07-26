@@ -1,3 +1,4 @@
+using ChapterTool.Localization;
 using DotMake.CommandLine;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -77,9 +78,12 @@ public sealed class ConvertCliCommand
     [CliOption(Description = "Built-in expression preset id used to transform chapter times before export.", Required = false)]
     public string? ExpressionPreset { get; set; }
 
+    [CliOption(Description = "User-interface language for terminal output.", Required = false)]
+    public string? Language { get; set; }
+
     public async Task<int> RunAsync()
     {
-        var app = new ChapterToolCliApplication();
+        var app = new ChapterToolCliApplication(localizer: new AppLocalizationManager(Language ?? "en-US"));
         return await app.ConvertAsync(
             new CliConvertRequest(
                 CliInputResolver.Resolve(Input, Source) ?? string.Empty,
@@ -107,9 +111,12 @@ public sealed class InspectCliCommand
     [CliOption(Alias = "-i", Description = "Input file or supported source path.", Required = false)]
     public string? Source { get; set; }
 
+    [CliOption(Description = "User-interface language for terminal output.", Required = false)]
+    public string? Language { get; set; }
+
     public async Task<int> RunAsync()
     {
-        var app = new ChapterToolCliApplication();
+        var app = new ChapterToolCliApplication(localizer: new AppLocalizationManager(Language ?? "en-US"));
         return await app.InspectAsync(
             new CliInspectRequest(CliInputResolver.Resolve(Input, Source) ?? string.Empty),
             CancellationToken.None);
@@ -119,9 +126,12 @@ public sealed class InspectCliCommand
 [CliCommand(Parent = typeof(ChapterToolRootCliCommand), Description = "List CLI-supported input and output formats")]
 public sealed class FormatsCliCommand
 {
+    [CliOption(Description = "User-interface language for terminal output.", Required = false)]
+    public string? Language { get; set; }
+
     public int Run()
     {
-        var app = new ChapterToolCliApplication();
+        var app = new ChapterToolCliApplication(localizer: new AppLocalizationManager(Language ?? "en-US"));
         return app.ShowFormats();
     }
 }

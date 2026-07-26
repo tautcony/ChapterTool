@@ -16,6 +16,7 @@ using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
+using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
@@ -23,6 +24,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 {
     private static readonly ConditionalWeakTable<Window, object> InitialLayouts = new();
     private readonly ApplicationLogPanelProvider logService;
+    private readonly AvaloniaLocalizationResourceAdapter localizationAdapter;
 
     public MainWindowHeadlessTestHost(
         ChapterImportResult? loadResult = null,
@@ -52,6 +54,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         FontSettings? fontSettings = null)
     {
         Localizer = localizer ?? new AppLocalizationManager("en-US");
+        localizationAdapter = new AvaloniaLocalizationResourceAdapter(Localizer);
         LoadService = new FakeLoadService(loadResults.Count == 0
             ? [ImportResult("movie.txt", Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro"))]
             : loadResults);
@@ -284,6 +287,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public void Dispose()
     {
+        localizationAdapter.Dispose();
         Window.Close();
         Window.Content = null;
         Dispatcher.UIThread.RunJobs();

@@ -6,6 +6,7 @@ using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Services;
+using ChapterTool.Localization;
 
 namespace ChapterTool.CommandLine.Cli;
 
@@ -20,6 +21,7 @@ public sealed partial class ChapterToolCliApplication
     private readonly IChapterExpressionEngine expressionEngine;
     private readonly string? configuredSavingPath;
     private readonly ISettingsStore<ChapterToolSettings> settingsStore;
+    private readonly IAppLocalizer localizer;
 
     public ChapterToolCliApplication(
         ICliConsole? console = null,
@@ -28,9 +30,11 @@ public sealed partial class ChapterToolCliApplication
         string? configuredSavingPath = null,
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
         string? settingsDirectory = null,
-        IChapterExpressionEngine? expressionEngine = null)
+        IChapterExpressionEngine? expressionEngine = null,
+        IAppLocalizer? localizer = null)
     {
         this.console = console ?? new SystemCliConsole();
+        this.localizer = localizer ?? new AppLocalizationManager("en-US");
         var directory = ChapterToolRuntimeComposition.ResolveSettingsDirectory(settingsDirectory);
         this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
 
@@ -45,23 +49,23 @@ public sealed partial class ChapterToolCliApplication
 
     public int ShowFormats()
     {
-        console.WriteLine("Input formats");
+        console.WriteLine(localizer.GetString("Cli.Header.InputFormats"));
         foreach (var line in SupportedInputFormats())
         {
             console.WriteLine($"  {line}");
         }
 
         console.WriteLine();
-        console.WriteLine("Output formats");
+        console.WriteLine(localizer.GetString("Cli.Header.OutputFormats"));
         foreach (var format in ChapterToolCliSupport.OutputFormats)
         {
             console.WriteLine($"  {format.Name,-12} {format.FileExtension,-18} {format.Description}");
         }
 
         console.WriteLine();
-        console.WriteLine("Scope");
-        console.WriteLine("  Basic import/export and terminal output are supported.");
-        console.WriteLine("  Convert supports optional Lua expressions and built-in expression presets.");
+        console.WriteLine(localizer.GetString("Cli.Header.Scope"));
+        console.WriteLine($"  {localizer.GetString("Cli.Scope.Basic")}");
+        console.WriteLine($"  {localizer.GetString("Cli.Scope.Expression")}");
         return 0;
     }
 
@@ -95,8 +99,15 @@ public sealed partial class ChapterToolCliApplication
         yield return "bdmv-directory       BDMV/PLAYLIST directory";
     }
 
-    private static IEnumerable<string> FormatDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
-        diagnostics.Select(static diagnostic => $"{diagnostic.Severity.ToString().ToUpperInvariant()} {diagnostic.DisplayCode}: {diagnostic.Message}");
+    private IEnumerable<string> FormatDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
+        diagnostics.Select(diagnostic =>
+        {
+            var key = $"Diagnostic.{diagnostic.DisplayCode}";
+            var message = localizer.TryGetString(key, out _)
+                ? localizer.Format(key, diagnostic.Arguments ?? new Dictionary<string, object?> { ["message"] = diagnostic.Message })
+                : diagnostic.Message;
+            return $"{diagnostic.Severity.ToString().ToUpperInvariant()} {diagnostic.DisplayCode}: {message}";
+        });
 
     private void RenderFailure(string message, IReadOnlyList<ChapterDiagnostic> diagnostics)
     {

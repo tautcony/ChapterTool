@@ -24,14 +24,14 @@ public sealed partial class ChapterToolCliApplication
         var import = await ImportAsync(request.InputPath, cancellationToken);
         if (!import.Success)
         {
-            RenderFailure("Import failed.", import.Result.Diagnostics);
+            RenderFailure(localizer.GetString("Cli.Error.ImportFailed"), import.Result.Diagnostics);
             return 1;
         }
 
         var selection = SelectOption(import.Result.Groups, request);
         if (selection is not { IsSuccess: true })
         {
-            RenderFailure(selection?.Message ?? "Selection failed.", selection?.Diagnostics ?? []);
+            RenderFailure(selection?.Message ?? localizer.GetString("Cli.Error.SelectionFailed"), selection?.Diagnostics ?? []);
             return 1;
         }
 
@@ -53,7 +53,7 @@ public sealed partial class ChapterToolCliApplication
 
         if (!export.Success)
         {
-            RenderFailure("Export failed.", export.Diagnostics);
+            RenderFailure(localizer.GetString("Cli.Error.ExportFailed"), export.Diagnostics);
             return 1;
         }
 
@@ -64,7 +64,7 @@ public sealed partial class ChapterToolCliApplication
     {
         if (request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath))
         {
-            console.WriteErrorLine("Entries --stdout and --output cannot be used together.");
+            console.WriteErrorLine(localizer.GetString("Cli.Error.StdoutOutputConflict"));
             format = null!;
             errorCode = 1;
             return false;
@@ -72,7 +72,7 @@ public sealed partial class ChapterToolCliApplication
 
         if (request.FrameRate is <= 0)
         {
-            console.WriteErrorLine("Frame rate must be greater than zero when --frame-rate is specified.");
+            console.WriteErrorLine(localizer.GetString("Cli.Error.FrameRatePositive"));
             format = null!;
             errorCode = 1;
             return false;
@@ -80,8 +80,8 @@ public sealed partial class ChapterToolCliApplication
 
         if (!ChapterToolCliSupport.TryParseFormat(request.Format, out format))
         {
-            console.WriteErrorLine($"Unsupported output format '{request.Format}'.");
-            console.WriteErrorLine("Run `formats` to see the supported CLI conversion targets.");
+            console.WriteErrorLine(localizer.Format("Cli.Error.UnsupportedFormat", new Dictionary<string, object?> { ["format"] = request.Format }));
+            console.WriteErrorLine(localizer.GetString("Cli.Error.FormatsHint"));
             errorCode = 1;
             return false;
         }
@@ -104,7 +104,7 @@ public sealed partial class ChapterToolCliApplication
         var hasPreset = !string.IsNullOrWhiteSpace(request.ExpressionPreset);
         if (hasExpression && hasPreset)
         {
-            console.WriteErrorLine("Options --expression and --expression-preset cannot be used together.");
+            console.WriteErrorLine(localizer.GetString("Cli.Error.ExpressionConflict"));
             return false;
         }
 
@@ -124,8 +124,8 @@ public sealed partial class ChapterToolCliApplication
             string.Equals(candidate.Id, request.ExpressionPreset, StringComparison.OrdinalIgnoreCase));
         if (preset is null)
         {
-            console.WriteErrorLine($"Unknown expression preset '{request.ExpressionPreset}'.");
-            console.WriteErrorLine("Available presets: " + string.Join(", ", expressionEngine.Presets.Select(static candidate => candidate.Id)));
+            console.WriteErrorLine(localizer.Format("Cli.Error.UnknownExpressionPreset", new Dictionary<string, object?> { ["preset"] = request.ExpressionPreset }));
+            console.WriteErrorLine(localizer.Format("Cli.Error.AvailablePresets", new Dictionary<string, object?> { ["presets"] = string.Join(", ", expressionEngine.Presets.Select(static candidate => candidate.Id)) }));
             return false;
         }
 
@@ -152,7 +152,7 @@ public sealed partial class ChapterToolCliApplication
         var targetPath = await ResolveOutputPathAsync(request, format, info, cancellationToken);
         if (string.IsNullOrWhiteSpace(targetPath))
         {
-            console.WriteErrorLine("Output directory was not resolved. Provide --output or set a default save directory in settings.");
+            console.WriteErrorLine(localizer.GetString("Cli.Error.OutputDirectory"));
             return 1;
         }
 

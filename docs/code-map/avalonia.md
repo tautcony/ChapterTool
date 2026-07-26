@@ -125,13 +125,12 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### Localization
 
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
-- `src/ChapterTool.Avalonia/Localization/IAppLocalizer.cs`
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationResources.cs`
-- `src/ChapterTool.Avalonia/Localization/AppLanguage.cs`
-- `src/ChapterTool.Avalonia/Localization/Resources/Strings.zh-CN.resx`
-- `src/ChapterTool.Avalonia/Localization/Resources/Strings.en-US.resx`
-- `src/ChapterTool.Avalonia/Localization/Resources/Strings.ja-JP.resx`
+- `src/ChapterTool.Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Localization/IAppLocalizer.cs`
+- `src/ChapterTool.Localization/AppLocalizationResources.cs`
+- `src/ChapterTool.Localization/AppLanguage.cs`
+- `src/ChapterTool.Localization/Resources/Locales/`
+- `src/ChapterTool.Avalonia/Localization/AvaloniaLocalizationResourceAdapter.cs`
 
 ## Feature Lookup
 
@@ -262,4 +261,5 @@ Start with:
 
 If resource projection or language switching behavior changes, inspect:
 
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Avalonia/Localization/AvaloniaLocalizationResourceAdapter.cs`

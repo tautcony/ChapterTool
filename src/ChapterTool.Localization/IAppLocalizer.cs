@@ -1,4 +1,6 @@
-namespace ChapterTool.Avalonia.Localization;
+using System.Globalization;
+
+namespace ChapterTool.Localization;
 
 public interface IAppLocalizer
 {

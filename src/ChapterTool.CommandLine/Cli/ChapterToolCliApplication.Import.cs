@@ -12,18 +12,18 @@ public sealed partial class ChapterToolCliApplication
     {
         if (string.IsNullOrWhiteSpace(inputPath))
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MissingInput, "Input path is required."));
+            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MissingInput, localizer.GetString("Cli.Error.InputRequired")));
         }
 
         if (!File.Exists(inputPath) && !Directory.Exists(inputPath))
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InputNotFound, $"Input path '{inputPath}' was not found."));
+            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InputNotFound, localizer.Format("Cli.Error.InputNotFound", new Dictionary<string, object?> { ["path"] = inputPath })));
         }
 
         var importer = importerRegistry.Resolve(inputPath);
         if (importer is null)
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedInput, $"No importer is available for '{inputPath}'."));
+            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedInput, localizer.Format("Cli.Error.UnsupportedInput", new Dictionary<string, object?> { ["path"] = inputPath })));
         }
 
         var result = await importer.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);

@@ -12,7 +12,7 @@ public sealed partial class ChapterToolCliApplication
     {
         if (groups.Count == 0)
         {
-            return CliSelectionResult.Failure("No chapter groups were imported.", []);
+            return CliSelectionResult.Failure(localizer.GetString("Cli.Error.NoGroups"), []);
         }
 
         if (!TryResolveGroupIndex(groups, request, out var group, out var failure))
@@ -22,13 +22,13 @@ public sealed partial class ChapterToolCliApplication
 
         if (group is null || group.Entries.Count == 0)
         {
-            return CliSelectionResult.Failure($"Group {request.GroupIndex ?? 0} contains no selectable chapter entries.", []);
+            return CliSelectionResult.Failure(localizer.Format("Cli.Error.EmptyGroup", new Dictionary<string, object?> { ["group"] = request.GroupIndex ?? 0 }), []);
         }
 
         return ResolveEntryFromGroup(group, request);
     }
 
-    private static bool TryResolveGroupIndex(
+    private bool TryResolveGroupIndex(
         IReadOnlyList<ChapterImportSource> groups,
         CliConvertRequest request,
         out ChapterImportSource? group,
@@ -39,7 +39,7 @@ public sealed partial class ChapterToolCliApplication
         {
             group = null;
             failure = CliSelectionResult.Failure(
-                "Multiple groups are available. Specify --group-index to select one.",
+                localizer.GetString("Cli.Error.MultipleGroups"),
                 AmbiguousSelectionDiagnostics(groups));
             return false;
         }
@@ -49,7 +49,7 @@ public sealed partial class ChapterToolCliApplication
         return true;
     }
 
-    private static CliSelectionResult ResolveEntryFromGroup(ChapterImportSource group, CliConvertRequest request)
+    private CliSelectionResult ResolveEntryFromGroup(ChapterImportSource group, CliConvertRequest request)
     {
         var groupIndex = request.GroupIndex ?? 0;
 
@@ -69,30 +69,30 @@ public sealed partial class ChapterToolCliApplication
         }
 
         return CliSelectionResult.Failure(
-            $"Group {groupIndex} has multiple entries. Specify --entry-id or --entry-index.",
+            localizer.Format("Cli.Error.MultipleEntries", new Dictionary<string, object?> { ["group"] = groupIndex }),
             AmbiguousSelectionDiagnostics([group], groupIndex));
     }
 
-    private static CliSelectionResult ResolveEntryById(ChapterImportSource group, string entryId, int groupIndex)
+    private CliSelectionResult ResolveEntryById(ChapterImportSource group, string entryId, int groupIndex)
     {
         var entry = group.Entries.FirstOrDefault(candidate =>
             string.Equals(candidate.Id, entryId, StringComparison.OrdinalIgnoreCase));
         if (entry is null)
         {
             return CliSelectionResult.Failure(
-                $"Entry id '{entryId}' was not found in group {groupIndex}.",
+                localizer.Format("Cli.Error.EntryNotFound", new Dictionary<string, object?> { ["entry"] = entryId, ["group"] = groupIndex }),
                 AmbiguousSelectionDiagnostics([group], groupIndex));
         }
 
         return CliSelectionResult.Success(entry);
     }
 
-    private static CliSelectionResult ResolveEntryByIndex(ChapterImportSource group, int entryIndex, int groupIndex)
+    private CliSelectionResult ResolveEntryByIndex(ChapterImportSource group, int entryIndex, int groupIndex)
     {
         if (entryIndex < 0 || entryIndex >= group.Entries.Count)
         {
             return CliSelectionResult.Failure(
-                $"Entry index {entryIndex} is out of range for group {groupIndex}.",
+                localizer.Format("Cli.Error.EntryIndex", new Dictionary<string, object?> { ["entry"] = entryIndex, ["group"] = groupIndex }),
                 AmbiguousSelectionDiagnostics([group], groupIndex));
         }
 

@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Diagnostics;
@@ -12,6 +11,7 @@ using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
+using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
@@ -1298,7 +1298,7 @@ public sealed class MainWindowViewModelTests
             settingsStore);
     }
 
-    private static ChapterSet Info(ChapterImportFormat sourceType,  string sourceName, params Chapter[] chapters) =>
+    private static ChapterSet Info(ChapterImportFormat sourceType, string sourceName, params Chapter[] chapters) =>
         new(sourceName, sourceName, sourceType, 24, chapters.Last().StartTime, chapters);
 
     private static ChapterImportResult ImportResult(string path, params ChapterSet[] infos)

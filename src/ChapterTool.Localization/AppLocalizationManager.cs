@@ -1,19 +1,17 @@
 using System.Globalization;
-using Avalonia;
 
-namespace ChapterTool.Avalonia.Localization;
+namespace ChapterTool.Localization;
 
 public sealed class AppLocalizationManager : IAppLocalizer
 {
     private readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> resources;
-    private readonly HashSet<string> appliedKeys = new(StringComparer.Ordinal);
 
     public AppLocalizationManager(
         string? initialCultureName = null,
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? resources = null)
     {
         this.resources = resources ?? AppLocalizationResources.All;
-        CurrentCultureName = AppLanguage.Normalize(initialCultureName);
+        CurrentCultureName = Normalize(initialCultureName);
         ApplyCulture(CurrentCultureName, raiseEvent: false);
     }
 
@@ -25,7 +23,7 @@ public sealed class AppLocalizationManager : IAppLocalizer
 
     public void SetCulture(string? cultureName)
     {
-        var normalized = AppLanguage.Normalize(cultureName);
+        var normalized = Normalize(cultureName);
         if (string.Equals(CurrentCultureName, normalized, StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -35,8 +33,7 @@ public sealed class AppLocalizationManager : IAppLocalizer
         ApplyCulture(normalized, raiseEvent: true);
     }
 
-    public string GetString(string key) =>
-        TryGetString(key, out var value) ? value : key;
+    public string GetString(string key) => TryGetString(key, out var value) ? value : key;
 
     public bool TryGetString(string key, out string value)
     {
@@ -75,50 +72,17 @@ public sealed class AppLocalizationManager : IAppLocalizer
 
     public string Format(LocalizedMessage message) => Format(message.Key, message.Arguments);
 
+    private static string Normalize(string? cultureName) => AppLanguage.Normalize(cultureName);
+
     private void ApplyCulture(string cultureName, bool raiseEvent)
     {
         var culture = CultureInfo.GetCultureInfo(cultureName);
         CultureInfo.CurrentCulture = culture;
         CultureInfo.CurrentUICulture = culture;
 
-        ApplyApplicationResources(cultureName);
         if (raiseEvent)
         {
             CultureChanged?.Invoke(this, EventArgs.Empty);
         }
-    }
-
-    private void ApplyApplicationResources(string cultureName)
-    {
-        var application = Application.Current;
-        if (application is null)
-        {
-            return;
-        }
-
-        if (!resources.TryGetValue(cultureName, out var current))
-        {
-            current = AppLocalizationResources.Fallback;
-        }
-
-        var activeKeys = new HashSet<string>(AppLocalizationResources.Fallback.Keys, StringComparer.Ordinal);
-        activeKeys.UnionWith(current.Keys);
-        foreach (var key in appliedKeys.Where(key => !activeKeys.Contains(key)).ToArray())
-        {
-            application.Resources.Remove(key);
-        }
-
-        foreach (var (key, value) in AppLocalizationResources.Fallback)
-        {
-            application.Resources[key] = value;
-        }
-
-        foreach (var (key, value) in current)
-        {
-            application.Resources[key] = value;
-        }
-
-        appliedKeys.Clear();
-        appliedKeys.UnionWith(activeKeys);
     }
 }

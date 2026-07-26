@@ -419,12 +419,12 @@ The Avalonia application SHALL write structured diagnostic logs to a local rolli
 - **WHEN** logs are recorded
 - **THEN** the application SHALL NOT upload logs or send telemetry to remote services as part of this change
 
-### Requirement: Avalonia localization resources are externalized
-The Avalonia application SHALL store translated UI, prompt, status, and user-facing log strings in culture-specific .NET resource assets rather than hand-written C# translation dictionaries.
+### Requirement: Desktop localization resources are externalized
+The desktop and command-line hosts SHALL store translated UI, prompt, status, and user-facing log strings in culture-specific Avalonia `.axaml` resource assets rather than hand-written C# translation dictionaries.
 
 #### Scenario: Resources load from compiled resource assets
 - **WHEN** the Avalonia localization manager resolves a supported UI culture
-- **THEN** it SHALL load localized values from compiled `.resx` resources through .NET resource infrastructure
+- **THEN** it SHALL load localized values from compiled `.axaml` resources through the shared `ChapterTool.Localization` catalog
 - **AND** it SHALL NOT require translated string literals to be maintained in C# dictionary initializers
 
 #### Scenario: Resource validation uses compiled resources

@@ -1,8 +1,8 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using ChapterTool.Avalonia.Localization;
+using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Services;
 

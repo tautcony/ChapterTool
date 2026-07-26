@@ -1,4 +1,4 @@
-namespace ChapterTool.Avalonia.Localization;
+namespace ChapterTool.Localization;
 
 public sealed record LocalizedMessage(
     string Key,

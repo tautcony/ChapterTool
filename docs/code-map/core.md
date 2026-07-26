@@ -133,7 +133,7 @@ Browser host:
 - `Services/WasmWorkspace` and `Pages/Home.razor` provide the load, grid, options, and save zones.
 - `WasmWorkspace` owns byte-based load, reload, and append state. It also owns selection actions, projection and export orchestration, diagnostics, activity logs, and localized status strings.
 - Core editing, segment, projection, and export services remain the behavior owners.
-- Browser settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document with schema `1`. `wwwroot/js/download.js` stores this document in `localStorage`. `Services/WasmLocalizer` stores UI strings.
+- Browser settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document with schema `1`. `wwwroot/js/download.js` stores this document in `localStorage`. `Services/WasmLocalizer` loads Web-only JSON resources from `Resources/Locales/`.
 - `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` — focused browser-workspace behavior coverage for reload, append gating, templates, selection/zones/delete, forward shifting, preview/save parity, auto naming, and localization refresh.
 - Deployed to GitHub Pages by `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 

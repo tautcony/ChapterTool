@@ -4,6 +4,7 @@
     <ProjectReference Include="..\ChapterTool.Core\ChapterTool.Core.csproj" />
     <ProjectReference Include="..\ChapterTool.Infrastructure\ChapterTool.Infrastructure.csproj" />
     <ProjectReference Include="..\ChapterTool.CommandLine\ChapterTool.CommandLine.csproj" />
+    <ProjectReference Include="..\ChapterTool.Localization\ChapterTool.Localization.csproj" />
   </ItemGroup>
 
   <ItemGroup>
