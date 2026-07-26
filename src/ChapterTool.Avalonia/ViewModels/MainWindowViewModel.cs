@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.Session.Ports;
 using ChapterTool.Avalonia.Workflows;
@@ -11,7 +12,6 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels;

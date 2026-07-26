@@ -15,7 +15,6 @@ using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Processes;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
-using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;

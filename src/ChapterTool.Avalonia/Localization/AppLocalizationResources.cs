@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Xml.Linq;
 
-namespace ChapterTool.Localization;
+namespace ChapterTool.Avalonia.Localization;
 
 public static class AppLocalizationResources
 {

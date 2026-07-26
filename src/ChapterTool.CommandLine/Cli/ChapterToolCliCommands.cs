@@ -1,4 +1,3 @@
-using ChapterTool.Localization;
 using DotMake.CommandLine;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -83,7 +82,7 @@ public sealed class ConvertCliCommand
 
     public async Task<int> RunAsync()
     {
-        var app = new ChapterToolCliApplication(localizer: new AppLocalizationManager(Language ?? "en-US"));
+        var app = new ChapterToolCliApplication(localizer: new CliLocalizationManager(Language));
         return await app.ConvertAsync(
             new CliConvertRequest(
                 CliInputResolver.Resolve(Input, Source) ?? string.Empty,
@@ -116,7 +115,7 @@ public sealed class InspectCliCommand
 
     public async Task<int> RunAsync()
     {
-        var app = new ChapterToolCliApplication(localizer: new AppLocalizationManager(Language ?? "en-US"));
+        var app = new ChapterToolCliApplication(localizer: new CliLocalizationManager(Language));
         return await app.InspectAsync(
             new CliInspectRequest(CliInputResolver.Resolve(Input, Source) ?? string.Empty),
             CancellationToken.None);
@@ -131,7 +130,7 @@ public sealed class FormatsCliCommand
 
     public int Run()
     {
-        var app = new ChapterToolCliApplication(localizer: new AppLocalizationManager(Language ?? "en-US"));
+        var app = new ChapterToolCliApplication(localizer: new CliLocalizationManager(Language));
         return app.ShowFormats();
     }
 }

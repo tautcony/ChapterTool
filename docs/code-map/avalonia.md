@@ -134,6 +134,8 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs`
+- `src/ChapterTool.CommandLine/Cli/CliLocalizationManager.cs`
+- `src/ChapterTool.CommandLine/Resources/Locales/`
 - `src/ChapterTool.CommandLine/Cli/CliConsole.cs`
 - `src/ChapterTool.Cli/Program.cs`
 - `src/ChapterTool.Cli/ChapterTool.Cli.csproj`
@@ -141,11 +143,11 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### Localization
 
-- `src/ChapterTool.Localization/AppLocalizationManager.cs`
-- `src/ChapterTool.Localization/IAppLocalizer.cs`
-- `src/ChapterTool.Localization/AppLocalizationResources.cs`
-- `src/ChapterTool.Localization/AppLanguage.cs`
-- `src/ChapterTool.Localization/Resources/Locales/`
+- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Avalonia/Localization/IAppLocalizer.cs`
+- `src/ChapterTool.Avalonia/Localization/AppLocalizationResources.cs`
+- `src/ChapterTool.Avalonia/Localization/AppLanguage.cs`
+- `src/ChapterTool.Avalonia/Localization/Resources/Locales/`
 - `src/ChapterTool.Avalonia/Localization/AvaloniaLocalizationResourceAdapter.cs`
 
 ## Feature Lookup
@@ -286,8 +288,9 @@ Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.Com
 Start with:
 
 - `src/ChapterTool.Avalonia/Localization/Resources/`
+- `src/ChapterTool.CommandLine/Cli/CliLocalizationManager.cs`
 
 If resource projection or language switching behavior changes, inspect:
 
-- `src/ChapterTool.Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
 - `src/ChapterTool.Avalonia/Localization/AvaloniaLocalizationResourceAdapter.cs`

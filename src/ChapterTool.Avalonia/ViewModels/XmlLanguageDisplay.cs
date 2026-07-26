@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Exporting;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.ViewModels;
 

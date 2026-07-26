@@ -3,13 +3,13 @@ using System.Globalization;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Avalonia;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.ViewModels;
 

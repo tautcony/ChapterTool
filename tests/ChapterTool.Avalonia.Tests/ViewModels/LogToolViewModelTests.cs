@@ -1,7 +1,7 @@
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;

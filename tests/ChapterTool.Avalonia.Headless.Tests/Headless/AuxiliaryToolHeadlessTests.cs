@@ -9,7 +9,6 @@ using ChapterTool.Avalonia.ViewModels.Tools;
 using ChapterTool.Avalonia.Views.Tools;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;

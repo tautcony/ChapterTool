@@ -6,7 +6,6 @@ using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 
 namespace ChapterTool.CommandLine.Cli;
 
@@ -21,7 +20,7 @@ public sealed partial class ChapterToolCliApplication
     private readonly IChapterExpressionEngine expressionEngine;
     private readonly string? configuredSavingPath;
     private readonly ISettingsStore<ChapterToolSettings> settingsStore;
-    private readonly IAppLocalizer localizer;
+    private readonly ICliLocalizer localizer;
 
     public ChapterToolCliApplication(
         ICliConsole? console = null,
@@ -31,10 +30,10 @@ public sealed partial class ChapterToolCliApplication
         ISettingsStore<ChapterToolSettings>? settingsStore = null,
         string? settingsDirectory = null,
         IChapterExpressionEngine? expressionEngine = null,
-        IAppLocalizer? localizer = null)
+        ICliLocalizer? localizer = null)
     {
         this.console = console ?? new SystemCliConsole();
-        this.localizer = localizer ?? new AppLocalizationManager("en-US");
+        this.localizer = localizer ?? new CliLocalizationManager();
         var directory = ChapterToolRuntimeComposition.ResolveSettingsDirectory(settingsDirectory);
         this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
 

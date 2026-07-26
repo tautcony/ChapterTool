@@ -10,8 +10,8 @@ using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Transform;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Views.Controls;
 

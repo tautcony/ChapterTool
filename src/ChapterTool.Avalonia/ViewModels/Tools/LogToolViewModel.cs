@@ -1,7 +1,7 @@
 using System.Text;
 using Avalonia.Threading;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.ViewModels.Tools;

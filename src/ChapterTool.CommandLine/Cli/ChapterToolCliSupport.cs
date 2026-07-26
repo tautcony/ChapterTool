@@ -1,5 +1,4 @@
 ﻿using ChapterTool.Core.Exporting;
-using ChapterTool.Localization;
 using DotMake.CommandLine;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -45,7 +44,7 @@ internal static class ChapterToolCliSupport
         var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
         if (parsed.IsCalled<LoadCliCommand>())
         {
-            Console.Error.WriteLine(new AppLocalizationManager("en-US").GetString("Cli.Error.GuiOnlyLoad"));
+            Console.Error.WriteLine(new CliLocalizationManager().GetString("Cli.Error.GuiOnlyLoad"));
             return 1;
         }
 

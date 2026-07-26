@@ -28,36 +28,6 @@
   <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">Shift frames forward: frames={frames}</x:String>
   <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">Split combined segments: entries={entries}, sourceType={sourceType}</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
-  <x:String x:Key="Cli.Error.AvailablePresets" xml:space="preserve">Available presets: {presets}</x:String>
-  <x:String x:Key="Cli.Error.EmptyGroup" xml:space="preserve">Group {group} contains no selectable chapter entries.</x:String>
-  <x:String x:Key="Cli.Error.EntryIndex" xml:space="preserve">Entry index {entry} is out of range for group {group}.</x:String>
-  <x:String x:Key="Cli.Error.EntryNotFound" xml:space="preserve">Entry id '{entry}' was not found in group {group}.</x:String>
-  <x:String x:Key="Cli.Error.ExportFailed" xml:space="preserve">Export failed.</x:String>
-  <x:String x:Key="Cli.Error.ExpressionConflict" xml:space="preserve">Options --expression and --expression-preset cannot be used together.</x:String>
-  <x:String x:Key="Cli.Error.FormatsHint" xml:space="preserve">Run `formats` to see the supported CLI conversion targets.</x:String>
-  <x:String x:Key="Cli.Error.FrameRatePositive" xml:space="preserve">Frame rate must be greater than zero when --frame-rate is specified.</x:String>
-  <x:String x:Key="Cli.Error.GuiOnlyLoad" xml:space="preserve">The `load` command is available only in the Avalonia host. Use an explicit CLI command such as `inspect` or `convert`.</x:String>
-  <x:String x:Key="Cli.Error.ImportFailed" xml:space="preserve">Import failed.</x:String>
-  <x:String x:Key="Cli.Error.InputNotFound" xml:space="preserve">Input path '{path}' was not found.</x:String>
-  <x:String x:Key="Cli.Error.InputRequired" xml:space="preserve">Input path is required.</x:String>
-  <x:String x:Key="Cli.Error.MultipleEntries" xml:space="preserve">Group {group} has multiple entries. Specify --entry-id or --entry-index.</x:String>
-  <x:String x:Key="Cli.Error.MultipleGroups" xml:space="preserve">Multiple groups are available. Specify --group-index to select one.</x:String>
-  <x:String x:Key="Cli.Error.NoGroups" xml:space="preserve">No chapter groups were imported.</x:String>
-  <x:String x:Key="Cli.Error.OutputDirectory" xml:space="preserve">Output directory was not resolved. Provide --output or set a default save directory in settings.</x:String>
-  <x:String x:Key="Cli.Error.SelectionFailed" xml:space="preserve">Selection failed.</x:String>
-  <x:String x:Key="Cli.Error.StdoutOutputConflict" xml:space="preserve">Options --stdout and --output cannot be used together.</x:String>
-  <x:String x:Key="Cli.Error.UnknownExpressionPreset" xml:space="preserve">Unknown expression preset '{preset}'.</x:String>
-  <x:String x:Key="Cli.Error.UnsupportedFormat" xml:space="preserve">Unsupported output format '{format}'.</x:String>
-  <x:String x:Key="Cli.Error.UnsupportedInput" xml:space="preserve">No importer is available for '{path}'.</x:String>
-  <x:String x:Key="Cli.Header.Diagnostics" xml:space="preserve">Diagnostics</x:String>
-  <x:String x:Key="Cli.Header.Groups" xml:space="preserve">Groups</x:String>
-  <x:String x:Key="Cli.Header.Importer" xml:space="preserve">Importer</x:String>
-  <x:String x:Key="Cli.Header.InputFormats" xml:space="preserve">Input formats</x:String>
-  <x:String x:Key="Cli.Header.OutputFormats" xml:space="preserve">Output formats</x:String>
-  <x:String x:Key="Cli.Header.Scope" xml:space="preserve">Scope</x:String>
-  <x:String x:Key="Cli.Header.Source" xml:space="preserve">Source</x:String>
-  <x:String x:Key="Cli.Scope.Basic" xml:space="preserve">Basic import/export and terminal output are supported.</x:String>
-  <x:String x:Key="Cli.Scope.Expression" xml:space="preserve">Convert supports optional Lua expressions and built-in expression presets.</x:String>
   <x:String x:Key="Common.Apply" xml:space="preserve">Apply</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">Cancel</x:String>
   <x:String x:Key="Common.Clear" xml:space="preserve">Clear</x:String>

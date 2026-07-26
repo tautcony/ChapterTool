@@ -11,6 +11,23 @@ namespace ChapterTool.Avalonia.Tests.Cli;
 public sealed class ChapterToolCliApplicationTests
 {
     [Fact]
+    public void CliLocalizationSupportsIndependentCultures()
+    {
+        var localizer = new CliLocalizationManager("zh-CN");
+
+        Assert.Equal("输入格式", localizer.GetString("Cli.Header.InputFormats"));
+        Assert.Equal(
+            "找不到输入路径“missing”。",
+            localizer.Format("Cli.Error.InputNotFound", new Dictionary<string, object?> { ["path"] = "missing" }));
+        Assert.True(localizer.TryGetString("Diagnostic.Xml.Invalid", out var diagnostic));
+        Assert.Contains("XML", diagnostic, StringComparison.OrdinalIgnoreCase);
+
+        localizer.SetCulture("ja-JP");
+
+        Assert.Equal("入力形式", localizer.GetString("Cli.Header.InputFormats"));
+    }
+
+    [Fact]
     public void Product_facade_keeps_desktop_and_standalone_launch_policies_distinct()
     {
         var existingPath = Path.GetTempFileName();

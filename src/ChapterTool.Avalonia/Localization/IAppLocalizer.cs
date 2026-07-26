@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace ChapterTool.Localization;
+namespace ChapterTool.Avalonia.Localization;
 
 public interface IAppLocalizer
 {

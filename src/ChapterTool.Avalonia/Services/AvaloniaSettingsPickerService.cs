@@ -1,6 +1,7 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using ChapterTool.Localization;
+
+using ChapterTool.Avalonia.Localization;
 
 namespace ChapterTool.Avalonia.Services;
 

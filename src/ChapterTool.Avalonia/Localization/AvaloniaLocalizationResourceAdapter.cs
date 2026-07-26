@@ -1,5 +1,4 @@
 ﻿using Avalonia;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Localization;
 

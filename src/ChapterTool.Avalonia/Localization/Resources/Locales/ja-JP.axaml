@@ -28,36 +28,6 @@
   <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">フレーム前方シフト: フレーム数={frames}</x:String>
   <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">結合済みセグメントを分割: オプション数={entries}, ソース種別={sourceType}</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
-  <x:String x:Key="Cli.Error.AvailablePresets" xml:space="preserve">使用できるプリセット: {presets}</x:String>
-  <x:String x:Key="Cli.Error.EmptyGroup" xml:space="preserve">グループ {group} に選択可能なチャプター項目がありません。</x:String>
-  <x:String x:Key="Cli.Error.EntryIndex" xml:space="preserve">項目インデックス {entry} はグループ {group} の範囲外です。</x:String>
-  <x:String x:Key="Cli.Error.EntryNotFound" xml:space="preserve">グループ {group} に項目 ID「{entry}」が見つかりません。</x:String>
-  <x:String x:Key="Cli.Error.ExportFailed" xml:space="preserve">エクスポートに失敗しました。</x:String>
-  <x:String x:Key="Cli.Error.ExpressionConflict" xml:space="preserve">--expression と --expression-preset は同時に使用できません。</x:String>
-  <x:String x:Key="Cli.Error.FormatsHint" xml:space="preserve">`formats` を実行して、対応する CLI 変換先を確認してください。</x:String>
-  <x:String x:Key="Cli.Error.FrameRatePositive" xml:space="preserve">--frame-rate を指定する場合、フレームレートは 0 より大きくする必要があります。</x:String>
-  <x:String x:Key="Cli.Error.GuiOnlyLoad" xml:space="preserve">`load` コマンドは Avalonia ホストでのみ使用できます。`inspect` または `convert` などの CLI コマンドを使用してください。</x:String>
-  <x:String x:Key="Cli.Error.ImportFailed" xml:space="preserve">インポートに失敗しました。</x:String>
-  <x:String x:Key="Cli.Error.InputNotFound" xml:space="preserve">入力パス「{path}」が見つかりません。</x:String>
-  <x:String x:Key="Cli.Error.InputRequired" xml:space="preserve">入力パスが必要です。</x:String>
-  <x:String x:Key="Cli.Error.MultipleEntries" xml:space="preserve">グループ {group} には複数の項目があります。--entry-id または --entry-index を指定してください。</x:String>
-  <x:String x:Key="Cli.Error.MultipleGroups" xml:space="preserve">複数のグループがあります。--group-index を指定してください。</x:String>
-  <x:String x:Key="Cli.Error.NoGroups" xml:space="preserve">チャプターグループをインポートできませんでした。</x:String>
-  <x:String x:Key="Cli.Error.OutputDirectory" xml:space="preserve">出力ディレクトリを解決できません。--output を指定するか、設定で既定の保存先を指定してください。</x:String>
-  <x:String x:Key="Cli.Error.SelectionFailed" xml:space="preserve">選択に失敗しました。</x:String>
-  <x:String x:Key="Cli.Error.StdoutOutputConflict" xml:space="preserve">--stdout と --output は同時に使用できません。</x:String>
-  <x:String x:Key="Cli.Error.UnknownExpressionPreset" xml:space="preserve">不明な式プリセット「{preset}」です。</x:String>
-  <x:String x:Key="Cli.Error.UnsupportedFormat" xml:space="preserve">出力形式「{format}」はサポートされていません。</x:String>
-  <x:String x:Key="Cli.Error.UnsupportedInput" xml:space="preserve">「{path}」に使用できるインポーターがありません。</x:String>
-  <x:String x:Key="Cli.Header.Diagnostics" xml:space="preserve">診断</x:String>
-  <x:String x:Key="Cli.Header.Groups" xml:space="preserve">グループ</x:String>
-  <x:String x:Key="Cli.Header.Importer" xml:space="preserve">インポーター</x:String>
-  <x:String x:Key="Cli.Header.InputFormats" xml:space="preserve">入力形式</x:String>
-  <x:String x:Key="Cli.Header.OutputFormats" xml:space="preserve">出力形式</x:String>
-  <x:String x:Key="Cli.Header.Scope" xml:space="preserve">範囲</x:String>
-  <x:String x:Key="Cli.Header.Source" xml:space="preserve">ソース</x:String>
-  <x:String x:Key="Cli.Scope.Basic" xml:space="preserve">基本的なインポート、エクスポート、端末出力をサポートします。</x:String>
-  <x:String x:Key="Cli.Scope.Expression" xml:space="preserve">convert は Lua 式と組み込み式プリセットを使用できます。</x:String>
   <x:String x:Key="Common.Apply" xml:space="preserve">適用</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">キャンセル</x:String>
   <x:String x:Key="Common.Clear" xml:space="preserve">クリア</x:String>

@@ -1,10 +1,10 @@
 using System.Text.RegularExpressions;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Workflows;

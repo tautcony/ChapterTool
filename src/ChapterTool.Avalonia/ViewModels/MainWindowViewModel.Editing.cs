@@ -1,10 +1,10 @@
 using System.Collections.Specialized;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Workflows;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.ViewModels;
 

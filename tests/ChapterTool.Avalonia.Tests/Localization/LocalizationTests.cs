@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Avalonia.ViewModels.Tools;
@@ -11,7 +12,6 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Tests.Localization;
 
@@ -42,6 +42,14 @@ public sealed partial class LocalizationTests
                 Assert.Equal(expected[key], Placeholders(value));
             }
         }
+    }
+
+    [Fact]
+    public void DesktopResourcesDoNotOwnCliMessages()
+    {
+        Assert.DoesNotContain(
+            AppLocalizationResources.Fallback.Keys,
+            key => key.StartsWith("Cli.", StringComparison.Ordinal));
     }
 
     [Fact]

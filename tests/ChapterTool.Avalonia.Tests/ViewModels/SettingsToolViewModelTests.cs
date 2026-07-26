@@ -1,3 +1,4 @@
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Diagnostics;
@@ -10,7 +11,6 @@ using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 

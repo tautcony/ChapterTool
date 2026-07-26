@@ -1,5 +1,5 @@
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.Tests.Services;
 

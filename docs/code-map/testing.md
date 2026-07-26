@@ -16,7 +16,7 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `packages/chaptertool/test/api-loader.test.mjs`
 - Infrastructure behavior:
   - `tests/ChapterTool.Infrastructure.Tests`
-- Avalonia ViewModels, runtime UI services, localization, CLI:
+- Avalonia ViewModels, runtime UI services, desktop localization, CLI:
   - `tests/ChapterTool.Avalonia.Tests`
 - Avalonia Headless UI shell/interaction (separate process):
   - `tests/ChapterTool.Avalonia.Headless.Tests`
@@ -116,7 +116,7 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
   - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
   - `src/ChapterTool.Cli/Program.cs`
-- localization
+- desktop localization
   - `tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs`
 - headless shell/interaction/integration
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs`

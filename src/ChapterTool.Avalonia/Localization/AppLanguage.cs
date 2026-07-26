@@ -1,4 +1,4 @@
-namespace ChapterTool.Localization;
+namespace ChapterTool.Avalonia.Localization;
 
 public sealed record AppLanguage(string CultureName, string DisplayNameKey)
 {

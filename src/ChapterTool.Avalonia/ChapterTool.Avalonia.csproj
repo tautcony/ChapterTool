@@ -4,13 +4,13 @@
     <ProjectReference Include="..\ChapterTool.Core\ChapterTool.Core.csproj" />
     <ProjectReference Include="..\ChapterTool.Infrastructure\ChapterTool.Infrastructure.csproj" />
     <ProjectReference Include="..\ChapterTool.CommandLine\ChapterTool.CommandLine.csproj" />
-    <ProjectReference Include="..\ChapterTool.Localization\ChapterTool.Localization.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Remove="Assets\Images\chapter-empty.svg" />
     <AvaloniaResource Include="Assets\Images\chapter-empty.svg" />
+    <EmbeddedResource Include="Localization\Resources\Locales\*.axaml" />
     <AvaloniaResource Include="Views\SourceGit\Fonts\*.ttf" />
   </ItemGroup>
 

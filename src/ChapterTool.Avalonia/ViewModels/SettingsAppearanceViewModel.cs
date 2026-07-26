@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using Avalonia.Media;
+using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Infrastructure.Configuration;
-using ChapterTool.Localization;
 
 namespace ChapterTool.Avalonia.ViewModels;
 
