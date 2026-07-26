@@ -2,7 +2,7 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 
-namespace ChapterTool.Avalonia.Session;
+namespace ChapterTool.Core.Session;
 
 /// <summary>
 /// Typed multi-clip session: either split (selectable entries) or combined.
@@ -57,32 +57,48 @@ public abstract record ClipSession
 }
 
 /// <summary>Split / multi-clip mode with a selectable entry index.</summary>
+/// <param name="Group">The multi-entry import group.</param>
+/// <param name="SelectedClipIndex">The selected entry index within <paramref name="Group"/>.</param>
 public sealed record SplitClipSession(ChapterImportSource Group, int SelectedClipIndex) : ClipSession
 {
+    /// <inheritdoc />
     public override ChapterImportSource OriginalGroup => Group;
 
+    /// <inheritdoc />
     public override IReadOnlyList<ChapterImportEntry> ClipOptions => Group.Entries;
 
+    /// <inheritdoc />
     public override int SelectedIndex => SelectedClipIndex;
 
+    /// <inheritdoc />
     public override bool IsCombined => false;
 }
 
 /// <summary>Combined mode retaining the original multi-entry group for restore.</summary>
+/// <param name="OriginalMultiEntryGroup">The original multi-entry group retained for restore.</param>
+/// <param name="CombinedEntry">The synthetic combined clip entry.</param>
 public sealed record CombinedClipSession(
     ChapterImportSource OriginalMultiEntryGroup,
     ChapterImportEntry CombinedEntry) : ClipSession
 {
+    /// <inheritdoc />
     public override ChapterImportSource OriginalGroup => OriginalMultiEntryGroup;
 
+    /// <inheritdoc />
     public override IReadOnlyList<ChapterImportEntry> ClipOptions => [CombinedEntry];
 
+    /// <inheritdoc />
     public override int SelectedIndex => 0;
 
+    /// <inheritdoc />
     public override bool IsCombined => true;
 }
 
 /// <summary>Result of a combine-or-restore transition.</summary>
+/// <param name="Session">The resulting session when the transition succeeds.</param>
+/// <param name="EditResult">The edit/combine result and diagnostics.</param>
+/// <param name="Restored">Whether the transition restored a split session from combined mode.</param>
+/// <param name="Succeeded">Whether the transition succeeded.</param>
 public sealed record ClipCombineTransitionResult(
     ClipSession? Session,
     ChapterEditResult EditResult,
@@ -90,6 +106,9 @@ public sealed record ClipCombineTransitionResult(
     bool Succeeded);
 
 /// <summary>Result of an append transition.</summary>
+/// <param name="Session">The resulting combined session when the transition succeeds.</param>
+/// <param name="EditResult">The append result and diagnostics.</param>
+/// <param name="Succeeded">Whether the transition succeeded.</param>
 public sealed record ClipAppendTransitionResult(
     CombinedClipSession? Session,
     ChapterEditResult EditResult,

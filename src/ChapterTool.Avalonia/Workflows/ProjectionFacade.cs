@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
-using ChapterTool.Avalonia.Session;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 

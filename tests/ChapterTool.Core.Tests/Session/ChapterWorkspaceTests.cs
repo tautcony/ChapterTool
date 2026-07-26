@@ -1,8 +1,8 @@
-using ChapterTool.Avalonia.Session;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 
-namespace ChapterTool.Avalonia.Tests.Session;
+namespace ChapterTool.Core.Tests.Session;
 
 public sealed class ChapterWorkspaceTests
 {

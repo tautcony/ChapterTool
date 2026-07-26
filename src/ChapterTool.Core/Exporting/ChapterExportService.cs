@@ -260,8 +260,10 @@ public sealed partial class ChapterExportService
 
     private sealed record JsonChapter(string Name, double Time);
 
-    [JsonSourceGenerationOptions(
-        PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+    /// <summary>
+    /// Source-generated JSON metadata for JSON export payloads.
+    /// </summary>
+    [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     [JsonSerializable(typeof(JsonPayload))]
     private sealed partial class ExportJsonSerializerContext : JsonSerializerContext;
 }

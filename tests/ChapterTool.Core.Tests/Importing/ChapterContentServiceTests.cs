@@ -66,4 +66,86 @@ public sealed class ChapterContentServiceTests
         Assert.True(result.Success);
         Assert.Equal(ChapterImportFormat.HdDvdXpl, result.Groups.Single().Entries.Single().ChapterSet.ImportFormat);
     }
+
+    [Fact]
+    public async Task ImportAsyncRoutesFlacBytesToEmbeddedCueImporter()
+    {
+        var service = new ChapterContentService();
+        var cue = """
+                  TITLE "Album"
+                  FILE "audio.flac" WAVE
+                    TRACK 01 AUDIO
+                      TITLE "Track 1"
+                      INDEX 01 00:00:00
+                  """;
+        var content = CreateFlacWithVorbisCue(cue);
+
+        var result = await service.ImportAsync("music.flac", content, TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success);
+        Assert.Equal(ChapterImportFormat.Cue, result.Groups.Single().Entries.Single().ChapterSet.ImportFormat);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+    }
+
+    [Fact]
+    public async Task ImportAsyncRoutesTakBytesToEmbeddedCueImporter()
+    {
+        var service = new ChapterContentService();
+        var cue = """
+                  TITLE "Album"
+                  FILE "audio.tak" WAVE
+                    TRACK 01 AUDIO
+                      TITLE "Track 1"
+                      INDEX 01 00:00:00
+                  """;
+        var content = System.Text.Encoding.UTF8.GetBytes("tBaKpaddingCUESHEET=" + cue + "\0\0\0\0\0\0trailer");
+
+        var result = await service.ImportAsync("music.tak", content, TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success);
+        Assert.Equal(ChapterImportFormat.Cue, result.Groups.Single().Entries.Single().ChapterSet.ImportFormat);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+    }
+
+    [Theory]
+    [InlineData(".flac")]
+    [InlineData(".tak")]
+    [InlineData(".mpls")]
+    [InlineData(".ifo")]
+    public void IsBinaryExtensionRecognizesPortableBinaryImports(string extension)
+    {
+        Assert.True(ChapterContentService.IsBinaryExtension(extension));
+    }
+
+    private static byte[] CreateFlacWithVorbisCue(string cue)
+    {
+        // Minimal FLAC: fLaC + one Vorbis comment block (type 4) containing cuesheet=...
+        using var stream = new MemoryStream();
+        stream.Write("fLaC"u8);
+        var comment = System.Text.Encoding.UTF8.GetBytes("cuesheet=" + cue);
+        var vendor = System.Text.Encoding.UTF8.GetBytes("ChapterTool");
+        using var body = new MemoryStream();
+        WriteLe32(body, vendor.Length);
+        body.Write(vendor);
+        WriteLe32(body, 1);
+        WriteLe32(body, comment.Length);
+        body.Write(comment);
+        var payload = body.ToArray();
+
+        // last block | type 4
+        stream.WriteByte(0x84);
+        stream.WriteByte((byte)((payload.Length >> 16) & 0xFF));
+        stream.WriteByte((byte)((payload.Length >> 8) & 0xFF));
+        stream.WriteByte((byte)(payload.Length & 0xFF));
+        stream.Write(payload);
+        return stream.ToArray();
+    }
+
+    private static void WriteLe32(Stream stream, int value)
+    {
+        stream.WriteByte((byte)(value & 0xFF));
+        stream.WriteByte((byte)((value >> 8) & 0xFF));
+        stream.WriteByte((byte)((value >> 16) & 0xFF));
+        stream.WriteByte((byte)((value >> 24) & 0xFF));
+    }
 }

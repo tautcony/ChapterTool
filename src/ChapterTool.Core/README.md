@@ -19,6 +19,7 @@ dotnet add package ChapterTool.Core
 - **Edit** chapter data: time edit, frame edit, rename, delete, insert, reorder, shift, apply name templates
 - **Transform** chapter times: pluggable expression engines, frame rate detection and conversion
 - **Combine & append** chapter segments from multipart sources (MPLS/DVD)
+- **Session kernel** for interactive hosts: typed clip sessions, workspace revision commits, projection and export preference state (`ChapterTool.Core.Session`)
 
 ## API Examples
 

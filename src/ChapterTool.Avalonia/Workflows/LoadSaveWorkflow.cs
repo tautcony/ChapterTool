@@ -1,8 +1,8 @@
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.Session;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.Workflows;
 

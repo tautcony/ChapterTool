@@ -35,7 +35,7 @@ Default URL: `http://localhost:5261`
 
 | Action | Behavior |
 |--------|----------|
-| **Load** | Pick `.txt` / `.vtt` / `.xml` / `.cue` / `.mpls` / `.ifo` → import → fill grid |
+| **Load** | Pick `.txt` / `.vtt` / `.xml` / `.cue` / `.mpls` / `.ifo` / `.xpl` / `.flac` / `.tak` → import → fill grid |
 | **Reload / Append MPLS** | Load context menu reuses the last file or appends another MPLS group |
 | **Clip combo** | Shown when import has multiple entries; switches active `ChapterSet` |
 | **Clip combo context menu** | Combine MPLS/IFO entries or restore separate clips |
@@ -43,7 +43,7 @@ Default URL: `http://localhost:5261`
 | **Save** | `ChapterExportService` with bottom options → browser download |
 | **Round frames + FPS** | `FrameRateService.UpdateFrames` fills Frames column (Auto detect or fixed rate) |
 | **Frame rate context menu** | Change chapter timing from the current frame rate to the selected valid rate |
-| **Expression + Use** | `ChapterOutputProjectionService` / Lua engine rewrites times + frames in the grid |
+| **Expression + Use** | `ChapterOutputProjectionService` / Lua engine rewrites times + frames in the grid; built-in Core presets; invalid expressions surface Core diagnostics |
 | **Save as** | TXT, XML, QPFile, TimeCodes, … |
 | **Chapter name** | As is / Auto generate |
 | **Order +** | Display number shift |
@@ -68,9 +68,9 @@ Pass chapter bytes through `ChapterImportRequest.Content`. The browser app does 
 
 ## Feature boundaries
 
-The browser app imports text, XML, CUE, WebVTT, MPLS, and IFO data from bytes. It supports chapter editing, managed Lua expressions, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
+The browser app imports text, XML, CUE, WebVTT, MPLS, IFO, HD-DVD XPL, and embedded FLAC/TAK CUE data from bytes. It supports chapter editing, managed Lua expressions with Core presets, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
 
-The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`eac3to`/`ffprobe`/`ffmpeg`, importing external-tool media/BDMV sources, opening local Related Media through a desktop shell, or loading Lua script files and the Lua editor/completion workflow.
+The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`eac3to`/`ffprobe`/`ffmpeg`, importing external-tool media/BDMV sources, opening local Related Media through a desktop shell, system font catalog, desktop Sentry telemetry, or loading Lua script files and the Lua editor/completion workflow.
 
 Related Media paths are informational. Relative paths are rendered as browser links when present, but local filesystem paths are not made accessible by WASM.
 

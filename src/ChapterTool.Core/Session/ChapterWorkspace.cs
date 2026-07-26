@@ -1,7 +1,7 @@
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
-namespace ChapterTool.Avalonia.Session;
+namespace ChapterTool.Core.Session;
 
 /// <summary>
 /// Explicit chapter workspace/session owner for the Avalonia shell.

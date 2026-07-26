@@ -18,7 +18,7 @@ Use this document to compare the supported functions of every program form.
 
 Keep code identifiers, paths, commands, and user interface strings exact.
 
-Last reviewed: 2026-07-21
+Last reviewed: 2026-07-25
 
 ## 1. Program Forms
 
@@ -122,9 +122,9 @@ They do not describe product priority.
 | CUE chapters | Provides `CueChapterImporter` | Supports local `.cue` input | Supports local `.cue` input | Supports browser `.cue` input | `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs` `[Shared]` |
 | MPLS chapters | Provides `MplsChapterImporter` | Supports local `.mpls` input and selection options | Supports local `.mpls` input and clip selection | Supports browser `.mpls` input | `src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs` `[Host variant]` |
 | DVD IFO chapters | Provides `IfoChapterImporter` | Supports local `.ifo` input and selection options | Supports local `.ifo` input and clip selection | Supports browser `.ifo` input | `src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs` `[Host variant]` |
-| Embedded FLAC CUE | Provides `FlacCueImporter` | Supports local `.flac` input through Infrastructure | Supports local `.flac` input through Infrastructure | Does not route `.flac` input | `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs` `[Desktop and CLI]` |
-| Embedded TAK CUE | Provides `TakCueImporter` | Supports local `.tak` input through Infrastructure | Supports local `.tak` input through Infrastructure | Does not route `.tak` input | `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs` `[Desktop and CLI]` |
-| HD-DVD XPL | Provides `XplChapterImporter` | Supports local `.xpl` input through Infrastructure | Supports local `.xpl` input through Infrastructure | Does not route `.xpl` input explicitly | `RuntimeChapterImporterRegistry` `[Desktop and CLI]` and `[Gap]` |
+| Embedded FLAC CUE | Provides `FlacCueImporter` | Supports local `.flac` input through Infrastructure | Supports local `.flac` input through Infrastructure | Routes `.flac` bytes through `ChapterContentService` / `FlacCueImporter` | `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs` and `ChapterContentService` `[Shared]` stream path |
+| Embedded TAK CUE | Provides `TakCueImporter` | Supports local `.tak` input through Infrastructure | Supports local `.tak` input through Infrastructure | Routes `.tak` bytes through `ChapterContentService` / `TakCueImporter` | `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs` and `ChapterContentService` `[Shared]` stream path |
+| HD-DVD XPL | Provides `XplChapterImporter` | Supports local `.xpl` input through Infrastructure | Supports local `.xpl` input through Infrastructure | Routes `.xpl` bytes through `ChapterContentService` / `XplChapterImporter` | `src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs` and `ChapterContentService` `[Shared]` stream path |
 | Matroska media | Provides media contracts | Uses `mkvextract` or ffprobe through Infrastructure | Uses `mkvextract` or ffprobe through Infrastructure | Does not use native media adapters | `src/ChapterTool.Infrastructure/Importing/Matroska/` `[Desktop and CLI]` |
 | Other media files | Provides media contracts | Uses ffprobe and the ATL MP4 fallback | Uses ffprobe and the ATL MP4 fallback | Does not use native media adapters | `src/ChapterTool.Infrastructure/Importing/Media/` `[Desktop and CLI]` |
 | BDMV directory | Provides disc models and parsers | Reads local `BDMV/PLAYLIST` directories | Reads local `BDMV/PLAYLIST` directories | Cannot read local directories | `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs` `[Desktop and CLI]` |
@@ -139,7 +139,7 @@ They do not describe product priority.
 | --- | --- | --- | --- | --- | --- |
 | Inspect groups and entries | Provides import result groups | Provides `inspect` | Shows groups through the GUI load workflow | Shows groups through the workspace | `ChapterToolCliApplication.InspectAsync` and `WasmWorkspace` `[Host variant]` |
 | Select a group or entry | Provides ordered import result entries | Uses `--group-index`, `--entry-index`, and `--entry-id` | Uses clip and entry controls | Uses clip and entry controls | Core import result plus each host selection layer `[Host variant]` |
-| Interactive chapter session | Provides models and services only | Does not provide an interactive session | Uses `ChapterWorkspace` and `ClipSession` | Uses `WasmWorkspace` | `src/ChapterTool.Avalonia/Session/` and `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` `[Host variant]` |
+| Interactive chapter session | Provides shared `ChapterWorkspace` and `ClipSession` kernel | Does not provide an interactive session | Uses Core session kernel plus Avalonia shell | Uses Core `ClipSession` transitions inside `WasmWorkspace` | `src/ChapterTool.Core/Session/` and host shells `[Shared]` kernel with `[Host variant]` presentation |
 | Edit chapter time | Provides `ChapterEditingService` | Does not edit rows interactively | Uses DataGrid editing | Uses browser input editing | `src/ChapterTool.Core/Editing/ChapterEditingService.cs` `[Host variant]` |
 | Edit chapter name | Provides `ChapterEditingService` | Does not edit rows interactively | Uses DataGrid editing | Uses browser input editing | `src/ChapterTool.Core/Editing/ChapterEditingService.cs` `[Host variant]` |
 | Insert and delete rows | Provides edit operations | Does not provide row commands | Provides insert and delete commands | Provides insert and delete actions | Core editing service plus host command layer `[Host variant]` |
@@ -157,8 +157,8 @@ They do not describe product priority.
 | Chapter name preservation | Provides projection options | Preserves names by default | Provides a source-name option | Provides a source-name option | `ChapterOutputProjectionService` `[Shared]` |
 | Automatic chapter names | Provides projection logic | Uses export projection | Provides an automatic-name option | Provides an automatic-name option | `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` `[Shared]` |
 | Template names | Provides template projection | Does not expose a template file option | Reads a local template file | Reads a browser text file | `ChapterNameTemplateReader` and `WasmWorkspace` `[Host variant]` |
-| Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides expression editing and application | Applies text expressions without completion | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
-| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Does not provide completion UI | `ExpressionEditor` and `ExpressionAuthoringService` `[Desktop only]` and `[Gap]` |
+| Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides expression editing and application | Applies text expressions and Core built-in presets through `WasmWorkspace` | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
+| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Surfaces Core expression diagnostics to status/log; no completion editor | `ExpressionEditor` (desktop) and `WasmWorkspace` diagnostics `[Host variant]` |
 | Export formats | Provides all Core export formats | Lists and writes all CLI formats | Provides all desktop save formats | Provides all browser save formats | `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs` `[Shared]` |
 | XML language | Provides the language catalog | Supports `--xml-language` | Provides a localized language selector | Provides a language selector | `XmlChapterLanguageCatalog` `[Host variant]` |
 | Text encoding | Provides encoding options | Writes UTF-8 output without a BOM | Uses selected encoding and BOM options | Uses selected encoding and browser download bytes | `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs` `[Host variant]` |

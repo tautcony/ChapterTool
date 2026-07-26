@@ -13,7 +13,7 @@ namespace ChapterTool.Core.Importing;
 /// </summary>
 public class ChapterContentService
 {
-    private static readonly string[] BinaryExtensions = [".mpls", ".ifo"];
+    private static readonly string[] BinaryExtensions = [".mpls", ".ifo", ".flac", ".tak"];
 
     private readonly ChapterTimeFormatter timeFormatter = new();
     private readonly ChapterExportService exportService;
@@ -21,6 +21,8 @@ public class ChapterContentService
     private readonly WebVttChapterImporter webVttImporter = new();
     private readonly XmlChapterImporter xmlImporter;
     private readonly CueChapterImporter cueImporter = new();
+    private readonly FlacCueImporter flacCueImporter = new();
+    private readonly TakCueImporter takCueImporter = new();
     private readonly MplsChapterImporter mplsImporter = new();
     private readonly IfoChapterImporter ifoImporter = new();
     private readonly XplChapterImporter xplImporter = new();
@@ -43,6 +45,10 @@ public class ChapterContentService
     /// <summary>
     /// Gets the import formats that this byte-based service can read without platform integrations.
     /// </summary>
+    /// <remarks>
+    /// Includes stream-capable pure managed importers used by WASM/Node hosts.
+    /// Embedded FLAC/TAK CUE imports produce <see cref="ChapterImportFormat.Cue"/> chapter sets.
+    /// </remarks>
     public IReadOnlyList<ChapterImportFormat> ImportFormats { get; } =
     [
         ChapterImportFormat.Ogm,
@@ -163,6 +169,8 @@ public class ChapterContentService
             ".vtt" => webVttImporter,
             ".xml" => xmlImporter,
             ".cue" => cueImporter,
+            ".flac" => flacCueImporter,
+            ".tak" => takCueImporter,
             ".mpls" => mplsImporter,
             ".ifo" => ifoImporter,
             ".xpl" => xplImporter,

@@ -1,7 +1,7 @@
-using ChapterTool.Avalonia.Session;
 using ChapterTool.Avalonia.ViewModels;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Workflows;

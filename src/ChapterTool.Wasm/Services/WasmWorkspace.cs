@@ -3,12 +3,16 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
+using ChapterTool.Core.Transform.Expressions.Lua;
 
 namespace ChapterTool.Wasm.Services;
 
 /// <summary>
 /// Browser-side workspace that mirrors Avalonia main-window load / grid / frames / expression / save flow.
+/// Clip combine/append/select transitions use the shared Core session kernel.
 /// </summary>
 public sealed class WasmWorkspace : IDisposable
 {
@@ -18,7 +22,8 @@ public sealed class WasmWorkspace : IDisposable
 
     private readonly WasmChapterService wasmChapterService;
     private readonly FrameRateService frameRateService = new();
-    private readonly ChapterOutputProjectionService projectionService = new();
+    private readonly IChapterExpressionEngine expressionEngine;
+    private readonly ChapterOutputProjectionService projectionService;
     private readonly ChapterEditingService editingService;
     private readonly WasmLocalizer localizer;
     private readonly long maxLoadBytes;
@@ -27,9 +32,7 @@ public sealed class WasmWorkspace : IDisposable
 
     private ChapterImportResult? importResult;
     private ChapterSet? baseChapterSet;
-    private ChapterSet? combinedChapterSet;
-    private IReadOnlyList<ClipOption>? splitClipOptions;
-    private string? splitSelectedClipId;
+    private ClipSession? clipSession;
     private int activeGroupIndex;
     private List<ChapterRowModel> rows = [];
     private int selectedFrameRateIndex;
@@ -46,6 +49,8 @@ public sealed class WasmWorkspace : IDisposable
         this.localizer = localizer ?? new WasmLocalizer();
         this.localizer.CultureChanged += OnCultureChanged;
         this.maxLoadBytes = maxLoadBytes is > 0 and var limit ? limit : MaxLoadBytes;
+        expressionEngine = new LuaExpressionScriptService();
+        projectionService = new ChapterOutputProjectionService(expressionEngine);
         editingService = new ChapterEditingService(wasmChapterService.TimeFormatter);
         SaveFormatIndex = 0;
         ChapterNameModeIndex = 0;
@@ -53,6 +58,7 @@ public sealed class WasmWorkspace : IDisposable
             ? "und"
             : wasmChapterService.XmlLanguages.FirstOrDefault() ?? "und";
         Expression = "t";
+        ExpressionPresetId = string.Empty;
         RoundFrames = true;
         TextEncoding = OutputTextEncoding.Utf8;
         EmitBom = true;
@@ -88,49 +94,11 @@ public sealed class WasmWorkspace : IDisposable
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombined;
 
-    public bool IsClipCombined { get; private set; }
+    public bool IsClipCombined => clipSession?.IsCombined == true;
 
-    public bool CanToggleClipCombine
-    {
-        get
-        {
-            if (IsClipCombined)
-            {
-                return true;
-            }
+    public bool CanToggleClipCombine => !IsBusy && clipSession?.CanCombine == true;
 
-            if (importResult is null || string.IsNullOrWhiteSpace(SelectedClipId))
-            {
-                return false;
-            }
-
-            var clip = ClipOptions.FirstOrDefault(option => option.Id == SelectedClipId);
-            if (clip is null || clip.EntryIndex < 0 || clip.GroupIndex < 0 || clip.GroupIndex >= importResult.Groups.Count)
-            {
-                return false;
-            }
-
-            var group = importResult.Groups[clip.GroupIndex];
-            return group.Entries.Count > 1
-                && group.Entries.All(entry => entry.ChapterSet.ImportFormat == group.Entries[0].ChapterSet.ImportFormat)
-                && group.Entries[0].ChapterSet.ImportFormat is ChapterImportFormat.Mpls or ChapterImportFormat.DvdIfo;
-        }
-    }
-
-    public bool CanAppendMpls
-    {
-        get
-        {
-            if (IsBusy || importResult is null)
-            {
-                return false;
-            }
-
-            var group = ResolveActiveGroup();
-            return group is not null
-                && group.Entries.Any(static entry => entry.ChapterSet.ImportFormat == ChapterImportFormat.Mpls);
-        }
-    }
+    public bool CanAppendMpls => !IsBusy && clipSession?.CanAppendMpls == true;
 
     public IReadOnlyList<SaveFormatOption> SaveFormats => wasmChapterService.SaveFormats;
 
@@ -171,7 +139,32 @@ public sealed class WasmWorkspace : IDisposable
 
     public bool ApplyExpression { get; set; }
 
-    public string Expression { get; set; }
+    public string Expression
+    {
+        get;
+        set
+        {
+            field = value;
+
+            // Free-form edits clear the preset selection unless the text still matches the selected preset.
+            if (!string.IsNullOrWhiteSpace(ExpressionPresetId))
+            {
+                var preset = ExpressionPresets.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Id, ExpressionPresetId, StringComparison.OrdinalIgnoreCase));
+                if (preset is null
+                    || !string.Equals(preset.ScriptText, value, StringComparison.Ordinal))
+                {
+                    ExpressionPresetId = string.Empty;
+                }
+            }
+        }
+    }
+
+    /// <summary>Gets the built-in Core expression presets (same engine as desktop).</summary>
+    public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => expressionEngine.Presets;
+
+    /// <summary>Gets the selected expression preset id, or empty when the expression is free-form.</summary>
+    public string ExpressionPresetId { get; private set; }
 
     public bool RoundFrames { get; set; }
 
@@ -233,30 +226,12 @@ public sealed class WasmWorkspace : IDisposable
     {
         get
         {
-            if (importResult is null || IsClipCombined)
-            {
-                // Combined view may still expose media from the original group entries.
-                var group = ResolveActiveGroup();
-                if (group is null)
-                {
-                    return [];
-                }
-
-                return group.Entries
-                    .SelectMany(static entry => entry.ReferencedMediaFiles ?? [])
-                    .Select(static media => new RelatedMediaItem(media.DisplayName, media.RelativePath, media.AbsolutePath))
-                    .DistinctBy(static item => item.DisplayName + "|" + item.RelativePath, StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-            }
-
-            var clip = ClipOptions.FirstOrDefault(option => option.Id == SelectedClipId);
-            if (clip is null || clip.EntryIndex < 0 || clip.GroupIndex < 0 || clip.GroupIndex >= importResult.Groups.Count)
+            if (clipSession is null)
             {
                 return [];
             }
 
-            var entry = importResult.Groups[clip.GroupIndex].Entries[clip.EntryIndex];
-            return (entry.ReferencedMediaFiles ?? [])
+            return clipSession.RelatedMedia
                 .Select(static media => new RelatedMediaItem(media.DisplayName, media.RelativePath, media.AbsolutePath))
                 .ToArray();
         }
@@ -568,16 +543,7 @@ public sealed class WasmWorkspace : IDisposable
 
     public async Task AppendMplsAsync(string fileName, byte[] content, CancellationToken cancellationToken = default)
     {
-        if (!CanAppendMpls)
-        {
-            SetLocalizedStatus("Status.CannotAppend");
-            AddLog("Warning", StatusText);
-            Notify();
-            return;
-        }
-
-        var existingGroup = ResolveActiveGroup();
-        if (existingGroup is null)
+        if (!CanAppendMpls || clipSession is null)
         {
             SetLocalizedStatus("Status.CannotAppend");
             AddLog("Warning", StatusText);
@@ -611,34 +577,27 @@ public sealed class WasmWorkspace : IDisposable
             }
 
             var appendedGroup = result.Groups[0];
-            var edit = ChapterSegmentService.Append(existingGroup, appendedGroup);
-            if (edit.Diagnostics.Count > 0)
+            var transition = ClipSessionTransitions.Append(clipSession, appendedGroup);
+            if (!transition.Succeeded || transition.Session is null)
             {
                 // Keep current session on append failure.
-                RecordDiagnostics(edit.Diagnostics);
-                StatusText = FirstError(edit.Diagnostics) ?? localizer.T("Status.AppendFailed");
+                RecordDiagnostics(transition.EditResult.Diagnostics);
+                StatusText = FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.AppendFailed");
                 AddLog("Error", StatusText);
                 return;
             }
 
-            var mergedEntries = existingGroup.Entries.Concat(appendedGroup.Entries).ToList();
-            var mergedGroup = existingGroup with { Entries = mergedEntries };
+            clipSession = transition.Session;
             if (importResult is not null)
             {
                 var groups = importResult.Groups.ToList();
-                groups[activeGroupIndex] = mergedGroup;
+                groups[activeGroupIndex] = clipSession.OriginalGroup;
                 importResult = new ChapterImportResult(true, groups, result.Diagnostics);
             }
 
-            splitClipOptions = null;
-            splitSelectedClipId = null;
-            IsClipCombined = true;
-            combinedChapterSet = edit.ChapterSet;
-            SelectedClipId = $"combined:{activeGroupIndex}";
-            ClipOptions = [new ClipOption(SelectedClipId, $"{mergedEntries[0].DisplayName} (Combined)", activeGroupIndex, -1)];
-            SetBaseChapterSet(combinedChapterSet);
+            SyncUiFromClipSession();
             ClearSelection();
-            RebuildFrameRateChoices(combinedChapterSet);
+            RebuildFrameRateChoices(baseChapterSet!);
             RefreshDisplay(
                 updateStatus: true,
                 statusKey: "Status.Appended",
@@ -659,7 +618,7 @@ public sealed class WasmWorkspace : IDisposable
 
     public void SelectClip(string? clipId)
     {
-        if (IsClipCombined)
+        if (IsClipCombined || clipSession is null || importResult is null)
         {
             return;
         }
@@ -669,59 +628,75 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        SelectedClipId = clipId;
-        LoadBaseFromSelectedClip();
-        ClearSelection();
-        RefreshDisplay(
-            updateStatus: true,
-            statusKey: "Status.SelectedClip",
-            statusArgs: [ClipOptions.FirstOrDefault(c => c.Id == clipId)?.DisplayText ?? clipId ?? string.Empty]);
-    }
-
-    public void ToggleClipCombine()
-    {
-        if (IsBusy || importResult is null || !CanToggleClipCombine)
+        var option = ClipOptions.FirstOrDefault(candidate => string.Equals(candidate.Id, clipId, StringComparison.Ordinal));
+        if (option is null)
         {
             return;
         }
 
-        if (IsClipCombined)
+        if (option.GroupIndex != activeGroupIndex)
         {
-            IsClipCombined = false;
-            combinedChapterSet = null;
-            ClipOptions = splitClipOptions ?? [];
-            SelectedClipId = splitSelectedClipId ?? ClipOptions.FirstOrDefault()?.Id;
-            splitClipOptions = null;
-            splitSelectedClipId = null;
-            LoadBaseFromSelectedClip();
-            ClearSelection();
+            // Browser may surface multiple import groups; switch the shared session to that group.
+            if (option.GroupIndex < 0 || option.GroupIndex >= importResult.Groups.Count)
+            {
+                return;
+            }
+
+            activeGroupIndex = option.GroupIndex;
+            clipSession = ClipSessionTransitions.FromLoad(importResult.Groups[activeGroupIndex]);
+            if (option.EntryIndex >= 0)
+            {
+                clipSession = ClipSessionTransitions.Select(clipSession, option.EntryIndex);
+            }
+        }
+        else if (option.EntryIndex >= 0)
+        {
+            clipSession = ClipSessionTransitions.Select(clipSession, option.EntryIndex);
+        }
+
+        SyncUiFromClipSession();
+        ClearSelection();
+        RefreshDisplay(
+            updateStatus: true,
+            statusKey: "Status.SelectedClip",
+            statusArgs: [option.DisplayText]);
+    }
+
+    public void ToggleClipCombine()
+    {
+        if (IsBusy || clipSession is null || !CanToggleClipCombine)
+        {
+            return;
+        }
+
+        var transition = ClipSessionTransitions.ToggleCombine(clipSession);
+        if (!transition.Succeeded || transition.Session is null)
+        {
+            RecordDiagnostics(transition.EditResult.Diagnostics);
+            StatusText = FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.CombineFailed");
+            Notify();
+            return;
+        }
+
+        clipSession = transition.Session;
+        if (importResult is not null)
+        {
+            var groups = importResult.Groups.ToList();
+            groups[activeGroupIndex] = clipSession.OriginalGroup;
+            importResult = importResult with { Groups = groups };
+        }
+
+        SyncUiFromClipSession();
+        ClearSelection();
+        if (transition.Restored)
+        {
             AddLog("Info", localizer.T("Status.RestoredClips"));
             RefreshDisplay(updateStatus: true, statusKey: "Status.RestoredClips");
             return;
         }
 
-        var clip = ClipOptions.First(option => option.Id == SelectedClipId);
-        var group = importResult.Groups[clip.GroupIndex];
-        var result = ChapterSegmentService.Combine(group);
-        if (result.Diagnostics.Count > 0)
-        {
-            RecordDiagnostics(result.Diagnostics);
-            StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.CombineFailed");
-            Notify();
-            return;
-        }
-
-        splitClipOptions = ClipOptions;
-        splitSelectedClipId = SelectedClipId;
-        activeGroupIndex = clip.GroupIndex;
-        combinedChapterSet = result.ChapterSet;
-        IsClipCombined = true;
-        SelectedClipId = $"combined:{clip.GroupIndex}";
-        ClipOptions = [new ClipOption(SelectedClipId, $"{group.Entries[0].DisplayName} (Combined)", clip.GroupIndex, -1)];
-        SetBaseChapterSet(combinedChapterSet);
-        ClearSelection();
-        AddLog("Info", localizer.Format("Status.Combined", group.Entries.Count));
-        RebuildFrameRateChoices(combinedChapterSet);
+        AddLog("Info", localizer.Format("Status.Combined", clipSession.OriginalGroup.Entries.Count));
+        RebuildFrameRateChoices(baseChapterSet!);
         RefreshDisplay(updateStatus: true, statusKey: "Status.CombinedDone");
     }
 
@@ -768,6 +743,49 @@ public sealed class WasmWorkspace : IDisposable
 
         RefreshDisplay(updateStatus: false, statusKey: null);
     }
+
+    /// <summary>
+    /// Applies a built-in Core expression preset and refreshes the projected rows.
+    /// </summary>
+    /// <param name="presetId">The preset identifier from <see cref="ExpressionPresets"/>.</param>
+    /// <returns><see langword="true"/> when the preset was found and applied.</returns>
+    public bool ApplyExpressionPreset(string? presetId)
+    {
+        if (string.IsNullOrWhiteSpace(presetId))
+        {
+            ExpressionPresetId = string.Empty;
+            return false;
+        }
+
+        var preset = expressionEngine.Presets.FirstOrDefault(candidate =>
+            string.Equals(candidate.Id, presetId, StringComparison.OrdinalIgnoreCase));
+        if (preset is null)
+        {
+            SetLocalizedStatus("Status.ExpressionPresetUnknown", presetId);
+            AddLog("Warning", StatusText);
+            Notify();
+            return false;
+        }
+
+        Expression = preset.ScriptText;
+        ExpressionPresetId = preset.Id;
+        ApplyExpression = true;
+        AddLog("Info", localizer.Format("Status.ExpressionPresetApplied", preset.DisplayName));
+        if (baseChapterSet is null)
+        {
+            SetLocalizedStatus("Status.ExpressionPresetApplied", preset.DisplayName);
+            Notify();
+            return true;
+        }
+
+        RefreshDisplay(updateStatus: true, statusKey: "Status.ExpressionPresetApplied", statusArgs: [preset.DisplayName]);
+        return true;
+    }
+
+    /// <summary>
+    /// Clears the selected expression preset while keeping the current free-form expression text.
+    /// </summary>
+    public void ClearExpressionPresetSelection() => ExpressionPresetId = string.Empty;
 
     public void RefreshRows()
     {
@@ -962,35 +980,82 @@ public sealed class WasmWorkspace : IDisposable
     {
         lastLoadedSource = new LoadedSourceSnapshot(fileName, content);
         importResult = result;
-        IsClipCombined = false;
-        combinedChapterSet = null;
-        splitClipOptions = null;
-        splitSelectedClipId = null;
         activeGroupIndex = 0;
         SourcePath = fileName;
-        ClipOptions = BuildClipOptions(result);
-        SelectedClipId = ClipOptions.FirstOrDefault()?.Id;
-        if (ClipOptions.Count > 0)
-        {
-            activeGroupIndex = ClipOptions[0].GroupIndex;
-        }
-
+        clipSession = result.Groups.Count > 0
+            ? ClipSessionTransitions.FromLoad(result.Groups[0])
+            : null;
         selectedFrameRateIndex = Math.Max(0, PreferredFrameRateIndex);
         ClearSelection();
         Diagnostics = [];
-        LoadBaseFromSelectedClip();
+        SyncUiFromClipSession(rebuildAllGroupOptions: true);
+        RebuildFrameRateChoices(baseChapterSet ?? new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []));
         RefreshDisplay(
             updateStatus: true,
             statusKey: "Status.Loaded",
             statusArgs: [baseChapterSet?.Chapters.Count ?? 0, Path.GetFileName(fileName)]);
     }
 
+    private void SyncUiFromClipSession(bool rebuildAllGroupOptions = false)
+    {
+        if (clipSession is null)
+        {
+            ClipOptions = [];
+            SelectedClipId = null;
+            baseChapterSet = null;
+            return;
+        }
+
+        if (rebuildAllGroupOptions && importResult is not null && importResult.Groups.Count > 1 && !clipSession.IsCombined)
+        {
+            ClipOptions = BuildClipOptions(importResult);
+            var selectedEntry = clipSession.SelectedIndex >= 0 && clipSession.SelectedIndex < clipSession.ClipOptions.Count
+                ? clipSession.ClipOptions[clipSession.SelectedIndex]
+                : null;
+            SelectedClipId = selectedEntry is null
+                ? ClipOptions.FirstOrDefault()?.Id
+                : ClipOptions.FirstOrDefault(option =>
+                    option.GroupIndex == activeGroupIndex
+                    && option.EntryIndex == clipSession.SelectedIndex)?.Id
+                  ?? ClipOptions.FirstOrDefault()?.Id;
+        }
+        else
+        {
+            ClipOptions = BuildClipOptionsFromSession(clipSession, activeGroupIndex);
+            SelectedClipId = ClipOptions.ElementAtOrDefault(Math.Max(0, clipSession.SelectedIndex))?.Id
+                ?? ClipOptions.FirstOrDefault()?.Id;
+        }
+
+        baseChapterSet = clipSession.CurrentChapterSet;
+        if (baseChapterSet is not null)
+        {
+            FramesPerSecond = baseChapterSet.FramesPerSecond;
+        }
+    }
+
+    private static IReadOnlyList<ClipOption> BuildClipOptionsFromSession(ClipSession session, int groupIndex)
+    {
+        if (session.IsCombined)
+        {
+            var combined = session.ClipOptions[0];
+            return [new ClipOption($"combined:{groupIndex}", combined.DisplayName, groupIndex, -1)];
+        }
+
+        return session.ClipOptions
+            .Select((entry, index) => new ClipOption($"{groupIndex}:{entry.Id}", entry.DisplayName, groupIndex, index))
+            .ToArray();
+    }
+
     private void LoadBaseFromSelectedClip()
     {
-        if (IsClipCombined && combinedChapterSet is not null)
+        if (clipSession is not null)
         {
-            SetBaseChapterSet(combinedChapterSet);
-            RebuildFrameRateChoices(combinedChapterSet);
+            SyncUiFromClipSession();
+            if (baseChapterSet is not null)
+            {
+                RebuildFrameRateChoices(baseChapterSet);
+            }
+
             return;
         }
 
@@ -1007,27 +1072,11 @@ public sealed class WasmWorkspace : IDisposable
         RebuildFrameRateChoices(baseChapterSet!);
     }
 
-    private ChapterImportSource? ResolveActiveGroup()
-    {
-        if (importResult is null || importResult.Groups.Count == 0)
-        {
-            return null;
-        }
-
-        if (IsClipCombined)
-        {
-            return importResult.Groups[Math.Clamp(activeGroupIndex, 0, importResult.Groups.Count - 1)];
-        }
-
-        var clip = ClipOptions.FirstOrDefault(option => option.Id == SelectedClipId);
-        if (clip is null)
-        {
-            return importResult.Groups[0];
-        }
-
-        activeGroupIndex = clip.GroupIndex;
-        return importResult.Groups[clip.GroupIndex];
-    }
+    private ChapterImportSource? ResolveActiveGroup() =>
+        clipSession?.OriginalGroup
+        ?? (importResult is { Groups.Count: > 0 }
+            ? importResult.Groups[Math.Clamp(activeGroupIndex, 0, importResult.Groups.Count - 1)]
+            : null);
 
     private void RefreshDisplay(bool updateStatus, string? statusKey, params object[] statusArgs)
     {
@@ -1065,17 +1114,21 @@ public sealed class WasmWorkspace : IDisposable
         Diagnostics = projectionDiagnostics;
         if (projectionDiagnostics.Count > 0)
         {
-            AddLog("Warning", $"{projectionDiagnostics.Count} diagnostic(s) reported.", string.Join(Environment.NewLine, projectionDiagnostics.Select(d => $"{d.Code}: {d.Message}")));
+            AddLog(
+                "Warning",
+                $"{projectionDiagnostics.Count} diagnostic(s) reported.",
+                string.Join(Environment.NewLine, projectionDiagnostics.Select(d => $"{d.Code}: {d.Message}")));
         }
 
-        if (updateStatus && statusKey is not null)
-        {
-            SetLocalizedStatus(statusKey, statusArgs);
-        }
-        else if (projectionDiagnostics.Count > 0)
+        // Expression failures always surface Core diagnostics to status/log even when a success key was requested.
+        if (ApplyExpression && projectionDiagnostics.Count > 0)
         {
             var first = projectionDiagnostics[0];
             SetRawStatus($"{first.Severity}: {first.Message}");
+        }
+        else if (updateStatus && statusKey is not null)
+        {
+            SetLocalizedStatus(statusKey, statusArgs);
         }
         else if (ApplyExpression)
         {
@@ -1153,6 +1206,12 @@ public sealed class WasmWorkspace : IDisposable
             OrderShift: OrderShift,
             ApplyExpression: ApplyExpression,
             Expression: string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim(),
+            ExpressionPresetId: ExpressionPresetId,
+            ExpressionSourceName: string.IsNullOrWhiteSpace(ExpressionPresetId)
+                ? string.Empty
+                : (ExpressionPresets.FirstOrDefault(preset =>
+                    string.Equals(preset.Id, ExpressionPresetId, StringComparison.OrdinalIgnoreCase))?.DisplayName
+                    ?? ExpressionPresetId),
             TextEncoding: TextEncoding,
             EmitBom: EmitBom,
             ProjectOutput: true);
@@ -1161,10 +1220,7 @@ public sealed class WasmWorkspace : IDisposable
     {
         importResult = null;
         baseChapterSet = null;
-        combinedChapterSet = null;
-        splitClipOptions = null;
-        splitSelectedClipId = null;
-        IsClipCombined = false;
+        clipSession = null;
         activeGroupIndex = 0;
         rows = [];
         ClipOptions = [];
@@ -1331,9 +1387,9 @@ public sealed class WasmWorkspace : IDisposable
     private void SetBaseChapterSet(ChapterSet value)
     {
         baseChapterSet = value;
-        if (IsClipCombined)
+        if (clipSession is not null)
         {
-            combinedChapterSet = value;
+            clipSession = ClipSessionTransitions.WriteBack(clipSession, value);
         }
     }
 }

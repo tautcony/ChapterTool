@@ -383,7 +383,19 @@ tr.separator {
 
 .option-cell.option-expression {
   grid-column: 1 / -1;
-  grid-template-columns: 5.2rem auto minmax(0, 1fr);
+  grid-template-columns: 5.2rem auto auto minmax(0, 1fr);
+}
+
+.expression-preset {
+  min-width: 9rem;
+  max-width: 14rem;
+  min-height: 25.6px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--control-bg);
+  color: var(--control-fg);
+  font: inherit;
+  font-size: 11.2px;
 }
 
 .preview-modal,
@@ -852,6 +864,7 @@ input:disabled {
     grid-template-columns: 5.2rem auto;
   }
 
+  .option-cell.option-expression .expression-preset,
   .option-cell.option-expression .expression-input {
     grid-column: 1 / -1;
   }

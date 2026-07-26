@@ -55,7 +55,7 @@ Important format entry points:
 - WebVTT: `src/ChapterTool.Core/Importing/Text/WebVttChapterImporter.cs`
 - CUE sheet parsing: `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs`
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
-- DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, `MplsPlaylistFile.cs`, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
+- DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, split `Mpls*.cs` playlist types, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
 - `BinaryReadExtensions.cs` defines generic exact-read ceilings.
 - `MplsParseLimits.cs` defines semantic MPLS limits.
 - `MplsBoundedStream.cs` enforces each declared parent-container byte budget while it parses nested entries.
@@ -69,6 +69,24 @@ In-memory chapter mutations:
 - `src/ChapterTool.Core/Editing/ChapterEditingService.cs`
 - `src/ChapterTool.Core/Editing/ChapterSegmentService.cs`
 - `src/ChapterTool.Core/Editing/ChapterEditResult.cs`
+
+### Session (shared host kernel)
+
+Host-agnostic interactive session state shared by Avalonia and WASM:
+
+- `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — path, edit buffer, revision and session-token commit rules
+- `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
+- `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
+
+Primary tests: `tests/ChapterTool.Core.Tests/Session/`
+
+### Disc MPLS types
+
+MPLS playlist records are split by type under `src/ChapterTool.Core/Importing/Disc/`:
+
+- `MplsPlaylistFile.cs` — top-level file and `Read`
+- `MplsPlayList.cs`, `MplsPlayItem.cs`, `MplsPlayListMark.cs`, `MplsExtensionData.cs`, and related stream tables
 
 ### Transform
 

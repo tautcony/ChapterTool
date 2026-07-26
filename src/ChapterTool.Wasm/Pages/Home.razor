@@ -38,7 +38,7 @@
                 <InputFile id="loadFileInput"
                            class="hidden-file"
                            OnChange="OnFileSelected"
-                           accept=".txt,.vtt,.xml,.cue,.mpls,.ifo,.csv,text/*,application/xml" />
+                           accept=".txt,.vtt,.xml,.cue,.mpls,.ifo,.xpl,.flac,.tak,.csv,text/*,application/xml,application/octet-stream" />
                 <InputFile id="appendMplsInput"
                            class="hidden-file"
                            OnChange="OnAppendMplsSelected"
@@ -290,6 +290,17 @@
                            @onchange="OnApplyExpressionChanged" />
                     @L.T("Label.UseExpression")
                 </label>
+                <select class="expression-preset"
+                        value="@expressionPresetId"
+                        disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
+                        title="@L.T("Label.ExpressionPreset")"
+                        @onchange="OnExpressionPresetChanged">
+                    <option value="">@L.T("ExpressionPreset.Custom")</option>
+                    @foreach (var preset in Workspace.ExpressionPresets)
+                    {
+                        <option value="@preset.Id" title="@preset.Description">@preset.DisplayName</option>
+                    }
+                </select>
                 <input class="expression-input"
                        value="@expression"
                        disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
@@ -675,6 +686,7 @@
     private string xmlLanguage = "eng";
     private bool applyExpression;
     private string expression = "t";
+    private string expressionPresetId = string.Empty;
     private bool roundFrames = true;
     private string uiLanguage = "en-US";
     private int outputTextEncodingIndex;
@@ -859,6 +871,7 @@
         xmlLanguage = Workspace.XmlLanguage;
         applyExpression = Workspace.ApplyExpression;
         expression = Workspace.Expression;
+        expressionPresetId = Workspace.ExpressionPresetId;
         roundFrames = Workspace.RoundFrames;
         selectedFrameRateIndex = Workspace.SelectedFrameRateIndex;
         outputTextEncodingIndex = OutputTextEncodings.All.ToList().IndexOf(Workspace.TextEncoding);
@@ -936,10 +949,34 @@
         await PersistSettingsAsync();
     }
 
+    private async Task OnExpressionPresetChanged(ChangeEventArgs args)
+    {
+        var presetId = args.Value?.ToString() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(presetId))
+        {
+            Workspace.ClearExpressionPresetSelection();
+            expressionPresetId = string.Empty;
+            StateHasChanged();
+            await PersistSettingsAsync();
+            return;
+        }
+
+        if (Workspace.ApplyExpressionPreset(presetId))
+        {
+            applyExpression = true;
+            expression = Workspace.Expression;
+            expressionPresetId = Workspace.ExpressionPresetId;
+        }
+
+        StateHasChanged();
+        await PersistSettingsAsync();
+    }
+
     private void OnExpressionInput(ChangeEventArgs args)
     {
         expression = args.Value?.ToString() ?? "t";
         Workspace.Expression = expression;
+        expressionPresetId = Workspace.ExpressionPresetId;
         if (applyExpression)
         {
             Workspace.ApplyOptionsAndRefresh();
@@ -950,6 +987,7 @@
     {
         expression = args.Value?.ToString() ?? "t";
         Workspace.Expression = expression;
+        expressionPresetId = Workspace.ExpressionPresetId;
         if (applyExpression)
         {
             Workspace.ApplyOptionsAndRefresh();

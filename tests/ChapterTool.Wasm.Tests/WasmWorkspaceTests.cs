@@ -192,6 +192,85 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task ExpressionPresetAppliesCoreEngineScriptAndProjectsRows()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+
+        Assert.NotEmpty(workspace.ExpressionPresets);
+        var offset = Assert.Single(workspace.ExpressionPresets, preset => preset.Id == "offset-seconds");
+        Assert.True(workspace.ApplyExpressionPreset(offset.Id));
+        Assert.True(workspace.ApplyExpression);
+        Assert.Equal(offset.Id, workspace.ExpressionPresetId);
+        Assert.Equal(offset.ScriptText, workspace.Expression);
+
+        var preview = workspace.Preview();
+        Assert.True(preview.Success);
+
+        // offset-seconds default adds 1 second to t=0
+        Assert.Contains("00:00:01", preview.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InvalidExpressionSurfacesCoreDiagnosticToStatusAndDiagnostics()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.ApplyExpression = true;
+        workspace.Expression = "return bad()";
+        workspace.ApplyOptionsAndRefresh();
+
+        Assert.True(workspace.HasDiagnostics);
+        Assert.Contains(workspace.Diagnostics, diagnostic =>
+            diagnostic.Code.Contains("Expression", StringComparison.OrdinalIgnoreCase)
+            || diagnostic.Code.Contains("Lua", StringComparison.OrdinalIgnoreCase)
+            || diagnostic.Message.Length > 0);
+        Assert.False(string.IsNullOrWhiteSpace(workspace.StatusText));
+        Assert.Contains(workspace.Diagnostics[0].Message, workspace.StatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WasmChapterServiceRoutesXplContentThroughSharedImportPath()
+    {
+        var service = new WasmChapterService();
+        var path = LocateFixture("Importing", "Disc", "Xpl", "VPLST001.XPL");
+        var bytes = await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken);
+
+        var result = await service.ImportAsync("VPLST001.XPL", bytes, TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success);
+        Assert.Equal(ChapterImportFormat.HdDvdXpl, result.Groups.Single().Entries.Single().ChapterSet.ImportFormat);
+
+        var workspace = CreateWorkspace();
+        await workspace.LoadAsync("VPLST001.XPL", bytes);
+        Assert.True(workspace.CanSave);
+        Assert.NotEmpty(workspace.Rows);
+    }
+
+    [Fact]
+    public async Task WasmChapterServiceRoutesFlacEmbeddedCueThroughSharedImportPath()
+    {
+        var service = new WasmChapterService();
+        var cue = """
+                  TITLE "Album"
+                  FILE "audio.flac" WAVE
+                    TRACK 01 AUDIO
+                      TITLE "Track 1"
+                      INDEX 01 00:00:00
+                  """;
+        var content = CreateFlacWithVorbisCue(cue);
+
+        var result = await service.ImportAsync("music.flac", content, TestContext.Current.CancellationToken);
+        Assert.True(result.Success);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+
+        var workspace = CreateWorkspace();
+        await workspace.LoadAsync("music.flac", content);
+        Assert.Single(workspace.Rows);
+        Assert.Equal("Track 1", workspace.Rows[0].Name);
+    }
+
+    [Fact]
     public async Task InsertAndDuplicateAffectRowCount()
     {
         var workspace = CreateWorkspace();
@@ -233,6 +312,71 @@ public sealed class WasmWorkspaceTests
     }
 
     private static WasmWorkspace CreateWorkspace() => new(new WasmChapterService());
+
+    private static string LocateFixture(params string[] segments)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName, "tests", "ChapterTool.Core.Tests", "Fixtures" }.Concat(segments).ToArray());
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            // Some layouts place fixtures next to the Core.Tests project root.
+            candidate = Path.Combine(new[] { directory.FullName }.Concat(segments).ToArray());
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        // Prefer Core.Tests FixtureResolver layout from repo root.
+        directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.Avalonia.slnx")))
+            {
+                return Path.Combine(new[] { directory.FullName, "tests", "ChapterTool.Core.Tests", "Fixtures" }.Concat(segments).ToArray());
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Could not locate test fixture: " + string.Join('/', segments));
+    }
+
+    private static byte[] CreateFlacWithVorbisCue(string cue)
+    {
+        using var stream = new MemoryStream();
+        stream.Write("fLaC"u8);
+        var comment = System.Text.Encoding.UTF8.GetBytes("cuesheet=" + cue);
+        var vendor = System.Text.Encoding.UTF8.GetBytes("ChapterTool");
+        using var body = new MemoryStream();
+        WriteLe32(body, vendor.Length);
+        body.Write(vendor);
+        WriteLe32(body, 1);
+        WriteLe32(body, comment.Length);
+        body.Write(comment);
+        var payload = body.ToArray();
+        stream.WriteByte(0x84);
+        stream.WriteByte((byte)((payload.Length >> 16) & 0xFF));
+        stream.WriteByte((byte)((payload.Length >> 8) & 0xFF));
+        stream.WriteByte((byte)(payload.Length & 0xFF));
+        stream.Write(payload);
+        return stream.ToArray();
+    }
+
+    private static void WriteLe32(Stream stream, int value)
+    {
+        stream.WriteByte((byte)(value & 0xFF));
+        stream.WriteByte((byte)((value >> 8) & 0xFF));
+        stream.WriteByte((byte)((value >> 16) & 0xFF));
+        stream.WriteByte((byte)((value >> 24) & 0xFF));
+    }
 
     private static ChapterImportSource CreateMplsImport(string path, string name, TimeSpan chapterTime, TimeSpan duration) =>
         new(
