@@ -64,7 +64,7 @@ public sealed class LogToolViewModelTests
         await viewModel.ClearCommand.ExecuteAsync();
         Assert.True(viewModel.IsEmpty);
         logger.LogInformation("After clear");
-        Assert.Empty(viewModel.FilteredEntries);
+        Assert.Single(viewModel.FilteredEntries);
     }
 
     [Fact]
