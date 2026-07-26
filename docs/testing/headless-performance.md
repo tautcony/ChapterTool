@@ -4,6 +4,18 @@ This document records the reusable diagnosis completed for Headless tests that w
 
 The final implementation passes the Headless and unit test suites. No fixed `Task.Delay`, polling loop, `Thread.Sleep`, or `SpinWait` remains in the Headless test project. The important result is the causal model below, not a wall-clock value from one machine.
 
+## 2026-07-26 Follow-Up
+
+The same failure pattern occurred again after `AvaloniaWindowServiceHeadlessTests` was extended.
+
+- `AvaloniaWindowServiceHeadlessTests` alone: 6 tests, about 5.7 seconds.
+- `MainWindowInteractionHeadlessTests` alone: 12 tests, about 4.8 seconds.
+- Both classes in one process: 18 tests, about 28.9 seconds.
+
+The service test was the producer. The interaction test was the victim. The service closed its window and disposed its data context, but it did not clear `Window.Content`. The closed settings visual tree remained in the shared Avalonia session. The service also used an anonymous localization event subscription without a disposal path.
+
+The fix clears `Content` in the window `Closed` path, adds service disposal for the localization subscription and any remaining windows, and verifies the detached content in `Settings_close_detaches_content_tree`.
+
 ## Symptom And Diagnosis
 
 Avalonia Headless uses one process-wide UI session for this test assembly. The Headless collection serializes its tests, but serialization does not release windows, visual trees, Popup roots, event subscriptions, or Dispatcher work between tests.
@@ -16,6 +28,8 @@ The characteristic symptom was:
 4. Explicitly releasing the preceding class's UI-owned state removed the extra time.
 
 The primary cause was `MainWindowHeadlessTestHost.Dispose()` closing its Window without detaching the Window's `Content` visual tree. The test host owned and retained the Window, and the still-reachable tree continued to increase shared-session layout and resource work. Closing the Window, clearing `Content`, and draining queued UI jobs removed this cross-test cost.
+
+The same cleanup rule applies to production-created auxiliary windows. `Window.Close()` does not guarantee that the content tree is detached. A closed window owner must release its content tree and its event subscriptions.
 
 Secondary lifecycle leaks amplified the same behavior:
 
@@ -72,6 +86,10 @@ When the combined duration is materially greater than the sum of isolated durati
 ## Prevention Rules
 
 - Use `MainWindowHeadlessTestHost` for main-window tests. Its disposal must close the Window, detach `Content`, and drain queued UI jobs.
+- Use `MainWindowHeadlessTestHost.CloseWindowAsync` for manually created Headless windows. Do not replace it with `Window.Close()` in test cleanup.
+- When a test creates an auxiliary window service, declare the service with `using` and close every opened window in `finally` when the test must inspect an intermediate state.
+- Assert both `IsVisible == false` and `Content == null` after a normal auxiliary-window close.
+- Give every long-lived UI service a named event handler and an explicit `Dispose` path. Do not use an anonymous subscription without a matching release path.
 - Close every opened ComboBox, Popup, and ContextMenu in `finally`.
 - Dispose every directly constructed `IDisposable` ViewModel or DataContext. Closing a manually created Window does not invoke `AvaloniaWindowService` DataContext disposal.
 - Do not create a complete main-window host when a test only needs a localizer or one control.
@@ -84,6 +102,7 @@ When the combined duration is materially greater than the sum of isolated durati
 
 - Shared Window/layout/transient UI cleanup: `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
 - Settings Window final-close coverage: `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
+- Auxiliary-window content-detach coverage: `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
 - Direct settings ViewModel disposal and font Popup cleanup: `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
 - ComboBox Popup cleanup: `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs`
 - Lightweight expression-editor hosts and removed fixed waits: `tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs`

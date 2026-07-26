@@ -9,7 +9,7 @@ using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Services;
 
-public sealed class AvaloniaWindowService : IWindowService
+public sealed class AvaloniaWindowService : IWindowService, IDisposable
 {
     private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
     private readonly IThemeApplicationService? themeApplicationService;
@@ -26,6 +26,8 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
     private readonly IReadOnlyList<ToolWindowRegistration> registrations;
+    private readonly EventHandler cultureChangedHandler;
+    private bool disposed;
 
     public AvaloniaWindowService(
         IAppLocalizer localizer,
@@ -57,7 +59,7 @@ public sealed class AvaloniaWindowService : IWindowService
         this.expressionAuthoringService = expressionAuthoringService;
         this.clipboardServiceFactory = clipboardServiceFactory;
         this.registrations = registrations ?? ToolWindowRegistry.DefaultRegistrations;
-        this.localizer.CultureChanged += (_, _) =>
+        cultureChangedHandler = (_, _) =>
         {
             foreach (var (id, window) in windows)
             {
@@ -73,6 +75,7 @@ public sealed class AvaloniaWindowService : IWindowService
                 }
             }
         };
+        this.localizer.CultureChanged += cultureChangedHandler;
     }
 
     public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
@@ -133,6 +136,7 @@ public sealed class AvaloniaWindowService : IWindowService
         window.Closed += (_, _) =>
         {
             DisposeContentDataContext(window);
+            window.Content = null;
             windows.Remove(windowId);
             parameters.Remove(windowId);
         };
@@ -152,9 +156,31 @@ public sealed class AvaloniaWindowService : IWindowService
         return ValueTask.CompletedTask;
     }
 
+    public void Dispose()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        disposed = true;
+        localizer.CultureChanged -= cultureChangedHandler;
+
+        foreach (var window in windows.Values.ToArray())
+        {
+            DisposeContentDataContext(window);
+            window.Content = null;
+            window.Close();
+        }
+
+        windows.Clear();
+        parameters.Clear();
+    }
+
     private void Refresh(Window window, string id, object? parameter)
     {
         DisposeContentDataContext(window);
+        window.Content = null;
         window.Title = Title(id);
         parameters[id] = parameter;
         window.Content = parameter is MainWindowViewModel viewModel

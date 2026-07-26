@@ -58,6 +58,8 @@ public sealed class AppCompositionRootIdentityHeadlessTests
             {
                 window.Close();
             }
+
+            await MainWindowHeadlessTestHost.CloseWindowAsync(mainWindow);
         }
     }
 
@@ -100,6 +102,8 @@ public sealed class AppCompositionRootIdentityHeadlessTests
             {
                 window.Close();
             }
+
+            await MainWindowHeadlessTestHost.CloseWindowAsync(mainWindow);
         }
     }
 

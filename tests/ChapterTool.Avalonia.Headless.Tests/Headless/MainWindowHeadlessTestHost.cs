@@ -182,9 +182,24 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             Width = width,
             Height = height
         };
+        window.Closed += (_, _) =>
+        {
+            window.Content = null;
+            window.DataContext = null;
+        };
         window.Show();
         await ExecuteLayoutAsync(window);
         return window;
+    }
+
+    public static async ValueTask CloseWindowAsync(Window window)
+    {
+        window.Close();
+        window.Content = null;
+        window.DataContext = null;
+        Dispatcher.UIThread.RunJobs();
+        await Task.Yield();
+        Dispatcher.UIThread.RunJobs();
     }
 
     public T RequiredControl<T>(string name)

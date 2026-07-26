@@ -38,6 +38,7 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly AvaloniaFontApplicationService fontApplicationService;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
     private readonly ILoggerFactory loggerFactory;
+    private AvaloniaWindowService? windowService;
     private bool disposed;
 
     public AppCompositionRoot(string? startupPath = null, string? settingsDirectory = null)
@@ -129,7 +130,7 @@ public sealed class AppCompositionRoot : IDisposable
     public static ChapterSegmentService CreateChapterSegmentService() => new();
 
     public IWindowService CreateWindowService() =>
-        new AvaloniaWindowService(
+        windowService ??= new AvaloniaWindowService(
             localizationManager,
             SettingsStore,
             themeApplicationService,
@@ -199,6 +200,7 @@ public sealed class AppCompositionRoot : IDisposable
         }
 
         disposed = true;
+        windowService?.Dispose();
         localizationResourceAdapter.Dispose();
         loggerFactory.Dispose();
     }

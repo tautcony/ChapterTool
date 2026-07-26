@@ -73,7 +73,7 @@ public sealed class AuxiliaryToolHeadlessTests
         }
         finally
         {
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 
@@ -111,7 +111,7 @@ public sealed class AuxiliaryToolHeadlessTests
         {
             themeService.Apply(ChapterTool.Infrastructure.Configuration.ThemeSettings.Default);
             Dispatcher.UIThread.RunJobs();
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 

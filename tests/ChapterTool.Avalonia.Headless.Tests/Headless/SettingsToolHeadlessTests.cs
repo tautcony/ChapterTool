@@ -59,7 +59,7 @@ public sealed class SettingsToolHeadlessTests
         }
         finally
         {
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 
@@ -100,7 +100,7 @@ public sealed class SettingsToolHeadlessTests
         }
         finally
         {
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 
@@ -147,7 +147,7 @@ public sealed class SettingsToolHeadlessTests
         }
         finally
         {
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 
@@ -215,7 +215,7 @@ public sealed class SettingsToolHeadlessTests
         }
         finally
         {
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 
@@ -280,7 +280,7 @@ public sealed class SettingsToolHeadlessTests
         finally
         {
             themeService.Apply(ThemeSettings.Default);
-            settingsWindow.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(settingsWindow);
         }
     }
 
@@ -380,8 +380,8 @@ public sealed class SettingsToolHeadlessTests
         finally
         {
             fontService.Apply(FontSettings.Default);
-            textWindow.Close();
-            settingsWindow.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(textWindow);
+            await MainWindowHeadlessTestHost.CloseWindowAsync(settingsWindow);
         }
     }
 
@@ -436,7 +436,7 @@ public sealed class SettingsToolHeadlessTests
             combo?.IsDropDownOpen = false;
             Dispatcher.UIThread.RunJobs();
             fontService.Apply(FontSettings.Default);
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 

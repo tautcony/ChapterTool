@@ -430,6 +430,7 @@ public sealed partial class MainWindow : Window
     protected override void OnClosed(EventArgs args)
     {
         UnsubscribeViewModelCommandState();
+        Content = null;
         base.OnClosed(args);
     }
 

@@ -65,7 +65,7 @@ public sealed class AppCompositionRootFontTests
         }
         finally
         {
-            window.Close();
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
 

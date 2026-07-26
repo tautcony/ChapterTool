@@ -140,7 +140,9 @@ The settings Headless workflows verify the footer settings-folder action, includ
 
 Font settings coverage is concentrated in `ChapterToolSettingsFontTests`, `AvaloniaFontFamilyCatalogTests`, `AppCompositionRootFontTests`, `SettingsToolViewModelTests`, and `SettingsToolHeadlessTests`. Catalog and ViewModel tests verify active-language family display names without changing canonical identity. The Headless workflow selects UI and monospace families. It verifies per-family options, live semantic resources, normal/editor/preview/table-cell surfaces, UI-font table headers and order-shift labels, monospace order-shift input, accessible previews, Save and Discard outcomes, and icon visibility.
 
-Headless tests share one Avalonia UI session in their test process. Close `Popup` and `ContextMenu` surfaces in `finally`. Dispose directly constructed `IDisposable` DataContexts. Use `MainWindowHeadlessTestHost` so window disposal also detaches its content tree. Await a real initialization task for asynchronous startup. Do not use fixed delays or polling to infer completion.
+Headless tests share one Avalonia UI session in their test process. Close `Popup` and `ContextMenu` surfaces in `finally`. Dispose directly constructed `IDisposable` DataContexts. Use `MainWindowHeadlessTestHost` and `MainWindowHeadlessTestHost.CloseWindowAsync` so window disposal also detaches its content tree. Await a real initialization task for asynchronous startup. Do not use fixed delays or polling to infer completion.
+
+`AvaloniaWindowService` also detaches the content tree when an auxiliary window closes. Tests that create this service must use `using` and must verify `Content == null` when they cover window cleanup. A closed window is not clean until its content tree and event subscriptions are released.
 
 The diagnosis, timing comparisons, affected tests, and repeatable triage procedure are recorded in `docs/testing/headless-performance.md`.
 

@@ -20,7 +20,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"),
             themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
-        var service = CreateService(host, confirmation);
+        using var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
@@ -54,7 +54,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"),
             themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Discard);
-        var service = CreateService(host, confirmation);
+        using var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
@@ -79,7 +79,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"),
             themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Save);
-        var service = CreateService(host, confirmation);
+        using var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
@@ -101,7 +101,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
-        var service = CreateService(host, confirmation);
+        using var service = CreateService(host, confirmation);
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
         var window = SettingsWindow(service);
 
@@ -116,7 +116,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     public async Task Settings_close_disposes_localization_subscription()
     {
         using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
-        var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
+        using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
@@ -142,7 +142,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
-        var service = CreateService(host, confirmation);
+        using var service = CreateService(host, confirmation);
         await host.LayoutAsync();
         await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
         var window = SettingsWindow(service);
@@ -183,6 +183,21 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             window.Close();
             await DrainUiAsync();
         }
+    }
+
+    [AvaloniaFact]
+    public async Task Settings_close_detaches_content_tree()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
+        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        var window = SettingsWindow(service);
+
+        window.Close();
+        await DrainUiAsync();
+
+        Assert.False(window.IsVisible);
+        Assert.Null(window.Content);
     }
 
     private static AvaloniaWindowService CreateService(
