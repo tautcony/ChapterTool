@@ -152,6 +152,74 @@ public sealed class SettingsToolHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Settings_inputs_and_footer_remain_compact_and_aligned_at_minimum_width()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        using var viewModel = new SettingsToolViewModel(
+            host.ViewModel.PortAdapters.Preferences,
+            host.SettingsStore,
+            host.Localizer,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 600,
+            Height = 420
+        };
+
+        try
+        {
+            window.Show();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            var saveDirectory = FindNamed<TextBox>(window, "SaveDirectoryTextBox");
+            var language = FindNamed<ComboBox>(window, "GeneralLanguageCombo");
+            var browse = FindNamed<Button>(window, "BrowseSaveDirectoryButton");
+            var clear = FindNamed<Button>(window, "ClearSaveDirectoryButton");
+            var footer = FindNamed<Border>(window, "SettingsFooter");
+            var folder = FindNamed<Button>(window, "OpenSettingsFolderButton");
+            var reset = FindNamed<Button>(window, "ResetSettingsButton");
+            var save = FindNamed<Button>(window, "SaveSettingsButton");
+            var browseIcon = browse.GetVisualDescendants().OfType<global::Avalonia.Controls.Shapes.Path>().Single();
+            var formEditorLeft = Left(saveDirectory, window);
+            var formEditorRight = Right(saveDirectory, window);
+
+            Assert.Equal(32, saveDirectory.Bounds.Height);
+            Assert.Equal(32, language.Bounds.Height);
+            Assert.Contains(saveDirectory, browse.GetVisualAncestors());
+            Assert.Contains(saveDirectory, clear.GetVisualAncestors());
+            Assert.True(browse.IsEffectivelyVisible);
+            Assert.Equal(30, browse.Bounds.Width);
+            Assert.Equal(15, browseIcon.Bounds.Width);
+            Assert.NotEqual(0, Assert.IsType<SolidColorBrush>(browseIcon.Fill).Color.A);
+            Assert.True(Right(browse, window) <= Right(saveDirectory, window));
+            Assert.True(Right(clear, window) <= Right(saveDirectory, window));
+
+            Assert.Equal(48, footer.Bounds.Height);
+            Assert.Equal(reset.Bounds.Height, save.Bounds.Height);
+            Assert.True(Right(folder, window) < Left(reset, window));
+            Assert.True(Right(reset, window) < Left(save, window));
+            Assert.True(Right(save, window) <= window.ClientSize.Width);
+            Assert.True(Top(reset, window) >= Top(footer, window));
+            Assert.True(Top(save, window) >= Top(footer, window));
+
+            Assert.InRange(formEditorLeft / window.ClientSize.Width, 0.18, 0.30);
+            Assert.True(saveDirectory.Bounds.Width >= window.ClientSize.Width * 0.60);
+
+            window.GetVisualDescendants().OfType<TabControl>().Single().SelectedIndex = 3;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            var themePreset = FindNamed<ComboBox>(window, "ThemePresetCombo");
+            Assert.InRange(Math.Abs(Left(themePreset, window) - formEditorLeft), 0, 1);
+            Assert.InRange(Math.Abs(Right(themePreset, window) - formEditorRight), 0, 1);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Preset_selection_updates_preview_runtime_theme_and_existing_grid_headers()
     {
         using var host = new MainWindowHeadlessTestHost();
@@ -385,6 +453,11 @@ public sealed class SettingsToolHeadlessTests
     private static double Top(Control control, Window window) =>
         control.TranslatePoint(default, window)?.Y
         ?? throw new InvalidOperationException($"Could not translate {control.Name} bounds.");
+
+    private static double Right(Control control, Window window) => Left(control, window) + control.Bounds.Width;
+
+    private static T FindNamed<T>(Window window, string name)
+        where T : Control => window.GetVisualDescendants().OfType<T>().Single(control => control.Name == name);
 
     private static Color BrushColor(IBrush? brush) => Assert.IsType<SolidColorBrush>(brush).Color;
 }

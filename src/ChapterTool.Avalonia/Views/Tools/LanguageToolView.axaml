@@ -3,18 +3,30 @@
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.LanguageToolView"
+             Classes="auxiliaryWindow"
              x:DataType="tools:LanguageToolViewModel"
              x:CompileBindings="True">
-  <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="{DynamicResource Tool.Language.Title}" FontSize="18" />
-    <ComboBox ItemsSource="{Binding Languages}"
-              SelectedIndex="{Binding SelectedLanguageIndex}">
-      <ComboBox.ItemTemplate>
-        <DataTemplate DataType="tools:LanguageOptionViewModel">
-          <TextBlock Text="{Binding DisplayName}" />
-        </DataTemplate>
-      </ComboBox.ItemTemplate>
-    </ComboBox>
-    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
-  </StackPanel>
+  <Grid RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" Margin="16" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Top">
+      <TextBlock Grid.Column="0" Classes="toolLabel" Text="{DynamicResource Tool.Language.Title}" />
+      <ComboBox Grid.Column="1"
+                MinWidth="220"
+                ItemsSource="{Binding Languages}"
+                SelectedIndex="{Binding SelectedLanguageIndex}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate DataType="tools:LanguageOptionViewModel">
+            <TextBlock Text="{Binding DisplayName}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+    </Grid>
+    <Border Grid.Row="1" Classes="toolFooter">
+      <Button Classes="primaryToolAction"
+              MinWidth="88"
+              HorizontalAlignment="Right"
+              Content="{DynamicResource Common.Apply}"
+              Command="{Binding ApplyCommand}"
+              CommandParameter="{Binding}" />
+    </Border>
+  </Grid>
 </UserControl>

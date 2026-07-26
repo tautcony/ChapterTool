@@ -21,6 +21,7 @@ public sealed class AvaloniaWindowService : IWindowService
     private readonly IShellService? shellService;
     private readonly string? settingsDirectory;
     private readonly IExpressionAuthoringService? expressionAuthoringService;
+    private readonly Func<Window, IClipboardService>? clipboardServiceFactory;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
@@ -38,6 +39,7 @@ public sealed class AvaloniaWindowService : IWindowService
         IFontApplicationService? fontApplicationService = null,
         string? settingsDirectory = null,
         IExpressionAuthoringService? expressionAuthoringService = null,
+        Func<Window, IClipboardService>? clipboardServiceFactory = null,
         IReadOnlyList<ToolWindowRegistration>? registrations = null)
     {
         ArgumentNullException.ThrowIfNull(localizer);
@@ -53,6 +55,7 @@ public sealed class AvaloniaWindowService : IWindowService
         this.shellService = shellService;
         this.settingsDirectory = settingsDirectory;
         this.expressionAuthoringService = expressionAuthoringService;
+        this.clipboardServiceFactory = clipboardServiceFactory;
         this.registrations = registrations ?? ToolWindowRegistry.DefaultRegistrations;
         this.localizer.CultureChanged += (_, _) =>
         {
@@ -89,10 +92,11 @@ public sealed class AvaloniaWindowService : IWindowService
         {
             Title = Title(windowId),
             Width = registration?.PreferredWidth ?? 620,
-            Height = 460,
-            MinWidth = 420,
-            MinHeight = 280,
+            Height = registration?.PreferredHeight ?? 460,
+            MinWidth = registration?.MinWidth ?? 420,
+            MinHeight = registration?.MinHeight ?? 280,
         };
+        window.Classes.Add("auxiliaryHost");
         var closeAccepted = false;
         Refresh(window, windowId, parameter);
         parameters[windowId] = parameter;
@@ -182,6 +186,7 @@ public sealed class AvaloniaWindowService : IWindowService
             ShellService = shellService,
             SettingsDirectory = settingsDirectory,
             ExpressionAuthoringService = expressionAuthoringService,
+            ClipboardService = clipboardServiceFactory?.Invoke(window),
         };
         return registration.CreateContent(context);
     }

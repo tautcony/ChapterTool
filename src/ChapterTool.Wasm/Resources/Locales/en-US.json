@@ -134,7 +134,6 @@
   "Tool.mkvtoolnix": "MkvToolnix path",
   "Tool.eac3to": "Eac3to path",
   "Tool.ffprobe": "Ffprobe path",
-  "Tool.ffmpeg": "Ffmpeg path",
   "Title.Load": "Load chapter file",
   "Title.Save": "Export with current options and download",
   "Title.Preview": "Preview projected export text",
@@ -148,4 +147,3 @@
   "Related.Absolute": "Absolute path",
   "Related.BrowserLimit": "Local absolute paths cannot be opened by the browser. Relative paths are informational only unless the host serves them."
 }
-

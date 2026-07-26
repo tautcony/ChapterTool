@@ -107,6 +107,7 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs`
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/`
@@ -124,11 +125,16 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootFontTests.cs`
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
+
+SourceGit resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative imported icons, brushes, and fonts through the runtime resource tree. They verify every SourceGit `Color.*` token for a dark preset.
+
+Log ViewModel coverage is in `LogToolViewModelTests`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, theme changes, and narrow layout.
 
 The settings Headless workflows verify the footer settings-folder action, including its left-side placement, accessible label, and routed shell target.
 

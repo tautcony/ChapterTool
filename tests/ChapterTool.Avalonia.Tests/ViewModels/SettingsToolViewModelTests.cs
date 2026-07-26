@@ -25,7 +25,6 @@ public sealed class SettingsToolViewModelTests
             MkvToolnixPath: "mkv",
             Eac3toPath: "eac3to",
             FfprobePath: "ffprobe",
-            FfmpegPath: "ffmpeg",
             DefaultSaveFormat: "Xml",
             DefaultXmlLanguage: "ja",
             OutputTextEncoding: "utf16le",
@@ -41,7 +40,6 @@ public sealed class SettingsToolViewModelTests
         viewModel.MkvToolnixPath = null;
         viewModel.Eac3toPath = "new-eac3to";
         viewModel.FfprobePath = "new-ffprobe";
-        viewModel.FfmpegPath = "new-ffmpeg";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         viewModel.OutputTextEncodingIndex = viewModel.OutputTextEncodingOptions.ToList().IndexOf("UTF-32 BE");
@@ -56,7 +54,6 @@ public sealed class SettingsToolViewModelTests
         Assert.Null(appStore.Current.MkvToolnixPath);
         Assert.Equal(Path.GetFullPath("new-eac3to"), appStore.Current.Eac3toPath);
         Assert.Equal(Path.GetFullPath("new-ffprobe"), appStore.Current.FfprobePath);
-        Assert.Equal(Path.GetFullPath("new-ffmpeg"), appStore.Current.FfmpegPath);
         Assert.Equal("Json", appStore.Current.DefaultSaveFormat);
         Assert.Equal("jpn", appStore.Current.DefaultXmlLanguage);
         Assert.Equal("utf32be", appStore.Current.OutputTextEncoding);
@@ -499,29 +496,6 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
-    public async Task FfmpegPathRequiresDirectoryContainingFfprobe()
-    {
-        var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
-        await File.WriteAllTextAsync(ffprobe, string.Empty);
-        var appStore = new FakeSettingsStore(new AppSettings(FfmpegPath: ffprobe));
-        var owner = CreateOwner(appStore);
-        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
-
-        try
-        {
-            await viewModel.LoadAsync(TestContext.Current.CancellationToken);
-
-            Assert.Equal("Path must be a directory", viewModel.FfmpegStatus);
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
     public async Task ValidateToolsDiscoversAndFillsExternalToolPaths()
     {
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
@@ -555,7 +529,6 @@ public sealed class SettingsToolViewModelTests
             Assert.Equal(mkvextract, viewModel.MkvToolnixPath);
             Assert.Equal(eac3to, viewModel.Eac3toPath);
             Assert.Equal(ffprobe, viewModel.FfprobePath);
-            Assert.Equal(root, viewModel.FfmpegPath);
             Assert.Contains(mkvextract, viewModel.MkvToolnixStatus, StringComparison.Ordinal);
             Assert.Contains(eac3to, viewModel.Eac3toStatus, StringComparison.Ordinal);
             Assert.Contains(ffprobe, viewModel.FfprobeStatus, StringComparison.Ordinal);

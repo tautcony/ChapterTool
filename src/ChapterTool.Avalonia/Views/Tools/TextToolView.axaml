@@ -4,32 +4,23 @@
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.TextToolView"
+             Classes="auxiliaryWindow"
              x:DataType="tools:TextToolViewModel"
              x:CompileBindings="True">
   <UserControl.Styles>
     <Style Selector="StackPanel#LineNumbersHost > TextBlock">
       <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}" />
     </Style>
-    <Style Selector="Button">
-      <Setter Property="CornerRadius" Value="2" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="Padding" Value="12,6" />
-      <Setter Property="MinHeight" Value="32" />
-      <Setter Property="MinWidth" Value="82" />
-      <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
-      <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AccentBrush}" />
-      <Setter Property="HorizontalContentAlignment" Value="Center" />
-      <Setter Property="VerticalContentAlignment" Value="Center" />
-    </Style>
   </UserControl.Styles>
 
   <Grid RowDefinitions="Auto,*"
-        RowSpacing="10"
-        Margin="14"
+        RowSpacing="8"
+        Margin="8"
+        Background="{DynamicResource ChapterTool.AuxiliaryContentBackgroundBrush}"
         MinWidth="0"
         MinHeight="0">
-    <DockPanel Grid.Row="0" LastChildFill="False">
-      <StackPanel DockPanel.Dock="Left"
+    <Grid Grid.Row="0" Classes="toolToolbar" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <StackPanel Grid.Column="0"
                   Orientation="Horizontal"
                   Spacing="8"
                   VerticalAlignment="Center">
@@ -42,36 +33,35 @@
                    Foreground="{DynamicResource ChapterTool.MutedForegroundBrush}"
                    Text="{Binding Kind}" />
       </StackPanel>
-      <StackPanel DockPanel.Dock="Right"
+      <StackPanel Grid.Column="1"
                   Orientation="Horizontal"
-                  Spacing="8"
+                  Spacing="4"
                   HorizontalAlignment="Right">
-        <Button Command="{Binding RefreshCommand}" ToolTip.Tip="{DynamicResource Common.Refresh}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <i:Icon Value="fa-solid fa-rotate" FontSize="14" />
-            <TextBlock Text="{DynamicResource Common.Refresh}" />
-          </StackPanel>
+        <Button Classes="iconToolAction"
+                Command="{Binding RefreshCommand}"
+                AutomationProperties.Name="{DynamicResource Common.Refresh}"
+                ToolTip.Tip="{DynamicResource Common.Refresh}">
+          <i:Icon Value="fa-solid fa-rotate" FontSize="13" />
         </Button>
-        <Button Click="OnCopyClicked" ToolTip.Tip="{DynamicResource Common.Copy}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <i:Icon Value="fa-solid fa-copy" FontSize="14" />
-            <TextBlock Text="{DynamicResource Common.Copy}" />
-          </StackPanel>
+        <Button Classes="iconToolAction"
+                Click="OnCopyClicked"
+                AutomationProperties.Name="{DynamicResource Common.Copy}"
+                ToolTip.Tip="{DynamicResource Common.Copy}">
+          <i:Icon Value="fa-solid fa-copy" FontSize="13" />
         </Button>
-        <Button IsVisible="{Binding CanClear}"
+        <Button Classes="iconToolAction"
+                IsVisible="{Binding CanClear}"
                 Command="{Binding ClearCommand}"
+                AutomationProperties.Name="{DynamicResource Common.Clear}"
                 ToolTip.Tip="{DynamicResource Common.Clear}">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
-            <TextBlock Text="{DynamicResource Common.Clear}" />
-          </StackPanel>
+          <i:Icon Value="fa-solid fa-xmark" FontSize="13" />
         </Button>
       </StackPanel>
-    </DockPanel>
+    </Grid>
 
     <Border Grid.Row="1"
             Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
-            BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
+            BorderBrush="{DynamicResource ChapterTool.AuxiliarySubtleBorderBrush}"
             BorderThickness="1"
             CornerRadius="2"
             MinWidth="0"

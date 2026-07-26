@@ -78,12 +78,26 @@ This is the first file to inspect when dependency wiring or service registration
 
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
 - `src/ChapterTool.Avalonia/Views/Controls/ExpressionEditor.axaml`
+- `src/ChapterTool.Avalonia/Views/Tools/LogToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/LanguageToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/ExpressionToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/TemplateNamesToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/ForwardShiftToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/TextToolView.axaml`
+
+### SourceGit user interface resources
+
+`src/ChapterTool.Avalonia/Views/SourceGit/` owns the ported SourceGit user interface foundation.
+
+- `Icons.axaml` contains the complete SourceGit icon dictionary.
+- `Themes.axaml` contains the complete light and dark token dictionaries.
+- `Styles.axaml` contains the reusable control styles for Avalonia 12.1.
+- `Fonts/` contains the JetBrains Mono NL font files.
+- `NOTICE.md` records the source, license, exclusions, and compatibility adaptations.
+- `LICENSE` contains the SourceGit MIT license.
+
+`App.axaml` loads these resources after the Avalonia base themes. It loads ChapterTool product styles after the SourceGit style layer.
 
 ### ViewModels
 
@@ -96,6 +110,7 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia/ViewModels/ChapterRowViewModel.cs`
 - `src/ChapterTool.Avalonia/ViewModels/UiCommand.cs`
 - `src/ChapterTool.Avalonia/ViewModels/ShortcutRouter.cs`
+- `src/ChapterTool.Avalonia/ViewModels/Tools/LogToolViewModel.cs`
 
 ### Runtime and UI services
 
@@ -170,6 +185,18 @@ Then inspect the matching pair in:
 - `src/ChapterTool.Avalonia/Views/Tools/`
 - `src/ChapterTool.Avalonia/ViewModels/`
 
+### Application log window
+
+Start with:
+
+- `src/ChapterTool.Avalonia/ViewModels/Tools/LogToolViewModel.cs`
+- `src/ChapterTool.Avalonia/Views/Tools/LogToolView.axaml`
+- `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs`
+- `src/ChapterTool.Infrastructure/Services/IApplicationLogService.cs`
+- `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+
+The ViewModel owns the filtered projection, selection, localized display text, and copy commands. The provider owns bounded history and live entry notifications. The view uses the ported SourceGit master-detail composition and resources.
+
 ### Clip combine / multi-entry session
 
 Start with:
@@ -237,7 +264,7 @@ Main-window selectors with runtime-localized display text, including the automat
 
 Secondary tool windows consume the stable interfaces in `Session/Ports/ShellPorts.cs` through `MainWindowPortAdapters`. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement those ports.
 
-Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset (including semantic frame/diagnostic colors from `ThemePalette`), updates application brushes and the Avalonia light/dark variant, while `App.axaml` owns shared control and `DataGridColumnHeader` semantic styles.
+Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all SourceGit `Color.*` tokens, and the Avalonia light or dark variant. `App.axaml` loads the SourceGit foundation and applies later ChapterTool product styles.
 
 Font appearance is split into independent UI and monospace families. `AvaloniaFontFamilyCatalog` snapshots and canonicalizes system fonts, lazily resolves localized family metadata for the active UI culture, and keeps canonical names for persistence. `AvaloniaFontApplicationService` resolves unavailable choices and updates `ChapterTool.UiFontFamily` and `ChapterTool.MonospaceFontFamily`. `App.axaml` applies the UI family through window inheritance and table headers, while chapter `DataGridCell`, `OrderShiftBox`, `ExpressionEditor`, and `TextToolView` consume the monospace resource so existing surfaces refresh at runtime without changing icon fonts.
 

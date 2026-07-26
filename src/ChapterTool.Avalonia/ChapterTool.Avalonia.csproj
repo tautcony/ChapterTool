@@ -11,6 +11,7 @@
     <Content Include="Assets\**\*" CopyToOutputDirectory="PreserveNewest" />
     <Content Remove="Assets\Images\chapter-empty.svg" />
     <AvaloniaResource Include="Assets\Images\chapter-empty.svg" />
+    <AvaloniaResource Include="Views\SourceGit\Fonts\*.ttf" />
   </ItemGroup>
 
   <ItemGroup>

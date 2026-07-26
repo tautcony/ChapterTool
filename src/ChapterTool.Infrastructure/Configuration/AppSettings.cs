@@ -7,7 +7,6 @@ public sealed record AppSettings(
     string? MkvToolnixPath = null,
     string? Eac3toPath = null,
     string? FfprobePath = null,
-    string? FfmpegPath = null,
     string DefaultSaveFormat = "Txt",
     string DefaultXmlLanguage = "und",
     string OutputTextEncoding = "utf8",

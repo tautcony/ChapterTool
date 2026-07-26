@@ -124,6 +124,21 @@ public sealed class SettingsMigrationTests
     }
 
     [Fact]
+    public async Task Removed_ffmpeg_path_field_is_ignored_when_loading_old_settings()
+    {
+        var root = CreateTempDirectory();
+        await File.WriteAllTextAsync(
+            SettingsPath(root),
+            "{\"schemaVersion\":1,\"application\":{\"language\":\"en-US\",\"ffmpegPath\":\"/tools\"}}",
+            TestContext.Current.CancellationToken);
+
+        var settings = await new ChapterToolSettingsStore(root).LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("en-US", settings.Application.Language);
+        Assert.Null(settings.Application.FfprobePath);
+    }
+
+    [Fact]
     public async Task Current_version_runtime_normalization_does_not_rewrite_document()
     {
         var root = CreateTempDirectory();

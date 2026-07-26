@@ -134,7 +134,6 @@
   "Tool.mkvtoolnix": "MkvToolnix 路径",
   "Tool.eac3to": "Eac3to 路径",
   "Tool.ffprobe": "Ffprobe 路径",
-  "Tool.ffmpeg": "Ffmpeg 路径",
   "Title.Load": "加载章节文件",
   "Title.Save": "按当前选项导出并下载",
   "Title.Preview": "预览投影后的导出文本",
@@ -148,4 +147,3 @@
   "Related.Absolute": "绝对路径",
   "Related.BrowserLimit": "浏览器无法打开本地绝对路径。相对路径仅供参考，除非主机实际提供这些资源。"
 }
-

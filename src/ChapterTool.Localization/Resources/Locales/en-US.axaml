@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
+  <x:String x:Key="Text.Cut" xml:space="preserve">Cut</x:String>
+  <x:String x:Key="Text.Copy" xml:space="preserve">Copy</x:String>
+  <x:String x:Key="Text.Paste" xml:space="preserve">Paste</x:String>
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">Append MPLS…</x:String>
   <x:String x:Key="Action.Apply" xml:space="preserve">Save</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">Browse template…</x:String>
@@ -60,6 +63,15 @@
   <x:String x:Key="Common.Clear" xml:space="preserve">Clear</x:String>
   <x:String x:Key="Common.Copy" xml:space="preserve">Copy</x:String>
   <x:String x:Key="Common.Refresh" xml:space="preserve">Refresh</x:String>
+  <x:String x:Key="Tool.Log.FilterAll" xml:space="preserve">All levels</x:String>
+  <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">Information</x:String>
+  <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">Warnings</x:String>
+  <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">Errors</x:String>
+  <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">Copy summary</x:String>
+  <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">Copy details</x:String>
+  <x:String x:Key="Tool.Log.Details" xml:space="preserve">Technical details</x:String>
+  <x:String x:Key="Tool.Log.Category" xml:space="preserve">Category</x:String>
+  <x:String x:Key="Tool.Log.Empty" xml:space="preserve">No log entries match the current filter.</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">Save</x:String>
   <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">This platform-gated feature is not enabled in this build.</x:String>
   <x:String x:Key="Common.Use" xml:space="preserve">Use</x:String>
@@ -346,11 +358,10 @@
   <x:String x:Key="Settings.EmitBomLabel" xml:space="preserve">Include byte order mark in text downloads</x:String>
   <x:String x:Key="Settings.EmptyUsesSource" xml:space="preserve">Blank uses the source directory</x:String>
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">External Tools</x:String>
-  <x:String x:Key="Settings.FfmpegPath" xml:space="preserve">FFmpeg bin directory (contains ffprobe)</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">Frame tolerance</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">General</x:String>
-  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix / mkvextract</x:String>
+  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix</x:String>
   <x:String x:Key="Settings.MonoFont" xml:space="preserve">Monospace font</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">Open settings folder</x:String>
   <x:String x:Key="Settings.Output" xml:space="preserve">Output defaults</x:String>
@@ -467,7 +478,6 @@
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">Use standard template names</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
   <x:String x:Key="Tool.eac3to" xml:space="preserve">Eac3to path</x:String>
-  <x:String x:Key="Tool.ffmpeg" xml:space="preserve">Ffmpeg path</x:String>
   <x:String x:Key="Tool.ffprobe" xml:space="preserve">Ffprobe path</x:String>
   <x:String x:Key="Tool.mkvtoolnix" xml:space="preserve">MkvToolnix path</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">Undetermined</x:String>

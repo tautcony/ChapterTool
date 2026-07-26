@@ -134,14 +134,18 @@ public sealed partial class TextToolView : UserControl
         }
     }
 
-    private static IBrush ForegroundFor(TextToolSpanKind kind) =>
-        kind switch
+    private static IBrush ForegroundFor(TextToolSpanKind kind)
+    {
+        var key = kind switch
         {
-            TextToolSpanKind.Name => Brush("#0550ae"),
-            TextToolSpanKind.String => Brush("#116329"),
-            TextToolSpanKind.Number => Brush("#953800"),
-            _ => Brush("#24292f")
+            TextToolSpanKind.Name => "ChapterTool.Expression.VariableBrush",
+            TextToolSpanKind.String => "ChapterTool.Expression.StringBrush",
+            TextToolSpanKind.Number => "ChapterTool.Expression.NumberBrush",
+            _ => "ChapterTool.ControlForegroundBrush"
         };
+
+        return Application.Current?.Resources[key] as IBrush ?? Brush("#24292f");
+    }
 
     private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
 

@@ -89,12 +89,10 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         BrowseMkvToolnixCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => MkvToolnixPath = value, token));
         BrowseEac3toCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => Eac3toPath = value, token));
         BrowseFfprobeCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => FfprobePath = value, token));
-        BrowseFfmpegCommand = new UiCommand(async (_, token) => await PickDirectoryAsync(value => FfmpegPath = value, token));
         ClearSaveDirectoryCommand = ClearCommand(() => SaveDirectory = null);
         ClearMkvToolnixCommand = ClearCommand(() => MkvToolnixPath = null);
         ClearEac3toCommand = ClearCommand(() => Eac3toPath = null);
         ClearFfprobeCommand = ClearCommand(() => FfprobePath = null);
-        ClearFfmpegCommand = ClearCommand(() => FfmpegPath = null);
         OpenRepositoryCommand = new UiCommand(async (_, token) => await OpenRepositoryAsync(token), _ => shellService is not null);
         OpenSettingsFolderCommand = new UiCommand(
             async (_, token) => await OpenSettingsFolderAsync(token),
@@ -247,19 +245,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         }
     }
 
-    public string? FfmpegPath
-    {
-        get;
-        set
-        {
-            if (SetProperty(ref field, CleanOptionalPath(value)))
-            {
-                FfmpegStatus = FormatToolStatus(ValidateToolDirectory(value, "ffprobe"));
-                NotifyUnsavedChanges();
-            }
-        }
-    }
-
     public int DefaultSaveFormatIndex
     {
         get => defaultSaveFormatIndex;
@@ -362,12 +347,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         private set => SetProperty(ref field, value);
     } = string.Empty;
 
-    public string FfmpegStatus
-    {
-        get;
-        private set => SetProperty(ref field, value);
-    } = string.Empty;
-
     public UiCommand SaveCommand { get; }
 
     public UiCommand ResetCommand { get; }
@@ -382,8 +361,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     public UiCommand BrowseFfprobeCommand { get; }
 
-    public UiCommand BrowseFfmpegCommand { get; }
-
     public UiCommand ClearSaveDirectoryCommand { get; }
 
     public UiCommand ClearMkvToolnixCommand { get; }
@@ -391,8 +368,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     public UiCommand ClearEac3toCommand { get; }
 
     public UiCommand ClearFfprobeCommand { get; }
-
-    public UiCommand ClearFfmpegCommand { get; }
 
     public UiCommand OpenRepositoryCommand { get; }
 
@@ -639,7 +614,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         MkvToolnixStatus = FormatToolStatus(ValidateTool(MkvToolnixPath, "mkvextract"));
         Eac3toStatus = FormatToolStatus(ValidateTool(Eac3toPath, "eac3to"));
         FfprobeStatus = FormatToolStatus(ValidateTool(FfprobePath, "ffprobe"));
-        FfmpegStatus = FormatToolStatus(ValidateToolDirectory(FfmpegPath, "ffprobe"));
     }
 
     private async ValueTask DiscoverAndFillToolPathsAsync(CancellationToken cancellationToken)
@@ -654,12 +628,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         Eac3toPath = await DiscoverExecutableAsync("eac3to", Eac3toPath, cancellationToken);
         var ffprobe = await DiscoverExecutableAsync("ffprobe", FfprobePath, cancellationToken);
         FfprobePath = ffprobe;
-
-        if (string.IsNullOrWhiteSpace(FfmpegPath) || ValidateToolDirectory(FfmpegPath, "ffprobe").Kind != SettingsToolStatusKind.Found)
-        {
-            var ffprobeDirectory = string.IsNullOrWhiteSpace(ffprobe) ? null : Path.GetDirectoryName(ffprobe);
-            FfmpegPath = string.IsNullOrWhiteSpace(ffprobeDirectory) ? FfmpegPath : ffprobeDirectory;
-        }
 
         RefreshToolStatuses();
     }
@@ -753,7 +721,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             MkvToolnixPath = MkvToolnixPath,
             Eac3toPath = Eac3toPath,
             FfprobePath = FfprobePath,
-            FfmpegPath = FfmpegPath,
             DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
             DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
             OutputTextEncoding = OutputTextEncodings.Id(OutputEncodings[OutputTextEncodingIndex]),
@@ -768,7 +735,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         MkvToolnixPath = settings.MkvToolnixPath;
         Eac3toPath = settings.Eac3toPath;
         FfprobePath = settings.FfprobePath;
-        FfmpegPath = settings.FfmpegPath;
         DefaultSaveFormatIndex = SaveFormatIndex(settings.DefaultSaveFormat);
         DefaultXmlLanguageIndex = XmlLanguageIndex(settings.DefaultXmlLanguage);
         OutputTextEncodingIndex = TextEncodingIndex(settings.OutputTextEncoding);

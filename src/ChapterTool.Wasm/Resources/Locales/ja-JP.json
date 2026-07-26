@@ -134,7 +134,6 @@
   "Tool.mkvtoolnix": "MkvToolnix パス",
   "Tool.eac3to": "Eac3to パス",
   "Tool.ffprobe": "Ffprobe パス",
-  "Tool.ffmpeg": "Ffmpeg パス",
   "Title.Load": "チャプターファイルを読み込む",
   "Title.Save": "現在のオプションで書き出してダウンロード",
   "Title.Preview": "投影後の書き出しテキストをプレビュー",
@@ -148,4 +147,3 @@
   "Related.Absolute": "絶対パス",
   "Related.BrowserLimit": "ブラウザはローカル絶対パスを開けません。ホストが提供しない限り、相対パスは参考情報のみです。"
 }
-

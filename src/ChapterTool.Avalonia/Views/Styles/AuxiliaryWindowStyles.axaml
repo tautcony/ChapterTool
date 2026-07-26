@@ -1,0 +1,184 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Style Selector="UserControl.auxiliaryWindow">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryContentBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.UiFontFamily}" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Border.auxiliarySurface">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryContentBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="2" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Grid.toolToolbar">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryToolbarBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Border.toolFooter">
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryToolbarBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliarySubtleBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TextBlock.toolTitle">
+    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TextBlock.toolLabel">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TextBlock.toolStatus">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.MutedForegroundBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryControlBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="10,3" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryHoverBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button:pressed">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryPressedBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button:disabled">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AuxiliaryDisabledForegroundBrush}" />
+    <Setter Property="Opacity" Value="0.62" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryFocusBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button.primaryToolAction">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AccentForegroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AccentBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button.primaryToolAction:pointerover">
+    <Setter Property="Opacity" Value="0.90" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button.iconToolAction">
+    <Setter Property="Width" Value="30" />
+    <Setter Property="MinWidth" Value="30" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow Button.compactToolAction">
+    <Setter Property="MinWidth" Value="36" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="8,2" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TextBox,
+                  UserControl.auxiliaryWindow ComboBox,
+                  UserControl.auxiliaryWindow NumericUpDown">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="3" />
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="6,0" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TextBox:pointerover,
+                  UserControl.auxiliaryWindow ComboBox:pointerover,
+                  UserControl.auxiliaryWindow NumericUpDown:pointerover">
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryFocusBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TextBox:focus,
+                  UserControl.auxiliaryWindow ComboBox:focus,
+                  UserControl.auxiliaryWindow NumericUpDown:focus">
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryFocusBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TabItem">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Padding" Value="12,0" />
+    <Setter Property="Opacity" Value="0.68" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TabItem:pointerover">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow TabItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AuxiliaryFocusBrush}" />
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow ListBox">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryContentBackgroundBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.AuxiliaryBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow ListBoxItem:pointerover">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliaryHoverBackgroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow ListBoxItem">
+    <Setter Property="MinHeight" Value="28" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow ListBoxItem:selected">
+    <Setter Property="Background" Value="{DynamicResource ChapterTool.AuxiliarySelectionBackgroundBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow CheckBox,
+                  UserControl.auxiliaryWindow RadioButton">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.ControlForegroundBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow CheckBox:disabled,
+                  UserControl.auxiliaryWindow RadioButton:disabled">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.AuxiliaryDisabledForegroundBrush}" />
+    <Setter Property="Opacity" Value="0.62" />
+  </Style>
+
+  <Style Selector="UserControl.auxiliaryWindow GridSplitter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Focusable" Value="False" />
+  </Style>
+</Styles>

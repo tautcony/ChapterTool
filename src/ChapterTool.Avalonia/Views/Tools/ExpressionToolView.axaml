@@ -5,12 +5,12 @@
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.ExpressionToolView"
+             Classes="auxiliaryWindow"
              x:DataType="tools:ExpressionToolViewModel"
              x:CompileBindings="True">
-  <Grid Margin="16" RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="10">
-    <TextBlock Grid.Row="0" Text="{DynamicResource Tool.Expression.Title}" FontSize="18" />
-
-    <Grid Grid.Row="1" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+  <Grid RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" Margin="16" RowDefinitions="Auto,*,Auto" RowSpacing="10">
+    <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="8">
       <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource Tool.Expression.Preset}" />
       <ComboBox Grid.Column="1"
                 MinWidth="220"
@@ -27,17 +27,14 @@
       </ComboBox>
     </Grid>
 
-    <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
       <controls:ExpressionEditor Grid.Column="0"
                                  EditorHeight="112"
                                  Text="{Binding Expression}"
                                  Localizer="{Binding Localizer}"
                                  AuthoringService="{Binding ExpressionAuthoringService}" />
       <Button Grid.Column="1"
-              Width="32"
-              Height="28"
-              MinWidth="32"
-              Padding="0"
+              Classes="iconToolAction"
               VerticalAlignment="Top"
               HorizontalContentAlignment="Center"
               VerticalContentAlignment="Center"
@@ -47,14 +44,22 @@
               i:Attached.Icon="fa-solid fa-file-code" />
     </Grid>
 
-    <Grid Grid.Row="3" ColumnDefinitions="Auto,*" ColumnSpacing="8">
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8">
       <CheckBox Grid.Column="0" Content="{DynamicResource Tool.Expression.Apply}" IsChecked="{Binding ApplyExpression}" />
       <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding ExpressionSourceName}" TextTrimming="CharacterEllipsis" />
     </Grid>
 
-    <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8">
-      <Button Content="{DynamicResource Common.Apply}" MinWidth="80" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
-      <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
-    </StackPanel>
+    </Grid>
+    <Border Grid.Row="1" Classes="toolFooter">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <TextBlock Grid.Column="0" Classes="toolStatus" VerticalAlignment="Center" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
+        <Button Grid.Column="1"
+                Classes="primaryToolAction"
+                Content="{DynamicResource Common.Apply}"
+                MinWidth="88"
+                Command="{Binding ApplyCommand}"
+                CommandParameter="{Binding}" />
+      </Grid>
+    </Border>
   </Grid>
 </UserControl>

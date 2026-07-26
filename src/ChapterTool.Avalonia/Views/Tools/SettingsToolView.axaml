@@ -1,6 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.SettingsToolView"
@@ -8,16 +7,16 @@
              x:CompileBindings="True">
   <UserControl.Styles>
     <Style Selector="TextBlock.sectionTitle">
-      <Setter Property="FontSize" Value="16" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="TextBlock.tabHeader">
       <Setter Property="TextWrapping" Value="NoWrap" />
-      <Setter Property="Margin" Value="2,0" />
+      <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="TextBlock.label">
       <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="TextAlignment" Value="Right" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style Selector="TextBlock.status">
@@ -45,15 +44,22 @@
       <Setter Property="Cursor" Value="Hand" />
     </Style>
     <Style Selector="TextBox, ComboBox">
+      <Setter Property="Height" Value="32" />
       <Setter Property="MinHeight" Value="32" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TextBox">
+      <Setter Property="Padding" Value="8,0" />
     </Style>
     <Style Selector="Slider.toleranceSlider">
       <Setter Property="MinHeight" Value="36" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="ComboBox.outputDefaultCombo">
-      <Setter Property="Width" Value="180" />
-      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
     <Style Selector="TextBlock.valueBadge">
       <Setter Property="MinWidth" Value="46" />
@@ -62,39 +68,57 @@
       <Setter Property="TextAlignment" Value="Right" />
     </Style>
     <Style Selector="Border.themeSwatch">
-      <Setter Property="Width" Value="34" />
-      <Setter Property="Height" Value="34" />
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
       <Setter Property="Margin" Value="0,0,4,4" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Border.fontPreview">
       <Setter Property="MinHeight" Value="44" />
-      <Setter Property="MaxWidth" Value="440" />
       <Setter Property="Padding" Value="10,8" />
       <Setter Property="Background" Value="{DynamicResource ChapterTool.ControlBackgroundBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource ChapterTool.BorderBrush}" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Button.compact">
-      <Setter Property="MinWidth" Value="42" />
+      <Setter Property="Width" Value="30" />
+      <Setter Property="MinWidth" Value="30" />
+      <Setter Property="Height" Value="30" />
       <Setter Property="MinHeight" Value="30" />
-      <Setter Property="Padding" Value="8,3" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Button.inputAction">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
+      <Setter Property="Opacity" Value="0.9" />
+    </Style>
+    <Style Selector="Button.inputAction:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.footerAction">
+      <Setter Property="Height" Value="30" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="MinWidth" Value="100" />
+      <Setter Property="Padding" Value="16,0" />
     </Style>
   </UserControl.Styles>
 
-  <Grid RowDefinitions="*,Auto" Margin="16" RowSpacing="12">
+  <Grid RowDefinitions="*,Auto">
     <TabControl Grid.Row="0">
       <TabItem>
         <TabItem.Header>
           <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.General}" />
         </TabItem.Header>
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="12" Margin="4,12,12,4">
+          <StackPanel Spacing="8" Margin="16,12">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.General}" />
-            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.UiLanguage}" />
-              <ComboBox Grid.Row="0"
+              <ComboBox x:Name="GeneralLanguageCombo"
+                        Grid.Row="0"
                         Grid.Column="1"
                         ItemsSource="{Binding Languages}"
                         SelectedIndex="{Binding SelectedLanguageIndex}">
@@ -106,15 +130,30 @@
               </ComboBox>
 
               <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.SaveDirectory}" />
-              <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                <TextBox Grid.Column="0" Text="{Binding SaveDirectory, Mode=TwoWay}" PlaceholderText="{DynamicResource Settings.EmptyUsesSource}" />
-                <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseSaveDirectoryCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseDirectory}" ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
-                  <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
-                </Button>
-                <Button Grid.Column="2" Classes="compact" Command="{Binding ClearSaveDirectoryCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                  <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
-                </Button>
-              </Grid>
+              <TextBox x:Name="SaveDirectoryTextBox"
+                       Grid.Row="1"
+                       Grid.Column="1"
+                       Text="{Binding SaveDirectory, Mode=TwoWay}"
+                       PlaceholderText="{DynamicResource Settings.EmptyUsesSource}">
+                <TextBox.InnerRightContent>
+                  <StackPanel Orientation="Horizontal">
+                    <Button x:Name="BrowseSaveDirectoryButton"
+                            Classes="icon_button compact inputAction"
+                            Command="{Binding BrowseSaveDirectoryCommand}"
+                            AutomationProperties.Name="{DynamicResource Settings.BrowseDirectory}"
+                            ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
+                      <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                    </Button>
+                    <Button x:Name="ClearSaveDirectoryButton"
+                            Classes="icon_button compact inputAction"
+                            Command="{Binding ClearSaveDirectoryCommand}"
+                            AutomationProperties.Name="{DynamicResource Common.Clear}"
+                            ToolTip.Tip="{DynamicResource Common.Clear}">
+                      <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                    </Button>
+                  </StackPanel>
+                </TextBox.InnerRightContent>
+              </TextBox>
             </Grid>
           </StackPanel>
         </ScrollViewer>
@@ -125,71 +164,72 @@
           <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.ExternalTools}" />
         </TabItem.Header>
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="12" Margin="4,12,12,4">
+          <StackPanel Spacing="8" Margin="16,12">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.ExternalTools}" />
-            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.MkvToolnixPath}" />
               <Grid Grid.Row="0" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                  <TextBox Grid.Column="0" Text="{Binding MkvToolnixPath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                    <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
-                  </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                    <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
-                  </Button>
-                </Grid>
+                <TextBox Text="{Binding MkvToolnixPath, Mode=TwoWay}">
+                  <TextBox.InnerRightContent>
+                    <StackPanel Orientation="Horizontal">
+                      <Button Classes="icon_button compact inputAction" Command="{Binding BrowseMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
+                        <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                      </Button>
+                      <Button Classes="icon_button compact inputAction" Command="{Binding ClearMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                        <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                      </Button>
+                    </StackPanel>
+                  </TextBox.InnerRightContent>
+                </TextBox>
                 <TextBlock Grid.Row="1" Classes="status" Text="{Binding MkvToolnixStatus}" />
               </Grid>
 
               <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Eac3toPath}" />
               <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                  <TextBox Grid.Column="0" Text="{Binding Eac3toPath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseEac3toCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                    <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
-                  </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearEac3toCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                    <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
-                  </Button>
-                </Grid>
+                <TextBox Text="{Binding Eac3toPath, Mode=TwoWay}">
+                  <TextBox.InnerRightContent>
+                    <StackPanel Orientation="Horizontal">
+                      <Button Classes="icon_button compact inputAction" Command="{Binding BrowseEac3toCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
+                        <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                      </Button>
+                      <Button Classes="icon_button compact inputAction" Command="{Binding ClearEac3toCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                        <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                      </Button>
+                    </StackPanel>
+                  </TextBox.InnerRightContent>
+                </TextBox>
                 <TextBlock Grid.Row="1" Classes="status" Text="{Binding Eac3toStatus}" />
               </Grid>
 
               <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfprobePath}" />
               <Grid Grid.Row="2" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                  <TextBox Grid.Column="0" Text="{Binding FfprobePath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseFfprobeCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                    <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
-                  </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearFfprobeCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                    <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
-                  </Button>
-                </Grid>
+                <TextBox Text="{Binding FfprobePath, Mode=TwoWay}">
+                  <TextBox.InnerRightContent>
+                    <StackPanel Orientation="Horizontal">
+                      <Button Classes="icon_button compact inputAction" Command="{Binding BrowseFfprobeCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
+                        <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                      </Button>
+                      <Button Classes="icon_button compact inputAction" Command="{Binding ClearFfprobeCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
+                        <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                      </Button>
+                    </StackPanel>
+                  </TextBox.InnerRightContent>
+                </TextBox>
                 <TextBlock Grid.Row="1" Classes="status" Text="{Binding FfprobeStatus}" />
               </Grid>
 
-              <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfmpegPath}" />
-              <Grid Grid.Row="3" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                  <TextBox Grid.Column="0" Text="{Binding FfmpegPath, Mode=TwoWay}" />
-                  <Button Grid.Column="1" Classes="compact" Command="{Binding BrowseFfmpegCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseDirectory}" ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
-                    <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
-                  </Button>
-                  <Button Grid.Column="2" Classes="compact" Command="{Binding ClearFfmpegCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                    <i:Icon Value="fa-solid fa-xmark" FontSize="14" />
-                  </Button>
-                </Grid>
-                <TextBlock Grid.Row="1" Classes="status" Text="{Binding FfmpegStatus}" />
-              </Grid>
+              <Button Grid.Row="3"
+                      Grid.Column="1"
+                      Classes="flat"
+                      HorizontalAlignment="Left"
+                      Command="{Binding ValidateToolsCommand}"
+                      ToolTip.Tip="{DynamicResource Settings.ValidateTools}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Path Width="14" Height="14" Data="{StaticResource Icons.Search}" />
+                  <TextBlock Text="{DynamicResource Settings.ValidateTools}" />
+                </StackPanel>
+              </Button>
             </Grid>
-            <Button HorizontalAlignment="Left" Command="{Binding ValidateToolsCommand}" ToolTip.Tip="{DynamicResource Settings.ValidateTools}">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <i:Icon Value="fa-solid fa-magnifying-glass" FontSize="14" />
-                <TextBlock Text="{DynamicResource Settings.ValidateTools}" />
-              </StackPanel>
-            </Button>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
@@ -199,9 +239,9 @@
           <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.OutputDefaults}" />
         </TabItem.Header>
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Spacing="12" Margin="4,12,12,4">
+        <StackPanel Spacing="8" Margin="16,12">
           <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.OutputDefaults}" />
-          <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+          <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DefaultSaveFormat}" />
             <ComboBox x:Name="DefaultSaveFormatCombo"
                       Grid.Row="0"
@@ -262,15 +302,14 @@
           <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.Appearance}" />
         </TabItem.Header>
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="12" Margin="4,12,12,4">
+          <StackPanel Spacing="8" Margin="16,12">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.Appearance}" />
-            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="12" RowSpacing="8">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.Preset}" />
               <ComboBox x:Name="ThemePresetCombo"
                         Grid.Row="0"
                         Grid.Column="1"
-                        MinWidth="240"
-                        HorizontalAlignment="Left"
+                        HorizontalAlignment="Stretch"
                         ItemsSource="{Binding Appearance.ThemePresets}"
                         SelectedIndex="{Binding Appearance.SelectedThemePresetIndex}">
                 <ComboBox.ItemTemplate>
@@ -304,7 +343,7 @@
               </ItemsControl>
 
               <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.UiFont}" />
-              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6" MaxWidth="440" HorizontalAlignment="Left">
+              <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6" HorizontalAlignment="Stretch">
                 <ComboBox x:Name="UiFontFamilyCombo"
                           MinWidth="240"
                           HorizontalAlignment="Stretch"
@@ -340,7 +379,7 @@
               </StackPanel>
 
               <TextBlock Grid.Row="3" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Appearance.MonospaceFont}" />
-              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6" MaxWidth="440" HorizontalAlignment="Left">
+              <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6" HorizontalAlignment="Stretch">
                 <ComboBox x:Name="MonospaceFontFamilyCombo"
                           MinWidth="240"
                           HorizontalAlignment="Stretch"
@@ -384,7 +423,7 @@
           <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.About}" />
         </TabItem.Header>
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
-          <StackPanel Spacing="14" Margin="4,12,12,4">
+          <StackPanel Spacing="10" Margin="16,12">
             <TextBlock Classes="aboutBody" Text="{DynamicResource Settings.About.Description}" />
             <StackPanel Spacing="4">
               <TextBlock Classes="status" Text="{Binding AvaloniaRuntimeDisplay}" />
@@ -402,18 +441,38 @@
 
     </TabControl>
 
-    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
-      <Button x:Name="OpenSettingsFolderButton"
-              Grid.Column="0"
-              Classes="compact"
-              Command="{Binding OpenSettingsFolderCommand}"
-              AutomationProperties.Name="{DynamicResource Settings.OpenSettingsFolder}"
-              ToolTip.Tip="{DynamicResource Settings.OpenSettingsFolder}">
-        <i:Icon Value="fa-solid fa-folder-open" FontSize="14" />
-      </Button>
-      <TextBlock Grid.Column="1" Classes="status" VerticalAlignment="Center" Text="{Binding StatusText}" />
-      <Button Grid.Column="2" Content="{DynamicResource Settings.ResetDefaults}" Command="{Binding ResetCommand}" />
-      <Button Grid.Column="3" Content="{DynamicResource Common.Save}" Command="{Binding SaveCommand}" />
-    </Grid>
+    <Border x:Name="SettingsFooter"
+            Grid.Row="1"
+            Height="48"
+            Padding="12,8"
+            Background="{DynamicResource Brush.ToolBar}"
+            BorderBrush="{DynamicResource Brush.Border2}"
+            BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" ColumnSpacing="8">
+        <Button x:Name="OpenSettingsFolderButton"
+                Grid.Column="0"
+                Classes="icon_button compact"
+                Command="{Binding OpenSettingsFolderCommand}"
+                AutomationProperties.Name="{DynamicResource Settings.OpenSettingsFolder}"
+                ToolTip.Tip="{DynamicResource Settings.OpenSettingsFolder}">
+          <Path Width="15" Height="15" Data="{StaticResource Icons.Folder.Open}" />
+        </Button>
+        <TextBlock Grid.Column="1"
+                   Classes="status"
+                   VerticalAlignment="Center"
+                   Text="{Binding StatusText}"
+                   TextTrimming="CharacterEllipsis" />
+        <Button x:Name="ResetSettingsButton"
+                Grid.Column="3"
+                Classes="flat footerAction"
+                Content="{DynamicResource Settings.ResetDefaults}"
+                Command="{Binding ResetCommand}" />
+        <Button x:Name="SaveSettingsButton"
+                Grid.Column="4"
+                Classes="flat primary footerAction"
+                Content="{DynamicResource Common.Save}"
+                Command="{Binding SaveCommand}" />
+      </Grid>
+    </Border>
   </Grid>
 </UserControl>

@@ -141,7 +141,8 @@ public sealed class AppCompositionRoot : IDisposable
             fontFamilyCatalog: fontFamilyCatalog,
             fontApplicationService: fontApplicationService,
             settingsDirectory: settingsDirectory,
-            expressionAuthoringService: expressionAuthoringService);
+            expressionAuthoringService: expressionAuthoringService,
+            clipboardServiceFactory: owner => new AvaloniaClipboardService(owner));
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 

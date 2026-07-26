@@ -148,21 +148,18 @@ public sealed class ExternalToolLocatorTests
     }
 
     [Fact]
-    public async Task LocateAsync_uses_configured_ffprobe_executable_before_ffmpeg_directory_and_search_paths()
+    public async Task LocateAsync_uses_configured_ffprobe_executable_before_search_paths()
     {
         var root = CreateTempDirectory();
         var configuredExecutable = Path.Combine(root, ToolExecutable("custom-ffprobe"));
         await CreateToolFileAsync(configuredExecutable);
-        var ffmpegDirectory = Path.Combine(root, "ffmpeg");
-        Directory.CreateDirectory(ffmpegDirectory);
-        await CreateToolFileAsync(Path.Combine(ffmpegDirectory, ToolExecutable("ffprobe")));
         var searchDirectory = Path.Combine(root, "search");
         Directory.CreateDirectory(searchDirectory);
         await CreateToolFileAsync(Path.Combine(searchDirectory, ToolExecutable("ffprobe")));
 
         var settingsStore = new ChapterToolSettingsStore(root);
         await settingsStore.SaveAsync(
-            new AppSettings(FfprobePath: configuredExecutable, FfmpegPath: ffmpegDirectory),
+            new AppSettings(FfprobePath: configuredExecutable),
             TestContext.Current.CancellationToken);
         var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [searchDirectory], new FakeMkvToolNixInstallProbe());
 
@@ -283,47 +280,6 @@ public sealed class ExternalToolLocatorTests
 
         Assert.True(location.Found);
         Assert.Equal(expectedToolPath, location.Path);
-    }
-
-    [Fact]
-    public async Task LocateAsync_uses_configured_ffmpeg_directory_for_ffprobe()
-    {
-        var root = CreateTempDirectory();
-        var ffmpegDirectory = Path.Combine(root, "ffmpeg");
-        Directory.CreateDirectory(ffmpegDirectory);
-        var expectedToolPath = Path.Combine(ffmpegDirectory, ToolExecutable("ffprobe"));
-        await CreateToolFileAsync(expectedToolPath);
-
-        var settingsStore = new ChapterToolSettingsStore(root);
-        await settingsStore.SaveAsync(
-            new AppSettings(FfmpegPath: ffmpegDirectory),
-            TestContext.Current.CancellationToken);
-        var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [], new FakeMkvToolNixInstallProbe());
-
-        var location = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
-
-        Assert.True(location.Found);
-        Assert.Equal(expectedToolPath, location.Path);
-    }
-
-    [Fact]
-    public async Task LocateAsync_does_not_treat_ffmpeg_path_as_ffprobe_executable()
-    {
-        var root = CreateTempDirectory();
-        var ffprobePath = Path.Combine(root, ToolExecutable("ffprobe"));
-        await CreateToolFileAsync(ffprobePath);
-
-        var settingsStore = new ChapterToolSettingsStore(root);
-        await settingsStore.SaveAsync(
-            new AppSettings(FfmpegPath: ffprobePath),
-            TestContext.Current.CancellationToken);
-        var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [], new FakeMkvToolNixInstallProbe());
-
-        var location = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
-
-        Assert.False(location.Found);
-        Assert.Null(location.Path);
-        Assert.Equal(ChapterDiagnosticCode.MissingDependency, location.DiagnosticCode);
     }
 
     [Fact]

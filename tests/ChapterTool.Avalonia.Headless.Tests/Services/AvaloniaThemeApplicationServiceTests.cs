@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -36,6 +37,21 @@ public sealed class AvaloniaThemeApplicationServiceTests
                 Assert.Equal(Color.Parse(palette.Border), BrushColor(application, AvaloniaThemeApplicationService.BorderBrushKey));
                 Assert.Equal(Color.Parse(palette.HoverBackground), BrushColor(application, AvaloniaThemeApplicationService.HoverBackgroundBrushKey));
                 Assert.Equal(Color.Parse(palette.ActiveBackground), BrushColor(application, AvaloniaThemeApplicationService.ActiveBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.PanelBackground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryToolbarBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.Border), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryBorderBrushKey));
+                Assert.Equal(Color.Parse(palette.ActiveBackground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliarySelectionBackgroundBrushKey));
+                Assert.Equal(Color.Parse(palette.Accent), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryFocusBrushKey));
+                Assert.Equal(Color.Parse(palette.MutedForeground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryDisabledForegroundBrushKey));
+                Assert.Equal(Color.Parse(palette.DiagnosticError), BrushColor(application, AvaloniaThemeApplicationService.LogErrorBrushKey));
+                Assert.All(
+                    AvaloniaThemeApplicationService.SourceGitColorKeys,
+                    key => Assert.IsType<Color>(application.Resources[key]));
+                Assert.Equal(
+                    ColorResource(application, "Color.Contents"),
+                    BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryContentBackgroundBrushKey));
+                AssertRuntimeResource(application, "Icons.Logs");
+                AssertRuntimeResource(application, "Brush.Contents");
+                AssertRuntimeResource(application, "Fonts.Monospace");
                 Assert.Equal(ThemeVariant.Dark, application.RequestedThemeVariant);
             }
             finally
@@ -74,5 +90,14 @@ public sealed class AvaloniaThemeApplicationServiceTests
     {
         var brush = Assert.IsType<SolidColorBrush>(application.Resources[key]);
         return brush.Color;
+    }
+
+    private static Color ColorResource(Application application, string key) =>
+        Assert.IsType<Color>(application.Resources[key]);
+
+    private static void AssertRuntimeResource(Application application, string key)
+    {
+        Assert.True(application.TryGetResource(key, out var resource));
+        Assert.NotNull(resource);
     }
 }

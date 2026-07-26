@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
+  <x:String x:Key="Text.Cut" xml:space="preserve">切り取り</x:String>
+  <x:String x:Key="Text.Copy" xml:space="preserve">コピー</x:String>
+  <x:String x:Key="Text.Paste" xml:space="preserve">貼り付け</x:String>
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">MPLS を追加…</x:String>
   <x:String x:Key="Action.Apply" xml:space="preserve">保存</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">テンプレートを参照…</x:String>
@@ -60,6 +63,15 @@
   <x:String x:Key="Common.Clear" xml:space="preserve">クリア</x:String>
   <x:String x:Key="Common.Copy" xml:space="preserve">コピー</x:String>
   <x:String x:Key="Common.Refresh" xml:space="preserve">更新</x:String>
+  <x:String x:Key="Tool.Log.FilterAll" xml:space="preserve">すべてのレベル</x:String>
+  <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">情報</x:String>
+  <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">警告</x:String>
+  <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">エラー</x:String>
+  <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">概要をコピー</x:String>
+  <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">詳細をコピー</x:String>
+  <x:String x:Key="Tool.Log.Details" xml:space="preserve">技術詳細</x:String>
+  <x:String x:Key="Tool.Log.Category" xml:space="preserve">カテゴリ</x:String>
+  <x:String x:Key="Tool.Log.Empty" xml:space="preserve">現在のフィルターに一致するログはありません。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">このビルドでは、このプラットフォーム依存機能は有効化されていません。</x:String>
   <x:String x:Key="Common.Use" xml:space="preserve">使用</x:String>
@@ -346,11 +358,10 @@
   <x:String x:Key="Settings.EmitBomLabel" xml:space="preserve">テキストダウンロードに BOM を含める</x:String>
   <x:String x:Key="Settings.EmptyUsesSource" xml:space="preserve">空の場合はソースの場所を使用</x:String>
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">外部ツール</x:String>
-  <x:String x:Key="Settings.FfmpegPath" xml:space="preserve">FFmpeg bin ディレクトリ（ffprobe を含む）</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">フレーム許容誤差</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">一般</x:String>
-  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix / mkvextract</x:String>
+  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix</x:String>
   <x:String x:Key="Settings.MonoFont" xml:space="preserve">等幅フォント</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">設定フォルダーを開く</x:String>
   <x:String x:Key="Settings.Output" xml:space="preserve">出力の既定値</x:String>
@@ -467,7 +478,6 @@
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">標準テンプレート名を使用</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
   <x:String x:Key="Tool.eac3to" xml:space="preserve">Eac3to パス</x:String>
-  <x:String x:Key="Tool.ffmpeg" xml:space="preserve">Ffmpeg パス</x:String>
   <x:String x:Key="Tool.ffprobe" xml:space="preserve">Ffprobe パス</x:String>
   <x:String x:Key="Tool.mkvtoolnix" xml:space="preserve">MkvToolnix パス</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">未定義</x:String>

@@ -3,11 +3,22 @@
              xmlns:vm="using:ChapterTool.Avalonia.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.Views.Tools.TemplateNamesToolView"
+             Classes="auxiliaryWindow"
              x:DataType="tools:TemplateNamesToolViewModel"
              x:CompileBindings="True">
-  <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="{DynamicResource Tool.TemplateNames.Title}" FontSize="18" />
-    <CheckBox Content="{DynamicResource Tool.TemplateNames.UseStandard}" IsChecked="{Binding UseTemplateNames}" />
-    <Button Content="{DynamicResource Common.Apply}" MinWidth="80" HorizontalAlignment="Left" Command="{Binding ApplyCommand}" CommandParameter="{Binding}" />
-  </StackPanel>
+  <Grid RowDefinitions="*,Auto">
+    <CheckBox Grid.Row="0"
+              Margin="16"
+              VerticalAlignment="Top"
+              Content="{DynamicResource Tool.TemplateNames.UseStandard}"
+              IsChecked="{Binding UseTemplateNames}" />
+    <Border Grid.Row="1" Classes="toolFooter">
+      <Button Classes="primaryToolAction"
+              MinWidth="88"
+              HorizontalAlignment="Right"
+              Content="{DynamicResource Common.Apply}"
+              Command="{Binding ApplyCommand}"
+              CommandParameter="{Binding}" />
+    </Border>
+  </Grid>
 </UserControl>
