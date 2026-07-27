@@ -1,5 +1,4 @@
 using System.Text;
-using Avalonia.Threading;
 using ChapterTool.Avalonia.Localization;
 using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
@@ -123,6 +122,7 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     private readonly IApplicationLogService logService;
     private readonly IAppLocalizer localizer;
     private readonly IClipboardService? clipboardService;
+    private readonly SynchronizationContext? synchronizationContext;
     private IReadOnlyList<ApplicationLogEntry> entries = [];
     private IReadOnlyList<LogEntryViewModel> filteredEntries = [];
     private IReadOnlyList<LogFilterOption> filterOptions = [];
@@ -140,6 +140,7 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         this.logService = logService;
         this.localizer = localizer;
         this.clipboardService = clipboardService;
+        synchronizationContext = SynchronizationContext.Current;
         filterOptions = CreateFilterOptions();
         selectedFilter = filterOptions[0];
         ClearCommand = new UiCommand(
@@ -227,13 +228,13 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     private void OnEntryAdded(object? sender, ApplicationLogEntry entry)
     {
-        if (Dispatcher.UIThread.CheckAccess())
+        if (synchronizationContext is null)
         {
             RefreshEntries();
             return;
         }
 
-        Dispatcher.UIThread.Post(RefreshEntries);
+        synchronizationContext.Post(static state => ((LogToolViewModel)state!).RefreshEntries(), this);
     }
 
     private void OnCultureChanged(object? sender, EventArgs args)
