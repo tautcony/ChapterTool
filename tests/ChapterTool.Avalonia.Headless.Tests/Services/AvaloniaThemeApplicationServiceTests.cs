@@ -6,6 +6,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.Headless.Tests.Headless;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Services;
@@ -44,14 +45,13 @@ public sealed class AvaloniaThemeApplicationServiceTests
                 Assert.Equal(Color.Parse(palette.MutedForeground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryDisabledForegroundBrushKey));
                 Assert.Equal(Color.Parse(palette.DiagnosticError), BrushColor(application, AvaloniaThemeApplicationService.LogErrorBrushKey));
                 Assert.All(
-                    AvaloniaThemeApplicationService.SourceGitColorKeys,
+                    AvaloniaThemeApplicationService.ImportedThemeColorKeys,
                     key => Assert.IsType<Color>(application.Resources[key]));
                 Assert.Equal(
                     ColorResource(application, "Color.Contents"),
                     BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryContentBackgroundBrushKey));
-                AssertRuntimeResource(application, "Icons.Logs");
                 AssertRuntimeResource(application, "Brush.Contents");
-                AssertRuntimeResource(application, "Fonts.Monospace");
+                AssertRuntimeResource(application, AvaloniaFontApplicationService.MonospaceFontFamilyKey);
                 Assert.Equal(ThemeVariant.Dark, application.RequestedThemeVariant);
             }
             finally

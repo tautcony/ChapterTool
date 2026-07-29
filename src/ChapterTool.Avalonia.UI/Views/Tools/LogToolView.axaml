@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.LogToolView"
              x:DataType="vm:LogToolViewModel"
@@ -45,18 +46,18 @@
               <DataTemplate x:DataType="vm:LogEntryViewModel">
                 <Grid ColumnDefinitions="Auto,*,Auto" Background="Transparent">
                   <Grid Grid.Column="0" Width="16" Height="16" Margin="4,0">
-                    <Path Width="14" Height="14"
-                          Data="{StaticResource Icons.Info}"
-                          Fill="{DynamicResource ChapterTool.LogInformationBrush}"
-                          IsVisible="{Binding IsInformation}" />
-                    <Path Width="14" Height="14"
-                          Data="{StaticResource Icons.Error}"
-                          Fill="{DynamicResource ChapterTool.LogWarningBrush}"
-                          IsVisible="{Binding IsWarning}" />
-                    <Path Width="14" Height="14"
-                          Data="{StaticResource Icons.Error}"
-                          Fill="{DynamicResource ChapterTool.LogErrorBrush}"
-                          IsVisible="{Binding IsError}" />
+                    <i:Icon Width="14" Height="14"
+                            Value="fa-solid fa-circle-info"
+                            Foreground="{DynamicResource ChapterTool.LogInformationBrush}"
+                            IsVisible="{Binding IsInformation}" />
+                    <i:Icon Width="14" Height="14"
+                            Value="fa-solid fa-triangle-exclamation"
+                            Foreground="{DynamicResource ChapterTool.LogWarningBrush}"
+                            IsVisible="{Binding IsWarning}" />
+                    <i:Icon Width="14" Height="14"
+                            Value="fa-solid fa-circle-xmark"
+                            Foreground="{DynamicResource ChapterTool.LogErrorBrush}"
+                            IsVisible="{Binding IsError}" />
                   </Grid>
 
                   <StackPanel Grid.Column="1" Margin="4,2" Spacing="0">
@@ -84,9 +85,9 @@
                       Spacing="10"
                       Margin="24"
                       IsVisible="{Binding IsEmpty}">
-            <Path Width="48" Height="48"
-                  Data="{StaticResource Icons.Empty}"
-                  Fill="{DynamicResource Brush.FG2}" />
+            <i:Icon Width="48" Height="48"
+                    Value="fa-solid fa-inbox"
+                    Foreground="{DynamicResource Brush.FG2}" />
             <TextBlock MaxWidth="220"
                        Foreground="{DynamicResource Brush.FG2}"
                        Text="{DynamicResource Tool.Log.Empty}"
@@ -131,7 +132,7 @@
                         HorizontalScrollBarVisibility="Auto"
                         VerticalScrollBarVisibility="Auto"
                         IsVisible="{Binding HasSelectedEntry}">
-            <SelectableTextBlock FontFamily="{DynamicResource Fonts.Monospace}"
+            <SelectableTextBlock FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
                                  FontSize="12"
                                  Text="{Binding SelectedEntry.Details}"
                                  TextWrapping="NoWrap"
@@ -144,9 +145,9 @@
                       Spacing="10"
                       Margin="24"
                       IsVisible="{Binding !HasSelectedEntry}">
-            <Path Width="48" Height="48"
-                  Data="{StaticResource Icons.Logs}"
-                  Fill="{DynamicResource Brush.FG2}" />
+            <i:Icon Width="48" Height="48"
+                    Value="fa-solid fa-list"
+                    Foreground="{DynamicResource Brush.FG2}" />
             <TextBlock Foreground="{DynamicResource Brush.FG2}"
                        Text="{DynamicResource Tool.Log.Details}"
                        HorizontalAlignment="Center" />
@@ -186,14 +187,14 @@
                   Command="{Binding CopySummaryCommand}"
                   AutomationProperties.Name="{DynamicResource Tool.Log.CopySummary}"
                   ToolTip.Tip="{DynamicResource Tool.Log.CopySummary}">
-            <Path Width="13" Height="13" Data="{StaticResource Icons.Copy}" />
+            <i:Icon Width="13" Height="13" Value="fa-solid fa-copy" />
           </Button>
           <Button Classes="icon_button"
                   Width="28" Height="28"
                   Command="{Binding CopyDetailsCommand}"
                   AutomationProperties.Name="{DynamicResource Tool.Log.CopyDetails}"
                   ToolTip.Tip="{DynamicResource Tool.Log.CopyDetails}">
-            <Path Width="13" Height="13" Data="{StaticResource Icons.Logs}" />
+            <i:Icon Width="13" Height="13" Value="fa-solid fa-list" />
           </Button>
         </StackPanel>
       </Grid>

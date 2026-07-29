@@ -92,18 +92,16 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia/Views/Tools/ForwardShiftToolView.axaml`
 - `src/ChapterTool.Avalonia/Views/Tools/TextToolView.axaml`
 
-### SourceGit user interface resources
+### Imported theme resources
 
-`src/ChapterTool.Avalonia/Views/SourceGit/` owns the ported SourceGit user interface foundation.
+`src/ChapterTool.Avalonia.UI/Resources/` owns the shared and imported user interface resources.
 
-- `Icons.axaml` contains the complete SourceGit icon dictionary.
-- `Themes.axaml` contains the complete light and dark token dictionaries.
+- `Themes.axaml` contains the complete imported light and dark token dictionaries.
 - `Styles.axaml` contains the reusable control styles for Avalonia 12.1.
-- `Fonts/` contains the JetBrains Mono NL font files.
-- `NOTICE.md` records the source, license, exclusions, and compatibility adaptations.
-- `LICENSE` contains the SourceGit MIT license.
+- `NOTICE.md` records the source, license scope, exclusions, and compatibility adaptations.
+- Only `Themes.axaml` and `Styles.axaml` contain adapted SourceGit MIT material.
 
-`App.axaml` loads these resources after the Avalonia base themes. It loads ChapterTool product styles after the SourceGit style layer.
+`App.axaml` loads these resources after the Avalonia base themes. It loads ChapterTool product styles after the imported theme layer.
 
 ### ViewModels
 
@@ -203,7 +201,7 @@ Start with:
 - `src/ChapterTool.Infrastructure/Services/IApplicationLogService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
 
-The ViewModel owns the filtered projection, selection, localized display text, and copy commands. The provider owns bounded history and live entry notifications. The view uses the ported SourceGit master-detail composition and resources.
+The ViewModel owns the filtered projection, selection, localized display text, and copy commands. The provider owns bounded history and live entry notifications. The view uses the imported master-detail composition and resources.
 
 ### Clip combine / multi-entry session
 
@@ -272,7 +270,7 @@ Main-window selectors with runtime-localized display text, including the automat
 
 Secondary tool windows consume the stable interfaces in `Session/Ports/ShellPorts.cs` through `MainWindowPortAdapters`. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement those ports.
 
-Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all SourceGit `Color.*` tokens, and the Avalonia light or dark variant. `App.axaml` loads the SourceGit foundation and applies later ChapterTool product styles.
+Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all imported `Color.*` tokens, and the Avalonia light or dark variant. `App.axaml` loads the imported theme foundation and applies later ChapterTool product styles.
 
 Font appearance is split into independent UI and monospace families. `AvaloniaFontFamilyCatalog` snapshots and canonicalizes system fonts, lazily resolves localized family metadata for the active UI culture, and keeps canonical names for persistence. `AvaloniaFontApplicationService` resolves unavailable choices and updates `ChapterTool.UiFontFamily` and `ChapterTool.MonospaceFontFamily`. `App.axaml` applies the UI family through window inheritance and table headers, while chapter `DataGridCell`, `OrderShiftBox`, `ExpressionEditor`, and `TextToolView` consume the monospace resource so existing surfaces refresh at runtime without changing icon fonts.
 

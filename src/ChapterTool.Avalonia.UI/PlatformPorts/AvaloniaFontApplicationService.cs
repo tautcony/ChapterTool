@@ -9,7 +9,7 @@ public sealed class AvaloniaFontApplicationService(IFontFamilyCatalog fontFamily
 {
     public const string UiFontFamilyKey = "ChapterTool.UiFontFamily";
     public const string MonospaceFontFamilyKey = "ChapterTool.MonospaceFontFamily";
-    public const string DefaultMonospaceFontFamily = "Menlo, Consolas, monospace";
+    public const string DefaultMonospaceFontFamily = "monospace";
 
     public FontSettings Resolve(FontSettings settings) => FontSettingsResolver.Resolve(settings, fontFamilyCatalog);
 

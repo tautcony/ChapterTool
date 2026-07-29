@@ -58,7 +58,7 @@ public sealed class AppCompositionRootFontTests
 
             Assert.NotNull(window.Content);
             Assert.Equal(FontFamily.Default.Name, ResourceFont(AvaloniaFontApplicationService.UiFontFamilyKey));
-            Assert.Equal("Menlo", ResourceFont(AvaloniaFontApplicationService.MonospaceFontFamilyKey));
+            Assert.Equal("monospace", ResourceFont(AvaloniaFontApplicationService.MonospaceFontFamilyKey));
             Assert.EndsWith(
                 "monospace",
                 AvaloniaFontApplicationService.DefaultMonospaceFontFamily,

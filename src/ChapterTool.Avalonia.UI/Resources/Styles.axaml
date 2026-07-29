@@ -1,5 +1,13 @@
+<!--
+  Adapted from SourceGit 2026.15.
+  Upstream: https://github.com/sourcegit-scm/sourcegit
+  Copyright (c) 2026 sourcegit
+  SPDX-License-Identifier: MIT
+  This MIT notice applies only to this file and the adapted Themes.axaml file.
+-->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
         xmlns:ae="using:AvaloniaEdit"
         xmlns:aee="using:AvaloniaEdit.Editing"
         xmlns:aes="using:AvaloniaEdit.Search">
@@ -137,7 +145,7 @@
   </Style>
 
   <Style Selector="ContentPresenter">
-    <Setter Property="FontSize" Value="{DynamicResource SourceGit.FontSize.Default}"/>
+    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Default}"/>
   </Style>
 
   <Style Selector="AdornerLayer">
@@ -396,9 +404,14 @@
     <Setter Property="HorizontalAlignment" Value="Center"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
   </Style>
-  <Style Selector="Path[IsVisible=True].rotating">
+  <Style Selector="i|Icon">
+    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}"/>
+    <Setter Property="HorizontalAlignment" Value="Center"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+  </Style>
+  <Style Selector="i|Icon[IsVisible=True].rotating">
     <Setter Property="Opacity" Value="0"/>
-    <Setter Property="Data" Value="{StaticResource Icons.Loading}"/>
+    <Setter Property="Value" Value="fa-solid fa-spinner"/>
     <Style.Animations>
       <Animation Duration="0:0:1" IterationCount="Infinite">
         <KeyFrame Cue="0%">
@@ -420,9 +433,9 @@
       </Animation>
     </Style.Animations>
   </Style>
-  <Style Selector="Path[IsVisible=True].waiting">
+  <Style Selector="i|Icon[IsVisible=True].waiting">
     <Setter Property="Opacity" Value="0"/>
-    <Setter Property="Data" Value="{StaticResource Icons.Waiting}"/>
+    <Setter Property="Value" Value="fa-solid fa-hourglass-half"/>
     <Style.Animations>
       <Animation Duration="0:0:1" IterationCount="Infinite">
         <KeyFrame Cue="0%">
@@ -437,11 +450,11 @@
       </Animation>
     </Style.Animations>
   </Style>
-  <Style Selector="Button.max_or_restore_btn Path">
-    <Setter Property="Data" Value="{StaticResource Icons.Window.Maximize}"/>
+  <Style Selector="Button.max_or_restore_btn i|Icon">
+    <Setter Property="Value" Value="fa-solid fa-square"/>
   </Style>
-  <Style Selector="Window[WindowState=Maximized] Button.max_or_restore_btn Path">
-    <Setter Property="Data" Value="{StaticResource Icons.Window.Restore}"/>
+  <Style Selector="Window[WindowState=Maximized] Button.max_or_restore_btn i|Icon">
+    <Setter Property="Value" Value="fa-solid fa-window-restore"/>
   </Style>
 
   <Style Selector="TextBlock">
@@ -449,10 +462,10 @@
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}"/>
     <Setter Property="FontFamily" Value="{DynamicResource Fonts.Default}"/>
-    <Setter Property="FontSize" Value="{DynamicResource SourceGit.FontSize.Default}"/>
+    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Default}"/>
   </Style>
   <Style Selector="TextBlock.small">
-    <Setter Property="FontSize" Value="{DynamicResource SourceGit.FontSize.Small}"/>
+    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Small}"/>
   </Style>
   <Style Selector="TextBlock.bold">
     <Setter Property="FontWeight" Value="Bold"/>
@@ -475,7 +488,7 @@
     <Setter Property="HorizontalAlignment" Value="Right"/>
   </Style>
   <Style Selector="TextBlock.tab_header">
-    <Setter Property="FontSize" Value="{DynamicResource SourceGit.FontSize.Large}"/>
+    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Large}"/>
     <Setter Property="FontWeight" Value="Bold"/>
     <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}"/>
     <Setter Property="Opacity" Value=".56"/>
@@ -488,12 +501,12 @@
     <Setter Property="Foreground" Value="{DynamicResource Brush.Link}"/>
   </Style>
   <Style Selector="Run.commit_link">
-    <Setter Property="FontFamily" Value="{DynamicResource Fonts.Monospace}"/>
+    <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}"/>
     <Setter Property="Foreground" Value="DarkOrange"/>
     <Setter Property="TextDecorations" Value="Underline"/>
   </Style>
   <Style Selector="Run.inline_code">
-    <Setter Property="FontFamily" Value="{DynamicResource Fonts.Monospace}"/>
+    <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}"/>
     <Setter Property="Foreground" Value="{DynamicResource Brush.InlineCodeFG}"/>
   </Style>
 
@@ -511,19 +524,19 @@
         <MenuFlyout>
           <MenuItem Header="{DynamicResource Text.Cut}" Command="{Binding $parent[TextBox].Cut}" IsEnabled="{Binding $parent[TextBox].CanCut}" InputGesture="{x:Static TextBox.CutGesture}">
             <MenuItem.Icon>
-              <Path Width="11" Height="11" Data="{StaticResource Icons.Cut}" VerticalAlignment="Center"/>
+              <i:Icon Width="11" Height="11" Value="fa-solid fa-scissors" />
             </MenuItem.Icon>
           </MenuItem>
 
           <MenuItem Header="{DynamicResource Text.Copy}" Command="{Binding $parent[TextBox].Copy}" IsEnabled="{Binding $parent[TextBox].CanCopy}" InputGesture="{x:Static TextBox.CopyGesture}">
             <MenuItem.Icon>
-              <Path Width="11" Height="11" Data="{StaticResource Icons.Copy}" VerticalAlignment="Center"/>
+              <i:Icon Width="11" Height="11" Value="fa-solid fa-copy" />
             </MenuItem.Icon>
           </MenuItem>
 
           <MenuItem Header="{DynamicResource Text.Paste}" Command="{Binding $parent[TextBox].Paste}" IsEnabled="{Binding $parent[TextBox].CanPaste}" InputGesture="{x:Static TextBox.PasteGesture}">
             <MenuItem.Icon>
-              <Path Width="11" Height="11" Data="{StaticResource Icons.Paste}" VerticalAlignment="Center"/>
+              <i:Icon Width="11" Height="11" Value="fa-solid fa-paste" />
             </MenuItem.Icon>
           </MenuItem>
         </MenuFlyout>
@@ -962,7 +975,7 @@
       <ControlTemplate>
         <Grid Background="Transparent" ColumnDefinitions="Auto,*">
           <Border x:Name="Border" Grid.Column="0" Width="16" Height="16" VerticalAlignment="Center" BorderBrush="{DynamicResource Brush.Border1}" BorderThickness="1" Background="Transparent" CornerRadius="2">
-            <Path x:Name="Icon" Height="12" Width="12" Data="{DynamicResource Icons.Check}" Fill="{DynamicResource Brush.Accent}" IsVisible="False" Margin="0,2,0,0"/>
+            <i:Icon x:Name="Icon" Height="12" Width="12" Value="fa-solid fa-check" Foreground="{DynamicResource Brush.Accent}" IsVisible="False" Margin="0,2,0,0"/>
           </Border>
 
           <ContentPresenter x:Name="ContentPresenter"
@@ -978,7 +991,7 @@
     <Style Selector="^:pointerover /template/ Border#Border">
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
     </Style>
-    <Style Selector="^:checked /template/ Path#Icon">
+    <Style Selector="^:checked /template/ i|Icon#Icon">
       <Setter Property="IsVisible" Value="True"/>
     </Style>
     <Style Selector="^:focus-visible /template/ Border#Border">
@@ -989,8 +1002,8 @@
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
       <Setter Property="Background" Value="{DynamicResource Brush.Accent}"/>
     </Style>
-    <Style Selector="^:focus-visible:checked /template/ Path#Icon">
-      <Setter Property="Fill" Value="White"/>
+    <Style Selector="^:focus-visible:checked /template/ i|Icon#Icon">
+      <Setter Property="Foreground" Value="White"/>
     </Style>
   </Style>
 
@@ -1117,15 +1130,15 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Grid ColumnDefinitions="Auto,*" Background="Transparent">
-          <Path Grid.Column="0"
-                x:Name="PART_IndicatorIcon"
-                Width="10"
-                Margin="0,0,2,0"
-                Data="{StaticResource Icons.Down}"
-                Fill="{DynamicResource Brush.FG2}"
-                VerticalAlignment="Center"
-                RenderTransformOrigin="50%,50%"
-                RenderTransform="rotate(270deg)"/>
+          <i:Icon Grid.Column="0"
+                  x:Name="PART_IndicatorIcon"
+                  Width="10"
+                  Margin="0,0,2,0"
+                  Value="fa-solid fa-chevron-down"
+                  Foreground="{DynamicResource Brush.FG2}"
+                  VerticalAlignment="Center"
+                  RenderTransformOrigin="50%,50%"
+                  RenderTransform="rotate(270deg)"/>
           <ContentPresenter Grid.Column="1"
                             x:Name="PART_ContentPresenter"
                             Background="{TemplateBinding Background}"
@@ -1148,7 +1161,7 @@
   <Style Selector="ToggleButton.group_expander:checked /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent"/>
   </Style>
-  <Style Selector="ToggleButton.group_expander:checked /template/ Path#PART_IndicatorIcon">
+  <Style Selector="ToggleButton.group_expander:checked /template/ i|Icon#PART_IndicatorIcon">
     <Setter Property="RenderTransform" Value="rotate(0deg)"/>
   </Style>
   <Style Selector="ToggleButton.group_expander:pointerover /template/ ContentPresenter#PART_ContentPresenter">
@@ -1192,18 +1205,17 @@
                 Height="{TemplateBinding Height}"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center">
-          <Path x:Name="ChevronPath"
-                Data="{StaticResource Icons.Folder}"
-                Fill="{TemplateBinding Foreground}"
-                Stretch="Uniform"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"/>
+          <i:Icon x:Name="ChevronPath"
+                  Value="fa-solid fa-folder"
+                  Foreground="{TemplateBinding Foreground}"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"/>
         </Border>
       </ControlTemplate>
     </Setter>
 
-    <Style Selector="^:checked /template/ Path#ChevronPath">
-      <Setter Property="Data" Value="{StaticResource Icons.Folder.Open}" />
+    <Style Selector="^:checked /template/ i|Icon#ChevronPath">
+      <Setter Property="Value" Value="fa-solid fa-folder-open" />
     </Style>
   </Style>
 
@@ -1243,13 +1255,12 @@
     <Setter Property="Template">
       <ControlTemplate>
         <Border Background="Transparent">
-          <Path x:Name="PART_IndicatorIcon"
-                Margin="{TemplateBinding Padding}"
-                Stretch="Fill"
-                Width="14" Height="14"
-                Data="{StaticResource Icons.EyeClose}"
-                Fill="{DynamicResource Brush.FG1}"
-                Opacity=".8"/>
+          <i:Icon x:Name="PART_IndicatorIcon"
+                  Margin="{TemplateBinding Padding}"
+                  Width="14" Height="14"
+                  Value="fa-solid fa-eye-slash"
+                  Foreground="{DynamicResource Brush.FG1}"
+                  Opacity=".8"/>
         </Border>
       </ControlTemplate>
     </Setter>
@@ -1257,10 +1268,10 @@
   <Style Selector="ToggleButton.toggle_untracked:pressed">
     <Setter Property="RenderTransform" Value="scale(1)"/>
   </Style>
-  <Style Selector="ToggleButton.toggle_untracked:checked /template/ Path#PART_IndicatorIcon">
-    <Setter Property="Data" Value="{StaticResource Icons.Eye}"/>
+  <Style Selector="ToggleButton.toggle_untracked:checked /template/ i|Icon#PART_IndicatorIcon">
+    <Setter Property="Value" Value="fa-solid fa-eye"/>
   </Style>
-  <Style Selector="ToggleButton.toggle_untracked:pointerover /template/ Path#PART_IndicatorIcon">
+  <Style Selector="ToggleButton.toggle_untracked:pointerover /template/ i|Icon#PART_IndicatorIcon">
     <Setter Property="Opacity" Value="1"/>
   </Style>
 
@@ -1367,21 +1378,21 @@
                                   Padding="0"
                                   Width="24" Height="20"
                                   VerticalAlignment="Center">
-                      <Path Width="12" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Data="{StaticResource Icons.CaseSensitive}" Fill="{DynamicResource Brush.FG1}"/>
+                      <i:Icon Width="12" Value="fa-solid fa-font" Foreground="{DynamicResource Brush.FG1}" />
                     </ToggleButton>
                     <ToggleButton IsChecked="{Binding $parent[aes:SearchPanel].WholeWords, Mode=TwoWay}"
                                   ToolTip.Tip="Match whole words"
                                   Margin="3,0,0,0" Padding="0"
                                   Width="24" Height="20"
                                   VerticalAlignment="Center">
-                      <Path Width="14" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Data="{StaticResource Icons.CompleteWord}" Fill="{DynamicResource Brush.FG1}"/>
+                      <i:Icon Width="14" Value="fa-solid fa-spell-check" Foreground="{DynamicResource Brush.FG1}" />
                     </ToggleButton>
                     <ToggleButton IsChecked="{Binding $parent[aes:SearchPanel].UseRegex, Mode=TwoWay}"
                                   ToolTip.Tip="Use regular expressions"
                                   Margin="3,0,5,0" Padding="0"
                                   Width="24" Height="20"
                                   VerticalAlignment="Center">
-                      <Path Width="12" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Data="{StaticResource Icons.RegularExpression}" Fill="{DynamicResource Brush.FG1}"/>
+                      <i:Icon Width="12" Value="fa-solid fa-code" Foreground="{DynamicResource Brush.FG1}" />
                     </ToggleButton>
                   </StackPanel>
                 </TextBox.InnerRightContent>
@@ -1392,7 +1403,7 @@
                       VerticalAlignment="Stretch"
                       Command="{x:Static aes:SearchCommands.FindPrevious}"
                       ToolTip.Tip="Find Previous (Shift+F3)">
-                <Path Width="14" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Data="{StaticResource Icons.Up}" Fill="{DynamicResource Brush.FG1}"/>
+                <i:Icon Width="14" Value="fa-solid fa-chevron-up" Foreground="{DynamicResource Brush.FG1}" />
               </Button>
               <Button Margin="3,0,0,0"
                       VerticalAlignment="Stretch"
@@ -1400,7 +1411,7 @@
                       Background="Transparent"
                       Command="{x:Static aes:SearchCommands.FindNext}"
                       ToolTip.Tip="Find Next (F3)">
-                <Path Width="14" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform" Data="{StaticResource Icons.Down}" Fill="{DynamicResource Brush.FG1}"/>
+                <i:Icon Width="14" Value="fa-solid fa-chevron-down" Foreground="{DynamicResource Brush.FG1}" />
               </Button>
             </StackPanel>
             <StackPanel Grid.Row="1" Name="PART_MessageView" IsVisible="False" Orientation="Horizontal" Margin="0 5 0 0">

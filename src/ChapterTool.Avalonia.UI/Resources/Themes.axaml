@@ -1,3 +1,10 @@
+<!--
+  Adapted from SourceGit 2026.15.
+  Upstream: https://github.com/sourcegit-scm/sourcegit
+  Copyright (c) 2026 sourcegit
+  SPDX-License-Identifier: MIT
+  This MIT notice applies only to this file and the adapted Styles.axaml file.
+-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <ResourceDictionary.ThemeDictionaries>
@@ -105,5 +112,4 @@
   <SolidColorBrush x:Key="Brush.HistoryBG" Color="{DynamicResource Color.HistoryBG}"/>
 
   <FontFamily x:Key="Fonts.Default">sans-serif</FontFamily>
-  <FontFamily x:Key="Fonts.Monospace">avares://ChapterTool.Avalonia.UI/Views/SourceGit/Fonts#JetBrains Mono NL</FontFamily>
 </ResourceDictionary>

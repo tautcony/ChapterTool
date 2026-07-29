@@ -14,6 +14,7 @@ using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
 using ChapterTool.Contracts.Configuration;
+using Optris.Icons.Avalonia;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
@@ -182,7 +183,7 @@ public sealed class SettingsToolHeadlessTests
             var folder = FindNamed<Button>(window, "OpenSettingsFolderButton");
             var reset = FindNamed<Button>(window, "ResetSettingsButton");
             var save = FindNamed<Button>(window, "SaveSettingsButton");
-            var browseIcon = browse.GetVisualDescendants().OfType<global::Avalonia.Controls.Shapes.Path>().Single();
+            var browseIcon = browse.GetVisualDescendants().OfType<Icon>().Single();
             var formEditorLeft = Left(saveDirectory, window);
             var formEditorRight = Right(saveDirectory, window);
 
@@ -193,7 +194,7 @@ public sealed class SettingsToolHeadlessTests
             Assert.True(browse.IsEffectivelyVisible);
             Assert.Equal(30, browse.Bounds.Width);
             Assert.Equal(15, browseIcon.Bounds.Width);
-            Assert.NotEqual(0, Assert.IsType<SolidColorBrush>(browseIcon.Fill).Color.A);
+            Assert.NotEqual(0, Assert.IsType<SolidColorBrush>(browseIcon.Foreground).Color.A);
             Assert.True(Right(browse, window) <= Right(saveDirectory, window));
             Assert.True(Right(clear, window) <= Right(saveDirectory, window));
 

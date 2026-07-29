@@ -10,7 +10,7 @@ namespace ChapterTool.Avalonia.Services;
 
 public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
 {
-    public static IReadOnlyList<string> SourceGitColorKeys { get; } =
+    public static IReadOnlyList<string> ImportedThemeColorKeys { get; } =
     [
         "Color.Window", "Color.WindowBorder", "Color.TitleBar", "Color.ToolBar", "Color.Popup",
         "Color.PopupBorder", "Color.Contents", "Color.Badge", "Color.BadgeFG", "Color.Conflict",
@@ -99,7 +99,7 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
         resources[LogInformationBrushKey] = Brush(palette.Accent);
         resources[LogWarningBrushKey] = Brush(preset.BaseVariant == ThemeBaseVariant.Dark ? "#FFD580" : "#A15C00");
         resources[LogErrorBrushKey] = Brush(palette.DiagnosticError);
-        ApplySourceGitColors(resources, preset, palette, auxiliary);
+        ApplyImportedThemeColors(resources, preset, palette, auxiliary);
         application.RequestedThemeVariant = preset.BaseVariant == ThemeBaseVariant.Dark
             ? ThemeVariant.Dark
             : ThemeVariant.Light;
@@ -107,7 +107,7 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
 
     private static SolidColorBrush Brush(string value) => new(Color.Parse(value));
 
-    private static void ApplySourceGitColors(
+    private static void ApplyImportedThemeColors(
         IResourceDictionary resources,
         ThemePreset preset,
         ThemePalette palette,

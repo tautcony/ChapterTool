@@ -28,7 +28,6 @@
     <AvaloniaResource Include="Assets\Images\chapter-empty.svg" />
     <AvaloniaResource Include="Resources\**\*.axaml" />
     <EmbeddedResource Include="Localization\Resources\Locales\*.axaml" />
-    <AvaloniaResource Include="Views\SourceGit\Fonts\*.ttf" />
   </ItemGroup>
 
 </Project>

@@ -2,7 +2,7 @@
   <FluentTheme />
   <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
   <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
-  <StyleInclude Source="avares://ChapterTool.Avalonia.UI/Views/SourceGit/Styles.axaml" />
+  <StyleInclude Source="avares://ChapterTool.Avalonia.UI/Resources/Styles.axaml" />
   <StyleInclude Source="avares://ChapterTool.Avalonia.UI/Views/Styles/AuxiliaryWindowStyles.axaml" />
   <Style Selector="Window">
     <Setter Property="Background" Value="{DynamicResource ChapterTool.WindowBackgroundBrush}" />

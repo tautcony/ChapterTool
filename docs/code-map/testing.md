@@ -134,7 +134,7 @@ High-signal test files:
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
 
-SourceGit resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative imported icons, brushes, and fonts through the runtime resource tree. They verify every SourceGit `Color.*` token for a dark preset.
+Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible FontAwesome icons.
 
 Log ViewModel coverage is in `LogToolViewModelTests`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, theme changes, and narrow layout.
 

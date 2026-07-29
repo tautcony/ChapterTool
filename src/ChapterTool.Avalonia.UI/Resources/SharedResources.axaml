@@ -1,14 +1,13 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <ResourceDictionary.MergedDictionaries>
-    <ResourceInclude Source="avares://ChapterTool.Avalonia.UI/Views/SourceGit/Icons.axaml" />
-    <ResourceInclude Source="avares://ChapterTool.Avalonia.UI/Views/SourceGit/Themes.axaml" />
+    <ResourceInclude Source="avares://ChapterTool.Avalonia.UI/Resources/Themes.axaml" />
   </ResourceDictionary.MergedDictionaries>
   <FontFamily x:Key="ChapterTool.UiFontFamily">sans-serif</FontFamily>
-  <FontFamily x:Key="ChapterTool.MonospaceFontFamily">Menlo, Consolas, monospace</FontFamily>
-  <x:Double x:Key="SourceGit.FontSize.Small">12</x:Double>
-  <x:Double x:Key="SourceGit.FontSize.Default">13</x:Double>
-  <x:Double x:Key="SourceGit.FontSize.Large">14</x:Double>
+  <FontFamily x:Key="ChapterTool.MonospaceFontFamily">monospace</FontFamily>
+  <x:Double x:Key="ChapterTool.FontSize.Small">12</x:Double>
+  <x:Double x:Key="ChapterTool.FontSize.Default">13</x:Double>
+  <x:Double x:Key="ChapterTool.FontSize.Large">14</x:Double>
   <SolidColorBrush x:Key="ChapterTool.WindowBackgroundBrush" Color="#F0F0F0" />
   <SolidColorBrush x:Key="ChapterTool.PanelBackgroundBrush" Color="#F7F7F7" />
   <SolidColorBrush x:Key="ChapterTool.ControlBackgroundBrush" Color="#FFFFFF" />

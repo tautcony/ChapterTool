@@ -805,12 +805,12 @@ The settings panel implementation SHALL modularize durable preference groups so 
 - **WHEN** external tool browse/clear/validate/discover actions are exercised
 - **THEN** those actions SHALL be implementable and testable as an external-tools settings module without requiring unrelated about-panel logic
 
-### Requirement: Desktop application uses the SourceGit user interface foundation
-The Avalonia application SHALL load the complete reusable SourceGit icon, theme, and control-style resources.
+### Requirement: Desktop application uses the imported user interface foundation
+The Avalonia application SHALL load the imported theme and reusable control-style resources. It SHALL use the registered FontAwesome provider for product icons.
 
 #### Scenario: Application starts with imported resources
 - **WHEN** the Avalonia application starts
-- **THEN** every imported SourceGit icon and theme token SHALL resolve
+- **THEN** every imported theme token and product FontAwesome icon SHALL resolve
 - **AND** every reusable imported control style SHALL compile under Avalonia 12.1
 
 #### Scenario: Product control uses the global style layer
@@ -823,13 +823,13 @@ The Avalonia application SHALL load the complete reusable SourceGit icon, theme,
 - **THEN** the migration SHALL exclude only selectors that require SourceGit Git-domain types
 - **AND** the migration notice SHALL identify each exclusion
 
-### Requirement: Imported SourceGit work retains attribution
+### Requirement: Imported work retains attribution
 ChapterTool SHALL keep an attribution record for the imported SourceGit resources.
 
 #### Scenario: Reviewer inspects third-party evidence
-- **WHEN** a reviewer opens the SourceGit resource directory
+- **WHEN** a reviewer opens the imported theme resource directory
 - **THEN** the directory SHALL identify the upstream repository and source revision
-- **AND** it SHALL include the SourceGit MIT license text
+- **AND** `Themes.axaml` and `Styles.axaml` SHALL each include the SourceGit copyright and MIT license notice
 
 ### Requirement: Global styles preserve workflow usability
 The ported style layer SHALL keep ChapterTool workflows usable at supported window sizes.
@@ -844,12 +844,12 @@ The ported style layer SHALL keep ChapterTool workflows usable at supported wind
 - **THEN** primary actions SHALL remain visible
 - **AND** text SHALL remain inside its control bounds
 
-### Requirement: Settings window uses compact SourceGit form composition
-The settings window SHALL use the ported SourceGit input and action styles.
+### Requirement: Settings window uses compact imported form composition
+The settings window SHALL use the imported input and action styles.
 
 #### Scenario: Settings form displays path input
 - **WHEN** a settings tab displays a path input
-- **THEN** the input SHALL use a consistent 32-pixel height and SourceGit border states
+- **THEN** the input SHALL use a consistent 32-pixel height and imported border states
 - **AND** browse and clear actions SHALL appear inside the input right-content area
 
 #### Scenario: Settings footer displays actions

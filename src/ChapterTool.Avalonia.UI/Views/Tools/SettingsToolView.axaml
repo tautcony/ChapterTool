@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.SettingsToolView"
@@ -143,14 +144,14 @@
                             Command="{Binding BrowseSaveDirectoryCommand}"
                             AutomationProperties.Name="{DynamicResource Settings.BrowseDirectory}"
                             ToolTip.Tip="{DynamicResource Settings.BrowseDirectory}">
-                      <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                      <i:Icon Width="15" Height="15" Value="fa-solid fa-folder-open" />
                     </Button>
                     <Button x:Name="ClearSaveDirectoryButton"
                             Classes="icon_button compact inputAction"
                             Command="{Binding ClearSaveDirectoryCommand}"
                             AutomationProperties.Name="{DynamicResource Common.Clear}"
                             ToolTip.Tip="{DynamicResource Common.Clear}">
-                      <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                      <i:Icon Width="14" Height="14" Value="fa-solid fa-xmark" />
                     </Button>
                   </StackPanel>
                 </TextBox.InnerRightContent>
@@ -174,10 +175,10 @@
                   <TextBox.InnerRightContent>
                     <StackPanel Orientation="Horizontal">
                       <Button Classes="icon_button compact inputAction" Command="{Binding BrowseMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                        <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                        <i:Icon Width="15" Height="15" Value="fa-solid fa-folder-open" />
                       </Button>
                       <Button Classes="icon_button compact inputAction" Command="{Binding ClearMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                        <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                        <i:Icon Width="14" Height="14" Value="fa-solid fa-xmark" />
                       </Button>
                     </StackPanel>
                   </TextBox.InnerRightContent>
@@ -191,10 +192,10 @@
                   <TextBox.InnerRightContent>
                     <StackPanel Orientation="Horizontal">
                       <Button Classes="icon_button compact inputAction" Command="{Binding BrowseEac3toCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                        <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                        <i:Icon Width="15" Height="15" Value="fa-solid fa-folder-open" />
                       </Button>
                       <Button Classes="icon_button compact inputAction" Command="{Binding ClearEac3toCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                        <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                        <i:Icon Width="14" Height="14" Value="fa-solid fa-xmark" />
                       </Button>
                     </StackPanel>
                   </TextBox.InnerRightContent>
@@ -208,10 +209,10 @@
                   <TextBox.InnerRightContent>
                     <StackPanel Orientation="Horizontal">
                       <Button Classes="icon_button compact inputAction" Command="{Binding BrowseFfprobeCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                        <Path Width="15" Height="15" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Folder.Open}" />
+                        <i:Icon Width="15" Height="15" Value="fa-solid fa-folder-open" />
                       </Button>
                       <Button Classes="icon_button compact inputAction" Command="{Binding ClearFfprobeCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                        <Path Width="14" Height="14" Fill="{DynamicResource Brush.FG1}" Data="{StaticResource Icons.Clear}" />
+                        <i:Icon Width="14" Height="14" Value="fa-solid fa-xmark" />
                       </Button>
                     </StackPanel>
                   </TextBox.InnerRightContent>
@@ -226,7 +227,7 @@
                       Command="{Binding ValidateToolsCommand}"
                       ToolTip.Tip="{DynamicResource Settings.ValidateTools}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                  <Path Width="14" Height="14" Data="{StaticResource Icons.Search}" />
+                  <i:Icon Width="14" Height="14" Value="fa-solid fa-magnifying-glass" />
                   <TextBlock Text="{DynamicResource Settings.ValidateTools}" />
                 </StackPanel>
               </Button>
@@ -457,7 +458,7 @@
                 Command="{Binding OpenSettingsFolderCommand}"
                 AutomationProperties.Name="{DynamicResource Settings.OpenSettingsFolder}"
                 ToolTip.Tip="{DynamicResource Settings.OpenSettingsFolder}">
-          <Path Width="15" Height="15" Data="{StaticResource Icons.Folder.Open}" />
+          <i:Icon Width="15" Height="15" Value="fa-solid fa-folder-open" />
         </Button>
         <TextBlock Grid.Column="1"
                    Classes="status"

@@ -102,7 +102,7 @@ public sealed class AuxiliaryToolHeadlessTests
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
-            var expected = SourceGitBrushColor("Brush.Contents");
+            var expected = ImportedThemeBrushColor("Brush.Contents");
             Assert.Contains(
                 window.GetVisualDescendants().OfType<Border>(),
                 border => border.Background is SolidColorBrush brush && brush.Color == expected);
@@ -121,7 +121,7 @@ public sealed class AuxiliaryToolHeadlessTests
     private static Color ResourceColor(string key) =>
         BrushColor(global::Avalonia.Application.Current!.Resources[key] as IBrush);
 
-    private static Color SourceGitBrushColor(string key)
+    private static Color ImportedThemeBrushColor(string key)
     {
         var application = global::Avalonia.Application.Current!;
         Assert.True(application.TryGetResource(key, out var resource));
