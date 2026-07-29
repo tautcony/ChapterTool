@@ -92,29 +92,49 @@ The browser app does not run desktop tools or access local files after import. S
 
 ## Node.js Package
 
-The `@chaptertool/node` package exposes the portable Core API to Node.js through a pure .NET WebAssembly host. It does not use Blazor or a browser UI.
+The `@chaptertool/node` package exposes the portable ChapterTool Core API to Node.js through .NET WebAssembly. It does not use Blazor or a browser user interface.
+
+Install it in a Node.js project:
+
+```bash
+npm install @chaptertool/node
+```
+
+The package requires Node.js 20, 22, 24, or later. Package consumers need Node.js only. They do not need the .NET SDK.
 
 Build and test the package from its directory:
 
 ```bash
 cd packages/chaptertool
 npm test
+npm run pack:verify
 ```
 
 Use the package from another JavaScript project:
 
 ```js
-import { createChapterTool } from "@chaptertool/node";
+import { readFile } from "node:fs/promises";
+import { ChapterTool } from "@chaptertool/node";
 
-const tool = await createChapterTool();
-const imported = await tool.import(chapterText, { fileName: "chapters.txt" });
+const tool = new ChapterTool();
+const imported = await tool.import(await readFile("chapters.txt"), {
+  fileName: "chapters.txt"
+});
 const chapterSet = imported.groups[0].entries[0].chapterSet;
 const exported = await tool.export(chapterSet, { format: "xml" });
+
+if (!exported.success) {
+  throw new Error(exported.diagnostics.map((item) => item.message).join("\n"));
+}
+
+console.log(exported.content);
 ```
 
-The package provides Core import, export, editing, frame rate, expression, projection, time, conversion, and metadata operations. It does not provide UI workspace state or browser actions.
+The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It provides Core import, export, editing, frame rate, expression, projection, time, conversion, and metadata operations. It does not provide UI workspace state, browser actions, desktop tools, settings, localization, or file pickers.
 
-The package build requires the .NET 10 SDK. The build generates and includes the .NET WebAssembly runtime in the npm package.
+Portable imports have a 64 MiB byte limit. The package checks the input byte count before it creates a conversion copy.
+
+The package build requires the .NET 10 SDK. The build generates and includes the .NET WebAssembly runtime in the npm package. Run `npm run doctor` to inspect the local SDK and optional WebAssembly build tools.
 
 ## Build And Test
 
