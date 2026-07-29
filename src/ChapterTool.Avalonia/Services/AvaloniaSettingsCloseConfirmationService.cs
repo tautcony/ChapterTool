@@ -3,7 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 
-using ChapterTool.Avalonia.Localization;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
 
 namespace ChapterTool.Avalonia.Services;
 

@@ -1,4 +1,4 @@
-using ChapterTool.Avalonia.ViewModels;
+﻿using ChapterTool.Avalonia.UI.ViewModels;
 
 namespace ChapterTool.Avalonia.Tests.Commands;
 

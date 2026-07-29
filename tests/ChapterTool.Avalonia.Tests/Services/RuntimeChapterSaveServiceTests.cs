@@ -1,4 +1,4 @@
-using ChapterTool.Avalonia.Services;
+﻿using ChapterTool.Avalonia.Services;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;

@@ -10,48 +10,11 @@ internal static class ChapterToolCliSupport
         EnableDefaultExceptionHandler = false
     };
 
-    internal static CliLaunchPlan AnalyzeLaunch(IReadOnlyList<string> args)
-    {
-        var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
-        if (parsed.IsCalled<LoadCliCommand>())
-        {
-            var startupPath = parsed.BindCalled() is LoadCliCommand command
-                ? CliInputResolver.Resolve(command.Input, command.Source)
-                : null;
-            return CliLaunchPlan.Gui(startupPath);
-        }
-
-        if (!parsed.IsCalled<ConvertCliCommand>()
-            && !parsed.IsCalled<InspectCliCommand>()
-            && !parsed.IsCalled<FormatsCliCommand>()
-            && parsed.Bind<ChapterToolRootCliCommand>() is { Input.Length: > 0 } inputCommand
-            && IsExistingPath(inputCommand.Input))
-        {
-            return CliLaunchPlan.Gui(inputCommand.Input);
-        }
-
-        var shouldRunCli = parsed.IsCalled<ConvertCliCommand>()
-            || parsed.IsCalled<InspectCliCommand>()
-            || parsed.IsCalled<FormatsCliCommand>()
-            || parsed.HasTokens;
-        return shouldRunCli ? CliLaunchPlan.Cli(parsed) : CliLaunchPlan.None;
-    }
-
-    internal static CliLaunchPlan AnalyzeDesktopLaunch(IReadOnlyList<string> args) => AnalyzeLaunch(args);
-
     internal static int Run(IReadOnlyList<string> args)
     {
         var parsed = DotMake.CommandLine.Cli.Parse<ChapterToolRootCliCommand>([.. args], ParseSettings);
-        if (parsed.IsCalled<LoadCliCommand>())
-        {
-            Console.Error.WriteLine(new CliLocalizationManager().GetString("Cli.Error.GuiOnlyLoad"));
-            return 1;
-        }
-
         return parsed.Run();
     }
-
-    private static bool IsExistingPath(string value) => File.Exists(value) || Directory.Exists(value);
 
     public static IReadOnlyList<CliOutputFormatDefinition> OutputFormats { get; } =
         ChapterExportFormats.All
@@ -75,15 +38,6 @@ internal static class ChapterToolCliSupport
         definition = match;
         return true;
     }
-}
-
-internal sealed record CliLaunchPlan(bool LaunchGui, string? GuiStartupPath, CliRunnableResult? CliResult)
-{
-    public static CliLaunchPlan None { get; } = new(false, null, null);
-
-    public static CliLaunchPlan Gui(string? startupPath) => new(true, startupPath, null);
-
-    public static CliLaunchPlan Cli(CliRunnableResult result) => new(false, null, result);
 }
 
 public sealed record CliOutputFormatDefinition(

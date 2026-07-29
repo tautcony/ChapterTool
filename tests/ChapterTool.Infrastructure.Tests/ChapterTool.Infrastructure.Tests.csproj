@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\ChapterTool.Contracts\ChapterTool.Contracts.csproj" />
     <ProjectReference Include="..\..\src\ChapterTool.Infrastructure\ChapterTool.Infrastructure.csproj" />
   </ItemGroup>
 

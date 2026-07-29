@@ -2,8 +2,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
-using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.Views.Controls;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
@@ -109,7 +109,8 @@ public sealed class MainWindowInteractionHeadlessTests
         await host.FocusAndPressAsync(Key.L, KeyModifiers.Control);
         await host.FocusAndPressAsync(Key.F11);
 
-        Assert.Equal(["movie.mpls", "movie.mpls", "movie.mpls"], host.LoadService.Paths);
+        var normalizedPath = Path.GetFullPath("movie.mpls");
+        Assert.Equal([normalizedPath, normalizedPath, normalizedPath], host.LoadService.Paths);
         Assert.Equal(1, host.SaveService.Calls);
         Assert.Contains("log", host.WindowService.Opened);
         Assert.Contains("preview", host.WindowService.Opened);

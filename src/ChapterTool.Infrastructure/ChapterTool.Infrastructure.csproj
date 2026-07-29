@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\ChapterTool.Contracts\ChapterTool.Contracts.csproj" />
     <ProjectReference Include="..\ChapterTool.Core\ChapterTool.Core.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageReference Include="z440.atl.core" Version="7.15.3" />

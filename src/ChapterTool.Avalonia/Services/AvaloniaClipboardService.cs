@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input.Platform;
-using ChapterTool.Infrastructure.Services;
+using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Avalonia.Services;
 

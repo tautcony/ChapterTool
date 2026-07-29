@@ -73,7 +73,7 @@ The CLI can apply the same Lua expression transforms as the GUI with `--expressi
 Run the standalone project during development:
 
 ```bash
-dotnet run --project src/ChapterTool.Cli -- formats
+dotnet run --project src/ChapterTool.CommandLine -- formats
 ```
 
 ## Browser App
@@ -146,10 +146,10 @@ Use `scripts/publish.ps1` on Windows.
 | --- | --- |
 | `src/ChapterTool.Core` | Chapter models, importers, transformations, and exporters |
 | `src/ChapterTool.Infrastructure` | External tools, process execution, settings, and platform services |
-| `src/ChapterTool.CommandLine` | Shared CLI commands, argument binding, and workflow composition |
-| `src/ChapterTool.Cli` | Standalone `chaptertool` host and NuGet Tool package |
-| `src/ChapterTool.Avalonia` | Desktop UI, GUI launch compatibility, and runtime composition |
-| `src/ChapterTool.Wasm` | Browser host for `ChapterTool.Core` |
+| `src/ChapterTool.CommandLine` | Standalone `chaptertool` host, CLI commands, argument binding, workflow composition, and NuGet Tool package |
+| `src/ChapterTool.Avalonia.UI` | Shared Avalonia views, ViewModels, workflows, resources, and platform ports |
+| `src/ChapterTool.Avalonia` | Desktop Avalonia host and desktop adapter composition |
+| `src/ChapterTool.Wasm` | Avalonia Browser host and browser adapter composition |
 | `src/ChapterTool.Node` | Pure .NET WebAssembly host for the Node.js package |
 | `packages/chaptertool` | Node.js package entry point, type declarations, and runtime packaging |
 | `tests/` | Core, Infrastructure, Avalonia, and Headless Avalonia tests |

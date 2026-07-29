@@ -1,11 +1,12 @@
-﻿using ChapterTool.Core.Diagnostics;
+﻿using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Transform.Expressions;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Runtime;
-using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.CommandLine.Cli;
 

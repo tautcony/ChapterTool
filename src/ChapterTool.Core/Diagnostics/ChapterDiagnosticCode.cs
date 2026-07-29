@@ -34,6 +34,9 @@ public readonly record struct ChapterDiagnosticCode(ChapterDiagnosticSource Sour
     public static readonly ChapterDiagnosticCode FlacEmbeddedCueNotFound = new(ChapterDiagnosticSource.FlacEmbeddedCue, ChapterDiagnosticReason.NotFound);
     public static readonly ChapterDiagnosticCode ImporterFallbackUsed = new(ChapterDiagnosticSource.ImporterFallback, ChapterDiagnosticReason.Used);
     public static readonly ChapterDiagnosticCode InputNotFound = new(ChapterDiagnosticSource.Input, ChapterDiagnosticReason.NotFound);
+    public static readonly ChapterDiagnosticCode InputReadFailed = new(ChapterDiagnosticSource.Input, ChapterDiagnosticReason.Failed);
+    public static readonly ChapterDiagnosticCode InputTooLarge = new(ChapterDiagnosticSource.Input, ChapterDiagnosticReason.Truncated);
+    public static readonly ChapterDiagnosticCode InputEmpty = new(ChapterDiagnosticSource.Input, ChapterDiagnosticReason.Empty);
     public static readonly ChapterDiagnosticCode InvalidChapterIndex = new(ChapterDiagnosticSource.ChapterIndex, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidChapterPair = new(ChapterDiagnosticSource.ChapterPair, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidChapterText = new(ChapterDiagnosticSource.ChapterText, ChapterDiagnosticReason.Invalid);

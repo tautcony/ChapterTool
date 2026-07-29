@@ -1,10 +1,11 @@
-using ChapterTool.Avalonia.Services;
+﻿using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Processes;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Avalonia.Tests.Services;

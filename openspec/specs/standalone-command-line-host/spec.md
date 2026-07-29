@@ -8,12 +8,12 @@ Define the standalone ChapterTool CLI host and its boundary from the Avalonia de
 
 ### Requirement: Standalone CLI has no desktop dependency
 
-The standalone CLI executable SHALL target `net10.0`, reference `ChapterTool.CommandLine`, and SHALL NOT reference `ChapterTool.Avalonia` or Avalonia packages.
+The `ChapterTool.CommandLine` executable SHALL target `net10.0`, contain the standalone CLI process entry point, and SHALL NOT reference `ChapterTool.Avalonia` or Avalonia packages.
 
 #### Scenario: Standalone project builds without Avalonia
 
-- **WHEN** the standalone CLI project is built
-- **THEN** the build SHALL resolve its command-line behavior through `ChapterTool.CommandLine`
+- **WHEN** the `ChapterTool.CommandLine` project is built
+- **THEN** the build SHALL resolve its command-line behavior from the same project
 - **AND** the project SHALL not require Avalonia desktop assemblies
 
 ### Requirement: Standalone host delegates complete arguments

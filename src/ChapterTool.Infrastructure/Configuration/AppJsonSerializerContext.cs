@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using ChapterTool.Contracts.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
 
 namespace ChapterTool.Infrastructure.Configuration;

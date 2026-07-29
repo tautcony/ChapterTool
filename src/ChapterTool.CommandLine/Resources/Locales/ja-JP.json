@@ -7,7 +7,6 @@
   "Cli.Error.ExpressionConflict": "--expression と --expression-preset は同時に使用できません。",
   "Cli.Error.FormatsHint": "`formats` を実行して、対応する CLI 変換先を確認してください。",
   "Cli.Error.FrameRatePositive": "--frame-rate を指定する場合、フレームレートは 0 より大きくする必要があります。",
-  "Cli.Error.GuiOnlyLoad": "`load` コマンドは Avalonia ホストでのみ使用できます。`inspect` または `convert` などの CLI コマンドを使用してください。",
   "Cli.Error.ImportFailed": "インポートに失敗しました。",
   "Cli.Error.InputNotFound": "入力パス「{path}」が見つかりません。",
   "Cli.Error.InputRequired": "入力パスが必要です。",
@@ -129,4 +128,3 @@
   "Diagnostic.XplChapters.None": "HD-DVD 章節が解析されませんでした。",
   "Diagnostic.XplParse.Failed": "XPL プレイリストを解析できませんでした: {message}"
 }
-

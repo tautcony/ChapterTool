@@ -3,12 +3,13 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.ViewModels.Tools;
-using ChapterTool.Avalonia.Views.Tools;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
+using ChapterTool.Avalonia.UI.Views.Tools;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Infrastructure.Platform;
-using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -97,7 +98,7 @@ public sealed class AuxiliaryToolHeadlessTests
         {
             window.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
-            themeService.Apply(new ChapterTool.Infrastructure.Configuration.ThemeSettings("ayu-dark"));
+            themeService.Apply(new ThemeSettings("ayu-dark"));
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
@@ -109,7 +110,7 @@ public sealed class AuxiliaryToolHeadlessTests
         }
         finally
         {
-            themeService.Apply(ChapterTool.Infrastructure.Configuration.ThemeSettings.Default);
+            themeService.Apply(ThemeSettings.Default);
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }

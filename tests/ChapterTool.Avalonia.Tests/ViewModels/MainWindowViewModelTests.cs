@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel;
-using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
@@ -9,9 +11,7 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
-using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
-using ChapterTool.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
@@ -1367,9 +1367,9 @@ public sealed class MainWindowViewModelTests
 
     private sealed class ControlledLoadService(IReadOnlyDictionary<string, ChapterImportResult> results) : IChapterLoadService
     {
-        private readonly Dictionary<string, TaskCompletionSource> started = [];
-        private readonly Dictionary<string, TaskCompletionSource<ChapterImportResult>> completions = [];
-        private readonly Dictionary<string, IChapterImportProgressReporter?> progressReporters = new(StringComparer.Ordinal);
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TaskCompletionSource> started = new(StringComparer.Ordinal);
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TaskCompletionSource<ChapterImportResult>> completions = new(StringComparer.Ordinal);
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, IChapterImportProgressReporter?> progressReporters = new(StringComparer.Ordinal);
 
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken)
         {
@@ -1378,25 +1378,28 @@ public sealed class MainWindowViewModelTests
 
         public async ValueTask<ChapterImportResult> LoadAsync(string path, IChapterImportProgressReporter? progress, CancellationToken cancellationToken)
         {
-            var startedSource = SourceFor(started, path);
-            var completion = CompletionFor(path);
-            progressReporters[path] = progress;
+            var key = Key(path);
+            var startedSource = SourceFor(started, key);
+            var completion = CompletionFor(key);
+            progressReporters[key] = progress;
             startedSource.TrySetResult();
             progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ParsingChapters, 0.25));
             await using var registration = cancellationToken.Register(() => completion.TrySetCanceled(cancellationToken));
             return await completion.Task;
         }
 
-        public Task WaitForRequestAsync(string path) => SourceFor(started, path).Task;
+        public Task WaitForRequestAsync(string path) => SourceFor(started, Key(path)).Task;
 
         public void Complete(string path)
         {
-            CompletionFor(path).TrySetResult(results[path]);
+            var key = Key(path);
+            CompletionFor(key).TrySetResult(results[key]);
         }
 
         public void ReportProgress(string path, ChapterImportProgress progress)
         {
-            if (!progressReporters.TryGetValue(path, out var reporter) || reporter is null)
+            var key = Key(path);
+            if (!progressReporters.TryGetValue(key, out var reporter) || reporter is null)
             {
                 throw new InvalidOperationException($"No progress reporter captured for '{path}'.");
             }
@@ -1404,27 +1407,15 @@ public sealed class MainWindowViewModelTests
             reporter.Report(progress);
         }
 
-        private TaskCompletionSource<ChapterImportResult> CompletionFor(string path)
-        {
-            if (!completions.TryGetValue(path, out var source))
-            {
-                source = new TaskCompletionSource<ChapterImportResult>(TaskCreationOptions.RunContinuationsAsynchronously);
-                completions[path] = source;
-            }
+        private TaskCompletionSource<ChapterImportResult> CompletionFor(string path) =>
+            completions.GetOrAdd(path, static _ => new TaskCompletionSource<ChapterImportResult>(TaskCreationOptions.RunContinuationsAsynchronously));
 
-            return source;
-        }
+        private static string Key(string path) => Path.GetFileName(path);
 
-        private static TaskCompletionSource SourceFor(Dictionary<string, TaskCompletionSource> sources, string path)
-        {
-            if (!sources.TryGetValue(path, out var source))
-            {
-                source = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                sources[path] = source;
-            }
-
-            return source;
-        }
+        private static TaskCompletionSource SourceFor(
+            System.Collections.Concurrent.ConcurrentDictionary<string, TaskCompletionSource> sources,
+            string path) =>
+            sources.GetOrAdd(path, static _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
     }
 
     private sealed class FakeSaveService : IChapterSaveService

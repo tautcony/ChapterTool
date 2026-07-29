@@ -1,0 +1,202 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels.Tools"
+             x:Class="ChapterTool.Avalonia.UI.Views.Tools.LogToolView"
+             x:DataType="vm:LogToolViewModel"
+             x:CompileBindings="True">
+  <Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Window}">
+    <Grid Grid.Row="0" Margin="8">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="300" MinWidth="250" MaxWidth="500" />
+        <ColumnDefinition Width="4" />
+        <ColumnDefinition Width="*" MinWidth="250" />
+      </Grid.ColumnDefinitions>
+
+      <Border Grid.Column="0"
+              Background="{DynamicResource Brush.Contents}"
+              BorderBrush="{DynamicResource Brush.Border2}"
+              BorderThickness="1">
+        <Grid>
+          <ListBox x:Name="LogList"
+                   Padding="4"
+                   Background="Transparent"
+                   BorderThickness="0"
+                   ItemsSource="{Binding FilteredEntries}"
+                   SelectedItem="{Binding SelectedEntry, Mode=TwoWay}"
+                   SelectionMode="Single"
+                   Grid.IsSharedSizeScope="True"
+                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                   ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.Styles>
+              <Style Selector="ListBoxItem">
+                <Setter Property="Height" Value="34" />
+                <Setter Property="MinHeight" Value="34" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="CornerRadius" Value="4" />
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel Orientation="Vertical" />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:LogEntryViewModel">
+                <Grid ColumnDefinitions="Auto,*,Auto" Background="Transparent">
+                  <Grid Grid.Column="0" Width="16" Height="16" Margin="4,0">
+                    <Path Width="14" Height="14"
+                          Data="{StaticResource Icons.Info}"
+                          Fill="{DynamicResource ChapterTool.LogInformationBrush}"
+                          IsVisible="{Binding IsInformation}" />
+                    <Path Width="14" Height="14"
+                          Data="{StaticResource Icons.Error}"
+                          Fill="{DynamicResource ChapterTool.LogWarningBrush}"
+                          IsVisible="{Binding IsWarning}" />
+                    <Path Width="14" Height="14"
+                          Data="{StaticResource Icons.Error}"
+                          Fill="{DynamicResource ChapterTool.LogErrorBrush}"
+                          IsVisible="{Binding IsError}" />
+                  </Grid>
+
+                  <StackPanel Grid.Column="1" Margin="4,2" Spacing="0">
+                    <TextBlock Text="{Binding Summary}"
+                               TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding Summary}" />
+                    <TextBlock Classes="small"
+                               Foreground="{DynamicResource Brush.FG2}"
+                               Text="{Binding Context}"
+                               TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+
+                  <TextBlock Grid.Column="2"
+                             Classes="small"
+                             Margin="8,0,4,0"
+                             Foreground="{DynamicResource Brush.FG2}"
+                             Text="{Binding Time}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+
+          <StackPanel HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Spacing="10"
+                      Margin="24"
+                      IsVisible="{Binding IsEmpty}">
+            <Path Width="48" Height="48"
+                  Data="{StaticResource Icons.Empty}"
+                  Fill="{DynamicResource Brush.FG2}" />
+            <TextBlock MaxWidth="220"
+                       Foreground="{DynamicResource Brush.FG2}"
+                       Text="{DynamicResource Tool.Log.Empty}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center" />
+          </StackPanel>
+        </Grid>
+      </Border>
+
+      <GridSplitter Grid.Column="1"
+                    MinWidth="1"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Focusable="False" />
+
+      <Border Grid.Column="2"
+              Background="{DynamicResource Brush.Contents}"
+              BorderBrush="{DynamicResource Brush.Border2}"
+              BorderThickness="1">
+        <Grid RowDefinitions="Auto,*">
+          <Border Grid.Row="0"
+                  Padding="12,8"
+                  Background="{DynamicResource Brush.ToolBar}"
+                  BorderBrush="{DynamicResource Brush.Border2}"
+                  BorderThickness="0,0,0,1"
+                  IsVisible="{Binding HasSelectedEntry}">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="4">
+              <TextBlock Classes="bold"
+                         Text="{Binding SelectedEntry.Summary}"
+                         TextWrapping="Wrap" />
+              <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
+                <TextBlock Grid.Column="0" Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.LevelText}" />
+                <TextBlock Grid.Column="1" Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.Timestamp}" />
+                <TextBlock Grid.Column="2" Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.Context}" TextTrimming="CharacterEllipsis" />
+              </Grid>
+            </Grid>
+          </Border>
+
+          <ScrollViewer Grid.Row="1"
+                        Margin="12,10"
+                        HorizontalScrollBarVisibility="Auto"
+                        VerticalScrollBarVisibility="Auto"
+                        IsVisible="{Binding HasSelectedEntry}">
+            <SelectableTextBlock FontFamily="{DynamicResource Fonts.Monospace}"
+                                 FontSize="12"
+                                 Text="{Binding SelectedEntry.Details}"
+                                 TextWrapping="NoWrap"
+                                 VerticalAlignment="Top" />
+          </ScrollViewer>
+
+          <StackPanel Grid.Row="1"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Spacing="10"
+                      Margin="24"
+                      IsVisible="{Binding !HasSelectedEntry}">
+            <Path Width="48" Height="48"
+                  Data="{StaticResource Icons.Logs}"
+                  Fill="{DynamicResource Brush.FG2}" />
+            <TextBlock Foreground="{DynamicResource Brush.FG2}"
+                       Text="{DynamicResource Tool.Log.Details}"
+                       HorizontalAlignment="Center" />
+          </StackPanel>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <Border Grid.Row="1"
+            Padding="8"
+            Background="{DynamicResource Brush.ToolBar}"
+            BorderBrush="{DynamicResource Brush.Border2}"
+            BorderThickness="0,1,0,0">
+      <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="8">
+        <ComboBox Grid.Column="0"
+                  Width="160"
+                  HorizontalAlignment="Left"
+                  ItemsSource="{Binding FilterOptions}"
+                  SelectedItem="{Binding SelectedFilter, Mode=TwoWay}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:LogFilterOption">
+              <TextBlock Text="{Binding DisplayName}" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <Button Grid.Column="1"
+                Classes="flat primary"
+                MinWidth="96"
+                Content="{DynamicResource Common.Clear}"
+                Command="{Binding ClearCommand}"
+                AutomationProperties.Name="{DynamicResource Common.Clear}" />
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" HorizontalAlignment="Right">
+          <Button Classes="icon_button"
+                  Width="28" Height="28"
+                  Command="{Binding CopySummaryCommand}"
+                  AutomationProperties.Name="{DynamicResource Tool.Log.CopySummary}"
+                  ToolTip.Tip="{DynamicResource Tool.Log.CopySummary}">
+            <Path Width="13" Height="13" Data="{StaticResource Icons.Copy}" />
+          </Button>
+          <Button Classes="icon_button"
+                  Width="28" Height="28"
+                  Command="{Binding CopyDetailsCommand}"
+                  AutomationProperties.Name="{DynamicResource Tool.Log.CopyDetails}"
+                  ToolTip.Tip="{DynamicResource Tool.Log.CopyDetails}">
+            <Path Width="13" Height="13" Data="{StaticResource Icons.Logs}" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+  </Grid>
+</UserControl>

@@ -16,7 +16,9 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `packages/chaptertool/test/api-loader.test.mjs`
 - Infrastructure behavior:
   - `tests/ChapterTool.Infrastructure.Tests`
-- Avalonia ViewModels, runtime UI services, desktop localization, CLI:
+- CommandLine workflows:
+  - `tests/ChapterTool.CommandLine.Tests`
+- Avalonia ViewModels, runtime UI services, and desktop localization:
   - `tests/ChapterTool.Avalonia.Tests`
 - Avalonia Headless UI shell/interaction (separate process):
   - `tests/ChapterTool.Avalonia.Headless.Tests`
@@ -25,7 +27,7 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
-Use `tests/ChapterTool.Wasm.Tests` when you change browser workspace orchestration, byte-based load or reload, templates, selection actions, preview or save projection, or browser localization. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
+Use `tests/ChapterTool.Wasm.Tests` when you change browser adapter contracts, bounded byte input, browser settings, or browser composition. The primary file is `tests/ChapterTool.Wasm.Tests/BrowserAdapterTests.cs`.
 
 Use `packages/chaptertool/test/chaptertool.test.mjs` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.mjs` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.mjs` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 
@@ -99,7 +101,7 @@ Fixtures:
 
 ## Avalonia Test Map
 
-Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, localization, and CommandLine behavior. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI and interaction workflows. The Headless project uses a separate testhost process. Non-UI unit tests do not share that process.
+Use `tests/ChapterTool.CommandLine.Tests` for DotMake binding and CLI workflows. Use `tests/ChapterTool.Avalonia.Tests` for ViewModels, runtime services, and localization. Use `tests/ChapterTool.Avalonia.Headless.Tests` for rendered UI and interaction workflows. The Headless project uses a separate testhost process. Non-UI unit tests do not share that process.
 
 High-signal test files:
 
@@ -113,9 +115,9 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Services/`
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
 - CLI
-  - `tests/ChapterTool.Avalonia.Tests/Cli/ChapterToolCliApplicationTests.cs`
+  - `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs`
   - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
-  - `src/ChapterTool.Cli/Program.cs`
+  - `src/ChapterTool.CommandLine/Program.cs`
 - desktop localization
   - `tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs`
 - headless shell/interaction/integration
@@ -150,7 +152,8 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 
 - parsing or export semantics changed: start in `tests/ChapterTool.Core.Tests`
 - external tool, settings, process, or platform boundary changed: start in `tests/ChapterTool.Infrastructure.Tests`
-- viewmodel, CLI, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
+- CLI binding or workflow changed: start in `tests/ChapterTool.CommandLine.Tests`
+- viewmodel, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
 - XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
 - Node.js package or npm runtime packaging changed: start in `packages/chaptertool/test/chaptertool.test.mjs` and `packages/chaptertool/test/api-loader.test.mjs`
 
@@ -167,8 +170,8 @@ Coverage entry point:
   - `.github/workflows/dotnet-ci.yml`
   - `.github/workflows/nuget-publish.yml`
   - `.github/workflows/npm-publish.yml`
-- The `ChapterTool` NuGet package installs the `chaptertool` command. `src/ChapterTool.Cli/ChapterTool.Cli.csproj` owns its package metadata.
+- The `ChapterTool` NuGet package installs the `chaptertool` command. `src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj` owns its package metadata.
 - `.github/workflows/dotnet-ci.yml` packs `ChapterTool.Core` and `ChapterTool` in the build job. It uploads the packages as `ChapterTool-Core-nuget` and `ChapterTool-Cli-nuget`. Each `pack-dotnet` runtime matrix job uploads one `ChapterTool-Avalonia-<runtime>` artifact.
 - `.github/workflows/nuget-publish.yml` applies one release version to both NuGet packages and publishes them. It does not install the CLI package during CI.
-- Use `src/ChapterTool.Cli/README.md` for the NuGet Tool installation and external-tool requirements.
+- Use `src/ChapterTool.CommandLine/README.md` for the NuGet Tool installation and external-tool requirements.
 - The legacy Windows NSIS installer inputs are retired. Future installer work should consume the `src/ChapterTool.Avalonia` publish output and derive version metadata from `Directory.Build.props`.

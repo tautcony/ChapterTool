@@ -1,6 +1,6 @@
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Infrastructure.Configuration;
-using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Tools;
 

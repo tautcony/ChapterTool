@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using ChapterTool.Avalonia.Views.Controls;
+using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
@@ -97,7 +97,7 @@ public sealed class MainWindowStateHeadlessTests
         roundFramesBox.IsChecked = false;
         host.FilePickerService.SaveDirectoryPath = "out";
 
-        await host.Window.SaveToCommand.ExecuteAsync();
+        await host.MainView.SaveToCommand.ExecuteAsync();
         await host.LayoutAsync();
 
         Assert.Equal(1, host.SaveService.Calls);

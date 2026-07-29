@@ -93,7 +93,7 @@ jobs:
         run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-build --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
 
       - name: Pack ChapterTool CLI
-        run: dotnet pack src/ChapterTool.Cli/ChapterTool.Cli.csproj --configuration Release --no-build --no-restore --output artifacts/cli-nuget /p:ContinuousIntegrationBuild=true
+        run: dotnet pack src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj --configuration Release --no-build --no-restore --output artifacts/cli-nuget /p:ContinuousIntegrationBuild=true
 
       - name: Install external tools
         run: |

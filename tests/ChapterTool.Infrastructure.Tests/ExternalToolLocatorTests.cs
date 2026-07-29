@@ -1,3 +1,4 @@
+using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Tools;

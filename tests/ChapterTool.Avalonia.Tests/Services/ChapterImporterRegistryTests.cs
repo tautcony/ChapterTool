@@ -1,4 +1,5 @@
-using ChapterTool.Avalonia.Services;
+﻿using ChapterTool.Avalonia.Services;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;

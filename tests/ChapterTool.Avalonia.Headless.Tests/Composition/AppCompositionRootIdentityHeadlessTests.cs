@@ -5,9 +5,10 @@ using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Composition;
 using ChapterTool.Avalonia.Headless.Tests.Headless;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.Views.Controls;
-using ChapterTool.Avalonia.Views.Tools;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.Views;
+using ChapterTool.Avalonia.UI.Views.Controls;
+using ChapterTool.Avalonia.UI.Views.Tools;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Runtime;
 
@@ -31,7 +32,8 @@ public sealed class AppCompositionRootIdentityHeadlessTests
             mainWindow.Show();
             await LayoutAsync(mainWindow);
 
-            var mainEditor = mainWindow.FindControl<ExpressionEditor>("ExpressionBox")
+            var mainView = Assert.IsType<MainView>(mainWindow.Content);
+            var mainEditor = mainView.FindControl<ExpressionEditor>("ExpressionBox")
                 ?? throw new InvalidOperationException("Main expression editor was not created.");
             mainEditor.Text = "sentinel";
             await LayoutAsync(mainWindow);

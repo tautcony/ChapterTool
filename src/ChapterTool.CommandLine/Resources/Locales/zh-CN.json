@@ -7,7 +7,6 @@
   "Cli.Error.ExpressionConflict": "不能同时使用 --expression 和 --expression-preset。",
   "Cli.Error.FormatsHint": "运行 `formats` 查看支持的 CLI 转换目标。",
   "Cli.Error.FrameRatePositive": "指定 --frame-rate 时，帧率必须大于零。",
-  "Cli.Error.GuiOnlyLoad": "`load` 命令只能在 Avalonia 主机中使用。请使用明确的 CLI 命令，例如 `inspect` 或 `convert`。",
   "Cli.Error.ImportFailed": "导入失败。",
   "Cli.Error.InputNotFound": "找不到输入路径“{path}”。",
   "Cli.Error.InputRequired": "必须提供输入路径。",
@@ -129,4 +128,3 @@
   "Diagnostic.XplChapters.None": "未解析到 HD-DVD 章节。",
   "Diagnostic.XplParse.Failed": "无法解析 XPL 播放列表：{message}"
 }
-

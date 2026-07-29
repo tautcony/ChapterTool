@@ -3,7 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.Threading;
-using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Avalonia.Services;
 

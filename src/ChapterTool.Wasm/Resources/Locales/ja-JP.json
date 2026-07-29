@@ -22,7 +22,7 @@
   "Label.ChapterName": "チャプター名",
   "Label.XmlLang": "XML 言語",
   "Label.OrderShift": "番号 +",
-  "Label.Expression": "式",
+  "Label.Expression": "エクスプレッション",
   "Label.ExpressionPreset": "プリセット",
   "ExpressionPreset.Custom": "カスタム",
   "Status.ExpressionPresetApplied": "式プリセットを適用しました: {0}",

@@ -1,9 +1,10 @@
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Processes;
-using ChapterTool.Infrastructure.Services;
 using ChapterTool.Infrastructure.Tools;
 
 namespace ChapterTool.Infrastructure.Tests.Importing;
@@ -85,16 +86,16 @@ public sealed class FfprobeMediaChapterIntegrationTests
         }
     }
 
-    private sealed class EmptySettingsStore : ISettingsStore<Configuration.ChapterToolSettings>
+    private sealed class EmptySettingsStore : ISettingsStore<ChapterToolSettings>
     {
-        public ValueTask<Configuration.ChapterToolSettings> LoadAsync(CancellationToken cancellationToken) =>
-            ValueTask.FromResult(Configuration.ChapterToolSettings.Default);
+        public ValueTask<ChapterToolSettings> LoadAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromResult(ChapterToolSettings.Default);
 
-        public ValueTask SaveAsync(Configuration.ChapterToolSettings settings, CancellationToken cancellationToken) =>
+        public ValueTask SaveAsync(ChapterToolSettings settings, CancellationToken cancellationToken) =>
             ValueTask.CompletedTask;
 
         public ValueTask UpdateAsync(
-            Func<Configuration.ChapterToolSettings, Configuration.ChapterToolSettings> update,
+            Func<ChapterToolSettings, ChapterToolSettings> update,
             CancellationToken cancellationToken) => ValueTask.CompletedTask;
     }
 

@@ -2,10 +2,10 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
-using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.ViewModels.Tools;
-using ChapterTool.Avalonia.Views.Controls;
-using ChapterTool.Avalonia.Views.Tools;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
+using ChapterTool.Avalonia.UI.Views.Controls;
+using ChapterTool.Avalonia.UI.Views.Tools;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;

@@ -1,4 +1,4 @@
-using ChapterTool.Avalonia.Diagnostics;
+﻿using ChapterTool.Avalonia.Diagnostics;
 
 namespace ChapterTool.Avalonia.Tests.Diagnostics;
 

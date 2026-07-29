@@ -65,6 +65,47 @@ public sealed class MainWindowHeadlessTests
             $"Expected selected clip label to remain visible. Rendered selector texts:{Environment.NewLine}{MainWindowHeadlessTestHost.DescribeRenderedTexts(clipSelector)}");
     }
 
+    [AvaloniaTheory]
+    [InlineData("zh-CN")]
+    [InlineData("en-US")]
+    [InlineData("ja-JP")]
+    public async Task Advanced_options_share_localized_label_columns_across_responsive_layouts(string culture)
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        host.Localizer.SetCulture(culture);
+
+        await host.LayoutAsync(width: 736, height: 576);
+
+        var options = host.RequiredControl<Grid>("AdvancedOptionsGrid");
+        var expressionGroup = host.RequiredControl<Grid>("ExpressionOptionsGroup");
+        var expressionEditor = host.RequiredControl<Control>("ExpressionBox");
+        var loadExpressionButton = host.RequiredControl<Button>("LoadExpressionButton");
+        var applyExpression = host.RequiredControl<CheckBox>("ApplyExpressionBox");
+        var chapterNameMode = host.RequiredControl<ComboBox>("ChapterNameModeBox");
+        var formatBox = host.RequiredControl<ComboBox>("FormatBox");
+        var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
+        var orderShiftBox = host.RequiredControl<NumericUpDown>("OrderShiftBox");
+
+        Assert.Equal(2, options.ColumnDefinitions.Count);
+        Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
+        Assert.True(expressionEditor.Bounds.Width >= 500);
+        Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
+        Assert.Null(applyExpression.Content);
+        Assert.False(string.IsNullOrWhiteSpace(ToolTip.GetTip(applyExpression)?.ToString()));
+        Assert.True(chapterNameMode.Bounds.Width >= 128);
+        Assert.InRange(Math.Abs(formatBox.Bounds.Left - xmlLanguageBox.Bounds.Left), 0, 0.5);
+        Assert.InRange(Math.Abs(formatBox.Bounds.Left - expressionEditor.Bounds.Left), 0, 0.5);
+        Assert.InRange(Math.Abs(chapterNameMode.Bounds.Left - orderShiftBox.Bounds.Left), 0, 0.5);
+
+        await host.LayoutAsync(width: 1100, height: 576);
+
+        Assert.Equal(3, options.ColumnDefinitions.Count);
+        Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
+        Assert.True(expressionEditor.Bounds.Width >= 500);
+        Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
+        Assert.InRange(Math.Abs(chapterNameMode.Bounds.Left - orderShiftBox.Bounds.Left), 0, 0.5);
+    }
+
     [AvaloniaFact]
     public async Task Clip_combine_context_menu_shows_checked_toggle_state()
     {

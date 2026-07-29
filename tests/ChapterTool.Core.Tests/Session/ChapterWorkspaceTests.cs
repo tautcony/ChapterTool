@@ -21,6 +21,37 @@ public sealed class ChapterWorkspaceTests
     }
 
     [Fact]
+    public void TryCommitLoad_RetainsBufferedSourceWithoutLocalPath()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var source = new BufferedChapterSource("chapters.txt", "data"u8.ToArray());
+
+        Assert.True(workspace.TryCommitLoad(revision, source, ClipSessionTransitions.FromLoad(SingleGroup("chapters.txt", "Loaded"))));
+        Assert.Same(source, workspace.CurrentSource);
+        Assert.Equal("chapters.txt", workspace.DisplayPath);
+        Assert.Empty(workspace.CurrentPath);
+        Assert.Equal("buffer:chapters.txt", source.Identity);
+    }
+
+    [Fact]
+    public void TryCommitLoad_IgnoresStaleBufferedSource()
+    {
+        var workspace = new ChapterWorkspace();
+        var oldRevision = workspace.BeginLoadOperation();
+        var currentRevision = workspace.BeginLoadOperation();
+        var currentSource = new BufferedChapterSource("current.txt", [2]);
+        Assert.True(workspace.TryCommitLoad(currentRevision, currentSource, ClipSessionTransitions.FromLoad(SingleGroup("current.txt", "Current"))));
+
+        Assert.False(workspace.TryCommitLoad(
+            oldRevision,
+            new BufferedChapterSource("old.txt", [1]),
+            ClipSessionTransitions.FromLoad(SingleGroup("old.txt", "Old"))));
+        Assert.Same(currentSource, workspace.CurrentSource);
+        Assert.Equal("Current", workspace.CurrentChapterSet?.Chapters[0].Name);
+    }
+
+    [Fact]
     public void TryCommitLoad_IgnoresStaleRevision()
     {
         var workspace = new ChapterWorkspace();

@@ -1,6 +1,7 @@
-using System.Globalization;
+﻿using System.Globalization;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Avalonia.Tests.Services;
 

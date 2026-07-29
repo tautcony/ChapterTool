@@ -1,12 +1,22 @@
 # Avalonia Code Map
 
-`src/ChapterTool.Avalonia` owns the desktop shell, GUI launch compatibility, view/viewmodel coordination, runtime orchestration, localization, and theme application.
+`src/ChapterTool.Avalonia.UI` owns the shared Avalonia shell, ViewModels, workflows, resources, and semantic platform ports. `src/ChapterTool.Avalonia` owns the desktop shell and desktop adapter composition.
 
 Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
 
 ## Ownership
 
-### Application shell
+### Shared application shell
+
+Shared workflow entry points:
+
+- `src/ChapterTool.Avalonia.UI/Views/MainView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/Workflows/`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/`
+
+### Desktop application shell
 
 Startup and main shell entry points:
 
@@ -16,12 +26,8 @@ Startup and main shell entry points:
 - `src/ChapterTool.Avalonia/App.axaml.cs`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs` (partial shell)
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Settings.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.ImportExport.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Expression.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Editing.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.StatusLog.cs`
+- `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
+- `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
 
 Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` use the same `ChapterWorkspace`:
 
@@ -32,8 +38,8 @@ Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` use the 
 
 Role split:
 
-- `MainWindow.axaml`: shell layout and bindings
-- `MainWindow.axaml.cs`: drag/drop, keyboard routing, and UI-only adapter commands (file pickers, DataGrid selection for insert/delete/zones/forward-shift)
+- `MainView.axaml`: shared shell layout and bindings
+- `MainView.axaml.cs`: drag/drop, keyboard routing, and UI-only adapter commands
 - `UiOperationBoundary.cs`: common asynchronous UI exception and cancellation boundary
 - Pure workflow commands bind to `MainWindowViewModel` (`SaveCommand`, `ReloadCommand`, `PreviewCommand`, `RefreshCommand`, `CombineCommand`, `OpenRelatedMediaCommand`, and tool-window commands)
 - `MainWindowViewModel` partials:
@@ -137,9 +143,9 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.CommandLine/Cli/CliLocalizationManager.cs`
 - `src/ChapterTool.CommandLine/Resources/Locales/`
 - `src/ChapterTool.CommandLine/Cli/CliConsole.cs`
-- `src/ChapterTool.Cli/Program.cs`
-- `src/ChapterTool.Cli/ChapterTool.Cli.csproj`
-- `src/ChapterTool.Cli/README.md`
+- `src/ChapterTool.CommandLine/Program.cs`
+- `src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj`
+- `src/ChapterTool.CommandLine/README.md`
 
 ### Localization
 
@@ -276,12 +282,12 @@ Start with:
 
 - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
-- `src/ChapterTool.Cli/Program.cs`
+- `src/ChapterTool.CommandLine/Program.cs`
 - `src/ChapterTool.Avalonia/Program.cs`
 
-Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs` for DotMake command definitions, bound launch-plan analysis, and supported format definitions. The Avalonia program uses the typed facade for GUI compatibility. The standalone program delegates process startup to the same facade.
+Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs` for DotMake command definitions, command parsing, and supported format definitions. The Avalonia program does not reference or dispatch CLI commands. The merged CommandLine executable delegates process startup to `ChapterToolCliHost`.
 
-`src/ChapterTool.Cli/ChapterTool.Cli.csproj` owns the `ChapterTool` NuGet package metadata. The package installs the `chaptertool` command. `.github/workflows/dotnet-ci.yml` uploads the CLI package as `ChapterTool-Cli-nuget` and uploads each Avalonia runtime output as `ChapterTool-Avalonia-<runtime>`. `.github/workflows/nuget-publish.yml` publishes the tool and `ChapterTool.Core` from the same version tag.
+`src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj` owns the `ChapterTool` NuGet package metadata. The package installs the `chaptertool` command. `.github/workflows/dotnet-ci.yml` uploads the CLI package as `ChapterTool-Cli-nuget` and uploads each Avalonia runtime output as `ChapterTool-Avalonia-<runtime>`. `.github/workflows/nuget-publish.yml` publishes the tool and `ChapterTool.Core` from the same version tag.
 
 ### Localization changes
 

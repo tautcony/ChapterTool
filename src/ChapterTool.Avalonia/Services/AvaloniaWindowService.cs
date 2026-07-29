@@ -1,11 +1,12 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Transform;
-using ChapterTool.Infrastructure.Configuration;
-using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Services;
 
@@ -105,7 +106,7 @@ public sealed class AvaloniaWindowService : IWindowService, IDisposable
         parameters[windowId] = parameter;
         window.Closing += async (sender, args) =>
         {
-            if (closeAccepted || window.Content is not Views.Tools.SettingsToolView { DataContext: SettingsToolViewModel
+            if (closeAccepted || window.Content is not ChapterTool.Avalonia.UI.Views.Tools.SettingsToolView { DataContext: SettingsToolViewModel
                 {
                     HasUnsavedChanges: true
                 } settings })

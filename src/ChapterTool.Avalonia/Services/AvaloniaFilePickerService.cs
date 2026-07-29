@@ -1,12 +1,40 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Platform.Storage;
 
-using ChapterTool.Avalonia.Localization;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.Services;
 
 public sealed class AvaloniaFilePickerService(Window owner, IAppLocalizer localizer) : IFilePickerService
 {
+    public async ValueTask<ChapterSourceDocument?> PickSourceDocumentAsync(CancellationToken cancellationToken)
+    {
+        var path = await PickSourceAsync(cancellationToken);
+        return string.IsNullOrWhiteSpace(path) ? null : new LocalPathChapterSource(path);
+    }
+
+    public async ValueTask<ChapterSourceDocument?> PickMplsDocumentAsync(CancellationToken cancellationToken)
+    {
+        var path = await PickMplsAsync(cancellationToken);
+        return string.IsNullOrWhiteSpace(path) ? null : new LocalPathChapterSource(path);
+    }
+
+    public ValueTask<ChapterSourceDocument?> ConvertDropAsync(object drop, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (drop is not IDataTransfer transfer)
+        {
+            return ValueTask.FromResult<ChapterSourceDocument?>(null);
+        }
+
+        var file = transfer.TryGetFiles()?.FirstOrDefault();
+        return ValueTask.FromResult<ChapterSourceDocument?>(
+            file is null ? null : new LocalPathChapterSource(file.Path.LocalPath, file.Name));
+    }
+
     public async ValueTask<string?> PickSourceAsync(CancellationToken cancellationToken)
     {
         var files = await owner.StorageProvider.OpenFilePickerAsync(CreateSourceOptions(localizer));

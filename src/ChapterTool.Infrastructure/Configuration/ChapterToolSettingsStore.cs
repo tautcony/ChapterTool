@@ -1,7 +1,8 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using ChapterTool.Infrastructure.Services;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Infrastructure.Configuration;
 

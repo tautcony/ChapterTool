@@ -1,3 +1,4 @@
+using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;

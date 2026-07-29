@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ChapterTool.Avalonia\ChapterTool.Avalonia.csproj" />
+    <ProjectReference Include="..\..\src\ChapterTool.CommandLine\ChapterTool.CommandLine.csproj" />
   </ItemGroup>
 
 </Project>

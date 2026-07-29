@@ -3,19 +3,21 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.Views;
 using ChapterTool.Avalonia.Views;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
-using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
-using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
@@ -88,10 +90,13 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             new ChapterExportService(formatter, expressionEngine),
             ShellService,
             SettingsStore);
-        Window = new MainWindow(ViewModel, _ => FilePickerService);
+        MainView = new MainView(ViewModel, _ => FilePickerService);
+        Window = new MainWindow(MainView, "ChapterTool Test");
     }
 
     public MainWindow Window { get; }
+
+    public MainView MainView { get; }
 
     public MainWindowViewModel ViewModel { get; }
 
@@ -145,7 +150,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     {
         await LayoutAsync();
         FilePickerService.SourcePath = path;
-        await Window.BrowseAndLoadCommand.ExecuteAsync();
+        await MainView.BrowseAndLoadCommand.ExecuteAsync();
         await LayoutAsync();
     }
 
@@ -204,7 +209,9 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public T RequiredControl<T>(string name)
         where T : Control =>
-        Window.FindControl<T>(name) ?? throw new InvalidOperationException($"Control '{name}' was not found.");
+        MainView.FindControl<T>(name)
+        ?? Window.FindControl<T>(name)
+        ?? throw new InvalidOperationException($"Control '{name}' was not found.");
 
     public static T RequiredDescendant<T>(Control scope, Func<T, bool> predicate, string description)
         where T : Control =>
@@ -241,12 +248,12 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public async ValueTask FocusAndPressAsync(Key key, KeyModifiers modifiers = KeyModifiers.None)
     {
         Window.Focus();
-        Window.RaiseEvent(new KeyEventArgs
+        MainView.RaiseEvent(new KeyEventArgs
         {
             RoutedEvent = InputElement.KeyDownEvent,
             Key = key,
             KeyModifiers = modifiers,
-            Source = Window
+            Source = MainView
         });
         await LayoutAsync(Window.Width, Window.Height);
     }

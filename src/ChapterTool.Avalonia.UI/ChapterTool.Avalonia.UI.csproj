@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ChapterTool.Avalonia.UI</RootNamespace>
+    <AssemblyName>ChapterTool.Avalonia.UI</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChapterTool.Contracts\ChapterTool.Contracts.csproj" />
+    <ProjectReference Include="..\ChapterTool.Core\ChapterTool.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.0" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.0" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <PackageReference Include="Optris.Icons.Avalonia" Version="12.0.7" />
+    <PackageReference Include="Optris.Icons.Avalonia.FontAwesome" Version="12.0.7" />
+    <PackageReference Include="Svg.Controls.Avalonia" Version="12.0.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\Images\chapter-empty.svg" />
+    <AvaloniaResource Include="Resources\**\*.axaml" />
+    <EmbeddedResource Include="Localization\Resources\Locales\*.axaml" />
+    <AvaloniaResource Include="Views\SourceGit\Fonts\*.ttf" />
+  </ItemGroup>
+
+</Project>

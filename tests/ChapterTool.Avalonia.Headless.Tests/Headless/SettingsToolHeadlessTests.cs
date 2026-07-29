@@ -7,12 +7,13 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.ViewModels.Tools;
-using ChapterTool.Avalonia.Views.Tools;
-using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
+using ChapterTool.Avalonia.UI.Views.Tools;
+using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 

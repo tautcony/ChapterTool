@@ -12,7 +12,10 @@ public sealed class ChapterWorkspace
 {
     private int currentRevision;
 
-    /// <summary>Loaded source path (empty when no session).</summary>
+    /// <summary>Typed source identity (null when no session).</summary>
+    public ChapterSourceDocument? CurrentSource { get; private set; }
+
+    /// <summary>Loaded source path (empty when the source has no local path).</summary>
     public string CurrentPath { get; private set; } = string.Empty;
 
     /// <summary>Display-friendly path (typically file name).</summary>
@@ -55,14 +58,19 @@ public sealed class ChapterWorkspace
     /// only when <paramref name="operationRevision"/> is still current.
     /// </summary>
     public bool TryCommitLoad(int operationRevision, string path, ClipSession session)
+        => TryCommitLoad(operationRevision, new LocalPathChapterSource(path), session);
+
+    /// <summary>Commits a typed source load when the operation revision is current.</summary>
+    public bool TryCommitLoad(int operationRevision, ChapterSourceDocument source, ClipSession session)
     {
         if (!IsCurrentRevision(operationRevision))
         {
             return false;
         }
 
-        CurrentPath = path;
-        DisplayPath = Path.GetFileName(path);
+        CurrentSource = source;
+        CurrentPath = source is LocalPathChapterSource local ? local.Path : string.Empty;
+        DisplayPath = source.DisplayName;
         ReplaceSession(session);
         return true;
     }
@@ -96,6 +104,9 @@ public sealed class ChapterWorkspace
     /// <summary>Clears the loaded session and edit buffer.</summary>
     public void ClearSession()
     {
+        CurrentSource = null;
+        CurrentPath = string.Empty;
+        DisplayPath = string.Empty;
         ClipSession = null;
         CurrentChapterSet = null;
     }

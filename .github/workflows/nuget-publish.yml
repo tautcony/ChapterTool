@@ -42,7 +42,7 @@ jobs:
       - name: Restore
         run: |
           dotnet restore tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj
-          dotnet restore src/ChapterTool.Cli/ChapterTool.Cli.csproj
+          dotnet restore src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj
 
       - name: Resolve package version
         id: version
@@ -58,7 +58,7 @@ jobs:
         run: |
           dotnet build src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore
           dotnet build tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj --configuration Release --no-restore
-          dotnet build src/ChapterTool.Cli/ChapterTool.Cli.csproj --configuration Release --no-restore
+          dotnet build src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj --configuration Release --no-restore
 
       - name: Test Core
         run: dotnet test tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj --configuration Release --no-build
@@ -68,7 +68,7 @@ jobs:
         run: |
           projects=(
             src/ChapterTool.Core/ChapterTool.Core.csproj
-            src/ChapterTool.Cli/ChapterTool.Cli.csproj
+            src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj
           )
           for project in "${projects[@]}"; do
             args=(

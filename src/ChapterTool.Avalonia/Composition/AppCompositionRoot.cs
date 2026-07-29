@@ -1,8 +1,12 @@
 using Avalonia.Controls;
-using ChapterTool.Avalonia.Localization;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.ViewModels;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.Views;
 using ChapterTool.Avalonia.Views;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform;
@@ -40,6 +44,16 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly ILoggerFactory loggerFactory;
     private AvaloniaWindowService? windowService;
     private bool disposed;
+
+    public RuntimeCapabilities Capabilities { get; } = new(
+        RuntimeSourceMode.LocalPath,
+        RuntimeOutputMode.Directory,
+        RuntimeSecondarySurfaceMode.NativeWindow,
+        CanReadClipboard: true,
+        CanWriteClipboard: true,
+        CanConfigureExternalTools: true,
+        CanRunExternalProcesses: true,
+        CanOpenLocalPaths: true);
 
     public AppCompositionRoot(string? startupPath = null, string? settingsDirectory = null)
         : this(startupPath, settingsDirectory, expressionAuthoringServiceOverride: null)
@@ -81,7 +95,14 @@ public sealed class AppCompositionRoot : IDisposable
     public MainWindow CreateMainWindow()
     {
         var viewModel = CreateMainWindowViewModel();
-        return new MainWindow(viewModel, CreateFilePickerService, startupPath);
+        var mainView = new MainView(
+            viewModel,
+            control => CreateFilePickerService(TopLevel.GetTopLevel(control) as Window
+                ?? throw new InvalidOperationException("The shared main view must be attached to a desktop window.")));
+        var title = $"{localizationManager.GetString("App.Title")} v{typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
+        var mainWindow = new MainWindow(mainView, title);
+        _ = mainView.InitializeAsync(startupPath);
+        return mainWindow;
     }
 
     public MainWindowViewModel CreateMainWindowViewModel() =>
@@ -100,7 +121,8 @@ public sealed class AppCompositionRoot : IDisposable
             CreateChapterExportService(),
             CreateShellService(),
             SettingsStore,
-            expressionAuthoringService);
+            expressionAuthoringService,
+            Capabilities);
 
     public IApplicationLogService CreateApplicationLogService() => logService;
 

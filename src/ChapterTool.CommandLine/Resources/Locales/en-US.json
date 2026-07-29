@@ -7,7 +7,6 @@
   "Cli.Error.ExpressionConflict": "Options --expression and --expression-preset cannot be used together.",
   "Cli.Error.FormatsHint": "Run `formats` to see the supported CLI conversion targets.",
   "Cli.Error.FrameRatePositive": "Frame rate must be greater than zero when --frame-rate is specified.",
-  "Cli.Error.GuiOnlyLoad": "The `load` command is available only in the Avalonia host. Use an explicit CLI command such as `inspect` or `convert`.",
   "Cli.Error.ImportFailed": "Import failed.",
   "Cli.Error.InputNotFound": "Input path '{path}' was not found.",
   "Cli.Error.InputRequired": "Input path is required.",
@@ -129,4 +128,3 @@
   "Diagnostic.XplChapters.None": "No HD-DVD chapters were parsed.",
   "Diagnostic.XplParse.Failed": "The XPL playlist could not be parsed: {message}"
 }
-

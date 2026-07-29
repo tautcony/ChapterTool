@@ -4,7 +4,7 @@ This directory is the maintainer navigation index for the current codebase.
 
 Use it to locate the code behind a feature before you search the full repository.
 
-ChapterTool is a cross-platform chapter editor for desktop, command-line, and browser use. The code map covers the Core library, platform services, command-line host, Avalonia desktop app, browser hosts, Node.js package, and test projects.
+ChapterTool is a cross-platform chapter editor for desktop, command-line, and browser use. The code map covers the Core library, platform services, command-line host, shared Avalonia UI, desktop and browser hosts, Node.js package, and test projects.
 
 ## Writing Standard
 
@@ -14,10 +14,12 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 
 - `core.md`
   - domain models, import/edit/transform/export logic
+- `contracts.md`
+  - host-neutral settings models and platform contracts
 - `infrastructure.md`
   - external tools, process execution, settings persistence, platform services
 - `avalonia.md`
-  - desktop shell, CLI entry points, view/viewmodel/runtime service wiring
+  - shared UI, desktop shell, and runtime service wiring
 - `program-form-capability-map.md`
   - all program forms, shared layers, capability comparison, known boundaries, and change tracking
 - `testing.md`
@@ -25,8 +27,10 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 
 ## WebAssembly Hosts
 
+- `src/ChapterTool.Avalonia.UI`
+  - shared Avalonia UI and semantic platform ports
 - `src/ChapterTool.Wasm`
-  - Blazor WebAssembly browser host for `ChapterTool.Core`
+  - Avalonia Browser host for the shared UI and `ChapterTool.Core`
 - `src/ChapterTool.Node`
   - Pure .NET WebAssembly host for Node.js
 - `packages/chaptertool`
@@ -35,9 +39,7 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 ## Command-Line Host
 
 - `src/ChapterTool.CommandLine`
-  - DotMake.CommandLine commands, binding, console workflows, and shared host facade
-- `src/ChapterTool.Cli`
-  - standalone process entry point and `ChapterTool` NuGet Tool package
+  - standalone process entry point, DotMake.CommandLine commands, binding, console workflows, and `ChapterTool` NuGet Tool package
 - `.github/workflows/nuget-publish.yml`
   - version-tag package build and publication
 

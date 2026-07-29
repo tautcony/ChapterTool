@@ -1,5 +1,5 @@
-using Avalonia.Media;
-using ChapterTool.Avalonia.Views.Controls.Expression;
+﻿using Avalonia.Media;
+using ChapterTool.Avalonia.UI.Views.Controls.Expression;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Tests.Views;

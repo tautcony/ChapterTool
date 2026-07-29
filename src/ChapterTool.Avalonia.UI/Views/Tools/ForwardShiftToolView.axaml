@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
+             xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
+             x:Class="ChapterTool.Avalonia.UI.Views.Tools.ForwardShiftToolView"
+             Classes="auxiliaryWindow"
+             x:DataType="tools:ForwardShiftToolViewModel"
+             x:CompileBindings="True">
+  <Grid RowDefinitions="*,Auto">
+    <Grid Grid.Row="0" Margin="16" ColumnDefinitions="Auto,*" ColumnSpacing="12" VerticalAlignment="Top">
+      <TextBlock Grid.Column="0" Classes="toolLabel" Text="{DynamicResource Tool.ForwardShift.Title}" />
+      <NumericUpDown Grid.Column="1"
+                     MinWidth="160"
+                     Minimum="-1000000"
+                     Maximum="1000000"
+                     Increment="1"
+                     Value="{Binding Frames}" />
+    </Grid>
+    <Border Grid.Row="1" Classes="toolFooter">
+      <Button Classes="primaryToolAction"
+              MinWidth="88"
+              HorizontalAlignment="Right"
+              Content="{DynamicResource Common.Apply}"
+              Command="{Binding ApplyCommand}"
+              CommandParameter="{Binding}" />
+    </Border>
+  </Grid>
+</UserControl>

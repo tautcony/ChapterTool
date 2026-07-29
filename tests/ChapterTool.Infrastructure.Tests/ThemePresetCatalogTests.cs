@@ -1,5 +1,5 @@
 using System.Globalization;
-using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Infrastructure.Tests;
 

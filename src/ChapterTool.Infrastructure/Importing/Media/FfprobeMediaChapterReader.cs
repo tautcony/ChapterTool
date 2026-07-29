@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Infrastructure.Configuration;

@@ -1,17 +1,18 @@
-using ChapterTool.Avalonia.Localization;
-using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.Session.Ports;
-using ChapterTool.Avalonia.ViewModels;
-using ChapterTool.Avalonia.ViewModels.Tools;
+﻿using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
+using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
-using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
-using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -63,9 +64,9 @@ public sealed class ToolWindowViewModelTests
     {
         var owner = CreateOwner();
         var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.PortAdapters.ExportPreferences) })
-            {
-                SelectedFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Json)
-            };
+        {
+            SelectedFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Json)
+        };
 
         Assert.Equal(ChapterExportFormat.Json, owner.SaveFormat);
         Assert.Equal(TextToolKind.Json, vm.Kind);

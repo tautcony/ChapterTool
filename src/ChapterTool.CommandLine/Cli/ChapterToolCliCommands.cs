@@ -4,31 +4,16 @@ namespace ChapterTool.CommandLine.Cli;
 
 [CliCommand(
     Description = "ChapterTool command-line workflows",
-    Children = [typeof(LoadCliCommand), typeof(ConvertCliCommand), typeof(InspectCliCommand), typeof(FormatsCliCommand)])]
+    Children = [typeof(ConvertCliCommand), typeof(InspectCliCommand), typeof(FormatsCliCommand)])]
 public sealed class ChapterToolRootCliCommand
 {
-    [CliArgument(Description = "Input file or supported source path for GUI startup.", Required = false)]
+    [CliArgument(Description = "Use an explicit command such as convert or inspect.", Required = false)]
     public string Input { get; set; } = string.Empty;
 
     public int Run(CliContext context)
     {
         context.ShowHelp();
         return context.Result.HasTokens ? 1 : 0;
-    }
-}
-
-[CliCommand(Parent = typeof(ChapterToolRootCliCommand), Description = "Launch the GUI and load a source path")]
-public sealed class LoadCliCommand
-{
-    [CliArgument(Description = "Input file or supported source path", Required = false)]
-    public string Input { get; set; } = string.Empty;
-
-    [CliOption(Alias = "-i", Description = "Input file or supported source path.", Required = false)]
-    public string? Source { get; set; }
-
-    public int Run()
-    {
-        return 0;
     }
 }
 

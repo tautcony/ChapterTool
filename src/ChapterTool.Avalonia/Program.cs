@@ -1,6 +1,5 @@
 using Avalonia;
 using ChapterTool.Avalonia.Diagnostics;
-using ChapterTool.CommandLine;
 using Optris.Icons.Avalonia;
 using Optris.Icons.Avalonia.FontAwesome;
 
@@ -8,36 +7,10 @@ namespace ChapterTool.Avalonia;
 
 internal static class Program
 {
-    internal static string? GuiStartupPath { get; private set; }
-
     [STAThread]
     public static void Main(string[] args)
     {
-        var launchPlan = ChapterToolCliHost.AnalyzeDesktopLaunch(args);
-        GuiStartupPath = launchPlan.GuiStartupPath;
-        if (launchPlan.LaunchGui)
-        {
-            SetupSentry();
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-            return;
-        }
-
-        if (launchPlan.RunCli)
-        {
-            try
-            {
-                var exitCode = ChapterToolCliHost.Run(args);
-                Environment.ExitCode = exitCode;
-                return;
-            }
-            catch (Exception exception)
-            {
-                Console.Error.WriteLine($"Unhandled CLI exception: {exception.Message}");
-                Environment.ExitCode = 2;
-                return;
-            }
-        }
-
+        SetupSentry();
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

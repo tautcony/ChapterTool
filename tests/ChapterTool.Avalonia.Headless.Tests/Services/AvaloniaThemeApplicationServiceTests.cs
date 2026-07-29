@@ -6,7 +6,7 @@ using Avalonia.Styling;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.Headless.Tests.Headless;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Services;
 

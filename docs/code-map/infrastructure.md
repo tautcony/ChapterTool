@@ -1,6 +1,6 @@
 # Infrastructure Code Map
 
-`src/ChapterTool.Infrastructure` owns process execution, external tool discovery, settings persistence, filesystem/platform integration, and import adapters that depend on native tools or container libraries.
+`src/ChapterTool.Infrastructure` owns process execution, external tool discovery, settings persistence, filesystem/platform integration, and import adapters that depend on native tools or container libraries. Host-neutral settings models and platform contracts live in `src/ChapterTool.Contracts`.
 
 Use ASD-STE100 principles in this document. Keep each sentence short and direct. Keep code identifiers exact.
 
@@ -46,15 +46,15 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 ### Settings and configuration persistence
 
 - schema:
-  - `src/ChapterTool.Infrastructure/Configuration/ChapterToolSettings.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/AppSettings.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/FontSettings.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/ThemeSettings.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/ThemePresetCatalog.cs`
+  - `src/ChapterTool.Contracts/Configuration/ChapterToolSettings.cs`
+  - `src/ChapterTool.Contracts/Configuration/AppSettings.cs`
+  - `src/ChapterTool.Contracts/Configuration/FontSettings.cs`
+  - `src/ChapterTool.Contracts/Configuration/ThemeSettings.cs`
+  - `src/ChapterTool.Contracts/Configuration/ThemePresetCatalog.cs`
 - storage:
   - `src/ChapterTool.Infrastructure/Configuration/ChapterToolSettingsStore.cs`
 - contracts:
-  - `src/ChapterTool.Infrastructure/Services/ISettingsStore.cs`
+  - `src/ChapterTool.Contracts/PlatformPorts/ISettingsStore.cs`
 - corrupt-file handling:
   - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFile.cs`
   - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFileException.cs`

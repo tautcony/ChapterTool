@@ -129,12 +129,12 @@ WASM integration rules:
 
 Browser host:
 
-- `src/ChapterTool.Wasm` is a browser WebAssembly workspace. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
-- `Services/WasmWorkspace` and `Pages/Home.razor` provide the load, grid, options, and save zones.
-- `WasmWorkspace` owns byte-based load, reload, and append state. It also owns selection actions, projection and export orchestration, diagnostics, activity logs, and localized status strings.
+- `src/ChapterTool.Wasm` is the Avalonia Browser host. It uses `Microsoft.NET.Sdk.WebAssembly`.
+- `src/ChapterTool.Avalonia.UI/Views/MainView.axaml` provides the shared load, grid, options, and save zones.
+- `ChapterWorkspace` and the shared ViewModels own buffered load, reload, append, selection, projection, export orchestration, diagnostics, activity logs, and localized status strings.
 - Core editing, segment, projection, and export services remain the behavior owners.
-- Browser settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document with schema `1`. `wwwroot/js/download.js` stores this document in `localStorage`. `Services/WasmLocalizer` loads Web-only JSON resources from `Resources/Locales/`.
-- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` — focused browser-workspace behavior coverage for reload, append gating, templates, selection/zones/delete, forward shifting, preview/save parity, auto naming, and localization refresh.
+- Browser settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document with schema `1`. `BrowserJavaScript.cs` stores this document in `localStorage`. Shared Avalonia resources provide localization.
+- `tests/ChapterTool.Wasm.Tests/BrowserAdapterTests.cs` — focused browser input and settings contract coverage.
 - Deployed to GitHub Pages by `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 
 ## Feature Lookup

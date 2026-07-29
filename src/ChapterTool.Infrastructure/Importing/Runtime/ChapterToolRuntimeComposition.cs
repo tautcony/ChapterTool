@@ -1,3 +1,5 @@
+using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Transform;

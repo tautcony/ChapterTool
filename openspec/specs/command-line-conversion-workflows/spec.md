@@ -6,7 +6,7 @@ Define the maintained ChapterTool CLI surface for inspecting supported formats a
 ## Requirements
 
 ### Requirement: CLI command tree
-The system SHALL expose a maintained command-line interface for ChapterTool through structured DotMake commands instead of ad-hoc argument branching. The command definitions and workflow entry points SHALL live in `ChapterTool.CommandLine`. The Avalonia host SHALL consume a typed launch facade and SHALL not dispatch raw CLI argument strings.
+The system SHALL expose a maintained command-line interface for ChapterTool through structured DotMake commands instead of ad-hoc argument branching. The command definitions, workflow entry points, and process entry point SHALL live in `ChapterTool.CommandLine`. The Avalonia host SHALL not reference or dispatch CLI commands.
 
 #### Scenario: Root command shows help
 - **WHEN** the user runs a supported host with `--help`, `-h`, or `-?`
@@ -16,9 +16,9 @@ The system SHALL expose a maintained command-line interface for ChapterTool thro
 - **WHEN** the user runs a supported host with the CLI version option
 - **THEN** the process SHALL print the application version to stdout and exit without launching the GUI
 
-#### Scenario: Existing startup paths stay on the GUI path
-- **WHEN** the user launches the Avalonia executable with a single existing file-system path and no CLI subcommand or switch
-- **THEN** the application SHALL treat that argument as GUI startup input instead of forcing CLI parsing
+#### Scenario: Avalonia arguments do not select CLI workflows
+- **WHEN** the user launches the Avalonia executable with CLI-looking arguments
+- **THEN** the application SHALL start the GUI without invoking the CLI command tree
 
 ### Requirement: Supported formats are discoverable
 The system SHALL provide a CLI command that lists supported input and output formats for basic conversion workflows.
