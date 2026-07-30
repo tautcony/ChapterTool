@@ -376,6 +376,528 @@ public sealed class DiscImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed || diagnostic.Code == ChapterDiagnosticCode.XplNoChapters);
     }
 
+    [Fact]
+    public void MplsParseLimitsValidateContainerLengthRejectsTooSmall()
+    {
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsParseLimits.ValidateContainerLength(13, 14, 64 * 1024, "test-container"));
+        Assert.Contains("test-container", ex.Message);
+        Assert.Contains("13", ex.Message);
+    }
+
+    [Fact]
+    public void MplsParseLimitsValidateContainerLengthRejectsTooLarge()
+    {
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsParseLimits.ValidateContainerLength(64 * 1024 + 1, 14, 64 * 1024, "test-container"));
+        Assert.Contains("test-container", ex.Message);
+    }
+
+    [Fact]
+    public void MplsParseLimitsValidateCountRejectsNegativeAndOversized()
+    {
+        var ex1 = Assert.Throws<InvalidDataException>(() =>
+            MplsParseLimits.ValidateCount(-1, 100, "widget"));
+        Assert.Contains("widget", ex1.Message);
+
+        var ex2 = Assert.Throws<InvalidDataException>(() =>
+            MplsParseLimits.ValidateCount(101, 100, "widget"));
+        Assert.Contains("widget", ex2.Message);
+    }
+
+    [Fact]
+    public void MplsParseLimitsValidateCountByBudgetRejectsBudgetViolation()
+    {
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsParseLimits.ValidateCountByBudget(100, 10, 500, "widge"));
+        Assert.Contains("widge", ex.Message);
+
+        MplsParseLimits.ValidateCountByBudget(50, 10, 500, "widge");
+    }
+
+    [Fact]
+    public void MplsParseLimitsSeekToAddressAcceptsValidAddress()
+    {
+        using var stream = new MemoryStream(new byte[100]);
+        MplsParseLimits.SeekToAddress(stream, 50, "test");
+        Assert.Equal(50, stream.Position);
+    }
+
+    [Fact]
+    public void MplsParseLimitsSeekToAddressRejectsAddressPastEnd()
+    {
+        using var stream = new MemoryStream(new byte[100]);
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsParseLimits.SeekToAddress(stream, 101, "test-section"));
+        Assert.Contains("test-section", ex.Message);
+    }
+
+    [Fact]
+    public void MplsBoundedStreamCreateRejectsContainerExceedingParent()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        inner.Position = 80;
+
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsBoundedStream.Create(inner, 30, 1, 1000, "overflow"));
+        Assert.Contains("overflow", ex.Message);
+    }
+
+    [Fact]
+    public void MplsBoundedStreamCreateToAddressRejectsAddressPastStreamEnd()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsBoundedStream.CreateToAddress(inner, 101, "past-end"));
+        Assert.Contains("past-end", ex.Message);
+    }
+
+    [Fact]
+    public void MplsBoundedStreamCreateToAddressRejectsEndAddressBeforePosition()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        inner.Position = 60;
+
+        var ex = Assert.Throws<InvalidDataException>(() =>
+            MplsBoundedStream.CreateToAddress(inner, 50, "before-pos"));
+        Assert.Contains("before-pos", ex.Message);
+    }
+
+    [Fact]
+    public void MplsBoundedStreamReadRespectsRemainingBudget()
+    {
+        using var inner = new MemoryStream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        using var bounded = MplsBoundedStream.Create(inner, 5, 1, 100, "limited");
+
+        var buffer = new byte[10];
+        var read = bounded.Read(buffer, 0, 10);
+        Assert.Equal(5, read);
+        Assert.Equal([1, 2, 3, 4, 5], buffer[..5]);
+        Assert.Equal(5, bounded.Position);
+
+        // Second read returns 0 (exhausted)
+        Assert.Equal(0, bounded.Read(buffer, 0, 10));
+    }
+
+    [Fact]
+    public void MplsBoundedStreamCompleteAdvancesInnerStreamPosition()
+    {
+        // Partial consumption: skips unread remainder
+        using (var inner = new MemoryStream(new byte[100]))
+        {
+            inner.Position = 10;
+            using var bounded = MplsBoundedStream.Create(inner, 20, 1, 100, "skip-remainder");
+            bounded.ReadByte();
+            bounded.Complete("skip-remainder");
+            Assert.Equal(10 + 20, inner.Position);
+        }
+
+        // Exact consumption: nothing to skip
+        using (var inner = new MemoryStream(new byte[100]))
+        {
+            inner.Position = 10;
+            using var bounded = MplsBoundedStream.Create(inner, 10, 1, 100, "exact");
+            bounded.ReadExactBytes(10);
+            bounded.Complete("exact");
+            Assert.Equal(20, inner.Position);
+        }
+    }
+
+    [Fact]
+    public void MplsBoundedStreamSeekWithBeginOrigin()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "seek-begin");
+
+        Assert.Equal(10, bounded.Seek(10, SeekOrigin.Begin));
+        Assert.Equal(10, bounded.Position);
+    }
+
+    [Fact]
+    public void MplsBoundedStreamSeekWithCurrentOrigin()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "seek-current");
+
+        bounded.Seek(10, SeekOrigin.Begin);
+        Assert.Equal(25, bounded.Seek(15, SeekOrigin.Current));
+    }
+
+    [Fact]
+    public void MplsBoundedStreamSeekWithEndOrigin()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "seek-end");
+
+        Assert.Equal(50, bounded.Seek(0, SeekOrigin.End));
+        Assert.Equal(30, bounded.Seek(-20, SeekOrigin.End));
+    }
+
+    [Fact]
+    public void MplsBoundedStreamSeekRejectsCrossingBoundary()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "seek-boundary");
+
+        Assert.Throws<InvalidDataException>(() => bounded.Seek(-1, SeekOrigin.Begin));
+        Assert.Throws<InvalidDataException>(() => bounded.Seek(51, SeekOrigin.Begin));
+        Assert.Throws<InvalidDataException>(() => bounded.Seek(1, SeekOrigin.End));
+    }
+
+    [Fact]
+    public void MplsBoundedStreamReadRejectsInvalidArguments()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "read-args");
+
+        Assert.Throws<ArgumentNullException>(() => bounded.Read(null!, 0, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => bounded.Read(new byte[10], -1, 1));
+    }
+
+    [Fact]
+    public void UOMaskTableWithAllBitsSetVerifiedViaRead()
+    {
+        var maskBytes = new byte[8] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        using var stream = new MemoryStream(maskBytes);
+        var mask = MplsUOMaskTable.Read(stream);
+
+        Assert.Equal(8, mask.FlagField.Length);
+        Assert.True(mask.MenuCall);
+        Assert.True(mask.TitleSearch);
+        Assert.True(mask.ChapterSearch);
+        Assert.True(mask.TimeSearch);
+        Assert.True(mask.Stop);
+        Assert.True(mask.PauseOn);
+        Assert.True(mask.ForwardPlay);
+        Assert.True(mask.BackwardPlay);
+        Assert.True(mask.Resume);
+        Assert.True(mask.SelectButton);
+        Assert.True(mask.ActivateButton);
+    }
+
+    [Fact]
+    public void UOMaskTableWithAllBitsClearedVerifiedViaRead()
+    {
+        var maskBytes = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        using var stream = new MemoryStream(maskBytes);
+        var mask = MplsUOMaskTable.Read(stream);
+
+        Assert.False(mask.MenuCall);
+        Assert.False(mask.TitleSearch);
+        Assert.False(mask.ChapterSearch);
+        Assert.False(mask.TimeSearch);
+        Assert.False(mask.SkipToNextPoint);
+        Assert.False(mask.SkipToPrevPoint);
+        Assert.False(mask.Stop);
+        Assert.False(mask.PauseOn);
+        Assert.False(mask.StillOff);
+        Assert.False(mask.ForwardPlay);
+        Assert.False(mask.BackwardPlay);
+        Assert.False(mask.Resume);
+        Assert.False(mask.MoveUpSelectedButton);
+        Assert.False(mask.MoveDownSelectedButton);
+        Assert.False(mask.MoveLeftSelectedButton);
+        Assert.False(mask.MoveRightSelectedButton);
+        Assert.False(mask.SelectButton);
+        Assert.False(mask.ActivateButton);
+        Assert.False(mask.SelectAndActivateButton);
+        Assert.False(mask.PrimaryAudioStreamNumberChange);
+        Assert.False(mask.AngleNumberChange);
+        Assert.False(mask.PopupOn);
+        Assert.False(mask.PopupOff);
+        Assert.False(mask.PrimaryPGEnableDisable);
+        Assert.False(mask.PrimaryPGStreamNumberChange);
+        Assert.False(mask.SecondaryVideoEnableDisable);
+        Assert.False(mask.SecondaryVideoStreamNumberChange);
+        Assert.False(mask.SecondaryAudioEnableDisable);
+        Assert.False(mask.SecondaryAudioStreamNumberChange);
+        Assert.False(mask.SecondaryPGStreamNumberChange);
+    }
+
+    [Fact]
+    public void MplsExtensionDataReadReturnsEmptyOnZeroLength()
+    {
+        using var builder = new MplsBinaryBuilder();
+        builder.UInt32BE(0);
+        using var stream = builder.Build();
+        var extData = MplsExtensionData.Read(stream);
+
+        Assert.Equal(0U, extData.Length);
+        Assert.Empty(extData.ExtDataEntries);
+        Assert.Empty(extData.DataBlock);
+    }
+
+    [Fact]
+    public void MplsExtensionDataRejectsEntriesLengthExceedingContainer()
+    {
+        using var builder = new MplsBinaryBuilder();
+        builder.UInt32BE(30)
+            .UInt32BE(28)
+            .ExtensionDataEntryTable(10);
+        using var stream = builder.Build();
+        Assert.Throws<InvalidDataException>(() => MplsExtensionData.Read(stream));
+    }
+
+    [Fact]
+    public void MplsExtensionDataRejectsInvalidDataBlockStartAddress()
+    {
+        using var builder = new MplsBinaryBuilder();
+        builder.UInt32BE(40)
+            .UInt32BE(5)
+            .ExtensionDataEntryTable(1);
+        using var stream = builder.Build();
+        Assert.Throws<InvalidDataException>(() => MplsExtensionData.Read(stream));
+    }
+
+    [Fact]
+    public void MplsExtensionDataRejectsEntriesOverflowingContainer()
+    {
+        using var builder = new MplsBinaryBuilder();
+        builder.UInt32BE(15)
+            .UInt32BE(20)
+            .ExtensionDataEntryTable(1);
+        using var stream = builder.Build();
+        Assert.Throws<InvalidDataException>(() => MplsExtensionData.Read(stream));
+    }
+
+    [Fact]
+    public void MplsPlaylistFileReadsFixtureWithSubpaths()
+    {
+        using var stream = File.OpenRead(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00001_MPEG_II.mpls"));
+        var file = MplsPlaylistFile.Read(stream);
+
+        Assert.NotEmpty(file.PlayList.SubPaths);
+        var subPath = file.PlayList.SubPaths[0];
+        Assert.NotNull(subPath);
+        Assert.NotEmpty(subPath.SubPlayItems);
+    }
+
+    [Fact]
+    public void MplsPlaylistFileReadsPaddingZeroFixture()
+    {
+        using var stream = File.OpenRead(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00003_Padding_Zero.mpls"));
+        var file = MplsPlaylistFile.Read(stream);
+
+        Assert.Equal(2, file.PlayList.NumberOfPlayItems);
+        Assert.Equal(24000d / 1001d, MplsFrameRate(file.PlayList.PlayItems[0]));
+    }
+
+    [Fact]
+    public void MplsImporterReadPlaylistInfoParsesFchFixture()
+    {
+        var path = FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00001_fch.mpls");
+        var chapterSet = MplsChapterImporter.ReadPlaylistInfo(path);
+
+        Assert.NotNull(chapterSet);
+        Assert.Equal("00001", chapterSet.SourceName);
+        Assert.Equal(ChapterImportFormat.Mpls, chapterSet.ImportFormat);
+        Assert.Equal(24000d / 1001d, chapterSet.FramesPerSecond, 3);
+        Assert.Equal(9, chapterSet.Chapters.Count);
+    }
+
+    [Fact]
+    public void MplsChapterImporterReturnsEmptyForEmptyPlayItems()
+    {
+        using var stream = new MemoryStream(MinimalMpls(numberOfPlayItems: 0, numberOfSubPaths: 0));
+
+        var parsed = MplsPlaylistFile.Read(stream);
+        Assert.Empty(parsed.PlayList.PlayItems);
+        Assert.Empty(parsed.PlayList.SubPaths);
+    }
+
+    [Fact]
+    public void MplsPlaylistFileRejectsInvalidVersion()
+    {
+        using var builder = new MplsBinaryBuilder();
+        builder.Ascii("MPLS9999").Reserved(36);
+        using var stream = builder.Build();
+        Assert.Throws<InvalidDataException>(() => MplsPlaylistFile.Read(stream));
+    }
+
+    [Fact]
+    public void BinaryReadExtensionsSkipBytesRejectsNegative()
+    {
+        using var stream = new MemoryStream(new byte[10]);
+        Assert.Throws<InvalidDataException>(() => stream.SkipBytes(-1));
+    }
+
+    [Fact]
+    public void BinaryReadExtensionsSkipBytesThrowsOnExhaustedStream()
+    {
+        using var stream = new MemoryStream(new byte[10]);
+        stream.Position = 10;
+        Assert.Throws<EndOfStreamException>(() => stream.SkipBytes(1));
+    }
+
+    [Fact]
+    public void BinaryReadExtensionsReadAsciiProducesString()
+    {
+        using var stream = new MemoryStream("HELLO!"u8.ToArray());
+        Assert.Equal("HELLO!", stream.ReadAscii(6));
+    }
+
+    [Fact]
+    public void BinaryReadExtensionsReadUInt16AndUInt32BigEndian()
+    {
+        using var stream = new MemoryStream([0x01, 0x02, 0x03, 0x04, 0x05, 0x06]);
+        Assert.Equal((ushort)0x0102, stream.ReadUInt16BigEndian());
+        Assert.Equal(0x03040506U, stream.ReadUInt32BigEndian());
+    }
+
+    [Fact]
+    public void BinaryReadExtensionsReadExactBytesThrowsEndOfStream()
+    {
+        using var stream = new MemoryStream([1, 2, 3]);
+        Assert.Throws<EndOfStreamException>(() => stream.ReadExactBytes(10));
+    }
+
+    [Fact]
+    public void MplsStreamReadExtensionsReadByteChecked()
+    {
+        using var empty = new MemoryStream([]);
+        Assert.Throws<EndOfStreamException>(() => empty.ReadByteChecked());
+
+        using var data = new MemoryStream([0xAB]);
+        Assert.Equal(0xAB, data.ReadByteChecked());
+    }
+
+    [Fact]
+    public void MplsBoundedStreamReadExactBytesCrossingBoundaryThrows()
+    {
+        using var inner = new MemoryStream("ABCDEFGHIJ"u8.ToArray());
+        using var bounded = MplsBoundedStream.Create(inner, 5, 1, 100, "cross");
+
+        Assert.Equal("ABCDE"u8.ToArray(), bounded.ReadExactBytes(5));
+
+        // Reading more should throw (Read returns 0)
+        Assert.Throws<InvalidDataException>(() => bounded.ReadExactBytes(1));
+    }
+
+    [Fact]
+    public void MplsBoundedStreamSeekWithInvalidOriginThrows()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "bad-origin");
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => bounded.Seek(0, (SeekOrigin)99));
+    }
+
+    [Fact]
+    public void MplsBoundedStreamWriteThrowsNotSupported()
+    {
+        using var inner = new MemoryStream(new byte[100]);
+        using var bounded = MplsBoundedStream.Create(inner, 50, 1, 100, "write-test");
+
+        Assert.Throws<NotSupportedException>(() => bounded.Write([], 0, 0));
+        Assert.Throws<NotSupportedException>(() => bounded.SetLength(10));
+        Assert.False(bounded.CanWrite);
+    }
+
+    [Fact]
+    public void MplsClipNameToStringReturnsClipAndCodec()
+    {
+        using var stream = new MemoryStream("00002M2TS"u8.ToArray());
+        var clipName = MplsClipName.Read(stream);
+
+        Assert.Equal("00002", clipName.ClipInformationFileName);
+        Assert.Equal("M2TS", clipName.ClipCodecIdentifier);
+        Assert.Equal("00002.M2TS", clipName.ToString());
+    }
+
+    [Fact]
+    public void MplsContainerReadExtensionsSkipContainerRemainder()
+    {
+        // Partial consumption: skips the unconsumed bytes
+        using (var stream = new MemoryStream(new byte[100]))
+        {
+            stream.Write(new byte[10]);
+            var startPos = stream.Position = 10;
+            stream.Position = startPos + 20;
+            stream.SkipContainerRemainder(startPos, 50, "test-section");
+            Assert.Equal(startPos + 50, stream.Position);
+        }
+
+        // Exact consumption: no-op
+        using (var stream = new MemoryStream(new byte[100]))
+        {
+            var startPos = stream.Position = 10;
+            stream.Position = startPos + 30;
+            stream.SkipContainerRemainder(startPos, 30, "test-section");
+            Assert.Equal(startPos + 30, stream.Position);
+        }
+    }
+
+    [Fact]
+    public void MplsContainerReadExtensionsSkipContainerRemainderThrowsOnOverConsumed()
+    {
+        using var stream = new MemoryStream(new byte[100]);
+        var startPos = stream.Position = 10;
+
+        // Consumed more than the container length
+        stream.Position = startPos + 40;
+        Assert.Throws<InvalidDataException>(() =>
+            stream.SkipContainerRemainder(startPos, 30, "over-test"));
+    }
+
+    [Fact]
+    public void MplsSubPlayItemReadsMultiClipEntries()
+    {
+        const int subPlayItemContainerLength = 50;
+        const int subPathContainerLength = 58;
+
+        using var builder = new MplsBinaryBuilder();
+        builder
+            .UInt32BE(subPathContainerLength)
+            .Byte(0)
+            .Byte(2)
+            .UInt16BE(0)
+            .Byte(0)
+            .Byte(1)
+            .UInt16BE(subPlayItemContainerLength)
+            .ClipName("00001", "M2TS")
+            .Reserved(3)
+            .Byte(0x01)
+            .Byte(0x00)
+            .UInt32BE(0)
+            .UInt32BE(0)
+            .UInt16BE(0)
+            .UInt32BE(0)
+            .Byte(2)
+            .Byte(0)
+            .ClipName("00002", "M2TS")
+            .Byte(0x01)
+            .ClipName("00003", "M2TS")
+            .Byte(0x02);
+
+        using var stream = builder.Build();
+        var subPath = MplsSubPath.Read(stream);
+
+        Assert.Equal(subPathContainerLength, (int)subPath.Length);
+        Assert.Equal(2, subPath.SubPathType);
+        Assert.Single(subPath.SubPlayItems);
+
+        var item = subPath.SubPlayItems[0];
+        Assert.True(item.IsMultiClipEntries);
+        Assert.Equal("00001", item.ClipName.ClipInformationFileName);
+        Assert.Equal(2, item.MultiClipEntries.Count);
+        Assert.Equal("00002", item.MultiClipEntries[0].ClipName.ClipInformationFileName);
+        Assert.Equal(0x01, item.MultiClipEntries[0].RefToSTCID);
+        Assert.Equal("00003", item.MultiClipEntries[1].ClipName.ClipInformationFileName);
+        Assert.Equal(0x02, item.MultiClipEntries[1].RefToSTCID);
+        Assert.Equal(0x00, item.ConnectionCondition);
+    }
+
+    [Fact]
+    public void MplsPlayListMarkRejectsLengthCannotContainDeclaredMarks()
+    {
+        using var builder = new MplsBinaryBuilder();
+        builder.UInt32BE(14)
+            .UInt16BE(2);
+        using var stream = builder.Build();
+        Assert.Throws<InvalidDataException>(() => MplsPlayListMark.Read(stream));
+    }
+
     private static TimeSpan[] MplsTimes(params uint[] ptsOffsets) =>
         ptsOffsets.Select(MplsChapterImporter.PtsToTime).ToArray();
 
@@ -391,48 +913,29 @@ public sealed class DiscImporterTests
         const uint playlistAddress = 64;
         const uint playlistMarkAddress = 80;
         const uint extensionAddress = 96;
-        using var stream = new MemoryStream();
-        stream.Write("MPLS"u8);
-        stream.Write("0200"u8);
-        WriteUInt32BigEndian(stream, playlistAddress);
-        WriteUInt32BigEndian(stream, playlistMarkAddress);
-        WriteUInt32BigEndian(stream, extensionLength is null ? 0 : extensionAddress);
-        stream.Write(new byte[20]);
-
-        WriteUInt32BigEndian(stream, 14);
-        stream.Write(new byte[14]);
-
-        stream.Position = playlistAddress;
-        WriteUInt32BigEndian(stream, playlistLength);
-        WriteUInt16BigEndian(stream, 0);
-        WriteUInt16BigEndian(stream, numberOfPlayItems);
-        WriteUInt16BigEndian(stream, numberOfSubPaths);
-
-        stream.Position = playlistMarkAddress;
-        WriteUInt32BigEndian(stream, 2);
-        WriteUInt16BigEndian(stream, 0);
+        using var b = new MplsBinaryBuilder();
+        b.Ascii("MPLS0200")
+            .UInt32BE(playlistAddress)
+            .UInt32BE(playlistMarkAddress)
+            .UInt32BE(extensionLength is null ? 0 : extensionAddress)
+            .Reserved(20)
+            .UInt32BE(14).Reserved(14)
+            .SeekTo((int)playlistAddress)
+            .UInt32BE(playlistLength)
+            .Reserved(2)
+            .UInt16BE(numberOfPlayItems)
+            .UInt16BE(numberOfSubPaths)
+            .SeekTo((int)playlistMarkAddress)
+            .UInt32BE(2)
+            .UInt16BE(0);
 
         if (extensionLength is not null)
         {
-            stream.Position = extensionAddress;
-            WriteUInt32BigEndian(stream, extensionLength.Value);
+            b.SeekTo((int)extensionAddress)
+                .UInt32BE(extensionLength.Value);
         }
 
-        return stream.ToArray();
-    }
-
-    private static void WriteUInt16BigEndian(Stream stream, ushort value)
-    {
-        stream.WriteByte((byte)(value >> 8));
-        stream.WriteByte((byte)value);
-    }
-
-    private static void WriteUInt32BigEndian(Stream stream, uint value)
-    {
-        stream.WriteByte((byte)(value >> 24));
-        stream.WriteByte((byte)(value >> 16));
-        stream.WriteByte((byte)(value >> 8));
-        stream.WriteByte((byte)value);
+        return b.ToArray();
     }
 
     private static double MplsFrameRate(MplsPlayItem playItem)
