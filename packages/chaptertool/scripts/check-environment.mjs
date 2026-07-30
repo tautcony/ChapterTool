@@ -10,7 +10,7 @@ function requireDirectory(path, description) {
   try {
     stats = statSync(path);
   } catch (error) {
-    throw new Error(`${description} does not exist at ${path}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`${description} does not exist at ${path}: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }
 
   if (!stats.isDirectory()) {
@@ -23,7 +23,7 @@ function requireFile(path, description) {
   try {
     stats = statSync(path);
   } catch (error) {
-    throw new Error(`${description} does not exist at ${path}: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(`${description} does not exist at ${path}: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
   }
 
   if (!stats.isFile()) {
@@ -56,7 +56,7 @@ function requireOwnedPath(root, path, expectedRelativePath, description) {
   const actualRelativePath = relative(root, path);
   if (actualRelativePath !== expectedRelativePath) {
     throw new Error(
-      `${description} must resolve to ${expectedRelativePath} under ${root}. Detected: ${path}`
+      `${description} must resolve to ${expectedRelativePath} under ${root}. Detected: ${path}`,
     );
   }
 
@@ -87,7 +87,7 @@ export function resolveBuildPaths() {
     entryPointPath: join(sourceDirectory, "index.ts"),
     publishDirectory: join(repositoryDirectory, "artifacts", "node-package-runtime"),
     packageOutputDirectory: join(repositoryDirectory, "artifacts", "npm"),
-    distributionDirectory: join(packageDirectory, "dist")
+    distributionDirectory: join(packageDirectory, "dist"),
   };
 }
 
@@ -97,7 +97,7 @@ export function inspectRepositoryLayout(paths) {
     paths.repositoryDirectory,
     paths.packageDirectory,
     join("packages", "chaptertool"),
-    "ChapterTool package directory"
+    "ChapterTool package directory",
   );
   requireDirectory(paths.sourceDirectory, "ChapterTool package source directory");
   requireFile(paths.solutionPath, "Avalonia solution");
@@ -110,12 +110,13 @@ export function inspectRepositoryLayout(paths) {
     packageJson = JSON.parse(readFileSync(paths.packageJsonPath, "utf8"));
   } catch (error) {
     throw new Error(
-      `ChapterTool package manifest is not valid JSON: ${error instanceof Error ? error.message : String(error)}`
+      `ChapterTool package manifest is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
   if (packageJson.name !== expectedPackageName) {
     throw new Error(
-      `ChapterTool package manifest must have name ${expectedPackageName}. Detected: ${String(packageJson.name)}`
+      `ChapterTool package manifest must have name ${expectedPackageName}. Detected: ${String(packageJson.name)}`,
     );
   }
 
@@ -123,19 +124,19 @@ export function inspectRepositoryLayout(paths) {
     paths.repositoryDirectory,
     paths.publishDirectory,
     join("artifacts", "node-package-runtime"),
-    "Node runtime publish directory"
+    "Node runtime publish directory",
   );
   requireOwnedPath(
     paths.repositoryDirectory,
     paths.packageOutputDirectory,
     join("artifacts", "npm"),
-    "npm package output directory"
+    "npm package output directory",
   );
   requireOwnedPath(
     paths.packageDirectory,
     paths.distributionDirectory,
     "dist",
-    "ChapterTool package distribution directory"
+    "ChapterTool package distribution directory",
   );
 }
 
@@ -143,15 +144,15 @@ function runDotnet(arguments_) {
   try {
     return execFileSync("dotnet", arguments_, {
       encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"]
+      stdio: ["ignore", "pipe", "pipe"],
     }).trim();
   } catch (error) {
     if (error?.code === "ENOENT") {
-      throw new Error("The .NET SDK is required, but the dotnet command was not found.");
+      throw new Error("The .NET SDK is required, but the dotnet command was not found.", { cause: error });
     }
 
     const details = error?.stderr?.trim();
-    throw new Error(details || `dotnet ${arguments_.join(" ")} failed.`);
+    throw new Error(details || `dotnet ${arguments_.join(" ")} failed.`, { cause: error });
   }
 }
 

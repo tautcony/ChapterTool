@@ -16,7 +16,7 @@ mkdirSync(packageOutputDirectory, { recursive: true });
 const packOutput = execFileSync(
   "npm",
   ["pack", "--ignore-scripts", "--json", "--pack-destination", packageOutputDirectory],
-  { cwd: packageDirectory, encoding: "utf8" }
+  { cwd: packageDirectory, encoding: "utf8" },
 ).trim();
 
 let packResult;
@@ -25,7 +25,7 @@ try {
   const jsonText = packOutput.slice(jsonStart >= 0 ? jsonStart + 1 : packOutput.indexOf("["));
   packResult = JSON.parse(jsonText);
 } catch (error) {
-  throw new Error(`npm pack did not return JSON: ${error instanceof Error ? error.message : String(error)}`);
+  throw new Error(`npm pack did not return JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
 }
 
 const archiveName = packResult[0]?.filename;
@@ -39,7 +39,7 @@ for (const requiredFile of [
   "dist/index.mjs",
   "dist/index.d.ts",
   "dist/runtime/_framework/dotnet.js",
-  "dist/runtime/_framework/dotnet.runtime.js.map"
+  "dist/runtime/_framework/dotnet.runtime.js.map",
 ]) {
   if (!packedFiles.has(requiredFile)) {
     throw new Error(`The package archive does not contain ${requiredFile}.`);
@@ -50,13 +50,13 @@ const consumerDirectory = mkdtempSync(join(tmpdir(), "chaptertool-node-consumer-
 try {
   writeFileSync(
     join(consumerDirectory, "package.json"),
-    JSON.stringify({ name: "chaptertool-node-package-check", private: true, type: "module" })
+    JSON.stringify({ name: "chaptertool-node-package-check", private: true, type: "module" }),
   );
 
   execFileSync(
     "npm",
     ["install", "--ignore-scripts", "--no-audit", "--no-fund", archivePath],
-    { cwd: consumerDirectory, stdio: "inherit" }
+    { cwd: consumerDirectory, stdio: "inherit" },
   );
 
   const checkScript = `
@@ -72,7 +72,7 @@ try {
   `;
   execFileSync(process.execPath, ["--input-type=module", "--eval", checkScript], {
     cwd: consumerDirectory,
-    stdio: "inherit"
+    stdio: "inherit",
   });
 } finally {
   rmSync(consumerDirectory, { recursive: true, force: true });

@@ -9,7 +9,7 @@ import {
   requireInteger,
   requireNumber,
   requireObject,
-  requireString
+  requireString,
 } from "./utils/validation.js";
 import type {
   ChapterConversionResult,
@@ -33,7 +33,7 @@ import type {
   FrameRateOption,
   OutputEncoding,
   TimeParseResult,
-  XmlLanguage
+  XmlLanguage,
 } from "./types.js";
 
 export type * from "./types.js";
@@ -133,7 +133,7 @@ export class ChapterTool {
       encodeJson({
         index: requireIndex(index, "index"),
         text: requireString(text, "text"),
-        framesPerSecond: requireNumber(framesPerSecond, "framesPerSecond")
+        framesPerSecond: requireNumber(framesPerSecond, "framesPerSecond"),
       }, "options"));
   }
 
@@ -190,7 +190,7 @@ export class ChapterTool {
       "shiftFramesForward",
       encodeJson({
         frames: requireInteger(frames, "frames"),
-        framesPerSecond: requireNumber(framesPerSecond, "framesPerSecond")
+        framesPerSecond: requireNumber(framesPerSecond, "framesPerSecond"),
       }, "options"));
   }
 
@@ -241,7 +241,7 @@ export class ChapterTool {
   /** Calculates chapter frame metadata for the selected frame-rate option. */
   async updateFrames(
     chapterSet: ChapterSet,
-    options: { optionCode?: string; round?: boolean; tolerance?: number } = {}
+    options: { optionCode?: string; round?: boolean; tolerance?: number } = {},
   ): Promise<FrameInfoResult> {
     const normalizedOptions = requireObject(options, "options");
     const optionCode = normalizedOptions.optionCode ?? "Auto";
@@ -293,7 +293,7 @@ export class ChapterTool {
   /** Analyzes an expression and returns spans, completions, and diagnostics. */
   async analyzeExpression(
     expression: string,
-    options: { caretIndex?: number; timeSeconds?: number; framesPerSecond?: number } = {}
+    options: { caretIndex?: number; timeSeconds?: number; framesPerSecond?: number } = {},
   ): Promise<ExpressionAnalysisResult> {
     const normalizedExpression = requireString(expression, "expression");
     const normalizedOptions = requireObject(options, "options");
@@ -347,7 +347,7 @@ export class ChapterTool {
   async chapterTextToQpfile(
     chapterText: string,
     framesPerSecond: number,
-    timecodeText: string | null = null
+    timecodeText: string | null = null,
   ): Promise<ChapterConversionResult> {
     if (timecodeText !== null && timecodeText !== undefined) {
       requireString(timecodeText, "timecodeText");

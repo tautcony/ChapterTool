@@ -7,7 +7,7 @@ import { build as bundle } from "tsdown";
 import {
   inspectBuildEnvironment,
   reportBuildEnvironment,
-  resolveBuildPaths
+  resolveBuildPaths,
 } from "./check-environment.mjs";
 
 const paths = resolveBuildPaths();
@@ -16,7 +16,7 @@ const {
   projectPath,
   publishDirectory,
   sourceDirectory,
-  distributionDirectory
+  distributionDirectory,
 } = paths;
 const runtimeDirectory = join(distributionDirectory, "runtime");
 const frameworkSourceDirectory = join(publishDirectory, "wwwroot", "_framework");
@@ -25,7 +25,7 @@ const nodeProjectBinDirectory = join(
   "src",
   "ChapterTool.Node",
   "bin",
-  "Release"
+  "Release",
 );
 const frameworkDirectory = join(runtimeDirectory, "_framework");
 const { copy, pathExists, readdir, remove } = fsExtra;
@@ -39,13 +39,13 @@ const publishArguments = [
   "--configuration",
   "Release",
   "--output",
-  publishDirectory
+  publishDirectory,
 ];
 
 if (!environment.hasWasmTools) {
   publishArguments.push(
     "-p:WasmBuildNative=false",
-    "-p:WasmRunWasmOpt=false"
+    "-p:WasmRunWasmOpt=false",
   );
 }
 
@@ -69,15 +69,15 @@ await bundle({
   deps: {
     neverBundle: (id) => id.includes("/runtime/") || id.startsWith("./runtime/"),
     dts: {
-      neverBundle: (id) => id.includes("/runtime/") || id.startsWith("./runtime/")
-    }
-  }
+      neverBundle: (id) => id.includes("/runtime/") || id.startsWith("./runtime/"),
+    },
+  },
 });
 
 // Clean runtime directory first to avoid stale hashed WASM files from previous builds.
 await remove(runtimeDirectory);
 await copy(frameworkSourceDirectory, frameworkDirectory, {
-  filter: (source) => !source.endsWith(".br") && !source.endsWith(".gz")
+  filter: (source) => !source.endsWith(".br") && !source.endsWith(".gz"),
 });
 
 // Publish omits the runtime JS source maps, but the emitted files still reference them.
