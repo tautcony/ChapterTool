@@ -674,6 +674,19 @@ public sealed class DiscImporterTests
     }
 
     [Fact]
+    public void MplsExtensionDataUsesSectionRelativeAddressesAndParsesPipMetadata()
+    {
+        using var stream = File.OpenRead(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls"));
+        var file = MplsPlaylistFile.Read(stream);
+
+        Assert.NotNull(file.ExtensionData);
+        Assert.Single(file.ExtensionData.ExtDataEntries);
+        Assert.Equal((ushort)1, file.ExtensionData.ExtDataEntries[0].ExtDataType);
+        Assert.NotEmpty(file.ExtensionData.PipMetadata);
+        Assert.NotEmpty(file.ExtensionData.PipMetadata[0].Data);
+    }
+
+    [Fact]
     public void MplsPlaylistFileReadsPaddingZeroFixture()
     {
         using var stream = File.OpenRead(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00003_Padding_Zero.mpls"));
@@ -681,6 +694,14 @@ public sealed class DiscImporterTests
 
         Assert.Equal(2, file.PlayList.NumberOfPlayItems);
         Assert.Equal(24000d / 1001d, MplsFrameRate(file.PlayList.PlayItems[0]));
+    }
+
+    [Fact]
+    public void MplsVersion0240IsAccepted()
+    {
+        using var stream = new MemoryStream(MinimalMpls(version: "0240"));
+        var file = MplsPlaylistFile.Read(stream);
+        Assert.Equal("0240", file.VersionNumber);
     }
 
     [Fact]
@@ -905,6 +926,7 @@ public sealed class DiscImporterTests
         (byte)(((value / 10) << 4) | (value % 10));
 
     private static byte[] MinimalMpls(
+        string version = "0200",
         uint playlistLength = 6,
         ushort numberOfPlayItems = 0,
         ushort numberOfSubPaths = 0,
@@ -914,7 +936,7 @@ public sealed class DiscImporterTests
         const uint playlistMarkAddress = 80;
         const uint extensionAddress = 96;
         using var b = new MplsBinaryBuilder();
-        b.Ascii("MPLS0200")
+        b.Ascii("MPLS" + version)
             .UInt32BE(playlistAddress)
             .UInt32BE(playlistMarkAddress)
             .UInt32BE(extensionLength is null ? 0 : extensionAddress)

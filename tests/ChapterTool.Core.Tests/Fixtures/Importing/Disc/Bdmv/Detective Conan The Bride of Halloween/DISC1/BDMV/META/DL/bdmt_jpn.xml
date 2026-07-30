@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<disclib xmlns="urn:BDA:bdmv;disclib" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:BDA:bdmv;disclib disclib.xsd">
+  <di:discinfo xmlns:di="urn:BDA:bdmv;discinfo">
+    <di:title>
+      <di:name>劇場版名探偵コナン ハロウィンの花嫁</di:name>
+    </di:title>
+    <di:description>
+      <di:thumbnail href="./conan_haloween_BD_META_S.jpg" size="416x240" />
+      <di:thumbnail href="./conan_haloween_BD_META_L.jpg" size="640x360" />
+    </di:description>
+  </di:discinfo>
+</disclib>

@@ -8,7 +8,7 @@
   <Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Window}">
     <Grid Grid.Row="0" Margin="8">
       <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="300" MinWidth="250" MaxWidth="500" />
+        <ColumnDefinition Width="360" MinWidth="300" MaxWidth="560" />
         <ColumnDefinition Width="4" />
         <ColumnDefinition Width="*" MinWidth="250" />
       </Grid.ColumnDefinitions>
@@ -30,10 +30,9 @@
                    ScrollViewer.VerticalScrollBarVisibility="Auto">
             <ListBox.Styles>
               <Style Selector="ListBoxItem">
-                <Setter Property="Height" Value="34" />
-                <Setter Property="MinHeight" Value="34" />
-                <Setter Property="Margin" Value="0" />
-                <Setter Property="Padding" Value="0" />
+                <Setter Property="MinHeight" Value="48" />
+                <Setter Property="Margin" Value="0,1" />
+                <Setter Property="Padding" Value="4,3" />
                 <Setter Property="CornerRadius" Value="4" />
               </Style>
             </ListBox.Styles>
@@ -44,8 +43,27 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="vm:LogEntryViewModel">
-                <Grid ColumnDefinitions="Auto,*,Auto" Background="Transparent">
-                  <Grid Grid.Column="0" Width="16" Height="16" Margin="4,0">
+                <Grid ColumnDefinitions="4,Auto,*,Auto" Background="Transparent">
+                  <Border Grid.Column="0"
+                          Width="4"
+                          Margin="0,1,6,1"
+                          CornerRadius="2"
+                          Background="{DynamicResource ChapterTool.LogInformationBrush}"
+                          IsVisible="{Binding IsInformation}" />
+                  <Border Grid.Column="0"
+                          Width="4"
+                          Margin="0,1,6,1"
+                          CornerRadius="2"
+                          Background="{DynamicResource ChapterTool.LogWarningBrush}"
+                          IsVisible="{Binding IsWarning}" />
+                  <Border Grid.Column="0"
+                          Width="4"
+                          Margin="0,1,6,1"
+                          CornerRadius="2"
+                          Background="{DynamicResource ChapterTool.LogErrorBrush}"
+                          IsVisible="{Binding IsError}" />
+
+                  <Grid Grid.Column="1" Width="20" Height="20" Margin="2,2,6,0" VerticalAlignment="Top">
                     <i:Icon Width="14" Height="14"
                             Value="fa-solid fa-circle-info"
                             Foreground="{DynamicResource ChapterTool.LogInformationBrush}"
@@ -60,19 +78,21 @@
                             IsVisible="{Binding IsError}" />
                   </Grid>
 
-                  <StackPanel Grid.Column="1" Margin="4,2" Spacing="0">
+                  <StackPanel Grid.Column="2" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LevelText}"
+                               Classes="small"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource Brush.FG2}" />
                     <TextBlock Text="{Binding Summary}"
-                               TextTrimming="CharacterEllipsis"
+                               MaxHeight="44"
+                               TextWrapping="Wrap"
                                ToolTip.Tip="{Binding Summary}" />
-                    <TextBlock Classes="small"
-                               Foreground="{DynamicResource Brush.FG2}"
-                               Text="{Binding Context}"
-                               TextTrimming="CharacterEllipsis" />
                   </StackPanel>
 
-                  <TextBlock Grid.Column="2"
+                  <TextBlock Grid.Column="3"
                              Classes="small"
-                             Margin="8,0,4,0"
+                             Margin="4,2,0,0"
+                             VerticalAlignment="Top"
                              Foreground="{DynamicResource Brush.FG2}"
                              Text="{Binding Time}" />
                 </Grid>
@@ -110,33 +130,114 @@
               BorderThickness="1">
         <Grid RowDefinitions="Auto,*">
           <Border Grid.Row="0"
-                  Padding="12,8"
+                  Padding="14,12"
                   Background="{DynamicResource Brush.ToolBar}"
                   BorderBrush="{DynamicResource Brush.Border2}"
                   BorderThickness="0,0,0,1"
                   IsVisible="{Binding HasSelectedEntry}">
-            <Grid RowDefinitions="Auto,Auto" RowSpacing="4">
+            <Grid RowDefinitions="Auto,Auto" RowSpacing="8">
               <TextBlock Classes="bold"
+                         FontSize="16"
                          Text="{Binding SelectedEntry.Summary}"
                          TextWrapping="Wrap" />
-              <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="12">
-                <TextBlock Grid.Column="0" Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.LevelText}" />
-                <TextBlock Grid.Column="1" Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.Timestamp}" />
-                <TextBlock Grid.Column="2" Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.Context}" TextTrimming="CharacterEllipsis" />
-              </Grid>
+              <WrapPanel Grid.Row="1" Orientation="Horizontal" ItemSpacing="12" LineSpacing="3">
+                <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding SelectedEntry.IsInformation}">
+                  <i:Icon Width="14" Height="14"
+                          Value="fa-solid fa-circle-info"
+                          Foreground="{DynamicResource ChapterTool.LogInformationBrush}" />
+                  <TextBlock Classes="small"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource ChapterTool.LogInformationBrush}"
+                             Text="{Binding SelectedEntry.LevelText}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding SelectedEntry.IsWarning}">
+                  <i:Icon Width="14" Height="14"
+                          Value="fa-solid fa-triangle-exclamation"
+                          Foreground="{DynamicResource ChapterTool.LogWarningBrush}" />
+                  <TextBlock Classes="small"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource ChapterTool.LogWarningBrush}"
+                             Text="{Binding SelectedEntry.LevelText}" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding SelectedEntry.IsError}">
+                  <i:Icon Width="14" Height="14"
+                          Value="fa-solid fa-circle-xmark"
+                          Foreground="{DynamicResource ChapterTool.LogErrorBrush}" />
+                  <TextBlock Classes="small"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource ChapterTool.LogErrorBrush}"
+                             Text="{Binding SelectedEntry.LevelText}" />
+                </StackPanel>
+                <TextBlock Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.Timestamp}" />
+                <TextBlock Classes="small" Foreground="{DynamicResource Brush.FG2}" Text="{Binding SelectedEntry.Context}" TextWrapping="Wrap" />
+              </WrapPanel>
             </Grid>
           </Border>
 
           <ScrollViewer Grid.Row="1"
                         Margin="12,10"
-                        HorizontalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Disabled"
                         VerticalScrollBarVisibility="Auto"
                         IsVisible="{Binding HasSelectedEntry}">
-            <SelectableTextBlock FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
-                                 FontSize="12"
-                                 Text="{Binding SelectedEntry.Details}"
-                                 TextWrapping="NoWrap"
-                                 VerticalAlignment="Top" />
+            <StackPanel Spacing="14" MinWidth="320">
+              <StackPanel Spacing="5" IsVisible="{Binding SelectedEntry.HasTechnicalDetail}">
+                <TextBlock Classes="bold" Text="{DynamicResource Tool.Log.TechnicalDetail}" />
+                <Border Padding="10,8"
+                        Background="{DynamicResource Brush.Window}"
+                        BorderBrush="{DynamicResource Brush.Border2}"
+                        BorderThickness="1">
+                  <SelectableTextBlock FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
+                                       FontSize="12"
+                                       Text="{Binding SelectedEntry.TechnicalDetail}"
+                                       TextWrapping="Wrap" />
+                </Border>
+              </StackPanel>
+
+              <StackPanel Spacing="5" IsVisible="{Binding SelectedEntry.HasStructuredTree}">
+                <TextBlock Classes="bold" Text="{DynamicResource Tool.Log.StructuredData}" />
+                <TreeView ItemsSource="{Binding SelectedEntry.StructuredTree}"
+                          BorderThickness="0"
+                          MinHeight="80">
+                  <TreeView.ItemTemplate>
+                    <TreeDataTemplate x:DataType="vm:LogStructuredNodeViewModel"
+                                      ItemsSource="{Binding Children}">
+                      <Border Padding="8,6"
+                              Background="{DynamicResource Brush.Window}"
+                              BorderBrush="{DynamicResource Brush.Border2}"
+                              BorderThickness="0,0,0,1">
+                        <Grid ColumnSpacing="16">
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.35*" MinWidth="120" />
+                            <ColumnDefinition Width="0.65*" MinWidth="180" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Grid.Column="0"
+                                     Classes="bold"
+                                     Text="{Binding Name}"
+                                     TextWrapping="Wrap" />
+                          <SelectableTextBlock Grid.Column="1"
+                                               FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
+                                               Text="{Binding Value}"
+                                               TextWrapping="Wrap" />
+                        </Grid>
+                      </Border>
+                    </TreeDataTemplate>
+                  </TreeView.ItemTemplate>
+                </TreeView>
+              </StackPanel>
+
+              <StackPanel Spacing="5" IsVisible="{Binding SelectedEntry.HasException}">
+                <TextBlock Classes="bold" Text="{DynamicResource Tool.Log.Exception}" />
+                <Border Padding="10,8"
+                        Background="{DynamicResource Brush.Window}"
+                        BorderBrush="{DynamicResource ChapterTool.LogErrorBrush}"
+                        BorderThickness="1">
+                  <SelectableTextBlock FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
+                                       FontSize="12"
+                                       Text="{Binding SelectedEntry.ExceptionText}"
+                                       TextWrapping="Wrap" />
+                </Border>
+              </StackPanel>
+            </StackPanel>
           </ScrollViewer>
 
           <StackPanel Grid.Row="1"

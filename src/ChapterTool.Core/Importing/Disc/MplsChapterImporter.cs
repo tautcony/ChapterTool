@@ -1,4 +1,5 @@
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Importing.Disc.Clpi;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Importing.Disc;
@@ -41,12 +42,14 @@ public sealed class MplsChapterImporter : IChapterImporter
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
+        var diagnostics = new List<ChapterDiagnostic>();
         await using var stream = request.Content ?? File.OpenRead(request.Path);
         try
         {
             var parsed = MplsPlaylistFile.Read(stream);
+            _ = DiscoverClpiFromPath(request.Path, parsed, diagnostics);
             var entries = parsed.PlayList.PlayItems.Select((playItem, index) => ToOption(request.Path, playItem, parsed.PlayListMark.Marks, index)).ToList();
-            return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
+            return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
         {
@@ -102,7 +105,27 @@ public sealed class MplsChapterImporter : IChapterImporter
             chapters);
     }
 
-    private static ChapterImportEntry ToOption(string path, MplsPlayItem playItem, IReadOnlyList<MplsMark> marks, int playItemIndex)
+    private static IReadOnlyDictionary<string, ClpiFile>? DiscoverClpiFromPath(string path, MplsPlaylistFile parsed, List<ChapterDiagnostic>? diagnostics = null)
+    {
+        var bdmvRoot = BdmvPathHelper.FindBdmvRoot(path);
+        if (bdmvRoot == null)
+        {
+            return null;
+        }
+
+        var clipNames = parsed.PlayList.PlayItems
+            .SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        var clpiMap = BdmvPathHelper.DiscoverClpiFiles(bdmvRoot, clipNames, diagnostics);
+        return clpiMap.Count > 0 ? clpiMap : null;
+    }
+
+    private static ChapterImportEntry ToOption(
+        string path,
+        MplsPlayItem playItem,
+        IReadOnlyList<MplsMark> marks,
+        int playItemIndex)
     {
         var matchingMarks = marks
             .Where(mark => mark.MarkType == 0x01 && mark.RefToPlayItemID == playItemIndex)
@@ -133,28 +156,25 @@ public sealed class MplsChapterImporter : IChapterImporter
         return new ChapterImportEntry($"clip-{playItemIndex}", $"{playItem.FullName}__{chapters.Count}", info, CanCombine: true, ReferencedMediaFiles: refs);
     }
 
-    private static List<Chapter> PlaylistChapters(IReadOnlyList<MplsPlayItem> playItems, IReadOnlyList<MplsMark> marks)
+    private static List<Chapter> PlaylistChapters(
+        IReadOnlyList<MplsPlayItem> playItems,
+        IReadOnlyList<MplsMark> marks)
     {
         if (playItems.Count == 0)
         {
             return [];
         }
 
-        var playItemStartPts = new ulong[playItems.Count];
-        var cursor = 0UL;
-        for (var i = 0; i < playItems.Count; i++)
-        {
-            playItemStartPts[i] = cursor;
-            cursor += playItems[i].OUTTime - playItems[i].INTime;
-        }
-
+        var playItemStartPts = ComputePlayItemStartPts(playItems);
         var chapters = marks
             .Where(static mark => mark.MarkType == 0x01)
             .Where(mark => mark.RefToPlayItemID < playItems.Count)
             .Select(mark =>
             {
                 var playItem = playItems[mark.RefToPlayItemID];
-                var relativePts = mark.MarkTimeStamp > playItem.INTime ? mark.MarkTimeStamp - playItem.INTime : 0;
+                var relativePts = mark.MarkTimeStamp > playItem.INTime
+                    ? mark.MarkTimeStamp - playItem.INTime
+                    : 0;
                 return playItemStartPts[mark.RefToPlayItemID] + relativePts;
             })
             .Distinct()
@@ -169,4 +189,19 @@ public sealed class MplsChapterImporter : IChapterImporter
             ? [new Chapter(1, TimeSpan.Zero, "Chapter 01")]
             : chapters;
     }
+
+    private static ulong[] ComputePlayItemStartPts(
+        IReadOnlyList<MplsPlayItem> playItems)
+    {
+        var playItemStartPts = new ulong[playItems.Count];
+        var cursor = 0UL;
+        for (var i = 0; i < playItems.Count; i++)
+        {
+            playItemStartPts[i] = cursor;
+            cursor += playItems[i].OUTTime - playItems[i].INTime;
+        }
+
+        return playItemStartPts;
+    }
+
 }
