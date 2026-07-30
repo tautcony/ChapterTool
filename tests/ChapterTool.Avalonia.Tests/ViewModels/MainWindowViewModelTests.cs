@@ -1214,6 +1214,27 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void InitialStatusRefreshesAfterLanguageSwitch()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var vm = CreateViewModel(localizer: localizer);
+
+        Assert.Equal("Ready", vm.StatusText);
+
+        localizer.SetCulture("zh-CN");
+
+        Assert.Equal("就绪", vm.StatusText);
+    }
+
+    [Fact]
+    public void UnconfiguredOutputDirectoryIsDisplayedAsEmpty()
+    {
+        var vm = CreateViewModel();
+
+        Assert.Empty(vm.EffectiveSaveDirectoryDisplay);
+    }
+
+    [Fact]
     public async Task DiagnosticLogsCaptureSeverityAndFormatForLogWindow()
     {
         var diagnostic = new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.PartialParse, "stopped", "line 5", "tail");

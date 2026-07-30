@@ -107,7 +107,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
         PortAdapters = new MainWindowPortAdapters(this);
         chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
-        statusText = Localizer.GetString("Status.Ready");
+        statusText = string.Empty;
+        statusDiagnosticsPresenter.SetStatus("Status.Ready");
         RefreshXmlLanguageDisplayOptions(notify: false);
         RefreshChapterNameModeOptions();
         RefreshFrameRateDisplayOptions();
@@ -683,9 +684,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         get
         {
             var directory = ResolveSaveDirectory(directoryOverride: null);
-            return string.IsNullOrWhiteSpace(directory)
-                ? Localizer.GetString("Main.OutputDirectoryUnresolved")
-                : directory;
+            return directory ?? string.Empty;
         }
     }
 
