@@ -35,7 +35,12 @@ if (typeof archiveName !== "string" || archiveName.length === 0) {
 
 const archivePath = resolve(packageOutputDirectory, archiveName);
 const packedFiles = new Set((packResult[0].files ?? []).map(({ path }) => path));
-for (const requiredFile of ["dist/index.mjs", "dist/index.d.ts", "dist/runtime/_framework/dotnet.js"]) {
+for (const requiredFile of [
+  "dist/index.mjs",
+  "dist/index.d.ts",
+  "dist/runtime/_framework/dotnet.js",
+  "dist/runtime/_framework/dotnet.runtime.js.map"
+]) {
   if (!packedFiles.has(requiredFile)) {
     throw new Error(`The package archive does not contain ${requiredFile}.`);
   }
