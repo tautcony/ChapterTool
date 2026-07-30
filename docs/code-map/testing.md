@@ -27,7 +27,7 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
-Use `tests/ChapterTool.Wasm.Tests` when you change browser adapter contracts, bounded byte input, browser settings, or browser composition. The primary file is `tests/ChapterTool.Wasm.Tests/BrowserAdapterTests.cs`.
+Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
 
 Use `packages/chaptertool/test/chaptertool.test.mjs` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.mjs` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.mjs` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 

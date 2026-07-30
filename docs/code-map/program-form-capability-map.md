@@ -4,13 +4,13 @@ This document compares the ChapterTool program forms and the shared implementati
 
 The command-line interface (CLI) is the standalone terminal program.
 
-The Avalonia Browser application is the browser program.
+The Blazor WebAssembly application is the browser program.
 
-The program forms are the standalone CLI, the Avalonia desktop application, the Avalonia Browser application, and the Node.js package.
+The program forms are the standalone CLI, the Avalonia desktop application, the Blazor WebAssembly browser application, and the Node.js package.
 
 The Node.js package provides JavaScript access to portable Core operations.
 
-The shared layers are Core, Configuration, Infrastructure, CommandLine, and the shared Avalonia UI.
+The shared layers are Core, Contracts, Infrastructure, CommandLine, and the shared Avalonia UI for desktop hosts.
 
 Use this document to locate capability owners and host entry points before you change a feature.
 
@@ -18,7 +18,7 @@ Use this document to compare the supported functions of every program form.
 
 Keep code identifiers, paths, commands, and user interface strings exact.
 
-Last reviewed: 2026-07-25
+Last reviewed: 2026-07-30
 
 ## 1. Program Forms
 
@@ -28,7 +28,7 @@ Last reviewed: 2026-07-25
 | --- | --- | --- | --- | --- |
 | `ChapterTool.CommandLine` | `net10.0` executable and .NET Tool | Terminal user or automation | Inspect and convert chapter sources | Uses local files, settings, external tools, and standard streams |
 | `ChapterTool.Avalonia` | `net10.0` desktop executable | Desktop user | Edit, inspect, convert, and save chapter sources | Uses Avalonia, local files, settings, external tools, shell services, and Sentry GUI telemetry |
-| `ChapterTool.Wasm` | Avalonia Browser application | Browser user | Load, edit, preview, and download chapter sources | Uses browser file input, browser memory, `localStorage`, JavaScript bridges, and browser APIs |
+| `ChapterTool.Wasm` | Blazor WebAssembly application | Browser user | Load, edit, preview, and download chapter sources | Uses browser file input, browser memory, browser storage, download scripts, and browser APIs |
 | `@chaptertool/node` | npm package backed by pure .NET WebAssembly | Node.js application or automation | Import, edit, transform, and export chapter data | Uses Node.js JavaScript and the packaged .NET WebAssembly runtime |
 
 ### 1.2 Shared Layers
@@ -38,6 +38,7 @@ Last reviewed: 2026-07-25
 | `ChapterTool.Core` | Multi-target library | Own chapter models, import contracts, editing, transforms, projection, and export | None in the product graph | None |
 | `ChapterTool.Contracts` | `net10.0` library | Own host-neutral settings models and platform contracts | `ChapterTool.Core`, `Microsoft.Extensions.Logging.Abstractions` | None |
 | `ChapterTool.Infrastructure` | `net10.0` library | Own local files, settings, processes, external tools, and native import adapters | `ChapterTool.Core`, `ChapterTool.Contracts` | None |
+| `ChapterTool.Avalonia.UI` | `net10.0` library | Own shared Avalonia views, ViewModels, workflows, resources, and semantic platform ports | `ChapterTool.Core`, `ChapterTool.Contracts`, Avalonia packages | Shared desktop UI |
 | `ChapterTool.CommandLine` | `net10.0` executable | Own DotMake commands, CLI application workflows, console output, process startup, and .NET Tool packaging | `ChapterTool.Core`, `ChapterTool.Infrastructure`, `DotMake.CommandLine` | Terminal boundary only |
 
 ### 1.3 Dependency Graph
@@ -45,26 +46,26 @@ Last reviewed: 2026-07-25
 The arrows point from a consumer to a dependency:
 
 ```text
-ChapterTool.CommandLine ---> ChapterTool.Infrastructure ---> ChapterTool.Core
-           |
-           +---------------> ChapterTool.Core
+ChapterTool.CommandLine ---> ChapterTool.Infrastructure ---> ChapterTool.Contracts ---> ChapterTool.Core
+           |                          |
+           +-------------------------> ChapterTool.Core
 
-ChapterTool.CommandLine ---> ChapterTool.Contracts
-
-ChapterTool.Avalonia ------> ChapterTool.Infrastructure
+ChapterTool.Avalonia ------> ChapterTool.Avalonia.UI ---> ChapterTool.Contracts ---> ChapterTool.Core
+       |                          |
+       |                          +--------------------> ChapterTool.Core
+       +-------------------> ChapterTool.Infrastructure ---> ChapterTool.Contracts ---> ChapterTool.Core
        +-------------------> ChapterTool.Core
-       +-------------------> ChapterTool.Contracts
 
 ChapterTool.Wasm ----------> ChapterTool.Core
 
 packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 ```
 
-`ChapterTool.CommandLine` does not reference `ChapterTool.Avalonia`.
+`ChapterTool.CommandLine` does not reference `ChapterTool.Avalonia` or `ChapterTool.Avalonia.UI`.
 
 `ChapterTool.Avalonia` does not reference `ChapterTool.CommandLine` and does not dispatch CLI commands.
 
-`ChapterTool.Wasm` does not reference Infrastructure or CommandLine.
+`ChapterTool.Wasm` does not reference Avalonia, Infrastructure, or CommandLine.
 
 `ChapterTool.Node` does not reference `ChapterTool.Wasm`, Blazor, Infrastructure, or CommandLine.
 
@@ -74,7 +75,7 @@ packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 | --- | --- | --- | --- | --- | --- |
 | Standalone CLI | `src/ChapterTool.CommandLine/Program.cs` | `src/ChapterTool.CommandLine/ChapterToolCliHost.cs` | `ChapterToolCliApplication.ImportAsync` | `ChapterToolCliApplication.ConvertAsync` | `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs` |
 | Avalonia desktop | `src/ChapterTool.Avalonia/Program.cs` | `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs` | `tests/ChapterTool.Avalonia.Tests` and `tests/ChapterTool.Avalonia.Headless.Tests` |
-| Avalonia Browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Composition/BrowserCompositionRoot.cs` | `src/ChapterTool.Wasm/Composition/BrowserCompositionRoot.cs` | `src/ChapterTool.Wasm/BrowserJavaScript.cs` | `tests/ChapterTool.Wasm.Tests/BrowserAdapterTests.cs` |
+| Blazor WebAssembly browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Pages/Home.razor` and `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` | `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` and `wwwroot/js/download.js` | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` |
 | Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs` |
 
 ### 2.1 Host Defaults
@@ -258,30 +259,27 @@ Start with these paths for shared and desktop behavior:
 - Runtime load and save: `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` and `RuntimeChapterSaveService.cs`
 The Avalonia executable starts the GUI without parsing process arguments.
 
-### 4.5 Avalonia Browser
+### 4.5 Blazor WebAssembly Browser
 
-The Avalonia Browser host owns browser file input, browser downloads, browser storage, and browser-specific limits. The shared UI owns browser-independent presentation state.
+The Blazor WebAssembly host owns the browser page, browser file input, browser downloads, browser storage, and browser-specific limits. It does not host the Avalonia shared UI.
 
 Start with these paths for browser behavior:
 
 - Application startup: `src/ChapterTool.Wasm/Program.cs`
-- Shared main view: `src/ChapterTool.Avalonia.UI/Views/MainView.axaml`
-- Browser composition: `src/ChapterTool.Wasm/Composition/BrowserCompositionRoot.cs`
-- Browser JavaScript bridge: `src/ChapterTool.Wasm/BrowserJavaScript.cs`
-
-`Program.cs` must register the Font Awesome icon provider before Avalonia creates the shared main view.
-`Program.cs` imports `chaptertool.js` before browser composition calls a JavaScript bridge.
-`BrowserCompositionRoot` starts the shared main view initialization after it creates the browser adapters.
-- Browser portable adapters: `src/ChapterTool.Avalonia.UI/PlatformPorts/BrowserPortableAdapters.cs`
+- Root components: `src/ChapterTool.Wasm/App.razor` and `src/ChapterTool.Wasm/Layout/MainLayout.razor`
+- Workspace page: `src/ChapterTool.Wasm/Pages/Home.razor`
+- Workspace state: `src/ChapterTool.Wasm/Services/WasmWorkspace.cs`
+- Core import and export adapter: `src/ChapterTool.Wasm/Services/WasmChapterService.cs`
 - Shared session state: `src/ChapterTool.Core/Session/ChapterWorkspace.cs`
-- Browser settings and localization: `src/ChapterTool.Wasm/Services/WasmModels.cs` and `WasmLocalizer.cs`
+- Browser settings models: `src/ChapterTool.Wasm/Services/WasmModels.cs`
+- Browser localization: `src/ChapterTool.Wasm/Services/WasmLocalizer.cs` and `src/ChapterTool.Wasm/Resources/Locales/`
 - Download bridge: `src/ChapterTool.Wasm/wwwroot/js/download.js`
 
-The browser host uses buffered `ChapterSourceDocument` content for browser file input.
+The browser host uses buffered source bytes for browser file input.
 
 WASM does not use local paths or local processes.
 
-WASM stores settings in `localStorage`.
+WASM stores settings in browser storage.
 
 The browser host sends exported content to the browser download bridge.
 
@@ -325,7 +323,7 @@ Use these rules when you change a capability:
 3. Put DotMake command definitions, CLI options, CLI selection rules, terminal diagnostics, and CLI output paths in CommandLine.
 4. Put shared controls, shared workflow state, Avalonia resources, and shared localization in `ChapterTool.Avalonia.UI`.
 5. Put desktop adapters, desktop settings, system fonts, and native windows in `ChapterTool.Avalonia`.
-6. Put browser file input, browser downloads, browser storage, and browser limits in `ChapterTool.Wasm` and its shared adapter contracts.
+6. Put browser file input, browser downloads, browser storage, browser workspace UI, and browser limits in `ChapterTool.Wasm`.
 7. Put Node.js API mapping and packaged runtime startup in `ChapterTool.Node` and `packages/chaptertool`.
 8. Keep the standalone CLI free of Avalonia references.
 9. When a shared Core behavior changes, test the Core path and one regression path in each applicable program form.
@@ -340,7 +338,7 @@ Use these rules when you change a capability:
 | CommandLine or standalone CLI behavior | `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs` | Run the standalone CLI for help, `formats`, and a usage error |
 | Avalonia ViewModel or service behavior | `tests/ChapterTool.Avalonia.Tests` | Check the GUI workflow when the change affects desktop behavior |
 | Avalonia XAML or interaction behavior | `tests/ChapterTool.Avalonia.Headless.Tests` | Check user actions and workflow results |
-| Browser adapter or composition behavior | `tests/ChapterTool.Wasm.Tests/BrowserAdapterTests.cs` | Build `src/ChapterTool.Wasm/ChapterTool.Wasm.csproj` and run browser smoke checks when host assets change |
+| Browser workspace or Blazor host behavior | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` | Build `src/ChapterTool.Wasm/ChapterTool.Wasm.csproj` and run browser smoke checks when host assets change |
 | Node.js package or npm runtime packaging | `packages/chaptertool/test/chaptertool.test.mjs` | Run `npm test` from `packages/chaptertool` |
 | Cross-form behavior | All applicable test projects | Run `dotnet test ChapterTool.slnx --no-restore` sequentially |
 

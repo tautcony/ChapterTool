@@ -26,10 +26,8 @@ Startup and main shell entry points:
 - `src/ChapterTool.Avalonia/App.axaml.cs`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
-- `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
-- `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
 
-Main-window workflow owners under `src/ChapterTool.Avalonia/Workflows/` use the same `ChapterWorkspace`:
+Main-window workflow owners under `src/ChapterTool.Avalonia.UI/Workflows/` use the same `ChapterWorkspace`:
 
 - `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
 - `ClipEditingCoordinator.cs` — clip selection/combine transitions plus cell and frame edits written through the workspace
@@ -61,8 +59,8 @@ Shared session kernel lives in Core:
 
 Avalonia owns only host ports:
 
-- `src/ChapterTool.Avalonia/Session/Ports/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
-- `src/ChapterTool.Avalonia/Session/Ports/MainWindowPortAdapters.cs` — concrete main-window adapters
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs` — concrete main-window adapters
 
 `MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append commits use workspace revision rules.
 
@@ -83,14 +81,15 @@ This is the first file to inspect when dependency wiring or service registration
 ### Views
 
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
-- `src/ChapterTool.Avalonia/Views/Controls/ExpressionEditor.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/LogToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/LanguageToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/ExpressionToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/TemplateNamesToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/ForwardShiftToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Tools/TextToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/MainView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Controls/ExpressionEditor.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/LanguageToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/ExpressionToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/TemplateNamesToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/ForwardShiftToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/TextToolView.axaml`
 
 ### Imported theme resources
 
@@ -105,16 +104,16 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### ViewModels
 
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel*.cs`
-- `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs` (settings monologue by design; appearance lives in `SettingsAppearanceViewModel`)
-- `src/ChapterTool.Avalonia/ViewModels/SettingsAppearanceViewModel.cs`
-- `src/ChapterTool.Avalonia/ViewModels/ChapterExpressionValidation.cs`
-- `src/ChapterTool.Avalonia/ViewModels/ChapterSaveDirectory.cs`
-- `src/ChapterTool.Avalonia/ViewModels/ToolWindowViewModels.cs`
-- `src/ChapterTool.Avalonia/ViewModels/ChapterRowViewModel.cs`
-- `src/ChapterTool.Avalonia/ViewModels/UiCommand.cs`
-- `src/ChapterTool.Avalonia/ViewModels/ShortcutRouter.cs`
-- `src/ChapterTool.Avalonia/ViewModels/Tools/LogToolViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel*.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs` (settings monologue by design; appearance lives in `SettingsAppearanceViewModel`)
+- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsAppearanceViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ChapterExpressionValidation.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ChapterSaveDirectory.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/Tools/`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ChapterRowViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
 
 ### Runtime and UI services
 
@@ -126,8 +125,8 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia/Services/AvaloniaFilePickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaSettingsPickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
-- `src/ChapterTool.Avalonia/Services/AvaloniaFontApplicationService.cs`
-- `src/ChapterTool.Avalonia/Services/IFontFamilyCatalog.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/AvaloniaFontApplicationService.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/IFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia/Services/FontFamilyCatalogEntry.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia/Services/FontSettingsResolver.cs`
@@ -147,12 +146,12 @@ This is the first file to inspect when dependency wiring or service registration
 
 ### Localization
 
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
-- `src/ChapterTool.Avalonia/Localization/IAppLocalizer.cs`
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationResources.cs`
-- `src/ChapterTool.Avalonia/Localization/AppLanguage.cs`
-- `src/ChapterTool.Avalonia/Localization/Resources/Locales/`
-- `src/ChapterTool.Avalonia/Localization/AvaloniaLocalizationResourceAdapter.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/IAppLocalizer.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/AppLocalizationResources.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/AppLanguage.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/`
+- `src/ChapterTool.Avalonia.UI/Localization/AvaloniaLocalizationResourceAdapter.cs`
 
 ## Feature Lookup
 
@@ -162,21 +161,21 @@ Start with:
 
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs`
 
 ### Main command workflow
 
 Start with:
 
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs`
 
 If keyboard routing matters:
 
-- `src/ChapterTool.Avalonia/ViewModels/ShortcutRouter.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`
 
 If command execution semantics change:
 
-- `src/ChapterTool.Avalonia/ViewModels/UiCommand.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs`
 
 ### Tool windows
 
@@ -184,19 +183,19 @@ Start with:
 
 - `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs` — tool id → title resource + content factory table
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs` — host lifecycle; iterates registry
-- `src/ChapterTool.Avalonia/Session/Ports/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, `IExportPreferencePort`, …)
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, `IExportPreferencePort`, …)
 
 Then inspect the matching pair in:
 
-- `src/ChapterTool.Avalonia/Views/Tools/`
-- `src/ChapterTool.Avalonia/ViewModels/`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/`
+- `src/ChapterTool.Avalonia.UI/ViewModels/`
 
 ### Application log window
 
 Start with:
 
-- `src/ChapterTool.Avalonia/ViewModels/Tools/LogToolViewModel.cs`
-- `src/ChapterTool.Avalonia/Views/Tools/LogToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml`
 - `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs`
 - `src/ChapterTool.Infrastructure/Services/IApplicationLogService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
@@ -207,11 +206,11 @@ The ViewModel owns the filtered projection, selection, localized display text, a
 
 Start with:
 
-- `src/ChapterTool.Avalonia/Session/ClipSession.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.Editing.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.ImportExport.cs`
+- `src/ChapterTool.Core/Session/ClipSession.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs`
 
-Pure transition coverage: `tests/ChapterTool.Avalonia.Tests/Session/ClipSessionTests.cs`. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
+Pure transition coverage: `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs`. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
 
 ### Load/save/import behavior exposed in UI
 
@@ -239,11 +238,11 @@ Presentation types live under `Views/Controls/Expression/`:
 
 Start with:
 
-- `src/ChapterTool.Avalonia/Views/Tools/ExpressionToolView.axaml`
-- `src/ChapterTool.Avalonia/Views/Controls/ExpressionEditor.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/ExpressionToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Views/Controls/ExpressionEditor.axaml`
 - `src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs`
-- `src/ChapterTool.Avalonia/ViewModels/MainWindowViewModel.cs`
-- `src/ChapterTool.Avalonia/ViewModels/ToolWindowViewModels.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/Tools/`
 - `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
 
 Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live valid projections, editing-key routing, and single-editor multiline expansion.
@@ -253,22 +252,22 @@ Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWin
 
 Start with:
 
-- `src/ChapterTool.Avalonia/ViewModels/SettingsToolViewModel.cs`
-- `src/ChapterTool.Avalonia/ViewModels/SettingsAppearanceViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsAppearanceViewModel.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
-- `src/ChapterTool.Avalonia/Services/AvaloniaFontApplicationService.cs`
-- `src/ChapterTool.Avalonia/Services/IFontFamilyCatalog.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/AvaloniaFontApplicationService.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/IFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFontFamilyCatalog.cs`
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
-- `src/ChapterTool.Avalonia/Views/Tools/SettingsToolView.axaml`
+- `src/ChapterTool.Avalonia.UI/Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
 
 Output defaults, external-tool paths and statuses, and runtime/footer display state live in `SettingsToolViewModel`; it flows live preferences through `PreferenceSinkAdapter` (session save format is applied only when startup settings are loaded). There are no unused `Settings*Module` placeholder types. A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once, dirty-checks a single `ChapterToolSettings` snapshot, and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
 
 Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together. `DisplayOptionCoordinator` owns localized option construction, clip-list incremental synchronization, and frame-rate index mapping, while `ChapterCellEdit` and `ChapterGridColumnIds` are standalone binding-contract types.
 
-Secondary tool windows consume the stable interfaces in `Session/Ports/ShellPorts.cs` through `MainWindowPortAdapters`. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement those ports.
+Secondary tool windows consume the stable interfaces in `PlatformPorts/SessionPorts/ShellPorts.cs` through `MainWindowPortAdapters`. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement those ports.
 
 Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all imported `Color.*` tokens, and the Avalonia light or dark variant. `App.axaml` loads the imported theme foundation and applies later ChapterTool product styles.
 
@@ -291,10 +290,10 @@ Use `ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs` and `ChapterTool.Com
 
 Start with:
 
-- `src/ChapterTool.Avalonia/Localization/Resources/`
+- `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/`
 - `src/ChapterTool.CommandLine/Cli/CliLocalizationManager.cs`
 
 If resource projection or language switching behavior changes, inspect:
 
-- `src/ChapterTool.Avalonia/Localization/AppLocalizationManager.cs`
-- `src/ChapterTool.Avalonia/Localization/AvaloniaLocalizationResourceAdapter.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/AppLocalizationManager.cs`
+- `src/ChapterTool.Avalonia.UI/Localization/AvaloniaLocalizationResourceAdapter.cs`

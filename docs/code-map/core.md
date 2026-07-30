@@ -129,13 +129,14 @@ WASM integration rules:
 
 Browser host:
 
-- `src/ChapterTool.Wasm` is the Avalonia Browser host. It uses `Microsoft.NET.Sdk.WebAssembly`.
-- `src/ChapterTool.Avalonia.UI/Views/MainView.axaml` provides the shared load, grid, options, and save zones.
-- `ChapterWorkspace` and the shared ViewModels own buffered load, reload, append, selection, projection, export orchestration, diagnostics, activity logs, and localized status strings.
-- Core editing, segment, projection, and export services remain the behavior owners.
-- Browser settings use the Avalonia-shaped `schemaVersion`/`application`/`theme`/`font` document with schema `1`. `BrowserJavaScript.cs` stores this document in `localStorage`. Shared Avalonia resources provide localization.
-- `tests/ChapterTool.Wasm.Tests/BrowserAdapterTests.cs` — focused browser input and settings contract coverage.
-- Deployed to GitHub Pages by `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
+- `src/ChapterTool.Wasm` is the Blazor WebAssembly browser app. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
+- `src/ChapterTool.Wasm/Pages/Home.razor` is the browser workspace page.
+- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, projection, export orchestration, diagnostics, activity logs, and localized status strings.
+- `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, projection, and export services.
+- Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
+- Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. The host stores settings in browser storage through the workspace path.
+- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, and export behavior.
+- GitHub Pages deploys the app through `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 
 ## Feature Lookup
 

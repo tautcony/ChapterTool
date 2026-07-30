@@ -27,14 +27,19 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 
 ## WebAssembly Hosts
 
-- `src/ChapterTool.Avalonia.UI`
-  - shared Avalonia UI and semantic platform ports
 - `src/ChapterTool.Wasm`
-  - Avalonia Browser host for the shared UI and `ChapterTool.Core`
+  - Blazor WebAssembly browser app for `ChapterTool.Core`
 - `src/ChapterTool.Node`
-  - Pure .NET WebAssembly host for Node.js
+  - pure .NET WebAssembly host for Node.js
 - `packages/chaptertool`
   - JavaScript source, build scripts, type declarations, and generated npm distribution
+
+## Shared Avalonia UI
+
+- `src/ChapterTool.Avalonia.UI`
+  - shared Avalonia views, ViewModels, workflows, resources, and semantic platform ports
+- `src/ChapterTool.Avalonia`
+  - desktop Avalonia host and desktop adapter composition
 
 ## Command-Line Host
 

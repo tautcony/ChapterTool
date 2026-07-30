@@ -169,7 +169,7 @@ Use `scripts/publish.ps1` on Windows.
 | `src/ChapterTool.CommandLine` | Standalone `chaptertool` host, CLI commands, argument binding, workflow composition, and NuGet Tool package |
 | `src/ChapterTool.Avalonia.UI` | Shared Avalonia views, ViewModels, workflows, resources, and platform ports |
 | `src/ChapterTool.Avalonia` | Desktop Avalonia host and desktop adapter composition |
-| `src/ChapterTool.Wasm` | Avalonia Browser host and browser adapter composition |
+| `src/ChapterTool.Wasm` | Blazor WebAssembly browser app for `ChapterTool.Core` |
 | `src/ChapterTool.Node` | Pure .NET WebAssembly host for the Node.js package |
 | `packages/chaptertool` | Node.js package entry point, type declarations, and runtime packaging |
 | `tests/` | Core, Infrastructure, Avalonia, and Headless Avalonia tests |

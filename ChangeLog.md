@@ -1,5 +1,15 @@
 # __Change Log__
 
+## [23.3.0] - 2026.07.30
+
+- 拆分桌面与命令行宿主：`ChapterTool.CommandLine` 成为独立 CLI 可执行文件与 .NET Tool；桌面 Avalonia 主机只负责图形界面启动，不再分发 CLI 参数。
+- 提取共享桌面 UI 到 `ChapterTool.Avalonia.UI`（主视图、工具窗、工作流与 ViewModel），并将设置与平台契约抽到 `ChapterTool.Contracts`。
+- 将 `ChapterWorkspace`、`ClipSession` 等工作区会话模型下沉到 `ChapterTool.Core`，供桌面、浏览器与命令行共用。
+- 扩展可移植导入路径：FLAC/TAK 内嵌 CUE 经 `ChapterContentService` 接入，WASM 与 Node 等无外部工具场景可直接读取。
+- 调整浏览器工作区高级选项布局，使之与桌面主流程一致，并改用 JSON 本地化资源完善中英日界面。
+- 为 CLI 增加中英日错误与诊断本地化；桌面文案改为 axaml 资源，并改进状态栏就绪文案与空输出路径在语言切换时的显示。
+- 改进表达式工具编辑体验（紧凑模式、补全锚定光标行），并改用系统字体与 FontAwesome 图标。
+
 ## [23.2.1] - 2026.07.22
 
 - 新增独立命令行程序和 .NET Tool 包，并将命令行工作流提取到共享组件。
