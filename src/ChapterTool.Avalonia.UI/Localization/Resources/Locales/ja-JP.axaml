@@ -40,6 +40,9 @@
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">概要をコピー</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">詳細をコピー</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技術詳細</x:String>
+  <x:String x:Key="Tool.Log.TechnicalDetail" xml:space="preserve">技術情報</x:String>
+  <x:String x:Key="Tool.Log.StructuredData" xml:space="preserve">構造化データ</x:String>
+  <x:String x:Key="Tool.Log.Exception" xml:space="preserve">例外</x:String>
   <x:String x:Key="Tool.Log.Category" xml:space="preserve">カテゴリ</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">現在のフィルターに一致するログはありません。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
@@ -58,6 +61,10 @@
   <x:String x:Key="Diagnostic.Chapters.Empty" xml:space="preserve">章節が解析されませんでした。</x:String>
   <x:String x:Key="Diagnostic.Chapters.None" xml:space="preserve">エクスポート可能な章節がありません。</x:String>
   <x:String x:Key="Diagnostic.Chapters.NotFound" xml:space="preserve">章節が見つかりませんでした。</x:String>
+  <x:String x:Key="Diagnostic.Clpi.NotFound" xml:space="preserve">CLPI ファイルが見つかりません: {message}</x:String>
+  <x:String x:Key="Diagnostic.Clpi.ParseFailed" xml:space="preserve">CLPI ファイルを解析できません: {message}</x:String>
+  <x:String x:Key="Diagnostic.Clpi.Available" xml:space="preserve">CLPI メタデータを読み込みました: {message}</x:String>
+  <x:String x:Key="Diagnostic.Parse.Available" xml:space="preserve">{message}</x:String>
   <x:String x:Key="Diagnostic.CombineSource.Unsupported" xml:space="preserve">結合できるのは MPLS および DVD 章節グループのみです。</x:String>
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">このファイルはサポート対象のコンテナではありません。</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE テキストが空であるか、章節が解析されませんでした。</x:String>

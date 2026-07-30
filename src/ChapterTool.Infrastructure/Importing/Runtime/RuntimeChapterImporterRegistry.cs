@@ -20,6 +20,7 @@ public sealed class RuntimeChapterImporterRegistry(
     IMediaChapterReader mp4FallbackChapterReader) : IChapterImporterRegistry
 {
     private readonly BdmvChapterImporter bdmvImporter = new(toolLocator, processRunner, formatter);
+    private readonly NativeBdmvImporter nativeBdmvImporter = new();
     private readonly TextChapterImporter textImporter = new(formatter);
     private readonly PremiereMarkerListImporter premiereMarkerListImporter = new(formatter);
     private readonly XmlChapterImporter xmlImporter = new(formatter);
@@ -42,7 +43,7 @@ public sealed class RuntimeChapterImporterRegistry(
     {
         if (Directory.Exists(path) && Directory.Exists(Path.Combine(path, "BDMV", "PLAYLIST")))
         {
-            return bdmvImporter;
+            return nativeBdmvImporter;
         }
 
         return Path.GetExtension(path).ToLowerInvariant() switch
@@ -57,6 +58,7 @@ public sealed class RuntimeChapterImporterRegistry(
             ".mpls" => mplsImporter,
             ".ifo" => ifoImporter,
             ".xpl" => xplImporter,
+            ".bdmv" => bdmvImporter,
             ".mkv" or ".mka" or ".mks" or ".webm" => matroskaImporter,
             ".mp4" or ".m4a" or ".m4v" or ".mov" or ".qt" or ".3gp" or ".3g2" => mediaImporter,
             ".asf" or ".wmv" or ".wma" or ".mp3" or ".aac" or ".ogg" or ".oga" or ".ogv" or ".opus" or ".wav" or ".nut" or ".aa" or ".aax" or ".ffmetadata" or ".ffmeta" => mediaImporter,

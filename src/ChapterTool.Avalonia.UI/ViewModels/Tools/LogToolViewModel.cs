@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Contracts.PlatformPorts;
@@ -14,6 +15,16 @@ public enum LogSeverityFilter
 }
 
 public sealed record LogFilterOption(LogSeverityFilter Value, string DisplayName);
+
+public sealed record LogPropertyViewModel(string Name, string Value);
+
+public sealed record LogStructuredNodeViewModel(
+    string Name,
+    string Value,
+    IReadOnlyList<LogStructuredNodeViewModel> Children)
+{
+    public bool HasChildren => Children.Count > 0;
+}
 
 public sealed class LogEntryViewModel : ObservableViewModel
 {
@@ -34,9 +45,21 @@ public sealed class LogEntryViewModel : ObservableViewModel
 
     public string LevelText => localizer.GetString(LevelKey(entry.Level));
 
-    public string Summary => entry.MessageKey is null
-        ? entry.Message
-        : localizer.Format(entry.MessageKey, entry.Arguments);
+    public string Summary
+    {
+        get
+        {
+            if (entry.Arguments is { } arguments && arguments.TryGetValue("message", out var message)
+                && !string.IsNullOrWhiteSpace(message?.ToString()))
+            {
+                return message.ToString()!;
+            }
+
+            return entry.MessageKey is null
+                ? entry.Message
+                : localizer.Format(entry.MessageKey, entry.Arguments);
+        }
+    }
 
     public string Category => entry.Category ?? string.Empty;
 
@@ -55,14 +78,9 @@ public sealed class LogEntryViewModel : ObservableViewModel
             var builder = new StringBuilder();
             Append(builder, entry.TechnicalDetail);
             Append(builder, entry.ExceptionText);
-            if (entry.StructuredState is { Count: > 0 })
+            if (HasStructuredTree)
             {
-                Append(builder, string.Join(
-                    Environment.NewLine,
-                    entry.StructuredState
-                        .Where(static pair => !string.Equals(pair.Key, "MessageKey", StringComparison.Ordinal))
-                        .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
-                        .Select(static pair => $"{pair.Key}={pair.Value}")));
+                Append(builder, FormatNodes(StructuredTree));
             }
 
             return builder.ToString();
@@ -70,6 +88,38 @@ public sealed class LogEntryViewModel : ObservableViewModel
     }
 
     public bool HasDetails => !string.IsNullOrWhiteSpace(Details);
+
+    public string TechnicalDetail => entry.TechnicalDetail?.Trim() ?? string.Empty;
+
+    public bool HasTechnicalDetail => !string.IsNullOrWhiteSpace(TechnicalDetail);
+
+    public string ExceptionText => entry.ExceptionText?.Trim() ?? string.Empty;
+
+    public bool HasException => !string.IsNullOrWhiteSpace(ExceptionText);
+
+    public IReadOnlyList<LogPropertyViewModel> StructuredProperties =>
+        entry.StructuredState is not { Count: > 0 }
+            ? []
+            : entry.StructuredState
+                .Where(static pair => !string.Equals(pair.Key, "MessageKey", StringComparison.Ordinal))
+                .Where(static pair => !string.Equals(pair.Key, "TechnicalDetail", StringComparison.Ordinal))
+                .Where(static pair => !string.Equals(pair.Key, "severity", StringComparison.Ordinal))
+                .Where(static pair => !string.Equals(pair.Key, "message", StringComparison.Ordinal))
+                .OrderBy(static pair => pair.Key, StringComparer.Ordinal)
+                .Select(static pair => new LogPropertyViewModel(pair.Key, FormatValue(pair.Value)))
+                .ToList();
+
+    public bool HasStructuredProperties => StructuredProperties.Count > 0;
+
+    public IReadOnlyList<LogStructuredNodeViewModel> StructuredTree =>
+        entry.StructuredState is not { Count: > 0 }
+            ? []
+            : CreateNodes(
+                entry.StructuredState
+                    .Where(static pair => !IsHiddenStructuredKey(pair.Key))
+                    .OrderBy(static pair => pair.Key, StringComparer.Ordinal));
+
+    public bool HasStructuredTree => StructuredTree.Count > 0;
 
     public bool IsInformation => entry.Level == LogLevel.Information;
 
@@ -91,6 +141,11 @@ public sealed class LogEntryViewModel : ObservableViewModel
         OnPropertyChanged(nameof(LevelText));
         OnPropertyChanged(nameof(Summary));
         OnPropertyChanged(nameof(Details));
+        OnPropertyChanged(nameof(TechnicalDetail));
+        OnPropertyChanged(nameof(ExceptionText));
+        OnPropertyChanged(nameof(StructuredProperties));
+        OnPropertyChanged(nameof(StructuredTree));
+        OnPropertyChanged(nameof(HasStructuredTree));
         OnPropertyChanged(nameof(Context));
     }
 
@@ -114,6 +169,102 @@ public sealed class LogEntryViewModel : ObservableViewModel
         LogLevel.Warning => "Tool.Log.FilterWarning",
         LogLevel.Error or LogLevel.Critical => "Tool.Log.FilterError",
         _ => "Tool.Log.FilterInformation"
+    };
+
+    private static IReadOnlyList<LogStructuredNodeViewModel> CreateNodes(
+        IEnumerable<KeyValuePair<string, object?>> values,
+        int depth = 0)
+    {
+        return values
+            .Select(pair => CreateNode(pair.Key, pair.Value, depth))
+            .ToList();
+    }
+
+    private static string FormatNodes(IEnumerable<LogStructuredNodeViewModel> nodes, int depth = 0)
+    {
+        var lines = new List<string>();
+        foreach (var node in nodes)
+        {
+            var value = string.IsNullOrEmpty(node.Value) ? string.Empty : $" = {node.Value}";
+            lines.Add($"{new string(' ', depth * 2)}{node.Name}{value}");
+            if (node.HasChildren)
+            {
+                lines.Add(FormatNodes(node.Children, depth + 1));
+            }
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static LogStructuredNodeViewModel CreateNode(string name, object? value, int depth)
+    {
+        if (depth >= 32)
+        {
+            return new LogStructuredNodeViewModel(name, "[depth limit]", []);
+        }
+
+        var children = CreateChildren(value, depth + 1);
+        return new LogStructuredNodeViewModel(name, FormatContainer(value, children), children);
+    }
+
+    private static IReadOnlyList<LogStructuredNodeViewModel> CreateChildren(object? value, int depth)
+    {
+        if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+        {
+            return CreateNodes(
+                readOnlyDictionary
+                    .Where(static pair => !IsHiddenStructuredKey(pair.Key))
+                    .OrderBy(static pair => pair.Key, StringComparer.Ordinal),
+                depth);
+        }
+
+        if (value is IDictionary dictionary)
+        {
+            var pairs = new List<KeyValuePair<string, object?>>();
+            foreach (DictionaryEntry entry in dictionary)
+            {
+                pairs.Add(new KeyValuePair<string, object?>(entry.Key?.ToString() ?? string.Empty, entry.Value));
+            }
+
+            return CreateNodes(pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal), depth);
+        }
+
+        if (value is IEnumerable enumerable and not string)
+        {
+            var children = new List<LogStructuredNodeViewModel>();
+            var index = 0;
+            foreach (var item in enumerable)
+            {
+                children.Add(CreateNode($"[{index++}]", item, depth));
+            }
+
+            return children;
+        }
+
+        return [];
+    }
+
+    private static string FormatContainer(object? value, IReadOnlyList<LogStructuredNodeViewModel> children)
+    {
+        if (children.Count == 0)
+        {
+            return FormatValue(value);
+        }
+
+        return value is IDictionary or IReadOnlyDictionary<string, object?>
+            ? $"{{{children.Count} fields}}"
+            : $"[{children.Count} items]";
+    }
+
+    private static bool IsHiddenStructuredKey(string key) =>
+        string.Equals(key, "MessageKey", StringComparison.Ordinal) ||
+        string.Equals(key, "TechnicalDetail", StringComparison.Ordinal);
+
+    private static string FormatValue(object? value) => value switch
+    {
+        null => string.Empty,
+        string text => text,
+        _ => value.ToString() ?? string.Empty
     };
 }
 

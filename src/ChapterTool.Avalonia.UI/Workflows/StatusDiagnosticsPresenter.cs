@@ -123,9 +123,23 @@ internal sealed partial class StatusDiagnosticsPresenter(
     {
         foreach (var diagnostic in diagnostics)
         {
-            Log(LogLevelFor(diagnostic.Severity), "Log.Diagnostic", diagnostic.Details,
-                ("operation", operation), ("severity", diagnostic.Severity), ("code", diagnostic.DisplayCode),
-                ("location", diagnostic.Location ?? string.Empty), ("message", LocalizeDiagnostic(diagnostic)), ("details", diagnostic.Details ?? string.Empty));
+            var arguments = new List<(string Name, object? Value)>
+            {
+                ("operation", operation),
+                ("severity", diagnostic.Severity),
+                ("code", diagnostic.DisplayCode),
+                ("location", diagnostic.Location ?? string.Empty),
+                ("message", LocalizeDiagnostic(diagnostic)),
+                ("details", diagnostic.Details ?? string.Empty)
+            };
+            if (diagnostic.Arguments is { Count: > 0 })
+            {
+                arguments.AddRange(diagnostic.Arguments
+                    .Where(pair => !arguments.Any(existing => string.Equals(existing.Name, pair.Key, StringComparison.Ordinal)))
+                    .Select(static pair => (pair.Key, pair.Value)));
+            }
+
+            Log(LogLevelFor(diagnostic.Severity), "Log.Diagnostic", diagnostic.Details, arguments.ToArray());
         }
     }
 

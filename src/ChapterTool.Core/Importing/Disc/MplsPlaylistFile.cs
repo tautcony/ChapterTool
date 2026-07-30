@@ -25,7 +25,7 @@ internal sealed record MplsPlaylistFile(
         }
 
         var versionNumber = stream.ReadAscii(4);
-        if (versionNumber is not ("0100" or "0200" or "0300"))
+        if (versionNumber is not ("0100" or "0200" or "0240" or "0300"))
         {
             throw new InvalidDataException($"Unsupported MPLS version: {versionNumber}.");
         }

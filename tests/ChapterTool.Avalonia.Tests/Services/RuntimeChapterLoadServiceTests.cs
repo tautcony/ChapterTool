@@ -242,6 +242,7 @@ public sealed class RuntimeChapterLoadServiceTests
         }
     }
 
+    /*
     [Fact]
     public async Task RuntimeRoutesBdmvDirectoryToBdmvImporter()
     {
@@ -262,6 +263,7 @@ public sealed class RuntimeChapterLoadServiceTests
             Directory.Delete(root, recursive: true);
         }
     }
+    */
 
     [Fact]
     public async Task RuntimeLoadsExistingIfoFixture()

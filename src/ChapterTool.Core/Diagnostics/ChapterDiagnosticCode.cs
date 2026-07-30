@@ -41,6 +41,10 @@ public readonly record struct ChapterDiagnosticCode(ChapterDiagnosticSource Sour
     public static readonly ChapterDiagnosticCode InvalidChapterPair = new(ChapterDiagnosticSource.ChapterPair, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidChapterText = new(ChapterDiagnosticSource.ChapterText, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidChapterTimestamp = new(ChapterDiagnosticSource.ChapterTimestamp, ChapterDiagnosticReason.Invalid);
+    public static readonly ChapterDiagnosticCode ClpiFileNotFound = new(ChapterDiagnosticSource.Clpi, ChapterDiagnosticReason.NotFound);
+    public static readonly ChapterDiagnosticCode ClpiFileLoaded = new(ChapterDiagnosticSource.Clpi, ChapterDiagnosticReason.Available);
+    public static readonly ChapterDiagnosticCode ClpiParseFailed = new(ChapterDiagnosticSource.Clpi, ChapterDiagnosticReason.ParseFailed);
+    public static readonly ChapterDiagnosticCode ParseInfo = new(ChapterDiagnosticSource.Parse, ChapterDiagnosticReason.Available);
     public static readonly ChapterDiagnosticCode InvalidContainerHeader = new(ChapterDiagnosticSource.ContainerHeader, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidEntryElement = new(ChapterDiagnosticSource.EntryElement, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidExpression = new(ChapterDiagnosticSource.Expression, ChapterDiagnosticReason.Invalid);

@@ -10,6 +10,7 @@ public enum ChapterDiagnosticSource
     AppendSource,
     ChapterIndex,
     ChapterPair,
+    Clpi,
     Chapters,
     ChapterText,
     ChapterTimestamp,

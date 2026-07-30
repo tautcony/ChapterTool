@@ -40,6 +40,9 @@
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">复制摘要</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">复制详情</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技术详情</x:String>
+  <x:String x:Key="Tool.Log.TechnicalDetail" xml:space="preserve">技术信息</x:String>
+  <x:String x:Key="Tool.Log.StructuredData" xml:space="preserve">结构化数据</x:String>
+  <x:String x:Key="Tool.Log.Exception" xml:space="preserve">异常</x:String>
   <x:String x:Key="Tool.Log.Category" xml:space="preserve">类别</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">当前筛选条件没有日志记录。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
@@ -58,6 +61,10 @@
   <x:String x:Key="Diagnostic.Chapters.Empty" xml:space="preserve">未解析到任何章节。</x:String>
   <x:String x:Key="Diagnostic.Chapters.None" xml:space="preserve">没有可导出的章节。</x:String>
   <x:String x:Key="Diagnostic.Chapters.NotFound" xml:space="preserve">未找到章节。</x:String>
+  <x:String x:Key="Diagnostic.Clpi.NotFound" xml:space="preserve">未找到 CLPI 文件：{message}</x:String>
+  <x:String x:Key="Diagnostic.Clpi.ParseFailed" xml:space="preserve">CLPI 文件解析失败：{message}</x:String>
+  <x:String x:Key="Diagnostic.Clpi.Available" xml:space="preserve">已加载 CLPI 元数据：{message}</x:String>
+  <x:String x:Key="Diagnostic.Parse.Available" xml:space="preserve">{message}</x:String>
   <x:String x:Key="Diagnostic.CombineSource.Unsupported" xml:space="preserve">仅支持合并 MPLS 与 DVD 章节组。</x:String>
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">该文件不是受支持的容器。</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE 文本为空，或未解析到章节。</x:String>

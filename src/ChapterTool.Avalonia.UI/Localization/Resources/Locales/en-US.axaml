@@ -40,6 +40,9 @@
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">Copy summary</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">Copy details</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">Technical details</x:String>
+  <x:String x:Key="Tool.Log.TechnicalDetail" xml:space="preserve">Technical detail</x:String>
+  <x:String x:Key="Tool.Log.StructuredData" xml:space="preserve">Structured data</x:String>
+  <x:String x:Key="Tool.Log.Exception" xml:space="preserve">Exception</x:String>
   <x:String x:Key="Tool.Log.Category" xml:space="preserve">Category</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">No log entries match the current filter.</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">Save</x:String>
@@ -58,6 +61,10 @@
   <x:String x:Key="Diagnostic.Chapters.Empty" xml:space="preserve">No chapters were parsed.</x:String>
   <x:String x:Key="Diagnostic.Chapters.None" xml:space="preserve">No chapters are available for export.</x:String>
   <x:String x:Key="Diagnostic.Chapters.NotFound" xml:space="preserve">No chapters were found.</x:String>
+  <x:String x:Key="Diagnostic.Clpi.NotFound" xml:space="preserve">The CLPI file was not found: {message}</x:String>
+  <x:String x:Key="Diagnostic.Clpi.ParseFailed" xml:space="preserve">The CLPI file could not be parsed: {message}</x:String>
+  <x:String x:Key="Diagnostic.Clpi.Available" xml:space="preserve">Loaded CLPI metadata: {message}</x:String>
+  <x:String x:Key="Diagnostic.Parse.Available" xml:space="preserve">{message}</x:String>
   <x:String x:Key="Diagnostic.CombineSource.Unsupported" xml:space="preserve">Only MPLS and DVD chapter groups can be combined.</x:String>
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">The file is not a supported container.</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE text is empty or no chapters were parsed.</x:String>

@@ -19,6 +19,7 @@ public sealed class LogToolViewModelTests
             ["MessageKey"] = "Log.Diagnostic",
             ["operation"] = "Load",
             ["code"] = "Import.Partial",
+            ["message"] = "Import failed",
             ["TechnicalDetail"] = "stderr=failed"
         };
         logger.Log(LogLevel.Error, new EventId(7, "Log.Diagnostic"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
@@ -27,8 +28,11 @@ public sealed class LogToolViewModelTests
 
         var entry = Assert.Single(viewModel.FilteredEntries);
         Assert.Equal("Log.Diagnostic", entry.Entry.MessageKey);
+        Assert.Equal("Import failed", entry.Summary);
         Assert.Contains("Load", entry.Details, StringComparison.Ordinal);
         Assert.Contains("stderr=failed", entry.Details, StringComparison.Ordinal);
+        Assert.DoesNotContain("TechnicalDetail=stderr=failed", entry.Details, StringComparison.Ordinal);
+        Assert.Contains(entry.StructuredProperties, property => property.Name == "code" && property.Value == "Import.Partial");
         Assert.Equal("Errors", entry.LevelText);
 
         viewModel.SelectedFilter = viewModel.FilterOptions.Single(option => option.Value == LogSeverityFilter.Information);
@@ -36,6 +40,66 @@ public sealed class LogToolViewModelTests
 
         viewModel.SelectedFilter = viewModel.FilterOptions[0];
         Assert.Single(viewModel.FilteredEntries);
+    }
+
+    [Fact]
+    public void ViewModel_exposes_distinct_severity_states()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        logger.LogInformation("info");
+        logger.LogWarning("warning");
+        logger.LogError("error");
+
+        using var viewModel = new LogToolViewModel(service, localizer);
+
+        Assert.Equal(3, viewModel.FilteredEntries.Count);
+        var info = Assert.Single(viewModel.FilteredEntries, entry => entry.IsInformation);
+        var warning = Assert.Single(viewModel.FilteredEntries, entry => entry.IsWarning);
+        var error = Assert.Single(viewModel.FilteredEntries, entry => entry.IsError);
+        Assert.Equal("Information", info.LevelText);
+        Assert.Equal("Warnings", warning.LevelText);
+        Assert.Equal("Errors", error.LevelText);
+    }
+
+    [Fact]
+    public void ViewModel_builds_a_tree_for_nested_structured_values()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["MessageKey"] = "Log.Diagnostic",
+            ["index"] = new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["header"] = new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["version"] = "0200"
+                },
+                ["titles"] = new object?[]
+                {
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["objectData"] = "00002"
+                    }
+                }
+            }
+        };
+        logger.Log(LogLevel.Information, new EventId(0, "Log.Diagnostic"), state, null,
+            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+
+        using var viewModel = new LogToolViewModel(service, localizer);
+
+        var entry = Assert.Single(viewModel.FilteredEntries);
+        var index = Assert.Single(entry.StructuredTree);
+        var header = Assert.Single(index.Children, node => node.Name == "header");
+        Assert.Equal("0200", Assert.Single(header.Children).Value);
+        var titles = Assert.Single(index.Children, node => node.Name == "titles");
+        Assert.Equal("00002", Assert.Single(Assert.Single(titles.Children).Children).Value);
+        Assert.Contains("  header", entry.Details, StringComparison.Ordinal);
+        Assert.Contains("    version = 0200", entry.Details, StringComparison.Ordinal);
     }
 
     [Fact]
