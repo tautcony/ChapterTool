@@ -213,9 +213,9 @@
             </div>
         </div>
 
-        <!-- Bottom: export / projection options (Avalonia zone) -->
-        <div class="options-zone">
-            <div class="option-cell">
+        <!-- Bottom: export / projection options (Avalonia AdvancedOptionsGrid parity) -->
+        <div class="options-zone" data-automation-id="AdvancedOptions">
+            <div class="option-cell option-format">
                 <label class="option-label" for="saveFormat">@L.T("Label.SaveAs")</label>
                 <select id="saveFormat"
                         @bind="saveFormatIndex"
@@ -241,22 +241,35 @@
                         }
                     </select>
                     <button type="button"
-                            class="secondary template-button"
+                            class="secondary template-button icon-button"
                             disabled="@Workspace.IsBusy"
                             @onclick="TriggerTemplateLoad"
-                            title="@L.T("Action.BrowseTemplate")">
-                        @L.T("Action.BrowseTemplate")
+                            title="@(string.IsNullOrWhiteSpace(Workspace.ChapterNameTemplateStatus)
+                                ? L.T("Action.BrowseTemplate")
+                                : $"{L.T("Action.BrowseTemplate")} — {Workspace.ChapterNameTemplateStatus}")"
+                            aria-label="@L.T("Action.BrowseTemplate")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l1.8 1.8H19.5A1.5 1.5 0 0 1 21 8.3v9.2A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-11Z" />
+                            <path d="M8 13h8M8 16h5" />
+                        </svg>
                     </button>
                 </div>
-                @if (chapterNameModeIndex == 2 || !string.IsNullOrWhiteSpace(Workspace.ChapterNameTemplateStatus))
-                {
-                    <span class="template-status" title="@Workspace.ChapterNameTemplateStatus">
-                        @L.T("Label.TemplateStatus"): @Workspace.ChapterNameTemplateStatus
-                    </span>
-                }
             </div>
 
-            <div class="option-cell">
+            <div class="option-cell option-order-shift">
+                <label class="option-label" for="orderShift">@L.T("Label.OrderShift")</label>
+                <input id="orderShift"
+                       class="order-shift-input"
+                       type="number"
+                       min="-1000"
+                       max="1000"
+                       step="1"
+                       @bind="orderShift"
+                       @bind:after="OnProjectionOptionsChanged"
+                       disabled="@Workspace.IsBusy" />
+            </div>
+
+            <div class="option-cell option-xml-lang">
                 <label class="option-label" for="xmlLang">@L.T("Label.XmlLang")</label>
                 <select id="xmlLang"
                         @bind="xmlLanguage"
@@ -269,45 +282,41 @@
                 </select>
             </div>
 
-            <div class="option-cell">
-                <label class="option-label" for="orderShift">@L.T("Label.OrderShift")</label>
-                <input id="orderShift"
-                       type="number"
-                       min="-1000"
-                       max="1000"
-                       step="1"
-                       @bind="orderShift"
-                       @bind:after="OnProjectionOptionsChanged"
-                       disabled="@Workspace.IsBusy" />
-            </div>
-
             <div class="option-cell option-expression">
-                <label class="option-label">@L.T("Label.Expression")</label>
-                <label class="check">
-                    <input type="checkbox"
-                           checked="@applyExpression"
-                           disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
-                           @onchange="OnApplyExpressionChanged" />
-                    @L.T("Label.UseExpression")
-                </label>
-                <select class="expression-preset"
-                        value="@expressionPresetId"
-                        disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
-                        title="@L.T("Label.ExpressionPreset")"
-                        @onchange="OnExpressionPresetChanged">
-                    <option value="">@L.T("ExpressionPreset.Custom")</option>
-                    @foreach (var preset in Workspace.ExpressionPresets)
-                    {
-                        <option value="@preset.Id" title="@preset.Description">@preset.DisplayName</option>
-                    }
-                </select>
-                <input class="expression-input"
-                       value="@expression"
-                       disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
-                       spellcheck="false"
-                       title="@L.T("Title.Expression")"
-                       @oninput="OnExpressionInput"
-                       @onchange="OnExpressionCommit" />
+                <div class="expression-label-group">
+                    <span class="option-label" id="expressionLabel">@L.T("Label.Expression")</span>
+                    <label class="check expression-enable"
+                           title="@L.T("Label.UseExpression")">
+                        <input type="checkbox"
+                               checked="@applyExpression"
+                               disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
+                               aria-labelledby="expressionLabel"
+                               aria-label="@L.T("Label.UseExpression")"
+                               @onchange="OnApplyExpressionChanged" />
+                    </label>
+                </div>
+                <div class="expression-controls">
+                    <select class="expression-preset"
+                            value="@expressionPresetId"
+                            disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
+                            title="@L.T("Label.ExpressionPreset")"
+                            aria-label="@L.T("Label.ExpressionPreset")"
+                            @onchange="OnExpressionPresetChanged">
+                        <option value="">@L.T("ExpressionPreset.Custom")</option>
+                        @foreach (var preset in Workspace.ExpressionPresets)
+                        {
+                            <option value="@preset.Id" title="@preset.Description">@preset.DisplayName</option>
+                        }
+                    </select>
+                    <input class="expression-input"
+                           value="@expression"
+                           disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
+                           spellcheck="false"
+                           title="@L.T("Title.Expression")"
+                           aria-labelledby="expressionLabel"
+                           @oninput="OnExpressionInput"
+                           @onchange="OnExpressionCommit" />
+                </div>
             </div>
         </div>
     </div>

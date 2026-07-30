@@ -335,60 +335,98 @@ tr.separator {
 /* —— Bottom options zone —— */
 .options-zone {
   display: grid;
-  grid-template-columns: 1fr 1.4fr 1fr;
-  gap: 0.55rem 0.9rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 14.4px;
+  row-gap: 8px;
   align-items: center;
 }
 
 .option-cell {
   display: grid;
-  grid-template-columns: 5.2rem minmax(0, 1fr);
-  gap: 0.4rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 6.4px;
   align-items: center;
-  min-height: 1.7rem;
+  min-width: 0;
+  min-height: 27.2px;
 }
 
-.option-cell.option-span {
-  grid-column: span 1;
+.option-format {
+  grid-column: 1;
+  grid-row: 1;
 }
 
-.option-cell.option-name-mode {
-  grid-column: span 1;
-  grid-template-columns: 5.2rem minmax(0, 1fr);
-  align-items: start;
+.option-name-mode {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.option-order-shift {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.option-xml-lang {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.option-expression {
+  grid-column: 2 / -1;
+  grid-row: 2;
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
 .name-mode-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.35rem;
+  gap: 6.4px;
+  min-width: 0;
+  align-items: center;
+}
+
+button.template-button.icon-button {
+  width: 35.2px;
+  min-width: 35.2px;
+  height: 25.6px;
+  min-height: 25.6px;
+  padding: 3.2px 6.4px;
+  display: inline-grid;
+  place-content: center;
+}
+
+button.template-button.icon-button svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.expression-label-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6.4px;
   min-width: 0;
 }
 
-.template-button {
-  white-space: nowrap;
-  font-size: 0.75rem;
-  min-height: 25.6px;
-  padding: 0.2rem 0.45rem;
+.expression-enable {
+  margin: 0;
 }
 
-.template-status {
-  grid-column: 2;
-  font-size: 0.72rem;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.option-cell.option-expression {
-  grid-column: 1 / -1;
-  grid-template-columns: 5.2rem auto auto minmax(0, 1fr);
+.expression-controls {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  gap: 6.4px;
+  min-width: 0;
+  align-items: center;
 }
 
 .expression-preset {
-  min-width: 9rem;
-  max-width: 14rem;
+  min-width: 0;
+  width: 100%;
   min-height: 25.6px;
   border: 1px solid var(--border);
   border-radius: 2px;
@@ -396,6 +434,11 @@ tr.separator {
   color: var(--control-fg);
   font: inherit;
   font-size: 11.2px;
+}
+
+.order-shift-input {
+  font-family: var(--mono);
+  min-width: 73.6px;
 }
 
 .preview-modal,
@@ -440,15 +483,17 @@ tr.separator {
 }
 
 .option-label {
-  font-size: 0.85rem;
+  font-size: 11.2px;
+  line-height: 1.25;
   color: var(--control-fg);
+  white-space: nowrap;
 }
 
 .check {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.85rem;
+  font-size: 11.2px;
   white-space: nowrap;
 }
 
@@ -825,7 +870,7 @@ input:disabled {
   content: var(--blazor-load-percentage-text, "Loading");
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
   .top-bar {
     grid-template-columns: 1fr;
     align-items: stretch;
@@ -855,16 +900,68 @@ input:disabled {
     justify-content: flex-start;
   }
 
+  /* Avalonia narrow AdvancedOptions: 2 cols, Expression full width on row 3 */
+  .options-zone {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+
+  .option-format {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .option-name-mode {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .option-xml-lang {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .option-order-shift {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .option-expression {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .expression-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
   .options-zone {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
 
-  .option-cell.option-expression {
-    grid-column: auto;
-    grid-template-columns: 5.2rem auto;
+  .option-format,
+  .option-name-mode,
+  .option-xml-lang,
+  .option-order-shift,
+  .option-expression {
+    grid-column: 1;
+    grid-row: auto;
   }
 
-  .option-cell.option-expression .expression-preset,
+  .option-cell {
+    grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr);
+  }
+
+  .option-expression {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .option-label {
+    white-space: normal;
+  }
   .option-cell.option-expression .expression-input {
     grid-column: 1 / -1;
   }
