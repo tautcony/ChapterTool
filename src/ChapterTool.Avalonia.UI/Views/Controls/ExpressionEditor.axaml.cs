@@ -27,6 +27,9 @@ public sealed class ExpressionCompletionKindBrushConverter : Expression.Expressi
 /// <summary>Provides an expression editor with completion and diagnostic presentation.</summary>
 public sealed partial class ExpressionEditor : UserControl
 {
+    private const double CompactEditorHeight = 25.6;
+    private const double ExpandedEditorHeight = 132;
+
     public static readonly StyledProperty<string> TextProperty =
         AvaloniaProperty.Register<ExpressionEditor, string>(nameof(Text), "t", defaultBindingMode: BindingMode.TwoWay);
 
@@ -52,6 +55,7 @@ public sealed partial class ExpressionEditor : UserControl
     private bool shouldShowCompletion;
     private bool isPointerOverDiagnosticPopup;
     private bool isMultilineExpanded;
+    private double effectiveEditorHeight = CompactEditorHeight;
     private ExpressionAuthoringDiagnostic? primaryDiagnostic;
 
     public ExpressionEditor()
@@ -79,8 +83,7 @@ public sealed partial class ExpressionEditor : UserControl
             Background = Brushes.Transparent,
             Foreground = Expression.ExpressionThemeBrushes.EditorForeground,
             Padding = new Thickness(6, 3),
-            MinHeight = EditorHeight,
-            Height = EditorHeight,
+            MinHeight = 0,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             Document = new TextDocument(Text)
@@ -154,7 +157,9 @@ public sealed partial class ExpressionEditor : UserControl
 
     public bool IsDiagnosticOpen => DiagnosticPopup.IsOpen;
 
-    public double ActualEditorHeightForTesting => editor.Height;
+    public double ActualEditorHeightForTesting => effectiveEditorHeight;
+
+    public double CompletionVerticalOffsetForTesting => CompletionPopup.VerticalOffset;
 
     public int CaretOffsetForTesting => editor.CaretOffset;
 
@@ -236,9 +241,6 @@ public sealed partial class ExpressionEditor : UserControl
         }
         else if (change.Property == EditorHeightProperty)
         {
-            var height = Math.Max(25.6, change.GetNewValue<double>());
-            editor.MinHeight = height;
-            editor.Height = height;
             UpdateMultilineState();
         }
         else if (change.Property == IsMultilineExpandableProperty)
@@ -296,21 +298,21 @@ public sealed partial class ExpressionEditor : UserControl
         var canExpand = IsMultilineExpandable && HasMultipleLines(editor.Text);
         var nextValue = value && canExpand;
         var changed = isMultilineExpanded != nextValue;
-        var previousHeight = editor.Height;
+        var previousHeight = effectiveEditorHeight;
         isMultilineExpanded = nextValue;
 
         MultilineToggleButton.IsVisible = canExpand;
         MultilineExpandIcon.IsVisible = !isMultilineExpanded;
         MultilineCollapseIcon.IsVisible = isMultilineExpanded;
 
-        var requestedHeight = Math.Max(25.6, EditorHeight);
+        var requestedHeight = Math.Max(CompactEditorHeight, EditorHeight);
         var effectiveHeight = canExpand
-            ? isMultilineExpanded ? 132 : 25.6
+            ? isMultilineExpanded ? ExpandedEditorHeight : CompactEditorHeight
             : requestedHeight;
 
-        editor.MinHeight = effectiveHeight;
-        editor.Height = effectiveHeight;
-        editor.VerticalScrollBarVisibility = isMultilineExpanded || requestedHeight > 25.6
+        effectiveEditorHeight = effectiveHeight;
+        RootGrid.Height = effectiveHeight;
+        editor.VerticalScrollBarVisibility = isMultilineExpanded || requestedHeight > CompactEditorHeight
             ? ScrollBarVisibility.Auto
             : ScrollBarVisibility.Disabled;
 
@@ -496,7 +498,7 @@ public sealed partial class ExpressionEditor : UserControl
         var completionAnchor = GetCompletionAnchorOffset();
         CompletionPopup.PlacementTarget = RootGrid;
         CompletionPopup.HorizontalOffset = completionAnchor.X + 12;
-        CompletionPopup.VerticalOffset = RootGrid.Bounds.Height + 4;
+        CompletionPopup.VerticalOffset = completionAnchor.Y + 4;
         CompletionPopup.IsOpen = true;
         CloseDiagnosticPopup();
     }
@@ -579,12 +581,11 @@ public sealed partial class ExpressionEditor : UserControl
     {
         if (CurrentCompletions.Count == 0)
         {
-            return new Point(GetCaretAnchorOffset().X, RootGrid.Bounds.Height);
+            return GetCaretAnchorOffset();
         }
 
         var completion = CompletionList.SelectedItem as ExpressionCompletion ?? CurrentCompletions[0];
-        var anchor = GetDocumentOffsetAnchorOffset(completion.ReplacementStart + completion.ReplacementLength);
-        return new Point(anchor.X, RootGrid.Bounds.Height);
+        return GetDocumentOffsetAnchorOffset(completion.ReplacementStart + completion.ReplacementLength);
     }
 
     private Point GetDiagnosticAnchorOffset(int offset)

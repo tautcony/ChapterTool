@@ -9,7 +9,7 @@
              x:DataType="tools:ExpressionToolViewModel"
              x:CompileBindings="True">
   <Grid RowDefinitions="*,Auto">
-    <Grid Grid.Row="0" Margin="16" RowDefinitions="Auto,*,Auto" RowSpacing="10">
+    <Grid Grid.Row="0" Margin="16" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
     <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="8">
       <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource Tool.Expression.Preset}" />
       <ComboBox Grid.Column="1"
@@ -29,7 +29,8 @@
 
     <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
       <controls:ExpressionEditor Grid.Column="0"
-                                 EditorHeight="112"
+                                 IsMultilineExpandable="True"
+                                 VerticalAlignment="Top"
                                  Text="{Binding Expression}"
                                  Localizer="{Binding Localizer}"
                                  AuthoringService="{Binding ExpressionAuthoringService}" />

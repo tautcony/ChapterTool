@@ -163,6 +163,68 @@ public sealed class ToolViewsHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Expression_tool_starts_with_compact_editor_height()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        var viewModel = new ExpressionToolViewModel(host.ViewModel.PortAdapters.Expression);
+        var view = new ExpressionToolView { DataContext = viewModel };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(view, viewModel);
+        try
+        {
+            var editor = Assert.Single(MainWindowHeadlessTestHost.Descendants<ExpressionEditor>(window));
+
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal(25.6, editor.ActualEditorHeightForTesting);
+            Assert.InRange(Math.Abs(editor.Bounds.Height - 25.6), 0, 0.5);
+            Assert.False(editor.IsMultilineExpanded);
+
+            editor.Text = "local offset = 1\nreturn t + offset";
+            editor.IsMultilineExpanded = true;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal(132, editor.ActualEditorHeightForTesting);
+            Assert.InRange(Math.Abs(editor.Bounds.Height - 132), 0, 0.5);
+            var toggleButton = editor.FindControl<Button>("MultilineToggleButton");
+            Assert.NotNull(toggleButton);
+            Assert.InRange(toggleButton.Bounds.Height, 19.5, 20.5);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expanded_expression_editor_positions_completion_below_the_caret_line()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var editor = new ExpressionEditor
+        {
+            Localizer = localizer,
+            IsMultilineExpandable = true,
+            Text = "local offset = 1\ns"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.IsMultilineExpanded = true;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            editor.MoveCaretToEnd();
+            editor.InsertTextForTesting("i");
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.True(editor.IsCompletionOpen);
+            Assert.Contains(editor.CurrentCompletions, item => item.Text == "sin");
+            Assert.InRange(editor.CompletionVerticalOffsetForTesting, 25, editor.Bounds.Height / 2);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Expression_editor_keeps_case_insensitive_prefix_completions_without_unknown_token_diagnostic()
     {
         var localizer = new AppLocalizationManager("en-US");

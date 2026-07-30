@@ -31,6 +31,8 @@
             Width="24"
             Height="20"
             MinWidth="24"
+            MinHeight="0"
+            MaxHeight="20"
             Padding="0"
             Margin="0,2,2,0"
             HorizontalAlignment="Right"
