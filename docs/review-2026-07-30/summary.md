@@ -6,52 +6,74 @@ This review compares the `libbluray` MPLS, CLPI, and INDEX parsers with the Chap
 
 ## Findings
 
-### P1-P1-1: Core shifts the playlist timeline when CLPI is present
+## Executed Native Comparison
+
+The Homebrew `libbluray 1.5.0` library was compared with the Core parsers and
+the `NativeBdmvImporter`.
+
+- 160/160 BDMV MPLS files matched on all compared fields.
+- 244/244 BDMV CLPI files matched on all common fields.
+- 18/18 valid independent MPLS samples matched. One malformed sample was
+  rejected by Core and accepted as an empty playlist by libbluray.
+- Six discs matched in relevant-title mode for playlist set, duration, and
+  chapter count.
+- The real PiP fixture matched, so the previously reported PiP address-base
+  defect is not confirmed.
+
+The remaining items below are static-review hypotheses or untested behavioral
+areas. They must not be treated as confirmed parser mismatches until a fixture
+or runtime comparison reproduces them.
+
+### P1-P1-1: CLPI timeline hypothesis (not reproduced)
 
 - Location: `src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs`, `PlaylistChapters` and `ComputePlayItemStartPts`.
 - Trigger: A playlist has a readable CLPI file with a non-zero `PresentationStartTime`.
 - Evidence: Core adds `stcStart` to each chapter timestamp and to each cumulative play-item start. `libbluray` uses the STC start packet to find an entry point, but calculates title time as `clip.title_time + mark.time - play_item.in_time`.
-- Impact: The first chapter can start after a false offset. Later chapters and the total playlist timeline can also be shifted or extended. The existing `StcAwarePtsTests` only checks that chapters exist, so it does not detect the wrong timestamp.
-- Direction: Keep CLPI STC information for packet lookup only. Calculate playlist chapter time from MPLS `INTime`, `OUTTime`, and mark timestamps. Add exact assertions for non-zero STC offsets.
+- Comparison status: No title-level duration or chapter mismatch was found on
+  six discs. Keep this as a targeted regression test rather than a confirmed
+  defect.
 
-### P1-P2-1: Core rejects the valid `0240` BDMV version
+### P1-P2-1: `0240` version support (not covered by current fixtures)
 
 - Location: `MplsPlaylistFile.cs:28`, `ClpiFile.cs:25`, and `IndexFile.cs:18`.
 - Trigger: A valid MPLS, CLPI, or INDEX header uses version `0240`.
 - Evidence: `libbluray/src/libbluray/bdnav/bdmv_parse.h:30` defines `BDMV_VERSION_0240`, and `bdmv_parse.c:60-63` accepts it. Core accepts only `0100`, `0200`, and `0300`.
-- Impact: 3D profile discs can fail import or lose native BDMV discovery.
-- Direction: Accept `0240` in all three shared header parsers. Add one fixture or synthetic test for each affected file type.
+- Comparison status: All tested files use version `0200`. No `0240` fixture was
+  available, so this remains an unverified compatibility gap.
 
-### P1-P2-2: Core reads INDEX AppInfo flags at the wrong bit positions
+### P1-P2-2: INDEX AppInfo flag layout (not covered by current comparison)
 
 - Location: `src/ChapterTool.Core/Importing/Disc/Index/IndexAppInfoBDMV.cs:17-20`.
 - Trigger: `index.bdmv` contains non-zero AppInfo flags.
 - Evidence: `libbluray` skips one reserved bit, then reads output mode at bit 6, content at bit 5, one reserved bit, and dynamic range in bits 3..0. Core reads output from bit 7, content from bit 6, and dynamic range from bits 5..2.
-- Impact: Diagnostic metadata is wrong. Existing tests construct `0xC0` and expect the Core interpretation, so the test protects the wrong wire layout.
-- Direction: Read the fields from the same bit positions as `index_parse.c`. Update the builder and add tests for independent output, content, and dynamic-range values.
+- Comparison status: The native comparison did not exercise non-zero INDEX
+  AppInfo flags. Keep the bit-layout test as a separate fixture task.
 
-### P1-P2-3: Core does not use the BDMV BACKUP parser paths
+### P1-P2-3: BDMV BACKUP fallback (not exercised)
 
 - Location: `BdmvPathHelper.cs:44-47` and `NativeBdmvImporter.cs:39,67`.
 - Trigger: The primary `BDMV/PLAYLIST`, `BDMV/CLIPINF`, or `BDMV/index.bdmv` path is absent or unusable while the corresponding `BDMV/BACKUP` path is usable.
 - Evidence: `libbluray` retries `BDMV/BACKUP/PLAYLIST` and `BDMV/BACKUP/index.bdmv` after the primary path. Core constructs only primary paths and scans only the primary playlist directory.
-- Impact: Core can report no titles or miss CLPI timing data for a disc that libbluray can read.
-- Direction: Apply one explicit primary-then-backup resolution policy to INDEX, MPLS, and CLPI files. Add a fixture with only the backup copy.
+- Comparison status: The six complete discs did not require fallback. A damaged
+  primary and backup-only fixture is still required before implementation.
 
-### P1-P2-4: Core does not parse MPLS extension entries like libbluray
+### P1-P2-4: MPLS extension entries (partly covered)
 
 - Location: `MplsExtensionData.cs:15-48`.
 - Trigger: An MPLS contains extension data.
 - Evidence: `libbluray` validates each entry range and dispatches known extension types for PiP metadata, extension SubPath records, and static metadata. Core stores one aggregate data block and does not validate or parse each `MplsExtDataEntry`. Its data-block seek is relative to the stream position after the length field, while libbluray resolves entry addresses from the extension section start.
-- Impact: Extension payloads can be read from the wrong base and their contents are unavailable to callers. Chapter extraction does not currently use these fields, but the parser result is not equivalent.
-- Direction: Define the address base explicitly. Validate every entry start and length against the bounded extension section. Parse the required known extension types or expose an intentional raw-extension contract with documented limits.
+- Comparison status: All 160 BDMV MPLS files had zero extension entries. The
+  real Terminator2 PiP sample matched exactly, including nested records. Keep
+  malformed-range and additional extension fixtures as future coverage, but do
+  not report the earlier PiP address-base claim as a confirmed bug.
 
-### P1-INFO-1: Core omits non-chapter CLPI metadata
+### P1-INFO-1: Non-chapter CLPI metadata (partly covered)
 
 - Location: `ClpiClipInfo.cs`, `ClpiStreamCodingInfo.cs`, and `ClpiFile.cs`.
 - Observation: `libbluray` parses ATC delta records, subtitle font records, video coding type `0x20`, ISRC values, and CLPI extension data. Core skips or does not expose these fields.
-- Impact: No current chapter timestamp path depends on these fields. Future media or diagnostic features cannot use the parsed information.
-- Direction: Treat this as an intentional scope decision or add typed records and tests before using CLPI as a general parser.
+- Comparison status: The tested BDMV set contained no native extent points,
+  ProgramInfo SS, or CPI SS records. The typed metadata scope remains a product
+  decision, not a demonstrated chapter-import difference.
 
 ## Test Review
 
@@ -61,4 +83,10 @@ ChapterTool has a useful Core fixture suite. It passed 227 focused importing tes
 
 ## Residual Risk
 
-The review did not run a native libbluray binary comparison because Meson and Ninja are unavailable. A follow-up should build the devtools and compare `mpls_dump -c` and `clpi_dump` output against Core records on the existing fixtures.
+Homebrew `libbluray 1.5.0` is installed and matches the repository checkout. The
+repository `mpls_dump` and `clpi_dump` sources compile directly against the
+Homebrew library without Meson or Ninja. The executed parser and title
+comparisons are recorded in [`native-libbluray-parity.md`](./native-libbluray-parity.md).
+Remaining risk is limited to malformed-input policy, BACKUP fallback, navigation
+execution, INDEX access flags, BDJO behavior, and extension fixtures that are
+absent from the current corpus.

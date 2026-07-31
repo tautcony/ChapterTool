@@ -161,7 +161,7 @@ public sealed class MovieObjectNavigationTests
                 file.Objects[1]
             }
         };
-        var titleJump = new HdmvNavigationResolver().Resolve(titleJumpFile, 0, new ushort[] { 1 });
+        var titleJump = new HdmvNavigationResolver().Resolve(titleJumpFile, 0, new Dictionary<uint, ushort> { [1] = 1 });
         Assert.Equal(7U, Assert.Single(titleJump.Events).PlaylistId);
 
         var callFile = new MovieObjectFile("MOBJ", "0100", 0, new[]
@@ -203,6 +203,88 @@ public sealed class MovieObjectNavigationTests
         });
         var callLimit = new HdmvNavigationResolver(new HdmvNavigationLimits(MaximumCallDepth: 1)).Resolve(call, 0);
         Assert.True(callLimit.LimitReached);
+    }
+
+    [Fact]
+    public void ResolverEvaluatesOnlyProfilesForReadPsrsAndMergesEvents()
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
+        {
+            new MovieObjectObject(false, false, false, new[]
+            {
+                Command(1, 0, 2, false, false, destination: 0x80000009),
+            })
+        });
+
+        var result = new HdmvNavigationResolver(new HdmvNavigationLimits(MaximumProfileVariants: 3))
+            .ResolveProfileVariants(file, 0);
+
+        Assert.Equal(new uint[] { 0, 1, 2 }, result.Events.Select(static item => item.PlaylistId));
+        Assert.Equal(new[] { "default", "psr9=1", "psr9=2" }, result.Events.Select(static item => item.PlayerProfile));
+        Assert.Equal(3, result.Diagnostics.Count(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.NavigationSource && diagnostic.Message.StartsWith("Evaluated HDMV player profile", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void ResolverPreservesGlobalTitleNumbersAcrossBdJEntries()
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
+        {
+            new MovieObjectObject(false, false, false, new[]
+            {
+                Command(1, 0, 1, true, false, branchOption: 1, destination: 3),
+            }),
+            new MovieObjectObject(false, false, false, new[]
+            {
+                Command(1, 0, 2, true, false, destination: 17),
+            })
+        });
+
+        var titleObjects = new Dictionary<uint, ushort> { [1] = 0, [3] = 1 };
+        var result = new HdmvNavigationResolver().Resolve(file, 0, titleObjects);
+
+        Assert.Equal(17U, Assert.Single(result.Events).PlaylistId);
+        Assert.Equal(3, result.Events[0].SourceTitle);
+    }
+
+    [Fact]
+    public void ResolverEmitsLinkAndPlayStopControlEvents()
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
+        {
+            new MovieObjectObject(false, false, false, new[]
+            {
+                Command(1, 0, 2, true, false, branchOption: 4, destination: 2),
+                Command(1, 0, 2, true, false, branchOption: 5, destination: 3),
+                Command(0, 0, 2, false, false, branchOption: 3),
+                Command(1, 0, 2, true, false, destination: 99),
+            })
+        });
+
+        var result = new HdmvNavigationResolver().Resolve(file, 0);
+
+        Assert.Empty(result.Events);
+        Assert.Equal(new[] { "LinkPI", "LinkMK", "PlayStop" }, result.ControlEvents.Select(static item => item.InstructionType));
+        Assert.Equal(2U, result.ControlEvents[0].PlayItemId);
+        Assert.Equal(3U, result.ControlEvents[1].MarkId);
+    }
+
+    [Fact]
+    public void ResolverUpdatesPlaylistRelevantSetSystemRegisters()
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
+        {
+            new MovieObjectObject(false, false, false, new[]
+            {
+                Command(2, 2, 1, true, true, setOption: 1, destination: 0x80070000),
+                Command(1, 0, 2, false, false, destination: 0x80000001),
+                Command(2, 2, 1, true, true, setOption: 3, destination: 0x80000005, source: 0x80000006),
+            })
+        });
+
+        var result = new HdmvNavigationResolver().Resolve(file, 0);
+
+        Assert.Equal(7U, Assert.Single(result.Events).PlaylistId);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Message.Contains("SetButtonPage", StringComparison.Ordinal));
     }
 
     private static MovieObjectCommand Command(

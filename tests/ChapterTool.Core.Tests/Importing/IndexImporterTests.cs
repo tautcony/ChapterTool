@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using ChapterTool.Core.Importing.Disc.Index;
 
 namespace ChapterTool.Core.Tests.Importing;
@@ -267,6 +268,61 @@ public sealed class IndexImporterTests
         Assert.Null(result);
         Assert.NotNull(error);
         Assert.NotEmpty(error);
+    }
+
+    [Theory]
+    [InlineData(0, false, false)]
+    [InlineData(1, true, false)]
+    [InlineData(3, true, true)]
+    public void IndexTitleAccessTypeExposesProhibitedAndHiddenState(byte accessType, bool prohibited, bool hidden)
+    {
+        var title = new IndexTitleEntry(1, accessType, 0, new IndexHdmvObjectReference(1));
+
+        Assert.Equal(prohibited, title.IsAccessProhibited);
+        Assert.Equal(hidden, title.IsHidden);
+    }
+
+    [Fact]
+    public void IndexExtensionParsesUhdMetadataAndPreservesRawEntry()
+    {
+        var bytes = new byte[40];
+        BinaryPrimitives.WriteUInt32BigEndian(bytes, 36);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(4), 24);
+        bytes[11] = 1;
+        BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(12), 3);
+        BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(14), 1);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(16), 24);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(20), 16);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(24), 8);
+        bytes[28] = 0xA1;
+        bytes[30] = 0x17;
+        using var stream = new MemoryStream(bytes);
+
+        var extension = IndexExtensionData.Read(stream);
+
+        var uhd = Assert.IsType<IndexUhdMetadata>(extension.UhdMetadata);
+        Assert.Equal((byte)0x0A, uhd.DiscType);
+        Assert.True(uhd.Exists4K);
+        Assert.Equal((byte)3, uhd.HdrFlags);
+        Assert.True(uhd.Hdr10Plus);
+        Assert.True(uhd.DolbyVision);
+        Assert.Equal(16, extension.RawEntries["3.1"].Length);
+    }
+
+    [Fact]
+    public void IndexExtensionRejectsEntryOutsideSection()
+    {
+        var bytes = new byte[24];
+        BinaryPrimitives.WriteUInt32BigEndian(bytes, 20);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(4), 24);
+        bytes[11] = 1;
+        BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(12), 3);
+        BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(14), 1);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(16), 24);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(20), 16);
+        using var stream = new MemoryStream(bytes);
+
+        Assert.Throws<InvalidDataException>(() => IndexExtensionData.Read(stream));
     }
 
     private static byte[] BuildMinimalIndex(uint? extensionDataStartAddress = null)

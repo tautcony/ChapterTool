@@ -682,8 +682,9 @@ public sealed class DiscImporterTests
         Assert.NotNull(file.ExtensionData);
         Assert.Single(file.ExtensionData.ExtDataEntries);
         Assert.Equal((ushort)1, file.ExtensionData.ExtDataEntries[0].ExtDataType);
-        Assert.NotEmpty(file.ExtensionData.PipMetadata);
-        Assert.NotEmpty(file.ExtensionData.PipMetadata[0].Data);
+        Assert.Equal(29, file.ExtensionData.PipMetadata.Count);
+        Assert.Equal(98, file.ExtensionData.PipMetadata.Sum(static item => item.Data.Count));
+        Assert.All(file.ExtensionData.PipMetadata, static item => Assert.InRange(item.TimelineType, (byte)0, (byte)15));
     }
 
     [Fact]
