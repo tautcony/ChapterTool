@@ -37,6 +37,7 @@
   <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">信息</x:String>
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">警告</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">错误</x:String>
+  <x:String x:Key="Tool.Log.Filter" xml:space="preserve">按级别筛选</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">复制摘要</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">复制详情</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技术详情</x:String>
@@ -45,6 +46,20 @@
   <x:String x:Key="Tool.Log.Exception" xml:space="preserve">异常</x:String>
   <x:String x:Key="Tool.Log.Category" xml:space="preserve">类别</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">当前筛选条件没有日志记录。</x:String>
+  <x:String x:Key="Tool.Log.EntryCount" xml:space="preserve">{count} 条记录</x:String>
+  <x:String x:Key="Tool.Log.NoOverviewData" xml:space="preserve">该日志没有更多详情。</x:String>
+  <x:String x:Key="Tool.Log.Overview" xml:space="preserve">摘要</x:String>
+  <x:String x:Key="Tool.Log.Properties" xml:space="preserve">属性</x:String>
+  <x:String x:Key="Tool.Log.Raw" xml:space="preserve">原始数据</x:String>
+  <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">搜索日志…</x:String>
+  <x:String x:Key="Tool.Log.Metadata" xml:space="preserve">记录信息</x:String>
+  <x:String x:Key="Tool.Log.Timestamp" xml:space="preserve">时间</x:String>
+  <x:String x:Key="Tool.Log.Level" xml:space="preserve">级别</x:String>
+  <x:String x:Key="Tool.Log.Operation" xml:space="preserve">操作</x:String>
+  <x:String x:Key="Tool.Log.Event" xml:space="preserve">事件</x:String>
+  <x:String x:Key="Tool.Log.MessageKey" xml:space="preserve">消息键</x:String>
+  <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">该日志没有嵌套结构化数据。</x:String>
+  <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">该日志没有异常数据。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">此构建未启用该平台相关功能。</x:String>
   <x:String x:Key="Common.Enable" xml:space="preserve">启用</x:String>
@@ -221,7 +236,7 @@
   <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">帧信息已更新：option={option}，fps={fps}，round={round}，chapters={chapters}</x:String>
   <x:String x:Key="Log.ImportEntry" xml:space="preserve">{operation} 条目 {entryIndex}：id='{id}'，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，duration={duration}，fps={fps}</x:String>
   <x:String x:Key="Log.ImportGroup" xml:space="preserve">{operation} 分组 {groupIndex}：sourcePath='{sourcePath}'，defaultEntryIndex={defaultEntryIndex}，entries={entries}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} 结果：success={success}，partial={partial}，groups={groups}，entries={entries}，chapters={chapters}，diagnostics={diagnostics}</x:String>
+  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
   <x:String x:Key="Log.LanguageSet" xml:space="preserve">语言已设置为 {language}</x:String>
   <x:String x:Key="Log.LoadingSource" xml:space="preserve">正在载入源：path='{path}'</x:String>
   <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}：path='{path}'</x:String>

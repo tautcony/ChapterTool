@@ -26,13 +26,15 @@ internal sealed class BdmvPlaylistScanner
         if (!Directory.Exists(directory)) return [];
 
         var candidates = new List<BdmvPlaylistCandidate>();
+        var skipped = new List<object?>();
         var signatures = new HashSet<string>(StringComparer.Ordinal);
-        IEnumerable<string> paths;
+        IReadOnlyList<string> paths;
         try
         {
             paths = Directory.EnumerateFiles(directory, "*.mpls", SearchOption.TopDirectoryOnly)
                 .OrderBy(static path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
-                .Take(MaximumPlaylists);
+                .Take(MaximumPlaylists)
+                .ToList();
         }
         catch (IOException exception)
         {
@@ -51,19 +53,18 @@ internal sealed class BdmvPlaylistScanner
                     .Any(group => group.Count() > MaximumRepeatedSegments);
                 if (repeated)
                 {
-                    diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.BdmvScanRejected, $"Skipped repeated-segment BDMV playlist {name}.", path);
+                    skipped.Add(SkippedPlaylist(name, path, "repeated-segments"));
                     continue;
                 }
 
                 var signature = StructuralSignature(projection);
                 if (!signatures.Add(signature))
                 {
-                    diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.BdmvScanRejected, $"Skipped structural duplicate BDMV playlist {name}.", path);
+                    skipped.Add(SkippedPlaylist(name, path, "structural-duplicate"));
                     continue;
                 }
 
                 candidates.Add(new BdmvPlaylistCandidate(name, path, projection, ["playlist-scan"]));
-                diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.BdmvScanCandidate, $"Playlist scan found {name}.", path);
             }
             catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
             {
@@ -71,8 +72,41 @@ internal sealed class BdmvPlaylistScanner
             }
         }
 
+        if (paths.Count > 0)
+        {
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.BdmvScanCandidate,
+                $"Playlist scan retained {candidates.Count} of {paths.Count} discovered files and skipped {skipped.Count} duplicates or repeated-segment playlists.",
+                directory,
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["discoveredCount"] = paths.Count,
+                    ["retainedCount"] = candidates.Count,
+                    ["skippedCount"] = skipped.Count,
+                    ["candidates"] = candidates.Select(static candidate => new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["name"] = candidate.Name,
+                        ["path"] = candidate.Path,
+                        ["hasChapterMarks"] = candidate.Projection.HasChapterMarks,
+                        ["chapters"] = candidate.Projection.ChapterSet.Chapters.Count,
+                        ["duration"] = candidate.Projection.ChapterSet.Duration,
+                        ["playItems"] = candidate.Projection.Playlist.PlayList.PlayItems.Count
+                    }).Cast<object?>().ToList(),
+                    ["skipped"] = skipped
+                }));
+        }
+
         return candidates;
     }
+
+    private static Dictionary<string, object?> SkippedPlaylist(string name, string path, string reason) =>
+        new(StringComparer.Ordinal)
+        {
+            ["name"] = name,
+            ["path"] = path,
+            ["reason"] = reason
+        };
 
     private static string StructuralSignature(MplsAggregateProjection projection) =>
         string.Join("|", projection.Playlist.PlayList.PlayItems.Select(static item =>

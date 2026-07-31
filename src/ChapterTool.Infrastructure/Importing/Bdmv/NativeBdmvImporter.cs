@@ -61,19 +61,11 @@ public sealed class NativeBdmvImporter : IChapterImporter
             .ThenByDescending(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        foreach (var candidate in candidates)
-        {
-            _ = BdmvPathHelper.DiscoverClpiFiles(
-                layout.DiscRoot,
-                candidate.Projection.Playlist.PlayList.PlayItems.SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries)),
-                diagnostics);
-            if (candidate.Projection.HasChapterMarks) continue;
-            diagnostics.Add(new ChapterDiagnostic(
-                DiagnosticSeverity.Info,
-                ChapterDiagnosticCode.BdmvScanCandidate,
-                $"Retained no-chapter playlist candidate {candidate.Name} for parity diagnostics.",
-                candidate.Path));
-        }
+        _ = BdmvPathHelper.DiscoverClpiFiles(
+            layout.DiscRoot,
+            candidates.SelectMany(static candidate => candidate.Projection.Playlist.PlayList.PlayItems)
+                .SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries)),
+            diagnostics);
 
         var entries = new List<ChapterImportEntry>();
         for (var indexValue = 0; indexValue < candidates.Count; indexValue++)
@@ -159,6 +151,8 @@ public sealed class NativeBdmvImporter : IChapterImporter
             layout.BackupMovieObjectPath,
             out var movieObjectPath,
             out var movieObjectError);
+        var navigationDetails = new List<object?>();
+        var unavailableLogged = false;
 
         foreach (var title in index.Indexes.MovieAndBdJTitles)
         {
@@ -166,27 +160,63 @@ public sealed class NativeBdmvImporter : IChapterImporter
             {
                 if (movieObject == null)
                 {
-                    diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.MovieObjectParseFailed,
-                        $"MovieObject navigation was unavailable for object {hdmv.ObjectId}: {movieObjectError}."));
+                    if (!unavailableLogged)
+                    {
+                        diagnostics.Add(new ChapterDiagnostic(
+                            DiagnosticSeverity.Info,
+                            ChapterDiagnosticCode.MovieObjectParseFailed,
+                            $"MovieObject navigation was unavailable for {titleObjects.Count} HDMV title objects: {movieObjectError}."));
+                        unavailableLogged = true;
+                    }
+
                     continue;
                 }
 
                 var titleNumber = index.Indexes.MovieAndBdJTitles.ToList().IndexOf(title) + 1;
                 var result = new HdmvNavigationResolver().Resolve(movieObject, hdmv.ObjectId, titleObjects, titleNumber: titleNumber);
                 diagnostics.AddRange(result.Diagnostics);
-                diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
-                    $"Resolved HDMV object {hdmv.ObjectId} from {(movieObjectPath == layout.BackupMovieObjectPath ? "backup" : "primary")} MovieObject."));
+                var playlists = new List<object?>();
                 foreach (var playback in result.Events)
                 {
                     AddEvidence(evidence, evidenceOrder, $"{playback.PlaylistId:D5}.mpls", $"HDMV:{hdmv.ObjectId}:{playback.InstructionType}");
-                    diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
-                        $"Index title references playlist through HDMV navigation: {playback.PlaylistId:D5}.mpls."));
+                    playlists.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["playlist"] = $"{playback.PlaylistId:D5}.mpls",
+                        ["instruction"] = playback.InstructionType.ToString()
+                    });
                 }
+
+                navigationDetails.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["title"] = titleNumber,
+                    ["objectId"] = hdmv.ObjectId,
+                    ["playlists"] = playlists
+                });
             }
             else if (title.ObjectReference is IndexBdJObjectReference bdj)
             {
                 ResolveBdjo(bdj, layout, evidence, evidenceOrder, diagnostics);
             }
+        }
+
+        if (navigationDetails.Count > 0)
+        {
+            var playlistCount = navigationDetails
+                .Cast<IReadOnlyDictionary<string, object?>>()
+                .Sum(static detail => ((IReadOnlyList<object?>)detail["playlists"]!).Count);
+            var source = movieObjectPath == layout.BackupMovieObjectPath ? "backup" : "primary";
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.NavigationSource,
+                $"Resolved {navigationDetails.Count} HDMV title objects and {playlistCount} playlist references from the {source} MovieObject.",
+                movieObjectPath,
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["source"] = source,
+                    ["objectCount"] = navigationDetails.Count,
+                    ["playlistCount"] = playlistCount,
+                    ["objects"] = navigationDetails
+                }));
         }
     }
 

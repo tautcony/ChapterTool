@@ -1,6 +1,8 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
@@ -36,6 +38,8 @@ public sealed class AuxiliaryToolHeadlessTests
             window.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
+            CaptureIfRequested(window, "log-default.png");
+
             var list = window.GetVisualDescendants().OfType<ListBox>().Single();
             Assert.Equal(2, list.Items.Count);
 
@@ -47,13 +51,33 @@ public sealed class AuxiliaryToolHeadlessTests
             Assert.Equal(LogSeverityFilter.Warning, viewModel.SelectedFilter.Value);
 
             filter.SelectedIndex = 0;
+            var search = window.GetVisualDescendants().OfType<TextBox>().Single(static box => box.Name == "LogSearch");
+            search.Text = "warning";
+            Dispatcher.UIThread.RunJobs();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            Assert.Single(viewModel.FilteredEntries);
+
+            search.Text = string.Empty;
             list.SelectedIndex = 1;
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             Assert.NotNull(viewModel.SelectedEntry);
 
+            var tabs = window.GetVisualDescendants().OfType<TabControl>().Single(static control => control.Name == "LogDetailsTabs");
+            Assert.Equal(4, tabs.ItemCount);
+            tabs.SelectedIndex = 3;
+            Dispatcher.UIThread.RunJobs();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            CaptureIfRequested(window, "log-raw.png");
+            Assert.Contains(
+                window.GetVisualDescendants().OfType<SelectableTextBlock>(),
+                block => block.IsVisible && block.Text?.Contains("\"message\": \"Initial warning\"", StringComparison.Ordinal) == true);
+
             await viewModel.CopySummaryCommand.ExecuteAsync();
             Assert.Contains("Initial warning", clipboard.Text, StringComparison.Ordinal);
+
+            await viewModel.CopyDetailsCommand.ExecuteAsync();
+            Assert.Contains("\"message\": \"Initial warning\"", clipboard.Text, StringComparison.Ordinal);
 
             await viewModel.ClearCommand.ExecuteAsync();
             Dispatcher.UIThread.RunJobs();
@@ -68,6 +92,7 @@ public sealed class AuxiliaryToolHeadlessTests
 
             window.Width = 420;
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            CaptureIfRequested(window, "log-narrow.png");
             var actionButtons = window.GetVisualDescendants().OfType<Button>().Where(button => button.Command is not null).ToArray();
             Assert.NotEmpty(actionButtons);
             Assert.All(actionButtons, button => Assert.True(button.Bounds.Right <= window.Bounds.Width + 1));
@@ -76,6 +101,26 @@ public sealed class AuxiliaryToolHeadlessTests
         {
             await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
+    }
+
+    private static void CaptureIfRequested(Window window, string fileName)
+    {
+        var directory = Environment.GetEnvironmentVariable("CHAPTERTOOL_CAPTURE_LOG_SCREENSHOTS");
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        var width = Math.Max(1, (int)Math.Ceiling(window.Bounds.Width));
+        var height = Math.Max(1, (int)Math.Ceiling(window.Bounds.Height));
+        using var bitmap = new RenderTargetBitmap(new PixelSize(width, height));
+        bitmap.Render(window);
+        var path = Path.Combine(directory, fileName);
+        bitmap.Save(path, PngBitmapEncoderOptions.Default);
+
+        Assert.True(File.Exists(path));
+        Assert.True(new FileInfo(path).Length > 256, $"Screenshot was empty: {path}");
     }
 
     [AvaloniaFact]

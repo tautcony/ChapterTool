@@ -1,3 +1,4 @@
+using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
@@ -9,6 +10,8 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Contains status and application-log behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
+    private readonly IAppLocalizer logContentLocalizer = new AppLocalizationManager("en-US");
+
     internal void SetStatus(string? key, params (string Name, object? Value)[] arguments)
         => statusDiagnosticsPresenter.SetStatus(key, arguments);
 
@@ -97,6 +100,14 @@ public sealed partial class MainWindowViewModel
 
     internal void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
         => statusDiagnosticsPresenter.LogDiagnostics(operation, diagnostics);
+
+    internal string EnglishLogText(string key, params (string Name, object? Value)[] arguments)
+        => logContentLocalizer.Format(LocalizedMessage.Create(key, arguments));
+
+    private void LogImportDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
+        => statusDiagnosticsPresenter.LogDiagnostics(
+            operation,
+            diagnostics.Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning).ToList());
 
     public ValueTask ReportUnexpectedUiException(Exception exception)
     {

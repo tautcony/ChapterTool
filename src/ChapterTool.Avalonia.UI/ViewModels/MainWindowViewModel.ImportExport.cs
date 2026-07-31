@@ -36,7 +36,6 @@ public sealed partial class MainWindowViewModel
             {
                 SetStatus("Status.TemplateLoadFailed", ("path", Path.GetFileName(path)));
                 Log(LogLevel.Warning, "Log.TemplateLoadFailed", ("path", path), ("reason", "empty"));
-                LogStatus(LogLevel.Warning);
                 return;
             }
 
@@ -45,7 +44,6 @@ public sealed partial class MainWindowViewModel
             ChapterNameModeIndex = 2;
             SetStatus("Status.TemplateLoaded", ("name", ChapterNameTemplateStatus));
             Log("Log.TemplateLoaded", ("path", path), ("name", ChapterNameTemplateStatus));
-            LogStatus();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -56,7 +54,6 @@ public sealed partial class MainWindowViewModel
 
             SetStatus("Status.TemplateLoadFailed", ("path", Path.GetFileName(path)));
             Log(LogLevel.Warning, "Log.TemplateLoadFailed", exception.Message, ("path", path));
-            LogStatus(LogLevel.Warning);
         }
     }
 
@@ -105,8 +102,7 @@ public sealed partial class MainWindowViewModel
             SetStatus("Status.LoadFailed", diagnostic: result.Diagnostics.FirstOrDefault());
             ClearProgressStatus();
             Progress = 0;
-            LogStatus();
-            LogDiagnostics(Localizer.GetString("Operation.Load"), result.Diagnostics);
+            LogImportDiagnostics("Load", result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -119,8 +115,7 @@ public sealed partial class MainWindowViewModel
         SetStatus("Status.LoadedChapters", ("count", Rows.Count));
         ClearProgressStatus();
         Progress = 1;
-        Log("Log.StatusFromPath", ("status", StatusText), ("path", source.DisplayName));
-        LogDiagnostics(Localizer.GetString("Operation.Load"), result.Diagnostics);
+        LogImportDiagnostics("Load", result.Diagnostics);
         NotifyStateChanged();
     }
 
@@ -141,11 +136,10 @@ public sealed partial class MainWindowViewModel
             ("chapters", projection.Info.Chapters.Count),
             ("applyExpression", ApplyExpression),
             ("expression", Expression));
-        LogDiagnostics(Localizer.GetString("Operation.OutputProjection"), projection.Diagnostics);
+        LogDiagnostics("Output projection", projection.Diagnostics);
         var result = await loadSaveWorkflow.SaveAsync(projection.Info, entries, directory, cancellationToken);
         ApplySaveStatus(result);
-        LogStatus();
-        LogDiagnostics(Localizer.GetString("Operation.Save"), result.Diagnostics);
+        LogDiagnostics("Save", result.Diagnostics);
         NotifyStateChanged();
     }
 
@@ -214,8 +208,7 @@ public sealed partial class MainWindowViewModel
         if (outcome.State == AppendWorkflowState.FailedLoad)
         {
             SetStatus("Status.AppendFailed", diagnostic: result.Diagnostics.FirstOrDefault());
-            LogStatus();
-            LogDiagnostics(Localizer.GetString("Operation.AppendLoad"), result.Diagnostics);
+            LogImportDiagnostics("Append load", result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -224,16 +217,14 @@ public sealed partial class MainWindowViewModel
         if (outcome.State == AppendWorkflowState.FailedTransition)
         {
             SetStatus(null, diagnostic: transition.EditResult.Diagnostics.FirstOrDefault());
-            LogStatus();
-            LogDiagnostics(Localizer.GetString("Operation.AppendEdit"), transition.EditResult.Diagnostics);
+            LogDiagnostics("Append edit", transition.EditResult.Diagnostics);
             NotifyStateChanged();
             return;
         }
 
         ApplyClipSessionUi(outcome.Session!, selectIndex: 0);
         SetStatus("Status.AppendedMplsSegments", ("count", result.Groups[0].Entries.Count));
-        LogStatus();
-        LogDiagnostics(Localizer.GetString("Operation.AppendLoad"), result.Diagnostics);
+        LogImportDiagnostics("Append load", result.Diagnostics);
         NotifyStateChanged();
     }
 

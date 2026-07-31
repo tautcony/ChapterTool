@@ -37,6 +37,7 @@
   <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">Information</x:String>
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">Warnings</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">Errors</x:String>
+  <x:String x:Key="Tool.Log.Filter" xml:space="preserve">Filter by level</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">Copy summary</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">Copy details</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">Technical details</x:String>
@@ -45,6 +46,20 @@
   <x:String x:Key="Tool.Log.Exception" xml:space="preserve">Exception</x:String>
   <x:String x:Key="Tool.Log.Category" xml:space="preserve">Category</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">No log entries match the current filter.</x:String>
+  <x:String x:Key="Tool.Log.EntryCount" xml:space="preserve">{count} entries</x:String>
+  <x:String x:Key="Tool.Log.NoOverviewData" xml:space="preserve">No additional details for this entry.</x:String>
+  <x:String x:Key="Tool.Log.Overview" xml:space="preserve">Summary</x:String>
+  <x:String x:Key="Tool.Log.Properties" xml:space="preserve">Properties</x:String>
+  <x:String x:Key="Tool.Log.Raw" xml:space="preserve">Raw data</x:String>
+  <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">Search log entries…</x:String>
+  <x:String x:Key="Tool.Log.Metadata" xml:space="preserve">Record</x:String>
+  <x:String x:Key="Tool.Log.Timestamp" xml:space="preserve">Timestamp</x:String>
+  <x:String x:Key="Tool.Log.Level" xml:space="preserve">Level</x:String>
+  <x:String x:Key="Tool.Log.Operation" xml:space="preserve">Operation</x:String>
+  <x:String x:Key="Tool.Log.Event" xml:space="preserve">Event</x:String>
+  <x:String x:Key="Tool.Log.MessageKey" xml:space="preserve">Message key</x:String>
+  <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">This entry has no nested structured data.</x:String>
+  <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">This entry has no exception data.</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">Save</x:String>
   <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">This platform-gated feature is not enabled in this build.</x:String>
   <x:String x:Key="Common.Enable" xml:space="preserve">Enable</x:String>
@@ -221,7 +236,7 @@
   <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">Frame info updated: option={option}, fps={fps}, round={round}, chapters={chapters}</x:String>
   <x:String x:Key="Log.ImportEntry" xml:space="preserve">{operation} entry {entryIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</x:String>
   <x:String x:Key="Log.ImportGroup" xml:space="preserve">{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultEntryIndex={defaultEntryIndex}, entries={entries}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} result: success={success}, partial={partial}, groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
+  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
   <x:String x:Key="Log.LanguageSet" xml:space="preserve">Language set to {language}</x:String>
   <x:String x:Key="Log.LoadingSource" xml:space="preserve">Loading source: path='{path}'</x:String>
   <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}: path='{path}'</x:String>

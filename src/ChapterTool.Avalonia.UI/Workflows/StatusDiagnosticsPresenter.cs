@@ -18,6 +18,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
     IChapterTimeFormatter timeFormatter,
     Action<string> setStatusText)
 {
+    private readonly IAppLocalizer logContentLocalizer = new AppLocalizationManager("en-US");
     private LocalizedMessage? statusMessage;
     private LocalizedMessage? progressMessage;
 
@@ -56,10 +57,11 @@ internal sealed partial class StatusDiagnosticsPresenter(
             return diagnostic.Message;
         }
 
-        var arguments = diagnostic.Arguments;
-        if (arguments is null && template.Contains("{message}", StringComparison.Ordinal))
+        var arguments = diagnostic.Arguments?.ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal)
+            ?? new Dictionary<string, object?>(StringComparer.Ordinal);
+        if (template.Contains("{message}", StringComparison.Ordinal) && !arguments.ContainsKey("message"))
         {
-            arguments = new Dictionary<string, object?>(StringComparer.Ordinal) { ["message"] = diagnostic.Message };
+            arguments["message"] = diagnostic.Message;
         }
 
         return LocalizerRegex().Replace(localizer.Format(key, arguments), "[?]");
@@ -72,52 +74,104 @@ internal sealed partial class StatusDiagnosticsPresenter(
             return;
         }
 
+        var trimmedKey = key.Trim();
         var state = arguments.ToDictionary(static item => item.Name, static item => item.Value, StringComparer.Ordinal);
-        state["MessageKey"] = key.Trim();
+        state["MessageKey"] = trimmedKey;
         if (!string.IsNullOrWhiteSpace(technicalDetail))
         {
             state["TechnicalDetail"] = technicalDetail;
         }
 
-        logger.Log(level, new EventId(0, key.Trim()), state, null,
+        // Tag the entry with its operation so the log panel can group and label entries.
+        // The explicit "operation" argument (used by import/diagnostic entries) wins over
+        // the key-derived fallback so localized operation names are preserved.
+        var operation = arguments.FirstOrDefault(static item => item.Name is "operation" or "Operation").Value?.ToString();
+        if (string.IsNullOrWhiteSpace(operation))
+        {
+            operation = OperationForKey(trimmedKey);
+        }
+
+        if (!string.IsNullOrWhiteSpace(operation))
+        {
+            state["Operation"] = operation;
+        }
+
+        logger.Log(level, new EventId(0, trimmedKey), state, null,
             static (values, _) => values.TryGetValue("MessageKey", out var value) ? value?.ToString() ?? string.Empty : string.Empty);
     }
 
+    /// <summary>
+    /// Logs an import result as a single summary entry with per-group/per-entry details
+    /// folded into the structured state instead of flooding the log with one entry each.
+    /// </summary>
     public void LogImportSummary(string operation, ChapterImportResult result)
     {
         var entryCount = result.Groups.Sum(static group => group.Entries.Count);
         var chapterCount = result.Groups.SelectMany(static group => group.Entries).Sum(static entry => entry.ChapterSet.Chapters.Count);
         Log(result.Success ? LogLevel.Information : LogLevel.Error, "Log.ImportSummary", null,
-            ("operation", operation), ("success", result.Success), ("partial", result.IsPartial), ("groups", result.Groups.Count),
-            ("entries", entryCount), ("chapters", chapterCount), ("diagnostics", result.Diagnostics.Count));
+            ("operation", operation),
+            ("result", result.Success
+                ? result.IsPartial ? "completed with partial results" : "completed"
+                : "failed"),
+            ("success", result.Success), ("partial", result.IsPartial), ("groups", result.Groups.Count),
+            ("entries", entryCount), ("chapters", chapterCount), ("diagnostics", result.Diagnostics.Count),
+            ("details", ImportDetails(result)));
+    }
 
+    private Dictionary<string, object?> ImportDetails(ChapterImportResult result)
+    {
+        var groups = new List<object?>();
         for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
         {
             var group = result.Groups[groupIndex];
-            Log(LogLevel.Information, "Log.ImportGroup", null,
-                ("operation", operation),
-                ("groupIndex", groupIndex + 1),
-                ("sourcePath", group.SourcePath),
-                ("defaultEntryIndex", group.DefaultEntryIndex),
-                ("entries", group.Entries.Count));
-
+            var entries = new List<object?>();
             for (var entryIndex = 0; entryIndex < group.Entries.Count; entryIndex++)
             {
                 var entry = group.Entries[entryIndex];
                 var info = entry.ChapterSet;
-                Log(LogLevel.Information, "Log.ImportEntry", null,
-                    ("operation", operation),
-                    ("entryIndex", entryIndex + 1),
-                    ("id", entry.Id),
-                    ("label", entry.DisplayName),
-                    ("source", info.SourceName ?? string.Empty),
-                    ("sourceType", ChapterImportFormats.DisplayName(info.ImportFormat)),
-                    ("chapters", info.Chapters.Count),
-                    ("duration", timeFormatter.Format(info.Duration)),
-                    ("fps", $"{info.FramesPerSecond:0.###}"));
+                entries.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["entryIndex"] = entryIndex + 1,
+                    ["id"] = entry.Id,
+                    ["label"] = entry.DisplayName,
+                    ["source"] = info.SourceName ?? string.Empty,
+                    ["sourceType"] = ChapterImportFormats.DisplayName(info.ImportFormat),
+                    ["chapters"] = info.Chapters.Count,
+                    ["duration"] = timeFormatter.Format(info.Duration),
+                    ["fps"] = $"{info.FramesPerSecond:0.###}"
+                });
             }
+
+            groups.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["groupIndex"] = groupIndex + 1,
+                ["sourcePath"] = group.SourcePath,
+                ["defaultEntryIndex"] = group.DefaultEntryIndex,
+                ["entries"] = entries
+            });
         }
+
+        return new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["groups"] = groups,
+            ["diagnostics"] = result.Diagnostics.Select(DiagnosticDetails).Cast<object?>().ToList()
+        };
     }
+
+    /// <summary>Maps well-known message keys to the operation that produced them.</summary>
+    private static string? OperationForKey(string key) => key switch
+    {
+        "Log.LoadingSource" or "Log.StatusFromPath" => "Load",
+        "Log.SavingChapters" => "Save",
+        "Log.AppendingMpls" => "Append",
+        "Log.TemplateLoaded" or "Log.TemplateLoadFailed" => "Template",
+        "Log.EditChapters" or "Log.ChangeFps" or "Log.FrameInfoUpdated"
+            or "Log.AutoFrameRateDetection" or "Log.SelectedSourceOption" => "Edit",
+        "Log.CreateZones" => "Zones",
+        "Log.OpenedPath" or "Log.RelatedMediaNotFound" => "Open",
+        "Log.LanguageSet" or "Log.SettingsLoaded" => "Settings",
+        _ => null
+    };
 
     public void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
     {
@@ -129,7 +183,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
                 ("severity", diagnostic.Severity),
                 ("code", diagnostic.DisplayCode),
                 ("location", diagnostic.Location ?? string.Empty),
-                ("message", LocalizeDiagnostic(diagnostic)),
+                ("message", diagnostic.Message),
                 ("details", diagnostic.Details ?? string.Empty)
             };
             if (diagnostic.Arguments is { Count: > 0 })
@@ -162,9 +216,20 @@ internal sealed partial class StatusDiagnosticsPresenter(
             return entry.Message;
         }
 
-        var message = localizer.Format(entry.MessageKey, entry.Arguments);
+        var message = logContentLocalizer.Format(entry.MessageKey, entry.Arguments);
         return string.IsNullOrWhiteSpace(entry.TechnicalDetail) ? message : $"{message} {entry.TechnicalDetail}";
     }
+
+    private static Dictionary<string, object?> DiagnosticDetails(ChapterDiagnostic diagnostic) =>
+        new(StringComparer.Ordinal)
+        {
+            ["severity"] = diagnostic.Severity.ToString(),
+            ["code"] = diagnostic.DisplayCode,
+            ["message"] = diagnostic.Message,
+            ["location"] = diagnostic.Location ?? string.Empty,
+            ["details"] = diagnostic.Details ?? string.Empty,
+            ["arguments"] = diagnostic.Arguments
+        };
 
     public static LogLevel LogLevelFor(DiagnosticSeverity severity) => severity switch
     {

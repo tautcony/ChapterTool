@@ -52,16 +52,22 @@ internal static class BdmvPathHelper
         List<ChapterDiagnostic>? diagnostics = null)
     {
         var result = new Dictionary<string, Clpi.ClpiFile>(StringComparer.OrdinalIgnoreCase);
-        foreach (var clipName in clipNames.Distinct(StringComparer.OrdinalIgnoreCase))
+        var requestedClips = clipNames
+            .Where(static name => !string.IsNullOrWhiteSpace(name))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var loadedClips = new List<object?>();
+        var missingClips = new List<object?>();
+        foreach (var clipName in requestedClips)
         {
             var clpiPath = GetClpiPath(bdmvRoot, clipName);
             if (clpiPath == null || !File.Exists(clpiPath))
             {
-                diagnostics?.Add(new ChapterDiagnostic(
-                    DiagnosticSeverity.Info,
-                    ChapterDiagnosticCode.ClpiFileNotFound,
-                    $"CLPI file not found for clip '{clipName}', skipping.",
-                    clpiPath));
+                missingClips.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["clip"] = clipName,
+                    ["path"] = clpiPath
+                });
                 continue;
             }
 
@@ -69,15 +75,15 @@ internal static class BdmvPathHelper
             if (clpi != null)
             {
                 result[clipName] = clpi;
-                diagnostics?.Add(new ChapterDiagnostic(
-                    DiagnosticSeverity.Info,
-                    ChapterDiagnosticCode.ClpiFileLoaded,
-                    $"Loaded CLPI for '{clipName}': " +
-                    $"stream_type={clpi.ClipInfo.ClipStreamType}, " +
-                    $"duration={clpi.ClipInfo.DurationFromPackets}, " +
-                    $"cc5={clpi.ClipInfo.IsCC5}, " +
-                    $"atc_sequences={clpi.SequenceInfo?.ATCSequences.Count ?? 0}",
-                    clpiPath));
+                loadedClips.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["clip"] = clipName,
+                    ["path"] = clpiPath,
+                    ["streamType"] = clpi.ClipInfo.ClipStreamType,
+                    ["duration"] = clpi.ClipInfo.DurationFromPackets,
+                    ["cc5"] = clpi.ClipInfo.IsCC5,
+                    ["atcSequences"] = clpi.SequenceInfo?.ATCSequences.Count ?? 0
+                });
             }
             else
             {
@@ -88,6 +94,36 @@ internal static class BdmvPathHelper
                     clpiPath,
                     error));
             }
+        }
+
+        if (diagnostics != null && loadedClips.Count > 0)
+        {
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.ClpiFileLoaded,
+                $"Loaded {loadedClips.Count} CLPI files for {requestedClips.Count} unique clips.",
+                Path.Combine(bdmvRoot, "BDMV", "CLIPINF"),
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["loadedCount"] = loadedClips.Count,
+                    ["requestedCount"] = requestedClips.Count,
+                    ["clips"] = loadedClips
+                }));
+        }
+
+        if (diagnostics != null && missingClips.Count > 0)
+        {
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.ClpiFileNotFound,
+                $"CLPI files were not found for {missingClips.Count} of {requestedClips.Count} unique clips.",
+                Path.Combine(bdmvRoot, "BDMV", "CLIPINF"),
+                Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["missingCount"] = missingClips.Count,
+                    ["requestedCount"] = requestedClips.Count,
+                    ["clips"] = missingClips
+                }));
         }
 
         return result;

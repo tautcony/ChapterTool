@@ -1,3 +1,4 @@
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Disc;
 
 namespace ChapterTool.Core.Tests.Importing;
@@ -151,5 +152,28 @@ public sealed class BdmvPathHelperTests
         var clipNames = new[] { "00010", "00010", "00010" };
         var clpiMap = BdmvPathHelper.DiscoverClpiFiles(bdmvRoot, clipNames);
         Assert.Single(clpiMap);
+    }
+
+    [Fact]
+    public void DiscoverClpiFilesAggregatesLoadedAndMissingDiagnostics()
+    {
+        var bdmvRoot = BdmvDir("Detective Conan The Bride of Halloween/DISC1");
+        var diagnostics = new List<ChapterDiagnostic>();
+
+        var clpiMap = BdmvPathHelper.DiscoverClpiFiles(
+            bdmvRoot,
+            ["00010", "00003", "00010", "99999"],
+            diagnostics);
+
+        Assert.Equal(2, clpiMap.Count);
+        var loaded = Assert.Single(diagnostics, static item => item.Code == ChapterDiagnosticCode.ClpiFileLoaded);
+        var loadedArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(loaded.Arguments);
+        Assert.Equal(2, loadedArguments["loadedCount"]);
+        Assert.Equal(3, loadedArguments["requestedCount"]);
+        Assert.Equal(2, Assert.IsAssignableFrom<IReadOnlyList<object?>>(loadedArguments["clips"]).Count);
+
+        var missing = Assert.Single(diagnostics, static item => item.Code == ChapterDiagnosticCode.ClpiFileNotFound);
+        var missingArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(missing.Arguments);
+        Assert.Equal(1, missingArguments["missingCount"]);
     }
 }

@@ -11,7 +11,7 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Contains chapter editing and clip-selection behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
-    private void SelectClip(int index)
+    private void SelectClip(int index, bool logSelection = true)
     {
         if (Workspace.ClipSession is null || index < 0 || index >= ClipOptions.Count)
         {
@@ -29,16 +29,20 @@ public sealed partial class MainWindowViewModel
         }
 
         configuredFrameRate = (decimal)CurrentInfo.FramesPerSecond;
-        Log("Log.SelectedSourceOption",
-            ("index", index),
-            ("label", ClipOptions[index].DisplayName),
-            ("source", CurrentInfo.SourceName ?? string.Empty),
-            ("sourceType", ChapterImportFormats.DisplayName(CurrentInfo.ImportFormat)),
-            ("chapters", CurrentInfo.Chapters.Count),
-            ("fps", $"{CurrentInfo.FramesPerSecond:0.###}"));
+        if (logSelection)
+        {
+            Log("Log.SelectedSourceOption",
+                ("index", index),
+                ("label", ClipOptions[index].DisplayName),
+                ("source", CurrentInfo.SourceName ?? string.Empty),
+                ("sourceType", ChapterImportFormats.DisplayName(CurrentInfo.ImportFormat)),
+                ("chapters", CurrentInfo.Chapters.Count),
+                ("fps", $"{CurrentInfo.FramesPerSecond:0.###}"));
+        }
+
         selectedFrameRateOption = frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
         SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
-        ApplyFrameInfo();
+        ApplyFrameInfo(logSelection);
     }
 
     private ValueTask EditCell(object? parameter, EditKind kind)
@@ -55,7 +59,7 @@ public sealed partial class MainWindowViewModel
             EditKind.Frame => ChapterEditKind.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         });
-        ApplyEdit(result, Localizer.Format(LocalizedMessage.Create("Action.EditCell", ("kind", Localizer.GetString($"EditKind.{kind}")), ("row", edit.Index), ("value", edit.Value))));
+        ApplyEdit(result, EnglishLogText("Action.EditCell", ("kind", logContentLocalizer.GetString($"EditKind.{kind}")), ("row", edit.Index), ("value", edit.Value)));
         return ValueTask.CompletedTask;
     }
 
@@ -77,10 +81,10 @@ public sealed partial class MainWindowViewModel
         {
             ApplyEdit(
                 transition.EditResult,
-                Localizer.Format(LocalizedMessage.Create(
+                EnglishLogText(
                     "Action.CombineSegments",
                     ("entries", originalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat)))));
+                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat))));
             return;
         }
 
@@ -90,44 +94,41 @@ public sealed partial class MainWindowViewModel
         if (transition.Restored)
         {
             Log("Log.EditChapters",
-                ("action", Localizer.Format(LocalizedMessage.Create(
-                    "Action.SplitCombinedSegments",
+                ("action", EnglishLogText("Action.SplitCombinedSegments",
                     ("entries", Workspace.ClipSession.OriginalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(Workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat))))),
+                    ("sourceType", ChapterImportFormats.DisplayName(Workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat)))),
                 ("before", beforeCount),
                 ("after", CurrentInfo?.Chapters.Count ?? 0));
         }
         else
         {
             Log("Log.EditChapters",
-                ("action", Localizer.Format(LocalizedMessage.Create(
+                ("action", EnglishLogText(
                     "Action.CombineSegments",
                     ("entries", originalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat))))),
+                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat)))),
                 ("before", beforeCount),
                 ("after", CurrentInfo?.Chapters.Count ?? 0));
         }
 
-        LogStatus();
         NotifyStateChanged();
     }
 
     private void ApplyEdit(ChapterEditResult result, string? action = null)
     {
-        var effectiveAction = action ?? Localizer.GetString("Action.EditChapters");
+        var effectiveAction = action ?? EnglishLogText("Action.EditChapters");
         var before = CurrentInfo?.Chapters.Count ?? 0;
         CurrentInfo = result.ChapterSet;
-        ApplyFrameInfo();
+        ApplyFrameInfo(logResult: false);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.Updated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
         Log("Log.EditChapters", ("action", effectiveAction), ("before", before), ("after", CurrentInfo.Chapters.Count));
-        LogDiagnostics(effectiveAction, result.Diagnostics);
-        LogStatus();
+        LogDiagnostics("Edit", result.Diagnostics);
         NotifyStateChanged();
     }
 
     internal void ApplyEditFromPort(ChapterEditResult result, string? action = null) => ApplyEdit(result, action);
 
-    private void ApplyFrameInfo()
+    private void ApplyFrameInfo(bool logResult = true)
     {
         if (CurrentInfo is null)
         {
@@ -150,12 +151,6 @@ public sealed partial class MainWindowViewModel
         {
             selectedFrameRateOption = frameRateService.Options[0];
             SetStatus("Status.DetectedFrameRate", ("displayName", detection.Option.DisplayName), ("confidence", detection.Confidence));
-            Log("Log.AutoFrameRateDetection",
-                ("entry", detection.Option.DisplayName),
-                ("confidence", detection.Confidence),
-                ("accurate", detection.AccurateChapterCount),
-                ("evaluated", detection.EvaluatedChapterCount),
-                ("deviation", $"{detection.CumulativeDeviation:0.######}"));
         }
         else
         {
@@ -163,11 +158,16 @@ public sealed partial class MainWindowViewModel
         }
 
         SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
-        Log("Log.FrameInfoUpdated",
-            ("entry", appliedOption.DisplayName),
-            ("fps", $"{result.FramesPerSecond:0.###}"),
-            ("round", RoundFrames),
-            ("chapters", CurrentInfo.Chapters.Count));
+        if (logResult)
+        {
+            Log("Log.FrameInfoUpdated",
+                ("option", appliedOption.DisplayName),
+                ("fps", $"{result.FramesPerSecond:0.###}"),
+                ("round", RoundFrames),
+                ("chapters", CurrentInfo.Chapters.Count),
+                ("autoDetected", detection is not null),
+                ("confidence", detection?.Confidence));
+        }
         SyncClipOptionsFromSession();
         OnPropertyChanged(nameof(RelatedMediaReferences));
         RefreshRows();
@@ -188,7 +188,7 @@ public sealed partial class MainWindowViewModel
         if (!result.Success)
         {
             SetStatus(null, diagnostic: result.Diagnostics.FirstOrDefault());
-            LogDiagnostics(Localizer.GetString("Main.ChangeFps"), result.Diagnostics);
+            LogDiagnostics("Change FPS", result.Diagnostics);
             NotifyStateChanged();
             return;
         }
@@ -196,14 +196,13 @@ public sealed partial class MainWindowViewModel
         var beforeCount = CurrentInfo.Chapters.Count;
         CurrentInfo = result.Info;
         configuredFrameRate = targetFps;
-        ApplyFrameInfo();
+        ApplyFrameInfo(logResult: false);
         SetStatus("Status.Updated");
         Log("Log.ChangeFps",
             ("sourceFps", $"{sourceFps:0.###}"),
             ("targetFps", $"{targetFps:0.###}"),
             ("before", beforeCount),
             ("after", result.Info.Chapters.Count));
-        LogStatus();
         NotifyStateChanged();
     }
 
@@ -226,7 +225,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        SelectClip(Math.Clamp(selectIndex, 0, ClipOptions.Count - 1));
+        SelectClip(Math.Clamp(selectIndex, 0, ClipOptions.Count - 1), logSelection: false);
     }
 
     private void SyncClipOptionsFromSession()

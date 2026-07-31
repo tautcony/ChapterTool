@@ -40,8 +40,7 @@ public sealed partial class MainWindowViewModel
         }
 
         lastExpressionDiagnosticSignature = signature;
-        LogDiagnostics(Localizer.GetString("Operation.LuaExpressionScript"), [diagnostic]);
-        LogStatus(LogLevelFor(diagnostic.Severity));
+        LogDiagnostics("Lua expression script", [diagnostic]);
     }
 
     private ChapterOutputProjectionResult CurrentOutputProjection() =>

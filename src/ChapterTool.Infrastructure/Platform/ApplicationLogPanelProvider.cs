@@ -16,6 +16,8 @@ public sealed class ApplicationLogPanelProvider(
 
     public event EventHandler<ApplicationLogEntry>? EntryAdded;
 
+    public event EventHandler? Cleared;
+
     public IReadOnlyList<ApplicationLogEntry> Entries
     {
         get
@@ -42,7 +44,8 @@ public sealed class ApplicationLogPanelProvider(
             snapshot.Select(entry =>
             {
                 var message = formatter is null ? entry.Message : formatter(entry);
-                return $"[{entry.Timestamp:yyyy-MM-dd HH:mm:ss}] {message}";
+                var tag = entry.Operation is null ? string.Empty : $" [{entry.Operation}]";
+                return $"[{entry.Level}] {entry.Timestamp:yyyy-MM-dd HH:mm:ss}{tag} {message}";
             }));
     }
 
@@ -52,6 +55,8 @@ public sealed class ApplicationLogPanelProvider(
         {
             entries.Clear();
         }
+
+        Cleared?.Invoke(this, EventArgs.Empty);
     }
 
     public void Dispose()
@@ -74,6 +79,7 @@ public sealed class ApplicationLogPanelProvider(
         var structuredState = StructuredState(state);
         var messageKey = StateString(structuredState, "MessageKey");
         var technicalDetail = StateString(structuredState, "TechnicalDetail");
+        var operation = StateString(structuredState, "Operation") ?? StateString(structuredState, "operation");
         var arguments = Arguments(structuredState);
         var message = string.IsNullOrWhiteSpace(messageKey) ? formatter(state, exception).Trim() : messageKey.Trim();
         if (string.IsNullOrWhiteSpace(message) && exception is null)
@@ -92,7 +98,8 @@ public sealed class ApplicationLogPanelProvider(
             eventId.Id,
             eventId.Name,
             exception?.ToString(),
-            structuredState);
+            structuredState,
+            operation);
 
         lock (gate)
         {
