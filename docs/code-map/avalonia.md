@@ -197,7 +197,7 @@ Start with:
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml`
 - `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs`
-- `src/ChapterTool.Infrastructure/Services/IApplicationLogService.cs`
+- `src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
 
 The ViewModel owns the filtered projection, selection, localized display text, and copy commands. The provider owns bounded history and live entry notifications. The view uses the imported master-detail composition and resources.

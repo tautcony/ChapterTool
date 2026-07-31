@@ -83,7 +83,6 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IE
         if (!ApplyExpression)
         {
             owner.SetStatus("Status.Updated");
-            owner.LogStatus();
             owner.NotifyStateChanged();
             return null;
         }
@@ -92,12 +91,10 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IE
         if (diagnostic is null)
         {
             owner.SetStatus("Status.Updated");
-            owner.LogStatus();
         }
         else
         {
             owner.SetStatus(null, diagnostic);
-            owner.LogStatus(MainWindowViewModel.LogLevelFor(diagnostic.Severity));
         }
 
         owner.NotifyStateChanged();
@@ -111,7 +108,7 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IE
             ChapterExpressionValidation.CreateContext(owner.CurrentChapterSet));
         if (logDiagnostics)
         {
-            owner.LogDiagnostics(Localizer.GetString("Operation.LuaExpressionScript"), result.Diagnostics);
+            owner.LogDiagnostics("Lua expression script", result.Diagnostics);
         }
 
         return result.Diagnostics.FirstOrDefault();

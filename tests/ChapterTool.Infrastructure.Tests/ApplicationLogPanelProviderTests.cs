@@ -124,5 +124,75 @@ public sealed class ApplicationLogPanelProviderTests
         Assert.Equal("After clear", Assert.Single(service.Entries).Message);
     }
 
+    [Fact]
+    public void CapturesOperationFromStructuredState()
+    {
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["MessageKey"] = "Log.ImportSummary",
+            ["operation"] = "Load",
+            ["success"] = true
+        };
+
+        logger.Log(LogLevel.Information, new EventId(0, "Log.ImportSummary"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+
+        var entry = Assert.Single(service.Entries);
+        Assert.Equal("Load", entry.Operation);
+        Assert.Equal("Load", entry.Arguments?["operation"]);
+    }
+
+    [Fact]
+    public void ExplicitOperationKeyWinsOverLowercaseOperationArgument()
+    {
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["MessageKey"] = "Log.SavingChapters",
+            ["operation"] = "ignored",
+            ["Operation"] = "Save"
+        };
+
+        logger.Log(LogLevel.Information, new EventId(0, "Log.SavingChapters"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+
+        Assert.Equal("Save", Assert.Single(service.Entries).Operation);
+    }
+
+    [Fact]
+    public void ClearRaisesClearedEvent()
+    {
+        var service = new ApplicationLogPanelProvider();
+        service.CreateLogger("ChapterTool.Tests").LogInformation("First");
+        var cleared = 0;
+
+        service.Cleared += (_, _) => cleared++;
+
+        service.Clear();
+
+        Assert.Equal(1, cleared);
+        Assert.Empty(service.Entries);
+    }
+
+    [Fact]
+    public void FormatIncludesLevelTimestampAndOperationTag()
+    {
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["MessageKey"] = "Log.SavingChapters",
+            ["Operation"] = "Save"
+        };
+
+        logger.Log(LogLevel.Warning, new EventId(0, "Log.SavingChapters"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+
+        var formatted = service.Format();
+        Assert.Contains("[Warning]", formatted, StringComparison.Ordinal);
+        Assert.Contains("[Save]", formatted, StringComparison.Ordinal);
+        Assert.Contains("Log.SavingChapters", formatted, StringComparison.Ordinal);
+    }
+
     private sealed record ApplicationLogEntrySnapshot(string Message, IReadOnlyList<string> CurrentHistory);
 }

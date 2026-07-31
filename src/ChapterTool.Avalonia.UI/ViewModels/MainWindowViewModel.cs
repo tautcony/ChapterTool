@@ -256,7 +256,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         {
             if (CurrentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes), Localizer.Format(LocalizedMessage.Create("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order())))));
+                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes), EnglishLogText("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order()))));
             }
 
             return ValueTask.CompletedTask;
@@ -266,7 +266,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
             if (CurrentInfo is not null)
             {
                 var index = parameter is int value ? value : Rows.Count;
-                ApplyEdit(ClipEditingCoordinator.InsertBefore(CurrentInfo, index), Localizer.Format(LocalizedMessage.Create("Action.InsertRow", ("index", index))));
+                ApplyEdit(ClipEditingCoordinator.InsertBefore(CurrentInfo, index), EnglishLogText("Action.InsertRow", ("index", index)));
             }
 
             return ValueTask.CompletedTask;
@@ -892,8 +892,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         var result = editingService.CreateZones(CurrentInfo, indexes, (decimal)CurrentInfo.FramesPerSecond);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
         Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", CurrentInfo.Chapters.Count));
-        LogDiagnostics(Localizer.GetString("Operation.CreateZones"), result.Diagnostics);
-        LogStatus();
+        LogDiagnostics("Create zones", result.Diagnostics);
         NotifyStateChanged();
         return result.Zones;
     }

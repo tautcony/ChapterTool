@@ -37,6 +37,7 @@
   <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">情報</x:String>
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">警告</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">エラー</x:String>
+  <x:String x:Key="Tool.Log.Filter" xml:space="preserve">レベルでフィルター</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">概要をコピー</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">詳細をコピー</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技術詳細</x:String>
@@ -45,6 +46,20 @@
   <x:String x:Key="Tool.Log.Exception" xml:space="preserve">例外</x:String>
   <x:String x:Key="Tool.Log.Category" xml:space="preserve">カテゴリ</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">現在のフィルターに一致するログはありません。</x:String>
+  <x:String x:Key="Tool.Log.EntryCount" xml:space="preserve">{count} 件のログ</x:String>
+  <x:String x:Key="Tool.Log.NoOverviewData" xml:space="preserve">このログに追加情報はありません。</x:String>
+  <x:String x:Key="Tool.Log.Overview" xml:space="preserve">概要</x:String>
+  <x:String x:Key="Tool.Log.Properties" xml:space="preserve">プロパティ</x:String>
+  <x:String x:Key="Tool.Log.Raw" xml:space="preserve">生データ</x:String>
+  <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">ログを検索…</x:String>
+  <x:String x:Key="Tool.Log.Metadata" xml:space="preserve">ログ情報</x:String>
+  <x:String x:Key="Tool.Log.Timestamp" xml:space="preserve">時刻</x:String>
+  <x:String x:Key="Tool.Log.Level" xml:space="preserve">レベル</x:String>
+  <x:String x:Key="Tool.Log.Operation" xml:space="preserve">操作</x:String>
+  <x:String x:Key="Tool.Log.Event" xml:space="preserve">イベント</x:String>
+  <x:String x:Key="Tool.Log.MessageKey" xml:space="preserve">メッセージキー</x:String>
+  <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">このログにネストされた構造化データはありません。</x:String>
+  <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">このログに例外データはありません。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">このビルドでは、このプラットフォーム依存機能は有効化されていません。</x:String>
   <x:String x:Key="Common.Enable" xml:space="preserve">有効化</x:String>
@@ -221,7 +236,7 @@
   <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">フレーム情報を更新: option={option}, fps={fps}, round={round}, chapters={chapters}</x:String>
   <x:String x:Key="Log.ImportEntry" xml:space="preserve">{operation} entry {entryIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</x:String>
   <x:String x:Key="Log.ImportGroup" xml:space="preserve">{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultEntryIndex={defaultEntryIndex}, entries={entries}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} result: success={success}, partial={partial}, groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
+  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
   <x:String x:Key="Log.LanguageSet" xml:space="preserve">言語を {language} に設定しました</x:String>
   <x:String x:Key="Log.LoadingSource" xml:space="preserve">ソースを読み込み中: path='{path}'</x:String>
   <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}: path='{path}'</x:String>

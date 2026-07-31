@@ -534,7 +534,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task LoadImportSummaryEmitsGroupAndEntryRecords()
+    public async Task LoadImportSummaryFoldsGroupAndEntryRecordsIntoStructuredState()
     {
         var log = new ApplicationLogPanelProvider();
         var load = new FakeLoadService(ImportResult(
@@ -545,17 +545,49 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
 
-        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
-        var group = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportGroup");
-        Assert.Equal("movie.mpls", group.Arguments?["sourcePath"]);
-        Assert.Equal(2, group.Arguments?["entries"]);
-        Assert.Equal(2, log.Entries.Count(static entry => entry.MessageKey == "Log.ImportEntry"));
-        Assert.Contains(
-            log.Entries,
-            static entry => entry.MessageKey == "Log.ImportEntry" && Equals(entry.Arguments?["id"], "entry-0"));
-        Assert.Contains(
-            log.Entries,
-            static entry => entry.MessageKey == "Log.ImportEntry" && Equals(entry.Arguments?["id"], "entry-1"));
+        var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
+        Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey is "Log.ImportGroup" or "Log.ImportEntry");
+        Assert.Equal("Load", summary.Operation);
+        var details = Assert.IsType<Dictionary<string, object?>>(summary.StructuredState?["details"]);
+        var groups = Assert.IsType<List<object?>>(details["groups"]);
+        var group = Assert.IsType<Dictionary<string, object?>>(Assert.Single(groups));
+        Assert.Equal("movie.mpls", group["sourcePath"]);
+        var entries = Assert.IsType<List<object?>>(group["entries"]);
+        Assert.Equal(2, entries.Count);
+        Assert.Equal("entry-0", Assert.IsType<Dictionary<string, object?>>(entries[0])["id"]);
+        Assert.Equal("entry-1", Assert.IsType<Dictionary<string, object?>>(entries[1])["id"]);
+    }
+
+    [Fact]
+    public async Task LoadImportSummaryFoldsInformationDiagnosticsWithoutCreatingListEntries()
+    {
+        var diagnostic = new ChapterDiagnostic(
+            DiagnosticSeverity.Info,
+            ChapterDiagnosticCode.ClpiFileLoaded,
+            "Loaded 12 CLPI files for 12 unique clips.",
+            Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["loadedCount"] = 12,
+                ["clips"] = new object?[] { new Dictionary<string, object?> { ["clip"] = "00001" } }
+            });
+        var result = ImportResult(
+            "index.bdmv",
+            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A"))) with
+        {
+            Diagnostics = [diagnostic]
+        };
+        var log = new ApplicationLogPanelProvider();
+        var vm = CreateViewModel(new FakeLoadService(result), logService: log);
+
+        await vm.LoadCommand.ExecuteAsync("index.bdmv");
+
+        Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic");
+        var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
+        var details = Assert.IsType<Dictionary<string, object?>>(summary.StructuredState?["details"]);
+        var diagnostics = Assert.IsType<List<object?>>(details["diagnostics"]);
+        var folded = Assert.IsType<Dictionary<string, object?>>(Assert.Single(diagnostics));
+        Assert.Equal("Clpi.Available", folded["code"]);
+        Assert.Equal("Loaded 12 CLPI files for 12 unique clips.", folded["message"]);
     }
 
     [Fact]
@@ -1008,7 +1040,7 @@ public sealed class MainWindowViewModelTests
         vm.SaveFormat = ChapterExportFormat.Txt;
 
         Assert.Contains("CHAPTER01=", vm.BuildPreview(), StringComparison.Ordinal);
-        Assert.Contains("Loaded 1 chapters", vm.LogText(), StringComparison.Ordinal);
+        Assert.Contains("Load completed: groups=1, entries=1, chapters=1", vm.LogText(), StringComparison.Ordinal);
         Assert.Contains(log.Entries, entry =>
             entry is { Level: LogLevel.Information, MessageKey: "Log.LoadingSource" } &&
             string.Equals(entry.Category, typeof(MainWindowViewModel).FullName, StringComparison.Ordinal));
@@ -1210,7 +1242,8 @@ public sealed class MainWindowViewModelTests
         localizer.SetCulture("ja-JP");
 
         Assert.Equal("1 個のチャプターを読み込みました", vm.StatusText);
-        Assert.Contains("ソースを読み込み中", vm.LogText(), StringComparison.Ordinal);
+        Assert.Contains("Loading source", vm.LogText(), StringComparison.Ordinal);
+        Assert.DoesNotContain("読み込み中", vm.LogText(), StringComparison.Ordinal);
     }
 
     [Fact]

@@ -10,6 +10,13 @@ public interface IApplicationLogService
         remove { }
     }
 
+    /// <summary>Raised after the entry history has been cleared.</summary>
+    event EventHandler? Cleared
+    {
+        add { }
+        remove { }
+    }
+
     IReadOnlyList<ApplicationLogEntry> Entries { get; }
 
     string Format(Func<ApplicationLogEntry, string>? formatter = null);
@@ -28,4 +35,5 @@ public sealed record ApplicationLogEntry(
     int EventId = 0,
     string? EventName = null,
     string? ExceptionText = null,
-    IReadOnlyDictionary<string, object?>? StructuredState = null);
+    IReadOnlyDictionary<string, object?>? StructuredState = null,
+    string? Operation = null);

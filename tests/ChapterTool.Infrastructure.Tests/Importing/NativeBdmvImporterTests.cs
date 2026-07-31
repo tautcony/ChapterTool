@@ -88,6 +88,11 @@ public sealed class NativeBdmvImporterTests
         Assert.Contains(actual, static entry => entry.Id == "00002.mpls");
         Assert.Contains(actual, static entry => entry.Id == "00099.mpls");
         Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Message.Contains("Skipped short", StringComparison.Ordinal));
+
+        var scan = Assert.Single(result.Diagnostics, static diagnostic =>
+            diagnostic.Code == ChapterDiagnosticCode.BdmvScanCandidate);
+        var scanArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(scan.Arguments);
+        Assert.True((int)scanArguments["retainedCount"]! > 0);
     }
 
     [Fact]
@@ -122,7 +127,12 @@ public sealed class NativeBdmvImporterTests
 
         Assert.True(result.Success);
         Assert.DoesNotContain(result.Groups.SelectMany(static group => group.Entries), entry => entry.Id == "00020.mpls");
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains("00020.mpls", StringComparison.Ordinal));
+        var scan = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.BdmvScanCandidate);
+        var arguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(scan.Arguments);
+        var candidates = Assert.IsAssignableFrom<IReadOnlyList<object?>>(arguments["candidates"]);
+        var skipped = Assert.IsAssignableFrom<IReadOnlyList<object?>>(arguments["skipped"]);
+        Assert.Contains(candidates.Concat(skipped), candidate =>
+            candidate is IReadOnlyDictionary<string, object?> values && Equals(values["name"], "00020.mpls"));
     }
 
     [Fact]
@@ -280,7 +290,17 @@ public sealed class NativeBdmvImporterTests
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.Contains(result.Diagnostics, d => d.Message.Contains("Index title references playlist through HDMV navigation: 00001.mpls"));
+        var navigation = Assert.Single(result.Diagnostics, static diagnostic =>
+            diagnostic.Code == ChapterDiagnosticCode.NavigationSource
+            && diagnostic.Arguments?.ContainsKey("objects") == true);
+        Assert.Contains("playlist references", navigation.Message, StringComparison.Ordinal);
+        var navigationArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(navigation.Arguments);
+        var objects = Assert.IsAssignableFrom<IReadOnlyList<object?>>(navigationArguments["objects"]);
+        Assert.Contains(objects, item =>
+            item is IReadOnlyDictionary<string, object?> values
+            && values["playlists"] is IReadOnlyList<object?> playlists
+            && playlists.Any(playlist => playlist is IReadOnlyDictionary<string, object?> details
+                && Equals(details["playlist"], "00001.mpls")));
         Assert.DoesNotContain(result.Diagnostics, d => d.Message.Contains("No playlists could be resolved from index.bdmv titles"));
 
         var loaded = Assert.Single(result.Diagnostics, d => d.Message.Contains("Loaded index.bdmv"));
@@ -299,7 +319,10 @@ public sealed class NativeBdmvImporterTests
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.Contains(result.Diagnostics, d => d.Message.Contains("CLPI for"));
+        var clpi = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.ClpiFileLoaded);
+        var arguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(clpi.Arguments);
+        Assert.True((int)arguments["loadedCount"]! > 0);
+        Assert.IsAssignableFrom<IReadOnlyList<object?>>(arguments["clips"]);
     }
 
     [Fact]
