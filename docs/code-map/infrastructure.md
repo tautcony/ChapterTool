@@ -20,6 +20,8 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs`: bounded playlist discovery and parity filtering
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs`: optional eac3to-backed importer
 
+`NativeBdmvImporter` preserves global INDEX title numbers, skips prohibited titles, reports hidden titles, and consumes bounded HDMV navigation evidence.
+
 ### Runtime importer composition
 
 - registry contract:

@@ -1,5 +1,7 @@
 namespace ChapterTool.Core.Importing.Disc.Clpi;
 
+#pragma warning disable SA1503
+
 internal sealed record ClpiFile(
     string TypeIndicator,
     string VersionNumber,
@@ -111,4 +113,48 @@ internal sealed record ClpiFile(
             return null;
         }
     }
+
+    internal ClpiPacketLookupResult? LookupPacket(byte stcId, uint timestamp)
+    {
+        var stc = SequenceInfo?.FindSTCSequence(stcId);
+        if (stc == null || CPI == null || CPI.StreamEntries.Count == 0 || CPI.EPMaps.Count == 0) return null;
+        var stream = CPI.StreamEntries[0];
+        var map = CPI.EPMaps[0];
+        ClpiPacketLookupResult? selected = null;
+        for (var coarseIndex = 0; coarseIndex < map.CoarseEntries.Count; coarseIndex++)
+        {
+            var coarse = map.CoarseEntries[coarseIndex];
+            var start = checked((int)coarse.RefToEPFineID);
+            var end = coarseIndex + 1 < map.CoarseEntries.Count
+                ? checked((int)map.CoarseEntries[coarseIndex + 1].RefToEPFineID)
+                : map.FineEntries.Count;
+            if (start < 0 || start > end || end > map.FineEntries.Count) continue;
+            for (var fineIndex = start; fineIndex < end; fineIndex++)
+            {
+                var fine = map.FineEntries[fineIndex];
+                var entryTimestamp = unchecked(((uint)(coarse.PTSEPCoarse & 0xfffe) << 18) + ((uint)fine.PTSEPFine << 8));
+                var packet = (coarse.SPNEPCoarse & ~0x1ffffU) + fine.SPNEPFine;
+                if (packet < stc.SPNSTCStart || entryTimestamp > timestamp) continue;
+                selected = new ClpiPacketLookupResult(
+                    stcId,
+                    stream.StreamPID,
+                    timestamp,
+                    entryTimestamp,
+                    packet,
+                    coarseIndex,
+                    fineIndex);
+            }
+        }
+
+        return selected ?? new ClpiPacketLookupResult(stcId, stream.StreamPID, timestamp, 0, 0, -1, -1);
+    }
 }
+
+internal sealed record ClpiPacketLookupResult(
+    byte STCId,
+    ushort StreamPID,
+    uint RequestedTimestamp,
+    uint EntryTimestamp,
+    uint SourcePacketNumber,
+    int CoarseEntryIndex,
+    int FineEntryIndex);

@@ -14,6 +14,7 @@ internal static class ClpiParseLimits
     internal const int MaximumPrograms = 1024;
     internal const int MaximumStreamsInPS = 256;
     internal const int MaximumExtensionDataLength = 16 * 1024 * 1024;
+    internal const int MaximumExtentStartPoints = 1_000_000;
 
     internal static void ValidateCount(int count, int maximumCount, string itemName)
     {

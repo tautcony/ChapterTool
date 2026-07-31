@@ -141,11 +141,12 @@ public sealed class NativeBdmvImporter : IChapterImporter
         List<string> evidenceOrder,
         List<ChapterDiagnostic> diagnostics)
     {
-        var titleObjects = index.Indexes.MovieAndBdJTitles
-            .Select(static title => title.ObjectReference)
-            .OfType<IndexHdmvObjectReference>()
-            .Select(static reference => reference.ObjectId)
-            .ToList();
+        var numberedTitles = index.Indexes.Titles.Select(static (title, index) => (Title: title, Number: (uint)index + 1)).ToList();
+        var titleObjects = numberedTitles
+            .Where(static item => !item.Title.IsAccessProhibited && item.Title.ObjectReference is IndexHdmvObjectReference)
+            .ToDictionary(
+                static item => item.Number,
+                static item => ((IndexHdmvObjectReference)item.Title.ObjectReference).ObjectId);
         var movieObject = MovieObjectFile.TryReadPrimaryOrBackup(
             layout.PrimaryMovieObjectPath,
             layout.BackupMovieObjectPath,
@@ -154,8 +155,26 @@ public sealed class NativeBdmvImporter : IChapterImporter
         var navigationDetails = new List<object?>();
         var unavailableLogged = false;
 
-        foreach (var title in index.Indexes.MovieAndBdJTitles)
+        foreach (var item in numberedTitles.Where(static item => item.Title.IsMoviePlayback && (item.Title.IsMovieObject || item.Title.IsBDJObject)))
         {
+            var title = item.Title;
+            if (title.IsAccessProhibited)
+            {
+                diagnostics.Add(new ChapterDiagnostic(
+                    DiagnosticSeverity.Info,
+                    ChapterDiagnosticCode.NavigationSource,
+                    $"Skipped prohibited INDEX title {item.Number}{(title.IsHidden ? " (hidden)" : string.Empty)}."));
+                continue;
+            }
+
+            if (title.IsHidden)
+            {
+                diagnostics.Add(new ChapterDiagnostic(
+                    DiagnosticSeverity.Info,
+                    ChapterDiagnosticCode.NavigationSource,
+                    $"INDEX title {item.Number} is hidden."));
+            }
+
             if (title.ObjectReference is IndexHdmvObjectReference hdmv)
             {
                 if (movieObject == null)
@@ -172,8 +191,8 @@ public sealed class NativeBdmvImporter : IChapterImporter
                     continue;
                 }
 
-                var titleNumber = index.Indexes.MovieAndBdJTitles.ToList().IndexOf(title) + 1;
-                var result = new HdmvNavigationResolver().Resolve(movieObject, hdmv.ObjectId, titleObjects, titleNumber: titleNumber);
+                var titleNumber = checked((int)item.Number);
+                var result = new HdmvNavigationResolver().ResolveProfileVariants(movieObject, hdmv.ObjectId, titleObjects, titleNumber);
                 diagnostics.AddRange(result.Diagnostics);
                 var playlists = new List<object?>();
                 foreach (var playback in result.Events)

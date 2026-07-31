@@ -9,12 +9,14 @@ internal sealed record HdmvNavigationLimits(
     int MaximumTransitions = 10_000,
     int MaximumCallDepth = 32,
     int MaximumEvents = 4_096,
-    int MaximumVisitedStates = 100_000);
+    int MaximumVisitedStates = 100_000,
+    int MaximumProfileVariants = 8);
 
 internal sealed record HdmvPlayerProfile
 {
-    internal HdmvPlayerProfile()
+    internal HdmvPlayerProfile(string name = "default")
     {
+        Name = name;
         Psr = new uint[128];
         Psr[0] = 1;
         Psr[1] = 0xff;
@@ -35,9 +37,18 @@ internal sealed record HdmvPlayerProfile
         Psr[31] = 0x02000000;
     }
 
+    internal string Name { get; }
     internal uint[] Psr { get; }
 
     internal static HdmvPlayerProfile Default => new();
+
+    internal HdmvPlayerProfile WithPsr(int index, uint value, string name)
+    {
+        var profile = new HdmvPlayerProfile(name);
+        Array.Copy(Psr, profile.Psr, Psr.Length);
+        profile.Psr[index] = value;
+        return profile;
+    }
 }
 
 internal sealed record HdmvNavigationEvent(
@@ -53,7 +64,18 @@ internal sealed record HdmvNavigationEvent(
 internal sealed record HdmvNavigationResult(
     IReadOnlyList<HdmvNavigationEvent> Events,
     IReadOnlyList<ChapterDiagnostic> Diagnostics,
-    bool LimitReached);
+    bool LimitReached)
+{
+    internal IReadOnlyList<HdmvNavigationControlEvent> ControlEvents { get; init; } = [];
+}
+
+internal sealed record HdmvNavigationControlEvent(
+    string InstructionType,
+    uint? PlayItemId,
+    uint? MarkId,
+    int SourceObject,
+    int ProgramCounter,
+    string PlayerProfile);
 
 internal sealed class HdmvNavigationResolver
 {
@@ -65,17 +87,17 @@ internal sealed class HdmvNavigationResolver
     internal HdmvNavigationResult Resolve(
         MovieObjectFile file,
         int objectId,
-        IReadOnlyList<ushort>? titleObjects = null,
+        IReadOnlyDictionary<uint, ushort>? titleObjects = null,
         HdmvPlayerProfile? profile = null,
         int titleNumber = 1)
     {
-        var state = new ExecutionState(titleObjects ?? [], profile ?? HdmvPlayerProfile.Default);
+        var state = new ExecutionState(titleObjects ?? new Dictionary<uint, ushort>(), profile ?? HdmvPlayerProfile.Default);
         state.SetTitleContext(titleNumber);
         state.EnterObject(objectId, titleNumber);
         while (state.ObjectId >= 0 && state.ObjectId < file.Objects.Count)
         {
             if (state.Instructions >= limits.MaximumInstructions || state.Transitions >= limits.MaximumTransitions ||
-                state.CallStack.Count > limits.MaximumCallDepth || state.Events.Count >= limits.MaximumEvents ||
+                state.CallStack.Count > limits.MaximumCallDepth || state.Events.Count + state.ControlEvents.Count >= limits.MaximumEvents ||
                 state.Visited.Count >= limits.MaximumVisitedStates)
             {
                 state.LimitReached = true;
@@ -105,8 +127,88 @@ internal sealed class HdmvNavigationResolver
             Execute(state, command, pc);
         }
 
-        return new HdmvNavigationResult(state.Events, state.Diagnostics, state.LimitReached);
+        return new HdmvNavigationResult(state.Events, state.Diagnostics, state.LimitReached)
+        {
+            ControlEvents = state.ControlEvents
+        };
     }
+
+    internal HdmvNavigationResult ResolveProfileVariants(
+        MovieObjectFile file,
+        int objectId,
+        IReadOnlyDictionary<uint, ushort>? titleObjects = null,
+        int titleNumber = 1)
+    {
+        var defaultProfile = HdmvPlayerProfile.Default;
+        var psrs = ReadPsrIndices(file);
+        var profiles = new List<HdmvPlayerProfile> { defaultProfile };
+        foreach (var psr in psrs)
+        {
+            foreach (var value in VariantValues(psr, defaultProfile.Psr[psr]))
+            {
+                if (profiles.Count >= limits.MaximumProfileVariants) break;
+                if (value == defaultProfile.Psr[psr]) continue;
+                profiles.Add(defaultProfile.WithPsr(psr, value, $"psr{psr}={value}"));
+            }
+
+            if (profiles.Count >= limits.MaximumProfileVariants) break;
+        }
+
+        var events = new List<HdmvNavigationEvent>();
+        var controls = new List<HdmvNavigationControlEvent>();
+        var diagnostics = new List<ChapterDiagnostic>();
+        var seenEvents = new HashSet<string>(StringComparer.Ordinal);
+        var limitReached = false;
+        foreach (var profile in profiles)
+        {
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.NavigationSource,
+                $"Evaluated HDMV player profile '{profile.Name}' (PSRs: {(psrs.Count == 0 ? "none" : string.Join(",", psrs))})."));
+            var result = Resolve(file, objectId, titleObjects, profile, titleNumber);
+            diagnostics.AddRange(result.Diagnostics);
+            limitReached |= result.LimitReached;
+            controls.AddRange(result.ControlEvents);
+            foreach (var item in result.Events)
+            {
+                var key = string.Join(':', item.PlaylistId, item.PlayItemId, item.MarkId, item.SourceTitle, item.SourceObject, item.ProgramCounter, item.InstructionType);
+                if (seenEvents.Add(key)) events.Add(item);
+            }
+        }
+
+        return new HdmvNavigationResult(events, diagnostics, limitReached)
+        {
+            ControlEvents = controls.Distinct().ToArray()
+        };
+    }
+
+    private static IReadOnlyList<int> ReadPsrIndices(MovieObjectFile file)
+    {
+        var result = new SortedSet<int>();
+        foreach (var command in file.Objects.SelectMany(static item => item.Commands))
+        {
+            var instruction = command.Instruction;
+            if (instruction.OperandCount > 0 && !instruction.Operand1Immediate && (command.DestinationOperand & PsrFlag) != 0)
+                result.Add((int)(command.DestinationOperand & 0x7f));
+            if (instruction.OperandCount > 1 && !instruction.Operand2Immediate && (command.SourceOperand & PsrFlag) != 0)
+                result.Add((int)(command.SourceOperand & 0x7f));
+        }
+
+        return result.Where(static index => index < 128).ToArray();
+    }
+
+    private static IReadOnlyList<uint> VariantValues(int psr, uint current) => psr switch
+    {
+        8 => [0, 1],
+        9 => [1, 2],
+        10 => [0, 1],
+        12 => [0, 1],
+        13 => [0, 1],
+        14 => [0, 1],
+        15 => [0, 1],
+        20 => [1, 2],
+        _ => [current]
+    };
 
     private void Execute(ExecutionState state, MovieObjectCommand command, int pc)
     {
@@ -144,8 +246,19 @@ internal sealed class HdmvNavigationResolver
                         state.TitleNumber,
                         state.ObjectId,
                         pc,
-                        "default",
+                        state.Profile.Name,
                         insn.BranchOption switch { 0 => "PlayPL", 1 => "PlayPLPI", _ => "PlayPLPM" }));
+                }
+                else if (state.ControlEvents.Count < limits.MaximumEvents && insn.BranchOption is >= 3 and <= 5)
+                {
+                    state.ControlEvents.Add(new HdmvNavigationControlEvent(
+                        insn.BranchOption switch { 3 => "PlayStop", 4 => "LinkPI", _ => "LinkMK" },
+                        insn.BranchOption == 4 ? dst : null,
+                        insn.BranchOption == 5 ? dst : null,
+                        state.ObjectId,
+                        pc,
+                        state.Profile.Name));
+                    if (insn.BranchOption == 3) next = int.MaxValue;
                 }
                 break;
             case 1:
@@ -155,7 +268,7 @@ internal sealed class HdmvNavigationResolver
                 ExecuteSet(state, insn.SetOption, command, dst, src);
                 break;
             case 2 when insn.Subgroup == 1:
-                ExecuteSetSystem(state, insn.SetOption, dst);
+                ExecuteSetSystem(state, insn.SetOption, dst, src);
                 break;
         }
 
@@ -211,15 +324,41 @@ internal sealed class HdmvNavigationResolver
         }
     }
 
-    private static void ExecuteSetSystem(ExecutionState state, byte option, uint dst)
+    private static void ExecuteSetSystem(ExecutionState state, byte option, uint dst, uint src)
     {
         switch (option)
         {
-            case 2: state.Psr[9] = dst; break;
-            case 10: state.Psr[21] = dst; break;
-            case 16: state.Psr[8] = dst; break;
+            case 1:
+                if ((dst & 0x80000000) != 0) state.Psr[1] = dst >> 16 & 0x0fff;
+                if ((src & 0x80000000) != 0) state.Psr[0] = src >> 16 & 0xff;
+                if ((src & 0x00008000) != 0) state.Psr[3] = src & 0xff;
+                if ((dst & 0x00008000) != 0) state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
+                state.Psr[2] = state.Psr[2] & 0x7fffffff | (dst & 0x4000) << 17;
+                break;
+            case 2: state.Psr[9] = src & 0xffff; break;
+            case 3:
+                if ((dst & 0x80000000) != 0) state.Psr[10] = dst & 0xffff;
+                if ((src & 0x80000000) != 0) state.Psr[11] = src & 0xff;
+                AddControlDiagnostic(state, "SetButtonPage");
+                break;
+            case 4: AddControlDiagnostic(state, "EnableButton"); break;
+            case 5: AddControlDiagnostic(state, "DisableButton"); break;
+            case 6:
+                if ((dst & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
+                if ((src & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
+                break;
+            case 7: AddControlDiagnostic(state, "PopupOff"); break;
+            case 8: AddControlDiagnostic(state, "StillOn"); break;
+            case 9: AddControlDiagnostic(state, "StillOff"); break;
+            case 10: state.Psr[22] = state.Psr[22] & ~1U | dst & 1; break;
+            case 11: AddControlDiagnostic(state, "SetStreamSS"); break;
+            case 16: state.Psr[103] = dst; break;
         }
     }
+
+    private static void AddControlDiagnostic(ExecutionState state, string instruction) =>
+        state.Diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
+            $"HDMV {instruction} was recognized as a bounded UI or playback-control instruction.");
 
     private static uint SaturatingAdd(uint left, uint right) => (ulong)left + right >= uint.MaxValue ? uint.MaxValue : left + right;
 
@@ -227,10 +366,11 @@ internal sealed class HdmvNavigationResolver
 
     private sealed class ExecutionState
     {
-        internal ExecutionState(IReadOnlyList<ushort> titleObjects, HdmvPlayerProfile profile)
+        internal ExecutionState(IReadOnlyDictionary<uint, ushort> titleObjects, HdmvPlayerProfile profile)
         {
-            TitleObjects = titleObjects.Select((value, index) => (value, index)).ToDictionary(static pair => (uint)(pair.index + 1), static pair => (int)pair.value);
+            TitleObjects = titleObjects.ToDictionary(static pair => pair.Key, static pair => (int)pair.Value);
             Psr = profile.Psr.ToArray();
+            Profile = profile;
             Gpr = new uint[4096];
         }
 
@@ -241,11 +381,13 @@ internal sealed class HdmvNavigationResolver
         internal int Transitions { get; set; }
         internal bool LimitReached { get; set; }
         internal uint[] Psr { get; }
+        internal HdmvPlayerProfile Profile { get; }
         internal uint[] Gpr { get; }
         internal Dictionary<uint, int> TitleObjects { get; }
         internal List<MovieObjectReturn> CallStack { get; } = [];
         internal HashSet<string> Visited { get; } = new(StringComparer.Ordinal);
         internal List<HdmvNavigationEvent> Events { get; } = [];
+        internal List<HdmvNavigationControlEvent> ControlEvents { get; } = [];
         internal List<ChapterDiagnostic> Diagnostics { get; } = [];
         private ulong random = 1;
 

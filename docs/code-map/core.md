@@ -57,6 +57,10 @@ Important format entry points:
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
 - DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, split `Mpls*.cs` playlist types, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
 - Native BDMV navigation uses typed INDEX references under `Disc/Index/`, bounded MovieObject parsing and HDMV resolution under `Disc/MovieObject/`, and BDJO accessible-playlist parsing under `Disc/Bdjo/`.
+- `HdmvNavigationResolver.ResolveProfileVariants` creates bounded player profiles only for Player Status Registers (PSRs) that MovieObject commands read. It merges playlist events in stable profile order.
+- `IndexFile.ExtensionData` exposes validated UHD/HDR extension 3.1 metadata. `IndexTitleEntry` exposes prohibited and hidden access state.
+- `ClpiFile.LookupPacket` uses STC and CPI EP Map records for bounded source-packet lookup. The lookup does not change MPLS chapter time.
+- `BdjoFile` parses terminal, cache, application, key-interest, file-access, and accessible-playlist records. It never executes BD-J code.
 - `src/ChapterTool.Core/Importing/Disc/MplsAggregateProjection.cs` builds one complete chapter projection for each BDMV playlist.
 - `BinaryReadExtensions.cs` defines generic exact-read ceilings.
 - `MplsParseLimits.cs` defines semantic MPLS limits.
