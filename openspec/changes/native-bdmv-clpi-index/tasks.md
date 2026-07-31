@@ -33,17 +33,17 @@
 
 - [x] 4.1 创建 `NativeBdmvImporter.cs`——实现 `IChapterImporter`，ID 为 `"bdmv-native"`
 - [x] 4.2 实现 BDMV 目录结构验证（BDMV/PLAYLIST 目录存在检查）
-- [x] 4.3 实现 `index.bdmv` 发现与解析，提取 Movie 类型 Title → PlayList 映射
-- [x] 4.4 实现 PlayList 候选发现：index 成功时用其指引，失败时降级为扫描 PLAYLIST/*.mpls
+- [x] 4.3 Replace the invalid INDEX-to-MPLS mapping with typed HDMV and BD-J references.
+- [x] 4.4 Discover playlist candidates through navigation evidence and bounded playlist scanning.
 - [x] 4.5 实现 META/DL/*.xml 光盘标题读取
-- [x] 4.6 对每个候选 PlayList 调用 `MplsChapterImporter.ImportAsync()`（CLPI 自动发现在其内部完成）
-- [x] 4.7 聚合结果：每个候选 PlayList 产生一个 `ChapterImportEntry`，含光盘元数据和 CLPI 增强的章节时间
+- [x] 4.6 Add and use an aggregate MPLS projection. Do not delegate BDMV titles to standalone PlayItem import.
+- [x] 4.7 Create one `ChapterImportEntry` for each complete chapter-bearing playlist.
 - [x] 4.8 实现进度报告（discovering titles → parsing playlists → building chapters）
 
 ## 5. Infrastructure: 注册原生导入器
 
 - [x] 5.1 在 `RuntimeChapterImporterRegistry` 中注册 `NativeBdmvImporter`
-- [x] 5.2 BDMV 目录路由指向原生导入器（替换当前直接路由到 eac3to 导入器的逻辑）
+- [x] 5.2 Route disc-root, `BDMV` directory, and primary `index.bdmv` inputs to the corrected native importer.
 - [x] 5.3 eac3to 导入器保留作为可选增强路径（保留现有 BdmvChapterImporter 的完整代码和注册）
 
 ## 6. 测试与验证
@@ -52,4 +52,57 @@
 - [x] 6.2 创建 INDEX 测试 Fixture 构建器
 - [x] 6.3 添加集成测试：构造完整 BDMV 目录结构（index + mpls + clpi），验证端到端导入
 - [x] 6.4 添加异常路径测试：缺失 CLPI、缺失 INDEX、损坏文件
-- [ ] 6.5 用真实 BDMV 样本验证 MPLS+CLPI 组合解析的章节时间与 eac3to 输出一致（需 eac3to 环境）
+- [x] 6.5 用真实 BDMV 样本验证 MPLS+CLPI 组合解析的章节时间与 eac3to 输出一致（需 eac3to 环境）
+
+## 7. Core: MovieObject Parsing
+
+- [x] 7.1 Add bounded MovieObject file and section limits.
+- [x] 7.2 Add typed MovieObject, object, instruction, command, and operand models.
+- [x] 7.3 Parse the common BDMV header and the MovieObject section at byte 40.
+- [x] 7.4 Decode every 12-byte command field and preserve both 32-bit operands.
+- [x] 7.5 Implement primary and `BDMV/BACKUP` MovieObject selection.
+- [x] 7.6 Add synthetic parser tests for every instruction field and malformed boundary.
+- [x] 7.7 Add parser tests that use the repository MovieObject fixtures.
+
+## 8. Core: Bounded HDMV Navigation Resolver
+
+- [x] 8.1 Define deterministic PSR defaults and GPR initialization.
+- [x] 8.2 Implement immediate, GPR, and PSR operand reads. Reject normal PSR writes.
+- [x] 8.3 Implement required Branch, Compare, Set, and SetSystem operations.
+- [x] 8.4 Emit typed `PlayPL`, `PlayPLPI`, and `PlayPLPM` events.
+- [x] 8.5 Implement object jump, object call, title jump, title call, resume, and call-stack behavior.
+- [x] 8.6 Add instruction, transition, call-depth, event, profile, and visited-state limits.
+- [x] 8.7 Add deterministic random behavior or bounded deterministic outcome forks.
+- [ ] 8.8 Add optional bounded player-profile variants only for PSRs that the program reads.
+- [x] 8.9 Add unit tests for instruction semantics, register-based playlist selection, branches, calls, cycles, and every limit.
+
+## 9. Core: BDJO Parsing
+
+- [x] 9.1 Add typed BD-J INDEX references and BDJO models.
+- [x] 9.2 Parse the accessible-playlist count, access-to-all flag, autostart flag, and playlist names.
+- [x] 9.3 Implement primary and `BDMV/BACKUP/BDJO` selection.
+- [x] 9.4 Add tests for explicit lists, access-to-all, autostart, truncation, invalid names, and limits.
+- [x] 9.5 Add the unsupported dynamic BD-J diagnostic. Do not execute JAR files or Xlets.
+
+## 10. Infrastructure: Discovery and Layout
+
+- [x] 10.1 Add `BdmvSourceLayout` for disc-root, `BDMV` directory, and primary `index.bdmv` input.
+- [x] 10.2 Reject arbitrary `.bdmv` files as top-level input.
+- [x] 10.3 Add a bounded MPLS scanner with structural duplicate and repeated-segment filtering.
+- [x] 10.4 Keep navigation evidence separate from scan evidence.
+- [x] 10.5 Add one deterministic parity discovery policy that merges and deduplicates evidence.
+- [x] 10.6 Retain no-chapter candidates for parity diagnostics and omit them from chapter entries.
+- [x] 10.7 Preserve first-use clip order, remove duplicate clips, and include angle clips.
+- [x] 10.8 Emit source, fallback, profile, and unsupported-navigation diagnostics.
+
+## 11. eac3to Parity and Regression Tests
+
+- [x] 11.1 Commit eac3to reference manifests for every BDMV fixture.
+- [x] 11.2 Add exact tests for title identity, order, duration, chapter count, clip collection, and chapter timestamps.
+- [x] 11.3 Add exact input-equivalence tests for the three accepted input forms.
+- [x] 11.4 Add a live opt-in parity check for `C:\Tools\eac3to\eac3to.exe`.
+- [x] 11.5 Verify the full STEINS;GATE disc values in `eac3to-alignment-plan.md`.
+- [x] 11.6 Verify that standard tests do not require eac3to or the external full disc.
+- [x] 11.7 Run focused Core, Infrastructure, and Avalonia tests in sequence.
+- [ ] 11.8 Run `dotnet test ChapterTool.slnx --no-restore`.
+- [x] 11.9 Update `docs/code-map/core.md` and `docs/code-map/infrastructure.md` after implementation.

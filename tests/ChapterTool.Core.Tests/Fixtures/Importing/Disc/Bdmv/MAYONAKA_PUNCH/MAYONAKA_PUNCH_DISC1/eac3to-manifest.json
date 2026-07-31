@@ -1,0 +1,21 @@
+{
+  "oracle": "eac3to",
+  "command": "-showall",
+  "scanPlaylistCount": 28,
+  "titles": [
+    {
+      "order": 1,
+      "playlist": "00001.mpls",
+      "duration": "2:22:06",
+      "chapterCount": 35,
+      "clips": [ "00002.m2ts", "00003.m2ts", "00004.m2ts", "00005.m2ts", "00006.m2ts", "00007.m2ts" ]
+    },
+    {
+      "order": 2,
+      "playlist": "01001.mpls",
+      "duration": "0:10:45",
+      "chapterCount": 0,
+      "clips": [ "00001.m2ts" ]
+    }
+  ]
+}

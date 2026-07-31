@@ -1,12 +1,23 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<disclib xmlns="urn:BDA:bdmv;disclib" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:BDA:bdmv;disclib disclib.xsd">
-  <di:discinfo xmlns:di="urn:BDA:bdmv;discinfo">
-    <di:title>
-      <di:name>Kimetsu No Yaiba The Movie Infinity Castle</di:name>
-    </di:title>
-    <di:description>
-      <di:thumbnail href="./meta_S.jpg" size="416x240" />
-      <di:thumbnail href="./meta_L.jpg" size="640x360" />
-    </di:description>
-  </di:discinfo>
+<?xml version="1.0" encoding="utf-8"?>
+
+<disclib xmlns="urn:BDA:bdmv;disclib" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:BDA:bdmv;disclib disclib.xsd">
+
+  <di:discinfo xmlns:di="urn:BDA:bdmv;discinfo">
+
+    <di:title>
+
+      <di:name>Kimetsu No Yaiba The Movie Infinity Castle</di:name>
+
+    </di:title>
+
+    <di:description>
+
+      <di:thumbnail href="./meta_S.jpg" size="416x240" />
+
+      <di:thumbnail href="./meta_L.jpg" size="640x360" />
+
+    </di:description>
+
+  </di:discinfo>
+
 </disclib>

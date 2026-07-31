@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!--<!DOCTYPE Tags SYSTEM "matroskatags.dtd">-->
 <Chapters>
   <EditionEntry>
@@ -7,7 +7,8 @@
     <EditionUID>674573635</EditionUID>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 01</ChapterString>
+        <ChapterString>Chapter 01
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1495155499</ChapterUID>
@@ -17,7 +18,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 02</ChapterString>
+        <ChapterString>Chapter 02
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1312022292</ChapterUID>
@@ -27,7 +29,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 03</ChapterString>
+        <ChapterString>Chapter 03
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1915142636</ChapterUID>
@@ -37,7 +40,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 04</ChapterString>
+        <ChapterString>Chapter 04
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>744028372</ChapterUID>
@@ -47,7 +51,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 05</ChapterString>
+        <ChapterString>Chapter 05
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>199575823</ChapterUID>
@@ -57,7 +62,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 06</ChapterString>
+        <ChapterString>Chapter 06
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>2019113389</ChapterUID>
@@ -67,7 +73,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 07</ChapterString>
+        <ChapterString>Chapter 07
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1428412925</ChapterUID>
@@ -77,7 +84,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 08</ChapterString>
+        <ChapterString>Chapter 08
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1978887235</ChapterUID>
@@ -87,7 +95,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 09</ChapterString>
+        <ChapterString>Chapter 09
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>845468151</ChapterUID>
@@ -97,7 +106,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 10</ChapterString>
+        <ChapterString>Chapter 10
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1119815919</ChapterUID>
@@ -107,7 +117,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 11</ChapterString>
+        <ChapterString>Chapter 11
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>106087879</ChapterUID>
@@ -117,7 +128,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 12</ChapterString>
+        <ChapterString>Chapter 12
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>2126440640</ChapterUID>
@@ -127,7 +139,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 13</ChapterString>
+        <ChapterString>Chapter 13
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>658442963</ChapterUID>
@@ -137,7 +150,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 14</ChapterString>
+        <ChapterString>Chapter 14
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>1106812871</ChapterUID>
@@ -147,7 +161,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 15</ChapterString>
+        <ChapterString>Chapter 15
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>737921113</ChapterUID>
@@ -157,7 +172,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 16</ChapterString>
+        <ChapterString>Chapter 16
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>753598825</ChapterUID>
@@ -167,7 +183,8 @@
     </ChapterAtom>
     <ChapterAtom>
       <ChapterDisplay>
-        <ChapterString>Chapter 17</ChapterString>
+        <ChapterString>Chapter 17
+</ChapterString>
         <ChapterLanguage>arg</ChapterLanguage>
       </ChapterDisplay>
       <ChapterUID>2012830796</ChapterUID>

@@ -44,6 +44,14 @@ public readonly record struct ChapterDiagnosticCode(ChapterDiagnosticSource Sour
     public static readonly ChapterDiagnosticCode ClpiFileNotFound = new(ChapterDiagnosticSource.Clpi, ChapterDiagnosticReason.NotFound);
     public static readonly ChapterDiagnosticCode ClpiFileLoaded = new(ChapterDiagnosticSource.Clpi, ChapterDiagnosticReason.Available);
     public static readonly ChapterDiagnosticCode ClpiParseFailed = new(ChapterDiagnosticSource.Clpi, ChapterDiagnosticReason.ParseFailed);
+    public static readonly ChapterDiagnosticCode UnsupportedDynamicBdJNavigation = new(ChapterDiagnosticSource.Bdjo, ChapterDiagnosticReason.Unsupported);
+    public static readonly ChapterDiagnosticCode NavigationLimitReached = new(ChapterDiagnosticSource.Navigation, ChapterDiagnosticReason.Limit);
+    public static readonly ChapterDiagnosticCode MovieObjectParseFailed = new(ChapterDiagnosticSource.MovieObject, ChapterDiagnosticReason.ParseFailed);
+    public static readonly ChapterDiagnosticCode NavigationSource = new(ChapterDiagnosticSource.Navigation, ChapterDiagnosticReason.Available);
+    public static readonly ChapterDiagnosticCode BdmvScanCandidate = new(ChapterDiagnosticSource.BdmvScan, ChapterDiagnosticReason.Available);
+    public static readonly ChapterDiagnosticCode BdmvScanRejected = new(ChapterDiagnosticSource.BdmvScan, ChapterDiagnosticReason.Invalid);
+    public static readonly ChapterDiagnosticCode BdmvInputLayout = new(ChapterDiagnosticSource.InputLayout, ChapterDiagnosticReason.Available);
+    public static readonly ChapterDiagnosticCode BdmvInputRejected = new(ChapterDiagnosticSource.InputLayout, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode ParseInfo = new(ChapterDiagnosticSource.Parse, ChapterDiagnosticReason.Available);
     public static readonly ChapterDiagnosticCode InvalidContainerHeader = new(ChapterDiagnosticSource.ContainerHeader, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidEntryElement = new(ChapterDiagnosticSource.EntryElement, ChapterDiagnosticReason.Invalid);

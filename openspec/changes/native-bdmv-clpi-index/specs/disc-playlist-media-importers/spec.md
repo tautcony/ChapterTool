@@ -21,11 +21,27 @@ The system SHALL enhance MPLS chapter import with automatic CLPI discovery from 
 - **AND** chapters SHALL use the PTS/45000 conversion as in existing behavior
 
 ### Requirement: Standard BDMV importer contract for directories
-The system SHALL route BDMV directory paths to the native C# importer. The existing eac3to-based importer SHALL remain available.
+The system SHALL route a disc root, a `BDMV` directory, and the primary `index.bdmv` file to the native C# importer. The existing eac3to-based importer SHALL remain available for explicit verification and diagnosed unsupported-navigation fallback.
 
 #### Scenario: BDMV directory routes to native importer
 - **WHEN** the import service receives a path containing a `BDMV/PLAYLIST` subdirectory
 - **THEN** it SHALL route to NativeBdmvImporter (not the eac3to-based importer)
+
+#### Scenario: Direct index input routes to native importer
+
+- **WHEN** the import service receives the primary `BDMV/index.bdmv` path
+- **THEN** it SHALL normalize the path to the same source layout as its disc root
+- **AND** it SHALL route to NativeBdmvImporter
+
+### Requirement: Aggregate BDMV playlist media references
+
+The system SHALL build BDMV media references from the complete MPLS playlist. It SHALL NOT infer clip ownership from formatted eac3to text.
+
+#### Scenario: Playlist contains multiple clips
+
+- **WHEN** a discovered playlist references multiple PlayItems or angle clips
+- **THEN** the BDMV entry SHALL contain every referenced stream path in first-use order
+- **AND** duplicate paths SHALL occur only once
 
 #### Scenario: Single MPLS file within BDMV still works standalone
 - **WHEN** a user loads a single `.mpls` file that resides within a BDMV tree

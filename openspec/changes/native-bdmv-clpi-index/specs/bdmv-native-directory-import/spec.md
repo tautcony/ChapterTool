@@ -1,43 +1,98 @@
 ## ADDED Requirements
 
 ### Requirement: Native BDMV directory import
-The system SHALL import Blu-ray BDMV directories through a native C# path that discovers `index.bdmv`, `PLAYLIST/*.mpls`, and `CLIPINF/*.clpi` without requiring external tools.
 
-#### Scenario: Native BDMV discovers main playlist via index
-- **WHEN** a BDMV directory with a valid `index.bdmv` is loaded
-- **THEN** the native importer SHALL identify movie-type Title entries and resolve their associated playlist file names
-- **AND** corresponding CLPI metadata SHALL be available to the delegated MPLS parser without changing the MPLS playlist timeline
+The system SHALL import Blu-ray BDMV sources through a native C# path. The path SHALL discover navigation data and playlist data without requiring eac3to.
 
-#### Scenario: Native BDMV falls back to playlist scanning
-- **WHEN** `index.bdmv` is missing or unparseable in the loaded BDMV directory
-- **THEN** the native importer SHALL enumerate `BDMV/PLAYLIST/*.mpls` as candidate playlists
-- **AND** import SHALL proceed for each parsable playlist with available chapter marks
-- **AND** an info-level diagnostic SHALL note the index fallback
+#### Scenario: Native BDMV resolves an HDMV title
 
-#### Scenario: Native BDMV preserves disc metadata
-- **WHEN** `BDMV/META/DL/*.xml` exists and contains a disc title
-- **THEN** the disc title SHALL be applied to the imported chapter sets
-- **AND** source names and media references SHALL be preserved from MPLS parsing
+- **WHEN** an INDEX title references an HDMV MovieObject
+- **THEN** the importer SHALL resolve the MovieObject identifier through `MovieObject.bdmv`
+- **AND** it SHALL collect playlists from bounded HDMV playback events
+- **AND** it SHALL NOT interpret the MovieObject identifier as an MPLS identifier
+
+#### Scenario: Native BDMV resolves a BD-J title declaration
+
+- **WHEN** an INDEX title references a BD-J Object
+- **THEN** the importer SHALL parse the referenced BDJO file
+- **AND** it SHALL collect explicitly accessible or autostart playlists
+- **AND** it SHALL NOT execute BD-J JAR files or Xlets
+
+#### Scenario: Native BDMV merges playlist scan evidence
+
+- **WHEN** the BDMV source contains structurally valid MPLS files
+- **THEN** the importer SHALL scan the playlist directory with explicit bounds
+- **AND** it SHALL apply structural duplicate and repeated-segment filtering
+- **AND** it SHALL merge scan evidence with navigation evidence through one deterministic policy
+
+#### Scenario: Native BDMV diagnoses dynamic BD-J navigation
+
+- **WHEN** a BD-J application can select a playlist that its BDJO declaration does not identify
+- **THEN** the importer SHALL report an `UnsupportedDynamicBdJNavigation` diagnostic
+- **AND** it SHALL use bounded playlist-scan evidence
+
+#### Scenario: Native BDMV returns aggregate playlist entries
+
+- **WHEN** a discovered MPLS file contains multiple PlayItems
+- **THEN** the importer SHALL return one entry for the complete playlist
+- **AND** chapter marks SHALL use the cumulative playlist timeline
+- **AND** media references SHALL contain all ordered and distinct PlayItem clips
+
+#### Scenario: Native BDMV omits a no-chapter entry
+
+- **WHEN** a discovered playlist contains no chapter marks
+- **THEN** the parity result SHALL retain the playlist candidate
+- **AND** the chapter import result SHALL NOT contain an entry for that playlist
+
+#### Scenario: Native BDMV uses backup navigation files
+
+- **WHEN** a required primary INDEX, MovieObject, BDJO, or playlist file is absent or unusable under the backup policy
+- **THEN** the importer SHALL try the corresponding `BDMV/BACKUP` path
+- **AND** it SHALL report the selected source in diagnostics
 
 #### Scenario: Native BDMV operates without eac3to
+
 - **WHEN** eac3to is not installed or not configured
-- **THEN** native BDMV import SHALL complete successfully using only Core's managed binary parsers
-- **AND** no missing-dependency diagnostic SHALL be produced for eac3to
+- **THEN** native BDMV import SHALL use only managed parsers
+- **AND** no missing-eac3to diagnostic SHALL occur unless the user requests explicit eac3to verification
 
-#### Scenario: Native BDMV reports progress
-- **WHEN** native BDMV import processes multiple playlists
-- **THEN** progress SHALL be reported through the importer progress contract for discovering titles and processing each playlist
+#### Scenario: Native BDMV preserves disc metadata
 
-#### Scenario: Native BDMV validates directory structure
-- **WHEN** the loaded path does not contain a `BDMV/PLAYLIST` subdirectory
-- **THEN** import SHALL fail with an InvalidStructure diagnostic
+- **WHEN** `BDMV/META/DL/*.xml` contains a disc title
+- **THEN** the importer SHALL apply the disc title to imported chapter sets
 
-#### Scenario: Native BDMV handles missing playlist files gracefully
-- **WHEN** an index-referenced playlist file does not exist on disk
-- **THEN** that candidate SHALL be skipped with an info diagnostic
-- **AND** other valid candidates SHALL continue to be processed
+#### Scenario: Native BDMV reports bounded progress
 
-#### Scenario: Native BDMV delegates MPLS parsing to MplsChapterImporter
-- **WHEN** processing a playlist candidate
-- **THEN** the importer SHALL call MplsChapterImporter.ImportAsync for each playlist file
-- **AND** CLPI auto-discovery SHALL happen inside MplsChapterImporter without coordination from NativeBdmvImporter
+- **WHEN** native BDMV import resolves navigation and scans playlists
+- **THEN** it SHALL report discovery and playlist processing progress
+- **AND** cancellation SHALL stop all remaining work
+
+### Requirement: Native BDMV input normalization
+
+The system SHALL normalize a disc root, a `BDMV` directory, and the primary `index.bdmv` file to one source layout.
+
+#### Scenario: Accepted inputs are equivalent
+
+- **WHEN** a user loads any accepted input form for the same disc
+- **THEN** every form SHALL return the same ordered entries and diagnostics
+
+#### Scenario: Arbitrary BDMV file is rejected
+
+- **WHEN** a user selects `MovieObject.bdmv` or another `.bdmv` file as the top-level input
+- **THEN** the importer SHALL return an invalid-structure diagnostic
+
+### Requirement: eac3to parity manifest
+
+The system SHALL compare native discovery with committed eac3to reference manifests.
+
+#### Scenario: Standard parity tests do not require eac3to
+
+- **WHEN** the automated test suite runs
+- **THEN** it SHALL compare native output with committed title, order, duration, chapter, and clip data
+- **AND** it SHALL NOT require a local eac3to installation
+
+#### Scenario: Opt-in parity uses live eac3to output
+
+- **WHEN** the opt-in parity check is enabled
+- **THEN** it SHALL run the configured eac3to executable
+- **AND** it SHALL compare every manifest field with native output

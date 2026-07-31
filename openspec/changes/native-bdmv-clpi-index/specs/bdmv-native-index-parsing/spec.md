@@ -7,7 +7,13 @@ The system SHALL parse Blu-ray `index.bdmv` files to extract the title table, in
 - **WHEN** a valid `index.bdmv` is parsed
 - **THEN** the TypeIndicator SHALL be "INDX"
 - **AND** the FirstPlaybackTitle, TopMenuTitle, and numbered Title list SHALL be accessible as structured records
-- **AND** each Title SHALL expose ObjectType (1=HDMV, 2=BD-J), AccessType, PlaybackType, and ObjectData
+- **AND** each Title SHALL expose ObjectType (1=HDMV, 2=BD-J), AccessType, PlaybackType, and a typed object reference
+
+#### Scenario: INDEX preserves distinct reference types
+- **WHEN** an HDMV or BD-J title entry is parsed
+- **THEN** an HDMV entry SHALL expose a MovieObject identifier
+- **AND** a BD-J entry SHALL expose a five-character BDJO name
+- **AND** neither reference SHALL be interpreted as an MPLS identifier
 
 #### Scenario: Movie titles are identifiable
 - **WHEN** index.bdmv parsing succeeds
