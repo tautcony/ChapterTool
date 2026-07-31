@@ -174,7 +174,7 @@ The scanner must:
 - reject malformed playlists with a structured diagnostic;
 - detect structurally duplicate playlists by PlayItems, marks, and stream declarations;
 - detect excessive repeated identical segments;
-- apply an explicit minimum-duration policy;
+- retain every structurally valid playlist, including short playlists, as a candidate — eac3to may omit short playlists from its title list, but ChapterTool shows them all;
 - retain the original MPLS name for every candidate;
 - retain no-chapter candidates for parity diagnostics.
 
