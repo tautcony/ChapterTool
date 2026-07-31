@@ -220,7 +220,7 @@
   <x:String x:Key="Label.FrameRate" xml:space="preserve">Frame rate used for Frames column</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">Order +</x:String>
   <x:String x:Key="Label.RoundFrames" xml:space="preserve">Round frames</x:String>
-  <x:String x:Key="Label.SaveAs" xml:space="preserve">Save as</x:String>
+  <x:String x:Key="Label.Format" xml:space="preserve">Format</x:String>
   <x:String x:Key="Label.TemplateStatus" xml:space="preserve">Template</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">Use</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML lang</x:String>
@@ -274,8 +274,6 @@
   <x:String x:Key="Main.Reload" xml:space="preserve">Reload</x:String>
   <x:String x:Key="Main.RoundFrames" xml:space="preserve">Round frames</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">Save format</x:String>
-  <x:String x:Key="Main.SaveTo" xml:space="preserve">Save to directory…</x:String>
-  <x:String x:Key="Main.SaveToShort" xml:space="preserve">Save to…</x:String>
   <x:String x:Key="Main.SettingsShort" xml:space="preserve">Settings</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">Standard template</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">Template file</x:String>

@@ -12,8 +12,6 @@ public interface IFilePickerService
 
     ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken);
 
-    ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken);
-
     async ValueTask<ChapterSourceDocument?> PickSourceDocumentAsync(CancellationToken cancellationToken)
     {
         var path = await PickSourceAsync(cancellationToken);

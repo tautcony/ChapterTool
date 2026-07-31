@@ -98,8 +98,6 @@ public sealed class MainWindowInteractionHeadlessTests
             MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001", "A"),
             MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "B")));
         host.FilePickerService.SourcePath = "movie.mpls";
-        host.FilePickerService.SaveDirectoryPath = "out";
-
         await host.LayoutAsync();
         await host.FocusAndPressAsync(Key.O, KeyModifiers.Control);
         await host.FocusAndPressAsync(Key.S, KeyModifiers.Control);

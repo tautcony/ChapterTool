@@ -43,7 +43,6 @@ public sealed partial class MainView : UserControl
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
         LoadChapterNameTemplateCommand = new UiCommand(async (_, _) => await LoadChapterNameTemplateAsync());
         LoadLuaExpressionScriptCommand = new UiCommand(async (_, _) => await LoadLuaExpressionScriptAsync());
-        SaveToCommand = new UiCommand(async (_, _) => await SaveToAsync(), _ => viewModel.SaveCommand.CanExecute());
         InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute());
         DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute());
         OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
@@ -94,8 +93,6 @@ public sealed partial class MainView : UserControl
 
     public UiCommand LoadLuaExpressionScriptCommand { get; }
 
-    public UiCommand SaveToCommand { get; }
-
     public UiCommand InsertSelectedCommand { get; }
 
     public UiCommand DeleteSelectedCommand { get; }
@@ -122,17 +119,6 @@ public sealed partial class MainView : UserControl
 
         viewModel.SourcePath = source is LocalPathChapterSource local ? local.Path : source.DisplayName;
         await viewModel.LoadCommand.ExecuteAsync(source);
-    }
-
-    private async Task SaveToAsync()
-    {
-        var directory = await FilePickerService.PickSaveDirectoryAsync(CancellationToken.None);
-        if (string.IsNullOrWhiteSpace(directory))
-        {
-            return;
-        }
-
-        await viewModel.SaveCommand.ExecuteAsync(directory);
     }
 
     private async Task AppendMplsAsync()
@@ -467,7 +453,6 @@ public sealed partial class MainView : UserControl
         yield return AppendMplsCommand;
         yield return LoadChapterNameTemplateCommand;
         yield return LoadLuaExpressionScriptCommand;
-        yield return SaveToCommand;
         yield return InsertSelectedCommand;
         yield return DeleteSelectedCommand;
         yield return OpenZonesCommand;
@@ -477,7 +462,6 @@ public sealed partial class MainView : UserControl
     private void RaiseCommandStates()
     {
         AppendMplsCommand.RaiseCanExecuteChanged();
-        SaveToCommand.RaiseCanExecuteChanged();
         InsertSelectedCommand.RaiseCanExecuteChanged();
         DeleteSelectedCommand.RaiseCanExecuteChanged();
         OpenZonesCommand.RaiseCanExecuteChanged();

@@ -220,7 +220,7 @@
   <x:String x:Key="Label.FrameRate" xml:space="preserve">用于帧列的帧率</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">序号 +</x:String>
   <x:String x:Key="Label.RoundFrames" xml:space="preserve">帧取整</x:String>
-  <x:String x:Key="Label.SaveAs" xml:space="preserve">保存为</x:String>
+  <x:String x:Key="Label.Format" xml:space="preserve">格式</x:String>
   <x:String x:Key="Label.TemplateStatus" xml:space="preserve">模板</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">启用</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML 语言</x:String>
@@ -274,8 +274,6 @@
   <x:String x:Key="Main.Reload" xml:space="preserve">重新载入</x:String>
   <x:String x:Key="Main.RoundFrames" xml:space="preserve">帧数取整</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存格式</x:String>
-  <x:String x:Key="Main.SaveTo" xml:space="preserve">保存到目录…</x:String>
-  <x:String x:Key="Main.SaveToShort" xml:space="preserve">另存到…</x:String>
   <x:String x:Key="Main.SettingsShort" xml:space="preserve">设置</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">统一模板</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">模板文件</x:String>

@@ -382,13 +382,9 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
         public string? ChapterNameTemplatePath { get; set; }
 
-        public string? SaveDirectoryPath { get; set; }
-
         public string? LuaExpressionScriptPath { get; set; }
 
         public int SourcePickCount { get; private set; }
-
-        public int SaveDirectoryPickCount { get; private set; }
 
         public ValueTask<string?> PickSourceAsync(CancellationToken cancellationToken)
         {
@@ -402,11 +398,6 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
         public ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken) => ValueTask.FromResult(LuaExpressionScriptPath);
 
-        public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken)
-        {
-            SaveDirectoryPickCount++;
-            return ValueTask.FromResult(SaveDirectoryPath);
-        }
     }
 
     internal sealed class FakeSettingsPickerService : ISettingsPickerService

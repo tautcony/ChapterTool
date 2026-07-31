@@ -72,14 +72,6 @@ public sealed class AvaloniaFilePickerService(Window owner, IAppLocalizer locali
         return files.Count > 0 ? files[0].Path.LocalPath : null;
     }
 
-    public async ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken)
-    {
-        var folders = await owner.StorageProvider.OpenFolderPickerAsync(CreateSaveDirectoryOptions(localizer));
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return folders.Count > 0 ? folders[0].Path.LocalPath : null;
-    }
-
     internal static FilePickerOpenOptions CreateSourceOptions(IAppLocalizer localizer) =>
         new()
         {
@@ -129,12 +121,5 @@ public sealed class AvaloniaFilePickerService(Window owner, IAppLocalizer locali
                 new FilePickerFileType(localizer.GetString("FilePicker.LuaScriptFiles")) { Patterns = ["*.lua"] },
                 FilePickerFileTypes.All
             ]
-        };
-
-    internal static FolderPickerOpenOptions CreateSaveDirectoryOptions(IAppLocalizer localizer) =>
-        new()
-        {
-            Title = localizer.GetString("FilePicker.SaveChaptersTo.Title"),
-            AllowMultiple = false
         };
 }

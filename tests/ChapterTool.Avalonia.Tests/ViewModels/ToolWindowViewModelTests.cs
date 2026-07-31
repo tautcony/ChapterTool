@@ -249,7 +249,6 @@ public sealed class ToolWindowViewModelTests
 
         public ValueTask<string?> PickLuaExpressionScriptAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(luaScriptPath);
 
-        public ValueTask<string?> PickSaveDirectoryAsync(CancellationToken cancellationToken) => ValueTask.FromResult<string?>(null);
     }
 
     private sealed class FakeExportPreferencePort : IExportPreferencePort

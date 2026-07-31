@@ -215,26 +215,7 @@
                   Content="{DynamicResource Common.Save}"
                   IsEnabled="{Binding CanSave}"
                   Command="{Binding SaveCommand}"
-                  ToolTip.Tip="{Binding EffectiveSaveDirectoryDisplay}">
-            <Button.ContextMenu>
-              <ContextMenu>
-                <MenuItem x:Name="SaveToMenuItem"
-                          Header="{DynamicResource Main.SaveTo}"
-                          IsVisible="{Binding IsSaveToVisible}"
-                          IsEnabled="{Binding CanSaveToDirectory}"
-                          Command="{Binding #RootView.SaveToCommand}" />
-              </ContextMenu>
-            </Button.ContextMenu>
-          </Button>
-          <Button x:Name="SaveToButton"
-                  Classes="primaryAction"
-                  AutomationProperties.AutomationId="SaveToButton"
-                  AutomationProperties.Name="{DynamicResource Main.SaveTo}"
-                  Content="{DynamicResource Main.SaveToShort}"
-                  IsVisible="{Binding IsSaveToVisible}"
-                  IsEnabled="{Binding CanSaveToDirectory}"
-                  Command="{Binding #RootView.SaveToCommand}"
-                  ToolTip.Tip="{DynamicResource Main.SaveTo}" />
+                  ToolTip.Tip="{Binding EffectiveSaveDirectoryDisplay}" />
         </StackPanel>
 
         <ComboBox x:Name="ClipBox"
