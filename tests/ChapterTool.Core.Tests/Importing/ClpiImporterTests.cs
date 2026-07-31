@@ -190,21 +190,68 @@ public sealed class ClpiImporterTests
     public void ClpiExtensionDataUsesSectionRelativeAddresses()
     {
         using var builder = new ClpiBinaryBuilder();
-        builder.UInt32BE(28)
+        builder.UInt32BE(32)
             .UInt32BE(24)
             .Reserved(3)
             .Byte(1)
             .UInt16BE(2)
             .UInt16BE(4)
             .UInt32BE(24)
+            .UInt32BE(12)
             .UInt32BE(8)
-            .Ascii("EXT DATA");
+            .UInt32BE(1)
+            .UInt32BE(1234);
 
         using var stream = builder.Build();
         var extension = ClpiExtensionData.Read(stream);
 
         Assert.Single(extension.ExtDataEntries);
-        Assert.Equal("EXT DATA"u8.ToArray(), extension.DataBlock);
+        Assert.Equal(12, extension.DataBlock.Length);
+        Assert.Equal(1234U, Assert.Single(Assert.IsType<ClpiExtentStartPoints>(extension.ExtentStartPoints).Points));
+        Assert.Equal(12, extension.RawEntries["2.4"].Length);
+    }
+
+    [Fact]
+    public void ClpiPacketLookupUsesStcAndNearestPrecedingEntryPoint()
+    {
+        var sequence = new ClpiSequenceInfo(0, new[]
+        {
+            new ClpiATCSequence(0, 1, 0, new[] { new ClpiSTCSequence(0x1011, 100, 0, 90_000) })
+        });
+        var cpi = new ClpiCPI(
+            0,
+            1,
+            new[] { new ClpiEPStreamEntry(0x1011, 1, 1, 2, 0) },
+            new[]
+            {
+                new ClpiEPMap(
+                    new[] { new ClpiEPCoarseEntry(0, 0, 0) },
+                    new[]
+                    {
+                        new ClpiEPFineEntry(0, 0, 100, 100),
+                        new ClpiEPFineEntry(0, 0, 200, 200),
+                    })
+            });
+        var file = new ClpiFile(
+            "HDMV",
+            "0200",
+            0,
+            0,
+            0,
+            0,
+            0,
+            new ClpiClipInfo(0, 1, 1, 0, 1_000, false, null, [], []),
+            sequence,
+            null,
+            cpi,
+            null);
+
+        var lookup = file.LookupPacket(0, 60_000);
+
+        Assert.NotNull(lookup);
+        Assert.Equal(200U, lookup.SourcePacketNumber);
+        Assert.Equal(200U << 8, lookup.EntryTimestamp);
+        Assert.Equal((ushort)0x1011, lookup.StreamPID);
     }
 
     private static byte[] BuildMinimalClpi(string version = "0200")

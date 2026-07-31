@@ -20,25 +20,25 @@
 
 ## Findings
 
-### P1-P1-1: CLPI presentation time changes the user timeline
+### P1-P1-1: CLPI presentation time changes the user timeline (not reproduced)
 
-See [`summary.md`](../summary.md#p1-p1-1-core-shifts-the-playlist-timeline-when-clpi-is-present). Core adds `PresentationStartTime` to chapter and play-item title time. libbluray does not add it to title time.
+See [`summary.md`](../summary.md#p1-p1-1-clpi-timeline-hypothesis-not-reproduced). The static review raised this concern, but the six-disc native comparison found no duration or chapter mismatch. Keep exact non-zero-STC assertions as regression coverage.
 
-### P1-P2-1: `0240` is missing from Core version checks
+### P1-P2-1: `0240` support is not covered by current fixtures
 
-See [`summary.md`](../summary.md#p1-p2-1-core-rejects-the-valid-0240-bdmv-version). libbluray accepts `0100`, `0200`, `0240`, and `0300`.
+See [`summary.md`](../summary.md#p1-p2-1-0240-version-support-not-covered-by-current-fixtures). All compared files use version `0200`; add a `0240` fixture before treating this as a confirmed gap.
 
-### P1-P2-2: INDEX AppInfo flags use shifted bit positions
+### P1-P2-2: INDEX AppInfo flags are not covered by native comparison
 
-See [`summary.md`](../summary.md#p1-p2-2-core-reads-index-appinfo-flags-at-the-wrong-bit-positions). The current test builder repeats the same shifted layout.
+See [`summary.md`](../summary.md#p1-p2-2-index-appinfo-flag-layout-not-covered-by-current-comparison). The native comparison did not exercise non-zero flags.
 
-### P1-P2-3: BACKUP lookup is missing
+### P1-P2-3: BACKUP lookup is not exercised
 
-See [`summary.md`](../summary.md#p1-p2-3-core-does-not-use-the-bdmv-backup-parser-paths). libbluray retries backup playlist and index paths.
+See [`summary.md`](../summary.md#p1-p2-3-bdmv-backup-fallback-not-exercised). The complete discs did not require fallback.
 
-### P1-P2-4: MPLS extension payloads are not equivalent
+### P1-P2-4: MPLS extension payloads are partly covered
 
-See [`summary.md`](../summary.md#p1-p2-4-core-does-not-parse-mpls-extension-entries-like-libbluray). Core stores raw data and does not validate per-entry ranges.
+See [`summary.md`](../summary.md#p1-p2-4-mpls-extension-entries-partly-covered). The tested BDMV set has no extension entries, and the real PiP sample matches.
 
 ### P1-INFO-1: CLPI metadata is intentionally incomplete or undocumented
 
@@ -48,11 +48,11 @@ See [`summary.md`](../summary.md#p1-info-1-core-omits-non-chapter-clpi-metadata)
 
 - Unknown values and reserved bits: checked. Core generally skips unknown payloads within bounded containers.
 - Length and count boundaries: checked. Core has stronger explicit limits than libbluray in several paths.
-- Timestamp base and STC context: one confirmed error found.
+- Timestamp base and STC context: no mismatch reproduced in native comparison.
 - Backup paths and extension data: gaps found.
 - Async or resource paths: no new parser-specific issue found. Core import streams use disposal on the main import path.
 
 ## Uncovered Areas
 
-- No real extension-data fixture was available in the Core test set.
-- Native libbluray execution was not available in this environment.
+- No broad CLPI SS or additional MPLS extension fixture was available.
+- BACKUP, HDMV, BDJO, and INDEX access-control behavior still needs runtime comparison.

@@ -4,7 +4,8 @@ internal sealed record IndexFile(
     string TypeIndicator,
     string VersionNumber,
     IndexAppInfoBDMV AppInfoBDMV,
-    IndexIndexes Indexes)
+    IndexIndexes Indexes,
+    IndexExtensionData? ExtensionData)
 {
     public static IndexFile Read(Stream stream)
     {
@@ -34,7 +35,14 @@ internal sealed record IndexFile(
         var indexes = IndexIndexes.Read(indexesSection);
         indexesSection.Complete("indexes section");
 
-        return new IndexFile(typeIndicator, versionNumber, appInfoBDMV, indexes);
+        IndexExtensionData? extensionData = null;
+        if (extensionDataStartAddress > 0 && extensionDataStartAddress < stream.Length)
+        {
+            MplsParseLimits.SeekToAddress(stream, extensionDataStartAddress, "INDEX extension data");
+            extensionData = IndexExtensionData.Read(stream);
+        }
+
+        return new IndexFile(typeIndicator, versionNumber, appInfoBDMV, indexes, extensionData);
     }
 
     public static IndexFile? TryRead(string path)

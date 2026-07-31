@@ -16,6 +16,10 @@ internal sealed record IndexTitleEntry(
 
     public bool IsInteractivePlayback => PlaybackType is 1 or 3;
 
+    public bool IsAccessProhibited => (AccessType & 0x01) != 0;
+
+    public bool IsHidden => (AccessType & 0x02) != 0;
+
     public string ObjectData => ObjectReference switch
     {
         IndexHdmvObjectReference hdmv => hdmv.ObjectId.ToString("D5"),

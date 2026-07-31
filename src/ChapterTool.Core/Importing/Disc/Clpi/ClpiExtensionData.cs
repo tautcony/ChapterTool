@@ -1,18 +1,24 @@
 namespace ChapterTool.Core.Importing.Disc.Clpi;
 
+#pragma warning disable SA1503
+
 internal sealed record ClpiExtensionData(
     uint Length,
     uint DataBlockStartAddress,
     byte NumberOfExtDataEntries,
     IReadOnlyList<ClpiExtDataEntry> ExtDataEntries,
-    byte[] DataBlock)
+    byte[] DataBlock,
+    IReadOnlyDictionary<string, byte[]> RawEntries,
+    ClpiExtentStartPoints? ExtentStartPoints,
+    ClpiProgramInfo? ProgramInfoSS,
+    ClpiCPI? CPISS)
 {
     public static ClpiExtensionData Read(Stream stream)
     {
         var length = stream.ReadUInt32BigEndian();
         if (length == 0)
         {
-            return new ClpiExtensionData(length, 0, 0, [], []);
+            return new ClpiExtensionData(length, 0, 0, [], [], new Dictionary<string, byte[]>(), null, null, null);
         }
 
         using var container = MplsBoundedStream.Create(stream, length, 8, ClpiParseLimits.MaximumExtensionDataLength, "extension data");
@@ -45,8 +51,52 @@ internal sealed record ClpiExtensionData(
         var dataBlockLength = length + 4L - dataBlockStartAddress;
         container.Position = dataBlockStartAddress - 4L;
         var dataBlock = container.ReadExactBytes((int)dataBlockLength);
+        var rawEntries = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        ClpiExtentStartPoints? extentStartPoints = null;
+        ClpiProgramInfo? programInfoSS = null;
+        ClpiCPI? cpiSS = null;
+        foreach (var entry in entries)
+        {
+            container.Position = entry.ExtDataStartAddress - 4L;
+            var payload = container.ReadExactBytes(checked((int)entry.ExtDataLength));
+            rawEntries[$"{entry.ExtDataType}.{entry.ExtDataVersion}"] = payload;
+            using var payloadStream = new MemoryStream(payload, writable: false);
+            if (entry.ExtDataType == 2 && entry.ExtDataVersion == 4)
+                extentStartPoints = ClpiExtentStartPoints.Read(payloadStream);
+            else if (entry.ExtDataType == 2 && entry.ExtDataVersion == 5)
+                programInfoSS = ClpiProgramInfo.Read(payloadStream);
+            else if (entry.ExtDataType == 2 && entry.ExtDataVersion == 6)
+                cpiSS = ClpiCPI.Read(payloadStream);
+        }
+
         container.Complete("extension data");
-        return new ClpiExtensionData(length, dataBlockStartAddress, numberOfEntries, entries, dataBlock);
+        return new ClpiExtensionData(
+            length,
+            dataBlockStartAddress,
+            numberOfEntries,
+            entries,
+            dataBlock,
+            rawEntries,
+            extentStartPoints,
+            programInfoSS,
+            cpiSS);
+    }
+}
+
+internal sealed record ClpiExtentStartPoints(IReadOnlyList<uint> Points)
+{
+    internal static ClpiExtentStartPoints Read(Stream stream)
+    {
+        var length = stream.ReadUInt32BigEndian();
+        if (length > ClpiParseLimits.MaximumExtensionDataLength || length > stream.Length - stream.Position)
+            throw new InvalidDataException("CLPI extent start points exceed the extension entry.");
+        var count = stream.ReadUInt32BigEndian();
+        if (count > ClpiParseLimits.MaximumExtentStartPoints)
+            throw new InvalidDataException("CLPI extent start point count exceeds the supported bounds.");
+        ClpiParseLimits.ValidateCountByBudget(count, sizeof(uint), stream.Length - stream.Position, "extent start point");
+        var points = new List<uint>(checked((int)count));
+        for (var i = 0U; i < count; i++) points.Add(stream.ReadUInt32BigEndian());
+        return new ClpiExtentStartPoints(points);
     }
 }
 
