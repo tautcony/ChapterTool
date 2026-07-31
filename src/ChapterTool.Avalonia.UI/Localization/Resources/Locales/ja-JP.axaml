@@ -220,7 +220,7 @@
   <x:String x:Key="Label.FrameRate" xml:space="preserve">Frames 列に使うフレームレート</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">番号 +</x:String>
   <x:String x:Key="Label.RoundFrames" xml:space="preserve">フレーム丸め</x:String>
-  <x:String x:Key="Label.SaveAs" xml:space="preserve">形式</x:String>
+  <x:String x:Key="Label.Format" xml:space="preserve">形式</x:String>
   <x:String x:Key="Label.TemplateStatus" xml:space="preserve">テンプレート</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">使用</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML 言語</x:String>
@@ -274,8 +274,6 @@
   <x:String x:Key="Main.Reload" xml:space="preserve">再読み込み</x:String>
   <x:String x:Key="Main.RoundFrames" xml:space="preserve">フレームを丸める</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存形式</x:String>
-  <x:String x:Key="Main.SaveTo" xml:space="preserve">フォルダーに保存…</x:String>
-  <x:String x:Key="Main.SaveToShort" xml:space="preserve">別名保存…</x:String>
   <x:String x:Key="Main.SettingsShort" xml:space="preserve">設定</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">標準テンプレート</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">テンプレートファイル</x:String>

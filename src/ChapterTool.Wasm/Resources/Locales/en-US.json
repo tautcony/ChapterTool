@@ -18,7 +18,7 @@
   "Action.LoadSample": "Load OGM sample",
   "Action.BrowseTemplate": "Browse template…",
   "Label.RoundFrames": "Round frames",
-  "Label.SaveAs": "Save as",
+  "Label.Format": "Format",
   "Label.ChapterName": "Chapter name",
   "Label.XmlLang": "XML lang",
   "Label.OrderShift": "Order +",

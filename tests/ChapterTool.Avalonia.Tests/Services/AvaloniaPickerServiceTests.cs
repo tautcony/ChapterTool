@@ -14,7 +14,6 @@ public sealed class AvaloniaPickerServiceTests
         var mpls = AvaloniaFilePickerService.CreateMplsOptions(localizer);
         var template = AvaloniaFilePickerService.CreateChapterNameTemplateOptions(localizer);
         var luaScript = AvaloniaFilePickerService.CreateLuaExpressionScriptOptions(localizer);
-        var saveDirectory = AvaloniaFilePickerService.CreateSaveDirectoryOptions(localizer);
         var executable = AvaloniaSettingsPickerService.CreateExecutableOptions("选择工具", localizer);
 
         Assert.Equal("打开源文件", source.Title);
@@ -28,7 +27,6 @@ public sealed class AvaloniaPickerServiceTests
         Assert.Equal("文本文件", template.FileTypeFilter?.First().Name);
         Assert.Equal("打开 Lua 表达式脚本", luaScript.Title);
         Assert.Equal("Lua 脚本文件", luaScript.FileTypeFilter?.First().Name);
-        Assert.Equal("保存章节到", saveDirectory.Title);
         Assert.Equal("选择工具", executable.Title);
         Assert.Equal("可执行文件", executable.FileTypeFilter?.First().Name);
     }

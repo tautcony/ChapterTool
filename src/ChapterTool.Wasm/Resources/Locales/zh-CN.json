@@ -18,7 +18,7 @@
   "Action.LoadSample": "加载 OGM 示例",
   "Action.BrowseTemplate": "浏览模板…",
   "Label.RoundFrames": "帧取整",
-  "Label.SaveAs": "保存为",
+  "Label.Format": "格式",
   "Label.ChapterName": "章节名",
   "Label.XmlLang": "XML 语言",
   "Label.OrderShift": "序号 +",

@@ -715,10 +715,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public bool CanOpenRelatedMedia => Capabilities.CanOpenLocalPaths && RelatedMediaReferences.Count > 0;
 
-    public bool IsSaveToVisible => Capabilities.OutputMode == RuntimeOutputMode.Directory;
-
-    public bool CanSaveToDirectory => IsSaveToVisible && CanSave;
-
     public bool CanUseClipboard => Capabilities.CanReadClipboard || Capabilities.CanWriteClipboard;
 
     public bool CanUseExternalTools => Capabilities.CanConfigureExternalTools;
@@ -914,8 +910,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         OnPropertyChanged(nameof(CanRefreshRows));
         OnPropertyChanged(nameof(CanEditRows));
         OnPropertyChanged(nameof(CanOpenRelatedMedia));
-        OnPropertyChanged(nameof(IsSaveToVisible));
-        OnPropertyChanged(nameof(CanSaveToDirectory));
         OnPropertyChanged(nameof(CanUseClipboard));
         OnPropertyChanged(nameof(CanUseExternalTools));
         OnPropertyChanged(nameof(CanRunExternalActions));

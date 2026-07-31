@@ -18,7 +18,7 @@
   "Action.LoadSample": "OGM サンプルを読み込む",
   "Action.BrowseTemplate": "テンプレートを参照…",
   "Label.RoundFrames": "フレーム丸め",
-  "Label.SaveAs": "形式",
+  "Label.Format": "形式",
   "Label.ChapterName": "チャプター名",
   "Label.XmlLang": "XML 言語",
   "Label.OrderShift": "番号 +",

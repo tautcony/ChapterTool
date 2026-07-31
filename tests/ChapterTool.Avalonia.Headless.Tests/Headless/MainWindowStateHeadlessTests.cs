@@ -18,6 +18,7 @@ public sealed class MainWindowStateHeadlessTests
 
         var loadButton = host.RequiredControl<Button>("LoadButton");
         var saveButton = host.RequiredControl<Button>("SaveButton");
+        Assert.Null(host.MainView.FindControl<Button>("SaveToButton"));
         var clipBox = host.RequiredControl<ComboBox>("ClipBox");
         var chapterGrid = host.RequiredControl<DataGrid>("ChapterGrid");
         var formatBox = host.RequiredControl<ComboBox>("FormatBox");
@@ -95,9 +96,7 @@ public sealed class MainWindowStateHeadlessTests
         Assert.True(expressionBox.Bounds.Height <= 34);
         frameRateBox.SelectedIndex = 3;
         roundFramesBox.IsChecked = false;
-        host.FilePickerService.SaveDirectoryPath = "out";
-
-        await host.MainView.SaveToCommand.ExecuteAsync();
+        await host.ViewModel.SaveCommand.ExecuteAsync("out");
         await host.LayoutAsync();
 
         Assert.Equal(1, host.SaveService.Calls);

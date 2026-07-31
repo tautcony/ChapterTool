@@ -109,7 +109,7 @@ Recommendation:
 
 ### Medium: Hidden controls are used as command shims
 
-`MainWindow.axaml` still contains hidden buttons such as `SaveToButton`, `AppendMplsButton`, `CombineButton`, `OpenMediaButton`, `ColorButton`, `ExpressionButton`, `TemplateButton`, `ZonesButton`, and `ForwardShiftButton`.
+`MainWindow.axaml` still contains hidden buttons such as `AppendMplsButton`, `CombineButton`, `OpenMediaButton`, `ColorButton`, `ExpressionButton`, `TemplateButton`, `ZonesButton`, and `ForwardShiftButton`.
 
 Impact:
 - The visual tree contains controls that are not part of the visible UI.
