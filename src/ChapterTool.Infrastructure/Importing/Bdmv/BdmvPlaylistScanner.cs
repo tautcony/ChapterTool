@@ -15,9 +15,8 @@ internal sealed class BdmvPlaylistScanner
 {
     internal const int MaximumPlaylists = 4096;
     internal const int MaximumRepeatedSegments = 2;
-    internal static readonly TimeSpan MinimumDuration = TimeSpan.FromMinutes(10);
 
-    internal IReadOnlyList<BdmvPlaylistCandidate> Scan(
+    internal static IReadOnlyList<BdmvPlaylistCandidate> Scan(
         BdmvSourceLayout layout,
         List<ChapterDiagnostic> diagnostics)
     {
@@ -47,12 +46,6 @@ internal sealed class BdmvPlaylistScanner
             try
             {
                 var projection = MplsAggregateProjection.Read(path, discRoot: layout.DiscRoot);
-                if (projection.ChapterSet.Duration < MinimumDuration)
-                {
-                    diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.BdmvScanRejected, $"Skipped short BDMV playlist {name}.", path);
-                    continue;
-                }
-
                 var repeated = projection.Playlist.PlayList.PlayItems
                     .GroupBy(static item => $"{item.FullName}:{item.INTime}:{item.OUTTime}", StringComparer.Ordinal)
                     .Any(group => group.Count() > MaximumRepeatedSegments);

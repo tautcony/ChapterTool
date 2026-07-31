@@ -89,7 +89,7 @@ public sealed class AvaloniaFilePickerService(Window owner, IAppLocalizer locali
             [
                 new FilePickerFileType(localizer.GetString("FilePicker.SourceFiles"))
                 {
-                    Patterns = ["*.txt", "*.xml", "*.vtt", "*.cue", "*.flac", "*.tak", "*.mpls", "*.ifo", "*.xpl", "*.mkv", "*.mka", "*.mp4", "*.m4a", "*.m4v"]
+                    Patterns = ["*.txt", "*.xml", "*.vtt", "*.cue", "*.flac", "*.tak", "*.mpls", "*.ifo", "*.xpl", "*.bdmv", "*.mkv", "*.mka", "*.mp4", "*.m4a", "*.m4v"]
                 },
                 FilePickerFileTypes.All
             ]

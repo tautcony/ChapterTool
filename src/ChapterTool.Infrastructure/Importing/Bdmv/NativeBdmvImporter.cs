@@ -14,8 +14,6 @@ namespace ChapterTool.Infrastructure.Importing.Bdmv;
 /// <summary>Imports complete chapter-bearing Blu-ray playlists with managed parsers.</summary>
 public sealed class NativeBdmvImporter : IChapterImporter
 {
-    private readonly BdmvPlaylistScanner scanner = new();
-
     public string Id => "bdmv-native";
 
     public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -43,7 +41,7 @@ public sealed class NativeBdmvImporter : IChapterImporter
 
         Report(request.ProgressReporter, ChapterImportProgressPhase.DiscoveringTitles, 0.05, layout.OriginalInputPath);
         var discTitle = ReadDiscTitle(layout.MetadataDirectory);
-        var scanCandidates = scanner.Scan(layout, diagnostics).ToDictionary(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase);
+        var scanCandidates = BdmvPlaylistScanner.Scan(layout, diagnostics).ToDictionary(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase);
         var evidence = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var evidenceOrder = new List<string>();
         var index = TryReadIndex(layout, diagnostics);
@@ -97,7 +95,7 @@ public sealed class NativeBdmvImporter : IChapterImporter
             };
             entries.Add(new ChapterImportEntry(
                 candidate.Name,
-                candidate.Name,
+                DisplayName(candidate),
                 chapterSet,
                 CanCombine: true,
                 ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles));
@@ -230,6 +228,37 @@ public sealed class NativeBdmvImporter : IChapterImporter
             diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.UnsupportedDynamicBdJNavigation,
                 $"BD-J object {name} may select playlists dynamically. JAR and Xlet execution is not supported; bounded playlist scan is used as fallback.", selectedPath));
         }
+    }
+
+    /// <summary>
+    /// Builds the eac3to-style display name: playlist name, complete duration, and the m2ts
+    /// combination. Angle clips and multiple PlayItems merge into one bracket group like eac3to,
+    /// for example <c>00041.mpls (2:00:22) [00112+00127+00115].m2ts</c>.
+    /// </summary>
+    private static string DisplayName(BdmvPlaylistCandidate candidate)
+    {
+        var clips = candidate.Projection.Playlist.PlayList.PlayItems
+            .SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries));
+        var clipText = ClipListDisplay(clips);
+        var duration = candidate.Projection.ChapterSet.Duration;
+        return clipText.Length == 0
+            ? $"{candidate.Name} ({duration:h\\:mm\\:ss})"
+            : $"{candidate.Name} ({duration:h\\:mm\\:ss}) {clipText}";
+    }
+
+    /// <summary>
+    /// Renders a clip list in the eac3to display convention: a single clip keeps its plain name,
+    /// while multiple clips (angles or PlayItems) merge into one <c>[a+b+c].m2ts</c> bracket group.
+    /// </summary>
+    internal static string ClipListDisplay(IEnumerable<string> clips)
+    {
+        var names = clips.ToList();
+        return names.Count switch
+        {
+            0 => string.Empty,
+            1 => $"{names[0]}.m2ts",
+            _ => $"[{string.Join("+", names)}].m2ts"
+        };
     }
 
     private static void AddEvidence(Dictionary<string, List<string>> evidence, List<string> evidenceOrder, string name, string source)

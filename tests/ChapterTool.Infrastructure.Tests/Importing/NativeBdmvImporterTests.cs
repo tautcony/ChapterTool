@@ -45,6 +45,52 @@ public sealed class NativeBdmvImporterTests
     }
 
     [Fact]
+    public async Task BdmvEntriesUseEac3toStyleDisplayNames()
+    {
+        var discRoot = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1");
+        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+
+        Assert.True(result.Success);
+        var entry = Assert.Single(result.Groups.SelectMany(static group => group.Entries), candidate => candidate.Id == "00001.mpls");
+        Assert.Matches(@"^00001\.mpls \(\d{1,2}:\d{2}:\d{2}\) 00002\.m2ts$", entry.DisplayName);
+    }
+
+    [Fact]
+    public async Task MultiClipBdmvEntryDisplayNameMergesIntoBracketForm()
+    {
+        var discRoot = CoreFixtureDir("KIMETSU_NO_YAIBA_MUGENJO_HEN_P1_DISC1");
+        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+
+        Assert.True(result.Success);
+        var entry = Assert.Single(result.Groups.SelectMany(static group => group.Entries), candidate => candidate.Id == "00000.mpls");
+        Assert.Matches(@"^00000\.mpls \(\d{1,2}:\d{2}:\d{2}\) \[00000\+00001\]\.m2ts$", entry.DisplayName);
+    }
+
+    [Theory]
+    [InlineData(new string[0], "")]
+    [InlineData(new[] { "00002" }, "00002.m2ts")]
+    [InlineData(new[] { "00000", "00001" }, "[00000+00001].m2ts")]
+    [InlineData(new[] { "00112", "00127", "00115" }, "[00112+00127+00115].m2ts")]
+    public void ClipListDisplayMergesMultipleClipsIntoBracketGroup(string[] clips, string expected)
+    {
+        Assert.Equal(expected, NativeBdmvImporter.ClipListDisplay(clips));
+    }
+
+    [Fact]
+    public async Task ShortChapterBearingPlaylistsAreRetainedAsEntries()
+    {
+        var discRoot = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1");
+        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+
+        Assert.True(result.Success);
+        var actual = result.Groups.SelectMany(static group => group.Entries).ToArray();
+        Assert.Contains(actual, static entry => entry.Id == "00000.mpls");
+        Assert.Contains(actual, static entry => entry.Id == "00002.mpls");
+        Assert.Contains(actual, static entry => entry.Id == "00099.mpls");
+        Assert.DoesNotContain(result.Diagnostics, static diagnostic => diagnostic.Message.Contains("Skipped short", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task DiscRootBdmvDirectoryAndIndexInputsProduceEquivalentEntries()
     {
         var discRoot = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1");
@@ -105,11 +151,15 @@ public sealed class NativeBdmvImporterTests
             var result = await importer.ImportAsync(new ChapterImportRequest(root), CancellationToken.None);
             Assert.True(result.Success, fixture);
             var actual = result.Groups.SelectMany(static group => group.Entries).ToArray();
-            Assert.True(expected.Length == actual.Length, $"{fixture}: actual={string.Join(',', actual.Select(static entry => $"{entry.Id}/{entry.ChapterSet.Chapters.Count}/{entry.ChapterSet.Duration}"))}");
+
+            // The importer retains every structurally valid chapter-bearing playlist, including
+            // short playlists that eac3to omits from its title list. The manifest set is therefore
+            // a subset of the imported entries; every manifest title must be present in manifest order.
             var expectedIds = expected.Select(static title => title.Playlist).ToArray();
             var actualIds = actual.Select(static entry => entry.Id).ToArray();
-            Assert.True(expectedIds.SequenceEqual(actualIds), $"{fixture}: expected={string.Join(',', expectedIds)}, actual={string.Join(',', actualIds)}, navigation={string.Join(" | ", result.Diagnostics.Where(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.NavigationSource).Select(static diagnostic => diagnostic.Message))}");
-            Assert.Equal(expected.Select(static title => title.ChapterCount), actual.Select(static entry => entry.ChapterSet.Chapters.Count));
+            var positions = expectedIds.Select(id => Array.IndexOf(actualIds, id)).ToArray();
+            Assert.All(positions, position => Assert.True(position >= 0, $"{fixture}: manifest title missing from imports; actual={string.Join(',', actualIds)}"));
+            Assert.Equal(positions, positions.OrderBy(static position => position));
             foreach (var title in expected)
             {
                 var entry = Assert.Single(actual, candidate => candidate.Id == title.Playlist);
@@ -190,9 +240,18 @@ public sealed class NativeBdmvImporterTests
     [Fact]
     public async Task ImportBdmvWithoutIndexFallsBackToScan()
     {
-        var bdmvDir = CoreFixtureDir("KIMETSU_NO_YAIBA_MUGENJO_HEN_P1_DISC1");
+        // Fixtures now carry navigation files, so build a temp disc with no index.bdmv at all
+        // (neither primary nor backup) to exercise the pure playlist-scan fallback.
+        using var tempDir = new TempDirectory();
+        var bdmvDir = Path.Combine(tempDir.Path, "BDMV");
+        var playlistDir = Path.Combine(bdmvDir, "PLAYLIST");
+        Directory.CreateDirectory(playlistDir);
+        File.Copy(
+            Path.Combine(CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1"), "BDMV", "PLAYLIST", "00001.mpls"),
+            Path.Combine(playlistDir, "00001.mpls"));
+
         var importer = new NativeBdmvImporter();
-        var request = new ChapterImportRequest(bdmvDir);
+        var request = new ChapterImportRequest(tempDir.Path);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
         Assert.True(result.Success);
@@ -244,7 +303,7 @@ public sealed class NativeBdmvImporterTests
     }
 
     [Fact]
-    public async Task ImportWithFailedIndexLogsError()
+    public async Task ImportWithFailedIndexFallsBackToScan()
     {
         using var tempDir = new TempDirectory();
         var bdmvDir = Path.Combine(tempDir.Path, "BDMV");
@@ -263,8 +322,9 @@ public sealed class NativeBdmvImporterTests
         var request = new ChapterImportRequest(tempDir.Path);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
-        Assert.False(result.Success);
+        Assert.True(result.Success);
         Assert.Contains(result.Diagnostics, d => d.Message.Contains("Failed to parse index.bdmv"));
+        Assert.Contains(result.Groups.SelectMany(static group => group.Entries), static entry => entry.Id == "00000.mpls");
     }
 
     [Fact]

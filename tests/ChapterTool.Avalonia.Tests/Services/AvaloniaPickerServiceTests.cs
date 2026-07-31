@@ -19,6 +19,9 @@ public sealed class AvaloniaPickerServiceTests
 
         Assert.Equal("打开源文件", source.Title);
         Assert.Equal("章节和媒体文件", source.FileTypeFilter?.First().Name);
+        var sourcePatterns = source.FileTypeFilter?.First().Patterns;
+        Assert.NotNull(sourcePatterns);
+        Assert.Contains("*.bdmv", sourcePatterns);
         Assert.Equal("追加 MPLS", mpls.Title);
         Assert.Equal("MPLS 播放列表", mpls.FileTypeFilter?.First().Name);
         Assert.Equal("打开章节名称模板", template.Title);
