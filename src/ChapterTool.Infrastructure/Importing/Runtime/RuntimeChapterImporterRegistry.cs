@@ -41,7 +41,7 @@ public sealed class RuntimeChapterImporterRegistry(
 
     public IChapterImporter? Resolve(string path)
     {
-        if (Directory.Exists(path) && Directory.Exists(Path.Combine(path, "BDMV", "PLAYLIST")))
+        if (BdmvSourceLayout.TryResolve(path, out _) != null)
         {
             return nativeBdmvImporter;
         }
@@ -58,7 +58,7 @@ public sealed class RuntimeChapterImporterRegistry(
             ".mpls" => mplsImporter,
             ".ifo" => ifoImporter,
             ".xpl" => xplImporter,
-            ".bdmv" => bdmvImporter,
+            ".bdmv" => nativeBdmvImporter,
             ".mkv" or ".mka" or ".mks" or ".webm" => matroskaImporter,
             ".mp4" or ".m4a" or ".m4v" or ".mov" or ".qt" or ".3gp" or ".3g2" => mediaImporter,
             ".asf" or ".wmv" or ".wma" or ".mp3" or ".aac" or ".ogg" or ".oga" or ".ogv" or ".opus" or ".wav" or ".nut" or ".aa" or ".aax" or ".ffmetadata" or ".ffmeta" => mediaImporter,

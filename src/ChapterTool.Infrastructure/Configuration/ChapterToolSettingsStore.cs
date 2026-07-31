@@ -94,11 +94,16 @@ public sealed class ChapterToolSettingsStore(string settingsDirectory) : ISettin
 
         try
         {
-            await using var stream = File.OpenRead(settingsPath);
-            var node = await JsonNode.ParseAsync(stream, cancellationToken: cancellationToken);
-            if (node is not JsonObject root)
+            JsonObject root;
+            await using (var stream = File.OpenRead(settingsPath))
             {
-                throw new JsonException("The settings document root must be an object.");
+                var node = await JsonNode.ParseAsync(stream, cancellationToken: cancellationToken);
+                if (node is not JsonObject parsedRoot)
+                {
+                    throw new JsonException("The settings document root must be an object.");
+                }
+
+                root = parsedRoot;
             }
 
             var upgraded = Upgrade(root);

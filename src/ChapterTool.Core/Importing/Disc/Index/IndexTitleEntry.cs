@@ -4,7 +4,7 @@ internal sealed record IndexTitleEntry(
     byte ObjectType,
     byte AccessType,
     ushort PlaybackType,
-    string ObjectData)
+    IndexObjectReference ObjectReference)
 {
     internal const int SerializedLength = 12;
 
@@ -15,6 +15,14 @@ internal sealed record IndexTitleEntry(
     public bool IsMoviePlayback => PlaybackType is 0 or 2;
 
     public bool IsInteractivePlayback => PlaybackType is 1 or 3;
+
+    public string ObjectData => ObjectReference switch
+    {
+        IndexHdmvObjectReference hdmv => hdmv.ObjectId.ToString("D5"),
+        IndexBdJObjectReference bdj => bdj.Name,
+        IndexUnknownObjectReference unknown => unknown.Data,
+        _ => string.Empty
+    };
 
     public static IndexTitleEntry Read(Stream stream)
     {
@@ -29,23 +37,31 @@ internal sealed record IndexTitleEntry(
         {
             1 => ReadHdmvObjectData(stream),
             2 => ReadBdJObjectData(stream),
-            _ => stream.ReadAscii(6)
+            _ => new IndexUnknownObjectReference(stream.ReadAscii(6))
         };
 
         return new IndexTitleEntry(objectType, accessType, playbackType, objectData);
     }
 
-    private static string ReadHdmvObjectData(Stream stream)
+    private static IndexObjectReference ReadHdmvObjectData(Stream stream)
     {
         var idReference = stream.ReadUInt16BigEndian();
         stream.SkipBytes(4);
-        return idReference.ToString("D5");
+        return new IndexHdmvObjectReference(idReference);
     }
 
-    private static string ReadBdJObjectData(Stream stream)
+    private static IndexObjectReference ReadBdJObjectData(Stream stream)
     {
         var objectData = stream.ReadAscii(5);
         stream.SkipBytes(1);
-        return objectData;
+        return new IndexBdJObjectReference(objectData);
     }
 }
+
+internal abstract record IndexObjectReference;
+
+internal sealed record IndexHdmvObjectReference(ushort ObjectId) : IndexObjectReference;
+
+internal sealed record IndexBdJObjectReference(string Name) : IndexObjectReference;
+
+internal sealed record IndexUnknownObjectReference(string Data) : IndexObjectReference;

@@ -72,7 +72,7 @@ public sealed class ProcessRunnerTests
     public async Task RunAsync_truncates_large_redirected_output()
     {
         var runner = new ProcessRunner();
-        var request = ShellCommand.Create("printf 'abcdef'; printf 'uvwxyz' 1>&2") with { MaxOutputCharacters = 3 };
+        var request = ShellCommand.CreateExactOutput("abcdef", "uvwxyz") with { MaxOutputCharacters = 3 };
 
         var result = await runner.RunAsync(request, TestContext.Current.CancellationToken);
 
@@ -87,7 +87,7 @@ public sealed class ProcessRunnerTests
         var runner = new ProcessRunner();
 
         var result = await runner.RunAsync(
-            ShellCommand.Create("printf 'before-timeout' 1>&2; sleep 5", timeout: TimeSpan.FromMilliseconds(100)),
+            ShellCommand.CreateOutputThenSleep("before-timeout", timeout: TimeSpan.FromSeconds(1)),
             TestContext.Current.CancellationToken);
 
         Assert.True(result.TimedOut);
@@ -139,6 +139,28 @@ public sealed class ProcessRunnerTests
             }
 
             return Create($@"printf '{stdout}\n'; printf '{stderr}\n' 1>&2");
+        }
+
+        public static ProcessRunRequest CreateExactOutput(string stdout, string stderr)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return new ProcessRunRequest(
+                    "powershell.exe",
+                    ["-NoProfile", "-Command", $"[Console]::Write('{stdout}'); [Console]::Error.Write('{stderr}')"]);
+            }
+
+            return Create($"printf '{stdout}'; printf '{stderr}' 1>&2");
+        }
+
+        public static ProcessRunRequest CreateOutputThenSleep(string stderr, TimeSpan? timeout = null)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return Create($"echo {stderr} 1>&2 & ping 127.0.0.1 -n 6 > nul", timeout: timeout);
+            }
+
+            return Create($"printf '{stderr}' 1>&2; sleep 5", timeout: timeout);
         }
     }
 }

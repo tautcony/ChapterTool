@@ -56,6 +56,8 @@ Important format entry points:
 - CUE sheet parsing: `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs`
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
 - DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, split `Mpls*.cs` playlist types, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
+- Native BDMV navigation uses typed INDEX references under `Disc/Index/`, bounded MovieObject parsing and HDMV resolution under `Disc/MovieObject/`, and BDJO accessible-playlist parsing under `Disc/Bdjo/`.
+- `src/ChapterTool.Core/Importing/Disc/MplsAggregateProjection.cs` builds one complete chapter projection for each BDMV playlist.
 - `BinaryReadExtensions.cs` defines generic exact-read ceilings.
 - `MplsParseLimits.cs` defines semantic MPLS limits.
 - `MplsBoundedStream.cs` enforces each declared parent-container byte budget while it parses nested entries.

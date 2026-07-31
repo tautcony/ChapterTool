@@ -15,7 +15,10 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - Matroska chapter extraction:
   - `src/ChapterTool.Infrastructure/Importing/Matroska/MatroskaChapterImporter.cs`
 - BDMV / eac3to path:
-  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs`
+  - `src/ChapterTool.Infrastructure/Importing/Bdmv/NativeBdmvImporter.cs`: managed BDMV directory importer
+  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvSourceLayout.cs`: accepted input shapes and primary/backup paths
+  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs`: bounded playlist discovery and parity filtering
+  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs`: optional eac3to-backed importer
 
 ### Runtime importer composition
 
@@ -120,7 +123,9 @@ Then inspect:
 
 Start with:
 
-- `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs`
+- `src/ChapterTool.Infrastructure/Importing/Bdmv/NativeBdmvImporter.cs`
+
+Use `BdmvSourceLayout.cs` for input-shape or backup-directory issues. Use `BdmvPlaylistScanner.cs` for candidate order, duplicate filtering, or no-chapter diagnostics. Use `BdmvChapterImporter.cs` for explicit eac3to behavior.
 
 ### External tool path resolution
 

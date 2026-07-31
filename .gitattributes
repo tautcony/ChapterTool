@@ -3,6 +3,17 @@
 ###############################################################################
 * text=auto
 .gitattributes text eol=lf
+*.cs text eol=lf
+*.md text eol=lf
+*.axaml text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.sln text eol=lf
+*.slnx text eol=lf
 *.sh text eol=lf
 
 # Blazor / GitHub Pages: keep JS binary so publish integrity hashes stay stable

@@ -8,6 +8,8 @@ namespace ChapterTool.Core.Diagnostics;
 public enum ChapterDiagnosticSource
 {
     AppendSource,
+    Bdjo,
+    BdmvScan,
     ChapterIndex,
     ChapterPair,
     Clpi,
@@ -49,6 +51,7 @@ public enum ChapterDiagnosticSource
     Importer,
     ImporterFallback,
     Input,
+    InputLayout,
     LuaExpression,
     LuaExpressionReturn,
     LuaExpressionToken,
@@ -62,6 +65,8 @@ public enum ChapterDiagnosticSource
     Mp4Path,
     Mp4Read,
     Mpls,
+    MovieObject,
+    Navigation,
     NativeLibrary,
     OgmFirstLine,
     OrderShift,

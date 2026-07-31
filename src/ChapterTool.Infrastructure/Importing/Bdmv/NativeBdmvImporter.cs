@@ -1,210 +1,254 @@
-using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
+using ChapterTool.Core.Importing.Disc.Bdjo;
 using ChapterTool.Core.Importing.Disc.Index;
+using ChapterTool.Core.Importing.Disc.MovieObject;
 using ChapterTool.Core.Models;
+
+#pragma warning disable SA1503
 
 namespace ChapterTool.Infrastructure.Importing.Bdmv;
 
-/// <summary>
-/// Native C# importer for Blu-ray BDMV directories that discovers
-/// index.bdmv, playlists, and CLPI files without external tools.
-/// </summary>
-public sealed partial class NativeBdmvImporter : IChapterImporter
+/// <summary>Imports complete chapter-bearing Blu-ray playlists with managed parsers.</summary>
+public sealed class NativeBdmvImporter : IChapterImporter
 {
-    private readonly MplsChapterImporter mplsImporter = new();
+    private readonly BdmvPlaylistScanner scanner = new();
 
-    /// <summary>
-    /// Gets the stable importer identifier.
-    /// </summary>
     public string Id => "bdmv-native";
 
-    /// <summary>
-    /// Gets the supported directory extensions for this importer.
-    /// </summary>
     public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "BDMV"
     };
 
-    /// <summary>
-    /// Imports chapters from a BDMV directory path.
-    /// </summary>
-    /// <param name="request">The import request with a BDMV root directory path.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        var playlistDirectory = Path.Combine(request.Path, "BDMV", "PLAYLIST");
-        if (!Directory.Exists(playlistDirectory))
+        var diagnostics = new List<ChapterDiagnostic>();
+        var layout = BdmvSourceLayout.TryResolve(request.Path, out var layoutError);
+        if (layout == null)
         {
-            return ChapterImportResult.Failed(
-                Error(ChapterDiagnosticCode.InvalidStructure, "Blu-ray BDMV/PLAYLIST directory was not found."));
+            return ChapterImportResult.Failed(new ChapterDiagnostic(
+                DiagnosticSeverity.Error,
+                ChapterDiagnosticCode.BdmvInputRejected,
+                layoutError ?? "Invalid BDMV input."));
         }
 
-        var diagnostics = new List<ChapterDiagnostic>();
-        var discTitle = ReadDiscTitle(request.Path);
+        diagnostics.Add(new ChapterDiagnostic(
+            DiagnosticSeverity.Info,
+            ChapterDiagnosticCode.BdmvInputLayout,
+            $"Normalized BDMV input to disc root '{layout.DiscRoot}'.",
+            layout.OriginalInputPath));
 
-        var playlistCandidates = DiscoverPlaylistCandidates(request.Path, diagnostics);
+        Report(request.ProgressReporter, ChapterImportProgressPhase.DiscoveringTitles, 0.05, layout.OriginalInputPath);
+        var discTitle = ReadDiscTitle(layout.MetadataDirectory);
+        var scanCandidates = scanner.Scan(layout, diagnostics).ToDictionary(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase);
+        var evidence = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var evidenceOrder = new List<string>();
+        var index = TryReadIndex(layout, diagnostics);
+        if (index != null)
+        {
+            ResolveNavigation(index, layout, evidence, evidenceOrder, diagnostics);
+        }
+
+        var candidates = scanCandidates.Values
+            .Select(candidate => candidate with { Evidence = evidence.TryGetValue(candidate.Name, out var values) ? values : candidate.Evidence })
+            .OrderBy(static candidate => EvidencePriority(candidate.Evidence))
+
+            // eac3to keeps the first discovered navigation title first. It then sorts the remaining
+            // candidates by complete duration and uses the descending playlist name as a stable tie-breaker.
+            .ThenBy(candidate => FirstEvidenceOrder(candidate.Name, evidenceOrder))
+            .ThenByDescending(static candidate => candidate.Projection.ChapterSet.Duration)
+            .ThenByDescending(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var candidate in candidates)
+        {
+            _ = BdmvPathHelper.DiscoverClpiFiles(
+                layout.DiscRoot,
+                candidate.Projection.Playlist.PlayList.PlayItems.SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries)),
+                diagnostics);
+            if (candidate.Projection.HasChapterMarks) continue;
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.BdmvScanCandidate,
+                $"Retained no-chapter playlist candidate {candidate.Name} for parity diagnostics.",
+                candidate.Path));
+        }
 
         var entries = new List<ChapterImportEntry>();
-        for (var candidateIndex = 0; candidateIndex < playlistCandidates.Count; candidateIndex++)
+        for (var indexValue = 0; indexValue < candidates.Count; indexValue++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var candidate = playlistCandidates[candidateIndex];
-
+            var candidate = candidates[indexValue];
             Report(
                 request.ProgressReporter,
-                ChapterImportProgressPhase.DiscoveringTitles,
-                0.20 + candidateIndex * 0.75 / Math.Max(playlistCandidates.Count, 1),
-                candidate,
-                candidateIndex + 1,
-                playlistCandidates.Count);
+                ChapterImportProgressPhase.ParsingChapters,
+                0.10 + (indexValue + 1) * 0.85 / Math.Max(candidates.Count, 1),
+                candidate.Name,
+                indexValue + 1,
+                candidates.Count);
+            if (!candidate.Projection.HasChapterMarks) continue;
 
-            try
+            var chapterSet = candidate.Projection.ChapterSet with
             {
-                var mplsPath = Path.Combine(playlistDirectory, candidate);
-                if (!File.Exists(mplsPath))
-                {
-                    diagnostics.Add(Info(ChapterDiagnosticCode.InvalidMpls, $"Playlist file not found: {candidate}"));
-                    continue;
-                }
-
-                var mplsResult = await mplsImporter.ImportAsync(
-                    new ChapterImportRequest(mplsPath, ProgressReporter: request.ProgressReporter),
-                    cancellationToken);
-
-                diagnostics.AddRange(mplsResult.Diagnostics);
-                if (!mplsResult.Success)
-                {
-                    continue;
-                }
-
-                foreach (var group in mplsResult.Groups)
-                {
-                    foreach (var entry in group.Entries)
-                    {
-                        var info = entry.ChapterSet with
-                        {
-                            Title = discTitle.Length > 0 ? discTitle : entry.ChapterSet.Title
-                        };
-                        entries.Add(new ChapterImportEntry(
-                            entry.Id,
-                            entry.DisplayName,
-                            info,
-                            CanCombine: true,
-                            ReferencedMediaFiles: entry.ReferencedMediaFiles));
-                    }
-                }
-            }
-            catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
-            {
-                diagnostics.Add(Error(ChapterDiagnosticCode.InvalidMpls, $"Failed to parse {candidate}: {exception.Message}"));
-            }
+                Title = string.IsNullOrWhiteSpace(discTitle) ? candidate.Projection.ChapterSet.Title : discTitle
+            };
+            entries.Add(new ChapterImportEntry(
+                candidate.Name,
+                candidate.Name,
+                chapterSet,
+                CanCombine: true,
+                ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles));
         }
 
         if (entries.Count == 0)
         {
-            var errors = diagnostics
-                .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-                .ToArray();
-            return ChapterImportResult.Failed(
-                errors.Length == 0
-                    ? [Error(ChapterDiagnosticCode.NoChaptersFound, "No BDMV playlists with chapters were found.")]
-                    : errors);
+            var errors = diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
+            if (errors.Length == 0)
+            {
+                diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.NoChaptersFound, "No BDMV playlists with chapters were found."));
+            }
+
+            return new ChapterImportResult(false, [], diagnostics);
         }
 
-        return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
+        return new ChapterImportResult(true, [new ChapterImportSource(layout.OriginalInputPath, entries)], diagnostics);
     }
 
-    private static List<string> DiscoverPlaylistCandidates(string bdmvRoot, List<ChapterDiagnostic> diagnostics)
+    private static IndexFile? TryReadIndex(BdmvSourceLayout layout, List<ChapterDiagnostic> diagnostics)
     {
-        var indexPath = BdmvPathHelper.GetIndexPath(bdmvRoot);
-        if (indexPath != null && File.Exists(indexPath))
+        var index = IndexFile.TryRead(layout.PrimaryIndexPath, out var primaryError);
+        if (index != null)
         {
-            var index = IndexFile.TryRead(indexPath, out var indexError);
-            if (index != null)
-            {
-                diagnostics.Add(Info(
-                    ChapterDiagnosticCode.ParseInfo,
-                    $"Loaded index.bdmv v{index.VersionNumber}: " +
-                    $"video_format={index.AppInfoBDMV.VideoFormat}, " +
-                    $"frame_rate={index.AppInfoBDMV.FrameRate}, " +
-                    $"initial_output={index.AppInfoBDMV.InitialOutputModePreference}, " +
-                    $"titles={index.Indexes.Titles.Count}",
-                    arguments: IndexStructure(index)));
-
-                var movieTitles = index.Indexes.MovieTitles.ToList();
-                if (movieTitles.Count > 0)
-                {
-                    diagnostics.Add(Info(
-                        ChapterDiagnosticCode.ParseInfo,
-                        $"Found {movieTitles.Count} movie title(s) in index.bdmv."));
-
-                    var candidates = new List<string>();
-                    foreach (var title in movieTitles)
-                    {
-                        var playlistName = ExtractPlaylistFromTitle(title);
-                        if (playlistName != null)
-                        {
-                            diagnostics.Add(Info(
-                                ChapterDiagnosticCode.ParseInfo,
-                                $"Index title references playlist: {playlistName}"));
-                            candidates.Add(playlistName);
-                        }
-                    }
-
-                    if (candidates.Count > 0)
-                    {
-                        return candidates;
-                    }
-
-                    diagnostics.Add(Info(ChapterDiagnosticCode.ParseInfo,
-                        "No playlists could be resolved from index.bdmv titles; falling back to playlist scan."));
-                }
-                else
-                {
-                    diagnostics.Add(Info(ChapterDiagnosticCode.ParseInfo,
-                        "No movie titles found in index.bdmv; falling back to playlist scan."));
-                }
-            }
-            else
-            {
-                diagnostics.Add(Info(
-                    ChapterDiagnosticCode.ParseInfo,
-                    $"Failed to parse index.bdmv: {indexError}. Falling back to playlist scan."));
-            }
-        }
-        else
-        {
-            diagnostics.Add(Info(ChapterDiagnosticCode.ParseInfo,
-                "index.bdmv not found; falling back to playlist scan."));
+            diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
+                $"Loaded index.bdmv v{index.VersionNumber}: titles={index.Indexes.Titles.Count}.",
+                layout.PrimaryIndexPath,
+                Arguments: IndexStructure(index)));
+            return index;
         }
 
-        return ScanPlaylistFiles(bdmvRoot);
-    }
-
-    private static string? ExtractPlaylistFromTitle(IndexTitleEntry title)
-    {
-        try
+        var backup = IndexFile.TryRead(layout.BackupIndexPath, out var backupError);
+        if (backup != null)
         {
-            if (title.IsMovieObject && !string.IsNullOrWhiteSpace(title.ObjectData))
-            {
-                var data = title.ObjectData.Trim();
-                var match = MplsReferenceRegex().Match(data);
-                if (match.Success)
-                {
-                    return $"{match.Groups["Mpls"].Value}.mpls";
-                }
-            }
-        }
-        catch (Exception)
-        {
+            diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
+                $"Loaded backup index.bdmv v{backup.VersionNumber}; primary was unavailable: {primaryError}.", layout.BackupIndexPath));
+            return backup;
         }
 
+        var message = File.Exists(layout.PrimaryIndexPath)
+            ? $"Failed to parse index.bdmv: {primaryError}. Falling back to playlist scan. Backup: {backupError}."
+            : $"index.bdmv not found; falling back to playlist scan. Backup: {backupError}.";
+        diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource, message));
         return null;
     }
+
+    private static void ResolveNavigation(
+        IndexFile index,
+        BdmvSourceLayout layout,
+        Dictionary<string, List<string>> evidence,
+        List<string> evidenceOrder,
+        List<ChapterDiagnostic> diagnostics)
+    {
+        var titleObjects = index.Indexes.MovieAndBdJTitles
+            .Select(static title => title.ObjectReference)
+            .OfType<IndexHdmvObjectReference>()
+            .Select(static reference => reference.ObjectId)
+            .ToList();
+        var movieObject = MovieObjectFile.TryReadPrimaryOrBackup(
+            layout.PrimaryMovieObjectPath,
+            layout.BackupMovieObjectPath,
+            out var movieObjectPath,
+            out var movieObjectError);
+
+        foreach (var title in index.Indexes.MovieAndBdJTitles)
+        {
+            if (title.ObjectReference is IndexHdmvObjectReference hdmv)
+            {
+                if (movieObject == null)
+                {
+                    diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.MovieObjectParseFailed,
+                        $"MovieObject navigation was unavailable for object {hdmv.ObjectId}: {movieObjectError}."));
+                    continue;
+                }
+
+                var titleNumber = index.Indexes.MovieAndBdJTitles.ToList().IndexOf(title) + 1;
+                var result = new HdmvNavigationResolver().Resolve(movieObject, hdmv.ObjectId, titleObjects, titleNumber: titleNumber);
+                diagnostics.AddRange(result.Diagnostics);
+                diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
+                    $"Resolved HDMV object {hdmv.ObjectId} from {(movieObjectPath == layout.BackupMovieObjectPath ? "backup" : "primary")} MovieObject."));
+                foreach (var playback in result.Events)
+                {
+                    AddEvidence(evidence, evidenceOrder, $"{playback.PlaylistId:D5}.mpls", $"HDMV:{hdmv.ObjectId}:{playback.InstructionType}");
+                    diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
+                        $"Index title references playlist through HDMV navigation: {playback.PlaylistId:D5}.mpls."));
+                }
+            }
+            else if (title.ObjectReference is IndexBdJObjectReference bdj)
+            {
+                ResolveBdjo(bdj, layout, evidence, evidenceOrder, diagnostics);
+            }
+        }
+    }
+
+    private static void ResolveBdjo(
+        IndexBdJObjectReference reference,
+        BdmvSourceLayout layout,
+        Dictionary<string, List<string>> evidence,
+        List<string> evidenceOrder,
+        List<ChapterDiagnostic> diagnostics)
+    {
+        var name = reference.Name;
+        var primaryPath = Path.Combine(layout.PrimaryBdjoDirectory, $"{name}.bdjo");
+        var backupPath = Path.Combine(layout.BackupBdjoDirectory, $"{name}.bdjo");
+        var bdjo = BdjoFile.TryRead(primaryPath, out var primaryError);
+        var selectedPath = primaryPath;
+        if (bdjo == null)
+        {
+            bdjo = BdjoFile.TryRead(backupPath, out var backupError);
+            selectedPath = backupPath;
+            if (bdjo == null)
+            {
+                diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.UnsupportedDynamicBdJNavigation,
+                    $"BD-J object {name} could not be parsed. Primary: {primaryError}; Backup: {backupError}."));
+                return;
+            }
+        }
+
+        diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
+            $"Loaded {(selectedPath == backupPath ? "backup" : "primary")} BDJO {name}.", selectedPath));
+        foreach (var playlist in bdjo.AccessiblePlaylists.Names)
+        {
+            AddEvidence(evidence, evidenceOrder, $"{playlist}.mpls", bdjo.AccessiblePlaylists.AutostartFirstPlaylist && playlist == bdjo.AccessiblePlaylists.Names[0]
+                ? $"BDJO-autostart:{name}"
+                : $"BDJO-accessible:{name}");
+        }
+
+        if (bdjo.AccessiblePlaylists.AccessToAll || bdjo.AccessiblePlaylists.Names.Count == 0)
+        {
+            diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.UnsupportedDynamicBdJNavigation,
+                $"BD-J object {name} may select playlists dynamically. JAR and Xlet execution is not supported; bounded playlist scan is used as fallback.", selectedPath));
+        }
+    }
+
+    private static void AddEvidence(Dictionary<string, List<string>> evidence, List<string> evidenceOrder, string name, string source)
+    {
+        if (!evidence.TryGetValue(name, out var values))
+        {
+            evidence[name] = values = [];
+            evidenceOrder.Add(name);
+        }
+
+        if (!values.Contains(source, StringComparer.Ordinal)) values.Add(source);
+    }
+
+    private static int FirstEvidenceOrder(string name, IReadOnlyList<string> evidenceOrder) =>
+        evidenceOrder.Count == 0 ? 1 : evidenceOrder[0].Equals(name, StringComparison.OrdinalIgnoreCase) ? 0 : 1;
+
+    private static int EvidencePriority(IReadOnlyList<string> evidence) =>
+        evidence.Any(static item => item.StartsWith("HDMV:", StringComparison.Ordinal)) ? 0 :
+        evidence.Any(static item => item.StartsWith("BDJO-", StringComparison.Ordinal)) ? 1 : 2;
 
     private static IReadOnlyDictionary<string, object?> IndexStructure(IndexFile index) =>
         new Dictionary<string, object?>(StringComparer.Ordinal)
@@ -214,74 +258,29 @@ public sealed partial class NativeBdmvImporter : IChapterImporter
                 ["typeIndicator"] = index.TypeIndicator,
                 ["version"] = index.VersionNumber
             },
-            ["appInfo"] = new Dictionary<string, object?>(StringComparer.Ordinal)
-            {
-                ["length"] = index.AppInfoBDMV.Length,
-                ["initialOutputModePreference"] = index.AppInfoBDMV.InitialOutputModePreference,
-                ["ssContentExistFlag"] = index.AppInfoBDMV.SSContentExistFlag,
-                ["initialDynamicRangeType"] = index.AppInfoBDMV.InitialDynamicRangeType,
-                ["videoFormat"] = index.AppInfoBDMV.VideoFormat,
-                ["frameRate"] = index.AppInfoBDMV.FrameRate,
-                ["userData"] = index.AppInfoBDMV.UserData.TrimEnd('\0')
-            },
             ["indexes"] = new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["length"] = index.Indexes.Length,
-                ["firstPlaybackTitle"] = TitleStructure(index.Indexes.FirstPlaybackTitle),
-                ["topMenuTitle"] = TitleStructure(index.Indexes.TopMenuTitle),
                 ["titleCount"] = index.Indexes.Titles.Count,
-                ["titles"] = index.Indexes.Titles.Select(TitleStructure).ToList()
+                ["titles"] = index.Indexes.Titles.Select(static title => new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["objectType"] = title.ObjectType,
+                    ["playbackType"] = title.PlaybackType,
+                    ["objectData"] = title.ObjectData
+                }).ToList()
             }
         };
 
-    private static IReadOnlyDictionary<string, object?> TitleStructure(IndexTitleEntry title) =>
-        new Dictionary<string, object?>(StringComparer.Ordinal)
-        {
-            ["objectType"] = title.ObjectType,
-            ["accessType"] = title.AccessType,
-            ["playbackType"] = title.PlaybackType,
-            ["objectData"] = title.ObjectData
-        };
-
-    private static List<string> ScanPlaylistFiles(string bdmvRoot)
+    private static string ReadDiscTitle(string metadataDirectory)
     {
-        var playlistDir = Path.Combine(bdmvRoot, "BDMV", "PLAYLIST");
-        if (!Directory.Exists(playlistDir))
-        {
-            return [];
-        }
-
         try
         {
-            return Directory.EnumerateFiles(playlistDir, "*.mpls")
-                .Select(Path.GetFileName)
-                .Where(static name => name != null)
-                .OrderBy(static name => name)
-                .ToList()!;
-        }
-        catch (IOException)
-        {
-            return [];
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
-
-    private static string ReadDiscTitle(string bdmvRoot)
-    {
-        var metaPath = BdmvPathHelper.GetMetaXmlPath(bdmvRoot);
-        if (metaPath == null)
-        {
-            return string.Empty;
-        }
-
-        try
-        {
-            var text = File.ReadAllText(metaPath);
-            var match = DiscTitleRegex().Match(text);
-            return match.Success ? match.Groups["Title"].Value.Trim() : string.Empty;
+            var file = Directory.Exists(metadataDirectory)
+                ? Directory.EnumerateFiles(metadataDirectory, "*.xml", SearchOption.TopDirectoryOnly).OrderBy(static path => path, StringComparer.OrdinalIgnoreCase).FirstOrDefault()
+                : null;
+            if (file == null) return string.Empty;
+            var document = XDocument.Load(file, LoadOptions.None);
+            return document.Descendants().FirstOrDefault(static element => element.Name.LocalName == "name")?.Value.Trim() ?? string.Empty;
         }
         catch (Exception)
         {
@@ -293,25 +292,8 @@ public sealed partial class NativeBdmvImporter : IChapterImporter
         IChapterImportProgressReporter? progress,
         ChapterImportProgressPhase phase,
         double fraction,
-        string? sourceName = null,
+        string? sourceName,
         int? current = null,
         int? total = null) =>
         progress?.Report(new ChapterImportProgress(phase, fraction, sourceName, current, total));
-
-    private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
-        new(DiagnosticSeverity.Error, code, message);
-
-    private static ChapterDiagnostic Info(
-        ChapterDiagnosticCode code,
-        string message,
-        string? location = null,
-        string? details = null,
-        IReadOnlyDictionary<string, object?>? arguments = null) =>
-        new(DiagnosticSeverity.Info, code, message, location, details, arguments);
-
-    [GeneratedRegex(@"^(?<Mpls>\d{5})(?:\.mpls)?$", RegexOptions.IgnoreCase)]
-    private static partial Regex MplsReferenceRegex();
-
-    [GeneratedRegex(@"<di:name>\s*(?<Title>.*?)\s*</di:name>", RegexOptions.IgnoreCase | RegexOptions.Singleline)]
-    private static partial Regex DiscTitleRegex();
 }

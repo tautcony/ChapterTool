@@ -1,11 +1,23 @@
 ## Context
 
+## Alignment Revision
+
+This revision is authoritative when later text conflicts with it.
+
+The native importer must parse `MovieObject.bdmv`. It must execute a bounded subset of HDMV navigation instructions that can produce playlist events. The native importer must also parse BDJO accessible-playlist declarations.
+
+The importer must not execute BD-J JAR files or Xlets. It must diagnose dynamic BD-J playlist selection and use bounded playlist-scan evidence.
+
+`index.bdmv` does not map an HDMV title directly to an MPLS file. It maps an HDMV title to a MovieObject identifier. The MovieObject program can select a playlist through immediate or register operands.
+
+The authoritative implementation plan is `eac3to-alignment-plan.md`. That plan defines parser limits, resolver behavior, libbluray references, eac3to manifests, tests, and acceptance criteria.
+
 当前 ChapterTool 的 BD-ROM 解析能力仅限于 MPLS 文件。完整的 BD-ROM 应用格式包含三种核心文件类型：
 
 ```
 BDMV/
-├── index.bdmv          ← 索引表：Title → PlayList 映射
-├── MovieObject.bdmv    ← HDMV 导航对象（暂不实现）
+├── index.bdmv          ← Title table with HDMV or BD-J object references
+├── MovieObject.bdmv    ← HDMV navigation objects (required)
 ├── PLAYLIST/
 │   └── *.mpls          ← 已实现
 ├── CLIPINF/
@@ -16,22 +28,24 @@ BDMV/
     └── *.xml           ← 光盘元数据（已支持读取标题）
 ```
 
-本次设计补齐 CLPI 和 INDEX.BDMV 的二进制解析，并在 Infrastructure 层构建无需 eac3to 的原生 BDMV 目录导入路径。
+This design adds CLPI, INDEX, MovieObject, and BDJO parsing. It adds a native BDMV import path that does not require eac3to.
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Core 层实现 CLPI 文件（`.clpi`）的完整二进制解析，包含 ClipInfo、SequenceInfo、ProgramInfo、CPI、StreamCodingInfo
 - Core 层实现 INDEX.BDMV 文件（`index.bdmv`）的完整二进制解析，包含 AppInfoBDMV、Indexes、TitleEntry
+- Core must parse `MovieObject.bdmv` and resolve bounded HDMV navigation.
+- Core must parse BDJO accessible-playlist declarations.
 - CLPI 数据作为 MPLS 章节导入的**可选增强**——提供时用于 STC、入口包和流元数据，缺失时不中断解析
-- Infrastructure 层实现原生 BDMV 目录导入器，自动发现 `index.bdmv` → 主影片 PlayList → 对应 CLPI → 章节数据
+- Infrastructure must merge HDMV events, BDJO declarations, and playlist-scan evidence.
 - 原生 BDMV 导入器与现有 eac3to 路径并存，通过 import request 区分或 fallback
 
 **Non-Goals:**
-- 不实现 MovieObject.bdmv / NavigationCommand 解析（导航命令层，非章节核心需求）
+- The change will not implement HDMV menu rendering or interactive graphics.
 - 不实现 M2TS 传输流解析
 - 不替换或移除现有 eac3to 路径
-- 不实现 BD-J 对象解析（`*.bdjo` 文件）
+- The change will not execute BD-J JAR files or Xlets.
 - 不解析 ClipMark（CLPI 内的标记段，极少用于章节）
 
 ## Decisions
@@ -121,7 +135,7 @@ private static ulong ResolveStcAwarePts(
 
 ### 3. INDEX.BDMV 解析器返回 Title 列表，由上层决定使用哪个
 
-**Rationale:** INDEX.BDMV 不包含章节数据，只提供 Title → PlayList/Object 的映射关系。解析结果作为元数据供上层消费。
+**Rationale:** INDEX.BDMV does not contain chapter data. An HDMV title references a MovieObject identifier. A BD-J title references a BDJO name. The parser must preserve these references as different typed values.
 
 ```csharp
 // IndexFile.Read() 返回可用的 Title 列表和全局元数据
@@ -141,12 +155,12 @@ public sealed record IndexTitleEntry(
     byte ObjectType,       // 1=MovieObject, 2=BD-J Object
     byte AccessType,       // Movie / Interactive
     ushort PlaybackType,   // 0=Movie, 1=Interactive, 2=BD-J Movie, 3=BD-J Interactive
-    string ObjectData);    // RefToMovieObjectID or RefToBDJObjectID
+    IndexObjectReference ObjectReference);
 ```
 
 ### 4. 原生 BDMV 导入器放在 Infrastructure 层
 
-**Rationale:** BDMV 目录导入需要文件系统访问（发现 `index.bdmv`、扫描 `PLAYLIST/*.mpls`），属于 Infrastructure 层职责。CLPI 的自动发现已在 `MplsChapterImporter` 内部实现，BDMV 导入器无需重复该逻辑——只需对每个 PlayList 调用 MPLS 导入器即可。
+**Rationale:** BDMV import requires file-system discovery. Infrastructure owns source-layout normalization, navigation-file selection, playlist scanning, and evidence merging. Core owns binary parsing, bounded navigation resolution, and aggregate MPLS projection.
 
 **导入流程：**
 
@@ -155,19 +169,22 @@ NativeBdmvImporter.ImportAsync(bdmvRootPath)
 │
 ├── 1. 验证 BDMV 目录结构（BDMV/PLAYLIST 存在）
 │
-├── 2. 解析 index.bdmv（best-effort）
-│   ├── 成功 → 提取 Movie 类型 Title → 对应的 PlayList 文件名列表
-│   └── 失败 → 降级为扫描 PLAYLIST/*.mpls 全部文件（含 warning diagnostic）
+├── 2. Parse index.bdmv.
+│   ├── HDMV reference → execute the referenced MovieObject with limits.
+│   ├── BD-J reference → parse the referenced BDJO playlist declaration.
+│   └── Missing navigation data → retain a diagnostic and scan MPLS files.
 │
-├── 3. 对每个候选 PlayList：
-│   ├── 构建 MPLS 路径: "{bdmvRoot}/BDMV/PLAYLIST/{playlistName}.mpls"
-│   ├── 调用 MplsChapterImporter.ImportAsync()
-│   │   └── 内部自动发现 CLPI（无需 NativeBdmvImporter 介入）
-│   └── 聚合每个 PlayList 的 ChapterImportEntry
+├── 3. Merge navigation events with bounded playlist-scan evidence.
 │
-├── 4. 读取 META/DL/*.xml 获取光盘标题（best-effort）
+├── 4. Project each candidate as one aggregate MPLS playlist.
+│   ├── Keep complete-playlist chapter marks and duration.
+│   ├── Keep ordered and distinct clip references.
+│   └── Omit no-chapter candidates from ChapterImportEntry output.
 │
-└── 5. 返回 ChapterImportResult（含 diagnostic 汇总）
+├── 5. Read META/DL/*.xml for the disc title when available.
+│
+└── 6. Return ChapterImportResult and discovery diagnostics.
+```
 
 ### 5. BDMV 路由与 CLPI 发现策略
 
@@ -179,9 +196,9 @@ NativeBdmvImporter.ImportAsync(bdmvRootPath)
 │ RuntimeChapterImporterRegistry.Resolve("/disc/")    │
 │   → 检测到 BDMV/PLAYLIST 子目录                     │
 │   → 路由到 NativeBdmvImporter                       │
-│     → 解析 index.bdmv → 发现候选 PlayList           │
-│     → 对每个 .mpls 调用 MplsChapterImporter         │
-│       → 内部自动发现 CLPI（路径推导）                │
+│     → resolve MovieObject or BDJO navigation         │
+│     → merge bounded playlist-scan evidence           │
+│     → build one aggregate entry per playlist         │
 └─────────────────────────────────────────────────────┘
 
 路径 B: 用户直接加载单个 .mpls（如 /disc/BDMV/PLAYLIST/00001.mpls）
@@ -201,7 +218,9 @@ NativeBdmvImporter.ImportAsync(bdmvRootPath)
 | 风险 | 缓解措施 |
 |------|---------|
 | CLPI EPMap PTS 拼接逻辑复杂（coarse + fine bits） | 使用 BoundedStream + 位操作，参考 BluRay 库已验证的算法 |
-| INDEX.BDMV 的 Title 结构无法区分 HDMV Object 还是 BD-J Object 引用的 PlayList | 仅对 `ObjectType=1`（HDMV）的项进一步解析 MovieObject；BD-J 暂不处理 |
+| An INDEX entry does not name an MPLS file | Preserve a typed HDMV or BD-J reference. Resolve it through MovieObject or BDJO data. |
+| An HDMV program can loop or branch by player state | Apply instruction, state, transition, event, profile, and call-depth limits. |
+| A BD-J Xlet can select a playlist dynamically | Do not execute the Xlet. Emit a diagnostic and use bounded scan evidence. |
 | 原生解析的章节时间可能与 eac3to 有微小差异 | 使用与 eac3to 相同的 PTS/45000 转换，差异应在亚毫秒级 |
 | 大型 CLPI 的 EPMap 可能包含大量 Entry Point | 用 `MplsBoundedStream` 约束读取边界，限制最大条目数 |
 | 原生 BDMV 路径章节名称不如 eac3to 导出的丰富 | 章节命名回退到 `Chapter 01` 等默认名称，保持可用性 |

@@ -1,7 +1,10 @@
 root = true
 
+[*.{cs,md,axaml,json,xml,yml,yaml,props,targets,sln,slnx,sh}]
+end_of_line = lf
+
 [*.cs]
-charset = utf-8-bom
+charset = utf-8
 indent_style = space
 indent_size = 4
 insert_final_newline = true
