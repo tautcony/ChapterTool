@@ -393,7 +393,7 @@ public sealed class WasmWorkspaceTests
         using var stream = new MemoryStream();
         stream.Write("fLaC"u8);
         var comment = System.Text.Encoding.UTF8.GetBytes("cuesheet=" + cue);
-        var vendor = System.Text.Encoding.UTF8.GetBytes("ChapterTool");
+        var vendor = "ChapterTool"u8.ToArray();
         using var body = new MemoryStream();
         WriteLe32(body, vendor.Length);
         body.Write(vendor);

@@ -188,9 +188,9 @@ internal sealed class HdmvNavigationResolver
         foreach (var command in file.Objects.SelectMany(static item => item.Commands))
         {
             var instruction = command.Instruction;
-            if (instruction.OperandCount > 0 && !instruction.Operand1Immediate && (command.DestinationOperand & PsrFlag) != 0)
+            if (instruction is { OperandCount: > 0, Operand1Immediate: false } && (command.DestinationOperand & PsrFlag) != 0)
                 result.Add((int)(command.DestinationOperand & 0x7f));
-            if (instruction.OperandCount > 1 && !instruction.Operand2Immediate && (command.SourceOperand & PsrFlag) != 0)
+            if (instruction is { OperandCount: > 1, Operand2Immediate: false } && (command.SourceOperand & PsrFlag) != 0)
                 result.Add((int)(command.SourceOperand & 0x7f));
         }
 

@@ -55,7 +55,6 @@ public sealed partial class ExpressionEditor : UserControl
     private bool shouldShowCompletion;
     private bool isPointerOverDiagnosticPopup;
     private bool isMultilineExpanded;
-    private double effectiveEditorHeight = CompactEditorHeight;
     private ExpressionAuthoringDiagnostic? primaryDiagnostic;
 
     public ExpressionEditor()
@@ -126,10 +125,8 @@ public sealed partial class ExpressionEditor : UserControl
 
     // Design-time / direct-test construction only. Production XAML binds AuthoringService
     // from the composition root; OnPropertyChanged re-analyzes when the binding arrives.
-    private IExpressionAuthoringService? fallbackAuthoringService;
-
     private IExpressionAuthoringService EffectiveAuthoringService =>
-        AuthoringService ?? (fallbackAuthoringService ??= new ExpressionAuthoringService());
+        AuthoringService ?? (field ??= new ExpressionAuthoringService());
 
     public double EditorHeight
     {
@@ -157,7 +154,7 @@ public sealed partial class ExpressionEditor : UserControl
 
     public bool IsDiagnosticOpen => DiagnosticPopup.IsOpen;
 
-    public double ActualEditorHeightForTesting => effectiveEditorHeight;
+    public double ActualEditorHeightForTesting { get; private set; } = CompactEditorHeight;
 
     public double CompletionVerticalOffsetForTesting => CompletionPopup.VerticalOffset;
 
@@ -298,7 +295,7 @@ public sealed partial class ExpressionEditor : UserControl
         var canExpand = IsMultilineExpandable && HasMultipleLines(editor.Text);
         var nextValue = value && canExpand;
         var changed = isMultilineExpanded != nextValue;
-        var previousHeight = effectiveEditorHeight;
+        var previousHeight = ActualEditorHeightForTesting;
         isMultilineExpanded = nextValue;
 
         MultilineToggleButton.IsVisible = canExpand;
@@ -310,7 +307,7 @@ public sealed partial class ExpressionEditor : UserControl
             ? isMultilineExpanded ? ExpandedEditorHeight : CompactEditorHeight
             : requestedHeight;
 
-        effectiveEditorHeight = effectiveHeight;
+        ActualEditorHeightForTesting = effectiveHeight;
         RootGrid.Height = effectiveHeight;
         editor.VerticalScrollBarVisibility = isMultilineExpanded || requestedHeight > CompactEditorHeight
             ? ScrollBarVisibility.Auto

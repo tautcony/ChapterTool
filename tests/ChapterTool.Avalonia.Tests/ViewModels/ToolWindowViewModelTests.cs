@@ -5,7 +5,6 @@ using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Contracts.Configuration;
-using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;

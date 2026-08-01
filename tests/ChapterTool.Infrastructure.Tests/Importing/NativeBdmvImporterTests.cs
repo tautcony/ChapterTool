@@ -1,6 +1,5 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
-using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Importing.Bdmv;
 using System.Diagnostics;
 using System.Text.Json;
@@ -157,7 +156,7 @@ public sealed class NativeBdmvImporterTests
                 PropertyNameCaseInsensitive = true
             });
             Assert.NotNull(manifest);
-            var expected = manifest!.Titles.Where(static title => title.ChapterCount > 0).ToArray();
+            var expected = manifest.Titles.Where(static title => title.ChapterCount > 0).ToArray();
             var result = await importer.ImportAsync(new ChapterImportRequest(root), CancellationToken.None);
             Assert.True(result.Success, fixture);
             var actual = result.Groups.SelectMany(static group => group.Entries).ToArray();
@@ -196,8 +195,8 @@ public sealed class NativeBdmvImporterTests
         var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
         Assert.True(result.Success);
         var entries = result.Groups.SelectMany(static group => group.Entries).ToArray();
-        Assert.Equal(new[] { "00000.mpls", "00001.mpls", "00002.mpls" }, entries.Select(static entry => entry.Id));
-        Assert.Equal(new[] { 14, 6, 2 }, entries.Select(static entry => entry.ChapterSet.Chapters.Count));
+        Assert.Equal(["00000.mpls", "00001.mpls", "00002.mpls"], entries.Select(static entry => entry.Id));
+        Assert.Equal([14, 6, 2], entries.Select(static entry => entry.ChapterSet.Chapters.Count));
         Assert.DoesNotContain(entries, static entry => entry.Id == "00005.mpls");
 
         var expectedTimes = new[]

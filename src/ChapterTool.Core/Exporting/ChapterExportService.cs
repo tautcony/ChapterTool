@@ -61,7 +61,7 @@ public sealed partial class ChapterExportService
 
         return result with
         {
-            Diagnostics = result.Diagnostics.Concat(projection.Diagnostics).ToList()
+            Diagnostics = [.. result.Diagnostics, .. projection.Diagnostics]
         };
     }
 

@@ -5,19 +5,16 @@ namespace ChapterTool.Avalonia.UI.PlatformPorts;
 
 public sealed class EmbeddedToolPresenter : IEmbeddedToolPresenter
 {
-    private Control? content;
-    private ToolId? toolId;
+    public Control? Content { get; private set; }
 
-    public Control? Content => content;
-
-    public ToolId? ToolId => toolId;
+    public ToolId? ToolId { get; private set; }
 
     public event EventHandler? ContentChanged;
 
     public void SetContent(ToolId? toolId, Control? content)
     {
-        this.toolId = toolId;
-        this.content = content;
+        this.ToolId = toolId;
+        this.Content = content;
         ContentChanged?.Invoke(this, EventArgs.Empty);
     }
 }

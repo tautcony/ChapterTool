@@ -478,10 +478,8 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     private readonly SynchronizationContext? synchronizationContext;
     private readonly List<LogEntryViewModel> entryViewModels = [];
     private IReadOnlyList<LogEntryViewModel> filteredEntries = [];
-    private IReadOnlyList<LogFilterOption> filterOptions = [];
-    private LogEntryViewModel? selectedEntry;
-    private LogFilterOption selectedFilter = null!;
-    private string searchText = string.Empty;
+    private IReadOnlyList<LogFilterOption> filterOptions;
+    private LogFilterOption selectedFilter;
     private bool disposed;
 
     public LogToolViewModel(
@@ -538,17 +536,17 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public string SearchText
     {
-        get => searchText;
+        get;
         set
         {
-            if (!SetProperty(ref searchText, value))
+            if (!SetProperty(ref field, value))
             {
                 return;
             }
 
             RefreshFilteredEntries();
         }
-    }
+    } = string.Empty;
 
     public IReadOnlyList<LogEntryViewModel> FilteredEntries
     {
@@ -558,10 +556,10 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public LogEntryViewModel? SelectedEntry
     {
-        get => selectedEntry;
+        get;
         set
         {
-            if (!SetProperty(ref selectedEntry, value))
+            if (!SetProperty(ref field, value))
             {
                 return;
             }

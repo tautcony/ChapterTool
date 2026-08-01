@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Xml.Linq;
 using Avalonia.Threading;
-using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Exporting;

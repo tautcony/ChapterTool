@@ -133,7 +133,7 @@ public sealed class BdmvPathHelperTests
     [Fact]
     public void DiscoverClpiFilesReturnsEmptyForMissingRoot()
     {
-        var clpiMap = BdmvPathHelper.DiscoverClpiFiles("/nonexistent", new[] { "00000" });
+        var clpiMap = BdmvPathHelper.DiscoverClpiFiles("/nonexistent", ["00000"]);
         Assert.Empty(clpiMap);
     }
 

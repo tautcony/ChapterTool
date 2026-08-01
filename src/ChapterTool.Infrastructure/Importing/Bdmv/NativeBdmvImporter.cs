@@ -201,7 +201,7 @@ public sealed class NativeBdmvImporter : IChapterImporter
                     playlists.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
                     {
                         ["playlist"] = $"{playback.PlaylistId:D5}.mpls",
-                        ["instruction"] = playback.InstructionType.ToString()
+                        ["instruction"] = playback.InstructionType
                     });
                 }
 

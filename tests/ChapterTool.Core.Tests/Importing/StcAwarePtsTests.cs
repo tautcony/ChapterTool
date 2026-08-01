@@ -1,5 +1,4 @@
 using ChapterTool.Core.Importing.Disc;
-using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Tests.Importing;
 
@@ -29,6 +28,7 @@ public sealed class StcAwarePtsTests : IDisposable
         }
         catch
         {
+            // ignored
         }
     }
 
@@ -158,7 +158,7 @@ public sealed class StcAwarePtsTests : IDisposable
         const int stcSequenceContentSize = 24;
 
         var seqInfoAddr = checked((uint)(headerSize + 4 + clipInfoContentSize));
-        var progInfoAddr = seqInfoAddr + 4 + (uint)stcSequenceContentSize;
+        var progInfoAddr = seqInfoAddr + 4 + stcSequenceContentSize;
         var cpiAddr = progInfoAddr + 6;
 
         // Header
@@ -172,7 +172,7 @@ public sealed class StcAwarePtsTests : IDisposable
         builder.Reserved(12);
 
         // ClipInfo
-        builder.UInt32BE((uint)clipInfoContentSize);
+        builder.UInt32BE(clipInfoContentSize);
         builder.Reserved(2);
         builder.Byte(1);
         builder.Byte(1);
@@ -184,7 +184,7 @@ public sealed class StcAwarePtsTests : IDisposable
 
         // SequenceInfo
         builder.SeekTo((int)seqInfoAddr);
-        builder.UInt32BE((uint)stcSequenceContentSize);
+        builder.UInt32BE(stcSequenceContentSize);
         builder.Byte(0);
         builder.Byte(1);
         builder.UInt32BE(0);

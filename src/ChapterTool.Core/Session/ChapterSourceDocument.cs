@@ -1,9 +1,7 @@
 namespace ChapterTool.Core.Session;
 
 /// <summary>Identifies a chapter source independently of the host storage model.</summary>
-public abstract record ChapterSourceDocument(string DisplayName, string Identity)
-{
-}
+public abstract record ChapterSourceDocument(string DisplayName, string Identity);
 
 /// <summary>Chapter source backed by a desktop path.</summary>
 public sealed record LocalPathChapterSource(string Path, string? DisplayName = null)

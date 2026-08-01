@@ -49,7 +49,7 @@ public sealed class ClpiImporterTests
     [Fact]
     public void InvalidHeaderThrows()
     {
-        using var stream = new MemoryStream("BAD\x00"u8.ToArray());
+        using var stream = new MemoryStream([.. "BAD\x00"u8]);
         Assert.Throws<InvalidDataException>(() => ClpiFile.Read(stream));
     }
 
@@ -148,7 +148,7 @@ public sealed class ClpiImporterTests
         payload[0] = 0x20;
         payload[1] = 0x23;
         payload[2] = 0x20;
-        System.Text.Encoding.ASCII.GetBytes("ISRC-TEST-01").CopyTo(payload, 5);
+        "ISRC-TEST-01"u8.ToArray().CopyTo(payload, 5);
         using var stream = new MemoryStream([17, .. payload]);
 
         var codingInfo = ClpiStreamCodingInfo.Read(stream);
@@ -214,24 +214,21 @@ public sealed class ClpiImporterTests
     [Fact]
     public void ClpiPacketLookupUsesStcAndNearestPrecedingEntryPoint()
     {
-        var sequence = new ClpiSequenceInfo(0, new[]
-        {
-            new ClpiATCSequence(0, 1, 0, new[] { new ClpiSTCSequence(0x1011, 100, 0, 90_000) })
-        });
+        var sequence = new ClpiSequenceInfo(0, [
+            new ClpiATCSequence(0, 1, 0, [new ClpiSTCSequence(0x1011, 100, 0, 90_000)])
+        ]);
         var cpi = new ClpiCPI(
             0,
             1,
-            new[] { new ClpiEPStreamEntry(0x1011, 1, 1, 2, 0) },
-            new[]
-            {
+            [new ClpiEPStreamEntry(0x1011, 1, 1, 2, 0)],
+            [
                 new ClpiEPMap(
-                    new[] { new ClpiEPCoarseEntry(0, 0, 0) },
-                    new[]
-                    {
+                    [new ClpiEPCoarseEntry(0, 0, 0)],
+                    [
                         new ClpiEPFineEntry(0, 0, 100, 100),
-                        new ClpiEPFineEntry(0, 0, 200, 200),
-                    })
-            });
+                        new ClpiEPFineEntry(0, 0, 200, 200)
+                    ])
+            ]);
         var file = new ClpiFile(
             "HDMV",
             "0200",
@@ -272,13 +269,13 @@ public sealed class ClpiImporterTests
         using var builder = new ClpiBinaryBuilder();
         const int stcContent = 1 + 1 + 4 + 1 + 1 + 2 + 4 + 4 + 4;
         var seqInfoAddr = checked((uint)(HeaderSize + 4 + ClipContentSize));
-        var progInfoAddr = seqInfoAddr + 4 + (uint)stcContent;
+        var progInfoAddr = seqInfoAddr + 4 + stcContent;
 
         WriteHeader(builder, seqInfoAddr, progInfoAddr, progInfoAddr + 6);
         WriteClipInfo(builder, isCC5: false);
 
         builder.SeekTo((int)seqInfoAddr);
-        builder.UInt32BE((uint)stcContent);
+        builder.UInt32BE(stcContent);
         builder.Byte(0);
         builder.Byte(1);
         builder.UInt32BE(0);
@@ -312,13 +309,13 @@ public sealed class ClpiImporterTests
         using var builder = new ClpiBinaryBuilder();
         const int stcContent = 1 + 1 + 4 + 1 + 1 + 2 + 4 + 4 + 4 + 2 + 4 + 4 + 4;
         var seqInfoAddr = checked((uint)(HeaderSize + 4 + ClipContentSize));
-        var progInfoAddr = seqInfoAddr + 4 + (uint)stcContent;
+        var progInfoAddr = seqInfoAddr + 4 + stcContent;
 
         WriteHeader(builder, seqInfoAddr, progInfoAddr, progInfoAddr + 6);
         WriteClipInfo(builder, isCC5: false);
 
         builder.SeekTo((int)seqInfoAddr);
-        builder.UInt32BE((uint)stcContent);
+        builder.UInt32BE(stcContent);
         builder.Byte(0);
         builder.Byte(1);
         builder.UInt32BE(0);

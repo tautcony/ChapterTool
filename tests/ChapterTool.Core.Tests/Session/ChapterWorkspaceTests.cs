@@ -25,7 +25,7 @@ public sealed class ChapterWorkspaceTests
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
-        var source = new BufferedChapterSource("chapters.txt", "data"u8.ToArray());
+        var source = new BufferedChapterSource("chapters.txt", [.. "data"u8]);
 
         Assert.True(workspace.TryCommitLoad(revision, source, ClipSessionTransitions.FromLoad(SingleGroup("chapters.txt", "Loaded"))));
         Assert.Same(source, workspace.CurrentSource);

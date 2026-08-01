@@ -1,4 +1,6 @@
+using Autofac;
 using Avalonia.Controls;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
@@ -8,232 +10,172 @@ using ChapterTool.Avalonia.Views;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Editing;
-using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform;
-using ChapterTool.Core.Transform.Expressions;
-using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Importing.Runtime;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Processes;
 using ChapterTool.Infrastructure.Services;
-using ChapterTool.Infrastructure.Tools;
 using Microsoft.Extensions.Logging;
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
 
 namespace ChapterTool.Avalonia.Composition;
 
+/// <summary>Owns the desktop Autofac container and its application lifetime.</summary>
 public sealed class AppCompositionRoot : IDisposable
 {
-    private readonly string? startupPath;
+    private static long latestCompositionGeneration;
+    private readonly AppCompositionOptions options;
     private readonly string settingsDirectory;
-    private readonly ChapterTimeFormatter formatter = new();
-    private readonly IExpressionAuthoringService expressionAuthoringService;
-    private readonly ChapterExportService exportService;
-    private readonly IProcessRunner processRunner;
-    private readonly FrameRateService frameRateService = new();
-    private readonly ApplicationLogPanelProvider logService = new(capacity: 500, minimumLevel: LogLevel.Information);
-    private readonly AppLocalizationManager localizationManager = new();
-    private readonly AvaloniaLocalizationResourceAdapter localizationResourceAdapter;
-    private readonly AvaloniaFontFamilyCatalog fontFamilyCatalog = new();
-    private readonly AvaloniaFontApplicationService fontApplicationService;
-    private readonly AvaloniaThemeApplicationService themeApplicationService = new();
-    private readonly IToolCatalog toolCatalog;
-    private readonly ILoggerFactory loggerFactory;
-    private AvaloniaWindowService? windowService;
+    private readonly string? startupPath;
+    private readonly long compositionGeneration;
+    private bool mainWindowInitialized;
     private bool disposed;
 
-    public RuntimeCapabilities Capabilities { get; } = new(
-        RuntimeSourceMode.LocalPath,
-        RuntimeOutputMode.Directory,
-        RuntimeSecondarySurfaceMode.NativeWindow,
-        CanReadClipboard: true,
-        CanWriteClipboard: true,
-        CanConfigureExternalTools: true,
-        CanRunExternalProcesses: true,
-        CanOpenLocalPaths: true);
-
     public AppCompositionRoot(string? startupPath = null, string? settingsDirectory = null)
-        : this(startupPath, settingsDirectory, expressionAuthoringServiceOverride: null)
+        : this(new AppCompositionOptions
+        {
+            StartupPath = startupPath,
+            SettingsDirectory = settingsDirectory
+        })
     {
+    }
+
+    public AppCompositionRoot(AppCompositionOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        compositionGeneration = Interlocked.Increment(ref latestCompositionGeneration);
+        this.startupPath = options.StartupPath;
+        settingsDirectory = options.SettingsDirectory ?? ChapterToolRuntimeComposition.ResolveSettingsDirectory();
+        this.options = options with { SettingsDirectory = settingsDirectory };
+
+        var builder = new ContainerBuilder();
+        if (this.options.RegisterProductionModules)
+        {
+            builder.RegisterModule(new LoggingModule(settingsDirectory));
+            builder.RegisterModule(new InfrastructureModule(settingsDirectory));
+            builder.RegisterModule(new WorkspaceModule(this.options));
+            builder.RegisterModule(new AvaloniaPlatformModule(this.options));
+            builder.RegisterModule(new AuxiliaryToolsModule(settingsDirectory));
+            builder.RegisterModule(new ApplicationShellModule(this.options));
+        }
+        this.options.ConfigureOverrides?.Invoke(builder);
+
+        LifetimeScope = builder.Build();
+        if (this.options.RegisterProductionModules)
+        {
+            _ = LifetimeScope.Resolve<AvaloniaLocalizationResourceAdapter>();
+            LifetimeScope.Resolve<IThemeApplicationService>().Apply(ThemeSettings.Default);
+            LifetimeScope.Resolve<IFontApplicationService>().Apply(FontSettings.Default);
+            AppearanceSettingsInitialization = ApplyAppearanceSettingsAsync();
+        }
+        else
+        {
+            AppearanceSettingsInitialization = Task.CompletedTask;
+        }
     }
 
     internal AppCompositionRoot(
         string? startupPath,
         string? settingsDirectory,
         IExpressionAuthoringService? expressionAuthoringServiceOverride)
-    {
-        this.startupPath = startupPath;
-        var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
-        this.settingsDirectory = resolvedSettingsDirectory;
-        toolCatalog = StandardToolCatalogFactory.Create();
-        localizationResourceAdapter = new AvaloniaLocalizationResourceAdapter(localizationManager);
-        SettingsStore = new ChapterToolSettingsStore(resolvedSettingsDirectory);
-        expressionAuthoringService = expressionAuthoringServiceOverride ?? new ExpressionAuthoringService(ExpressionEngine);
-        exportService = new ChapterExportService(formatter, ExpressionEngine);
-        ExternalToolLocator = new ExternalToolLocator(SettingsStore, PathSearchDirectories().ToList());
-        processRunner = CreateProcessRunner();
-        fontApplicationService = new AvaloniaFontApplicationService(fontFamilyCatalog);
-        var serilogLogger = CreateSerilogLogger(resolvedSettingsDirectory);
-        loggerFactory = LoggerFactory.Create(builder =>
+        : this(new AppCompositionOptions
         {
-            builder.SetMinimumLevel(LogLevel.Debug);
-            builder.AddSerilog(serilogLogger, dispose: true);
-            builder.AddProvider(logService);
-        });
-
-        // Settings are loaded asynchronously from MainWindow.Opened. Blocking here can deadlock
-        // macOS single-file startup before Avalonia has shown the first window.
-        themeApplicationService.Apply(ThemeSettings.Default);
-        fontApplicationService.Apply(FontSettings.Default);
-        AppearanceSettingsInitialization = ApplyAppearanceSettingsAsync();
+            StartupPath = startupPath,
+            SettingsDirectory = settingsDirectory,
+            ExpressionAuthoringService = expressionAuthoringServiceOverride
+        })
+    {
     }
+
+    /// <summary>Gets the application lifetime scope owned by this root.</summary>
+    public ILifetimeScope LifetimeScope { get; }
+
+    public IRuntimeCapabilities Capabilities => LifetimeScope.Resolve<IRuntimeCapabilities>();
 
     internal Task AppearanceSettingsInitialization { get; }
 
+    internal ChapterToolSettingsStore SettingsStore => LifetimeScope.Resolve<ChapterToolSettingsStore>();
+
+    internal IExternalToolLocator ExternalToolLocator => LifetimeScope.Resolve<IExternalToolLocator>();
+
+    internal IChapterTimeFormatter Formatter => LifetimeScope.Resolve<IChapterTimeFormatter>();
+
+    /// <summary>Resolves the shell graph without showing a window or starting initialization.</summary>
+    public MainWindow ResolveMainWindow()
+    {
+        ObjectDisposedException.ThrowIf(disposed, this);
+        return LifetimeScope.Resolve<MainWindow>();
+    }
+
+    /// <summary>Resolves the shell and starts its normal asynchronous initialization.</summary>
     public MainWindow CreateMainWindow()
     {
-        var viewModel = CreateMainWindowViewModel();
-        var mainView = new MainView(
-            viewModel,
-            control => CreateFilePickerService(TopLevel.GetTopLevel(control) as Window
-                ?? throw new InvalidOperationException("The shared main view must be attached to a desktop window.")),
-            new NoContentEmbeddedToolPresenter());
-        var title = $"{localizationManager.GetString("App.Title")} v{typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
-        var mainWindow = new MainWindow(mainView, title);
-        _ = mainView.InitializeAsync(startupPath);
+        var mainWindow = ResolveMainWindow();
+        if (!mainWindowInitialized && mainWindow.Content is MainView mainView)
+        {
+            mainWindowInitialized = true;
+            _ = mainView.InitializeAsync(startupPath);
+        }
+
         return mainWindow;
     }
 
-    public MainWindowViewModel CreateMainWindowViewModel() => new(CreateHostComposition());
+    /// <summary>Validates the production root graph before user interaction.</summary>
+    public void ValidateProductionComposition()
+    {
+        _ = ResolveMainWindow();
+        _ = LifetimeScope.Resolve<MainWindowViewModel>();
+        _ = LifetimeScope.Resolve<IToolCatalog>();
+        _ = LifetimeScope.Resolve<IAuxiliaryToolHost>();
+        _ = LifetimeScope.Resolve<IChapterImporterRegistry>();
+    }
 
-    public AvaloniaHostComposition CreateHostComposition() => CreateHostDependencies().Compose();
+    public MainWindowViewModel CreateMainWindowViewModel() => LifetimeScope.Resolve<MainWindowViewModel>();
 
-    private AvaloniaHostDependencies CreateHostDependencies() =>
-        new(
-            new WorkspaceHostServices(
-                CreateChapterLoadService(),
-                CreateChapterSaveService(),
-                CreateChapterEditingService(),
-                CreateChapterSegmentService(),
-                formatter,
-                frameRateService,
-                ExpressionEngine,
-                CreateChapterExportService(),
-                expressionAuthoringService),
-            new HostEffectServices(
-                logService,
-                loggerFactory.CreateLogger<MainWindowViewModel>(),
-                CreateShellService()),
-            new SettingsAppearanceServices(
-                SettingsStore,
-                themeApplicationService,
-                fontFamilyCatalog,
-                fontApplicationService,
-                ExternalToolLocator,
-                settingsDirectory),
-            new LocalizationServices(localizationManager),
-            new RuntimeHostServices(Capabilities),
-            new AuxiliaryToolHostServices(CreateAuxiliaryToolHost(), new NoContentEmbeddedToolPresenter()));
+    public AvaloniaHostComposition CreateHostComposition() => LifetimeScope.Resolve<AvaloniaHostComposition>();
 
-    public IApplicationLogService CreateApplicationLogService() => logService;
+    public IApplicationLogService CreateApplicationLogService() => LifetimeScope.Resolve<IApplicationLogService>();
 
-    public ILogger<T> CreateLogger<T>() => loggerFactory.CreateLogger<T>();
+    public ILogger<T> CreateLogger<T>() => LifetimeScope.Resolve<ILoggerFactory>().CreateLogger<T>();
 
-    public IChapterLoadService CreateChapterLoadService() => new RuntimeChapterLoadService(CreateChapterImporterRegistry());
+    public IChapterLoadService CreateChapterLoadService() => LifetimeScope.Resolve<IChapterLoadService>();
 
-    public IChapterImporterRegistry CreateChapterImporterRegistry() =>
-        ChapterToolRuntimeComposition.CreateImporterRegistry(
-            SettingsStore,
-            formatter,
-            ExternalToolLocator,
-            processRunner,
-            new FfprobeMediaChapterReader(ExternalToolLocator, processRunner),
-            new AtlMp4ChapterReader());
+    public IChapterImporterRegistry CreateChapterImporterRegistry() => LifetimeScope.Resolve<IChapterImporterRegistry>();
 
-    public FfprobeMediaChapterReader CreateMediaChapterReader() =>
-        new(ExternalToolLocator, processRunner);
+    public FfprobeMediaChapterReader CreateMediaChapterReader() => LifetimeScope.Resolve<FfprobeMediaChapterReader>();
 
-    public ChapterExportService CreateChapterExportService() => exportService;
+    public Core.Exporting.ChapterExportService CreateChapterExportService() =>
+        LifetimeScope.Resolve<Core.Exporting.ChapterExportService>();
 
-    public IChapterSaveService CreateChapterSaveService() =>
-        new RuntimeChapterSaveService(CreateChapterExportService());
+    public IChapterSaveService CreateChapterSaveService() => LifetimeScope.Resolve<IChapterSaveService>();
 
-    public IChapterEditingService CreateChapterEditingService() => new ChapterEditingService(formatter);
+    public IChapterEditingService CreateChapterEditingService() => LifetimeScope.Resolve<IChapterEditingService>();
 
     public static ChapterSegmentService CreateChapterSegmentService() => new();
 
-    public AvaloniaWindowService CreateWindowService() =>
-        windowService ??= new AvaloniaWindowService(
-            localizationManager,
-            SettingsStore,
-            themeApplicationService,
-            owner => new AvaloniaSettingsPickerService(owner, localizationManager),
-            ExternalToolLocator,
-            new AvaloniaSettingsCloseConfirmationService(localizationManager),
-            shellService: CreateShellService(),
-            fontFamilyCatalog: fontFamilyCatalog,
-            fontApplicationService: fontApplicationService,
-            settingsDirectory: settingsDirectory,
-            expressionAuthoringService: expressionAuthoringService,
-            clipboardServiceFactory: owner => new AvaloniaClipboardService(owner),
-            toolCatalog: toolCatalog);
+    public AvaloniaWindowService CreateWindowService() => LifetimeScope.Resolve<AvaloniaWindowService>();
 
-    public IAuxiliaryToolHost CreateAuxiliaryToolHost() =>
-        windowService ?? (AvaloniaWindowService)CreateWindowService();
+    public IAuxiliaryToolHost CreateAuxiliaryToolHost() => LifetimeScope.Resolve<IAuxiliaryToolHost>();
 
-    public IToolCatalog CreateToolCatalog() => toolCatalog;
+    public IToolCatalog CreateToolCatalog() => LifetimeScope.Resolve<IToolCatalog>();
 
-    public IAppLocalizer CreateLocalizer() => localizationManager;
+    public IAppLocalizer CreateLocalizer() => LifetimeScope.Resolve<IAppLocalizer>();
 
-    public IExpressionAuthoringService CreateExpressionAuthoringService() => expressionAuthoringService;
+    public IExpressionAuthoringService CreateExpressionAuthoringService() =>
+        LifetimeScope.Resolve<IExpressionAuthoringService>();
 
-    internal IChapterTimeFormatter Formatter => formatter;
+    public IFilePickerService CreateFilePickerService(Window owner) =>
+        LifetimeScope.Resolve<Func<Window, IFilePickerService>>()(owner);
 
-    private IChapterExpressionEngine ExpressionEngine { get; } = new LuaExpressionScriptService();
-
-    internal ChapterToolSettingsStore SettingsStore { get; }
-
-    internal IExternalToolLocator ExternalToolLocator { get; }
-
-    public static IShellService CreateShellService() => new ShellService();
-
-    public IFilePickerService CreateFilePickerService(Window owner) => new AvaloniaFilePickerService(owner, localizationManager);
-
-    public IExternalToolLocator CreateExternalToolLocator() => ExternalToolLocator;
+    public IExternalToolLocator CreateExternalToolLocator() => LifetimeScope.Resolve<IExternalToolLocator>();
 
     public static IProcessRunner CreateProcessRunner() => new ProcessRunner();
 
     public static INativeDependencyService CreateNativeDependencyService() =>
         new FileSystemNativeDependencyService(PathSearchDirectories().Prepend(AppContext.BaseDirectory).ToList());
 
-    private async Task ApplyAppearanceSettingsAsync()
-    {
-        try
-        {
-            var settings = await SettingsStore.LoadAsync(CancellationToken.None);
-            themeApplicationService.Apply(settings.Theme);
-            fontApplicationService.Apply(settings.Font);
-        }
-        catch (IOException)
-        {
-            themeApplicationService.Apply(ThemeSettings.Default);
-            fontApplicationService.Apply(FontSettings.Default);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            themeApplicationService.Apply(ThemeSettings.Default);
-            fontApplicationService.Apply(FontSettings.Default);
-        }
-        catch (CorruptSettingsFileException)
-        {
-            themeApplicationService.Apply(ThemeSettings.Default);
-            fontApplicationService.Apply(FontSettings.Default);
-        }
-    }
+    internal static IEnumerable<string> PathSearchDirectoriesForTests() => ChapterToolRuntimeComposition.PathSearchDirectories();
 
     public void Dispose()
     {
@@ -243,37 +185,44 @@ public sealed class AppCompositionRoot : IDisposable
         }
 
         disposed = true;
-        windowService?.Dispose();
-        localizationResourceAdapter.Dispose();
-        loggerFactory.Dispose();
+        LifetimeScope.Dispose();
     }
 
-    private static Logger CreateSerilogLogger(string settingsDirectory)
+    private async Task ApplyAppearanceSettingsAsync()
     {
-        var logDirectory = Path.Combine(settingsDirectory, "logs");
-        Directory.CreateDirectory(logDirectory);
-        return new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-            .Enrich.FromLogContext()
-            .WriteTo.File(
-                Path.Combine(logDirectory, "chaptertool-.log"),
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
-                fileSizeLimitBytes: 10 * 1024 * 1024,
-                rollOnFileSizeLimit: true)
-            .CreateLogger();
+        try
+        {
+            var settings = await SettingsStore.LoadAsync(CancellationToken.None);
+            if (compositionGeneration != Volatile.Read(ref latestCompositionGeneration))
+            {
+                return;
+            }
+
+            await Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                LifetimeScope.Resolve<IThemeApplicationService>().Apply(settings.Theme);
+                LifetimeScope.Resolve<IFontApplicationService>().Apply(settings.Font);
+            });
+        }
+        catch (IOException)
+        {
+            ApplyAppearanceDefaults();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            ApplyAppearanceDefaults();
+        }
+        catch (CorruptSettingsFileException)
+        {
+            ApplyAppearanceDefaults();
+        }
     }
 
-    private static string SettingsDirectory()
+    private void ApplyAppearanceDefaults()
     {
-        return ChapterToolRuntimeComposition.ResolveSettingsDirectory();
+        LifetimeScope.Resolve<IThemeApplicationService>().Apply(ThemeSettings.Default);
+        LifetimeScope.Resolve<IFontApplicationService>().Apply(FontSettings.Default);
     }
 
-    private static IEnumerable<string> PathSearchDirectories()
-    {
-        return ChapterToolRuntimeComposition.PathSearchDirectories();
-    }
-
-    internal static IEnumerable<string> PathSearchDirectoriesForTests() => PathSearchDirectories();
+    private static IEnumerable<string> PathSearchDirectories() => ChapterToolRuntimeComposition.PathSearchDirectories();
 }

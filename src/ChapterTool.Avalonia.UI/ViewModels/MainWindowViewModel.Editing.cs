@@ -1,5 +1,4 @@
 using System.Collections.Specialized;
-using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;

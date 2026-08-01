@@ -33,7 +33,7 @@ public sealed class LogToolViewModelTests
         Assert.Equal("Load", entry.Operation);
         Assert.Contains("stderr=failed", entry.Details, StringComparison.Ordinal);
         Assert.DoesNotContain("TechnicalDetail=stderr=failed", entry.Details, StringComparison.Ordinal);
-        Assert.Contains(entry.StructuredProperties, property => property.Name == "Code" && property.Value == "Import.Partial");
+        Assert.Contains(entry.StructuredProperties, property => property is { Name: "Code", Value: "Import.Partial" });
         Assert.Equal("Errors", entry.LevelText);
 
         viewModel.SelectedFilter = viewModel.FilterOptions.Single(option => option.Value == LogSeverityFilter.Information);
