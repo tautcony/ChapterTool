@@ -17,13 +17,14 @@ internal static class ChapterToolCliSupport
     }
 
     public static IReadOnlyList<CliOutputFormatDefinition> OutputFormats { get; } =
-        ChapterExportFormats.All
+    [
+        .. ChapterExportFormats.All
             .Select(static format => new CliOutputFormatDefinition(
                 ChapterExportFormats.Code(format),
                 format,
                 ChapterExportFormats.Extension(format),
                 ChapterExportFormats.Description(format)))
-            .ToArray();
+    ];
 
     public static bool TryParseFormat(string value, out CliOutputFormatDefinition definition)
     {

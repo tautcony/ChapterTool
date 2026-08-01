@@ -124,12 +124,14 @@ public sealed class MediaChapterImporter(
         var editionIndex = 0;
         foreach (var key in editionKeys)
         {
-            entries.Add(CreateEditionOption(path, editionIndex++, chapters.Where(chapter => EditionUid(chapter.Entry) == key).ToList()));
+            entries.Add(CreateEditionOption(path, editionIndex++,
+                [.. chapters.Where(chapter => EditionUid(chapter.Entry) == key)]));
         }
 
         if (hasUntagged)
         {
-            entries.Add(CreateEditionOption(path, editionIndex, chapters.Where(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry))).ToList()));
+            entries.Add(CreateEditionOption(path, editionIndex,
+                [.. chapters.Where(static chapter => string.IsNullOrWhiteSpace(EditionUid(chapter.Entry)))]));
         }
 
         return entries;

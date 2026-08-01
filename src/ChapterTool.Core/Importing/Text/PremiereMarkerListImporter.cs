@@ -180,11 +180,12 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
     }
 
     private static string[] NormalizeLines(string text) =>
-        text.Replace("\r\n", "\n", StringComparison.Ordinal)
+    [
+        .. text.Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
             .Split('\n')
             .Where(static line => !string.IsNullOrWhiteSpace(line))
-            .ToArray();
+    ];
 
     private static char DetectSeparator(string headerLine)
     {
@@ -270,7 +271,7 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
         }
 
         values.Add(current.ToString());
-        return values.ToArray();
+        return [.. values];
     }
 
     private static decimal GuessFrameRate(int frame)

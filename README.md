@@ -26,7 +26,7 @@ The command-line interface (CLI) can list formats, inspect imported groups, and 
 - .NET 10 SDK to build from source.
 - `ffprobe` from FFmpeg for media-container chapters.
 - `mkvextract` from MKVToolNix for Matroska chapters.
-- `eac3to` for Blu-ray `BDMV` folders.
+- No external tool is required for Blu-ray `BDMV` folders.
 
 Configure external tool paths in the application settings. ChapterTool also searches supported platform locations.
 

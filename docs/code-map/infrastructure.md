@@ -14,13 +14,13 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Infrastructure/Importing/Media/AtlMp4ChapterReader.cs`
 - Matroska chapter extraction:
   - `src/ChapterTool.Infrastructure/Importing/Matroska/MatroskaChapterImporter.cs`
-- BDMV / eac3to path:
-  - `src/ChapterTool.Infrastructure/Importing/Bdmv/NativeBdmvImporter.cs`: managed BDMV directory importer
+- BDMV path:
+  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvImporter.cs`: managed BDMV directory importer
+  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvMetadataReader.cs`: optional disc title reader
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvSourceLayout.cs`: accepted input shapes and primary/backup paths
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs`: bounded playlist discovery and parity filtering
-  - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvChapterImporter.cs`: optional eac3to-backed importer
 
-`NativeBdmvImporter` preserves global INDEX title numbers, skips prohibited titles, reports hidden titles, and consumes bounded HDMV navigation evidence.
+`BdmvImporter` preserves global INDEX title numbers, skips prohibited titles, reports hidden titles, and consumes bounded HDMV navigation evidence.
 
 ### Runtime importer composition
 
@@ -120,13 +120,13 @@ Then inspect:
 - `src/ChapterTool.Infrastructure/Tools/ExternalToolLocator.cs`
 - `src/ChapterTool.Infrastructure/Tools/MkvToolNixInstallProbe.cs`
 
-### BDMV / eac3to issues
+### BDMV import issues
 
 Start with:
 
-- `src/ChapterTool.Infrastructure/Importing/Bdmv/NativeBdmvImporter.cs`
+- `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvImporter.cs`
 
-Use `BdmvSourceLayout.cs` for input-shape or backup-directory issues. Use `BdmvPlaylistScanner.cs` for candidate order, duplicate filtering, or no-chapter diagnostics. Use `BdmvChapterImporter.cs` for explicit eac3to behavior.
+Use `BdmvSourceLayout.cs` for input-shape or backup-directory issues. Use `BdmvPlaylistScanner.cs` for candidate order, duplicate filtering, or no-chapter diagnostics. Use `BdmvImporter.cs` for managed navigation and playlist composition.
 
 ### External tool path resolution
 

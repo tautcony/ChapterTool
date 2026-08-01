@@ -394,11 +394,12 @@ public sealed partial class MainView : UserControl
         ChapterGrid.SelectedItem is ChapterRowViewModel row ? viewModel.Rows.IndexOf(row) : viewModel.Rows.Count;
 
     private HashSet<int> SelectedIndexes() =>
-        ChapterGrid.SelectedItems
+    [
+        .. ChapterGrid.SelectedItems
             .OfType<ChapterRowViewModel>()
             .Select(row => viewModel.Rows.IndexOf(row))
             .Where(static index => index >= 0)
-            .ToHashSet();
+    ];
 
     private void OnOrderShiftValueChanged(object? sender, NumericUpDownValueChangedEventArgs args)
     {

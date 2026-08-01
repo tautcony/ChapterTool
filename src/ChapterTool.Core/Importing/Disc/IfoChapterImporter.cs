@@ -38,7 +38,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
             var entries = GetStreams(request.Path, stream)
                 .Select((info, index) => new ChapterImportEntry(
                     $"pgc-{index}",
-                    $"{info.SourceName}__{info.Chapters.Count}",
+                    info.SourceName ?? $"PGC {index + 1}",
                     info,
                     CanCombine: true,
                     ReferencedMediaFiles: [new ReferencedMediaFile($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))

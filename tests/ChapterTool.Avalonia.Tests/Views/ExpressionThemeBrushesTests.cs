@@ -15,7 +15,7 @@ public sealed class ExpressionThemeBrushesTests
         {
             var brush = ExpressionThemeBrushes.ForTokenKind(kind);
             Assert.NotNull(brush);
-            Assert.IsAssignableFrom<IBrush>(brush);
+            Assert.IsType<IBrush>(brush, exactMatch: false);
         }
 
         Assert.NotNull(ExpressionThemeBrushes.DiagnosticUnderline);
@@ -27,7 +27,7 @@ public sealed class ExpressionThemeBrushesTests
     {
         var presentation = new ExpressionCompletionPresentation();
         var brush = presentation.Convert(ExpressionTokenKind.Function, typeof(IBrush), parameter: null, culture: System.Globalization.CultureInfo.InvariantCulture);
-        Assert.IsAssignableFrom<IBrush>(brush);
+        Assert.IsType<IBrush>(brush, exactMatch: false);
         var icon = presentation.Convert(ExpressionTokenKind.Function, typeof(string), parameter: "icon", culture: System.Globalization.CultureInfo.InvariantCulture);
         Assert.Equal("ƒ", icon);
     }

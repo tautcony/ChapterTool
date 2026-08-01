@@ -9,7 +9,7 @@ This review compares the `libbluray` MPLS, CLPI, and INDEX parsers with the Chap
 ## Executed Native Comparison
 
 The Homebrew `libbluray 1.5.0` library was compared with the Core parsers and
-the `NativeBdmvImporter`.
+the `BdmvImporter`.
 
 - 160/160 BDMV MPLS files matched on all compared fields.
 - 244/244 BDMV CLPI files matched on all common fields.
@@ -51,7 +51,7 @@ or runtime comparison reproduces them.
 
 ### P1-P2-3: BDMV BACKUP fallback (not exercised)
 
-- Location: `BdmvPathHelper.cs:44-47` and `NativeBdmvImporter.cs:39,67`.
+- Location: `BdmvPathHelper.cs:44-47` and `BdmvImporter.cs:39,67`.
 - Trigger: The primary `BDMV/PLAYLIST`, `BDMV/CLIPINF`, or `BDMV/index.bdmv` path is absent or unusable while the corresponding `BDMV/BACKUP` path is usable.
 - Evidence: `libbluray` retries `BDMV/BACKUP/PLAYLIST` and `BDMV/BACKUP/index.bdmv` after the primary path. Core constructs only primary paths and scans only the primary playlist directory.
 - Comparison status: The six complete discs did not require fallback. A damaged

@@ -81,6 +81,21 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SingleMplsOptionStillShowsClipSelection()
+    {
+        var load = new FakeLoadService(ImportResult(
+            "movie.mpls",
+            Info(ChapterImportFormat.Mpls, "00001.m2ts", new Chapter(1, TimeSpan.Zero, "A"))));
+        var vm = CreateViewModel(load);
+
+        await vm.LoadCommand.ExecuteAsync("movie.mpls");
+
+        Assert.Single(vm.ClipOptions);
+        Assert.True(vm.IsClipSelectionVisible);
+        Assert.Equal("00001.m2ts", vm.ClipDisplayOptions.Single().MainText);
+    }
+
+    [Fact]
     public async Task LoadAppliesProgressUpdatesBeforeCompletion()
     {
         var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))))
@@ -92,13 +107,14 @@ public sealed class MainWindowViewModelTests
         var progressStatuses = new List<string>();
         vm.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(MainWindowViewModel.Progress))
+            switch (args.PropertyName)
             {
-                progressValues.Add(vm.Progress);
-            }
-            else if (args.PropertyName == nameof(MainWindowViewModel.StatusText))
-            {
-                progressStatuses.Add(vm.StatusText);
+                case nameof(MainWindowViewModel.Progress):
+                    progressValues.Add(vm.Progress);
+                    break;
+                case nameof(MainWindowViewModel.StatusText):
+                    progressStatuses.Add(vm.StatusText);
+                    break;
             }
         };
 
@@ -126,13 +142,14 @@ public sealed class MainWindowViewModelTests
         vm.ClipOptions.CollectionChanged += (_, _) => clipNotifications++;
         vm.PropertyChanged += (_, args) =>
         {
-            if (args.PropertyName == nameof(MainWindowViewModel.StatusText))
+            switch (args.PropertyName)
             {
-                statusNotifications.Add(vm.StatusText);
-            }
-            else if (args.PropertyName == nameof(MainWindowViewModel.Progress))
-            {
-                progressNotifications.Add(vm.Progress);
+                case nameof(MainWindowViewModel.StatusText):
+                    statusNotifications.Add(vm.StatusText);
+                    break;
+                case nameof(MainWindowViewModel.Progress):
+                    progressNotifications.Add(vm.Progress);
+                    break;
             }
         };
 
@@ -260,27 +277,39 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task ClipDisplayOptionsExposeMainContentWithRemarksWithoutChangingSourceOptions()
     {
-        var firstInfo = Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.Zero, "A"));
-        var secondInfo = Info(ChapterImportFormat.Mpls, "00003", new Chapter(1, TimeSpan.Zero, "B"));
+        var firstInfo = Info(
+            ChapterImportFormat.Mpls,
+            "00002.m2ts",
+            [
+                .. Enumerable.Range(1, 6)
+                    .Select(index => new Chapter(index, TimeSpan.FromSeconds(index - 1), $"A{index}"))
+            ]);
+        var secondInfo = Info(
+            ChapterImportFormat.Mpls,
+            "00003.m2ts",
+            [
+                .. Enumerable.Range(1, 8)
+                    .Select(index => new Chapter(index, TimeSpan.FromSeconds(index - 1), $"B{index}"))
+            ]);
         var load = new FakeLoadService(new ChapterImportResult(true, [
             new ChapterImportSource("movie.mpls", [
-                new ChapterImportEntry("clip-0", "00002__6", firstInfo),
-                new ChapterImportEntry("clip-1", "00003__8", secondInfo)
+                new ChapterImportEntry("clip-0", "00002.m2ts", firstInfo),
+                new ChapterImportEntry("clip-1", "00003.m2ts", secondInfo)
             ])
         ], []));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
 
-        Assert.Equal("00002__6", vm.ClipOptions[0].DisplayName);
-        Assert.Equal("00002", vm.ClipDisplayOptions[0].MainText);
+        Assert.Equal("00002.m2ts", vm.ClipOptions[0].DisplayName);
+        Assert.Equal("00002.m2ts", vm.ClipDisplayOptions[0].MainText);
         Assert.Equal("6 chapters", vm.ClipDisplayOptions[0].RemarkText);
-        Assert.Equal("00002（6 chapters）", vm.ClipDisplayOptions[0].DisplayText);
+        Assert.Equal("00002.m2ts（6 chapters）", vm.ClipDisplayOptions[0].DisplayText);
 
         await vm.SelectClipCommand.ExecuteAsync(1);
 
         Assert.Equal(1, vm.SelectedClipIndex);
-        Assert.Equal("B", vm.Rows[0].Name);
+        Assert.Equal("B1", vm.Rows[0].Name);
     }
 
     [Fact]
@@ -377,7 +406,7 @@ public sealed class MainWindowViewModelTests
     {
         var vm = CreateViewModel();
         var changed = new List<string?>();
-        Assert.IsAssignableFrom<INotifyPropertyChanged>(vm);
+        Assert.IsType<INotifyPropertyChanged>(vm, exactMatch: false);
         vm.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
@@ -1074,8 +1103,8 @@ public sealed class MainWindowViewModelTests
         var media = Path.Combine(root, "movie.m2ts");
         await File.WriteAllBytesAsync(media, [0]);
         var shell = new FakeShellService();
-        var info = Info(ChapterImportFormat.Mpls, "movie", new Chapter(1, TimeSpan.Zero, "A"));
-        var entry = new ChapterImportEntry("clip-0", "movie__1", info, ReferencedMediaFiles: [new ReferencedMediaFile("movie.m2ts", "movie.m2ts")]);
+        var info = Info(ChapterImportFormat.Mpls, "movie.m2ts", new Chapter(1, TimeSpan.Zero, "A"));
+        var entry = new ChapterImportEntry("clip-0", "movie.m2ts", info, ReferencedMediaFiles: [new ReferencedMediaFile("movie.m2ts", "movie.m2ts")]);
         var load = new FakeLoadService(new ChapterImportResult(true, [new ChapterImportSource(Path.Combine(root, "movie.mpls"), [entry])], []));
         var vm = CreateViewModel(load, shellService: shell);
 

@@ -134,7 +134,7 @@ public sealed class CueImporterTests
     public async Task FlacImporterFailsInvalidHeader()
     {
         var result = await new FlacCueImporter().ImportAsync(
-            new ChapterImportRequest("bad.flac", new MemoryStream("bad!"u8.ToArray())),
+            new ChapterImportRequest("bad.flac", new MemoryStream([.. "bad!"u8])),
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
@@ -193,7 +193,7 @@ public sealed class CueImporterTests
     public async Task TakImporterFailsInvalidHeader()
     {
         var result = await new TakCueImporter().ImportAsync(
-            new ChapterImportRequest("bad.tak", new MemoryStream("bad!"u8.ToArray())),
+            new ChapterImportRequest("bad.tak", new MemoryStream([.. "bad!"u8])),
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);

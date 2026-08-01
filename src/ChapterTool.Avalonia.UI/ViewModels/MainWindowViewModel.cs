@@ -21,7 +21,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 {
     private readonly IChapterEditingService editingService;
     private readonly ChapterSegmentService segmentService;
-    private readonly IAuxiliaryToolHost auxiliaryToolHost;
     private readonly IFrameRateService frameRateService;
     private readonly ChapterExportService exportService;
     private readonly IShellService? shellService;
@@ -105,7 +104,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         this.editingService = editingService;
         this.segmentService = segmentService;
-        this.auxiliaryToolHost = auxiliaryToolHost;
+        this.AuxiliaryToolHost = auxiliaryToolHost;
         this.frameRateService = frameRateService;
         this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
@@ -161,7 +160,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     /// <summary>Host effects projected into shared command and visibility state.</summary>
     public IRuntimeCapabilities Capabilities { get; }
 
-    public IAuxiliaryToolHost AuxiliaryToolHost => auxiliaryToolHost;
+    public IAuxiliaryToolHost AuxiliaryToolHost { get; }
 
     internal IChapterExpressionEngine ExpressionEngine { get; }
 
@@ -219,13 +218,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     {
         LoadCommand = new UiCommand(async (parameter, token) =>
         {
-            if (parameter is ChapterSourceDocument source)
+            switch (parameter)
             {
-                await LoadSourceAsync(source, token);
-            }
-            else if (parameter is string path)
-            {
-                await LoadPathAsync(path, token);
+                case ChapterSourceDocument source:
+                    await LoadSourceAsync(source, token);
+                    break;
+                case string path:
+                    await LoadPathAsync(path, token);
+                    break;
             }
         });
         ReloadCommand = new UiCommand(async (_, token) =>
@@ -237,13 +237,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }, _ => Workspace.CurrentSource is not null);
         AppendMplsCommand = new UiCommand(async (parameter, token) =>
         {
-            if (parameter is ChapterSourceDocument source)
+            switch (parameter)
             {
-                await AppendSourceAsync(source, token);
-            }
-            else if (parameter is string path)
-            {
-                await AppendMplsAsync(path, token);
+                case ChapterSourceDocument source:
+                    await AppendSourceAsync(source, token);
+                    break;
+                case string path:
+                    await AppendMplsAsync(path, token);
+                    break;
             }
         }, parameter => CanAppendMpls && parameter is ChapterSourceDocument or string);
         DropPathLoadCommand = new UiCommand(async (parameter, token) =>
@@ -430,7 +431,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
     } = 0;
 
-    public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombineChecked;
+    public bool IsClipSelectionVisible => ClipOptions.Count > 0 || IsClipCombineChecked;
 
     /// <summary>Derived from typed clip session mode (combined vs split).</summary>
     public bool IsClipCombineChecked => Workspace.ClipSession?.IsCombined == true;
@@ -466,7 +467,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     }
 
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
-        XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
+        [.. XmlChapterLanguageCatalog.Languages.Select(static language => language.Code)];
 
     private IReadOnlyDictionary<string, int>? xmlLanguageIndexes;
 
@@ -904,7 +905,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
-        SelectedRowIndexes = indexes.Where(index => index >= 0).ToHashSet();
+        SelectedRowIndexes = [.. indexes.Where(index => index >= 0)];
         NotifyCommandStates();
     }
 
@@ -916,7 +917,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         }
 
         var indexes = SelectedRowIndexes.Count == 0
-            ? Enumerable.Range(0, CurrentInfo.Chapters.Count).ToHashSet()
+            ? [.. Enumerable.Range(0, CurrentInfo.Chapters.Count)]
             : SelectedRowIndexes;
         var result = editingService.CreateZones(CurrentInfo, indexes, (decimal)CurrentInfo.FramesPerSecond);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
@@ -978,7 +979,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         new(async (_, token) =>
         {
             var toolId = new ToolId(id);
-            await auxiliaryToolHost.OpenAsync(
+            await AuxiliaryToolHost.OpenAsync(
                 toolId,
                 new AuxiliaryToolRequest(ToolSession, Localizer, Capabilities),
                 token);

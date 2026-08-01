@@ -277,18 +277,12 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
     private static Window SettingsWindow(AvaloniaWindowService service)
     {
-        var field = typeof(AvaloniaWindowService).GetField("windows", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Window service did not expose its window registry.");
-        var windows = (IReadOnlyDictionary<string, Window>)field.GetValue(service)!;
-        return windows["settings"];
+        return service.WindowsForTesting["settings"];
     }
 
     private static Window FindWindow(AvaloniaWindowService service, string id)
     {
-        var field = typeof(AvaloniaWindowService).GetField("windows", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Window service did not expose its window registry.");
-        var windows = (IReadOnlyDictionary<string, Window>)field.GetValue(service)!;
-        return windows[id];
+        return service.WindowsForTesting[id];
     }
 
     private static void SelectPreset(SettingsToolViewModel settings, string presetId)

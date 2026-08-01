@@ -72,7 +72,7 @@ Portable browser imports use the shared 64 MiB byte limit in `ChapterTool.Core.B
 
 The browser app imports text, XML, CUE, WebVTT, MPLS, IFO, HD-DVD XPL, and embedded FLAC/TAK CUE data from bytes. It supports chapter editing, managed Lua expressions with Core presets, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
 
-The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`eac3to`/`ffprobe`, importing external-tool media/BDMV sources, opening local Related Media through a desktop shell, system font catalog, desktop Sentry telemetry, or loading Lua script files and the Lua editor/completion workflow.
+The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`ffprobe`, importing external-tool media sources, opening local Related Media through a desktop shell, system font catalog, desktop Sentry telemetry, or loading Lua script files and the Lua editor/completion workflow.
 
 Related Media paths are informational. Relative paths are rendered as browser links when present, but local filesystem paths are not made accessible by WASM.
 

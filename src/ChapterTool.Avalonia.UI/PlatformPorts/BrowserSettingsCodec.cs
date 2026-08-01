@@ -24,7 +24,6 @@ public static class BrowserSettingsCodec
                 SavingPath = null,
                 MainWindowLocation = null,
                 MkvToolnixPath = null,
-                Eac3toPath = null,
                 FfprobePath = null
             }
         };

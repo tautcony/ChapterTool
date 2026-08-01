@@ -40,7 +40,7 @@
   "Diagnostic.ContainerHeader.Invalid": "该文件不是受支持的容器。",
   "Diagnostic.CueFile.Empty": "CUE 文本为空，或未解析到章节。",
   "Diagnostic.CueSyntax.Malformed": "CUE 索引语法不受支持或格式错误。",
-  "Diagnostic.Dependency.Missing": "未找到 eac3to。",
+  "Diagnostic.Dependency.Missing": "未找到所需的外部工具。",
   "Diagnostic.DependencyExecution.Cancelled": "操作已取消。",
   "Diagnostic.DependencyExecution.Failed": "操作失败：{message}",
   "Diagnostic.DependencyExecution.TimedOut": "操作超时。",

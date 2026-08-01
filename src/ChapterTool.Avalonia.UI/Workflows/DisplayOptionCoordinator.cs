@@ -54,7 +54,7 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
         }
     }
 
-    public static void RebuildClipDisplayOptions(
+    public void RebuildClipDisplayOptions(
         IReadOnlyList<ChapterImportEntry> clipOptions,
         ObservableCollection<SelectorDisplayOption> displayOptions)
     {
@@ -123,22 +123,13 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
         }
     }
 
-    private static SelectorDisplayOption ToClipDisplayOption(ChapterImportEntry entry)
+    private SelectorDisplayOption ToClipDisplayOption(ChapterImportEntry entry)
     {
-        var mainText = entry.DisplayName;
-        var remarkParts = new List<string>();
-        var markerIndex = entry.DisplayName.LastIndexOf("__", StringComparison.Ordinal);
-        if (markerIndex > 0 && markerIndex + 2 < entry.DisplayName.Length)
-        {
-            mainText = entry.DisplayName[..markerIndex];
-            remarkParts.Add($"{entry.DisplayName[(markerIndex + 2)..]} chapters");
-        }
-        else if (entry.ChapterSet.Chapters.Count > 0)
-        {
-            remarkParts.Add($"{entry.ChapterSet.Chapters.Count} chapters");
-        }
-
-        var remarkText = string.Join(", ", remarkParts.Where(static part => !string.IsNullOrWhiteSpace(part)).Distinct(StringComparer.OrdinalIgnoreCase));
+        var display = ChapterImportDisplay.From(entry);
+        var remarkText = display.ChapterCount > 0
+            ? localizer.Format("Main.ChapterCount", new Dictionary<string, object?> { ["count"] = display.ChapterCount })
+            : string.Empty;
+        var mainText = display.MainText;
         var displayText = string.IsNullOrWhiteSpace(remarkText) ? mainText : $"{mainText}（{remarkText}）";
         return new SelectorDisplayOption(mainText, remarkText, displayText);
     }

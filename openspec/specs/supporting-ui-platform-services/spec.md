@@ -22,7 +22,7 @@ The system SHALL provide Avalonia preview, log, color settings, about, and updat
 The system SHALL use typed cross-platform settings while reading compatible legacy configuration.
 
 #### Scenario: Legacy chaptertool settings migrate
-- **WHEN** legacy `chaptertool.json` contains saving path, language, location, mkvToolnixPath, or eac3toPath keys
+- **WHEN** legacy `chaptertool.json` contains saving path, language, location, or mkvToolnixPath keys
 - **THEN** settings SHALL load them and normalize future writes to the new settings model
 
 #### Scenario: Legacy color config migrates
@@ -50,7 +50,7 @@ The application SHALL access dialogs, clipboard, shell, process execution, setti
 - **THEN** the process runner SHALL decode output with an explicit platform-appropriate encoding instead of relying on an interactive terminal code page
 
 ### Requirement: External dependency location
-The system SHALL centralize discovery and configuration for mkvextract and eac3to while keeping default MP4 chapter reading independent from external tool configuration.
+The system SHALL centralize discovery and configuration for mkvextract and ffprobe while keeping default MP4 chapter reading independent from external tool configuration.
 
 #### Scenario: Configured path wins
 - **WHEN** a dependency path exists in migrated settings
@@ -294,7 +294,7 @@ The settings system SHALL persist all settings exposed by the unified settings p
 The application SHALL allow users to configure, clear, and verify external tool paths used by current import workflows.
 
 #### Scenario: Configured paths preserve locator precedence
-- **WHEN** MKVToolNix/mkvextract, eac3to, or ffprobe path settings are saved
+- **WHEN** MKVToolNix/mkvextract or ffprobe path settings are saved
 - **THEN** the external tool locator SHALL use those configured values before environment or platform discovery according to the existing precedence rules
 
 #### Scenario: Cleared paths restore discovery

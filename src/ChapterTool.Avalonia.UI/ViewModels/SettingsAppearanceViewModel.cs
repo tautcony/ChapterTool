@@ -210,7 +210,7 @@ public sealed class SettingsAppearanceViewModel : ObservableViewModel
             themePresets.Add(new ThemePresetOptionViewModel(
                 preset.Id,
                 localizer.GetString(preset.DisplayNameKey),
-                preset.Palette.PreviewSwatches.Select(static color => new ThemeSwatchViewModel(color)).ToArray()));
+                [.. preset.Palette.PreviewSwatches.Select(static color => new ThemeSwatchViewModel(color))]));
         }
 
         selectedThemePresetId = ThemePresetCatalog.Resolve(selectedId).Id;

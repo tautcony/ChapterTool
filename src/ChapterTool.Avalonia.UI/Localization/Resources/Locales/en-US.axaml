@@ -84,7 +84,7 @@
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">The file is not a supported container.</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE text is empty or no chapters were parsed.</x:String>
   <x:String x:Key="Diagnostic.CueSyntax.Malformed" xml:space="preserve">CUE index syntax is unsupported or malformed.</x:String>
-  <x:String x:Key="Diagnostic.Dependency.Missing" xml:space="preserve">eac3to was not found.</x:String>
+  <x:String x:Key="Diagnostic.Dependency.Missing" xml:space="preserve">The required external tool was not found.</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">The operation was cancelled.</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Failed" xml:space="preserve">The operation failed: {message}</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.TimedOut" xml:space="preserve">The operation timed out.</x:String>
@@ -251,6 +251,7 @@
   <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">Loaded chapter name template '{name}' from '{path}'</x:String>
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">Append MPLS</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">Auto</x:String>
+  <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} chapters</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">Convert to current FPS</x:String>
   <x:String x:Key="Main.ChapterName" xml:space="preserve">Chapter name</x:String>
   <x:String x:Key="Main.ColumnFrames" xml:space="preserve">Frames</x:String>
@@ -344,7 +345,6 @@
   <x:String x:Key="Settings.BrowseExecutable" xml:space="preserve">Choose Executable</x:String>
   <x:String x:Key="Settings.DefaultSaveFormat" xml:space="preserve">Default save format</x:String>
   <x:String x:Key="Settings.DefaultXmlLanguage" xml:space="preserve">Default XML language</x:String>
-  <x:String x:Key="Settings.Eac3toPath" xml:space="preserve">eac3to</x:String>
   <x:String x:Key="Settings.EmitBom" xml:space="preserve">Write BOM</x:String>
   <x:String x:Key="Settings.EmitBomLabel" xml:space="preserve">Include byte order mark in text downloads</x:String>
   <x:String x:Key="Settings.EmptyUsesSource" xml:space="preserve">Blank uses the source directory</x:String>
@@ -414,7 +414,7 @@
   <x:String x:Key="Status.LoadedChapters" xml:space="preserve">Loaded {count} chapters</x:String>
   <x:String x:Key="Status.Loading" xml:space="preserve">Loading…</x:String>
   <x:String x:Key="Status.LoadingSource" xml:space="preserve">Loading source...</x:String>
-  <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">Locating eac3to...</x:String>
+  <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">Discovering titles...</x:String>
   <x:String x:Key="Status.LoadingSource.Export" xml:space="preserve">Exporting chapter text...</x:String>
   <x:String x:Key="Status.LoadingSource.Parse" xml:space="preserve">Parsing chapter text...</x:String>
   <x:String x:Key="Status.LoadingSource.Validate" xml:space="preserve">Validating source...</x:String>
@@ -468,7 +468,6 @@
   <x:String x:Key="Tool.TemplateNames.Title" xml:space="preserve">Template Names</x:String>
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">Use standard template names</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
-  <x:String x:Key="Tool.eac3to" xml:space="preserve">Eac3to path</x:String>
   <x:String x:Key="Tool.ffprobe" xml:space="preserve">Ffprobe path</x:String>
   <x:String x:Key="Tool.mkvtoolnix" xml:space="preserve">MkvToolnix path</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">Undetermined</x:String>

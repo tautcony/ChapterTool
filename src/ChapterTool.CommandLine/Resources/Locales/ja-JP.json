@@ -40,7 +40,7 @@
   "Diagnostic.ContainerHeader.Invalid": "このファイルはサポート対象のコンテナではありません。",
   "Diagnostic.CueFile.Empty": "CUE テキストが空であるか、章節が解析されませんでした。",
   "Diagnostic.CueSyntax.Malformed": "CUE インデックス構文はサポート対象外または不正です。",
-  "Diagnostic.Dependency.Missing": "eac3to が見つかりませんでした。",
+  "Diagnostic.Dependency.Missing": "必要な外部ツールが見つかりませんでした。",
   "Diagnostic.DependencyExecution.Cancelled": "操作はキャンセルされました。",
   "Diagnostic.DependencyExecution.Failed": "操作が失敗しました: {message}",
   "Diagnostic.DependencyExecution.TimedOut": "操作がタイムアウトしました。",

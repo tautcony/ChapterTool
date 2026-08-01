@@ -154,7 +154,8 @@ public sealed class FrameRateService : IFrameRateService
             Chapters = chapters
         };
 
-        return new FrameInfoResult(updatedInfo, chapters, selectedOption, selectedOption.Value, frameDisplays.Select(static display => display.Accuracy).ToArray());
+        return new FrameInfoResult(updatedInfo, chapters, selectedOption, selectedOption.Value,
+            [.. frameDisplays.Select(static display => display.Accuracy)]);
     }
 
     private static FrameDisplay FormatFrames(Chapter chapter, decimal framesPerSecond, bool round, decimal tolerance)

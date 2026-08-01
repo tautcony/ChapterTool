@@ -16,7 +16,7 @@ public sealed class IndexImporterTests
     [Fact]
     public void InvalidHeaderThrows()
     {
-        using var stream = new MemoryStream("BAD\x00"u8.ToArray());
+        using var stream = new MemoryStream([.. "BAD\0"u8]);
         Assert.Throws<InvalidDataException>(() => IndexFile.Read(stream));
     }
 
@@ -368,7 +368,6 @@ public sealed class IndexImporterTests
         var indexesAddress = HeaderSize + AppInfoSize;
         var indexesContentSize = TitleEntrySize + TitleEntrySize + 2 + titles.Length * TitleEntrySize;
         var paddedContentSize = Math.Max(indexesContentSize, IndexesMinContentSize);
-        var indexesLength = paddedContentSize;
         var indexesTotalSize = IndexesLengthSize + paddedContentSize;
         var extAddress = extensionDataStartAddress ?? (uint)(indexesAddress + indexesTotalSize);
 
@@ -392,7 +391,7 @@ public sealed class IndexImporterTests
 
         // Indexes
         builder.SeekTo(indexesAddress);
-        builder.UInt32BE((uint)indexesLength);
+        builder.UInt32BE((uint)paddedContentSize);
         WriteTitleEntry(builder, 0, 0, "      ");
         WriteTitleEntry(builder, 0, 0, "      ");
         builder.UInt16BE(checked((ushort)titles.Length));

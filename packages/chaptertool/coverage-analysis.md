@@ -94,7 +94,7 @@
 5. **FileSystemNativeDependencyService (56.2%, 25% 分支)** — 文件系统原生依赖探测。
    - **建议：** 同时 Mock 文件系统和运行时标识，覆盖 macOS/Linux/Windows 三平台路径。
 
-6. **BdmvChapterImporter (84.2%, 75.9%)** — BDMV 目录结构解析。
+6. **BdmvImporter** — BDMV 目录结构解析。
    - **问题：** 仍有 42 行未覆盖，主要在异常路径。
    - **建议：** 构造不完整/无效的 BDMV 目录结构测试异常处理。
 

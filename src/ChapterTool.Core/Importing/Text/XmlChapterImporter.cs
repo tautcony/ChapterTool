@@ -200,7 +200,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
     }
 
     private static IReadOnlyList<Chapter> Renumber(IReadOnlyList<Chapter> chapters) =>
-        chapters.Select((chapter, index) => chapter with { DisplayNumber = index + 1 }).ToList();
+        [.. chapters.Select((chapter, index) => chapter with { DisplayNumber = index + 1 })];
 
     private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);

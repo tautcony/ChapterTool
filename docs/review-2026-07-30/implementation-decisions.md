@@ -43,7 +43,7 @@
 
 ### P1-3：HDMV 全局标题编号映射
 
-证据：`NativeBdmvImporter.cs` 只把 HDMV 标题对象放入 `titleObjects`。BD-J 标题会从编号序列中被移除。libbluray 使用 INDEX 中的全局标题编号。
+证据：`BdmvImporter.cs` 只把 HDMV 标题对象放入 `titleObjects`。BD-J 标题会从编号序列中被移除。libbluray 使用 INDEX 中的全局标题编号。
 
 影响：当 HDMV 和 BD-J 标题交错时，`JUMP_TITLE` 或 `CALL_TITLE` 可能指向错误的 MovieObject。
 
@@ -173,11 +173,11 @@ Homebrew 不安装 `mpls_dump` 或 `clpi_dump`，但可以直接编译仓库中�
 ### V-2：现有测试状态
 
 - [x] Core Importing 测试：253 通过。
-- [ ] Infrastructure Native BDMV 测试：当前 25 通过、1 失败。
+- [ ] Infrastructure BDMV 测试：当前 25 通过、1 失败。
 
 失败测试：
 
-`NativeBdmvImporterTests.NoChapterPlaylistIsRetainedAsDiagnosticAndNotImported`
+`BdmvImporterTests.NoChapterPlaylistIsRetainedAsDiagnosticAndNotImported`
 
 该测试仍期待旧的逐条诊断消息。当前实现已经改为聚合扫描诊断。需要在继续实现前决定是否同步测试契约。
 

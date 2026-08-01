@@ -20,7 +20,7 @@ internal static class RuntimeImportTestFactory
     private static readonly ChapterTimeFormatter Formatter = new();
     private static readonly IExternalToolLocator ToolLocator = new ExternalToolLocator(
         new ChapterToolSettingsStore(SettingsDirectory),
-        PathSearchDirectories().ToList());
+        [.. PathSearchDirectories()]);
 
     private static readonly ProcessRunner ProcessRunner = new();
     private static readonly FfprobeMediaChapterReader MediaChapterReader = new(ToolLocator, ProcessRunner);

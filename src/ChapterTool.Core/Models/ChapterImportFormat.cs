@@ -56,7 +56,7 @@ public enum ChapterImportFormat
     Media = 90,
 
     /// <summary>
-    /// Blu-ray disc chapters discovered through BDMV/eac3to integration.
+    /// Blu-ray disc chapters discovered through BDMV parsing.
     /// </summary>
     Bdmv = 100
 }

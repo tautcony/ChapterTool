@@ -352,32 +352,27 @@ public sealed partial class ExpressionEditor : UserControl
             return;
         }
 
-        if (args.Key == Key.Down && CompletionPopup.IsOpen && CurrentCompletions.Count > 0)
+        switch (args.Key)
         {
-            MoveCompletionSelection(1);
-            args.Handled = true;
-            return;
-        }
-
-        if (args.Key == Key.Up && CompletionPopup.IsOpen && CurrentCompletions.Count > 0)
-        {
-            MoveCompletionSelection(-1);
-            args.Handled = true;
-            return;
-        }
-
-        if (args.Key == Key.Tab && CompletionPopup.IsOpen && CurrentCompletions.Count > 0)
-        {
-            AcceptSelectedCompletion();
-            args.Handled = true;
-            return;
-        }
-
-        if (args.Key is Key.Escape)
-        {
-            var wasOpen = CompletionPopup.IsOpen;
-            CloseCompletionPopup();
-            args.Handled = wasOpen;
+            case Key.Down when CompletionPopup.IsOpen && CurrentCompletions.Count > 0:
+                MoveCompletionSelection(1);
+                args.Handled = true;
+                return;
+            case Key.Up when CompletionPopup.IsOpen && CurrentCompletions.Count > 0:
+                MoveCompletionSelection(-1);
+                args.Handled = true;
+                return;
+            case Key.Tab when CompletionPopup.IsOpen && CurrentCompletions.Count > 0:
+                AcceptSelectedCompletion();
+                args.Handled = true;
+                return;
+            case Key.Escape:
+            {
+                var wasOpen = CompletionPopup.IsOpen;
+                CloseCompletionPopup();
+                args.Handled = wasOpen;
+                break;
+            }
         }
     }
 

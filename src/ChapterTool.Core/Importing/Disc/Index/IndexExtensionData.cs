@@ -18,7 +18,7 @@ internal sealed record IndexExtensionData(
         var dataBlockStart = container.ReadUInt32BigEndian();
         container.SkipBytes(3);
         var count = container.ReadByteChecked();
-        if (count > IndexParseLimits.MaximumExtensions || 8L + count * 12L > length)
+        if (8L + count * 12L > length)
             throw new InvalidDataException("INDEX extension entry count exceeds the supported bounds.");
 
         var entries = new List<IndexExtensionEntry>(count);

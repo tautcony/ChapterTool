@@ -96,11 +96,9 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         ValidateToolsCommand = new UiCommand(async (_, token) => await DiscoverAndFillToolPathsAsync(token), _ => IsExternalToolsVisible);
         BrowseSaveDirectoryCommand = new UiCommand(async (_, token) => await PickDirectoryAsync(value => SaveDirectory = value, token), _ => IsSaveDirectoryVisible);
         BrowseMkvToolnixCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => MkvToolnixPath = value, token), _ => IsExternalToolsVisible);
-        BrowseEac3toCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => Eac3toPath = value, token), _ => IsExternalToolsVisible);
         BrowseFfprobeCommand = new UiCommand(async (_, token) => await PickExecutableAsync(value => FfprobePath = value, token), _ => IsExternalToolsVisible);
         ClearSaveDirectoryCommand = ClearCommand(() => SaveDirectory = null);
         ClearMkvToolnixCommand = ClearCommand(() => MkvToolnixPath = null);
-        ClearEac3toCommand = ClearCommand(() => Eac3toPath = null);
         ClearFfprobeCommand = ClearCommand(() => FfprobePath = null);
         OpenRepositoryCommand = new UiCommand(async (_, token) => await OpenRepositoryAsync(token), _ => shellService is not null);
         OpenSettingsFolderCommand = new UiCommand(
@@ -146,12 +144,12 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     public IReadOnlyList<LanguageOptionViewModel> Languages => languages;
 
-    public IReadOnlyList<string> SaveFormatOptions { get; } = SaveFormats.Select(ChapterExportFormats.DisplayName).ToArray();
+    public IReadOnlyList<string> SaveFormatOptions { get; } = [.. SaveFormats.Select(ChapterExportFormats.DisplayName)];
 
-    public IReadOnlyList<string> OutputTextEncodingOptions { get; } = OutputEncodings.Select(OutputTextEncodings.DisplayName).ToArray();
+    public IReadOnlyList<string> OutputTextEncodingOptions { get; } = [.. OutputEncodings.Select(OutputTextEncodings.DisplayName)];
 
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
-        XmlChapterLanguageCatalog.Languages.Select(static language => language.Code).ToList();
+        [.. XmlChapterLanguageCatalog.Languages.Select(static language => language.Code)];
 
     public IReadOnlyList<SelectorDisplayOption> XmlLanguageDisplayOptions => xmlLanguageDisplayOptions;
 
@@ -232,19 +230,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             if (SetProperty(ref field, CleanOptionalPath(value)))
             {
                 MkvToolnixStatus = FormatToolStatus(ValidateTool(value, "mkvextract"));
-                NotifyUnsavedChanges();
-            }
-        }
-    }
-
-    public string? Eac3toPath
-    {
-        get;
-        set
-        {
-            if (SetProperty(ref field, CleanOptionalPath(value)))
-            {
-                Eac3toStatus = FormatToolStatus(ValidateTool(value, "eac3to"));
                 NotifyUnsavedChanges();
             }
         }
@@ -353,12 +338,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         private set => SetProperty(ref field, value);
     } = string.Empty;
 
-    public string Eac3toStatus
-    {
-        get;
-        private set => SetProperty(ref field, value);
-    } = string.Empty;
-
     public string FfprobeStatus
     {
         get;
@@ -375,15 +354,11 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     public UiCommand BrowseMkvToolnixCommand { get; }
 
-    public UiCommand BrowseEac3toCommand { get; }
-
     public UiCommand BrowseFfprobeCommand { get; }
 
     public UiCommand ClearSaveDirectoryCommand { get; }
 
     public UiCommand ClearMkvToolnixCommand { get; }
-
-    public UiCommand ClearEac3toCommand { get; }
 
     public UiCommand ClearFfprobeCommand { get; }
 
@@ -612,11 +587,12 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     }
 
     private List<LanguageOptionViewModel> BuildLanguageOptions() =>
-        localizer.SupportedLanguages
+    [
+        .. localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
                 localizer.GetString(language.DisplayNameKey)))
-            .ToList();
+    ];
 
     private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> entries)
     {
@@ -630,7 +606,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private void RefreshToolStatuses()
     {
         MkvToolnixStatus = FormatToolStatus(ValidateTool(MkvToolnixPath, "mkvextract"));
-        Eac3toStatus = FormatToolStatus(ValidateTool(Eac3toPath, "eac3to"));
         FfprobeStatus = FormatToolStatus(ValidateTool(FfprobePath, "ffprobe"));
     }
 
@@ -643,7 +618,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         }
 
         MkvToolnixPath = await DiscoverExecutableAsync("mkvextract", MkvToolnixPath, cancellationToken);
-        Eac3toPath = await DiscoverExecutableAsync("eac3to", Eac3toPath, cancellationToken);
         var ffprobe = await DiscoverExecutableAsync("ffprobe", FfprobePath, cancellationToken);
         FfprobePath = ffprobe;
 
@@ -737,7 +711,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             Language = SelectedLanguage,
             SavingPath = SaveDirectory,
             MkvToolnixPath = MkvToolnixPath,
-            Eac3toPath = Eac3toPath,
             FfprobePath = FfprobePath,
             DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
             DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
@@ -751,7 +724,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         SelectedLanguage = settings.Language;
         SaveDirectory = settings.SavingPath;
         MkvToolnixPath = settings.MkvToolnixPath;
-        Eac3toPath = settings.Eac3toPath;
         FfprobePath = settings.FfprobePath;
         DefaultSaveFormatIndex = SaveFormatIndex(settings.DefaultSaveFormat);
         DefaultXmlLanguageIndex = XmlLanguageIndex(settings.DefaultXmlLanguage);

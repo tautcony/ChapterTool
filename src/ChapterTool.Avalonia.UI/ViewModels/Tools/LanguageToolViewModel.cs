@@ -91,11 +91,12 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
     }
 
     private List<LanguageOptionViewModel> BuildLanguages() =>
-        preferenceSink.Localizer.SupportedLanguages
+    [
+        .. preferenceSink.Localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
                 preferenceSink.Localizer.GetString(language.DisplayNameKey)))
-            .ToList();
+    ];
 
     private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> options)
     {

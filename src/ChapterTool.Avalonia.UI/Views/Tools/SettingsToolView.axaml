@@ -168,7 +168,7 @@
         <ScrollViewer Classes="settingsPageScroller" HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="8" Margin="16,12">
             <TextBlock Classes="sectionTitle" Text="{DynamicResource Settings.ExternalTools}" />
-            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.MkvToolnixPath}" />
               <Grid Grid.Row="0" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
                 <TextBox Text="{Binding MkvToolnixPath, Mode=TwoWay}">
@@ -186,25 +186,8 @@
                 <TextBlock Grid.Row="1" Classes="status" Text="{Binding MkvToolnixStatus}" />
               </Grid>
 
-              <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.Eac3toPath}" />
+              <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfprobePath}" />
               <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <TextBox Text="{Binding Eac3toPath, Mode=TwoWay}">
-                  <TextBox.InnerRightContent>
-                    <StackPanel Orientation="Horizontal">
-                      <Button Classes="icon_button compact inputAction" Command="{Binding BrowseEac3toCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
-                        <i:Icon Width="15" Height="15" Value="fa-solid fa-folder-open" />
-                      </Button>
-                      <Button Classes="icon_button compact inputAction" Command="{Binding ClearEac3toCommand}" AutomationProperties.Name="{DynamicResource Common.Clear}" ToolTip.Tip="{DynamicResource Common.Clear}">
-                        <i:Icon Width="14" Height="14" Value="fa-solid fa-xmark" />
-                      </Button>
-                    </StackPanel>
-                  </TextBox.InnerRightContent>
-                </TextBox>
-                <TextBlock Grid.Row="1" Classes="status" Text="{Binding Eac3toStatus}" />
-              </Grid>
-
-              <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfprobePath}" />
-              <Grid Grid.Row="2" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
                 <TextBox Text="{Binding FfprobePath, Mode=TwoWay}">
                   <TextBox.InnerRightContent>
                     <StackPanel Orientation="Horizontal">
@@ -220,7 +203,7 @@
                 <TextBlock Grid.Row="1" Classes="status" Text="{Binding FfprobeStatus}" />
               </Grid>
 
-              <Button Grid.Row="3"
+              <Button Grid.Row="2"
                       Grid.Column="1"
                       Classes="flat"
                       HorizontalAlignment="Left"

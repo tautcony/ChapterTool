@@ -164,10 +164,12 @@ public sealed class TextToolViewModel : ObservableViewModel
             return [];
         }
 
-        return text.ReplaceLineEndings("\n")
-            .Split('\n')
-            .Select((line, index) => new TextToolLineViewModel(index + 1, Highlight(line, kind)))
-            .ToList();
+        return
+        [
+            .. text.ReplaceLineEndings("\n")
+                .Split('\n')
+                .Select((line, index) => new TextToolLineViewModel(index + 1, Highlight(line, kind)))
+        ];
     }
 
     private static IReadOnlyList<TextToolSpanViewModel> Highlight(string line, TextToolKind kind) =>
@@ -325,7 +327,7 @@ public sealed class TextToolFormatSelector(IExportPreferencePort exportPreferenc
 
     private IExportPreferencePort ExportPreferences { get; } = exportPreferences;
 
-    public IReadOnlyList<string> Labels { get; } = Formats.Select(ChapterExportFormats.DisplayName).ToArray();
+    public IReadOnlyList<string> Labels { get; } = [.. Formats.Select(ChapterExportFormats.DisplayName)];
 
     public int SelectedIndex
     {

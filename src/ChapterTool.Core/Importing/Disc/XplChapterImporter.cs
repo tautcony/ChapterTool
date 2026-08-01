@@ -100,7 +100,7 @@ public sealed class XplChapterImporter : IChapterImporter
                 IReadOnlyList<ReferencedMediaFile> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
                     ? []
                     : [new ReferencedMediaFile(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
-                yield return new ChapterImportEntry($"title-{optionIndex}", $"{info.Title}__{chapters.Count}", info, ReferencedMediaFiles: mediaReferences);
+                yield return new ChapterImportEntry($"title-{optionIndex}", info.Title, info, ReferencedMediaFiles: mediaReferences);
                 optionIndex++;
             }
         }

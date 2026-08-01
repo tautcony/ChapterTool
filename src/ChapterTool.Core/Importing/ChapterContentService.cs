@@ -65,13 +65,14 @@ public class ChapterContentService
     /// Gets the supported export formats.
     /// </summary>
     public IReadOnlyList<SaveFormatOption> SaveFormats { get; } =
-        ChapterExportFormats.All
+    [
+        .. ChapterExportFormats.All
             .Select((format, index) => new SaveFormatOption(
                 index,
                 ChapterExportFormats.Code(format),
                 ChapterExportFormats.DisplayName(format),
                 ChapterExportFormats.Extension(format)))
-            .ToArray();
+    ];
 
     /// <summary>
     /// Gets the supported chapter name modes.
@@ -87,11 +88,12 @@ public class ChapterContentService
     /// Gets the XML language codes supported by export.
     /// </summary>
     public IReadOnlyList<string> XmlLanguages { get; } =
-        XmlChapterLanguageCatalog.Languages
+    [
+        .. XmlChapterLanguageCatalog.Languages
             .Select(static language => language.Code)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(static code => code, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+    ];
 
     /// <summary>
     /// Determines whether the extension requires binary input handling.

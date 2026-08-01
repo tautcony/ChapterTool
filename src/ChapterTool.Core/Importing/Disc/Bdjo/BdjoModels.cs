@@ -103,7 +103,6 @@ internal sealed record BdjoFile(
         using var section = ReadSection(stream, "application management table", 2);
         var count = section.ReadByteChecked();
         section.SkipBytes(1);
-        if (count > BdjoParseLimits.MaximumApplications) throw new InvalidDataException("BDJO application count exceeds the supported bounds.");
         var applications = new List<BdjoApplication>(count);
         for (var i = 0; i < count; i++) applications.Add(ReadApplication(section));
         section.Complete("BDJO application management table");
@@ -180,7 +179,7 @@ internal sealed record BdjoFile(
     private static string ReadAlignedString(Stream stream)
     {
         var length = stream.ReadByteChecked();
-        if (length > BdjoParseLimits.MaximumStringLength || length > stream.Length - stream.Position)
+        if (length > stream.Length - stream.Position)
             throw new InvalidDataException("BDJO application string exceeds the supported bounds.");
         var value = ReadUtf8(stream, length);
         if ((length & 1) == 0) stream.SkipBytes(1);

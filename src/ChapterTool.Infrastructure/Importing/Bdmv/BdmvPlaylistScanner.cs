@@ -31,10 +31,12 @@ internal sealed class BdmvPlaylistScanner
         IReadOnlyList<string> paths;
         try
         {
-            paths = Directory.EnumerateFiles(directory, "*.mpls", SearchOption.TopDirectoryOnly)
-                .OrderBy(static path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
-                .Take(MaximumPlaylists)
-                .ToList();
+            paths =
+            [
+                .. Directory.EnumerateFiles(directory, "*.mpls", SearchOption.TopDirectoryOnly)
+                    .OrderBy(static path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+                    .Take(MaximumPlaylists)
+            ];
         }
         catch (IOException exception)
         {

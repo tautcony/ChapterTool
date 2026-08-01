@@ -52,7 +52,7 @@ public static partial class NodeApi
         var indexes = JsonSerializer.Deserialize(indexesJson, NodeJsonContext.Default.Int32Array) ?? [];
         var result = EditingService.CreateZones(chapterSet, indexes.ToHashSet(), (decimal)framesPerSecond);
         return JsonSerializer.Serialize(
-            new NodeZonesResponse(result.Zones, result.Diagnostics.Select(ToDiagnostic).ToArray()),
+            new NodeZonesResponse(result.Zones, [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeZonesResponse);
     }
 
@@ -74,7 +74,7 @@ public static partial class NodeApi
     [JSExport]
     public static string GetFrameRates() =>
         JsonSerializer.Serialize(
-            FrameRateService.Options.Select(ToFrameRateOption).ToArray(),
+            [.. FrameRateService.Options.Select(ToFrameRateOption)],
             NodeJsonContext.Default.NodeFrameRateOptionArray);
 
     [JSExport]
@@ -108,10 +108,10 @@ public static partial class NodeApi
         return JsonSerializer.Serialize(
             new NodeFrameInfoResponse(
                 ToNodeChapterSet(result.Info),
-                result.Chapters.Select(ToNodeChapter).ToArray(),
+                [.. result.Chapters.Select(ToNodeChapter)],
                 ToFrameRateOption(result.SelectedOption),
                 (double)result.FramesPerSecond,
-                result.Accuracy.Select(static accuracy => accuracy.ToString()).ToArray()),
+                [.. result.Accuracy.Select(static accuracy => accuracy.ToString())]),
             NodeJsonContext.Default.NodeFrameInfoResponse);
     }
 
@@ -126,7 +126,7 @@ public static partial class NodeApi
             new NodeTransformResponse(
                 result.Success,
                 ToNodeChapterSet(result.Info),
-                result.Diagnostics.Select(ToDiagnostic).ToArray()),
+                [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeTransformResponse);
     }
 
@@ -137,7 +137,7 @@ public static partial class NodeApi
         return JsonSerializer.Serialize(
             new NodeEditResponse(
                 ToNodeChapterSet(result.Info),
-                result.Diagnostics.Select(ToDiagnostic).ToArray()),
+                [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeEditResponse);
     }
 
@@ -150,8 +150,8 @@ public static partial class NodeApi
         return JsonSerializer.Serialize(
             new NodeProjectionResponse(
                 ToNodeChapterSet(result.Info),
-                result.OutputChapters.Select(ToNodeChapter).ToArray(),
-                result.Diagnostics.Select(ToDiagnostic).ToArray()),
+                [.. result.OutputChapters.Select(ToNodeChapter)],
+                [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeProjectionResponse);
     }
 
@@ -169,46 +169,56 @@ public static partial class NodeApi
             (decimal)framesPerSecond);
         return JsonSerializer.Serialize(
             new NodeExpressionAnalysisResponse(
-                result.Spans.Select(static span => new NodeExpressionSpan(
-                    span.Start,
-                    span.Length,
-                    span.Text,
-                    span.Kind.ToString())).ToArray(),
-                result.Completions.Select(static completion => new NodeExpressionCompletion(
-                    completion.Text,
-                    completion.Kind.ToString(),
-                    completion.KindLabel,
-                    completion.Description,
-                    completion.ReplacementStart,
-                    completion.ReplacementLength,
-                    completion.InsertText)).ToArray(),
-                result.Diagnostics.Select(static diagnostic => new NodeExpressionDiagnostic(
-                    ToDiagnostic(diagnostic.Diagnostic),
-                    new NodeExpressionSuggestion(diagnostic.Suggestion.Code, diagnostic.Suggestion.Message),
-                    diagnostic.Start,
-                    diagnostic.Length)).ToArray()),
+                [
+                    .. result.Spans.Select(static span => new NodeExpressionSpan(
+                        span.Start,
+                        span.Length,
+                        span.Text,
+                        span.Kind.ToString()))
+                ],
+                [
+                    .. result.Completions.Select(static completion => new NodeExpressionCompletion(
+                        completion.Text,
+                        completion.Kind.ToString(),
+                        completion.KindLabel,
+                        completion.Description,
+                        completion.ReplacementStart,
+                        completion.ReplacementLength,
+                        completion.InsertText))
+                ],
+                [
+                    .. result.Diagnostics.Select(static diagnostic => new NodeExpressionDiagnostic(
+                        ToDiagnostic(diagnostic.Diagnostic),
+                        new NodeExpressionSuggestion(diagnostic.Suggestion.Code, diagnostic.Suggestion.Message),
+                        diagnostic.Start,
+                        diagnostic.Length))
+                ]),
             NodeJsonContext.Default.NodeExpressionAnalysisResponse);
     }
 
     [JSExport]
     public static string GetExpressionSymbols() =>
         JsonSerializer.Serialize(
-            ExpressionAuthoringService.Symbols.Select(static symbol => new NodeExpressionSymbol(
-                symbol.Text,
-                symbol.Kind.ToString(),
-                symbol.Description,
-                symbol.Arity,
-                symbol.InsertText)).ToArray(),
+            [
+                .. ExpressionAuthoringService.Symbols.Select(static symbol => new NodeExpressionSymbol(
+                    symbol.Text,
+                    symbol.Kind.ToString(),
+                    symbol.Description,
+                    symbol.Arity,
+                    symbol.InsertText))
+            ],
             NodeJsonContext.Default.NodeExpressionSymbolArray);
 
     [JSExport]
     public static string GetExpressionPresets() =>
         JsonSerializer.Serialize(
-            ExpressionEngine.Presets.Select(static preset => new NodeExpressionPreset(
-                preset.Id,
-                preset.DisplayName,
-                preset.Description,
-                preset.ScriptText)).ToArray(),
+            [
+                .. ExpressionEngine.Presets.Select(static preset => new NodeExpressionPreset(
+                    preset.Id,
+                    preset.DisplayName,
+                    preset.Description,
+                    preset.ScriptText))
+            ],
             NodeJsonContext.Default.NodeExpressionPresetArray);
 
     [JSExport]
@@ -218,7 +228,7 @@ public static partial class NodeApi
         return JsonSerializer.Serialize(
             new NodeTimeParseResponse(
                 result.Value.TotalSeconds,
-                result.Diagnostics.Select(ToDiagnostic).ToArray()),
+                [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeTimeParseResponse);
     }
 
@@ -250,18 +260,22 @@ public static partial class NodeApi
     [JSExport]
     public static string GetXmlLanguages() =>
         JsonSerializer.Serialize(
-            XmlChapterLanguageCatalog.Languages.Select(static language => new NodeXmlLanguage(
-                language.Code,
-                language.DisplayName)).ToArray(),
+            [
+                .. XmlChapterLanguageCatalog.Languages.Select(static language => new NodeXmlLanguage(
+                    language.Code,
+                    language.DisplayName))
+            ],
             NodeJsonContext.Default.NodeXmlLanguageArray);
 
     [JSExport]
     public static string GetOutputEncodings() =>
         JsonSerializer.Serialize(
-            OutputTextEncodings.All.Select(static encoding => new NodeOutputEncoding(
-                OutputTextEncodings.Id(encoding),
-                OutputTextEncodings.DisplayName(encoding),
-                OutputTextEncodings.XmlName(encoding))).ToArray(),
+            [
+                .. OutputTextEncodings.All.Select(static encoding => new NodeOutputEncoding(
+                    OutputTextEncodings.Id(encoding),
+                    OutputTextEncodings.DisplayName(encoding),
+                    OutputTextEncodings.XmlName(encoding)))
+            ],
             NodeJsonContext.Default.NodeOutputEncodingArray);
 
     private static ChapterSet DeserializeChapterSet(string json) =>
@@ -275,15 +289,17 @@ public static partial class NodeApi
             ?? throw new ArgumentException("Import source JSON is invalid.", nameof(json));
         return new ChapterImportSource(
             source.SourcePath,
-            source.Entries.Select(static entry => new ChapterImportEntry(
-                entry.Id,
-                entry.DisplayName,
-                ToChapterSet(entry.ChapterSet),
-                entry.CanCombine,
-                entry.ReferencedMediaFiles?.Select(static media => new ReferencedMediaFile(
-                    media.DisplayName,
-                    media.RelativePath,
-                    media.AbsolutePath)).ToArray())).ToArray(),
+            [
+                .. source.Entries.Select(static entry => new ChapterImportEntry(
+                    entry.Id,
+                    entry.DisplayName,
+                    ToChapterSet(entry.ChapterSet),
+                    entry.CanCombine,
+                    entry.ReferencedMediaFiles?.Select(static media => new ReferencedMediaFile(
+                        media.DisplayName,
+                        media.RelativePath,
+                        media.AbsolutePath)).ToArray()))
+            ],
             source.DefaultEntryIndex);
     }
 
@@ -291,7 +307,7 @@ public static partial class NodeApi
         JsonSerializer.Serialize(
             new NodeEditResponse(
                 ToNodeChapterSet(result.ChapterSet),
-                result.Diagnostics.Select(ToDiagnostic).ToArray()),
+                [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeEditResponse);
 
     private static string SerializeConversion(ChapterConversionResult result) =>
@@ -300,7 +316,7 @@ public static partial class NodeApi
                 result.Success,
                 result.Content,
                 result.Extension,
-                result.Diagnostics.Select(ToDiagnostic).ToArray()),
+                [.. result.Diagnostics.Select(ToDiagnostic)]),
             NodeJsonContext.Default.NodeConversionResponse);
 
     private static NodeFrameRateOption ToFrameRateOption(FrameRateOption option) =>

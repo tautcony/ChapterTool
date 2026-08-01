@@ -128,11 +128,7 @@ public sealed class BdjoParserTests
         bytes.AddRange([.. "00001"u8]);
         bytes.Add(0);
 
-        var applications = new List<byte>();
-        applications.Add(1);
-        applications.Add(0);
-        applications.Add(1);
-        applications.Add(0x10);
+        List<byte> applications = [1, 0, 1, 0x10];
         AddUInt32(applications, 0x01020304);
         AddUInt16(applications, 7);
         applications.AddRange(new byte[10]);

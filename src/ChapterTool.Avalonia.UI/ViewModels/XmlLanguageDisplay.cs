@@ -10,13 +10,14 @@ internal static class XmlLanguageDisplay
     private static readonly ConcurrentDictionary<(string CultureName, string LanguageCode), string> DisplayNameCache = new();
 
     public static IReadOnlyList<SelectorDisplayOption> Options(IAppLocalizer localizer) =>
-        XmlChapterLanguageCatalog.Languages
+    [
+        .. XmlChapterLanguageCatalog.Languages
             .Select(language =>
             {
                 var displayName = LanguageDisplayName(language, localizer);
                 return new SelectorDisplayOption(language.Code, displayName, $"{language.Code}（{displayName}）");
             })
-            .ToArray();
+    ];
 
     private static string LanguageDisplayName(XmlChapterLanguage language, IAppLocalizer localizer)
     {

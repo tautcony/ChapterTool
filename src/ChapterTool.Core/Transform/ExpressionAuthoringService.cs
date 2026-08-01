@@ -117,17 +117,21 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         if (token.Prefix.Contains('.', StringComparison.Ordinal) && candidates.Count == 0)
         {
             var suffix = token.Prefix[(token.Prefix.LastIndexOf('.') + 1)..];
-            candidates = Symbols
-                .Where(symbol => symbol.Text.Contains('.', StringComparison.Ordinal) && symbol.Text[(symbol.Text.LastIndexOf('.') + 1)..].StartsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(static symbol => symbol.Text, StringComparer.OrdinalIgnoreCase)
-                .Select(symbol => new ExpressionCompletion(
-                    symbol.Text,
-                    symbol.Kind,
-                    symbol.Description,
-                    token.Start,
-                    token.Length,
-                    string.IsNullOrEmpty(symbol.InsertText) ? symbol.Text : symbol.InsertText))
-                .ToList();
+            candidates =
+            [
+                .. Symbols
+                    .Where(symbol => symbol.Text.Contains('.', StringComparison.Ordinal) && symbol
+                        .Text[(symbol.Text.LastIndexOf('.') + 1)..]
+                        .StartsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(static symbol => symbol.Text, StringComparer.OrdinalIgnoreCase)
+                    .Select(symbol => new ExpressionCompletion(
+                        symbol.Text,
+                        symbol.Kind,
+                        symbol.Description,
+                        token.Start,
+                        token.Length,
+                        string.IsNullOrEmpty(symbol.InsertText) ? symbol.Text : symbol.InsertText))
+            ];
         }
 
         return candidates;

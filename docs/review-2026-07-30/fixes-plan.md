@@ -6,7 +6,7 @@ Fix `P1-P1-1` first. Remove CLPI presentation-time addition from playlist-time c
 
 ## Batch 2: Restore format compatibility
 
-Fix `P1-P2-1`, `P1-P2-2`, and `P1-P2-3`. Use one BDMV version policy. Correct INDEX bit extraction. Add primary and backup path fixtures. Verify native BDMV discovery and standalone MPLS import.
+Fix `P1-P2-1`, `P1-P2-2`, and `P1-P2-3`. Use one BDMV version policy. Correct INDEX bit extraction. Add primary and backup path fixtures. Verify BDMV discovery and standalone MPLS import.
 
 ## Batch 3: Complete extension and metadata contracts
 

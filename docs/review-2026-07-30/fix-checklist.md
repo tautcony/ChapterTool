@@ -23,7 +23,7 @@
 
 - [x] Add `0240` binary header fixtures for MPLS, CLPI, and INDEX.
 - [x] Accept `0240` in the three header readers.
-- [x] Run Core import tests. Native BDMV tests are covered by the Infrastructure test run below.
+- [x] Run Core import tests. BDMV tests are covered by the Infrastructure test run below.
 
 ## P1-P2-2 — INDEX AppInfo bit shift
 

@@ -49,7 +49,7 @@ public sealed class ClpiImporterTests
     [Fact]
     public void InvalidHeaderThrows()
     {
-        using var stream = new MemoryStream([.. "BAD\x00"u8]);
+        using var stream = new MemoryStream([.. "BAD\0"u8]);
         Assert.Throws<InvalidDataException>(() => ClpiFile.Read(stream));
     }
 

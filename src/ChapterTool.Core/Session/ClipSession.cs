@@ -1,5 +1,6 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
+using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Session;
@@ -262,9 +263,16 @@ public static class ClipSessionTransitions
             .SelectMany(static entry => entry.ReferencedMediaFiles ?? [])
             .Distinct()
             .ToArray();
+        var displayName = combinedInfo.ImportFormat == ChapterImportFormat.Mpls
+            ? MplsPlaylistProjection.ClipListDisplay(mediaReferences.Select(static reference => Path.GetFileNameWithoutExtension(reference.DisplayName)))
+            : sourceGroup.Entries.FirstOrDefault()?.DisplayName ?? combinedInfo.Title;
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            displayName = combinedInfo.Title;
+        }
         return new ChapterImportEntry(
             "combined",
-            $"{combinedInfo.Title}__{combinedInfo.Chapters.Count}",
+            displayName,
             combinedInfo,
             CanCombine: true,
             ReferencedMediaFiles: mediaReferences);
