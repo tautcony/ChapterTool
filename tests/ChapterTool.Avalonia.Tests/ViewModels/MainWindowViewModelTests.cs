@@ -1491,17 +1491,22 @@ public sealed class MainWindowViewModelTests
         }
     }
 
-    private sealed class FakeWindowService : IWindowService
+    private sealed class FakeWindowService : IAuxiliaryToolHost
     {
         public List<string> Opened { get; } = [];
 
-        public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
+        public ValueTask<AuxiliaryToolResult> OpenAsync(ToolId toolId, AuxiliaryToolRequest request, CancellationToken cancellationToken)
         {
-            Opened.Add(windowId);
-            return ValueTask.CompletedTask;
+            Opened.Add(toolId.Value);
+            return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
         }
 
-        public ValueTask HideAsync(string windowId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Closed, toolId));
+
+        public void Dispose()
+        {
+        }
     }
 
     private sealed class FakeShellService : IShellService

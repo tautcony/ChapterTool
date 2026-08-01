@@ -19,7 +19,7 @@ public sealed partial class MainView : UserControl
     private readonly ShortcutRouter shortcutRouter;
     private readonly Func<Control, IFilePickerService> filePickerServiceFactory;
     private readonly UiOperationBoundary uiOperationBoundary;
-    private readonly IInViewSecondarySurface? secondarySurface;
+    private readonly IEmbeddedToolPresenter embeddedToolPresenter;
     private IFilePickerService? filePickerService;
     private bool windowCommandRefreshPending;
 
@@ -31,9 +31,21 @@ public sealed partial class MainView : UserControl
     public MainView(
         MainWindowViewModel viewModel,
         Func<Control, IFilePickerService> filePickerServiceFactory)
+        : this(viewModel, filePickerServiceFactory, new NoContentEmbeddedToolPresenter())
     {
+    }
+
+    public MainView(
+        MainWindowViewModel viewModel,
+        Func<Control, IFilePickerService> filePickerServiceFactory,
+        IEmbeddedToolPresenter embeddedToolPresenter)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(filePickerServiceFactory);
+        ArgumentNullException.ThrowIfNull(embeddedToolPresenter);
         this.viewModel = viewModel;
         this.filePickerServiceFactory = filePickerServiceFactory;
+        this.embeddedToolPresenter = embeddedToolPresenter;
         shortcutRouter = new ShortcutRouter(viewModel);
         uiOperationBoundary = new UiOperationBoundary(viewModel.ReportUnexpectedUiException);
 
@@ -56,12 +68,8 @@ public sealed partial class MainView : UserControl
 
         InitializeComponent();
         DataContext = viewModel;
-        secondarySurface = viewModel.WindowService as IInViewSecondarySurface;
-        if (secondarySurface is not null)
-        {
-            secondarySurface.ContentChanged += OnSecondarySurfaceChanged;
-            UpdateSecondarySurface();
-        }
+        embeddedToolPresenter.ContentChanged += OnSecondarySurfaceChanged;
+        UpdateSecondarySurface();
         SubscribeViewModelCommandState();
         ApplyAdvancedOptionsLayout();
         RaiseCommandStates();
@@ -151,7 +159,7 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        await viewModel.PortAdapters.Expression.LoadScriptAsync(path, CancellationToken.None);
+        await viewModel.ToolSession.Expression.LoadScriptAsync(path, CancellationToken.None);
     }
 
     private async Task OpenZonesAsync()
@@ -421,10 +429,7 @@ public sealed partial class MainView : UserControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs args)
     {
         UnsubscribeViewModelCommandState();
-        if (secondarySurface is not null)
-        {
-            secondarySurface.ContentChanged -= OnSecondarySurfaceChanged;
-        }
+        embeddedToolPresenter.ContentChanged -= OnSecondarySurfaceChanged;
         Content = null;
         base.OnDetachedFromVisualTree(args);
     }
@@ -433,8 +438,8 @@ public sealed partial class MainView : UserControl
 
     private void UpdateSecondarySurface()
     {
-        SecondarySurface.Content = secondarySurface?.Content;
-        SecondarySurface.IsVisible = secondarySurface?.Content is not null;
+        SecondarySurface.Content = embeddedToolPresenter.Content;
+        SecondarySurface.IsVisible = embeddedToolPresenter.Content is not null;
     }
 
     private IEnumerable<UiCommand> ViewModelCommandsForAdapterRefresh()

@@ -142,13 +142,15 @@ public sealed class ToolWindowViewModelTests
     }
 
     [Fact]
-    public void ToolWindowRegistry_registers_known_tool_ids()
+    public void Standard_catalog_registers_known_tool_ids()
     {
-        Assert.NotNull(ToolWindowRegistry.Find("preview"));
-        Assert.NotNull(ToolWindowRegistry.Find("settings"));
-        Assert.NotNull(ToolWindowRegistry.Find("expression"));
-        Assert.NotNull(ToolWindowRegistry.Find("language"));
-        Assert.Null(ToolWindowRegistry.Find("missing-tool"));
+        var catalog = StandardToolCatalogFactory.Create();
+
+        Assert.True(catalog.TryGet(ToolIds.Preview, out _));
+        Assert.True(catalog.TryGet(ToolIds.Settings, out _));
+        Assert.True(catalog.TryGet(ToolIds.Expression, out _));
+        Assert.True(catalog.TryGet(ToolIds.Language, out _));
+        Assert.False(catalog.TryGet("missing-tool", out _));
     }
 
 
@@ -290,6 +292,11 @@ public sealed class ToolWindowViewModelTests
 
         public decimal FrameAccuracyTolerance { get; private set; } = 0.15m;
 
+        public void ApplyLoadedSettings(AppSettings settings)
+        {
+            ApplyLivePreferences(settings);
+        }
+
         public void ApplyLivePreferences(AppSettings settings)
         {
             UiLanguage = AppLanguage.Normalize(settings.Language);
@@ -303,10 +310,16 @@ public sealed class ToolWindowViewModelTests
         }
     }
 
-    private sealed class FakeWindowService : IWindowService
+    private sealed class FakeWindowService : IAuxiliaryToolHost
     {
-        public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask<AuxiliaryToolResult> OpenAsync(ToolId toolId, AuxiliaryToolRequest request, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
 
-        public ValueTask HideAsync(string windowId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Closed, toolId));
+
+        public void Dispose()
+        {
+        }
     }
 }

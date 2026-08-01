@@ -21,7 +21,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 {
     private readonly IChapterEditingService editingService;
     private readonly ChapterSegmentService segmentService;
-    private readonly IWindowService windowService;
+    private readonly IAuxiliaryToolHost auxiliaryToolHost;
     private readonly IFrameRateService frameRateService;
     private readonly ChapterExportService exportService;
     private readonly IRuntimeCapabilities capabilities;
@@ -45,12 +45,40 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         set => Workspace.SetCurrentChapterSet(value);
     }
 
+    public MainWindowViewModel(AvaloniaHostComposition composition)
+        : this(
+            Valid(composition).Workspace.LoadService,
+            composition.Workspace.SaveService,
+            composition.Workspace.EditingService,
+            composition.Workspace.SegmentService,
+            composition.AuxiliaryTools.Host,
+            composition.Workspace.Formatter,
+            composition.Effects.LogService,
+            composition.Effects.Logger,
+            composition.Workspace.FrameRateService,
+            composition.Localization.Localizer,
+            composition.Workspace.ExpressionEngine,
+            composition.Workspace.ExportService,
+            composition.Effects.ShellService,
+            composition.Settings.SettingsStore,
+            composition.Workspace.ExpressionAuthoringService,
+            composition.Runtime.Capabilities)
+    {
+    }
+
+    private static AvaloniaHostComposition Valid(AvaloniaHostComposition composition)
+    {
+        ArgumentNullException.ThrowIfNull(composition);
+        composition.Validate();
+        return composition;
+    }
+
     public MainWindowViewModel(
         IChapterLoadService loadService,
         IChapterSaveService saveService,
         IChapterEditingService editingService,
         ChapterSegmentService segmentService,
-        IWindowService windowService,
+        IAuxiliaryToolHost auxiliaryToolHost,
         IChapterTimeFormatter formatter,
         IApplicationLogService logService,
         ILogger<MainWindowViewModel> logger,
@@ -67,7 +95,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         ArgumentNullException.ThrowIfNull(saveService);
         ArgumentNullException.ThrowIfNull(editingService);
         ArgumentNullException.ThrowIfNull(segmentService);
-        ArgumentNullException.ThrowIfNull(windowService);
+        ArgumentNullException.ThrowIfNull(auxiliaryToolHost);
         ArgumentNullException.ThrowIfNull(formatter);
         ArgumentNullException.ThrowIfNull(logService);
         ArgumentNullException.ThrowIfNull(logger);
@@ -78,7 +106,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         this.editingService = editingService;
         this.segmentService = segmentService;
-        this.windowService = windowService;
+        this.auxiliaryToolHost = auxiliaryToolHost;
         this.frameRateService = frameRateService;
         this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
@@ -105,7 +133,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, formatter);
         statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, logger, formatter, value => StatusText = value);
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
-        PortAdapters = new MainWindowPortAdapters(this);
+        var toolSession = new MainWindowToolSession(this);
+        ToolSession = toolSession;
+        PortAdapters = toolSession.PortAdapters;
         chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
         statusText = string.Empty;
         statusDiagnosticsPresenter.SetStatus("Status.Ready");
@@ -123,12 +153,16 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
     internal ChapterWorkspace Workspace { get; } = new();
 
-    public MainWindowPortAdapters PortAdapters { get; }
+    /// <summary>Compatibility access for existing tests and legacy callers.</summary>
+    internal MainWindowPortAdapters PortAdapters { get; }
+
+    /// <summary>Session facade that owns the narrow ports used by auxiliary tools.</summary>
+    public IWorkspaceToolSession ToolSession { get; }
 
     /// <summary>Host effects projected into shared command and visibility state.</summary>
     public IRuntimeCapabilities Capabilities => capabilities;
 
-    public IWindowService WindowService => windowService;
+    public IAuxiliaryToolHost AuxiliaryToolHost => auxiliaryToolHost;
 
     internal IChapterExpressionEngine ExpressionEngine { get; }
 
@@ -942,7 +976,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
 
     private UiCommand WindowCommand(string id, Func<bool>? canExecute = null) =>
-        new(async (_, token) => await windowService.ShowAsync(id, this, token), _ =>
+        new(async (_, token) =>
+        {
+            var toolId = new ToolId(id);
+            await auxiliaryToolHost.OpenAsync(
+                toolId,
+                new AuxiliaryToolRequest(ToolSession, Localizer, Capabilities),
+                token);
+        }, _ =>
             Capabilities.SecondarySurfaceMode != RuntimeSecondarySurfaceMode.Unavailable
             && (canExecute?.Invoke() ?? true));
 

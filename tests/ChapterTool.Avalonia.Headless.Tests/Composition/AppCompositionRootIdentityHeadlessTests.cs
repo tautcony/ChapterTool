@@ -5,6 +5,7 @@ using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Composition;
 using ChapterTool.Avalonia.Headless.Tests.Headless;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views;
 using ChapterTool.Avalonia.UI.Views.Controls;
@@ -17,6 +18,24 @@ namespace ChapterTool.Avalonia.Headless.Tests.Composition;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class AppCompositionRootIdentityHeadlessTests
 {
+    [AvaloniaFact]
+    public void Desktop_composition_resolves_the_validated_host_graph_and_catalog()
+    {
+        var settingsDirectory = CreateTempDirectory();
+        using var composition = new AppCompositionRoot(settingsDirectory: settingsDirectory);
+
+        var hostComposition = composition.CreateHostComposition();
+        var catalog = composition.CreateToolCatalog();
+
+        Assert.NotNull(hostComposition.Workspace.LoadService);
+        Assert.NotNull(hostComposition.AuxiliaryTools.Host);
+        Assert.NotNull(hostComposition.AuxiliaryTools.Presenter);
+        Assert.Equal(8, catalog.Descriptors.Count);
+        Assert.All(
+            [ToolIds.Preview, ToolIds.Log, ToolIds.Settings, ToolIds.Language, ToolIds.Expression, ToolIds.TemplateNames, ToolIds.Zones, ToolIds.ForwardShift],
+            id => Assert.True(catalog.TryGet(id, out _)));
+    }
+
     [AvaloniaFact]
     public async Task Production_editor_hosts_use_the_same_composed_authoring_service()
     {
@@ -121,7 +140,7 @@ public sealed class AppCompositionRootIdentityHeadlessTests
     private static IReadOnlyList<Window> WindowsFor(MainWindowViewModel viewModel)
     {
         var serviceField = typeof(MainWindowViewModel).GetField(
-            "windowService",
+            "auxiliaryToolHost",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
             ?? throw new InvalidOperationException("Main window service field was not found.");
         var service = serviceField.GetValue(viewModel)

@@ -21,6 +21,8 @@ public interface IExpressionSessionPort
 
     string ExpressionSourceName { get; }
 
+    ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken);
+
     ChapterDiagnostic? ApplyLuaExpressionSettings(
         string expression,
         bool applyExpression,
@@ -47,6 +49,8 @@ public interface IPreferenceSink
 
     decimal FrameAccuracyTolerance { get; }
 
+    void ApplyLoadedSettings(AppSettings settings);
+
     void ApplyLivePreferences(AppSettings settings);
 
     ValueTask SaveUiLanguageAsync(string language, CancellationToken cancellationToken);
@@ -72,4 +76,13 @@ public interface INamingPreferencePort
 public interface IChapterEditPort
 {
     void ShiftFramesForward(int frames);
+}
+
+public interface IMainShellNotificationPort
+{
+    void RefreshExpressionFields();
+
+    void RefreshRows();
+
+    void RefreshStatus();
 }

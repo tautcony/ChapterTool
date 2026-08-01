@@ -89,7 +89,6 @@ All runtime consumers receive the same aggregate store. `SettingsToolViewModel` 
 - test/dummy platform services:
   - `src/ChapterTool.Infrastructure/Platform/MemoryClipboardService.cs`
   - `src/ChapterTool.Infrastructure/Platform/ScriptedDialogService.cs`
-  - `src/ChapterTool.Infrastructure/Platform/RecordingWindowService.cs`
 
 ## Feature Lookup
 

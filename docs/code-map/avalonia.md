@@ -72,7 +72,13 @@ Runtime wiring is centralized in:
 
 The GUI composition root uses `ChapterToolRuntimeComposition` for runtime importer construction. It passes its formatter, tool locator, process runner, and media readers to preserve shared GUI service instances.
 
-For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through `MainWindowViewModel` or `ToolWindowCreateContext`. Its private fallback is limited to direct design-time or test construction.
+`AppCompositionRoot.CreateHostComposition()` is the explicit desktop boundary for shared Avalonia composition. It supplies workspace services, host effects, settings and appearance services, localization, runtime capabilities, and auxiliary-tool hosting. `AppCompositionRoot.CreateToolCatalog()` returns the injected catalog used by the desktop host.
+
+`src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs` owns `ToolId`, typed auxiliary-tool requests and results, host service groups, catalog descriptors, and the embedded presenter contract. `EmbeddedAuxiliaryToolHost.cs` provides the single-content host implementation. `UnavailableHostAdapters.cs` provides explicit no-op adapters for unavailable capabilities.
+
+`BrowserPortableAdapters.cs` remains in the shared assembly because it contains no browser API implementation. It defines the bounded source-read behavior and the `IBrowserFileAccess` host port. A browser host owns the `IBrowserFileAccess` implementation.
+
+For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through the host composition and the typed `ToolCreationContext`. Its private fallback is limited to direct design-time or test construction.
 
 The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`: formatter, expression authoring, export, and external-tool locator identities are shared within one GUI root.
 
@@ -181,9 +187,12 @@ If command execution semantics change:
 
 Start with:
 
-- `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs` — tool id → title resource + content factory table
-- `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs` — host lifecycle; iterates registry
+- `src/ChapterTool.Avalonia/Services/StandardToolCatalogFactory.cs` — standard `ToolDescriptor` construction
+- `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs` — Native Window host lifecycle and typed catalog lookup
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/EmbeddedAuxiliaryToolHost.cs` — Embedded host lifecycle and presenter updates
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs` — typed identifiers, catalog, host, and presenter contracts
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, `IExportPreferencePort`, …)
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/WorkspaceToolSession.cs` — workspace tool-session facade and shell notification port
 
 Then inspect the matching pair in:
 
@@ -196,7 +205,7 @@ Start with:
 
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml`
-- `src/ChapterTool.Avalonia/Services/ToolWindowRegistry.cs`
+- `src/ChapterTool.Avalonia/Services/StandardToolCatalogFactory.cs`
 - `src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
 
