@@ -164,11 +164,11 @@ public sealed class AuxiliaryToolHeadlessTests
     private static Color BrushColor(IBrush? brush) => Assert.IsType<SolidColorBrush>(brush).Color;
 
     private static Color ResourceColor(string key) =>
-        BrushColor(global::Avalonia.Application.Current!.Resources[key] as IBrush);
+        BrushColor(Application.Current!.Resources[key] as IBrush);
 
     private static Color ImportedThemeBrushColor(string key)
     {
-        var application = global::Avalonia.Application.Current!;
+        var application = Application.Current!;
         Assert.True(application.TryGetResource(key, out var resource));
         return BrushColor(resource as IBrush);
     }

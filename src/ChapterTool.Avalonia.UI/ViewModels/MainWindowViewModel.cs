@@ -24,7 +24,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private readonly IAuxiliaryToolHost auxiliaryToolHost;
     private readonly IFrameRateService frameRateService;
     private readonly ChapterExportService exportService;
-    private readonly IRuntimeCapabilities capabilities;
     private readonly IShellService? shellService;
     private readonly LoadSaveWorkflow loadSaveWorkflow;
     private readonly ProjectionFacade projectionFacade;
@@ -110,7 +109,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         this.frameRateService = frameRateService;
         this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
-        this.capabilities = capabilities ?? new RuntimeCapabilities(
+        this.Capabilities = capabilities ?? new RuntimeCapabilities(
             RuntimeSourceMode.LocalPath,
             RuntimeOutputMode.Directory,
             RuntimeSecondarySurfaceMode.NativeWindow,
@@ -160,7 +159,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     public IWorkspaceToolSession ToolSession { get; }
 
     /// <summary>Host effects projected into shared command and visibility state.</summary>
-    public IRuntimeCapabilities Capabilities => capabilities;
+    public IRuntimeCapabilities Capabilities { get; }
 
     public IAuxiliaryToolHost AuxiliaryToolHost => auxiliaryToolHost;
 

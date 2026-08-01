@@ -61,11 +61,11 @@ internal sealed record ClpiExtensionData(
             var payload = container.ReadExactBytes(checked((int)entry.ExtDataLength));
             rawEntries[$"{entry.ExtDataType}.{entry.ExtDataVersion}"] = payload;
             using var payloadStream = new MemoryStream(payload, writable: false);
-            if (entry.ExtDataType == 2 && entry.ExtDataVersion == 4)
+            if (entry is { ExtDataType: 2, ExtDataVersion: 4 })
                 extentStartPoints = ClpiExtentStartPoints.Read(payloadStream);
-            else if (entry.ExtDataType == 2 && entry.ExtDataVersion == 5)
+            else if (entry is { ExtDataType: 2, ExtDataVersion: 5 })
                 programInfoSS = ClpiProgramInfo.Read(payloadStream);
-            else if (entry.ExtDataType == 2 && entry.ExtDataVersion == 6)
+            else if (entry is { ExtDataType: 2, ExtDataVersion: 6 })
                 cpiSS = ClpiCPI.Read(payloadStream);
         }
 

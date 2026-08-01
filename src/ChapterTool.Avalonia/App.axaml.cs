@@ -22,6 +22,7 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             composition = new AppCompositionRoot();
+            composition.ValidateProductionComposition();
             desktop.Exit += (_, _) => composition.Dispose();
             desktop.MainWindow = composition.CreateMainWindow();
         }

@@ -1,5 +1,4 @@
 using System.Buffers.Binary;
-using System.Text;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Disc.MovieObject;
 
@@ -51,21 +50,19 @@ public sealed class MovieObjectNavigationTests
         var file = MovieObjectFile.TryRead(path, out var error);
 
         Assert.True(file != null, error);
-        Assert.NotEmpty(file!.Objects);
+        Assert.NotEmpty(file.Objects);
         Assert.Contains(file.Objects, static movieObject => movieObject.Commands.Count > 0);
     }
 
     [Fact]
     public void ResolverReadsRegisterOperandsAndEmitsPlayPlEvent()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
                 Command(2, 2, 0, false, true, setOption: 1, destination: 1, source: 42),
-                Command(1, 0, 2, false, false, branchOption: 0, destination: 1),
-            })
-        });
+                Command(1, 0, 2, false, false, branchOption: 0, destination: 1)
+            ])
+        ]);
         var result = new HdmvNavigationResolver().Resolve(file, 0);
 
         Assert.True(result.Events.Count > 0, string.Join("; ", result.Diagnostics.Select(static d => d.Message)));
@@ -78,16 +75,14 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverSkipsPlayCommandWhenCompareIsFalse()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
                 Command(2, 2, 0, false, true, setOption: 1, destination: 0, source: 1),
                 Command(2, 1, 0, false, true, compareOption: 2, destination: 0, source: 2),
                 Command(1, 0, 2, true, false, branchOption: 0, destination: 10),
-                Command(1, 0, 2, true, false, branchOption: 0, destination: 11),
-            })
-        });
+                Command(1, 0, 2, true, false, branchOption: 0, destination: 11)
+            ])
+        ]);
 
         var result = new HdmvNavigationResolver().Resolve(file, 0);
 
@@ -98,16 +93,14 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverSaturatesArithmeticAndRejectsPsrWrites()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
                 Command(2, 2, 0, false, true, setOption: 1, destination: 0, source: uint.MaxValue),
                 Command(2, 2, 0, false, true, setOption: 3, destination: 0, source: 1),
                 Command(2, 2, 0, false, true, setOption: 1, destination: 0x80000004, source: 7),
-                Command(1, 0, 2, false, false, branchOption: 0, destination: 0),
-            })
-        });
+                Command(1, 0, 2, false, false, branchOption: 0, destination: 0)
+            ])
+        ]);
 
         var result = new HdmvNavigationResolver().Resolve(file, 0);
 
@@ -119,13 +112,11 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverStopsAVisitedStateLoop()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 0, true, false, branchOption: 1, destination: 0),
-            })
-        });
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 0, true, false, branchOption: 1, destination: 0)
+            ])
+        ]);
 
         var result = new HdmvNavigationResolver(new HdmvNavigationLimits(MaximumVisitedStates: 2)).Resolve(file, 0);
 
@@ -136,47 +127,40 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverSupportsObjectJumpTitleJumpAndCallResume()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 1, true, false, branchOption: 0, destination: 1),
-            }),
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 2, true, false, destination: 7),
-            })
-        });
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 1, true, false, branchOption: 0, destination: 1)
+            ]),
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 2, true, false, destination: 7)
+            ])
+        ]);
         var jump = new HdmvNavigationResolver().Resolve(file, 0);
         Assert.Equal(7U, Assert.Single(jump.Events).PlaylistId);
 
         var titleJumpFile = file with
         {
-            Objects = new[]
-            {
-                new MovieObjectObject(false, false, false, new[]
-                {
-                    Command(1, 0, 1, true, false, branchOption: 1, destination: 1),
-                }),
+            Objects =
+            [
+                new MovieObjectObject(false, false, false, [
+                    Command(1, 0, 1, true, false, branchOption: 1, destination: 1)
+                ]),
                 file.Objects[1]
-            }
+            ]
         };
         var titleJump = new HdmvNavigationResolver().Resolve(titleJumpFile, 0, new Dictionary<uint, ushort> { [1] = 1 });
         Assert.Equal(7U, Assert.Single(titleJump.Events).PlaylistId);
 
-        var callFile = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
+        var callFile = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
                 Command(1, 0, 1, true, false, branchOption: 2, destination: 1),
-                Command(1, 0, 2, true, false, destination: 8),
-            }),
-            new MovieObjectObject(false, false, false, new[]
-            {
+                Command(1, 0, 2, true, false, destination: 8)
+            ]),
+            new MovieObjectObject(false, false, false, [
                 Command(1, 0, 2, true, false, destination: 9),
-                Command(0, 0, 1, false, false, branchOption: 4),
-            })
-        });
+                Command(0, 0, 1, false, false, branchOption: 4)
+            ])
+        ]);
         var call = new HdmvNavigationResolver().Resolve(callFile, 0);
         Assert.Equal(new uint[] { 9, 8 }, call.Events.Select(static item => item.PlaylistId));
     }
@@ -184,23 +168,19 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverStopsAtInstructionAndCallDepthLimits()
     {
-        var loop = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 0, true, false, branchOption: 1, destination: 0),
-            })
-        });
+        var loop = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 0, true, false, branchOption: 1, destination: 0)
+            ])
+        ]);
         var instructionLimit = new HdmvNavigationResolver(new HdmvNavigationLimits(MaximumInstructions: 1)).Resolve(loop, 0);
         Assert.True(instructionLimit.LimitReached);
 
-        var call = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 1, true, false, branchOption: 2, destination: 0),
-            })
-        });
+        var call = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 1, true, false, branchOption: 2, destination: 0)
+            ])
+        ]);
         var callLimit = new HdmvNavigationResolver(new HdmvNavigationLimits(MaximumCallDepth: 1)).Resolve(call, 0);
         Assert.True(callLimit.LimitReached);
     }
@@ -208,36 +188,31 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverEvaluatesOnlyProfilesForReadPsrsAndMergesEvents()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 2, false, false, destination: 0x80000009),
-            })
-        });
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 2, false, false, destination: 0x80000009)
+            ])
+        ]);
 
         var result = new HdmvNavigationResolver(new HdmvNavigationLimits(MaximumProfileVariants: 3))
             .ResolveProfileVariants(file, 0);
 
         Assert.Equal(new uint[] { 0, 1, 2 }, result.Events.Select(static item => item.PlaylistId));
-        Assert.Equal(new[] { "default", "psr9=1", "psr9=2" }, result.Events.Select(static item => item.PlayerProfile));
+        Assert.Equal(["default", "psr9=1", "psr9=2"], result.Events.Select(static item => item.PlayerProfile));
         Assert.Equal(3, result.Diagnostics.Count(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.NavigationSource && diagnostic.Message.StartsWith("Evaluated HDMV player profile", StringComparison.Ordinal)));
     }
 
     [Fact]
     public void ResolverPreservesGlobalTitleNumbersAcrossBdJEntries()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 1, true, false, branchOption: 1, destination: 3),
-            }),
-            new MovieObjectObject(false, false, false, new[]
-            {
-                Command(1, 0, 2, true, false, destination: 17),
-            })
-        });
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 1, true, false, branchOption: 1, destination: 3)
+            ]),
+            new MovieObjectObject(false, false, false, [
+                Command(1, 0, 2, true, false, destination: 17)
+            ])
+        ]);
 
         var titleObjects = new Dictionary<uint, ushort> { [1] = 0, [3] = 1 };
         var result = new HdmvNavigationResolver().Resolve(file, 0, titleObjects);
@@ -249,21 +224,19 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverEmitsLinkAndPlayStopControlEvents()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
                 Command(1, 0, 2, true, false, branchOption: 4, destination: 2),
                 Command(1, 0, 2, true, false, branchOption: 5, destination: 3),
                 Command(0, 0, 2, false, false, branchOption: 3),
-                Command(1, 0, 2, true, false, destination: 99),
-            })
-        });
+                Command(1, 0, 2, true, false, destination: 99)
+            ])
+        ]);
 
         var result = new HdmvNavigationResolver().Resolve(file, 0);
 
         Assert.Empty(result.Events);
-        Assert.Equal(new[] { "LinkPI", "LinkMK", "PlayStop" }, result.ControlEvents.Select(static item => item.InstructionType));
+        Assert.Equal(["LinkPI", "LinkMK", "PlayStop"], result.ControlEvents.Select(static item => item.InstructionType));
         Assert.Equal(2U, result.ControlEvents[0].PlayItemId);
         Assert.Equal(3U, result.ControlEvents[1].MarkId);
     }
@@ -271,15 +244,13 @@ public sealed class MovieObjectNavigationTests
     [Fact]
     public void ResolverUpdatesPlaylistRelevantSetSystemRegisters()
     {
-        var file = new MovieObjectFile("MOBJ", "0100", 0, new[]
-        {
-            new MovieObjectObject(false, false, false, new[]
-            {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
                 Command(2, 2, 1, true, true, setOption: 1, destination: 0x80070000),
                 Command(1, 0, 2, false, false, destination: 0x80000001),
-                Command(2, 2, 1, true, true, setOption: 3, destination: 0x80000005, source: 0x80000006),
-            })
-        });
+                Command(2, 2, 1, true, true, setOption: 3, destination: 0x80000005, source: 0x80000006)
+            ])
+        ]);
 
         var result = new HdmvNavigationResolver().Resolve(file, 0);
 
@@ -304,8 +275,8 @@ public sealed class MovieObjectNavigationTests
     {
         var sectionLength = 6 + 6 + command.Length;
         var bytes = new byte[40 + 4 + sectionLength];
-        Encoding.ASCII.GetBytes("MOBJ").CopyTo(bytes, 0);
-        Encoding.ASCII.GetBytes("0100").CopyTo(bytes, 4);
+        "MOBJ"u8.ToArray().CopyTo(bytes, 0);
+        "0100"u8.ToArray().CopyTo(bytes, 4);
         BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(40), (uint)sectionLength);
         BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(44), 0);
         BinaryPrimitives.WriteUInt16BigEndian(bytes.AsSpan(48), 1);

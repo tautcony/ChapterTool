@@ -42,6 +42,6 @@ public static class ChapterOutputDocumentFactory
     private static byte[] Encode(string content, ChapterExportOptions options)
     {
         var encoding = OutputTextEncodings.Create(options.TextEncoding, options.EmitBom);
-        return encoding.GetPreamble().Concat(encoding.GetBytes(content)).ToArray();
+        return [.. encoding.GetPreamble(), .. encoding.GetBytes(content)];
     }
 }

@@ -69,10 +69,13 @@ public static class XmlChapterLanguageCatalog
             .Select(static group => group.First())
             .OrderBy(static language => language.Code, StringComparer.OrdinalIgnoreCase);
 
-        return QuickCodes
-            .Select(static code => new XmlChapterLanguage(code, DisplayNameFor(code)))
-            .Concat(cultures.Where(static language => !QuickCodes.Contains(language.Code, StringComparer.OrdinalIgnoreCase)))
-            .ToList();
+        return
+        [
+            .. QuickCodes
+                .Select(static code => new XmlChapterLanguage(code, DisplayNameFor(code))),
+
+            .. cultures.Where(static language => !QuickCodes.Contains(language.Code, StringComparer.OrdinalIgnoreCase))
+        ];
     }
 
     private static string DisplayNameFor(string code)

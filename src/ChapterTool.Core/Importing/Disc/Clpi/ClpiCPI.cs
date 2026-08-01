@@ -73,7 +73,7 @@ internal sealed record ClpiCPI(
 
             ClpiParseLimits.ValidateCountByBudget(entry.NumberOfEPCoarseEntries, 8, container.Remaining, "EP coarse entry");
 
-            var coarseEntries = new List<ClpiEPCoarseEntry>((int)Math.Min(entry.NumberOfEPCoarseEntries, ClpiParseLimits.MaximumEPCoarseEntries));
+            var coarseEntries = new List<ClpiEPCoarseEntry>(Math.Min(entry.NumberOfEPCoarseEntries, ClpiParseLimits.MaximumEPCoarseEntries));
             var coarseReader = new ClpiBitReader(container);
             for (var j = 0; j < entry.NumberOfEPCoarseEntries; j++)
             {

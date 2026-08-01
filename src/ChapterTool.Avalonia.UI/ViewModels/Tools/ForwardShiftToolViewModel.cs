@@ -1,4 +1,3 @@
-using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;

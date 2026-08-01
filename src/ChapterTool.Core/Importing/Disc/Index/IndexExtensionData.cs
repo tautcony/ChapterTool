@@ -29,7 +29,7 @@ internal sealed record IndexExtensionData(
                 container.ReadUInt16BigEndian(),
                 container.ReadUInt32BigEndian(),
                 container.ReadUInt32BigEndian());
-            if ((ulong)entry.StartAddress + entry.Length > (ulong)length + 4UL)
+            if ((ulong)entry.StartAddress + entry.Length > length + 4UL)
                 throw new InvalidDataException("INDEX extension entry exceeds the extension section.");
             entries.Add(entry);
         }
@@ -44,7 +44,7 @@ internal sealed record IndexExtensionData(
             container.Position = entry.StartAddress - 4;
             var bytes = container.ReadExactBytes(checked((int)entry.Length));
             raw[$"{entry.Type}.{entry.Version}"] = bytes;
-            if (entry.Type == 3 && entry.Version == 1) uhd = IndexUhdMetadata.TryRead(bytes);
+            if (entry is { Type: 3, Version: 1 }) uhd = IndexUhdMetadata.TryRead(bytes);
         }
 
         container.Complete("INDEX extension data");

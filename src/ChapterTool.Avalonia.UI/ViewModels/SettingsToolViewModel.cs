@@ -132,7 +132,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     public IRuntimeCapabilities Capabilities { get; }
 
     public bool IsSaveDirectoryVisible =>
-        Capabilities.OutputMode == RuntimeOutputMode.Directory && Capabilities.CanOpenLocalPaths;
+        Capabilities is { OutputMode: RuntimeOutputMode.Directory, CanOpenLocalPaths: true };
 
     public bool IsExternalToolsVisible => Capabilities.CanConfigureExternalTools;
 

@@ -226,7 +226,7 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
 
     private static void DisposeContentDataContext(Window window)
     {
-        if (window.Content is Control control && control.DataContext is IDisposable disposable)
+        if (window.Content is Control { DataContext: IDisposable disposable } control)
         {
             control.DataContext = null;
             disposable.Dispose();

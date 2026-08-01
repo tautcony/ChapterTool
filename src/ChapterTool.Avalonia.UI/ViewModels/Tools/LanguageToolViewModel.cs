@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using ChapterTool.Avalonia.UI.Localization;
-using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;

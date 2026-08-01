@@ -22,7 +22,7 @@ internal sealed record MplsSTNTable(
     /// <summary>
     /// Gets the SubPathStreamEntries value.
     /// </summary>
-    public IReadOnlyList<MplsBasicStreamEntry> SubPathStreamEntries => PIPPGStreamEntries.Concat(DVStreamEntries).ToList();
+    public IReadOnlyList<MplsBasicStreamEntry> SubPathStreamEntries => [.. PIPPGStreamEntries, .. DVStreamEntries];
 
     /// <summary>
     /// Executes the Read operation.

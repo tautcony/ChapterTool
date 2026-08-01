@@ -1,4 +1,3 @@
-using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts;

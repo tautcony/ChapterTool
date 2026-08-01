@@ -69,10 +69,23 @@ Avalonia owns only host ports:
 Runtime wiring is centralized in:
 
 - `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs`
+- `src/ChapterTool.Avalonia/Composition/AppCompositionOptions.cs`
+- `src/ChapterTool.Avalonia/Composition/LoggingModule.cs`
+- `src/ChapterTool.Avalonia/Composition/WorkspaceModule.cs`
+- `src/ChapterTool.Avalonia/Composition/InfrastructureModule.cs`
+- `src/ChapterTool.Avalonia/Composition/AvaloniaPlatformModule.cs`
+- `src/ChapterTool.Avalonia/Composition/AuxiliaryToolsModule.cs`
+- `src/ChapterTool.Avalonia/Composition/ApplicationShellModule.cs`
 
-The GUI composition root uses `ChapterToolRuntimeComposition` for runtime importer construction. It passes its formatter, tool locator, process runner, and media readers to preserve shared GUI service instances.
+`AppCompositionRoot` builds the Autofac container and owns its application lifetime scope. It resolves the main window only after `ValidateProductionComposition()` succeeds during desktop startup.
 
-`AppCompositionRoot.CreateHostComposition()` is the explicit desktop boundary for shared Avalonia composition. It supplies workspace services, host effects, settings and appearance services, localization, runtime capabilities, and auxiliary-tool hosting. `AppCompositionRoot.CreateToolCatalog()` returns the injected catalog used by the desktop host.
+The modules own logging, workspace, infrastructure, Avalonia platform, auxiliary-tool, and application-shell registrations. Shared formatter, expression, export, settings, localization, external-tool, catalog, and host services use one application lifetime instance.
+
+`AppCompositionRoot.CreateHostComposition()` remains the explicit desktop boundary for shared Avalonia composition. Compatibility factory methods resolve services from the same scope. They do not create a second desktop graph.
+
+Window-bound file picker, settings picker, and clipboard services use host-owned factories. The root does not register a global `Window` or `Control` instance.
+
+`AppCompositionOptions.ConfigureOverrides` adds test registrations before the container is built. `RegisterProductionModules = false` creates an intentionally incomplete graph for missing-registration tests.
 
 `src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs` owns `ToolId`, typed auxiliary-tool requests and results, host service groups, catalog descriptors, and the embedded presenter contract. `EmbeddedAuxiliaryToolHost.cs` provides the single-content host implementation. `UnavailableHostAdapters.cs` provides explicit no-op adapters for unavailable capabilities.
 
@@ -80,7 +93,9 @@ The GUI composition root uses `ChapterToolRuntimeComposition` for runtime import
 
 For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through the host composition and the typed `ToolCreationContext`. Its private fallback is limited to direct design-time or test construction.
 
-The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`: formatter, expression authoring, export, and external-tool locator identities are shared within one GUI root.
+The lifetime contract is covered by `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs` and `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AutofacCompositionHeadlessTests.cs`. These tests cover shared identity, validation failure, override precedence, and repeated disposal.
+
+Production code uses constructor injection for required dependencies. Production code must not use property injection or field injection. Direct constructors remain available for focused tests that build a small fake graph.
 
 This is the first file to inspect when dependency wiring or service registration changes.
 

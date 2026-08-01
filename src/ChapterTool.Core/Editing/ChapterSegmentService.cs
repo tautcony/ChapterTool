@@ -65,7 +65,7 @@ public sealed class ChapterSegmentService
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedAppendSource, "Only MPLS chapter groups can be appended.")]);
         }
 
-        var combined = existing with { Entries = existing.Entries.Concat(appended.Entries).ToList() };
+        var combined = existing with { Entries = [.. existing.Entries, .. appended.Entries] };
         return Combine(combined);
     }
 

@@ -17,7 +17,7 @@ internal sealed record MplsAggregateProjection(
         var playlist = MplsPlaylistFile.Read(stream);
         var playItems = playlist.PlayList.PlayItems;
         var marks = playlist.PlayListMark.Marks
-            .Where(static mark => mark.MarkType == 0x01 && mark.RefToPlayItemID < 4096)
+            .Where(static mark => mark is { MarkType: 0x01, RefToPlayItemID: < 4096 })
             .Where(mark => mark.RefToPlayItemID < playItems.Count)
             .ToList();
         var starts = new ulong[playItems.Count];

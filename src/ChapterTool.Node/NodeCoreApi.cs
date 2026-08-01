@@ -19,7 +19,7 @@ public static partial class NodeApi
     private static readonly ExpressionAuthoringService ExpressionAuthoringService = new();
     private static readonly LuaExpressionScriptService ExpressionEngine = new();
     private static readonly ChapterOutputProjectionService ProjectionService = new();
-    private static readonly ChapterConversionService ConversionService = new(ChapterService!.TimeFormatter);
+    private static readonly ChapterConversionService ConversionService = new(ChapterService.TimeFormatter);
 
     [JSExport]
     public static string Edit(string chapterSetJson, string operation, string optionsJson)

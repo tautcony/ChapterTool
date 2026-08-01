@@ -3,7 +3,6 @@ using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
-using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;

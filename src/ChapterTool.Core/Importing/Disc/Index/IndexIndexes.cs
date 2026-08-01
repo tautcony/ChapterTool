@@ -35,7 +35,7 @@ internal sealed record IndexIndexes(
     }
 
     public IEnumerable<IndexTitleEntry> MovieTitles =>
-        Titles.Where(static title => title.IsMovieObject && title.IsMoviePlayback);
+        Titles.Where(static title => title is { IsMovieObject: true, IsMoviePlayback: true });
 
     public IEnumerable<IndexTitleEntry> MovieAndBdJTitles =>
         Titles.Where(static title => title.IsMoviePlayback && (title.IsMovieObject || title.IsBDJObject));

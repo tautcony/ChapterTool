@@ -7,7 +7,7 @@ public static class PortableInputPolicy
     public const long MaxBytes = 64 * 1024 * 1024;
 
     /// <summary>Checks whether a byte count fits the portable input budget.</summary>
-    public static bool IsWithinLimit(long byteCount) => byteCount >= 0 && byteCount <= MaxBytes;
+    public static bool IsWithinLimit(long byteCount) => byteCount is >= 0 and <= MaxBytes;
 
     /// <summary>
     /// Gets the decoded byte count for Base64 without allocating the decoded buffer.

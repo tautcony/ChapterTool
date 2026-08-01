@@ -17,7 +17,7 @@ public sealed class BdjoParserTests
         Assert.Equal((ushort)2, file.AccessiblePlaylists.Count);
         Assert.True(file.AccessiblePlaylists.AutostartFirstPlaylist);
         Assert.False(file.AccessiblePlaylists.AccessToAll);
-        Assert.Equal(new[] { "00017", "01001" }, file.AccessiblePlaylists.Names);
+        Assert.Equal(["00017", "01001"], file.AccessiblePlaylists.Names);
         Assert.Equal("*****", file.TerminalInfo.DefaultFont);
         Assert.Empty(file.ApplicationCacheInfo.Items);
         Assert.Empty(file.ApplicationManagementTable.Applications);
@@ -81,9 +81,9 @@ public sealed class BdjoParserTests
     {
         var names = second == null ? new[] { first } : new[] { first, second };
         var bytes = new byte[48 + names.Length * 6];
-        Encoding.ASCII.GetBytes("BDJO0240").CopyTo(bytes, 0);
+        "BDJO0240"u8.ToArray().CopyTo(bytes, 0);
         BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(8), 10);
-        Encoding.ASCII.GetBytes("*****").CopyTo(bytes, 12);
+        "*****"u8.ToArray().CopyTo(bytes, 12);
         BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(22), 2);
         var flags = (uint)names.Length << 21;
         if (accessToAll)
@@ -112,20 +112,20 @@ public sealed class BdjoParserTests
     private static byte[] BuildMetadataBdjo()
     {
         var bytes = new List<byte>(160);
-        bytes.AddRange("BDJO0240"u8.ToArray());
+        bytes.AddRange([.. "BDJO0240"u8]);
         AddUInt32(bytes, 10);
-        bytes.AddRange("F0001"u8.ToArray());
+        bytes.AddRange([.. "F0001"u8]);
         bytes.Add(0x7C);
         bytes.AddRange(new byte[4]);
         AddUInt32(bytes, 14);
         bytes.Add(1);
         bytes.Add(0);
         bytes.Add(1);
-        bytes.AddRange("00001eng"u8.ToArray());
+        bytes.AddRange([.. "00001eng"u8]);
         bytes.AddRange(new byte[3]);
         AddUInt32(bytes, 10);
         AddUInt32(bytes, 1U << 21);
-        bytes.AddRange("00001"u8.ToArray());
+        bytes.AddRange([.. "00001"u8]);
         bytes.Add(0);
 
         var applications = new List<byte>();
@@ -138,31 +138,31 @@ public sealed class BdjoParserTests
         applications.AddRange(new byte[10]);
         AddUInt16(applications, 0x1000);
         AddUInt16(applications, 1);
-        applications.AddRange(new byte[] { 2, 1, 0, 0 });
+        applications.AddRange([2, 1, 0, 0]);
         applications.Add(10);
         applications.Add(0x50);
         AddUInt16(applications, 8);
-        applications.AddRange("eng"u8.ToArray());
+        applications.AddRange([.. "eng"u8]);
         applications.Add(4);
-        applications.AddRange("Demo"u8.ToArray());
+        applications.AddRange([.. "Demo"u8]);
         applications.AddRange(new byte[2]);
         AddUInt16(applications, 0x1234);
         applications.Add(5);
-        applications.AddRange("00000"u8.ToArray());
+        applications.AddRange([.. "00000"u8]);
         applications.AddRange(new byte[2]);
         applications.Add(4);
-        applications.AddRange("Main"u8.ToArray());
+        applications.AddRange([.. "Main"u8]);
         applications.Add(0);
         applications.Add(4);
         applications.Add(3);
-        applications.AddRange("arg"u8.ToArray());
+        applications.AddRange([.. "arg"u8]);
         applications.Add(0);
         AddUInt32(bytes, (uint)applications.Count);
         bytes.AddRange(applications);
         AddUInt32(bytes, 0x82000000);
         AddUInt16(bytes, 8);
-        bytes.AddRange("BDMV;JAR"u8.ToArray());
-        return bytes.ToArray();
+        bytes.AddRange([.. "BDMV;JAR"u8]);
+        return [.. bytes];
     }
 
     private static void AddUInt16(List<byte> bytes, ushort value)

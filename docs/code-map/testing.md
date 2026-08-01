@@ -23,6 +23,12 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - Avalonia Headless UI shell/interaction (separate process):
   - `tests/ChapterTool.Avalonia.Headless.Tests`
 
+Desktop composition coverage:
+
+- `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AutofacCompositionHeadlessTests.cs` validates missing registrations, test overrides, and repeated disposal.
+- `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs` validates shared service identity and shell resolution.
+- `tests/ChapterTool.Avalonia.Headless.Tests` references Autofac only to test the desktop composition boundary.
+
 ## Core Test Map
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
@@ -133,6 +139,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AutofacCompositionHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootFontTests.cs`
 
 Use `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs` for typed tool identifiers, duplicate catalog validation, custom descriptor selection, embedded reuse, disposal, and unknown-tool results. Use `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs` for Native Window close confirmation and content detachment. Keep Native Window and Headless test projects in separate processes.

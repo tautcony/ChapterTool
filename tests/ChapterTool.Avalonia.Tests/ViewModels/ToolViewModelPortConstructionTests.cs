@@ -1,5 +1,4 @@
 using ChapterTool.Avalonia.UI.Localization;
-using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;

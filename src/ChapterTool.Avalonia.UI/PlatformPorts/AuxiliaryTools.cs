@@ -6,7 +6,6 @@ using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
 

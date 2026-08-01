@@ -558,7 +558,7 @@ public sealed class DiscImporterTests
     [Fact]
     public void UOMaskTableWithAllBitsSetVerifiedViaRead()
     {
-        var maskBytes = new byte[8] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+        var maskBytes = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
         using var stream = new MemoryStream(maskBytes);
         var mask = MplsUOMaskTable.Read(stream);
 
@@ -579,7 +579,7 @@ public sealed class DiscImporterTests
     [Fact]
     public void UOMaskTableWithAllBitsClearedVerifiedViaRead()
     {
-        var maskBytes = new byte[8] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+        var maskBytes = "\0\0\0\0\0\0\0\0"u8.ToArray();
         using var stream = new MemoryStream(maskBytes);
         var mask = MplsUOMaskTable.Read(stream);
 
