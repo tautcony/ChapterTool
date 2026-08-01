@@ -108,7 +108,11 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         if (chapters.Count > 0 && indexes.Contains(0))
         {
             var shift = chapters[0].StartTime;
-            chapters = chapters.Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift }).ToList();
+            chapters =
+            [
+                .. chapters.Select(chapter =>
+                    chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })
+            ];
         }
 
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
@@ -254,9 +258,11 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     private static List<Chapter> Renumber(IEnumerable<Chapter> chapters)
     {
         var number = 0;
-        return chapters
-            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { DisplayNumber = ++number })
-            .ToList();
+        return
+        [
+            .. chapters
+                .Select(chapter => chapter.IsSeparator ? chapter : chapter with { DisplayNumber = ++number })
+        ];
     }
 
     private static bool TryGetChapter(IReadOnlyList<Chapter> chapters, int index, out Chapter chapter)

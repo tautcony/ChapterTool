@@ -25,7 +25,6 @@ public sealed class SettingsToolViewModelTests
             SavingPath: "out",
             Language: "en-US",
             MkvToolnixPath: "mkv",
-            Eac3toPath: "eac3to",
             FfprobePath: "ffprobe",
             DefaultSaveFormat: "Xml",
             DefaultXmlLanguage: "ja",
@@ -40,7 +39,6 @@ public sealed class SettingsToolViewModelTests
         viewModel.SelectedLanguage = "ja-JP";
         viewModel.SaveDirectory = "new-out";
         viewModel.MkvToolnixPath = null;
-        viewModel.Eac3toPath = "new-eac3to";
         viewModel.FfprobePath = "new-ffprobe";
         viewModel.DefaultSaveFormatIndex = viewModel.SaveFormatOptions.ToList().IndexOf("JSON");
         viewModel.DefaultXmlLanguageIndex = viewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
@@ -54,7 +52,6 @@ public sealed class SettingsToolViewModelTests
         Assert.Equal("ja-JP", appStore.Current.Language);
         Assert.Equal(Path.GetFullPath("new-out"), appStore.Current.SavingPath);
         Assert.Null(appStore.Current.MkvToolnixPath);
-        Assert.Equal(Path.GetFullPath("new-eac3to"), appStore.Current.Eac3toPath);
         Assert.Equal(Path.GetFullPath("new-ffprobe"), appStore.Current.FfprobePath);
         Assert.Equal("Json", appStore.Current.DefaultSaveFormat);
         Assert.Equal("jpn", appStore.Current.DefaultXmlLanguage);
@@ -503,17 +500,14 @@ public sealed class SettingsToolViewModelTests
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         var mkvextract = Path.Combine(root, ToolExecutable("mkvextract"));
-        var eac3to = Path.Combine(root, ToolExecutable("eac3to"));
         var ffprobe = Path.Combine(root, ToolExecutable("ffprobe"));
         await File.WriteAllTextAsync(mkvextract, string.Empty);
-        await File.WriteAllTextAsync(eac3to, string.Empty);
         await File.WriteAllTextAsync(ffprobe, string.Empty);
         var appStore = new FakeSettingsStore(new AppSettings());
         var owner = CreateOwner(appStore);
         var locator = new FakeExternalToolLocator(new Dictionary<string, ExternalToolLocation>(StringComparer.OrdinalIgnoreCase)
         {
             ["mkvextract"] = new(true, mkvextract),
-            ["eac3to"] = new(true, eac3to),
             ["ffprobe"] = new(true, ffprobe)
         });
         var viewModel = CreateViewModel(
@@ -529,10 +523,8 @@ public sealed class SettingsToolViewModelTests
             await viewModel.ValidateToolsCommand.ExecuteAsync();
 
             Assert.Equal(mkvextract, viewModel.MkvToolnixPath);
-            Assert.Equal(eac3to, viewModel.Eac3toPath);
             Assert.Equal(ffprobe, viewModel.FfprobePath);
             Assert.Contains(mkvextract, viewModel.MkvToolnixStatus, StringComparison.Ordinal);
-            Assert.Contains(eac3to, viewModel.Eac3toStatus, StringComparison.Ordinal);
             Assert.Contains(ffprobe, viewModel.FfprobeStatus, StringComparison.Ordinal);
         }
         finally

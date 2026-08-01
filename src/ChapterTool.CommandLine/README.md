@@ -7,7 +7,7 @@ ChapterTool is a cross-platform command-line tool for multimedia chapter files. 
 - Install a compatible .NET 10 runtime.
 - Install `ffprobe` from FFmpeg to read chapters from general media containers.
 - Install `mkvextract` from MKVToolNix to read Matroska chapters.
-- Install `eac3to` to read Blu-ray `BDMV` folders.
+- Blu-ray `BDMV` folders use the managed importer.
 
 ChapterTool searches standard platform locations for these external tools.
 

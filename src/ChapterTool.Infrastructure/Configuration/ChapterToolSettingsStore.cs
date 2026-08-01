@@ -111,13 +111,14 @@ public sealed class ChapterToolSettingsStore(string settingsDirectory) : ISettin
                 ?? throw new JsonException("The settings document could not be deserialized.");
             var normalized = ChapterToolSettings.Normalize(settings);
 
-            if (upgraded.WasUpgraded && persistMigrations)
+            switch (upgraded.WasUpgraded)
             {
-                await WriteAsync(normalized, cancellationToken);
-            }
-            else if (!upgraded.WasUpgraded)
-            {
-                Cache(normalized, stamp);
+                case true when persistMigrations:
+                    await WriteAsync(normalized, cancellationToken);
+                    break;
+                case false:
+                    Cache(normalized, stamp);
+                    break;
             }
 
             return normalized;

@@ -193,7 +193,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
                     .Select(static pair => (pair.Key, pair.Value)));
             }
 
-            Log(LogLevelFor(diagnostic.Severity), "Log.Diagnostic", diagnostic.Details, arguments.ToArray());
+            Log(LogLevelFor(diagnostic.Severity), "Log.Diagnostic", diagnostic.Details, [.. arguments]);
         }
     }
 

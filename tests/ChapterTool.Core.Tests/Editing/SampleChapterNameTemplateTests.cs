@@ -33,7 +33,8 @@ public sealed class SampleChapterNameTemplateTests
             ChapterImportFormat.Ogm,
             24,
             TimeSpan.FromMinutes(6),
-            Enumerable.Range(1, 6)
-                .Select(index => new Chapter(index, TimeSpan.FromMinutes(index - 1), $"Chapter {index:00}"))
-                .ToArray());
+            [
+                .. Enumerable.Range(1, 6)
+                    .Select(index => new Chapter(index, TimeSpan.FromMinutes(index - 1), $"Chapter {index:00}"))
+            ]);
 }

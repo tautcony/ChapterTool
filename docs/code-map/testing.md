@@ -87,8 +87,8 @@ High-signal test files:
 - Matroska / mkvextract:
   - `tests/ChapterTool.Infrastructure.Tests/MatroskaChapterImporterTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/Importing/MatroskaIntegrationTests.cs`
-- BDMV / eac3to:
-  - `tests/ChapterTool.Infrastructure.Tests/BdmvChapterImporterTests.cs`
+- BDMV:
+  - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs`
 - process runner:
   - `tests/ChapterTool.Infrastructure.Tests/ProcessRunnerTests.cs`
 - platform services:

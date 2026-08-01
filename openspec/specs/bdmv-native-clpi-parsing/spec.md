@@ -1,4 +1,4 @@
-# BDMV Native CLPI Parsing Specification
+# BDMV CLPI Parsing Specification
 
 ## Purpose
 The system parses Blu-ray CLPI files and exposes bounded clip, sequence, program, and entry-point metadata.

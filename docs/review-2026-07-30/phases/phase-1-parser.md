@@ -1,7 +1,7 @@
 # Phase 1 Review: Core Blu-ray Parsers
 
 > Date: 2026-07-30
-> Files: Core MPLS, CLPI, INDEX, BDMV path, and native BDMV importer files.
+> Files: Core MPLS, CLPI, INDEX, BDMV path, and BDMV importer files.
 > Findings: P1(1) / P2(4) / INFO(1)
 > Navigation: [Back to review index](../index.md) | [Fix checklist](../fix-checklist.md)
 
@@ -16,7 +16,7 @@
 - `src/ChapterTool.Core/Importing/Disc/Index/IndexAppInfoBDMV.cs`
 - `src/ChapterTool.Core/Importing/Disc/Index/IndexFile.cs`
 - `src/ChapterTool.Core/Importing/Disc/BdmvPathHelper.cs`
-- `src/ChapterTool.Infrastructure/Importing/Bdmv/NativeBdmvImporter.cs`
+- `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvImporter.cs`
 
 ## Findings
 

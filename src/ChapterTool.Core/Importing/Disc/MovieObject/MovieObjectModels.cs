@@ -51,8 +51,7 @@ internal sealed record MovieObjectFile(
             var flags = section.ReadByteChecked();
             section.SkipBytes(1);
             var commandCount = section.ReadUInt16BigEndian();
-            if (commandCount > MovieObjectParseLimits.MaximumCommandsPerObject ||
-                totalCommands > MovieObjectParseLimits.MaximumCommands - commandCount ||
+            if (totalCommands > MovieObjectParseLimits.MaximumCommands - commandCount ||
                 commandCount > section.Remaining / 12)
             {
                 throw new InvalidDataException("MovieObject command count exceeds the supported bounds.");

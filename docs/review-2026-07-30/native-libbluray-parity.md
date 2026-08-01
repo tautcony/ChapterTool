@@ -41,11 +41,11 @@ disc_root="tests/ChapterTool.Core.Tests/Fixtures/Importing/Disc/Bdmv/Detective C
 "$libbluray_prefix/bin/bd_list_titles" "$disc_root"
 ```
 
-Use the default relevant-title mode for parity with `NativeBdmvImporter`.
+Use the default relevant-title mode for parity with `BdmvImporter`.
 Use `-a` only as a policy diagnostic. It includes titles that Core intentionally
 filters, such as no-chapter playlists and repeated-segment candidates.
 
-Compare these fields with `NativeBdmvImporter` output:
+Compare these fields with `BdmvImporter` output:
 
 - playlist ID and order
 - main title

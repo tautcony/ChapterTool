@@ -98,33 +98,13 @@ public sealed class ExternalToolLocatorTests
     }
 
     [Fact]
-    public async Task LocateAsync_does_not_use_platform_discovery_for_eac3to()
-    {
-        var root = CreateTempDirectory();
-        var platformToolPath = Path.Combine(root, "platform", ToolExecutable("mkvextract"));
-        Directory.CreateDirectory(Path.GetDirectoryName(platformToolPath)!);
-        await CreateToolFileAsync(platformToolPath);
-
-        var locator = CreateLocatorWithoutDefaultCandidates(
-            new ChapterToolSettingsStore(root),
-            [],
-            new FakeMkvToolNixInstallProbe(platformToolPath));
-
-        var location = await locator.LocateAsync("eac3to", TestContext.Current.CancellationToken);
-
-        Assert.False(location.Found);
-        Assert.Null(location.Path);
-        Assert.Equal(ChapterDiagnosticCode.MissingDependency, location.DiagnosticCode);
-    }
-
-    [Fact]
     public async Task LocateAsync_returns_missing_dependency_when_tool_is_absent()
     {
         var root = CreateTempDirectory();
         var settingsStore = new ChapterToolSettingsStore(root);
         var locator = CreateLocatorWithoutDefaultCandidates(settingsStore, [root], new FakeMkvToolNixInstallProbe());
 
-        var location = await locator.LocateAsync("eac3to", TestContext.Current.CancellationToken);
+        var location = await locator.LocateAsync("ffprobe", TestContext.Current.CancellationToken);
 
         Assert.False(location.Found);
         Assert.Null(location.Path);

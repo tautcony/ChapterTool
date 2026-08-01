@@ -24,7 +24,7 @@ public sealed class ApplicationLogPanelProvider(
         {
             lock (gate)
             {
-                return entries.ToList();
+                return [.. entries];
             }
         }
     }
@@ -36,7 +36,7 @@ public sealed class ApplicationLogPanelProvider(
         IReadOnlyList<ApplicationLogEntry> snapshot;
         lock (gate)
         {
-            snapshot = entries.ToList();
+            snapshot = [.. entries];
         }
 
         return string.Join(

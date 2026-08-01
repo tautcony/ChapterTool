@@ -54,6 +54,18 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task SingleMplsClipKeepsClipSelectorVisible()
+    {
+        var workspace = CreateWorkspace();
+        var path = LocateFixture("Importing", "Disc", "Mpls", "00000_HEVC.mpls");
+        await workspace.LoadAsync(path, await File.ReadAllBytesAsync(path));
+
+        Assert.Single(workspace.ClipOptions);
+        Assert.True(workspace.IsClipSelectionVisible);
+        Assert.Contains(".m2ts", workspace.ClipOptions[0].DisplayText, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AppendMplsMergesGroupsAndKeepsSessionOnFailure()
     {
         var workspace = CreateWorkspace();
@@ -63,15 +75,17 @@ public sealed class WasmWorkspaceTests
         // Seed via public load of text first, then inject MPLS groups through Append path by loading synthetic binary is hard.
         // Instead exercise Append against a workspace prepared with a successful text load and replace via Append failure path,
         // then verify non-MPLS append is rejected without clearing the session.
-        await workspace.LoadAsync("sample.txt", """
-                                                CHAPTER01=00:00:00.000
-                                                CHAPTER01NAME=Opening
-                                                CHAPTER02=00:01:00.000
-                                                CHAPTER02NAME=Middle
-                                                """u8.ToArray());
+        await workspace.LoadAsync("sample.txt", [
+            .. """
+               CHAPTER01=00:00:00.000
+               CHAPTER01NAME=Opening
+               CHAPTER02=00:01:00.000
+               CHAPTER02NAME=Middle
+               """u8
+        ]);
         Assert.False(workspace.CanAppendMpls);
         var beforeCount = workspace.Rows.Count;
-        await workspace.AppendMplsAsync("not-mpls.txt", "CHAPTER01=00:00:00.000\nCHAPTER01NAME=X\n"u8.ToArray());
+        await workspace.AppendMplsAsync("not-mpls.txt", [.. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=X\n"u8]);
         Assert.Equal(beforeCount, workspace.Rows.Count);
         Assert.False(string.IsNullOrWhiteSpace(workspace.SourcePath));
 
@@ -194,7 +208,7 @@ public sealed class WasmWorkspaceTests
     {
         // Use a tiny limit so the test does not allocate a 64 MiB buffer.
         var workspace = new WasmWorkspace(new WasmChapterService(), maxLoadBytes: 8);
-        await workspace.LoadAsync("huge.bin", "0123456789"u8.ToArray());
+        await workspace.LoadAsync("huge.bin", [.. "0123456789"u8]);
 
         Assert.Empty(workspace.Rows);
         Assert.False(workspace.CanSave);

@@ -54,7 +54,6 @@ public sealed record WasmApplicationSettings(
     string Language = "",
     WasmWindowLocation? MainWindowLocation = null,
     string? MkvToolnixPath = null,
-    string? Eac3toPath = null,
     string? FfprobePath = null,
     string DefaultSaveFormat = "Txt",
     string DefaultXmlLanguage = "und",

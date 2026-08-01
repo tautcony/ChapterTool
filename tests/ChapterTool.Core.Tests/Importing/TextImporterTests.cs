@@ -824,9 +824,10 @@ public sealed class TextImporterTests
         TimeSpan LastTime);
 
     private static XmlOptionExpectation[] AngelBeatsEditions() =>
-        Enumerable.Range(0, 14)
+    [
+        .. Enumerable.Range(0, 14)
             .Select(static _ => new XmlOptionExpectation(3, Ms(59601), "Part A", TimeSpan.Zero, "Part C", Ms(59601)))
-            .ToArray();
+    ];
 
     private static XmlSampleExpectation XmlSample(string fileName, XmlOptionExpectation[] entries) =>
         new(fileName, entries);

@@ -83,7 +83,6 @@ public sealed class ExternalToolLocator(
         toolId.ToLowerInvariant() switch
         {
             "mkvextract" => settings.MkvToolnixPath,
-            "eac3to" => settings.Eac3toPath,
             "ffprobe" => settings.FfprobePath,
             _ => null
         };

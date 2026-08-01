@@ -76,6 +76,47 @@ public sealed class MplsImporterTests
             static entry => Assert.Equal("Chapter 01", entry.ChapterSet.Chapters.Single().Name));
     }
 
+    [Fact]
+    public async Task MultiAnglePlaylistEntriesUseBdmvClipDisplayNames()
+    {
+        var importer = new MplsChapterImporter();
+
+        var result = await importer.ImportAsync(
+            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00002_MultiAngle.mpls")),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        var entries = result.Groups.Single().Entries;
+        Assert.Equal("00005.m2ts", entries[0].DisplayName);
+        Assert.Equal("[00006+00007].m2ts", entries[1].DisplayName);
+        Assert.Equal("[00009+00010].m2ts", entries[3].DisplayName);
+    }
+
+    [Fact]
+    public async Task MplsLoadedFromBdmvUsesDiscRootForMediaReferences()
+    {
+        var discRoot = Path.Combine(
+            FixtureResolver.RepositoryRoot,
+            "tests",
+            "ChapterTool.Core.Tests",
+            "Fixtures",
+            "Importing",
+            "Disc",
+            "Bdmv",
+            "Detective Conan The Bride of Halloween",
+            "DISC1");
+        var path = Path.Combine(discRoot, "BDMV", "PLAYLIST", "00001.mpls");
+        var result = await new MplsChapterImporter().ImportAsync(
+            new ChapterImportRequest(path),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        var entry = Assert.Single(result.Groups.Single().Entries);
+        var reference = Assert.Single(entry.ReferencedMediaFiles ?? []);
+        Assert.Equal("00002.m2ts", reference.DisplayName);
+        Assert.Equal(Path.Combine(discRoot, "BDMV", "STREAM", "00002.m2ts"), reference.AbsolutePath);
+    }
+
     public static TheoryData<SampleExpectation> SampleExpectations() =>
     [
         Sample("00000_HEVC.mpls", [new("00000", 1, 0, Ms(16850), TimeSpan.Zero, TimeSpan.Zero, 1)]),

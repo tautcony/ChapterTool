@@ -1,12 +1,11 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Infrastructure.Importing.Bdmv;
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace ChapterTool.Infrastructure.Tests.Importing;
 
-public sealed class NativeBdmvImporterTests
+public sealed class BdmvImporterTests
 {
     private static string CoreFixtureDir(params string[] segments)
     {
@@ -20,7 +19,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportBdmvDirectoryWithIndexSucceeds()
     {
         var bdmvDir = CoreFixtureDir("Detective Conan Zero the Enforcer");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -35,7 +34,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportBdmvDirectoryDisc2Succeeds()
     {
         var bdmvDir = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC2");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -44,10 +43,10 @@ public sealed class NativeBdmvImporterTests
     }
 
     [Fact]
-    public async Task BdmvEntriesUseEac3toStyleDisplayNames()
+    public async Task BdmvEntriesUseDisplayNames()
     {
         var discRoot = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1");
-        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+        var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
 
         Assert.True(result.Success);
         var entry = Assert.Single(result.Groups.SelectMany(static group => group.Entries), candidate => candidate.Id == "00001.mpls");
@@ -58,7 +57,7 @@ public sealed class NativeBdmvImporterTests
     public async Task MultiClipBdmvEntryDisplayNameMergesIntoBracketForm()
     {
         var discRoot = CoreFixtureDir("KIMETSU_NO_YAIBA_MUGENJO_HEN_P1_DISC1");
-        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+        var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
 
         Assert.True(result.Success);
         var entry = Assert.Single(result.Groups.SelectMany(static group => group.Entries), candidate => candidate.Id == "00000.mpls");
@@ -72,14 +71,14 @@ public sealed class NativeBdmvImporterTests
     [InlineData(new[] { "00112", "00127", "00115" }, "[00112+00127+00115].m2ts")]
     public void ClipListDisplayMergesMultipleClipsIntoBracketGroup(string[] clips, string expected)
     {
-        Assert.Equal(expected, NativeBdmvImporter.ClipListDisplay(clips));
+        Assert.Equal(expected, BdmvImporter.ClipListDisplay(clips));
     }
 
     [Fact]
     public async Task ShortChapterBearingPlaylistsAreRetainedAsEntries()
     {
         var discRoot = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1");
-        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+        var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
 
         Assert.True(result.Success);
         var actual = result.Groups.SelectMany(static group => group.Entries).ToArray();
@@ -90,7 +89,7 @@ public sealed class NativeBdmvImporterTests
 
         var scan = Assert.Single(result.Diagnostics, static diagnostic =>
             diagnostic.Code == ChapterDiagnosticCode.BdmvScanCandidate);
-        var scanArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(scan.Arguments);
+        var scanArguments = Assert.IsType<IReadOnlyDictionary<string, object?>>(scan.Arguments, exactMatch: false);
         Assert.True((int)scanArguments["retainedCount"]! > 0);
     }
 
@@ -104,7 +103,7 @@ public sealed class NativeBdmvImporterTests
             Path.Combine(discRoot, "BDMV"),
             Path.Combine(discRoot, "BDMV", "index.bdmv")
         };
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var results = new List<ChapterImportResult>();
         foreach (var input in inputs)
         {
@@ -122,14 +121,14 @@ public sealed class NativeBdmvImporterTests
     public async Task NoChapterPlaylistIsRetainedAsDiagnosticAndNotImported()
     {
         var discRoot = CoreFixtureDir("KIMETSU_NO_YAIBA_MUGENJO_HEN_P1_DISC1");
-        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+        var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
 
         Assert.True(result.Success);
         Assert.DoesNotContain(result.Groups.SelectMany(static group => group.Entries), entry => entry.Id == "00020.mpls");
         var scan = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.BdmvScanCandidate);
-        var arguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(scan.Arguments);
-        var candidates = Assert.IsAssignableFrom<IReadOnlyList<object?>>(arguments["candidates"]);
-        var skipped = Assert.IsAssignableFrom<IReadOnlyList<object?>>(arguments["skipped"]);
+        var arguments = Assert.IsType<IReadOnlyDictionary<string, object?>>(scan.Arguments, exactMatch: false);
+        var candidates = Assert.IsType<IReadOnlyList<object?>>(arguments["candidates"], exactMatch: false);
+        var skipped = Assert.IsType<IReadOnlyList<object?>>(arguments["skipped"], exactMatch: false);
         Assert.Contains(candidates.Concat(skipped), candidate =>
             candidate is IReadOnlyDictionary<string, object?> values && Equals(values["name"], "00020.mpls"));
     }
@@ -146,11 +145,11 @@ public sealed class NativeBdmvImporterTests
             "MAYONAKA_PUNCH/MAYONAKA_PUNCH_DISC1",
             "MAYONAKA_PUNCH/MAYONAKA_PUNCH_DISC2"
         };
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         foreach (var fixture in fixtures)
         {
             var root = CoreFixtureDir(fixture);
-            await using var manifestStream = File.OpenRead(Path.Combine(root, "eac3to-manifest.json"));
+            await using var manifestStream = File.OpenRead(Path.Combine(root, "bdmv-manifest.json"));
             var manifest = await JsonSerializer.DeserializeAsync<Manifest>(manifestStream, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -161,9 +160,8 @@ public sealed class NativeBdmvImporterTests
             Assert.True(result.Success, fixture);
             var actual = result.Groups.SelectMany(static group => group.Entries).ToArray();
 
-            // The importer retains every structurally valid chapter-bearing playlist, including
-            // short playlists that eac3to omits from its title list. The manifest set is therefore
-            // a subset of the imported entries; every manifest title must be present in manifest order.
+            // The importer retains every structurally valid chapter-bearing playlist. The manifest
+            // set is a subset of the imported entries; every manifest title must be present in order.
             var expectedIds = expected.Select(static title => title.Playlist).ToArray();
             var actualIds = actual.Select(static entry => entry.Id).ToArray();
             var positions = expectedIds.Select(id => Array.IndexOf(actualIds, id)).ToArray();
@@ -192,7 +190,7 @@ public sealed class NativeBdmvImporterTests
 
         var discRoot = @"D:\Downloads\[BDMV][アニメ][131213] 劇場版 STEINS;GATE 負荷領域のデジャヴ\BDISO";
         Assert.True(Directory.Exists(discRoot), $"Expected full disc: {discRoot}");
-        var result = await new NativeBdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
+        var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
         Assert.True(result.Success);
         var entries = result.Groups.SelectMany(static group => group.Entries).ToArray();
         Assert.Equal(["00000.mpls", "00001.mpls", "00002.mpls"], entries.Select(static entry => entry.Id));
@@ -212,41 +210,6 @@ public sealed class NativeBdmvImporterTests
     }
 
     [Fact]
-    public async Task Eac3toShowAllCanBeVerifiedOptIn()
-    {
-        if (!string.Equals(Environment.GetEnvironmentVariable("CHAPTERTOOL_RUN_EAC3TO_PARITY"), "1", StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        const string executable = @"C:\Tools\eac3to\eac3to.exe";
-        const string source = @"D:\Downloads\[BDMV][アニメ][131213] 劇場版 STEINS;GATE 負荷領域のデジャヴ\BDISO";
-        Assert.True(File.Exists(executable), $"Expected eac3to: {executable}");
-        Assert.True(Directory.Exists(source), $"Expected full disc: {source}");
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo(executable)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            }
-        };
-        process.StartInfo.ArgumentList.Add(source);
-        process.StartInfo.ArgumentList.Add("-showall");
-        Assert.True(process.Start());
-        var output = await process.StandardOutput.ReadToEndAsync();
-        var error = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        Assert.True(process.ExitCode == 0, error);
-        Assert.Contains("00000.mpls", output);
-        Assert.Contains("00001.mpls", output);
-        Assert.Contains("00005.mpls", output);
-        Assert.Contains("00002.mpls", output);
-    }
-
-    [Fact]
     public async Task ImportBdmvWithoutIndexFallsBackToScan()
     {
         // Fixtures now carry navigation files, so build a temp disc with no index.bdmv at all
@@ -259,7 +222,7 @@ public sealed class NativeBdmvImporterTests
             Path.Combine(CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1"), "BDMV", "PLAYLIST", "00001.mpls"),
             Path.Combine(playlistDir, "00001.mpls"));
 
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(tempDir.Path);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -272,7 +235,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportWithIndexLogsParsedMetadata()
     {
         var bdmvDir = CoreFixtureDir("Detective Conan Zero the Enforcer");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -284,7 +247,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportWithIndexUsesHdmvNavigationToDiscoverPlaylist()
     {
         var bdmvDir = CoreFixtureDir("Detective Conan The Bride of Halloween/DISC1");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -293,8 +256,8 @@ public sealed class NativeBdmvImporterTests
             diagnostic.Code == ChapterDiagnosticCode.NavigationSource
             && diagnostic.Arguments?.ContainsKey("objects") == true);
         Assert.Contains("playlist references", navigation.Message, StringComparison.Ordinal);
-        var navigationArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(navigation.Arguments);
-        var objects = Assert.IsAssignableFrom<IReadOnlyList<object?>>(navigationArguments["objects"]);
+        var navigationArguments = Assert.IsType<IReadOnlyDictionary<string, object?>>(navigation.Arguments, exactMatch: false);
+        var objects = Assert.IsType<IReadOnlyList<object?>>(navigationArguments["objects"], exactMatch: false);
         Assert.Contains(objects, item =>
             item is IReadOnlyDictionary<string, object?> values
             && values["playlists"] is IReadOnlyList<object?> playlists
@@ -303,8 +266,8 @@ public sealed class NativeBdmvImporterTests
         Assert.DoesNotContain(result.Diagnostics, d => d.Message.Contains("No playlists could be resolved from index.bdmv titles"));
 
         var loaded = Assert.Single(result.Diagnostics, d => d.Message.Contains("Loaded index.bdmv"));
-        var structure = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(loaded.Arguments);
-        var indexes = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(structure["indexes"]);
+        var structure = Assert.IsType<IReadOnlyDictionary<string, object?>>(loaded.Arguments, exactMatch: false);
+        var indexes = Assert.IsType<IReadOnlyDictionary<string, object?>>(structure["indexes"], exactMatch: false);
         Assert.Equal(38U, indexes["length"]);
         Assert.Equal(1, indexes["titleCount"]);
     }
@@ -313,15 +276,15 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportClpiDiagnosticsAreProduced()
     {
         var bdmvDir = CoreFixtureDir("Detective Conan Zero the Enforcer");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
         Assert.True(result.Success);
         var clpi = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.ClpiFileLoaded);
-        var arguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(clpi.Arguments);
+        var arguments = Assert.IsType<IReadOnlyDictionary<string, object?>>(clpi.Arguments, exactMatch: false);
         Assert.True((int)arguments["loadedCount"]! > 0);
-        Assert.IsAssignableFrom<IReadOnlyList<object?>>(arguments["clips"]);
+        Assert.IsType<IReadOnlyList<object?>>(arguments["clips"], exactMatch: false);
     }
 
     [Fact]
@@ -333,14 +296,14 @@ public sealed class NativeBdmvImporterTests
         Directory.CreateDirectory(playlistDir);
 
         // Create a deliberately invalid index.bdmv
-        File.WriteAllText(Path.Combine(bdmvDir, "index.bdmv"), "not a valid index");
+        await File.WriteAllTextAsync(Path.Combine(bdmvDir, "index.bdmv"), "not a valid index");
 
         // Create a minimal valid mpls file
         File.Copy(
             Path.Combine(CoreFixtureDir("Detective Conan Zero the Enforcer"), "BDMV", "PLAYLIST", "00000.mpls"),
             Path.Combine(playlistDir, "00000.mpls"));
 
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(tempDir.Path);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -353,7 +316,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportWithoutIndexDoesNotContainIndexLoadedLog()
     {
         var bdmvDir = CoreFixtureDir("KIMETSU_NO_YAIBA_MUGENJO_HEN_P1_DISC1");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -365,7 +328,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportReadsDiscTitleFromMetadata()
     {
         var bdmvDir = CoreFixtureDir("Detective Conan Zero the Enforcer");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -379,7 +342,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportWithDiscTitleFromMetadata()
     {
         var bdmvDir = CoreFixtureDir("KIMETSU_NO_YAIBA_MUGENJO_HEN_P1_DISC1");
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(bdmvDir);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -395,7 +358,7 @@ public sealed class NativeBdmvImporterTests
     public async Task ImportRejectsMissingPlaylistDirectory()
     {
         using var tempDir = new TempDirectory();
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(tempDir.Path);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -411,7 +374,7 @@ public sealed class NativeBdmvImporterTests
         var playlistDir = Path.Combine(bdmvDir, "PLAYLIST");
         Directory.CreateDirectory(playlistDir);
 
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         var request = new ChapterImportRequest(tempDir.Path);
         var result = await importer.ImportAsync(request, CancellationToken.None);
 
@@ -420,16 +383,16 @@ public sealed class NativeBdmvImporterTests
     }
 
     [Fact]
-    public void NativeBdmvImporterHasCorrectId()
+    public void BdmvImporterHasCorrectId()
     {
-        var importer = new NativeBdmvImporter();
-        Assert.Equal("bdmv-native", importer.Id);
+        var importer = new BdmvImporter();
+        Assert.Equal("bdmv", importer.Id);
     }
 
     [Fact]
-    public void NativeBdmvImporterSupportsBdmvExtension()
+    public void BdmvImporterSupportsBdmvExtension()
     {
-        var importer = new NativeBdmvImporter();
+        var importer = new BdmvImporter();
         Assert.Contains("BDMV", importer.SupportedExtensions);
     }
 

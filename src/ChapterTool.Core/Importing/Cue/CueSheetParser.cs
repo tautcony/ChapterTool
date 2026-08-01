@@ -135,16 +135,16 @@ public sealed partial class CueSheetParser
     private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
-    [GeneratedRegex(@"^TITLE\s+""(?<Title>.+)""$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("""^TITLE\s+"(?<Title>.+)"$""", RegexOptions.IgnoreCase)]
     private static partial Regex TitleRegex();
 
-    [GeneratedRegex(@"^FILE\s+""(?<Name>.+)""\s+(WAVE|MP3|AIFF|BINARY|MOTOROLA)$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("""^FILE\s+"(?<Name>.+)"\s+(WAVE|MP3|AIFF|BINARY|MOTOROLA)$""", RegexOptions.IgnoreCase)]
     private static partial Regex FileRegex();
 
     [GeneratedRegex(@"^TRACK\s+(?<Number>\d+)", RegexOptions.IgnoreCase)]
     private static partial Regex TrackRegex();
 
-    [GeneratedRegex(@"^PERFORMER\s+""(?<Performer>.+)""$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("""^PERFORMER\s+"(?<Performer>.+)"$""", RegexOptions.IgnoreCase)]
     private static partial Regex PerformerRegex();
 
     [GeneratedRegex(@"^INDEX\s+(?<Index>\d+)\s+(?<Minute>\d{2,}):(?<Second>\d{2}):(?<Frame>\d{2})$", RegexOptions.IgnoreCase)]

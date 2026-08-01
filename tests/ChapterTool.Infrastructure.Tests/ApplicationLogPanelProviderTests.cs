@@ -80,7 +80,8 @@ public sealed class ApplicationLogPanelProviderTests
         var notifications = new List<ApplicationLogEntrySnapshot>();
 
         service.EntryAdded += (_, entry) =>
-            notifications.Add(new ApplicationLogEntrySnapshot(entry.Message, service.Entries.Select(static item => item.Message).ToArray()));
+            notifications.Add(new ApplicationLogEntrySnapshot(entry.Message,
+                [.. service.Entries.Select(static item => item.Message)]));
 
         logger.LogInformation("First");
         logger.LogInformation("Second");

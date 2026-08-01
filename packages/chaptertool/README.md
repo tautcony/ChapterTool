@@ -53,7 +53,7 @@ The package transfers complex values across the .NET WebAssembly boundary as JSO
 
 The WebAssembly runtime is initialized once per Node.js process. Concurrent `ChapterTool` instances share the initialized runtime. A failed startup can be retried by a later API operation.
 
-The package requires Node.js 20, 22, 24, or later. It accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It supports the byte-based import formats provided by `ChapterTool.Core`. It does not run desktop tools such as `ffprobe`, `ffmpeg`, `mkvtoolnix`, or `eac3to`.
+The package requires Node.js 20, 22, 24, or later. It accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It supports the byte-based import formats provided by `ChapterTool.Core`. It does not run desktop tools such as `ffprobe`, `ffmpeg`, or `mkvtoolnix`.
 
 Portable imports have a 64 MiB byte limit. The package checks the UTF-8 or binary byte count before it creates a conversion copy. An input above the limit throws a `RangeError` with `code` set to `INPUT_TOO_LARGE`.
 

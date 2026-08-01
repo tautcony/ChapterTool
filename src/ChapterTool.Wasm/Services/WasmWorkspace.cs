@@ -114,7 +114,7 @@ public sealed class WasmWorkspace : IDisposable
 
     public string? SelectedClipId { get; private set; }
 
-    public bool IsClipSelectionVisible => ClipOptions.Count > 1 || IsClipCombined;
+    public bool IsClipSelectionVisible => ClipOptions.Count > 0 || IsClipCombined;
 
     public bool IsClipCombined => ClipSessionState?.IsCombined == true;
 
@@ -253,9 +253,12 @@ public sealed class WasmWorkspace : IDisposable
                 return [];
             }
 
-            return ClipSessionState.RelatedMedia
-                .Select(static media => new RelatedMediaItem(media.DisplayName, media.RelativePath, media.AbsolutePath))
-                .ToArray();
+            return
+            [
+                .. ClipSessionState.RelatedMedia
+                    .Select(static media =>
+                        new RelatedMediaItem(media.DisplayName, media.RelativePath, media.AbsolutePath))
+            ];
         }
     }
 
@@ -1091,17 +1094,19 @@ public sealed class WasmWorkspace : IDisposable
         }
     }
 
-    private static IReadOnlyList<ClipOption> BuildClipOptionsFromSession(ClipSession session, int groupIndex)
+    private IReadOnlyList<ClipOption> BuildClipOptionsFromSession(ClipSession session, int groupIndex)
     {
         if (session.IsCombined)
         {
             var combined = session.ClipOptions[0];
-            return [new ClipOption($"combined:{groupIndex}", combined.DisplayName, groupIndex, -1)];
+            return [ToClipOption(combined, $"combined:{groupIndex}", groupIndex, -1)];
         }
 
-        return session.ClipOptions
-            .Select((entry, index) => new ClipOption($"{groupIndex}:{entry.Id}", entry.DisplayName, groupIndex, index))
-            .ToArray();
+        return
+        [
+            .. session.ClipOptions
+                .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{entry.Id}", groupIndex, index))
+        ];
     }
 
     private void LoadBaseFromSelectedClip()
@@ -1157,9 +1162,11 @@ public sealed class WasmWorkspace : IDisposable
         RebuildFrameRateChoices(BaseChapterSet);
 
         var projection = projectionService.Project(BaseChapterSet, CreateExportOptions());
-        rows = projection.Info.Chapters
-            .Select(chapter => ToRow(chapter, wasmChapterService.TimeFormatter))
-            .ToList();
+        rows =
+        [
+            .. projection.Info.Chapters
+                .Select(chapter => ToRow(chapter, wasmChapterService.TimeFormatter))
+        ];
 
         // Drop selection indexes that no longer exist after edits.
         selectedRowIndexes.RemoveWhere(index => index < 0 || index >= rows.Count);
@@ -1309,7 +1316,7 @@ public sealed class WasmWorkspace : IDisposable
     {
         if (selectedRowIndexes.Count > 0)
         {
-            return selectedRowIndexes.Where(index => index >= 0 && index < rows.Count).ToHashSet();
+            return [.. selectedRowIndexes.Where(index => index >= 0 && index < rows.Count)];
         }
 
         if (SelectedRowIndex >= 0 && SelectedRowIndex < rows.Count)
@@ -1320,7 +1327,7 @@ public sealed class WasmWorkspace : IDisposable
         return [];
     }
 
-    private static List<ClipOption> BuildClipOptions(ChapterImportResult result)
+    private List<ClipOption> BuildClipOptions(ChapterImportResult result)
     {
         var options = new List<ClipOption>();
         for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
@@ -1338,11 +1345,26 @@ public sealed class WasmWorkspace : IDisposable
                     display = $"{Path.GetFileName(group.SourcePath)} · {display}";
                 }
 
-                options.Add(new ClipOption(id, display, groupIndex, entryIndex));
+                options.Add(ToClipOption(entry, id, groupIndex, entryIndex, display));
             }
         }
 
         return options;
+    }
+
+    private ClipOption ToClipOption(
+        ChapterImportEntry entry,
+        string id,
+        int groupIndex,
+        int entryIndex,
+        string? prefix = null)
+    {
+        var display = ChapterImportDisplay.From(entry);
+        var mainText = prefix ?? display.MainText;
+        var displayText = display.ChapterCount > 0
+            ? localizer.Format("Label.ClipOption", mainText, display.ChapterCount)
+            : mainText;
+        return new ClipOption(id, displayText, groupIndex, entryIndex);
     }
 
     private static ChapterRowModel ToRow(Chapter chapter, IChapterTimeFormatter formatter) =>
@@ -1358,11 +1380,13 @@ public sealed class WasmWorkspace : IDisposable
         };
 
     private static IReadOnlyList<DiagnosticView> ToDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
-        diagnostics.Select(static diagnostic => new DiagnosticView(
+    [
+        .. diagnostics.Select(static diagnostic => new DiagnosticView(
             diagnostic.Severity.ToString(),
             diagnostic.DisplayCode,
             diagnostic.Message,
-            diagnostic.Details)).ToArray();
+            diagnostic.Details))
+    ];
 
     private static string? FirstError(IEnumerable<ChapterDiagnostic> diagnostics)
     {
@@ -1417,11 +1441,19 @@ public sealed class WasmWorkspace : IDisposable
 
     private void OnCultureChanged()
     {
+        if (ClipSessionState is not null)
+        {
+            ClipOptions = importResult is { Groups.Count: > 1 } && !ClipSessionState.IsCombined
+                ? BuildClipOptions(importResult)
+                : BuildClipOptionsFromSession(ClipSessionState, activeGroupIndex);
+        }
+
         if (statusLocalizationKey is not null)
         {
             StatusText = localizer.Format(statusLocalizationKey, statusLocalizationArgs);
-            Notify();
         }
+
+        Notify();
     }
 
     private void RecordDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics)

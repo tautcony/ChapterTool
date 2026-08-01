@@ -443,10 +443,10 @@ public sealed class SettingsToolHeadlessTests
     }
 
     private static Color ResourceColor(string key) =>
-        BrushColor(Assert.IsAssignableFrom<IBrush>(Application.Current!.Resources[key]));
+        BrushColor(Assert.IsType<IBrush>(Application.Current!.Resources[key], exactMatch: false));
 
     private static string ResourceFont(string key) =>
-        Assert.IsType<FontFamily>(Application.Current!.Resources[key]).Name;
+        Assert.IsType<FontFamily>(Application.Current!.Resources[key], exactMatch: false).Name;
 
     private static double Left(Control control, Window window) =>
         control.TranslatePoint(default, window)?.X

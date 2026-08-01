@@ -358,7 +358,7 @@ The settings panel SHALL organize the durable configurable features discovered f
 
 #### Scenario: External tool settings are editable
 - **WHEN** the settings panel is opened
-- **THEN** it SHALL expose MKVToolNix/mkvextract path, eac3to path, and ffprobe path controls with browse, clear, and validation status behavior
+- **THEN** it SHALL expose MKVToolNix/mkvextract and ffprobe path controls with browse, clear, and validation status behavior
 
 ### Requirement: Async load updates observable UI state safely
 The Avalonia shell SHALL keep file IO and parsing separate from observable UI state mutation during asynchronous loads.

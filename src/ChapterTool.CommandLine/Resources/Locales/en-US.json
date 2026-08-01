@@ -40,7 +40,7 @@
   "Diagnostic.ContainerHeader.Invalid": "The file is not a supported container.",
   "Diagnostic.CueFile.Empty": "CUE text is empty or no chapters were parsed.",
   "Diagnostic.CueSyntax.Malformed": "CUE index syntax is unsupported or malformed.",
-  "Diagnostic.Dependency.Missing": "eac3to was not found.",
+  "Diagnostic.Dependency.Missing": "The required external tool was not found.",
   "Diagnostic.DependencyExecution.Cancelled": "The operation was cancelled.",
   "Diagnostic.DependencyExecution.Failed": "The operation failed: {message}",
   "Diagnostic.DependencyExecution.TimedOut": "The operation timed out.",

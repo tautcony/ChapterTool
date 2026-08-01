@@ -6,9 +6,14 @@ namespace ChapterTool.Avalonia.Views;
 /// <summary>Provides the desktop lifetime wrapper for the shared main view.</summary>
 public sealed partial class MainWindow : Window
 {
-    public MainWindow(MainView mainView, string title)
+    public MainWindow()
     {
         InitializeComponent();
+    }
+
+    public MainWindow(MainView mainView, string title)
+        : this()
+    {
         Title = title;
         Width = 736;
         Height = 576;

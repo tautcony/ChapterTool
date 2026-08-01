@@ -67,6 +67,21 @@ public sealed class MainWindowStateHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Single_mpls_option_keeps_clip_selector_visible()
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.mpls",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00001.m2ts", "Opening")));
+
+        await host.LoadAsync("movie.mpls");
+
+        var clipBox = host.RequiredControl<ComboBox>("ClipBox");
+        Assert.True(clipBox.IsVisible);
+        Assert.Equal(0, clipBox.SelectedIndex);
+        Assert.Equal("00001.m2ts（1 chapters）", clipBox.SelectionBoxItem?.ToString());
+    }
+
+    [AvaloniaFact]
     public async Task Save_options_changed_through_rendered_controls_route_to_save_service()
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(

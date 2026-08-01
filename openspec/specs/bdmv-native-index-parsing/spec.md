@@ -1,4 +1,4 @@
-# BDMV Native INDEX Parsing Specification
+# BDMV INDEX Parsing Specification
 
 ## Purpose
 The system parses bounded Blu-ray index.bdmv title and application metadata.

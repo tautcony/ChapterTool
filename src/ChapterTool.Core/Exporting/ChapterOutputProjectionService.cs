@@ -56,7 +56,7 @@ public sealed class ChapterOutputProjectionService
 
         return new ChapterOutputProjectionResult(
             expressionResult.Info with { Chapters = chapters },
-            chapters.Where(static chapter => !chapter.IsSeparator).ToList(),
+            [.. chapters.Where(static chapter => !chapter.IsSeparator)],
             diagnostics);
     }
 
@@ -78,12 +78,14 @@ public sealed class ChapterOutputProjectionService
     private static List<string> TemplateNames(string? templateText) =>
         string.IsNullOrWhiteSpace(templateText)
             ? []
-            : templateText
-                .Trim(' ', '\r', '\n')
-                .Split('\n')
-                .Select(static line => line.TrimEnd('\r'))
-                .Where(static line => line.Length > 0)
-                .ToList();
+            :
+            [
+                .. templateText
+                    .Trim(' ', '\r', '\n')
+                    .Split('\n')
+                    .Select(static line => line.TrimEnd('\r'))
+                    .Where(static line => line.Length > 0)
+            ];
 
     private static string OutputName(
         string originalName,
@@ -119,7 +121,7 @@ public sealed record ChapterOutputProjectionResult(
     /// <param name="info">The chapter data to process.</param>
     /// <param name="diagnostics">The diagnostics for the operation.</param>
     public ChapterOutputProjectionResult(ChapterSet info, IReadOnlyList<ChapterDiagnostic> diagnostics)
-        : this(info, info.Chapters.Where(static chapter => !chapter.IsSeparator).ToList(), diagnostics)
+        : this(info, [.. info.Chapters.Where(static chapter => !chapter.IsSeparator)], diagnostics)
     {
     }
 }

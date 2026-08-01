@@ -167,13 +167,13 @@ public sealed class BdmvPathHelperTests
 
         Assert.Equal(2, clpiMap.Count);
         var loaded = Assert.Single(diagnostics, static item => item.Code == ChapterDiagnosticCode.ClpiFileLoaded);
-        var loadedArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(loaded.Arguments);
+        var loadedArguments = Assert.IsType<IReadOnlyDictionary<string, object?>>(loaded.Arguments, exactMatch: false);
         Assert.Equal(2, loadedArguments["loadedCount"]);
         Assert.Equal(3, loadedArguments["requestedCount"]);
-        Assert.Equal(2, Assert.IsAssignableFrom<IReadOnlyList<object?>>(loadedArguments["clips"]).Count);
+        Assert.Equal(2, Assert.IsType<IReadOnlyList<object?>>(loadedArguments["clips"], exactMatch: false).Count);
 
         var missing = Assert.Single(diagnostics, static item => item.Code == ChapterDiagnosticCode.ClpiFileNotFound);
-        var missingArguments = Assert.IsAssignableFrom<IReadOnlyDictionary<string, object?>>(missing.Arguments);
+        var missingArguments = Assert.IsType<IReadOnlyDictionary<string, object?>>(missing.Arguments, exactMatch: false);
         Assert.Equal(1, missingArguments["missingCount"]);
     }
 }

@@ -53,7 +53,6 @@ public static class ExternalToolPathResolver
             foreach (var root in WindowsProgramRoots())
             {
                 yield return Path.Combine(root, "MKVToolNix");
-                yield return Path.Combine(root, "eac3to");
                 yield return Path.Combine(root, "ffmpeg", "bin");
             }
         }

@@ -173,7 +173,7 @@ public sealed class AppCompositionRoot : IDisposable
     public static IProcessRunner CreateProcessRunner() => new ProcessRunner();
 
     public static INativeDependencyService CreateNativeDependencyService() =>
-        new FileSystemNativeDependencyService(PathSearchDirectories().Prepend(AppContext.BaseDirectory).ToList());
+        new FileSystemNativeDependencyService([.. PathSearchDirectories().Prepend(AppContext.BaseDirectory)]);
 
     internal static IEnumerable<string> PathSearchDirectoriesForTests() => ChapterToolRuntimeComposition.PathSearchDirectories();
 

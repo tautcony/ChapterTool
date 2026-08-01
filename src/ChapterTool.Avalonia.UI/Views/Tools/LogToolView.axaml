@@ -64,7 +64,7 @@
                           Background="{DynamicResource ChapterTool.LogErrorBrush}"
                           IsVisible="{Binding IsError}" />
 
-                  <Grid Grid.Column="1" Width="20" Height="20" Margin="2,0,6,0" VerticalAlignment="Top">
+                  <Grid Grid.Column="1" Width="20" Height="20" Margin="2,0,6,0" VerticalAlignment="Center">
                     <i:Icon Width="14" Height="14"
                             Value="fa-solid fa-circle-info"
                             Foreground="{DynamicResource ChapterTool.LogInformationBrush}"

@@ -137,6 +137,8 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
         return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Closed, toolId));
     }
 
+    internal IReadOnlyDictionary<string, Window> WindowsForTesting => windows;
+
     public void Dispose()
     {
         if (disposed)
@@ -196,7 +198,7 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
                 return;
             }
 
-            if (control.DataContext is not SettingsToolViewModel settings || !settings.HasUnsavedChanges)
+            if (control.DataContext is not SettingsToolViewModel { HasUnsavedChanges: true } settings)
             {
                 return;
             }

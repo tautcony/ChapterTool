@@ -113,10 +113,11 @@ public sealed partial class LocalizationTests
     }
 
     private static string[] Placeholders(string value) =>
-        PlaceholderRegex().Matches(value)
+    [
+        .. PlaceholderRegex().Matches(value)
             .Select(static match => match.Groups["name"].Value)
             .Order(StringComparer.Ordinal)
-            .ToArray();
+    ];
 
     private static void AssertNoEncodingArtifacts(string value, string context)
     {

@@ -5,7 +5,6 @@ public sealed record AppSettings(
     string Language = "",
     WindowLocation? MainWindowLocation = null,
     string? MkvToolnixPath = null,
-    string? Eac3toPath = null,
     string? FfprobePath = null,
     string DefaultSaveFormat = "Txt",
     string DefaultXmlLanguage = "und",

@@ -97,7 +97,7 @@ public sealed class FfprobeMediaChapterReader(
                     sourceOrder++));
             }
 
-            return MediaChapterReadResult.Succeeded(chapters.ToArray());
+            return MediaChapterReadResult.Succeeded([.. chapters]);
         }
         catch (JsonException exception)
         {

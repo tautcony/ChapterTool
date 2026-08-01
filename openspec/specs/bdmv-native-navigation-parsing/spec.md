@@ -1,4 +1,4 @@
-# BDMV Native Navigation Parsing Specification
+# BDMV Navigation Parsing Specification
 
 ## Purpose
 The system parses bounded HDMV MovieObject commands and BD-J playlist declarations.

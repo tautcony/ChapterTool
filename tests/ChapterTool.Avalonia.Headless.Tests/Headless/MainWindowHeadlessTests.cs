@@ -205,8 +205,8 @@ public sealed class MainWindowHeadlessTests
         Assert.True(result.Success);
         using var host = new MainWindowHeadlessTestHost(result);
 
-        await AssertDefaultSelectionDisplaysLabelAsync(host, path, "00002（6 chapters）");
-        await AssertSelectorDisplaysLabelAsync(host, path, selectedIndex: 1, "00003（6 chapters）");
+        await AssertDefaultSelectionDisplaysLabelAsync(host, path, "00002.m2ts（6 chapters）");
+        await AssertSelectorDisplaysLabelAsync(host, path, selectedIndex: 1, "00003.m2ts（6 chapters）");
     }
 
     private static MainWindowHeadlessTestHost CreateMultiOptionHost(

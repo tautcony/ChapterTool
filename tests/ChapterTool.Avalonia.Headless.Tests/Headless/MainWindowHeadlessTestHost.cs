@@ -220,7 +220,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     public static IReadOnlyList<T> Descendants<T>(Control scope)
         where T : Control =>
-        scope.GetVisualDescendants().OfType<T>().ToArray();
+        [.. scope.GetVisualDescendants().OfType<T>()];
 
     public bool ContainsRenderedText(string text) =>
         ContainsRenderedText(Window, text);

@@ -178,7 +178,7 @@ internal sealed class HdmvNavigationResolver
 
         return new HdmvNavigationResult(events, diagnostics, limitReached)
         {
-            ControlEvents = controls.Distinct().ToArray()
+            ControlEvents = [.. controls.Distinct()]
         };
     }
 
@@ -194,7 +194,7 @@ internal sealed class HdmvNavigationResolver
                 result.Add((int)(command.SourceOperand & 0x7f));
         }
 
-        return result.Where(static index => index < 128).ToArray();
+        return [.. result.Where(static index => index < 128)];
     }
 
     private static IReadOnlyList<uint> VariantValues(int psr, uint current) => psr switch
@@ -220,8 +220,14 @@ internal sealed class HdmvNavigationResolver
         switch (insn.Group)
         {
             case 0 when insn.Subgroup == 0:
-                if (insn.BranchOption == 1) next = dst > int.MaxValue ? int.MaxValue : (int)dst;
-                else if (insn.BranchOption == 2) { state.ProgramCounter = int.MaxValue; return; }
+                switch (insn.BranchOption)
+                {
+                    case 1:
+                        next = dst > int.MaxValue ? int.MaxValue : (int)dst;
+                        break;
+                    case 2:
+                        state.ProgramCounter = int.MaxValue; return;
+                }
                 break;
             case 0 when insn.Subgroup == 1:
                 switch (insn.BranchOption)
@@ -369,7 +375,7 @@ internal sealed class HdmvNavigationResolver
         internal ExecutionState(IReadOnlyDictionary<uint, ushort> titleObjects, HdmvPlayerProfile profile)
         {
             TitleObjects = titleObjects.ToDictionary(static pair => pair.Key, static pair => (int)pair.Value);
-            Psr = profile.Psr.ToArray();
+            Psr = [.. profile.Psr];
             Profile = profile;
             Gpr = new uint[4096];
         }

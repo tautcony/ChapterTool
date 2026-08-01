@@ -16,7 +16,7 @@ public sealed class WasmLocalizer
     public event Action? CultureChanged;
 
     public static IReadOnlyCollection<string> EnglishKeys =>
-        Catalog["en-US"].Keys.ToArray();
+        [.. Catalog["en-US"].Keys];
 
     public void SetCulture(string? culture)
     {
@@ -37,9 +37,7 @@ public sealed class WasmLocalizer
             return value;
         }
 
-        return Catalog["en-US"].TryGetValue(key, out var fallback)
-            ? fallback
-            : key;
+        return Catalog["en-US"].GetValueOrDefault(key, key);
     }
 
     public string Format(string key, params object[] args) =>

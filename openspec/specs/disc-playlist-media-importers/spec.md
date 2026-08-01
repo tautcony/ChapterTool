@@ -57,27 +57,6 @@ The system SHALL parse HD-DVD `.xpl` playlist XML.
 - **WHEN** namespace, duration, or timestamp structure is malformed
 - **THEN** the importer SHALL return a parse diagnostic instead of a null-reference failure
 
-### Requirement: BDMV eac3to import
-The system SHALL import BDMV directories through an eac3to adapter that enumerates title candidates and exports chapter text for parsing.
-
-#### Scenario: Valid BDMV delegates chapter text
-- **WHEN** eac3to lists playlists and exports chapter text
-- **THEN** the importer SHALL parse exported chapter text through the OGM parser
-- **AND** the returned BDMV options SHALL use the exported chapter times rather than direct MPLS chapter parsing
-
-#### Scenario: Candidate metadata is preserved
-- **WHEN** an eac3to playlist candidate maps to a readable MPLS file
-- **THEN** the importer SHALL preserve available title, source name, source index, source type, duration, frame-rate, and media-reference metadata on the returned chapter option
-
-#### Scenario: Missing eac3to is recoverable
-- **WHEN** no valid eac3to path is configured
-- **THEN** import SHALL return a missing-dependency result and Core SHALL NOT prompt directly
-
-#### Scenario: eac3to export failure is diagnosed
-- **WHEN** eac3to lists one or more chapter-bearing candidates but chapter export fails, times out, is cancelled, produces no chapter file, or produces unparseable chapter text for a candidate
-- **THEN** import SHALL fail that candidate with a structured diagnostic
-- **AND** BDMV directory import SHALL NOT fall back to direct MPLS-derived chapter times
-
 ### Requirement: MP4 import
 The system SHALL import MP4-family chapters through the ffprobe-backed media chapter importer, falling back to ATL.NET only for `.mp4`, `.m4a`, and `.m4v` when ffprobe cannot be located or started.
 
@@ -199,19 +178,19 @@ The system SHALL enhance MPLS chapter import with automatic CLPI discovery from 
 - **AND** chapters SHALL use the PTS/45000 conversion as in existing behavior
 
 ### Requirement: Standard BDMV importer contract for directories
-The system SHALL route a disc root, a `BDMV` directory, and the primary `index.bdmv` file to the native C# importer. The existing eac3to-based importer SHALL remain available for explicit verification and diagnosed unsupported-navigation fallback.
+The system SHALL route a disc root, a `BDMV` directory, and the primary `index.bdmv` file to `BdmvImporter`.
 
-#### Scenario: BDMV directory routes to native importer
+#### Scenario: BDMV directory routes to BdmvImporter
 - **WHEN** the import service receives a path containing a `BDMV/PLAYLIST` subdirectory
-- **THEN** it SHALL route to NativeBdmvImporter (not the eac3to-based importer)
+- **THEN** it SHALL route to BdmvImporter
 
-#### Scenario: Direct index input routes to native importer
+#### Scenario: Direct index input routes to BdmvImporter
 - **WHEN** the import service receives the primary `BDMV/index.bdmv` path
 - **THEN** it SHALL normalize the path to the same source layout as its disc root
-- **AND** it SHALL route to NativeBdmvImporter
+- **AND** it SHALL route to BdmvImporter
 
 ### Requirement: Aggregate BDMV playlist media references
-The system SHALL build BDMV media references from the complete MPLS playlist. It SHALL NOT infer clip ownership from formatted eac3to text.
+The system SHALL build BDMV media references from the complete MPLS playlist.
 
 #### Scenario: Playlist contains multiple clips
 - **WHEN** a discovered playlist references multiple PlayItems or angle clips

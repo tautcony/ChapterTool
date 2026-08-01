@@ -54,6 +54,9 @@ public sealed partial class MainWindowViewModel
         RefreshChapterNameModeOptions();
         RefreshFrameRateDisplayOptions();
         RefreshXmlLanguageDisplayOptions(notify: true);
+        displayOptionCoordinator.RebuildClipDisplayOptions(ClipOptions, ClipDisplayOptions);
+        OnPropertyChanged(nameof(ClipDisplayOptions));
+        OnPropertyChanged(nameof(SelectedClipDisplayOption));
 
         if (string.IsNullOrEmpty(ChapterNameTemplateText))
         {
@@ -107,7 +110,7 @@ public sealed partial class MainWindowViewModel
     private void LogImportDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
         => statusDiagnosticsPresenter.LogDiagnostics(
             operation,
-            diagnostics.Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning).ToList());
+            [.. diagnostics.Where(static diagnostic => diagnostic.Severity >= DiagnosticSeverity.Warning)]);
 
     public ValueTask ReportUnexpectedUiException(Exception exception)
     {

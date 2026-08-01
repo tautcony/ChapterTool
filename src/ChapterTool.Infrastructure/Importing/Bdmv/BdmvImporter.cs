@@ -1,4 +1,3 @@
-using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
@@ -12,9 +11,9 @@ using ChapterTool.Core.Models;
 namespace ChapterTool.Infrastructure.Importing.Bdmv;
 
 /// <summary>Imports complete chapter-bearing Blu-ray playlists with managed parsers.</summary>
-public sealed class NativeBdmvImporter : IChapterImporter
+public sealed class BdmvImporter : IChapterImporter
 {
-    public string Id => "bdmv-native";
+    public string Id => "bdmv";
 
     public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
@@ -40,7 +39,7 @@ public sealed class NativeBdmvImporter : IChapterImporter
             layout.OriginalInputPath));
 
         Report(request.ProgressReporter, ChapterImportProgressPhase.DiscoveringTitles, 0.05, layout.OriginalInputPath);
-        var discTitle = ReadDiscTitle(layout.MetadataDirectory);
+        var discTitle = BdmvMetadataReader.ReadDiscTitle(layout.MetadataDirectory);
         var scanCandidates = BdmvPlaylistScanner.Scan(layout, diagnostics).ToDictionary(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase);
         var evidence = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var evidenceOrder = new List<string>();
@@ -54,8 +53,8 @@ public sealed class NativeBdmvImporter : IChapterImporter
             .Select(candidate => candidate with { Evidence = evidence.TryGetValue(candidate.Name, out var values) ? values : candidate.Evidence })
             .OrderBy(static candidate => EvidencePriority(candidate.Evidence))
 
-            // eac3to keeps the first discovered navigation title first. It then sorts the remaining
-            // candidates by complete duration and uses the descending playlist name as a stable tie-breaker.
+            // Keep the first navigation title first. Sort the remaining candidates by complete
+            // duration and use the descending playlist name as a stable tie-breaker.
             .ThenBy(candidate => FirstEvidenceOrder(candidate.Name, evidenceOrder))
             .ThenByDescending(static candidate => candidate.Projection.ChapterSet.Duration)
             .ThenByDescending(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
@@ -175,9 +174,9 @@ public sealed class NativeBdmvImporter : IChapterImporter
                     $"INDEX title {item.Number} is hidden."));
             }
 
-            if (title.ObjectReference is IndexHdmvObjectReference hdmv)
+            switch (title.ObjectReference)
             {
-                if (movieObject == null)
+                case IndexHdmvObjectReference hdmv when movieObject == null:
                 {
                     if (!unavailableLogged)
                     {
@@ -190,31 +189,33 @@ public sealed class NativeBdmvImporter : IChapterImporter
 
                     continue;
                 }
-
-                var titleNumber = checked((int)item.Number);
-                var result = new HdmvNavigationResolver().ResolveProfileVariants(movieObject, hdmv.ObjectId, titleObjects, titleNumber);
-                diagnostics.AddRange(result.Diagnostics);
-                var playlists = new List<object?>();
-                foreach (var playback in result.Events)
+                case IndexHdmvObjectReference hdmv:
                 {
-                    AddEvidence(evidence, evidenceOrder, $"{playback.PlaylistId:D5}.mpls", $"HDMV:{hdmv.ObjectId}:{playback.InstructionType}");
-                    playlists.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                    var titleNumber = checked((int)item.Number);
+                    var result = new HdmvNavigationResolver().ResolveProfileVariants(movieObject, hdmv.ObjectId, titleObjects, titleNumber);
+                    diagnostics.AddRange(result.Diagnostics);
+                    var playlists = new List<object?>();
+                    foreach (var playback in result.Events)
                     {
-                        ["playlist"] = $"{playback.PlaylistId:D5}.mpls",
-                        ["instruction"] = playback.InstructionType
-                    });
-                }
+                        AddEvidence(evidence, evidenceOrder, $"{playback.PlaylistId:D5}.mpls", $"HDMV:{hdmv.ObjectId}:{playback.InstructionType}");
+                        playlists.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                        {
+                            ["playlist"] = $"{playback.PlaylistId:D5}.mpls",
+                            ["instruction"] = playback.InstructionType
+                        });
+                    }
 
-                navigationDetails.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
-                {
-                    ["title"] = titleNumber,
-                    ["objectId"] = hdmv.ObjectId,
-                    ["playlists"] = playlists
-                });
-            }
-            else if (title.ObjectReference is IndexBdJObjectReference bdj)
-            {
-                ResolveBdjo(bdj, layout, evidence, evidenceOrder, diagnostics);
+                    navigationDetails.Add(new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["title"] = titleNumber,
+                        ["objectId"] = hdmv.ObjectId,
+                        ["playlists"] = playlists
+                    });
+                    break;
+                }
+                case IndexBdJObjectReference bdj:
+                    ResolveBdjo(bdj, layout, evidence, evidenceOrder, diagnostics);
+                    break;
             }
         }
 
@@ -280,35 +281,22 @@ public sealed class NativeBdmvImporter : IChapterImporter
     }
 
     /// <summary>
-    /// Builds the eac3to-style display name: playlist name, complete duration, and the m2ts
-    /// combination. Angle clips and multiple PlayItems merge into one bracket group like eac3to,
+    /// Builds the BDMV display name: playlist name, complete duration, and the m2ts
+    /// combination. Angle clips and multiple PlayItems merge into one bracket group,
     /// for example <c>00041.mpls (2:00:22) [00112+00127+00115].m2ts</c>.
     /// </summary>
     private static string DisplayName(BdmvPlaylistCandidate candidate)
-    {
-        var clips = candidate.Projection.Playlist.PlayList.PlayItems
-            .SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries));
-        var clipText = ClipListDisplay(clips);
-        var duration = candidate.Projection.ChapterSet.Duration;
-        return clipText.Length == 0
-            ? $"{candidate.Name} ({duration:h\\:mm\\:ss})"
-            : $"{candidate.Name} ({duration:h\\:mm\\:ss}) {clipText}";
-    }
+        => MplsPlaylistProjection.PlaylistDisplayName(
+            candidate.Name,
+            candidate.Projection.ChapterSet.Duration,
+            candidate.Projection.Playlist.PlayList.PlayItems.SelectMany(MplsPlaylistProjection.ClipNames));
 
     /// <summary>
-    /// Renders a clip list in the eac3to display convention: a single clip keeps its plain name,
+    /// Renders a clip list in the BDMV display convention: a single clip keeps its plain name,
     /// while multiple clips (angles or PlayItems) merge into one <c>[a+b+c].m2ts</c> bracket group.
     /// </summary>
     internal static string ClipListDisplay(IEnumerable<string> clips)
-    {
-        var names = clips.ToList();
-        return names.Count switch
-        {
-            0 => string.Empty,
-            1 => $"{names[0]}.m2ts",
-            _ => $"[{string.Join("+", names)}].m2ts"
-        };
-    }
+        => MplsPlaylistProjection.ClipListDisplay(clips);
 
     private static void AddEvidence(Dictionary<string, List<string>> evidence, List<string> evidenceOrder, string name, string source)
     {
@@ -348,23 +336,6 @@ public sealed class NativeBdmvImporter : IChapterImporter
                 }).ToList()
             }
         };
-
-    private static string ReadDiscTitle(string metadataDirectory)
-    {
-        try
-        {
-            var file = Directory.Exists(metadataDirectory)
-                ? Directory.EnumerateFiles(metadataDirectory, "*.xml", SearchOption.TopDirectoryOnly).OrderBy(static path => path, StringComparer.OrdinalIgnoreCase).FirstOrDefault()
-                : null;
-            if (file == null) return string.Empty;
-            var document = XDocument.Load(file, LoadOptions.None);
-            return document.Descendants().FirstOrDefault(static element => element.Name.LocalName == "name")?.Value.Trim() ?? string.Empty;
-        }
-        catch (Exception)
-        {
-            return string.Empty;
-        }
-    }
 
     private static void Report(
         IChapterImportProgressReporter? progress,

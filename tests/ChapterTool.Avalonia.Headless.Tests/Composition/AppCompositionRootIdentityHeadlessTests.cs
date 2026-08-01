@@ -139,17 +139,11 @@ public sealed class AppCompositionRootIdentityHeadlessTests
 
     private static IReadOnlyList<Window> WindowsFor(MainWindowViewModel viewModel)
     {
-        var serviceField = typeof(MainWindowViewModel).GetField(
-            "auxiliaryToolHost",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Main window service field was not found.");
-        var service = serviceField.GetValue(viewModel)
-            ?? throw new InvalidOperationException("Main window service was not created.");
-        var windowsField = service.GetType().GetField(
-            "windows",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
-            ?? throw new InvalidOperationException("Window registry was not found.");
-        return Assert.IsAssignableFrom<IReadOnlyDictionary<string, Window>>(windowsField.GetValue(service)!).Values.ToArray();
+        var service = Assert.IsType<AvaloniaWindowService>(viewModel.AuxiliaryToolHost);
+        return
+        [
+            .. service.WindowsForTesting.Values
+        ];
     }
 
     private static string CreateTempDirectory()

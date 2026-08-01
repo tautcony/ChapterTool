@@ -21,9 +21,12 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         Expression = expressionSession.Expression;
         ApplyExpression = expressionSession.ApplyExpression;
         ExpressionSourceName = expressionSession.ExpressionSourceName;
-        Presets = expressionSession.ExpressionPresets
-            .Select(static preset => new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
-            .ToList();
+        Presets =
+        [
+            .. expressionSession.ExpressionPresets
+                .Select(static preset =>
+                    new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
+        ];
         SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
         BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null);
         ApplyCommand = new UiCommand((parameter, _) =>

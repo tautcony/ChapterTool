@@ -56,22 +56,25 @@ public static partial class NodeApi
     [JSExport]
     public static string GetFormats() =>
         JsonSerializer.Serialize(
-            ChapterService.SaveFormats.Select(static option => new NodeFormat(
-                option.Index,
-                option.Code,
-                option.DisplayName,
-                option.Extension,
-                ChapterExportFormats.Description(ParseExportFormat(option.Code)))).ToArray(),
+            [
+                .. ChapterService.SaveFormats.Select(static option => new NodeFormat(
+                    option.Index,
+                    option.Code,
+                    option.DisplayName,
+                    option.Extension,
+                    ChapterExportFormats.Description(ParseExportFormat(option.Code))))
+            ],
             NodeJsonContext.Default.NodeFormatArray);
 
     [JSExport]
     public static string GetImportFormats() =>
         JsonSerializer.Serialize(
-            ChapterService.ImportFormats
-                .Select(static format => new NodeImportFormat(
-                    ChapterImportFormats.Code(format),
-                    ChapterImportFormats.DisplayName(format)))
-                .ToArray(),
+            [
+                .. ChapterService.ImportFormats
+                    .Select(static format => new NodeImportFormat(
+                        ChapterImportFormats.Code(format),
+                        ChapterImportFormats.DisplayName(format)))
+            ],
             NodeJsonContext.Default.NodeImportFormatArray);
 
     [JSExport]
@@ -82,19 +85,23 @@ public static partial class NodeApi
         new(
             result.Success,
             result.IsPartial,
-            result.Groups.Select(static group => new NodeImportGroup(
-                group.SourcePath,
-                group.Entries.Select(static entry => new NodeImportEntry(
-                    entry.Id,
-                    entry.DisplayName,
-                    ToNodeChapterSet(entry.ChapterSet),
-                    entry.CanCombine,
-                    entry.ReferencedMediaFiles?.Select(static media => new NodeReferencedMediaFile(
-                        media.DisplayName,
-                        media.RelativePath,
-                        media.AbsolutePath)).ToArray())).ToArray(),
-                group.DefaultEntryIndex)).ToArray(),
-            result.Diagnostics.Select(ToDiagnostic).ToArray());
+            [
+                .. result.Groups.Select(static group => new NodeImportGroup(
+                    group.SourcePath,
+                    [
+                        .. group.Entries.Select(static entry => new NodeImportEntry(
+                            entry.Id,
+                            entry.DisplayName,
+                            ToNodeChapterSet(entry.ChapterSet),
+                            entry.CanCombine,
+                            entry.ReferencedMediaFiles?.Select(static media => new NodeReferencedMediaFile(
+                                media.DisplayName,
+                                media.RelativePath,
+                                media.AbsolutePath)).ToArray()))
+                    ],
+                    group.DefaultEntryIndex))
+            ],
+            [.. result.Diagnostics.Select(ToDiagnostic)]);
 
     private static string SerializeImportFailure(string code, string message) =>
         JsonSerializer.Serialize(
@@ -112,21 +119,23 @@ public static partial class NodeApi
             chapterSet.ImportFormat.ToString(),
             chapterSet.FramesPerSecond,
             chapterSet.Duration.TotalSeconds,
-            chapterSet.Chapters.Select(static chapter => new NodeChapter(
-                chapter.DisplayNumber,
-                chapter.StartTime.TotalSeconds,
-                chapter.Name,
-                chapter.FramesInfo,
-                chapter.EndTime?.TotalSeconds,
-                chapter.FrameAccuracy.ToString(),
-                chapter.Kind.ToString())).ToArray());
+            [
+                .. chapterSet.Chapters.Select(static chapter => new NodeChapter(
+                    chapter.DisplayNumber,
+                    chapter.StartTime.TotalSeconds,
+                    chapter.Name,
+                    chapter.FramesInfo,
+                    chapter.EndTime?.TotalSeconds,
+                    chapter.FrameAccuracy.ToString(),
+                    chapter.Kind.ToString()))
+            ]);
 
     private static NodeExportResponse ToExportResponse(ChapterExportResult result) =>
         new(
             result.Success,
             result.Content,
             result.FileExtension,
-            result.Diagnostics.Select(ToDiagnostic).ToArray());
+            [.. result.Diagnostics.Select(ToDiagnostic)]);
 
     private static NodeDiagnostic ToDiagnostic(ChapterDiagnostic diagnostic) =>
         new(
@@ -143,14 +152,16 @@ public static partial class NodeApi
             Enum.Parse<ChapterImportFormat>(chapterSet.ImportFormat, ignoreCase: true),
             chapterSet.FramesPerSecond,
             TimeSpan.FromSeconds(chapterSet.DurationSeconds),
-            chapterSet.Chapters.Select(static chapter => new Chapter(
-                chapter.DisplayNumber,
-                TimeSpan.FromSeconds(chapter.StartTimeSeconds),
-                chapter.Name,
-                chapter.FramesInfo,
-                chapter.EndTimeSeconds is null ? null : TimeSpan.FromSeconds(chapter.EndTimeSeconds.Value),
-                Enum.Parse<FrameAccuracy>(chapter.FrameAccuracy, ignoreCase: true),
-                Enum.Parse<ChapterKind>(chapter.Kind, ignoreCase: true))).ToArray());
+            [
+                .. chapterSet.Chapters.Select(static chapter => new Chapter(
+                    chapter.DisplayNumber,
+                    TimeSpan.FromSeconds(chapter.StartTimeSeconds),
+                    chapter.Name,
+                    chapter.FramesInfo,
+                    chapter.EndTimeSeconds is null ? null : TimeSpan.FromSeconds(chapter.EndTimeSeconds.Value),
+                    Enum.Parse<FrameAccuracy>(chapter.FrameAccuracy, ignoreCase: true),
+                    Enum.Parse<ChapterKind>(chapter.Kind, ignoreCase: true)))
+            ]);
 
     private static ChapterExportOptions ToExportOptions(NodeExportOptions options) =>
         new(

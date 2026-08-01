@@ -88,7 +88,7 @@ public sealed class AtlMp4ChapterReader() : IMediaChapterReader
                 entries.Count));
         }
 
-        return MediaChapterReadResult.Succeeded(entries.ToArray());
+        return MediaChapterReadResult.Succeeded([.. entries]);
     }
 }
 
@@ -104,13 +104,15 @@ internal sealed class AtlTrackChapterSource : IAtlTrackChapterSource
         cancellationToken.ThrowIfCancellationRequested();
 
         var track = new Track(path);
-        return track.Chapters
-            .Select(static chapter => new AtlChapterEntry(
-                chapter.Title,
-                chapter.StartTime,
-                chapter.EndTime,
-                chapter.UseOffset))
-            .ToArray();
+        return
+        [
+            .. track.Chapters
+                .Select(static chapter => new AtlChapterEntry(
+                    chapter.Title,
+                    chapter.StartTime,
+                    chapter.EndTime,
+                    chapter.UseOffset))
+        ];
     }
 }
 

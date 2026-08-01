@@ -32,7 +32,11 @@ public sealed record LogStructuredNodeViewModel(
     public bool HasChildren => Children.Count > 0;
 }
 
-public sealed class LogEntryViewModel : ObservableViewModel
+public sealed class LogEntryViewModel(
+    ApplicationLogEntry entry,
+    IAppLocalizer localizer,
+    IAppLocalizer contentLocalizer)
+    : ObservableViewModel
 {
     private static readonly JsonSerializerOptions RawJsonOptions = new()
     {
@@ -41,18 +45,8 @@ public sealed class LogEntryViewModel : ObservableViewModel
         Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
     };
 
-    private readonly ApplicationLogEntry entry;
-    private readonly IAppLocalizer localizer;
-    private readonly IAppLocalizer contentLocalizer;
     private string? rawText;
     private string? searchableText;
-
-    public LogEntryViewModel(ApplicationLogEntry entry, IAppLocalizer localizer, IAppLocalizer contentLocalizer)
-    {
-        this.entry = entry;
-        this.localizer = localizer;
-        this.contentLocalizer = contentLocalizer;
-    }
 
     public ApplicationLogEntry Entry => entry;
 
@@ -230,9 +224,11 @@ public sealed class LogEntryViewModel : ObservableViewModel
         IEnumerable<KeyValuePair<string, object?>> values,
         int depth = 0)
     {
-        return values
-            .Select(pair => CreateNode(pair.Key, pair.Value, depth))
-            .ToList();
+        return
+        [
+            .. values
+                .Select(pair => CreateNode(pair.Key, pair.Value, depth))
+        ];
     }
 
     private static string FormatNodes(IEnumerable<LogStructuredNodeViewModel> nodes, int depth = 0)
@@ -268,36 +264,31 @@ public sealed class LogEntryViewModel : ObservableViewModel
 
     private static IReadOnlyList<LogStructuredNodeViewModel> CreateChildren(object? value, int depth)
     {
-        if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+        switch (value)
         {
-            return CreateNodes(
-                readOnlyDictionary
-                    .Where(static pair => !IsHiddenStructuredKey(pair.Key))
-                    .OrderBy(static pair => pair.Key, StringComparer.Ordinal),
-                depth);
-        }
-
-        if (value is IDictionary dictionary)
-        {
-            var pairs = new List<KeyValuePair<string, object?>>();
-            foreach (DictionaryEntry entry in dictionary)
+            case IReadOnlyDictionary<string, object?> readOnlyDictionary:
+                return CreateNodes(
+                    readOnlyDictionary
+                        .Where(static pair => !IsHiddenStructuredKey(pair.Key))
+                        .OrderBy(static pair => pair.Key, StringComparer.Ordinal),
+                    depth);
+            case IDictionary dictionary:
             {
-                pairs.Add(new KeyValuePair<string, object?>(entry.Key?.ToString() ?? string.Empty, entry.Value));
-            }
+                var pairs = new List<KeyValuePair<string, object?>>();
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    pairs.Add(new KeyValuePair<string, object?>(entry.Key?.ToString() ?? string.Empty, entry.Value));
+                }
 
-            return CreateNodes(pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal), depth);
+                return CreateNodes(pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal), depth);
+            }
         }
 
         if (value is IEnumerable enumerable and not string)
         {
-            var children = new List<LogStructuredNodeViewModel>();
             var index = 0;
-            foreach (var item in enumerable)
-            {
-                children.Add(CreateNode($"#{++index}", item, depth));
-            }
 
-            return children;
+            return [.. from object? item in enumerable select CreateNode($"#{++index}", item, depth)];
         }
 
         return [];
@@ -366,7 +357,7 @@ public sealed class LogEntryViewModel : ObservableViewModel
         string.Equals(key, "details", StringComparison.Ordinal);
 
     private static bool IsContainer(object? value) =>
-        value is IDictionary or IReadOnlyDictionary<string, object?> || value is IEnumerable and not string;
+        value is IDictionary or IReadOnlyDictionary<string, object?> or IEnumerable and not string;
 
     private string CreateRawText()
     {
@@ -389,25 +380,17 @@ public sealed class LogEntryViewModel : ObservableViewModel
 
     private static object? NormalizeRawValue(object? value, int depth, HashSet<object> path)
     {
-        if (value is null || value is string or bool or byte or sbyte or short or ushort or int or uint or long or ulong
-            or float or double or decimal)
+        switch (value)
         {
-            return value;
-        }
-
-        if (value is char or Enum or Guid or Uri or TimeSpan)
-        {
-            return value.ToString();
-        }
-
-        if (value is DateTime dateTime)
-        {
-            return dateTime.ToString("O", CultureInfo.InvariantCulture);
-        }
-
-        if (value is DateTimeOffset dateTimeOffset)
-        {
-            return dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+            case null or string or bool or byte or sbyte or short or ushort or int or uint or long or ulong
+                or float or double or decimal:
+                return value;
+            case char or Enum or Guid or Uri or TimeSpan:
+                return value.ToString();
+            case DateTime dateTime:
+                return dateTime.ToString("O", CultureInfo.InvariantCulture);
+            case DateTimeOffset dateTimeOffset:
+                return dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
         }
 
         if (depth >= 32)
@@ -422,33 +405,30 @@ public sealed class LogEntryViewModel : ObservableViewModel
 
         try
         {
-            if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+            switch (value)
             {
-                return readOnlyDictionary.ToDictionary(
-                    static pair => pair.Key,
-                    pair => NormalizeRawValue(pair.Value, depth + 1, path),
-                    StringComparer.Ordinal);
-            }
-
-            if (value is IDictionary dictionary)
-            {
-                var normalized = new Dictionary<string, object?>(StringComparer.Ordinal);
-                foreach (DictionaryEntry item in dictionary)
+                case IReadOnlyDictionary<string, object?> readOnlyDictionary:
+                    return readOnlyDictionary.ToDictionary(
+                        static pair => pair.Key,
+                        pair => NormalizeRawValue(pair.Value, depth + 1, path),
+                        StringComparer.Ordinal);
+                case IDictionary dictionary:
                 {
-                    normalized[item.Key?.ToString() ?? string.Empty] = NormalizeRawValue(item.Value, depth + 1, path);
+                    var normalized = new Dictionary<string, object?>(StringComparer.Ordinal);
+                    foreach (DictionaryEntry item in dictionary)
+                    {
+                        normalized[item.Key?.ToString() ?? string.Empty] = NormalizeRawValue(item.Value, depth + 1, path);
+                    }
+
+                    return normalized;
                 }
-
-                return normalized;
+                case IEnumerable enumerable:
+                    return enumerable.Cast<object?>()
+                        .Select(item => NormalizeRawValue(item, depth + 1, path))
+                        .ToList();
+                default:
+                    return value.ToString();
             }
-
-            if (value is IEnumerable enumerable)
-            {
-                return enumerable.Cast<object?>()
-                    .Select(item => NormalizeRawValue(item, depth + 1, path))
-                    .ToList();
-            }
-
-            return value.ToString();
         }
         finally
         {
@@ -729,9 +709,11 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     private void RefreshFilteredEntries()
     {
         var previousEntry = SelectedEntry?.Entry;
-        FilteredEntries = entryViewModels
-            .Where(entry => entry.Matches(SelectedFilter.Value) && entry.MatchesSearch(SearchText))
-            .ToList();
+        FilteredEntries =
+        [
+            .. entryViewModels
+                .Where(entry => entry.Matches(SelectedFilter.Value) && entry.MatchesSearch(SearchText))
+        ];
         SelectedEntry = FilteredEntries.FirstOrDefault(entry => ReferenceEquals(entry.Entry, previousEntry))
             ?? FilteredEntries.LastOrDefault();
         RaiseListStateChanged();

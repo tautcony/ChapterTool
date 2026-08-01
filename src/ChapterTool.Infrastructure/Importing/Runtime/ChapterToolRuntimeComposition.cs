@@ -40,7 +40,7 @@ public static class ChapterToolRuntimeComposition
         IMediaChapterReader? mp4FallbackChapterReader = null)
     {
         formatter ??= new ChapterTimeFormatter();
-        toolLocator ??= new ExternalToolLocator(settingsStore, PathSearchDirectories().ToList());
+        toolLocator ??= new ExternalToolLocator(settingsStore, [.. PathSearchDirectories()]);
         processRunner ??= new ProcessRunner();
         return new RuntimeChapterImporterRegistry(
             formatter,
