@@ -11,7 +11,7 @@ public sealed partial class MainWindowViewModel
         }
 
         var settings = await SettingsStore.LoadAsync(cancellationToken);
-        PortAdapters.Preferences.ApplyLoadedSettings(settings.Application);
+        ToolSession.Preferences.ApplyLoadedSettings(settings.Application);
         Log("Log.SettingsLoaded",
             ("savingPath", SaveDirectory ?? string.Empty),
             ("language", UiLanguage));

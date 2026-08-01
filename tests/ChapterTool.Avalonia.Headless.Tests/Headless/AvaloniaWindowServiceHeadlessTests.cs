@@ -15,6 +15,51 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 public sealed class AvaloniaWindowServiceHeadlessTests
 {
     [AvaloniaFact]
+    public async Task Typed_host_uses_the_injected_catalog_and_reuses_custom_content()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        var state = new DisposableState();
+        var descriptor = new ToolDescriptor(
+            new ToolId("custom-tool"),
+            "Tool.Custom.Title",
+            new ToolSizeConstraints(),
+            ToolRefreshPolicy.Reuse,
+            _ => new Border { DataContext = state });
+        using var service = new AvaloniaWindowService(
+            host.Localizer,
+            host.SettingsStore,
+            new FakeThemeApplicationService(),
+            _ => host.SettingsPickerService,
+            externalToolLocator: new UnavailableExternalToolLocator(),
+            settingsCloseConfirmationService: new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel),
+            shellService: host.ShellService,
+            fontFamilyCatalog: host.FontFamilyCatalog,
+            fontApplicationService: host.FontApplicationService,
+            settingsDirectory: Path.GetTempPath(),
+            expressionAuthoringService: host.ViewModel.ExpressionAuthoringService,
+            clipboardServiceFactory: _ => new UnavailableClipboardService(),
+            toolCatalog: new ToolCatalog([descriptor]));
+        var request = new AuxiliaryToolRequest(
+            host.ViewModel.ToolSession,
+            host.Localizer,
+            Capabilities: host.ViewModel.Capabilities);
+
+        var first = await service.OpenAsync("CUSTOM-TOOL", request, TestContext.Current.CancellationToken);
+        var firstWindow = FindWindow(service, "custom-tool");
+        var second = await service.OpenAsync("custom-tool", request, TestContext.Current.CancellationToken);
+
+        Assert.Equal(AuxiliaryToolResultKind.Opened, first.Kind);
+        Assert.Equal(AuxiliaryToolResultKind.Activated, second.Kind);
+        Assert.Same(firstWindow, FindWindow(service, "custom-tool"));
+
+        await service.CloseAsync("custom-tool", TestContext.Current.CancellationToken);
+        await DrainUiAsync();
+
+        Assert.False(firstWindow.IsVisible);
+        Assert.True(state.IsDisposed);
+    }
+
+    [AvaloniaFact]
     public async Task Settings_close_cancel_keeps_window_open_and_live_changes()
     {
         using var host = new MainWindowHeadlessTestHost(
@@ -22,12 +67,13 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
         using var service = CreateService(host, confirmation);
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
 
         settings.SaveDirectory = "live";
         SelectPreset(settings, "ayu-dark");
+        Assert.True(settings.HasUnsavedChanges);
         window.Close();
         await DrainUiAsync();
 
@@ -56,7 +102,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Discard);
         using var service = CreateService(host, confirmation);
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
 
@@ -81,7 +127,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             themeSettings: new ThemeSettings("solarized-light"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Save);
         using var service = CreateService(host, confirmation);
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
 
@@ -103,7 +149,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
         using var service = CreateService(host, confirmation);
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
 
         window.Close();
@@ -118,7 +164,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
         using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
         var settings = SettingsViewModel(window);
         var notifications = 0;
@@ -145,7 +191,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         var confirmation = new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel);
         using var service = CreateService(host, confirmation);
         await host.LayoutAsync();
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
         var settings = SettingsViewModel(window);
@@ -191,7 +237,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost();
         using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
-        await service.ShowAsync("settings", host.ViewModel, TestContext.Current.CancellationToken);
+        await OpenSettingsAsync(service, host);
         var window = SettingsWindow(service);
 
         window.Close();
@@ -209,8 +255,25 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             host.SettingsStore,
             new FakeThemeApplicationService(),
             _ => host.SettingsPickerService,
-            externalToolLocator: null,
-            confirmation);
+            externalToolLocator: new UnavailableExternalToolLocator(),
+            settingsCloseConfirmationService: confirmation,
+            shellService: host.ShellService,
+            fontFamilyCatalog: host.FontFamilyCatalog,
+            fontApplicationService: host.FontApplicationService,
+            settingsDirectory: Path.GetTempPath(),
+            expressionAuthoringService: host.ViewModel.ExpressionAuthoringService,
+            clipboardServiceFactory: _ => new UnavailableClipboardService(),
+            toolCatalog: StandardToolCatalogFactory.Create());
+
+    private static async ValueTask OpenSettingsAsync(AvaloniaWindowService service, MainWindowHeadlessTestHost host)
+    {
+        await service.OpenAsync(
+            ToolIds.Settings,
+            new AuxiliaryToolRequest(host.ViewModel.ToolSession, host.Localizer, Capabilities: host.ViewModel.Capabilities),
+            TestContext.Current.CancellationToken);
+
+        await SettingsViewModel(SettingsWindow(service)).InitializationTask;
+    }
 
     private static Window SettingsWindow(AvaloniaWindowService service)
     {
@@ -218,6 +281,14 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             ?? throw new InvalidOperationException("Window service did not expose its window registry.");
         var windows = (IReadOnlyDictionary<string, Window>)field.GetValue(service)!;
         return windows["settings"];
+    }
+
+    private static Window FindWindow(AvaloniaWindowService service, string id)
+    {
+        var field = typeof(AvaloniaWindowService).GetField("windows", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            ?? throw new InvalidOperationException("Window service did not expose its window registry.");
+        var windows = (IReadOnlyDictionary<string, Window>)field.GetValue(service)!;
+        return windows[id];
     }
 
     private static void SelectPreset(SettingsToolViewModel settings, string presetId)
@@ -255,5 +326,12 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         public void Apply(ThemeSettings settings)
         {
         }
+    }
+
+    private sealed class DisposableState : IDisposable
+    {
+        public bool IsDisposed { get; private set; }
+
+        public void Dispose() => IsDisposed = true;
     }
 }

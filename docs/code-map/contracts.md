@@ -18,7 +18,6 @@ Use this project when a desktop, browser, or command-line host needs the same pe
   - `src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/IClipboardService.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/IExternalToolLocator.cs`
-  - `src/ChapterTool.Contracts/PlatformPorts/IWindowService.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/IShellService.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/ExternalToolLocation.cs`
 

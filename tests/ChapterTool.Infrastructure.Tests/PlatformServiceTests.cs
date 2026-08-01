@@ -86,4 +86,26 @@ public sealed class PlatformServiceTests
     }
 
     private sealed record LogEntry(LogLevel Level, string Message, Exception? Exception);
+
+    private sealed class RecordingWindowService
+    {
+        private readonly List<string> calls = [];
+        private readonly Dictionary<string, object?> visibleWindows = [];
+
+        public IReadOnlyList<string> Calls => calls;
+
+        public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
+        {
+            calls.Add($"show:{windowId}");
+            visibleWindows[windowId] = parameter;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask HideAsync(string windowId, CancellationToken cancellationToken)
+        {
+            calls.Add($"hide:{windowId}");
+            visibleWindows.Remove(windowId);
+            return ValueTask.CompletedTask;
+        }
+    }
 }

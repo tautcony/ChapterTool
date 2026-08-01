@@ -909,10 +909,16 @@ public sealed class SettingsToolViewModelTests
             ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 
-    private sealed class FakeWindowService : IWindowService
+    private sealed class FakeWindowService : IAuxiliaryToolHost
     {
-        public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask<AuxiliaryToolResult> OpenAsync(ToolId toolId, AuxiliaryToolRequest request, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
 
-        public ValueTask HideAsync(string windowId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Closed, toolId));
+
+        public void Dispose()
+        {
+        }
     }
 }

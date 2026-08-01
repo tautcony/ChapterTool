@@ -114,6 +114,9 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/`
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
+- cross-host contracts
+  - `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/PlatformPorts/SharedBoundaryContractTests.cs`
 - CLI
   - `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs`
   - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
@@ -131,6 +134,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootFontTests.cs`
+
+Use `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs` for typed tool identifiers, duplicate catalog validation, custom descriptor selection, embedded reuse, disposal, and unknown-tool results. Use `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs` for Native Window close confirmation and content detachment. Keep Native Window and Headless test projects in separate processes.
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
 

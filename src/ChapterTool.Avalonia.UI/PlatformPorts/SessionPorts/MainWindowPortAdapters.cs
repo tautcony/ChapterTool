@@ -12,7 +12,8 @@ public sealed class MainWindowPortAdapters
 {
     public MainWindowPortAdapters(MainWindowViewModel owner)
     {
-        Expression = new ExpressionSessionPortAdapter(owner);
+        Notifications = new MainShellNotificationPort(owner);
+        Expression = new ExpressionSessionPortAdapter(owner, Notifications);
         Preferences = new PreferenceSinkAdapter(owner);
         ExportPreferences = new ExportPreferencePortAdapter(owner);
         NamingPreferences = new NamingPreferencePortAdapter(owner);
@@ -20,6 +21,8 @@ public sealed class MainWindowPortAdapters
     }
 
     public ExpressionSessionPortAdapter Expression { get; }
+
+    public IMainShellNotificationPort Notifications { get; }
 
     public PreferenceSinkAdapter Preferences { get; }
 
@@ -30,8 +33,10 @@ public sealed class MainWindowPortAdapters
     public ChapterEditPortAdapter ChapterEdit { get; }
 }
 
-public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IExpressionSessionPort
+public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMainShellNotificationPort? notifications = null) : IExpressionSessionPort
 {
+    private readonly IMainShellNotificationPort notifications = notifications ?? new MainShellNotificationPort(owner);
+
     public IAppLocalizer Localizer => owner.Localizer;
 
     public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => owner.ExpressionEngine.Presets;
@@ -74,16 +79,13 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IE
         string expressionSourceName)
     {
         owner.Workspace.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
-        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.Expression));
-        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ApplyExpression));
-        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionPresetId));
-        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionSourceName));
-        owner.RefreshRowsFromPort();
+        notifications.RefreshExpressionFields();
+        notifications.RefreshRows();
 
         if (!ApplyExpression)
         {
             owner.SetStatus("Status.Updated");
-            owner.NotifyStateChanged();
+            notifications.RefreshStatus();
             return null;
         }
 
@@ -97,7 +99,7 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner) : IE
             owner.SetStatus(null, diagnostic);
         }
 
-        owner.NotifyStateChanged();
+        notifications.RefreshStatus();
         return diagnostic;
     }
 
@@ -223,4 +225,19 @@ public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapter
             owner.ClipEditingCoordinator.ShiftFramesForward(owner.CurrentChapterSet, frames),
             owner.Localizer.Format(LocalizedMessage.Create("Action.ShiftFramesForward", ("frames", frames))));
     }
+}
+
+public sealed class MainShellNotificationPort(MainWindowViewModel owner) : IMainShellNotificationPort
+{
+    public void RefreshExpressionFields()
+    {
+        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.Expression));
+        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ApplyExpression));
+        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionPresetId));
+        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionSourceName));
+    }
+
+    public void RefreshRows() => owner.RefreshRowsFromPort();
+
+    public void RefreshStatus() => owner.NotifyStateChanged();
 }

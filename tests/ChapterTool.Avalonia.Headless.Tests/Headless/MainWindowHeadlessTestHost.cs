@@ -358,20 +358,25 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         }
     }
 
-    internal sealed class FakeWindowService : IWindowService
+    internal sealed class FakeWindowService : IAuxiliaryToolHost
     {
         public List<string> Opened { get; } = [];
 
-        public List<object?> Parameters { get; } = [];
+        public List<AuxiliaryToolRequest> Requests { get; } = [];
 
-        public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
+        public ValueTask<AuxiliaryToolResult> OpenAsync(ToolId toolId, AuxiliaryToolRequest request, CancellationToken cancellationToken)
         {
-            Opened.Add(windowId);
-            Parameters.Add(parameter);
-            return ValueTask.CompletedTask;
+            Opened.Add(toolId.Value);
+            Requests.Add(request);
+            return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
         }
 
-        public ValueTask HideAsync(string windowId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+        public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Closed, toolId));
+
+        public void Dispose()
+        {
+        }
     }
 
     internal sealed class FakeFilePickerService : IFilePickerService

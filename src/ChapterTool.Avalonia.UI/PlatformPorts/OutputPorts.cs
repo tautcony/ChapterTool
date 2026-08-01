@@ -1,4 +1,3 @@
-using Avalonia.Controls;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 
@@ -19,23 +18,6 @@ public interface IChapterOutputSink
         ChapterOutputDocument document,
         string? directory,
         CancellationToken cancellationToken);
-}
-
-public interface ISecondarySurfaceService
-{
-    ValueTask ShowAsync(string surfaceId, object? parameter, CancellationToken cancellationToken);
-
-    ValueTask CloseAsync(string surfaceId, CancellationToken cancellationToken);
-}
-
-/// <summary>Exposes a secondary tool as content inside a single-view host.</summary>
-public interface IInViewSecondarySurface : IWindowService
-{
-    Control? Content { get; }
-
-    string? SurfaceId { get; }
-
-    event EventHandler? ContentChanged;
 }
 
 public interface IRelatedMediaActionPort

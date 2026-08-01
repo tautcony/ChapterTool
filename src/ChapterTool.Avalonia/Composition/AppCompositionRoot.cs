@@ -41,6 +41,7 @@ public sealed class AppCompositionRoot : IDisposable
     private readonly AvaloniaFontFamilyCatalog fontFamilyCatalog = new();
     private readonly AvaloniaFontApplicationService fontApplicationService;
     private readonly AvaloniaThemeApplicationService themeApplicationService = new();
+    private readonly IToolCatalog toolCatalog;
     private readonly ILoggerFactory loggerFactory;
     private AvaloniaWindowService? windowService;
     private bool disposed;
@@ -68,6 +69,7 @@ public sealed class AppCompositionRoot : IDisposable
         this.startupPath = startupPath;
         var resolvedSettingsDirectory = settingsDirectory ?? SettingsDirectory();
         this.settingsDirectory = resolvedSettingsDirectory;
+        toolCatalog = StandardToolCatalogFactory.Create();
         localizationResourceAdapter = new AvaloniaLocalizationResourceAdapter(localizationManager);
         SettingsStore = new ChapterToolSettingsStore(resolvedSettingsDirectory);
         expressionAuthoringService = expressionAuthoringServiceOverride ?? new ExpressionAuthoringService(ExpressionEngine);
@@ -98,31 +100,44 @@ public sealed class AppCompositionRoot : IDisposable
         var mainView = new MainView(
             viewModel,
             control => CreateFilePickerService(TopLevel.GetTopLevel(control) as Window
-                ?? throw new InvalidOperationException("The shared main view must be attached to a desktop window.")));
+                ?? throw new InvalidOperationException("The shared main view must be attached to a desktop window.")),
+            new NoContentEmbeddedToolPresenter());
         var title = $"{localizationManager.GetString("App.Title")} v{typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "0.0.0"}";
         var mainWindow = new MainWindow(mainView, title);
         _ = mainView.InitializeAsync(startupPath);
         return mainWindow;
     }
 
-    public MainWindowViewModel CreateMainWindowViewModel() =>
+    public MainWindowViewModel CreateMainWindowViewModel() => new(CreateHostComposition());
+
+    public AvaloniaHostComposition CreateHostComposition() => CreateHostDependencies().Compose();
+
+    private AvaloniaHostDependencies CreateHostDependencies() =>
         new(
-            CreateChapterLoadService(),
-            CreateChapterSaveService(),
-            CreateChapterEditingService(),
-            CreateChapterSegmentService(),
-            CreateWindowService(),
-            formatter,
-            logService,
-            loggerFactory.CreateLogger<MainWindowViewModel>(),
-            frameRateService,
-            localizationManager,
-            ExpressionEngine,
-            CreateChapterExportService(),
-            CreateShellService(),
-            SettingsStore,
-            expressionAuthoringService,
-            Capabilities);
+            new WorkspaceHostServices(
+                CreateChapterLoadService(),
+                CreateChapterSaveService(),
+                CreateChapterEditingService(),
+                CreateChapterSegmentService(),
+                formatter,
+                frameRateService,
+                ExpressionEngine,
+                CreateChapterExportService(),
+                expressionAuthoringService),
+            new HostEffectServices(
+                logService,
+                loggerFactory.CreateLogger<MainWindowViewModel>(),
+                CreateShellService()),
+            new SettingsAppearanceServices(
+                SettingsStore,
+                themeApplicationService,
+                fontFamilyCatalog,
+                fontApplicationService,
+                ExternalToolLocator,
+                settingsDirectory),
+            new LocalizationServices(localizationManager),
+            new RuntimeHostServices(Capabilities),
+            new AuxiliaryToolHostServices(CreateAuxiliaryToolHost(), new NoContentEmbeddedToolPresenter()));
 
     public IApplicationLogService CreateApplicationLogService() => logService;
 
@@ -151,7 +166,7 @@ public sealed class AppCompositionRoot : IDisposable
 
     public static ChapterSegmentService CreateChapterSegmentService() => new();
 
-    public IWindowService CreateWindowService() =>
+    public AvaloniaWindowService CreateWindowService() =>
         windowService ??= new AvaloniaWindowService(
             localizationManager,
             SettingsStore,
@@ -164,7 +179,13 @@ public sealed class AppCompositionRoot : IDisposable
             fontApplicationService: fontApplicationService,
             settingsDirectory: settingsDirectory,
             expressionAuthoringService: expressionAuthoringService,
-            clipboardServiceFactory: owner => new AvaloniaClipboardService(owner));
+            clipboardServiceFactory: owner => new AvaloniaClipboardService(owner),
+            toolCatalog: toolCatalog);
+
+    public IAuxiliaryToolHost CreateAuxiliaryToolHost() =>
+        windowService ?? (AvaloniaWindowService)CreateWindowService();
+
+    public IToolCatalog CreateToolCatalog() => toolCatalog;
 
     public IAppLocalizer CreateLocalizer() => localizationManager;
 

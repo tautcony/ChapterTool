@@ -1,6 +1,4 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Media;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -10,151 +8,133 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.Services;
 
-public sealed class AvaloniaWindowService : IWindowService, IDisposable
+/// <summary>Hosts injected auxiliary-tool descriptors in Native Window surfaces.</summary>
+public sealed class AvaloniaWindowService : IAuxiliaryToolHost
 {
-    private readonly ISettingsStore<ChapterToolSettings>? settingsStore;
-    private readonly IThemeApplicationService? themeApplicationService;
-    private readonly IFontFamilyCatalog? fontFamilyCatalog;
-    private readonly IFontApplicationService? fontApplicationService;
+    private readonly ISettingsStore<ChapterToolSettings> settingsStore;
+    private readonly IThemeApplicationService themeApplicationService;
+    private readonly IFontFamilyCatalog fontFamilyCatalog;
+    private readonly IFontApplicationService fontApplicationService;
     private readonly ISettingsCloseConfirmationService settingsCloseConfirmationService;
-    private readonly Func<Window, ISettingsPickerService>? settingsPickerFactory;
-    private readonly IExternalToolLocator? externalToolLocator;
-    private readonly IShellService? shellService;
-    private readonly string? settingsDirectory;
-    private readonly IExpressionAuthoringService? expressionAuthoringService;
-    private readonly Func<Window, IClipboardService>? clipboardServiceFactory;
+    private readonly Func<Window, ISettingsPickerService> settingsPickerFactory;
+    private readonly IExternalToolLocator externalToolLocator;
+    private readonly IShellService shellService;
+    private readonly string settingsDirectory;
+    private readonly IExpressionAuthoringService expressionAuthoringService;
+    private readonly Func<Window, IClipboardService> clipboardServiceFactory;
+    private readonly IToolCatalog toolCatalog;
     private readonly Dictionary<string, Window> windows = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, object?> parameters = new(StringComparer.OrdinalIgnoreCase);
     private readonly IAppLocalizer localizer;
-    private readonly IReadOnlyList<ToolWindowRegistration> registrations;
     private readonly EventHandler cultureChangedHandler;
     private bool disposed;
 
     public AvaloniaWindowService(
         IAppLocalizer localizer,
-        ISettingsStore<ChapterToolSettings>? settingsStore = null,
-        IThemeApplicationService? themeApplicationService = null,
-        Func<Window, ISettingsPickerService>? settingsPickerFactory = null,
-        IExternalToolLocator? externalToolLocator = null,
-        ISettingsCloseConfirmationService? settingsCloseConfirmationService = null,
-        IShellService? shellService = null,
-        IFontFamilyCatalog? fontFamilyCatalog = null,
-        IFontApplicationService? fontApplicationService = null,
-        string? settingsDirectory = null,
-        IExpressionAuthoringService? expressionAuthoringService = null,
-        Func<Window, IClipboardService>? clipboardServiceFactory = null,
-        IReadOnlyList<ToolWindowRegistration>? registrations = null)
+        ISettingsStore<ChapterToolSettings> settingsStore,
+        IThemeApplicationService themeApplicationService,
+        Func<Window, ISettingsPickerService> settingsPickerFactory,
+        IExternalToolLocator externalToolLocator,
+        ISettingsCloseConfirmationService settingsCloseConfirmationService,
+        IShellService shellService,
+        IFontFamilyCatalog fontFamilyCatalog,
+        IFontApplicationService fontApplicationService,
+        string settingsDirectory,
+        IExpressionAuthoringService expressionAuthoringService,
+        Func<Window, IClipboardService> clipboardServiceFactory,
+        IToolCatalog toolCatalog)
     {
         ArgumentNullException.ThrowIfNull(localizer);
+        ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(themeApplicationService);
+        ArgumentNullException.ThrowIfNull(settingsPickerFactory);
+        ArgumentNullException.ThrowIfNull(externalToolLocator);
+        ArgumentNullException.ThrowIfNull(settingsCloseConfirmationService);
+        ArgumentNullException.ThrowIfNull(shellService);
+        ArgumentNullException.ThrowIfNull(fontFamilyCatalog);
+        ArgumentNullException.ThrowIfNull(fontApplicationService);
+        ArgumentException.ThrowIfNullOrWhiteSpace(settingsDirectory);
+        ArgumentNullException.ThrowIfNull(expressionAuthoringService);
+        ArgumentNullException.ThrowIfNull(clipboardServiceFactory);
+        ArgumentNullException.ThrowIfNull(toolCatalog);
         this.settingsStore = settingsStore;
         this.themeApplicationService = themeApplicationService;
         this.fontFamilyCatalog = fontFamilyCatalog;
         this.fontApplicationService = fontApplicationService;
         this.localizer = localizer;
-        this.settingsCloseConfirmationService = settingsCloseConfirmationService
-            ?? new AvaloniaSettingsCloseConfirmationService(this.localizer);
+        this.settingsCloseConfirmationService = settingsCloseConfirmationService;
         this.settingsPickerFactory = settingsPickerFactory;
         this.externalToolLocator = externalToolLocator;
         this.shellService = shellService;
         this.settingsDirectory = settingsDirectory;
         this.expressionAuthoringService = expressionAuthoringService;
         this.clipboardServiceFactory = clipboardServiceFactory;
-        this.registrations = registrations ?? ToolWindowRegistry.DefaultRegistrations;
+        this.toolCatalog = toolCatalog;
         cultureChangedHandler = (_, _) =>
         {
             foreach (var (id, window) in windows)
             {
                 window.Title = Title(id);
-                switch (window.Content)
-                {
-                    case TextBlock placeholder:
-                        placeholder.Text = PlaceholderText(id);
-                        break;
-                    case null:
-                        Refresh(window, id, parameters.GetValueOrDefault(id));
-                        break;
-                }
             }
         };
         this.localizer.CultureChanged += cultureChangedHandler;
     }
 
-    public ValueTask ShowAsync(string windowId, object? parameter, CancellationToken cancellationToken)
+    public ValueTask<AuxiliaryToolResult> OpenAsync(
+        ToolId toolId,
+        AuxiliaryToolRequest request,
+        CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
-        if (windows.TryGetValue(windowId, out var existing))
+        if (!toolCatalog.TryGet(toolId, out var descriptor))
         {
-            Refresh(existing, windowId, parameter);
-            existing.Activate();
-            return ValueTask.CompletedTask;
+            return ValueTask.FromResult(AuxiliaryToolResult.Unknown(toolId));
         }
 
-        var registration = ToolWindowRegistry.Find(windowId)
-            ?? this.registrations.FirstOrDefault(entry =>
-                string.Equals(entry.Id, windowId, StringComparison.OrdinalIgnoreCase));
-        var window = new Window
+        if (windows.TryGetValue(toolId.Value, out var existing))
         {
-            Title = Title(windowId),
-            Width = registration?.PreferredWidth ?? 620,
-            Height = registration?.PreferredHeight ?? 460,
-            MinWidth = registration?.MinWidth ?? 420,
-            MinHeight = registration?.MinHeight ?? 280,
-        };
-        window.Classes.Add("auxiliaryHost");
-        var closeAccepted = false;
-        Refresh(window, windowId, parameter);
-        parameters[windowId] = parameter;
-        window.Closing += async (sender, args) =>
-        {
-            if (closeAccepted || window.Content is not ChapterTool.Avalonia.UI.Views.Tools.SettingsToolView { DataContext: SettingsToolViewModel
-                {
-                    HasUnsavedChanges: true
-                } settings })
+            if (descriptor.RefreshPolicy == ToolRefreshPolicy.RefreshRequest)
             {
-                return;
+                DisposeContentDataContext(existing);
+                existing.Content = CreateTypedContent(existing, descriptor, request);
             }
 
-            args.Cancel = true;
-            var action = await settingsCloseConfirmationService.ConfirmCloseAsync(window, CancellationToken.None);
-            switch (action)
-            {
-                case SettingsCloseAction.Save:
-                    await settings.SaveCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
-                    closeAccepted = true;
-                    ((Window)sender!).Close();
-                    break;
-                case SettingsCloseAction.Discard:
-                    settings.DiscardUnsavedChanges();
-                    closeAccepted = true;
-                    ((Window)sender!).Close();
-                    break;
-                case SettingsCloseAction.Cancel:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            existing.Activate();
+            return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Activated, toolId));
+        }
+
+        var window = new Window
+        {
+            Title = localizer.GetString(descriptor.TitleResourceKey),
+            Width = descriptor.Size.PreferredWidth,
+            Height = descriptor.Size.PreferredHeight,
+            MinWidth = descriptor.Size.MinWidth,
+            MinHeight = descriptor.Size.MinHeight
         };
+        window.Classes.Add("auxiliaryHost");
+        window.Content = CreateTypedContent(window, descriptor, request);
+        ConfigureCloseBehavior(window, toolId, descriptor);
         window.Closed += (_, _) =>
         {
             DisposeContentDataContext(window);
             window.Content = null;
-            windows.Remove(windowId);
-            parameters.Remove(windowId);
+            windows.Remove(toolId.Value);
         };
-        windows[windowId] = window;
+        windows[toolId.Value] = window;
         window.Show();
-        return ValueTask.CompletedTask;
+        return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
     }
 
-    public ValueTask HideAsync(string windowId, CancellationToken cancellationToken)
+    public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (windows.TryGetValue(windowId, out var window))
+        if (!windows.TryGetValue(toolId.Value, out var window))
         {
-            window.Close();
+            return ValueTask.FromResult(AuxiliaryToolResult.Unknown(toolId));
         }
 
-        return ValueTask.CompletedTask;
+        window.Close();
+        return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Closed, toolId));
     }
 
     public void Dispose()
@@ -166,7 +146,6 @@ public sealed class AvaloniaWindowService : IWindowService, IDisposable
 
         disposed = true;
         localizer.CultureChanged -= cultureChangedHandler;
-
         foreach (var window in windows.Values.ToArray())
         {
             DisposeContentDataContext(window);
@@ -175,75 +154,90 @@ public sealed class AvaloniaWindowService : IWindowService, IDisposable
         }
 
         windows.Clear();
-        parameters.Clear();
     }
 
-    private void Refresh(Window window, string id, object? parameter)
+    private Control CreateTypedContent(Window window, ToolDescriptor descriptor, AuxiliaryToolRequest request)
     {
-        DisposeContentDataContext(window);
-        window.Content = null;
-        window.Title = Title(id);
-        parameters[id] = parameter;
-        window.Content = parameter is MainWindowViewModel viewModel
-            ? CreateContent(window, id, viewModel)
-            : Placeholder(PlaceholderText(id));
+        var filePicker = request.FilePicker ?? new AvaloniaFilePickerService(window, localizer);
+        var context = new ToolCreationContext(
+            request.Session,
+            request.Localizer,
+            settingsStore,
+            themeApplicationService,
+            settingsPickerFactory(window),
+            externalToolLocator,
+            shellService,
+            fontFamilyCatalog,
+            fontApplicationService,
+            settingsDirectory,
+            expressionAuthoringService,
+            request.Clipboard ?? clipboardServiceFactory(window),
+            window,
+            filePicker,
+            request.Capabilities);
+        return descriptor.CreateContent(context);
     }
 
-    private Control CreateContent(Window window, string id, MainWindowViewModel viewModel)
+    private void ConfigureCloseBehavior(Window window, ToolId toolId, ToolDescriptor descriptor)
     {
-        var registration = ToolWindowRegistry.Find(id)
-            ?? registrations.FirstOrDefault(entry =>
-                string.Equals(entry.Id, id, StringComparison.OrdinalIgnoreCase));
-        if (registration is null)
+        if (!descriptor.RequiresCloseConfirmation)
         {
-            return Placeholder(PlaceholderText(id));
+            return;
         }
 
-        var context = new ToolWindowCreateContext
+        var closeAccepted = false;
+        var closeConfirmationPort = new DesktopSettingsCloseConfirmationPort(
+            settingsCloseConfirmationService,
+            window);
+        window.Closing += async (_, args) =>
         {
-            HostWindow = window,
-            Owner = viewModel,
-            Localizer = localizer,
-            SettingsStore = settingsStore,
-            ThemeApplicationService = themeApplicationService,
-            FontFamilyCatalog = fontFamilyCatalog,
-            FontApplicationService = fontApplicationService,
-            SettingsPickerFactory = settingsPickerFactory,
-            ExternalToolLocator = externalToolLocator,
-            ShellService = shellService,
-            SettingsDirectory = settingsDirectory,
-            ExpressionAuthoringService = expressionAuthoringService,
-            ClipboardService = clipboardServiceFactory?.Invoke(window),
+            if (closeAccepted || window.Content is not Control control)
+            {
+                return;
+            }
+
+            if (control.DataContext is not SettingsToolViewModel settings || !settings.HasUnsavedChanges)
+            {
+                return;
+            }
+
+            args.Cancel = true;
+            var action = await closeConfirmationPort.ConfirmCloseAsync(toolId, CancellationToken.None);
+            switch (action)
+            {
+                case SettingsCloseAction.Save:
+                    await settings.SaveCommand.ExecuteAsync(cancellationToken: CancellationToken.None);
+                    closeAccepted = true;
+                    window.Close();
+                    break;
+                case SettingsCloseAction.Discard:
+                    settings.DiscardUnsavedChanges();
+                    closeAccepted = true;
+                    window.Close();
+                    break;
+            }
         };
-        return registration.CreateContent(context);
     }
 
-    private static TextBlock Placeholder(string text) =>
-        new()
-        {
-            Margin = new Thickness(20),
-            Text = text,
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 16
-        };
-
-    private string Title(string id)
-    {
-        var registration = ToolWindowRegistry.Find(id)
-            ?? registrations.FirstOrDefault(entry =>
-                string.Equals(entry.Id, id, StringComparison.OrdinalIgnoreCase));
-        return registration is null
-            ? id
-            : localizer.GetString(registration.TitleResourceKey);
-    }
-
-    private string PlaceholderText(string id) => Title(id);
+    private string Title(string id) =>
+        toolCatalog.TryGet(new ToolId(id), out var descriptor)
+            ? localizer.GetString(descriptor.TitleResourceKey)
+            : id;
 
     private static void DisposeContentDataContext(Window window)
     {
-        if (window.Content is Control { DataContext: IDisposable disposable })
+        if (window.Content is Control control && control.DataContext is IDisposable disposable)
         {
+            control.DataContext = null;
             disposable.Dispose();
         }
     }
+}
+
+internal sealed class DesktopSettingsCloseConfirmationPort(
+    ISettingsCloseConfirmationService service,
+    Window owner) : ISettingsCloseConfirmationPort
+{
+    public ValueTask<SettingsCloseAction> ConfirmCloseAsync(ToolId toolId, CancellationToken cancellationToken)
+        => service.ConfirmCloseAsync(owner, cancellationToken);
 }
