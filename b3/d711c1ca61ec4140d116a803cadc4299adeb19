@@ -1,0 +1,14 @@
+packages/chaptertool/test/core-api.test.ts
+  h_3705811fa4502c 77
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b3d711c1ca61ec4140d116a803cadc4299adeb19",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
