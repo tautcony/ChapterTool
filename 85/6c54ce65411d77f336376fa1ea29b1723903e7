@@ -1,0 +1,24 @@
+src/ChapterTool.Infrastructure/ChapterTool.Infrastructure.csproj
+  h_3705811fa4502c 6-7
+src/ChapterTool.Avalonia.UI/ChapterTool.Avalonia.UI.csproj
+  h_3705811fa4502c 18,21,24
+src/ChapterTool.Contracts/ChapterTool.Contracts.csproj
+  h_3705811fa4502c 14
+src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj
+  h_3705811fa4502c 14-16,20,27
+src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+  h_3705811fa4502c 15-16
+tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+  h_3705811fa4502c 13,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "856c54ce65411d77f336376fa1ea29b1723903e7",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
