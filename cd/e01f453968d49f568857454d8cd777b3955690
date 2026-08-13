@@ -1,0 +1,18 @@
+src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvNavigation.cs
+  h_3705811fa4502c 3
+src/ChapterTool.Core/Importing/Disc/MplsAggregateProjection.cs
+  h_3705811fa4502c 3
+tests/ChapterTool.TestSupport/TestApplicationLogger.cs
+  h_3705811fa4502c 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "cde01f453968d49f568857454d8cd777b3955690",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
