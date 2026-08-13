@@ -1,0 +1,16 @@
+.github/workflows/release.yml
+  h_3705811fa4502c 6,58,60-65
+docs/code-map/testing.md
+  h_3705811fa4502c 190,194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "b3282c72ea74a52edb7becd82ee3f3a4e390b245",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
