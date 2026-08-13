@@ -267,6 +267,7 @@
   <x:String x:Key="Main.Insert" xml:space="preserve">挿入</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">元の名前を保持</x:String>
   <x:String x:Key="Main.Load" xml:space="preserve">読み込み</x:String>
+  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">読み込み (Ctrl+O)</x:String>
   <x:String x:Key="Main.Log" xml:space="preserve">ログ</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">関連メディアを開く</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">番号シフト</x:String>
@@ -276,6 +277,7 @@
   <x:String x:Key="Main.Reload" xml:space="preserve">再読み込み</x:String>
   <x:String x:Key="Main.RoundFrames" xml:space="preserve">フレームを丸める</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存形式</x:String>
+  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
   <x:String x:Key="Main.SettingsShort" xml:space="preserve">設定</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">標準テンプレート</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">テンプレートファイル</x:String>

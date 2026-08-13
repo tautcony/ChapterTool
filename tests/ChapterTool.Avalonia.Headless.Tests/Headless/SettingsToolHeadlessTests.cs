@@ -258,26 +258,27 @@ public sealed class SettingsToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
 
-            var dark = ThemePresetCatalog.Resolve("ayu-dark").Palette;
+            var dark = ThemePresetCatalog.Resolve("ayu-dark");
+            var darkTokens = AvaloniaThemeApplicationService.ComputeImportedThemeColors(dark);
             Assert.Equal(ThemeVariant.Dark, Application.Current!.RequestedThemeVariant);
             Assert.Equal(8, preview.GetVisualDescendants().OfType<Border>().Count(border => border.Classes.Contains("themeSwatch")));
             Assert.Contains("Ayu Dark", AutomationProperties.GetName(preview), StringComparison.Ordinal);
             Assert.All(headers, header =>
             {
-                Assert.Equal(Color.Parse(dark.ControlBackground), BrushColor(header.Background));
-                Assert.Equal(Color.Parse(dark.ControlForeground), BrushColor(header.Foreground));
-                Assert.Equal(Color.Parse(dark.Border), BrushColor(header.BorderBrush));
+                Assert.Equal(Color.Parse(darkTokens["Color.Contents"]), BrushColor(header.Background));
+                Assert.Equal(Color.Parse(darkTokens["Color.FG1"]), BrushColor(header.Foreground));
+                Assert.Equal(Color.Parse(darkTokens["Color.Border1"]), BrushColor(header.BorderBrush));
             });
-            Assert.Equal(Color.Parse(dark.HoverBackground), ResourceColor(AvaloniaThemeApplicationService.HoverBackgroundBrushKey));
-            Assert.Equal(Color.Parse(dark.ActiveBackground), ResourceColor(AvaloniaThemeApplicationService.ActiveBackgroundBrushKey));
+            Assert.Equal(Color.Parse(darkTokens["Color.Hover"]), ColorResource("Color.Hover"));
+            Assert.Equal(Color.Parse(darkTokens["Color.Active"]), ColorResource("Color.Active"));
             Assert.Equal(ThemeSettings.Default, host.SettingsStore.Current.Theme);
 
             combo.SelectedIndex = viewModel.Appearance.ThemePresets.ToList().FindIndex(option => option.Id == "solarized-light");
             Dispatcher.UIThread.RunJobs();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
-            var light = ThemePresetCatalog.Resolve("solarized-light").Palette;
+            var lightTokens = AvaloniaThemeApplicationService.ComputeImportedThemeColors(ThemePresetCatalog.Resolve("solarized-light"));
             Assert.Equal(ThemeVariant.Light, Application.Current.RequestedThemeVariant);
-            Assert.All(headers, header => Assert.Equal(Color.Parse(light.ControlBackground), BrushColor(header.Background)));
+            Assert.All(headers, header => Assert.Equal(Color.Parse(lightTokens["Color.Contents"]), BrushColor(header.Background)));
         }
         finally
         {
@@ -444,6 +445,9 @@ public sealed class SettingsToolHeadlessTests
 
     private static Color ResourceColor(string key) =>
         BrushColor(Assert.IsType<IBrush>(Application.Current!.Resources[key], exactMatch: false));
+
+    private static Color ColorResource(string key) =>
+        Assert.IsType<Color>(Application.Current!.Resources[key]);
 
     private static string ResourceFont(string key) =>
         Assert.IsType<FontFamily>(Application.Current!.Resources[key], exactMatch: false).Name;

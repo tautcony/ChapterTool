@@ -5,7 +5,7 @@
              xmlns:i="https://github.com/projektanker/icons.avalonia"
              xmlns:transform="clr-namespace:ChapterTool.Core.Transform;assembly=ChapterTool.Core"
              x:Class="ChapterTool.Avalonia.UI.Views.Controls.ExpressionEditor"
-             MinHeight="25.6"
+             MinHeight="32"
              Focusable="True"
              GotFocus="OnWrapperGotFocus"
              PointerPressed="OnPointerPressed">
@@ -20,8 +20,8 @@
   <Grid x:Name="RootGrid"
         ClipToBounds="False">
     <Border x:Name="EditorBorder"
-            Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
-            BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
+            Background="{DynamicResource Brush.Contents}"
+            BorderBrush="{DynamicResource Brush.Border1}"
             BorderThickness="1"
             CornerRadius="2">
       <ContentControl x:Name="EditorHost" />
@@ -42,8 +42,8 @@
             IsVisible="False"
             Click="OnMultilineToggleClick">
       <Grid>
-        <i:Icon x:Name="MultilineExpandIcon" Value="fa-solid fa-chevron-down" FontSize="11" />
-        <i:Icon x:Name="MultilineCollapseIcon" Value="fa-solid fa-chevron-up" FontSize="11" IsVisible="False" />
+        <i:Icon x:Name="MultilineExpandIcon" Value="fa-solid fa-chevron-down" FontSize="12" />
+        <i:Icon x:Name="MultilineCollapseIcon" Value="fa-solid fa-chevron-up" FontSize="12" IsVisible="False" />
       </Grid>
     </Button>
 
@@ -57,8 +57,8 @@
               MinWidth="300"
               MaxWidth="520"
               MaxHeight="260"
-              Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
-              BorderBrush="{DynamicResource ChapterTool.BorderBrush}"
+              Background="{DynamicResource Brush.Contents}"
+              BorderBrush="{DynamicResource Brush.Border1}"
               BorderThickness="1"
               CornerRadius="4"
               BoxShadow="0 6 18 0 #22000000">
@@ -96,7 +96,7 @@
                            VerticalAlignment="Center" />
                 <TextBlock Grid.Column="3"
                            Text="{Binding KindLabel}"
-                           FontSize="11"
+                           FontSize="12"
                            FontWeight="SemiBold"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
@@ -114,7 +114,7 @@
            IsLightDismissEnabled="False">
       <Border x:Name="DiagnosticPanel"
               MaxWidth="360"
-              Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
+              Background="{DynamicResource Brush.Contents}"
               BorderBrush="{DynamicResource ChapterTool.DiagnosticErrorBrush}"
               BorderThickness="1"
               CornerRadius="4"

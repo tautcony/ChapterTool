@@ -3,7 +3,6 @@
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.ForwardShiftToolView"
-             Classes="auxiliaryWindow"
              x:DataType="tools:ForwardShiftToolViewModel"
              x:CompileBindings="True">
   <Grid RowDefinitions="*,Auto">
@@ -17,7 +16,7 @@
                      Value="{Binding Frames}" />
     </Grid>
     <Border Grid.Row="1" Classes="toolFooter">
-      <Button Classes="primaryToolAction"
+      <Button Classes="flat primary"
               MinWidth="88"
               HorizontalAlignment="Right"
               Content="{DynamicResource Common.Apply}"

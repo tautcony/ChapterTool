@@ -15,10 +15,10 @@ public sealed partial class MainWindow : Window
         : this()
     {
         Title = title;
-        Width = 736;
-        Height = 576;
-        MinWidth = 608;
-        MinHeight = 480;
+        Width = 800;
+        Height = 600;
+        MinWidth = 760;
+        MinHeight = 520;
         Content = mainView;
         DataContext = mainView.DataContext;
     }

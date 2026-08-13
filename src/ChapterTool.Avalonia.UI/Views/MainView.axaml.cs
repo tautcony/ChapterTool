@@ -23,6 +23,7 @@ public sealed partial class MainView : UserControl
     private IFilePickerService? filePickerService;
     private bool windowCommandRefreshPending;
     private bool commandStateSubscribed;
+    private bool? advancedOptionsNarrow;
 
     public MainView()
     {
@@ -95,11 +96,24 @@ public sealed partial class MainView : UserControl
         object? sender,
         ExpressionEditorExpansionChangedEventArgs args)
     {
-        if (TopLevel.GetTopLevel(this) is Window window)
+        if (TopLevel.GetTopLevel(this) is not Window window)
         {
-            window.Height = Math.Max(window.MinHeight, window.Height + args.HeightDelta);
+            return;
         }
+
+        var nextHeight = Math.Max(window.MinHeight, window.Height + args.HeightDelta);
+        var screen = window.Screens?.ScreenFromWindow(window) ?? window.Screens?.Primary;
+        if (screen is not null)
+        {
+            var scaling = window.RenderScaling <= 0 ? 1 : window.RenderScaling;
+            var workingHeight = screen.WorkingArea.Height / scaling;
+            nextHeight = Math.Min(nextHeight, workingHeight);
+        }
+
+        window.Height = nextHeight;
     }
+
+    internal static bool IsNarrowAdvancedOptions(double width) => width <= 760;
 
     public UiCommand BrowseAndLoadCommand { get; }
 
@@ -506,7 +520,14 @@ public sealed partial class MainView : UserControl
     private void ApplyAdvancedOptionsLayout()
     {
         var layoutWidth = Bounds.Width > 0 ? Bounds.Width : Width;
-        if (layoutWidth <= 760)
+        var narrow = IsNarrowAdvancedOptions(layoutWidth);
+        if (advancedOptionsNarrow == narrow)
+        {
+            return;
+        }
+
+        advancedOptionsNarrow = narrow;
+        if (narrow)
         {
             AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,*");
             AdvancedOptionsGrid.RowDefinitions = new RowDefinitions("Auto,Auto,Auto");

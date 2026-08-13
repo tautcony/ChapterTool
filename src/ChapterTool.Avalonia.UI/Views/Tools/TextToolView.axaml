@@ -4,7 +4,6 @@
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.TextToolView"
-             Classes="auxiliaryWindow"
              x:DataType="tools:TextToolViewModel"
              x:CompileBindings="True">
   <UserControl.Styles>
@@ -16,7 +15,7 @@
   <Grid RowDefinitions="Auto,*"
         RowSpacing="8"
         Margin="8"
-        Background="{DynamicResource ChapterTool.AuxiliaryContentBackgroundBrush}"
+        Background="{DynamicResource Brush.Contents}"
         MinWidth="0"
         MinHeight="0">
     <Grid Grid.Row="0" Classes="toolToolbar" ColumnDefinitions="*,Auto" ColumnSpacing="8">
@@ -30,26 +29,32 @@
                   IsVisible="{Binding CanSelectFormat}" />
         <TextBlock VerticalAlignment="Center"
                    FontSize="13"
-                   Foreground="{DynamicResource ChapterTool.MutedForegroundBrush}"
+                   Foreground="{DynamicResource Brush.FG2}"
                    Text="{Binding Kind}" />
       </StackPanel>
       <StackPanel Grid.Column="1"
                   Orientation="Horizontal"
                   Spacing="4"
                   HorizontalAlignment="Right">
-        <Button Classes="iconToolAction"
+        <Button Classes="icon_button"
+                Width="32"
+                Height="32"
                 Command="{Binding RefreshCommand}"
                 AutomationProperties.Name="{DynamicResource Common.Refresh}"
                 ToolTip.Tip="{DynamicResource Common.Refresh}">
           <i:Icon Value="fa-solid fa-rotate" FontSize="13" />
         </Button>
-        <Button Classes="iconToolAction"
+        <Button Classes="icon_button"
+                Width="32"
+                Height="32"
                 Click="OnCopyClicked"
                 AutomationProperties.Name="{DynamicResource Common.Copy}"
                 ToolTip.Tip="{DynamicResource Common.Copy}">
           <i:Icon Value="fa-solid fa-copy" FontSize="13" />
         </Button>
-        <Button Classes="iconToolAction"
+        <Button Classes="icon_button"
+                Width="32"
+                Height="32"
                 IsVisible="{Binding CanClear}"
                 Command="{Binding ClearCommand}"
                 AutomationProperties.Name="{DynamicResource Common.Clear}"
@@ -60,8 +65,8 @@
     </Grid>
 
     <Border Grid.Row="1"
-            Background="{DynamicResource ChapterTool.ControlBackgroundBrush}"
-            BorderBrush="{DynamicResource ChapterTool.AuxiliarySubtleBorderBrush}"
+            Background="{DynamicResource Brush.Contents}"
+            BorderBrush="{DynamicResource Brush.Border2}"
             BorderThickness="1"
             CornerRadius="2"
             MinWidth="0"

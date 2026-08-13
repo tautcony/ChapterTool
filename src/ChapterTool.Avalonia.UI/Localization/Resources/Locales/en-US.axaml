@@ -267,6 +267,7 @@
   <x:String x:Key="Main.Insert" xml:space="preserve">Insert</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">Keep original</x:String>
   <x:String x:Key="Main.Load" xml:space="preserve">Load</x:String>
+  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">Load (Ctrl+O)</x:String>
   <x:String x:Key="Main.Log" xml:space="preserve">Log</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">Open Related Media</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">Order shift</x:String>
@@ -276,6 +277,7 @@
   <x:String x:Key="Main.Reload" xml:space="preserve">Reload</x:String>
   <x:String x:Key="Main.RoundFrames" xml:space="preserve">Round frames</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">Save format</x:String>
+  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
   <x:String x:Key="Main.SettingsShort" xml:space="preserve">Settings</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">Standard template</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">Template file</x:String>

@@ -3,7 +3,6 @@
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.TemplateNamesToolView"
-             Classes="auxiliaryWindow"
              x:DataType="tools:TemplateNamesToolViewModel"
              x:CompileBindings="True">
   <Grid RowDefinitions="*,Auto">
@@ -13,7 +12,7 @@
               Content="{DynamicResource Tool.TemplateNames.UseStandard}"
               IsChecked="{Binding UseTemplateNames}" />
     <Border Grid.Row="1" Classes="toolFooter">
-      <Button Classes="primaryToolAction"
+      <Button Classes="flat primary"
               MinWidth="88"
               HorizontalAlignment="Right"
               Content="{DynamicResource Common.Apply}"

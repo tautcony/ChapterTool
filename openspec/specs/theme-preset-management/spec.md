@@ -82,7 +82,7 @@ The system SHALL persist stable preset identity in the theme section of the unif
 - **AND** the running application SHALL fall back to `Avalonia Default`
 
 ### Requirement: Theme presets populate imported theme tokens
-Each built-in ChapterTool preset SHALL provide the color tokens that the imported style layer uses.
+Each built-in ChapterTool preset SHALL provide the color tokens that the imported style layer uses, and the imported token set SHALL contain only tokens that the style layer consumes.
 
 #### Scenario: Light preset is applied
 - **WHEN** the user applies a light preset
@@ -98,3 +98,8 @@ Each built-in ChapterTool preset SHALL provide the color tokens that the importe
 - **WHEN** the user changes a preset while a window is open
 - **THEN** dynamic imported theme and ChapterTool resources SHALL refresh
 - **AND** the preset identifier and settings schema SHALL remain unchanged
+
+#### Scenario: Unused imported tokens are absent
+- **WHEN** the imported token definitions and the theme application service are audited
+- **THEN** every defined `Color.*` and `Brush.*` token SHALL have at least one consumer in the style layer or the views
+- **AND** the theme application service SHALL NOT write tokens that no consumer resolves

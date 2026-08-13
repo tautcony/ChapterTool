@@ -16,7 +16,7 @@ public sealed class MainWindowStateHeadlessTests
 
         await host.LayoutAsync();
 
-        var loadButton = host.RequiredControl<Button>("LoadButton");
+        var loadButton = host.RequiredControl<SplitButton>("LoadButton");
         var saveButton = host.RequiredControl<Button>("SaveButton");
         Assert.Null(host.MainView.FindControl<Button>("SaveToButton"));
         var clipBox = host.RequiredControl<ComboBox>("ClipBox");
@@ -35,6 +35,7 @@ public sealed class MainWindowStateHeadlessTests
         Assert.Equal(0, frameRateBox.SelectedIndex);
         Assert.Equal(host.ViewModel.StatusText, status.Text);
         Assert.Equal(0, progress.Value);
+        Assert.False(progress.IsVisible);
     }
 
     [AvaloniaFact]

@@ -8,32 +8,10 @@
   <x:Double x:Key="ChapterTool.FontSize.Small">12</x:Double>
   <x:Double x:Key="ChapterTool.FontSize.Default">13</x:Double>
   <x:Double x:Key="ChapterTool.FontSize.Large">14</x:Double>
-  <SolidColorBrush x:Key="ChapterTool.WindowBackgroundBrush" Color="#F0F0F0" />
-  <SolidColorBrush x:Key="ChapterTool.PanelBackgroundBrush" Color="#F7F7F7" />
-  <SolidColorBrush x:Key="ChapterTool.ControlBackgroundBrush" Color="#FFFFFF" />
-  <SolidColorBrush x:Key="ChapterTool.ControlForegroundBrush" Color="#111111" />
-  <SolidColorBrush x:Key="ChapterTool.MutedForegroundBrush" Color="#595959" />
-  <SolidColorBrush x:Key="ChapterTool.AccentBrush" Color="#0067C0" />
-  <SolidColorBrush x:Key="ChapterTool.AccentForegroundBrush" Color="#FFFFFF" />
-  <SolidColorBrush x:Key="ChapterTool.BorderBrush" Color="#767676" />
-  <SolidColorBrush x:Key="ChapterTool.HoverBackgroundBrush" Color="#D6E9F8" />
-  <SolidColorBrush x:Key="ChapterTool.ActiveBackgroundBrush" Color="#CCE4F7" />
   <SolidColorBrush x:Key="ChapterTool.FrameNeutralBrush" Color="#111111" />
   <SolidColorBrush x:Key="ChapterTool.FrameAccurateBrush" Color="#0F7A2F" />
   <SolidColorBrush x:Key="ChapterTool.FrameInexactBrush" Color="#B42318" />
   <SolidColorBrush x:Key="ChapterTool.DiagnosticErrorBrush" Color="#B42318" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryTitleBackgroundBrush" Color="#CFDEEA" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryToolbarBackgroundBrush" Color="#F0F5F9" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryContentBackgroundBrush" Color="#FAFAFA" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryControlBackgroundBrush" Color="#F8F8F8" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryPopupBackgroundBrush" Color="#F4F8FB" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryBorderBrush" Color="#898989" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliarySubtleBorderBrush" Color="#CFCFCF" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryHoverBackgroundBrush" Color="#FFFFFF" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryPressedBackgroundBrush" Color="#DDEAF4" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliarySelectionBackgroundBrush" Color="#D7E7F3" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryFocusBrush" Color="#0067C0" />
-  <SolidColorBrush x:Key="ChapterTool.AuxiliaryDisabledForegroundBrush" Color="#8A94A6" />
   <SolidColorBrush x:Key="ChapterTool.LogInformationBrush" Color="#0067C0" />
   <SolidColorBrush x:Key="ChapterTool.LogWarningBrush" Color="#A15C00" />
   <SolidColorBrush x:Key="ChapterTool.LogErrorBrush" Color="#B42318" />

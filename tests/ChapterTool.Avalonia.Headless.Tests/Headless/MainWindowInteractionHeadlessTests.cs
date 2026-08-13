@@ -172,7 +172,7 @@ public sealed class MainWindowInteractionHeadlessTests
         expressionBox.IsMultilineExpanded = true;
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
 
-        Assert.InRange(host.Window.Height - initialHeight, 106, 112);
+        Assert.InRange(host.Window.Height - initialHeight, 98, 112);
         Assert.Equal(initialPosition, host.Window.Position);
         Assert.Equal(132, expressionBox.ActualEditorHeightForTesting);
         Assert.True(chapterGrid.Bounds.Height >= initialGridHeight - 1);
@@ -182,7 +182,7 @@ public sealed class MainWindowInteractionHeadlessTests
 
         Assert.InRange(Math.Abs(host.Window.Height - initialHeight), 0, 1);
         Assert.Equal(initialPosition, host.Window.Position);
-        Assert.Equal(25.6, expressionBox.ActualEditorHeightForTesting);
+        Assert.Equal(32, expressionBox.ActualEditorHeightForTesting);
         Assert.InRange(Math.Abs(chapterGrid.Bounds.Height - initialGridHeight), 0, 1);
     }
 
@@ -227,12 +227,10 @@ public sealed class MainWindowInteractionHeadlessTests
                 MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "B")));
             await host.LoadAsync(Path.Combine(root, "movie.mpls"));
 
-            var loadButton = host.RequiredControl<Button>("LoadButton");
-            var clipBox = host.RequiredControl<ComboBox>("ClipBox");
+            var loadButton = host.RequiredControl<SplitButton>("LoadButton");
             var grid = host.RequiredControl<DataGrid>("ChapterGrid");
 
-            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(loadButton, "AppendLoadMenuItem").IsEnabled);
-            Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(clipBox, "ClipCombineMenuItem").IsEnabled);
+            Assert.True(MainWindowHeadlessTestHost.RequiredFlyoutMenuItem(loadButton, "AppendLoadMenuItem").IsEnabled);
             Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "GridCombineMenuItem").IsEnabled);
             Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "OpenMediaMenuItem").IsEnabled);
             Assert.True(MainWindowHeadlessTestHost.RequiredMenuItem(grid, "InsertMenuItem").IsEnabled);
@@ -245,10 +243,10 @@ public sealed class MainWindowInteractionHeadlessTests
 
         using var emptyHost = new MainWindowHeadlessTestHost();
         await emptyHost.LayoutAsync();
-        var emptyLoadButton = emptyHost.RequiredControl<Button>("LoadButton");
+        var emptyLoadButton = emptyHost.RequiredControl<SplitButton>("LoadButton");
         var emptyGrid = emptyHost.RequiredControl<DataGrid>("ChapterGrid");
 
-        Assert.False(MainWindowHeadlessTestHost.RequiredMenuItem(emptyLoadButton, "AppendLoadMenuItem").IsEnabled);
+        Assert.False(MainWindowHeadlessTestHost.RequiredFlyoutMenuItem(emptyLoadButton, "AppendLoadMenuItem").IsEnabled);
         Assert.False(MainWindowHeadlessTestHost.RequiredMenuItem(emptyGrid, "InsertMenuItem").IsEnabled);
         Assert.False(MainWindowHeadlessTestHost.RequiredMenuItem(emptyGrid, "DeleteMenuItem").IsEnabled);
     }

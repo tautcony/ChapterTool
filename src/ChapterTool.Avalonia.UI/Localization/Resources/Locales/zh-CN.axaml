@@ -267,6 +267,7 @@
   <x:String x:Key="Main.Insert" xml:space="preserve">插入</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">保留原名</x:String>
   <x:String x:Key="Main.Load" xml:space="preserve">载入</x:String>
+  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">载入 (Ctrl+O)</x:String>
   <x:String x:Key="Main.Log" xml:space="preserve">日志</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">打开相关媒体</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">平移章节号</x:String>
@@ -276,6 +277,7 @@
   <x:String x:Key="Main.Reload" xml:space="preserve">重新载入</x:String>
   <x:String x:Key="Main.RoundFrames" xml:space="preserve">帧数取整</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存格式</x:String>
+  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
   <x:String x:Key="Main.SettingsShort" xml:space="preserve">设置</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">统一模板</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">模板文件</x:String>

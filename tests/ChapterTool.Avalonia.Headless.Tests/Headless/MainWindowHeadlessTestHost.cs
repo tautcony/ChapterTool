@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
@@ -155,7 +157,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         await LayoutAsync();
     }
 
-    public async ValueTask LayoutAsync(double width = 736, double height = 576)
+    public async ValueTask LayoutAsync(double width = 800, double height = 600)
     {
         Window.Show();
         Window.Width = width;
@@ -196,6 +198,22 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         window.Show();
         await ExecuteLayoutAsync(window);
         return window;
+    }
+
+    public static void CaptureRenderedFrame(Window window, string relativePath)
+    {
+        var path = Path.Combine(RepositoryRoot(), relativePath);
+        var directory = Path.GetDirectoryName(path);
+        if (!string.IsNullOrWhiteSpace(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var width = Math.Max(1, (int)Math.Ceiling(window.Bounds.Width));
+        var height = Math.Max(1, (int)Math.Ceiling(window.Bounds.Height));
+        using var bitmap = new RenderTargetBitmap(new PixelSize(width, height));
+        bitmap.Render(window);
+        bitmap.Save(path, PngBitmapEncoderOptions.Default);
     }
 
     public static async ValueTask CloseWindowAsync(Window window)
@@ -257,6 +275,29 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             Source = MainView
         });
         await LayoutAsync(Window.Width, Window.Height);
+    }
+
+    public static MenuItem RequiredFlyoutMenuItem(SplitButton button, string name)
+    {
+        if (button.Flyout is not MenuFlyout flyout)
+        {
+            throw new InvalidOperationException($"Control '{button.Name}' does not have a menu flyout.");
+        }
+
+        flyout.ShowAt(button);
+        try
+        {
+            Dispatcher.UIThread.RunJobs();
+            return flyout.Items
+                .OfType<MenuItem>()
+                .FirstOrDefault(item => string.Equals(item.Name, name, StringComparison.Ordinal))
+                ?? throw new InvalidOperationException($"Menu item '{name}' was not found on '{button.Name}'.");
+        }
+        finally
+        {
+            flyout.Hide();
+            Dispatcher.UIThread.RunJobs();
+        }
     }
 
     public static MenuItem RequiredMenuItem(Control control, string name)

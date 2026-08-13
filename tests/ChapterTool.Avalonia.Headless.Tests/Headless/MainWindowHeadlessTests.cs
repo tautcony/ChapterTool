@@ -115,7 +115,7 @@ public sealed class MainWindowHeadlessTests
             MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "MPLS B1", "MPLS B2"));
 
         await host.LoadAsync("00000.mpls");
-        var menuItem = host.RequiredControl<MenuItem>("ClipCombineMenuItem");
+        var menuItem = host.RequiredControl<MenuItem>("GridCombineMenuItem");
 
         Assert.False(menuItem.IsChecked);
 
@@ -141,13 +141,11 @@ public sealed class MainWindowHeadlessTests
             MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Mpls, "00002", "MPLS B1", "MPLS B2"));
 
         await host.LoadAsync("00000.mpls");
-        var clipMenuItem = host.RequiredControl<MenuItem>("ClipCombineMenuItem");
         var gridMenuItem = host.RequiredControl<MenuItem>("GridCombineMenuItem");
 
         await host.ViewModel.CombineCommand.ExecuteAsync();
         await host.LayoutAsync();
 
-        Assert.True(clipMenuItem.IsChecked);
         Assert.True(gridMenuItem.IsChecked);
     }
 

@@ -5,7 +5,6 @@
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.ExpressionToolView"
-             Classes="auxiliaryWindow"
              x:DataType="tools:ExpressionToolViewModel"
              x:CompileBindings="True">
   <Grid RowDefinitions="*,Auto">
@@ -20,7 +19,7 @@
           <DataTemplate x:DataType="tools:ExpressionPresetViewModel">
             <StackPanel>
               <TextBlock Text="{Binding DisplayName}" />
-              <TextBlock Text="{Binding Description}" FontSize="11" Opacity="0.72" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Description}" FontSize="12" Opacity="0.72" TextWrapping="Wrap" />
             </StackPanel>
           </DataTemplate>
         </ComboBox.ItemTemplate>
@@ -35,14 +34,16 @@
                                  Localizer="{Binding Localizer}"
                                  AuthoringService="{Binding ExpressionAuthoringService}" />
       <Button Grid.Column="1"
-              Classes="iconToolAction"
+              Classes="icon_button"
+              Width="32"
+              Height="32"
               VerticalAlignment="Top"
-              HorizontalContentAlignment="Center"
-              VerticalContentAlignment="Center"
               ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"
+              AutomationProperties.Name="{DynamicResource Tool.Expression.LoadLuaScript}"
               IsVisible="{Binding CanBrowseScript}"
-              Command="{Binding BrowseScriptCommand}"
-              i:Attached.Icon="fa-solid fa-file-code" />
+              Command="{Binding BrowseScriptCommand}">
+        <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
+      </Button>
     </Grid>
 
     <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8">
@@ -55,7 +56,7 @@
       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
         <TextBlock Grid.Column="0" Classes="toolStatus" VerticalAlignment="Center" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
         <Button Grid.Column="1"
-                Classes="primaryToolAction"
+                Classes="flat primary"
                 Content="{DynamicResource Common.Apply}"
                 MinWidth="88"
                 Command="{Binding ApplyCommand}"

@@ -27,7 +27,7 @@ public sealed class ExpressionCompletionKindBrushConverter : Expression.Expressi
 /// <summary>Provides an expression editor with completion and diagnostic presentation.</summary>
 public sealed partial class ExpressionEditor : UserControl
 {
-    private const double CompactEditorHeight = 25.6;
+    private const double CompactEditorHeight = 32;
     private const double ExpandedEditorHeight = 132;
 
     public static readonly StyledProperty<string> TextProperty =
@@ -40,7 +40,7 @@ public sealed partial class ExpressionEditor : UserControl
         AvaloniaProperty.Register<ExpressionEditor, IExpressionAuthoringService?>(nameof(AuthoringService));
 
     public static readonly StyledProperty<double> EditorHeightProperty =
-        AvaloniaProperty.Register<ExpressionEditor, double>(nameof(EditorHeight), 25.6);
+        AvaloniaProperty.Register<ExpressionEditor, double>(nameof(EditorHeight), 32);
 
     public static readonly StyledProperty<bool> IsMultilineExpandableProperty =
         AvaloniaProperty.Register<ExpressionEditor, bool>(nameof(IsMultilineExpandable));
