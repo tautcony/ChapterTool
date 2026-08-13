@@ -1,6 +1,6 @@
 using ChapterTool.Core.Diagnostics;
 
- #pragma warning disable SA1107, SA1501, SA1503, SA1516, SA1520
+#pragma warning disable SA1107, SA1501, SA1503, SA1516, SA1520
 
 namespace ChapterTool.Core.Importing.Disc.MovieObject;
 

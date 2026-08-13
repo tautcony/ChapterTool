@@ -11,6 +11,7 @@ public static class TestApplicationLogger
     /// <summary>
     /// Creates a typed logger that writes through the test log service provider.
     /// </summary>
+    /// <typeparam name="T">The category type used to name the logger.</typeparam>
     public static ILogger<T> Create<T>(IApplicationLogService logService)
     {
         if (logService is not ILoggerProvider provider)
