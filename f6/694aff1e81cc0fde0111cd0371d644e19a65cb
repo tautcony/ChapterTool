@@ -1,0 +1,157 @@
+AGENTS.md
+  s_d32927ed6d4069::t_6cbdeee5150ca4 16
+ChapterTool.slnx
+  s_d32927ed6d4069::t_572ba26f6e9e8c 19
+docs/code-map/testing.md
+  s_d32927ed6d4069::t_f0ae3ebc4be18f 9-12
+docs/code-review/review-2026-08-13/99-汇总.md
+  s_d32927ed6d4069::t_0b8b49c659c75a 44-45
+docs/code-review/review-2026-08-13/fix-plan-p1.md
+  s_d32927ed6d4069::t_866e6ce9d5e8e3 1-35
+docs/code-review/review-2026-08-13/fix-plan-p2.md
+  s_d32927ed6d4069::t_a907163b7ba46a 1-70
+packages/chaptertool/README.md
+  s_d32927ed6d4069::t_cd9ee672c519df 58
+packages/chaptertool/package.json
+  s_d32927ed6d4069::t_361d9f76e62e88 6-7,11-13
+packages/chaptertool/src/index.ts
+  s_d32927ed6d4069::t_8fb844c399464f 3,80-82,136,141-147
+packages/chaptertool/src/utils/input.ts
+  s_d32927ed6d4069::t_98475d713f4f2a 2-3,5-23
+packages/chaptertool/test/chaptertool.test.ts
+  s_d32927ed6d4069::t_cabd517746f2ce 71
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_d32927ed6d4069::t_2828825de31a16 20,31,144-145,153-159,478-480,635
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_d32927ed6d4069::t_1797338bc94e80 487,489
+src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs
+  s_d32927ed6d4069::t_08ceb933325b47 38
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Convert.cs
+  s_d32927ed6d4069::t_c1d1266f380ede 73,81-89,168-173,180-187
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Paths.cs
+  s_d32927ed6d4069::t_fb09c1518f7127 1-2,32
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Selection.cs
+  s_d32927ed6d4069::t_b5bd445248ebd0 37,39-45,53-62
+src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs
+  s_d32927ed6d4069::t_38afdcdde0679b 1,36,66-74,80-82,96-99,118,134,139-151
+src/ChapterTool.CommandLine/Cli/ChapterToolCliModels.cs
+  s_d32927ed6d4069::t_18447a7d0630d9 20-23
+src/ChapterTool.CommandLine/Cli/CliLocalizationManager.cs
+  s_d32927ed6d4069::t_d6a41ef6f11127 4,34,41,80
+src/ChapterTool.CommandLine/Resources/Locales/en-US.json
+  s_d32927ed6d4069::t_01c3419f03b53f 9-12,46
+src/ChapterTool.CommandLine/Resources/Locales/ja-JP.json
+  s_d32927ed6d4069::t_5bc8c2a90c961e 9-12,46
+src/ChapterTool.CommandLine/Resources/Locales/zh-CN.json
+  s_d32927ed6d4069::t_c8f757fb00e0ce 9-12,46
+src/ChapterTool.Contracts/Configuration/AppSettings.cs
+  s_d32927ed6d4069::t_1ddb79329b8582 12
+src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs
+  s_ac77239eeb4b11::t_861e3de798b799 7,10
+src/ChapterTool.Core/Exporting/ChapterExportOptions.cs
+  s_d32927ed6d4069::t_6fd203d14d1818 33
+src/ChapterTool.Core/Exporting/ChapterSavePath.cs
+  s_d32927ed6d4069::t_e8de60ad479eb6 43,45-49,53,57,65
+src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs
+  s_d32927ed6d4069::t_410c74ae7250a6 1,32-33,35
+src/ChapterTool.Core/Importing/Disc/MplsPlaylistProjection.cs
+  s_ac77239eeb4b11::t_497a542b072faa 192-201
+src/ChapterTool.Core/Localization/UiLanguageCode.cs
+  s_d32927ed6d4069::t_cf1212437aff6e 1-66
+src/ChapterTool.Core/Session/ExportPreferences.cs
+  s_d32927ed6d4069::t_4416bdb1ae3259 21
+src/ChapterTool.Infrastructure/Configuration/ChapterToolSettingsStore.cs
+  s_ac77239eeb4b11::t_c2b6a4421e7791 147-153,160-161
+src/ChapterTool.Infrastructure/Importing/Matroska/MatroskaChapterImporter.cs
+  s_ac77239eeb4b11::t_f6fa0c0d2ecbb3 31-33
+src/ChapterTool.Infrastructure/Tools/ExternalToolLocator.cs
+  s_ac77239eeb4b11::t_37c3e182a5df0c 36,44-45,78-80,85
+src/ChapterTool.Infrastructure/Tools/MkvToolNixInstallProbe.cs
+  s_ac77239eeb4b11::t_cf5cc4fe704b54 52-63
+src/ChapterTool.Node/NodeApi.cs
+  s_d32927ed6d4069::t_7dd4d109b69b7a 34-38,87-90,186,190-199,283
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_d32927ed6d4069::t_63b5095779fb14 264,702,724,757,759-763,765,767-773,777-780,782,784,786-797,799,804-807,1068-1085,1088
+src/ChapterTool.Wasm/Services/WasmLocalizer.cs
+  s_d32927ed6d4069::t_33d0a1f8185b0c 4,63
+src/ChapterTool.Wasm/Services/WasmModels.cs
+  s_d32927ed6d4069::t_031fd120b3ad96 61
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_d32927ed6d4069::t_182b31d5803ccd 86
+tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+  s_d32927ed6d4069::t_6cf7eb9c722d9a 33
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs
+  s_d32927ed6d4069::t_7a6cad055367d6 21,294
+tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj
+  s_d32927ed6d4069::t_f46b9fc8fe6d9c 31
+tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs
+  s_d32927ed6d4069::t_f73af91e88abc2 15
+tests/ChapterTool.Avalonia.Tests/Services/ChapterImporterRegistryTests.cs
+  s_d32927ed6d4069::t_e069f4ac11a3b5 172
+tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterLoadServiceTests.cs
+  s_d32927ed6d4069::t_eedf43e673cf6f 282
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  s_d32927ed6d4069::t_b4e469018919e1 15,566-591,1420
+tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs
+  s_d32927ed6d4069::t_653ac39da6338c 16,100-125,889-893
+tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs
+  s_d32927ed6d4069::t_6bb9e0155b0e83 15,190-226
+tests/ChapterTool.CommandLine.Tests/ChapterTool.CommandLine.Tests.csproj
+  s_d32927ed6d4069::t_ec11f666f5aefe 31
+tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs
+  s_d32927ed6d4069::t_f496d2b419366b 1-3,6,10,94-117,437-450,452-453,455-460,462-522,524,526-585,587-599,601-615,617-625,628-633
+tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj
+  s_d32927ed6d4069::t_508247dd695f70 30
+tests/ChapterTool.Core.Tests/Exporting/ChapterSavePathTests.cs
+  s_d32927ed6d4069::t_37a7729948f5fc 37,41,50-63
+tests/ChapterTool.Core.Tests/FixtureResolver.cs
+  s_d32927ed6d4069::t_6be6036889dfae 1-2,7,11,18
+tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs
+  s_d32927ed6d4069::t_662ab26afe3e8f 3,131-144,215-228,455-517
+tests/ChapterTool.Core.Tests/Importing/MplsImporterTests.cs
+  s_d32927ed6d4069::t_4650d634bacb1d 52-67
+tests/ChapterTool.Core.Tests/Localization/UiLanguageCodeTests.cs
+  s_d32927ed6d4069::t_f69a75916cdb5c 1-27
+tests/ChapterTool.Infrastructure.Tests/ChapterTool.Infrastructure.Tests.csproj
+  s_d32927ed6d4069::t_2f3af6ee447089 31
+tests/ChapterTool.Infrastructure.Tests/FixtureResolver.cs
+  s_d32927ed6d4069::t_ff16eca4a3967c 1-2,7,11,18
+tests/ChapterTool.Infrastructure.Tests/PlatformServiceTests.cs
+  s_d32927ed6d4069::t_aeb08f669a597f 1,54-89
+tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs
+  s_d32927ed6d4069::t_6664c6a8ecc8f1 55,64-77
+tests/ChapterTool.TestSupport/ChapterTool.TestSupport.csproj
+  s_d32927ed6d4069::t_03a2bef5516a67 1-15
+tests/ChapterTool.TestSupport/TestApplicationLogger.cs
+  s_d32927ed6d4069::t_8374ddbb557228 4,6-9,11-13
+tests/ChapterTool.TestSupport/TestRepository.cs
+  s_d32927ed6d4069::t_ca0ae87c39bad2 1-81
+tests/ChapterTool.Wasm.Tests/ChapterTool.Wasm.Tests.csproj
+  s_d32927ed6d4069::t_1bc17b390fc2f7 26
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  s_d32927ed6d4069::t_e34549236abd7f 69,85-96,98-101,132,134-137,285,374-375
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "f6694aff1e81cc0fde0111cd0371d644e19a65cb",
+  "prompts": {},
+  "sessions": {
+    "s_ac77239eeb4b11": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "6d00e662-701f-4d20-a1de-2100faca23af",
+        "model": "claude-fable-5"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_d32927ed6d4069": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7d81484f-8f95-4fe2-8cb6-1f12d0695671",
+        "model": "claude-fable-5"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
