@@ -721,6 +721,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             {
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
+                OnPropertyChanged(nameof(SaveButtonTooltip));
             }
         }
     }
@@ -743,7 +744,25 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public double Progress
     {
         get;
-        private set => SetProperty(ref field, value);
+        private set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(IsOperationRunning));
+            }
+        }
+    }
+
+    public bool IsOperationRunning => Progress > 0 && Progress < 1;
+
+    public string SaveButtonTooltip
+    {
+        get
+        {
+            var directory = EffectiveSaveDirectoryDisplay;
+            var shortcut = Localizer.GetString("Main.SaveShortcutHint");
+            return string.IsNullOrWhiteSpace(directory) ? shortcut : $"{directory} ({shortcut})";
+        }
     }
 
     public IReadOnlyList<ReferencedMediaFile> RelatedMediaReferences =>
@@ -960,6 +979,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(CanUseExternalTools));
         OnPropertyChanged(nameof(CanRunExternalActions));
         OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
+        OnPropertyChanged(nameof(SaveButtonTooltip));
         NotifyCommandStates();
     }
 

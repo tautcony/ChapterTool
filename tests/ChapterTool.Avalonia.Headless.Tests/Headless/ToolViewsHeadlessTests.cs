@@ -80,7 +80,7 @@ public sealed class ToolViewsHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
             Assert.False(editor.IsMultilineExpanded);
-            Assert.Equal(25.6, editor.ActualEditorHeightForTesting);
+            Assert.Equal(32, editor.ActualEditorHeightForTesting);
 
             editor.SetCaretOffsetForTesting(6);
             editor.IsMultilineExpanded = true;
@@ -175,8 +175,8 @@ public sealed class ToolViewsHeadlessTests
 
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
-            Assert.Equal(25.6, editor.ActualEditorHeightForTesting);
-            Assert.InRange(Math.Abs(editor.Bounds.Height - 25.6), 0, 0.5);
+            Assert.Equal(32, editor.ActualEditorHeightForTesting);
+            Assert.InRange(Math.Abs(editor.Bounds.Height - 32), 0, 0.5);
             Assert.False(editor.IsMultilineExpanded);
 
             editor.Text = "local offset = 1\nreturn t + offset";

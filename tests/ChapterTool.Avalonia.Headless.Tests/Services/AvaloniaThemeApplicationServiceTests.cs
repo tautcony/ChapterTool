@@ -13,8 +13,10 @@ namespace ChapterTool.Avalonia.Headless.Tests.Services;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class AvaloniaThemeApplicationServiceTests
 {
-    [AvaloniaFact]
-    public void ApplyWritesSemanticBrushResourcesAndDarkVariant()
+    [AvaloniaTheory]
+    [InlineData(ThemePresetCatalog.DefaultPresetId)]
+    [InlineData("ayu-dark")]
+    public void ApplyWritesImportedTokensFromCatalogAndBlendFormulas(string presetId)
     {
         var application = Application.Current
             ?? throw new InvalidOperationException("Avalonia application was not initialized.");
@@ -22,34 +24,21 @@ public sealed class AvaloniaThemeApplicationServiceTests
 
         try
         {
-            service.Apply(new ThemeSettings("ayu-dark"));
-            var palette = ThemePresetCatalog.Resolve("ayu-dark").Palette;
+            service.Apply(new ThemeSettings(presetId));
+            var preset = ThemePresetCatalog.Resolve(presetId);
+            var expected = AvaloniaThemeApplicationService.ComputeImportedThemeColors(preset);
 
-            Assert.Equal(Color.Parse(palette.WindowBackground), BrushColor(application, AvaloniaThemeApplicationService.WindowBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.PanelBackground), BrushColor(application, AvaloniaThemeApplicationService.PanelBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.ControlBackground), BrushColor(application, AvaloniaThemeApplicationService.ControlBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.ControlForeground), BrushColor(application, AvaloniaThemeApplicationService.ControlForegroundBrushKey));
-            Assert.Equal(Color.Parse(palette.MutedForeground), BrushColor(application, AvaloniaThemeApplicationService.MutedForegroundBrushKey));
-            Assert.Equal(Color.Parse(palette.Accent), BrushColor(application, AvaloniaThemeApplicationService.AccentBrushKey));
-            Assert.Equal(Color.Parse(palette.AccentForeground), BrushColor(application, AvaloniaThemeApplicationService.AccentForegroundBrushKey));
-            Assert.Equal(Color.Parse(palette.Border), BrushColor(application, AvaloniaThemeApplicationService.BorderBrushKey));
-            Assert.Equal(Color.Parse(palette.HoverBackground), BrushColor(application, AvaloniaThemeApplicationService.HoverBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.ActiveBackground), BrushColor(application, AvaloniaThemeApplicationService.ActiveBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.PanelBackground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryToolbarBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.Border), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryBorderBrushKey));
-            Assert.Equal(Color.Parse(palette.ActiveBackground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliarySelectionBackgroundBrushKey));
-            Assert.Equal(Color.Parse(palette.Accent), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryFocusBrushKey));
-            Assert.Equal(Color.Parse(palette.MutedForeground), BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryDisabledForegroundBrushKey));
-            Assert.Equal(Color.Parse(palette.DiagnosticError), BrushColor(application, AvaloniaThemeApplicationService.LogErrorBrushKey));
             Assert.All(
                 AvaloniaThemeApplicationService.ImportedThemeColorKeys,
-                key => Assert.IsType<Color>(application.Resources[key]));
-            Assert.Equal(
-                ColorResource(application, "Color.Contents"),
-                BrushColor(application, AvaloniaThemeApplicationService.AuxiliaryContentBackgroundBrushKey));
+                key => Assert.Equal(Color.Parse(expected[key]), ColorResource(application, key)));
+            Assert.Equal(Color.Parse(preset.Palette.FrameAccurate), BrushColor(application, AvaloniaThemeApplicationService.FrameAccurateBrushKey));
+            Assert.Equal(Color.Parse(preset.Palette.DiagnosticError), BrushColor(application, AvaloniaThemeApplicationService.LogErrorBrushKey));
             AssertRuntimeResource(application, "Brush.Contents");
+            AssertRuntimeResource(application, "Brush.Hover");
             AssertRuntimeResource(application, AvaloniaFontApplicationService.MonospaceFontFamilyKey);
-            Assert.Equal(ThemeVariant.Dark, application.RequestedThemeVariant);
+            Assert.Equal(
+                preset.BaseVariant == ThemeBaseVariant.Dark ? ThemeVariant.Dark : ThemeVariant.Light,
+                application.RequestedThemeVariant);
         }
         finally
         {
@@ -67,10 +56,9 @@ public sealed class AvaloniaThemeApplicationServiceTests
         try
         {
             service.Apply(new ThemeSettings("missing"));
+            var expected = AvaloniaThemeApplicationService.ComputeImportedThemeColors(ThemePresetCatalog.Default);
 
-            Assert.Equal(
-                Color.Parse(ThemePresetCatalog.Default.Palette.WindowBackground),
-                BrushColor(application, AvaloniaThemeApplicationService.WindowBackgroundBrushKey));
+            Assert.Equal(Color.Parse(expected["Color.Window"]), ColorResource(application, "Color.Window"));
             Assert.Equal(ThemeVariant.Light, application.RequestedThemeVariant);
         }
         finally

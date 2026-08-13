@@ -19,12 +19,16 @@ The Avalonia main window SHALL be driven by a ViewModel rather than by direct co
 - **THEN** progress and result updates from the older load SHALL NOT overwrite the newer load's current path, chapter rows, status, or progress state after the newer load has become current
 
 ### Requirement: Main window load progress
-The main window SHALL present bounded progress during source loading when the load pipeline reports intermediate progress.
+The main window SHALL present bounded progress during source loading when the load pipeline reports intermediate progress, and SHALL NOT present an empty progress indicator at idle.
 
 #### Scenario: Importer reports intermediate progress
 - **WHEN** a load operation reports progress before returning its import result
 - **THEN** the main-window view model SHALL update the progress value to a bounded intermediate value
 - **AND** completion or failure handling SHALL remain responsible for the final progress state
+
+#### Scenario: Idle state hides the progress indicator
+- **WHEN** no load or save operation is running
+- **THEN** the status-strip progress indicator SHALL NOT be visible
 
 ### Requirement: Legacy-inspired cross-platform UX
 The Avalonia main window SHALL preserve the original ChapterTool workflow density while using cross-platform Avalonia controls and services.
@@ -48,6 +52,19 @@ The Avalonia main window SHALL preserve the original ChapterTool workflow densit
 #### Scenario: Auxiliary actions remain discoverable without visual clutter
 - **WHEN** optional actions such as preview, refresh, color, language, template, zones, forward shift, related media, or append MPLS are available
 - **THEN** they SHALL be reachable from compact buttons or context menus on the relevant workflow area rather than from an always-visible marketing-style navigation strip
+
+#### Scenario: Load variants are reachable from a visible control
+- **WHEN** the load action offers the Reload and Append MPLS variants
+- **THEN** the variants SHALL be reachable from a visible split-style control on the Load action
+- **AND** the variants SHALL NOT be reachable only through a right-click context menu on a button
+
+#### Scenario: Frame-rate change action has a visible entry point
+- **WHEN** the Change FPS action is available for the frame-rate selector
+- **THEN** it SHALL be reachable from a visible control next to the selector
+
+#### Scenario: Keyboard shortcuts are displayed
+- **WHEN** a menu item or primary action has a keyboard shortcut
+- **THEN** the menu item SHALL display the shortcut as an input gesture, or the control tooltip SHALL include the shortcut text
 
 #### Scenario: Platform-specific integration is gated
 - **WHEN** a workflow needs file picking, directory picking, clipboard, shell-open, settings, or file association
@@ -163,8 +180,49 @@ The Avalonia shell SHALL use typed data contexts and compiled bindings for the m
 - **WHEN** a bound ViewModel property or command is renamed or removed
 - **THEN** the build or focused UI/static tests SHALL fail before runtime manual testing is required
 
+### Requirement: Unified design system
+The Avalonia UI SHALL use one shared design system based on the imported SourceGit style layer for every view, and the resource layer SHALL NOT keep duplicate or unused style content.
+
+#### Scenario: Views share one style vocabulary
+- **WHEN** the main window and the tool views are inspected
+- **THEN** buttons, inputs, toolbars, and footers SHALL use shared style classes from the shared style layer
+- **AND** views SHALL NOT define local styles that duplicate a shared class
+
+#### Scenario: Surface brushes use one vocabulary
+- **WHEN** a view paints a surface, border, or foreground
+- **THEN** it SHALL reference an imported `Brush.*` token or a dedicated semantic `ChapterTool.*` brush
+- **AND** alias brushes that only mirror another token SHALL NOT exist
+
+#### Scenario: Dead style content is absent
+- **WHEN** the style resources are audited
+- **THEN** style classes referenced by views SHALL have a definition
+- **AND** defined selectors, brushes, and colors SHALL have at least one consumer
+
+### Requirement: Integer sizing scale
+The Avalonia UI SHALL define control sizes, spacing, and font sizes with integer device-independent pixel values on a shared scale.
+
+#### Scenario: Sizes are integer values
+- **WHEN** the view XAML and shared styles are inspected
+- **THEN** font sizes, control dimensions, margins, and spacing SHALL use integer values
+
+#### Scenario: Text meets the minimum readable size
+- **WHEN** any visible text is rendered
+- **THEN** its font size SHALL be at least the shared small font token (12)
+
+### Requirement: Frame-accuracy indicator rendering
+The Frames column SHALL indicate frame accuracy through the dedicated semantic frame colors using a single text layer.
+
+#### Scenario: Accuracy states use semantic colors
+- **WHEN** a chapter row is frame-accurate, inexact, or neutral
+- **THEN** the Frames cell text SHALL use the matching dedicated semantic brush
+
+#### Scenario: The indicator renders one text layer
+- **WHEN** the Frames cell template is inspected
+- **THEN** it SHALL contain one text element for the frames value
+- **AND** it SHALL NOT apply bitmap effects such as drop shadows
+
 ### Requirement: Hidden command shims are removed
-The UI shell SHALL NOT use hidden buttons or invisible controls solely as command hosts for main-window actions.
+The UI shell SHALL NOT use hidden buttons or invisible controls as command hosts or state hosts for main-window actions.
 
 #### Scenario: Main actions are reachable through real command surfaces
 - **WHEN** save, append MPLS, combine, open media, color, expression, template, zones, forward shift, and similar actions are available
@@ -172,7 +230,8 @@ The UI shell SHALL NOT use hidden buttons or invisible controls solely as comman
 
 #### Scenario: Hidden shim controls are absent
 - **WHEN** the main-window XAML is inspected
-- **THEN** controls whose only purpose is to hide a command binding from the visible UI SHALL NOT be present
+- **THEN** controls whose only purpose is to hide a command binding or a state binding from the visible UI SHALL NOT be present
+- **AND** tests SHALL drive source-path state through the ViewModel instead of a hidden text box
 
 ### Requirement: Async commands are observed
 The UI shell SHALL execute asynchronous commands through an abstraction or event pattern that awaits work, observes exceptions, and exposes execution state when needed.
@@ -580,24 +639,24 @@ The Avalonia settings panel SHALL keep theme preset selection in a single simple
 ### Requirement: Frame accuracy is visual state
 The Avalonia shell SHALL render frame accuracy as visual styling rather than as `K` or `*` characters in frame text.
 
-#### Scenario: Accurate rounded frames glow green
+#### Scenario: Accurate rounded frames use the semantic accurate color
 - **WHEN** a chapter row has rounded frame display and the frame calculation error is within tolerance
 - **THEN** the frame cell SHALL show only the numeric frame text
-- **AND** the frame text SHALL use a green outer glow treatment
-- **AND** the glow SHALL be visually centered around the text rather than offset down or right
-- **AND** the glow SHALL use a softened radius large enough to read as glow rather than hard outline
+- **AND** the frame text SHALL use the dedicated semantic accurate brush
+- **AND** the cell SHALL render one text layer
+- **AND** the cell SHALL NOT apply bitmap effects such as drop shadows
 
-#### Scenario: Inexact rounded frames glow red
+#### Scenario: Inexact rounded frames use the semantic inexact color
 - **WHEN** a chapter row has rounded frame display and the frame calculation error exceeds tolerance
 - **THEN** the frame cell SHALL show only the numeric frame text
-- **AND** the frame text SHALL use a red outer glow treatment
-- **AND** the glow SHALL be visually centered around the text rather than offset down or right
-- **AND** the glow SHALL use a softened radius large enough to read as glow rather than hard outline
+- **AND** the frame text SHALL use the dedicated semantic inexact brush
+- **AND** the cell SHALL render one text layer
+- **AND** the cell SHALL NOT apply bitmap effects such as drop shadows
 
 #### Scenario: Unrounded frames are neutral
 - **WHEN** frame rounding is disabled
 - **THEN** the frame cell SHALL show the unrounded numeric frame text
-- **AND** the frame text SHALL render with neutral black styling rather than green or red accuracy styling
+- **AND** the frame text SHALL use the dedicated semantic neutral brush rather than accurate or inexact styling
 
 #### Scenario: Frame edits use numeric text
 - **WHEN** a user edits the frame cell

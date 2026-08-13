@@ -116,12 +116,15 @@ This is the first file to inspect when dependency wiring or service registration
 
 `src/ChapterTool.Avalonia.UI/Resources/` owns the shared and imported user interface resources.
 
-- `Themes.axaml` contains the complete imported light and dark token dictionaries.
-- `Styles.axaml` contains the reusable control styles for Avalonia 12.1.
+- `Themes.axaml` contains the imported light and dark token dictionaries. Surface colors use `Brush.*` tokens.
+- `Styles.axaml` contains the reusable control styles for Avalonia 12.1. Shared classes include `flat`, `icon_button`, `toolFooter`, `toolToolbar`, `optionLabel`, `optionCell`, `gridEditor`, and `frameText`.
+- `SharedResources.axaml` keeps fonts, font-size tokens, and semantic `ChapterTool.*` brushes for frame accuracy, diagnostics, log levels, and expression highlighting.
 - `NOTICE.md` records the source, license scope, exclusions, and compatibility adaptations.
 - Only `Themes.axaml` and `Styles.axaml` contain adapted SourceGit MIT material.
 
 `App.axaml` loads these resources after the Avalonia base themes. It loads ChapterTool product styles after the imported theme layer.
+
+The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. Change FPS is a visible `icon_button` next to the frame-rate selector.
 
 ### ViewModels
 

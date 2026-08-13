@@ -9,7 +9,7 @@
     <Grid Grid.Row="0" Margin="8">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="360" MinWidth="300" MaxWidth="560" />
-        <ColumnDefinition Width="4" />
+        <ColumnDefinition Width="6" />
         <ColumnDefinition Width="*" MinWidth="250" />
       </Grid.ColumnDefinitions>
 
@@ -262,9 +262,9 @@
                           MinHeight="80"
                           IsVisible="{Binding SelectedEntry.HasStructuredTree}">
                   <TreeView.Styles>
-                    <Style Selector="TreeViewItem">
+                    <Style Selector="TreeViewItem" x:DataType="vm:LogStructuredNodeViewModel">
                       <Setter Property="MinHeight" Value="30" />
-                      <Setter Property="IsExpanded" Value="{ReflectionBinding IsInitiallyExpanded}" />
+                      <Setter Property="IsExpanded" Value="{Binding IsInitiallyExpanded}" />
                     </Style>
                   </TreeView.Styles>
                   <TreeView.ItemTemplate>

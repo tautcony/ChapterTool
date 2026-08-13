@@ -141,7 +141,7 @@ public sealed partial class TextToolView : UserControl
             TextToolSpanKind.Name => "ChapterTool.Expression.VariableBrush",
             TextToolSpanKind.String => "ChapterTool.Expression.StringBrush",
             TextToolSpanKind.Number => "ChapterTool.Expression.NumberBrush",
-            _ => "ChapterTool.ControlForegroundBrush"
+            _ => "Brush.FG1"
         };
 
         return Application.Current?.Resources[key] as IBrush ?? Brush("#24292f");

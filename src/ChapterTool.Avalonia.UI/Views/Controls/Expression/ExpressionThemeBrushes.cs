@@ -31,12 +31,12 @@ public static class ExpressionThemeBrushes
         ExpressionTokenKind.Number => Resolve("ChapterTool.Expression.NumberBrush", "#116329"),
         ExpressionTokenKind.Comment => Resolve("ChapterTool.Expression.CommentBrush", "#6e7781"),
         ExpressionTokenKind.Unknown => Resolve("ChapterTool.Expression.UnknownBrush", "#b42318"),
-        _ => Resolve("ChapterTool.ControlForegroundBrush", "#24292f")
+        _ => Resolve("Brush.FG1", "#24292f")
     };
 
     public static IBrush DiagnosticUnderline =>
         Resolve("ChapterTool.DiagnosticErrorBrush", "#cf222e");
 
     public static IBrush EditorForeground =>
-        Resolve("ChapterTool.ControlForegroundBrush", "#24292f");
+        Resolve("Brush.FG1", "#24292f");
 }

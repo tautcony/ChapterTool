@@ -16,6 +16,42 @@
     </StackPanel>
   </Design.PreviewWith>
 
+  <Styles.Resources>
+    <!-- Geometry copied from the Fluent ButtonSpinner icons. -->
+    <StreamGeometry x:Key="ChapterTool.SpinnerIncreaseIcon">M0,9 L10,0 20,9 19,10 10,2 1,10 z</StreamGeometry>
+    <StreamGeometry x:Key="ChapterTool.SpinnerDecreaseIcon">M0,1 L10,10 20,1 19,0 10,8 1,0 z</StreamGeometry>
+
+    <!-- Narrow spin button used by the NumericUpDown template below. The Fluent
+         ButtonSpinner template hardcodes MinWidth=34 on its buttons, which starves
+         the text area, so the control template is replaced. -->
+    <ControlTheme x:Key="ChapterTool.SpinnerRepeatButton" TargetType="RepeatButton">
+      <Setter Property="MinWidth" Value="22"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            Padding="{TemplateBinding Padding}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"/>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Brush.Hover}"/>
+      </Style>
+      <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource Brush.Active}"/>
+      </Style>
+      <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Opacity" Value="0.5"/>
+      </Style>
+    </ControlTheme>
+  </Styles.Resources>
+
   <Style Selector="Window">
     <Style.Resources>
       <SolidColorBrush x:Key="SystemControlErrorTextForegroundBrush" Color="Red"/>
@@ -473,43 +509,6 @@
   <Style Selector="TextBlock.italic">
     <Setter Property="FontStyle" Value="Italic"/>
   </Style>
-  <Style Selector="TextBlock.group_header_label">
-    <Setter Property="Foreground" Value="{DynamicResource Brush.FG2}"/>
-    <Setter Property="FontWeight" Value="Bold"/>
-  </Style>
-  <Style Selector="TextBlock.table_header">
-    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}"/>
-    <Setter Property="Opacity" Value=".65"/>
-    <Setter Property="FontWeight" Value="Bold"/>
-  </Style>
-  <Style Selector="TextBlock.info_label">
-    <Setter Property="Foreground" Value="{DynamicResource Brush.FG2}"/>
-    <Setter Property="FontWeight" Value="Bold"/>
-    <Setter Property="HorizontalAlignment" Value="Right"/>
-  </Style>
-  <Style Selector="TextBlock.tab_header">
-    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Large}"/>
-    <Setter Property="FontWeight" Value="Bold"/>
-    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}"/>
-    <Setter Property="Opacity" Value=".56"/>
-  </Style>
-  <Style Selector="TextBlock.dropped">
-    <Setter Property="TextDecorations" Value="Strikethrough"/>
-  </Style>
-
-  <Style Selector="Run.issue_link">
-    <Setter Property="Foreground" Value="{DynamicResource Brush.Link}"/>
-  </Style>
-  <Style Selector="Run.commit_link">
-    <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}"/>
-    <Setter Property="Foreground" Value="DarkOrange"/>
-    <Setter Property="TextDecorations" Value="Underline"/>
-  </Style>
-  <Style Selector="Run.inline_code">
-    <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.MonospaceFontFamily}"/>
-    <Setter Property="Foreground" Value="{DynamicResource Brush.InlineCodeFG}"/>
-  </Style>
-
   <Style Selector="TextBox">
     <Setter Property="CornerRadius" Value="0"/>
     <Setter Property="Padding" Value="4,0"/>
@@ -603,16 +602,43 @@
   </Style>
 
   <Style Selector="Button.icon_button, RepeatButton.icon_button">
-    <Setter Property="BorderThickness" Value="0"/>
-    <Setter Property="Background" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}"/>
+    <Setter Property="Background" Value="{DynamicResource Brush.Contents}"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="Padding" Value="0"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border x:Name="PART_Border"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Background="Transparent"
+                            Padding="{TemplateBinding Padding}"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalContentAlignment="Center"
+                            VerticalContentAlignment="Center"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
   </Style>
-  <Style Selector="Button.icon_button /template/ ContentPresenter#PART_ContentPresenter, RepeatButton.icon_button /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="Opacity" Value="0.8"/>
+  <Style Selector="Button.icon_button:pointerover, RepeatButton.icon_button:pointerover">
+    <Setter Property="Background" Value="{DynamicResource Brush.Hover}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}"/>
   </Style>
-  <Style Selector="Button.icon_button:pointerover /template/ ContentPresenter#PART_ContentPresenter, RepeatButton.icon_button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Opacity" Value="1"/>
+  <Style Selector="Button.icon_button:pressed, RepeatButton.icon_button:pressed">
+    <Setter Property="Background" Value="{DynamicResource Brush.Active}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}"/>
+  </Style>
+  <Style Selector="Button.icon_button:disabled, RepeatButton.icon_button:disabled">
+    <Setter Property="Opacity" Value="0.55"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}"/>
   </Style>
   <Style Selector="Button.icon_button:disabled Path">
     <Setter Property="Fill" Value="{DynamicResource Brush.FG2}"/>
@@ -647,7 +673,7 @@
     </Setter>
   </Style>
   <Style Selector="Button.flat:pointerover /template/ Border#PART_Border">
-    <Setter Property="Background" Value="{DynamicResource Brush.FlatButton.BackgroundHovered}"/>
+    <Setter Property="Background" Value="{DynamicResource Brush.Hover}"/>
   </Style>
   <Style Selector="Button.flat:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent"/>
@@ -943,10 +969,12 @@
       <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="{DynamicResource SystemAccentColor}"/>
     </Style.Resources>
 
-    <Setter Property="MinHeight" Value="20"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Height" Value="32"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}"/>
     <Setter Property="Background" Value="{DynamicResource Brush.Contents}"/>
+    <Setter Property="CornerRadius" Value="3"/>
 
     <Style Selector="^:pointerover /template/ Border#Background">
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}" />
@@ -1313,19 +1341,90 @@
   <Style Selector="NumericUpDown">
     <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}"/>
     <Setter Property="Background" Value="{DynamicResource Brush.Contents}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}"/>
+    <Setter Property="MinHeight" Value="32"/>
+    <Setter Property="Height" Value="32"/>
+    <Setter Property="MinWidth" Value="96"/>
+    <!-- The Fluent template forwards Padding to PART_TextBox; a style setter on
+         PART_TextBox itself loses to that template binding. -->
+    <Setter Property="Padding" Value="8,0"/>
+    <Setter Property="CornerRadius" Value="3"/>
+    <Setter Property="VerticalContentAlignment" Value="Center"/>
 
     <Style Selector="^ /template/ ButtonSpinner#PART_Spinner">
       <Setter Property="MinHeight" Value="0"/>
-      <Setter Property="Height" Value="28"/>
+      <Setter Property="MinWidth" Value="0"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
+      <Setter Property="CornerRadius" Value="3"/>
+
+      <!-- Replaces the Fluent ButtonSpinner template: it hardcodes MinWidth=34 on
+           the spin buttons (Template priority, not overridable by styles), which
+           leaves too little room for the value text. -->
+      <Setter Property="Template">
+        <ControlTemplate TargetType="ButtonSpinner">
+          <DataValidationErrors>
+            <Border x:Name="PART_SpinnerBorder"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    MinHeight="{TemplateBinding MinHeight}">
+              <DockPanel>
+                <StackPanel Name="PART_SpinnerPanel"
+                            TabIndex="2"
+                            DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            IsVisible="{TemplateBinding ShowButtonSpinner}">
+                  <RepeatButton Name="PART_IncreaseButton"
+                                Theme="{StaticResource ChapterTool.SpinnerRepeatButton}"
+                                IsTabStop="{TemplateBinding IsTabStop}"
+                                Background="Transparent"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1,0,0,0"
+                                Padding="0"
+                                VerticalAlignment="Stretch"
+                                VerticalContentAlignment="Center"
+                                Foreground="{TemplateBinding Foreground}">
+                    <PathIcon Width="12" Height="6" Data="{StaticResource ChapterTool.SpinnerIncreaseIcon}"/>
+                  </RepeatButton>
+                  <RepeatButton Name="PART_DecreaseButton"
+                                Theme="{StaticResource ChapterTool.SpinnerRepeatButton}"
+                                IsTabStop="{TemplateBinding IsTabStop}"
+                                Background="Transparent"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1,0,0,0"
+                                Padding="0"
+                                CornerRadius="0,2,2,0"
+                                VerticalAlignment="Stretch"
+                                VerticalContentAlignment="Center"
+                                Foreground="{TemplateBinding Foreground}">
+                    <PathIcon Width="12" Height="6" Data="{StaticResource ChapterTool.SpinnerDecreaseIcon}"/>
+                  </RepeatButton>
+                </StackPanel>
+                <ContentPresenter Name="PART_ContentPresenter"
+                                  TabIndex="1"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Content="{TemplateBinding Content}"
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                  Padding="{TemplateBinding Padding}"/>
+              </DockPanel>
+            </Border>
+          </DataValidationErrors>
+        </ControlTemplate>
+      </Setter>
     </Style>
     <Style Selector="^ /template/ TextBox#PART_TextBox">
       <Setter Property="MinHeight" Value="0"/>
-      <Setter Property="Height" Value="28"/>
+      <Setter Property="VerticalAlignment" Value="Stretch"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
       <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
       <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Disabled"/>
     </Style>
-    <Style Selector="^:focus-within /template/ ButtonSpinner#PART_Spinner">
+    <Style Selector="^ /template/ ButtonSpinner#PART_Spinner:pointerover /template/ Border#PART_SpinnerBorder">
+      <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+    </Style>
+    <Style Selector="^ /template/ ButtonSpinner#PART_Spinner:focus-within /template/ Border#PART_SpinnerBorder">
       <Setter Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
     </Style>
     <Style Selector="^ /template/ TextBox#PART_TextBox /template/ Border#PART_BorderElement">
@@ -1415,11 +1514,97 @@
               </Button>
             </StackPanel>
             <StackPanel Grid.Row="1" Name="PART_MessageView" IsVisible="False" Orientation="Horizontal" Margin="0 5 0 0">
-              <TextBlock Name="PART_MessageContent" FontSize="11" />
+              <TextBlock Name="PART_MessageContent" FontSize="12" />
             </StackPanel>
           </Grid>
         </Border>
       </ControlTemplate>
     </Setter>
+  </Style>
+
+  <Style Selector="Grid.toolToolbar">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Background" Value="{DynamicResource Brush.ToolBar}" />
+  </Style>
+
+  <Style Selector="Border.toolFooter">
+    <Setter Property="MinHeight" Value="44" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="Background" Value="{DynamicResource Brush.ToolBar}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border2}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+
+  <Style Selector="TextBlock.toolTitle">
+    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Large}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
+  </Style>
+
+  <Style Selector="TextBlock.toolLabel">
+    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="TextBlock.toolStatus">
+    <Setter Property="Foreground" Value="{DynamicResource Brush.FG2}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="TextBlock.optionLabel">
+    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
+    <Setter Property="FontSize" Value="{DynamicResource ChapterTool.FontSize.Default}" />
+    <Setter Property="MinHeight" Value="14" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="TextTrimming" Value="None" />
+  </Style>
+
+  <Style Selector="Grid.optionCell">
+    <Setter Property="MinHeight" Value="32" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="TextBox.gridEditor">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="TextBlock.frameText">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameNeutralBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.frameText.frameAccurate">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameAccurateBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.frameText.frameInexact">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameInexactBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.frameText.frameNeutral">
+    <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameNeutralBrush}" />
+  </Style>
+
+  <!-- SplitButton pointer-over and pressed backgrounds come from the Fluent
+       SplitButton* resource overrides in Themes.axaml; property setters on the
+       control do not reach the inner PART buttons. -->
+  <Style Selector="SplitButton.flat">
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border2}" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
+    <Setter Property="Background" Value="{DynamicResource Brush.FlatButton.Background}" />
+    <Setter Property="MinWidth" Value="96" />
+    <Setter Property="MinHeight" Value="40" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
 </Styles>

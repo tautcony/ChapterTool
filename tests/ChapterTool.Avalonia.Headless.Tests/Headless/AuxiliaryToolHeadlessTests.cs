@@ -151,7 +151,6 @@ public sealed class AuxiliaryToolHeadlessTests
             Assert.Contains(
                 window.GetVisualDescendants().OfType<Border>(),
                 border => border.Background is SolidColorBrush brush && brush.Color == expected);
-            Assert.Equal(expected, ResourceColor(AvaloniaThemeApplicationService.AuxiliaryContentBackgroundBrushKey));
         }
         finally
         {

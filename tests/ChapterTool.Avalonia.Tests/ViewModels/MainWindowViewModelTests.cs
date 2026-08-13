@@ -125,6 +125,32 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("Loading source...", progressStatuses);
         Assert.Contains("Exporting chapter text...", progressStatuses);
         Assert.Equal(1, vm.Progress);
+        Assert.False(vm.IsOperationRunning);
+    }
+
+    [Fact]
+    public async Task OperationRunningHidesWhenProgressIsIdleOrComplete()
+    {
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "Intro"))))
+        {
+            OnLoad = progress => progress?.Report(new ChapterImportProgress(ChapterImportProgressPhase.ParsingChapters, 0.5))
+        };
+        var vm = CreateViewModel(load);
+        var runningValues = new List<bool>();
+        vm.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(MainWindowViewModel.IsOperationRunning))
+            {
+                runningValues.Add(vm.IsOperationRunning);
+            }
+        };
+
+        Assert.False(vm.IsOperationRunning);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        Assert.Contains(true, runningValues);
+        Assert.False(vm.IsOperationRunning);
+        Assert.Equal(1, vm.Progress);
     }
 
     [Fact]
