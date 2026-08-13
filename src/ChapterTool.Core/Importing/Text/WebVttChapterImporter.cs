@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 
@@ -6,7 +8,7 @@ namespace ChapterTool.Core.Importing.Text;
 /// <summary>
 /// Imports WebVTT cue starts as chapter markers.
 /// </summary>
-public sealed class WebVttChapterImporter : IChapterImporter
+public sealed partial class WebVttChapterImporter : IChapterImporter
 {
     /// <summary>
     /// Gets the stable importer identifier.
@@ -58,7 +60,7 @@ public sealed class WebVttChapterImporter : IChapterImporter
             }
 
             var parts = lines[0].Split("-->", StringSplitOptions.TrimEntries);
-            if (parts.Length != 2 || !TimeSpan.TryParse(parts[0], out var start) || !TimeSpan.TryParse(parts[1], out var end))
+            if (parts.Length != 2 || !TryParseTimestamp(parts[0], out var start) || !TryParseTimestamp(parts[1], out var end))
             {
                 var code = parts.Length == 2 && parts[1].Contains(' ', StringComparison.Ordinal)
                     ? ChapterDiagnosticCode.WebVttUnsupportedTimingSettings
@@ -84,6 +86,49 @@ public sealed class WebVttChapterImporter : IChapterImporter
         return TextImportUtilities.SingleGroup(path, info);
     }
 
+    // The WebVTT timestamp grammar is [hh…:]mm:ss.ttt. The hour component is
+    // optional, has two or more digits, and may exceed 24. TimeSpan.TryParse
+    // rejects both the short form and hours >= 24, so parse the grammar directly.
+    private static bool TryParseTimestamp(string text, out TimeSpan value)
+    {
+        value = TimeSpan.Zero;
+        var match = TimestampRegex().Match(text);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var hours = 0L;
+        if (match.Groups["Hours"].Success
+            && !long.TryParse(match.Groups["Hours"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out hours))
+        {
+            return false;
+        }
+
+        if (hours > TimeSpan.MaxValue.Ticks / TimeSpan.TicksPerHour)
+        {
+            return false;
+        }
+
+        var minutes = int.Parse(match.Groups["Minutes"].Value, NumberStyles.None, CultureInfo.InvariantCulture);
+        var seconds = int.Parse(match.Groups["Seconds"].Value, NumberStyles.None, CultureInfo.InvariantCulture);
+        var milliseconds = int.Parse(match.Groups["Milliseconds"].Value, NumberStyles.None, CultureInfo.InvariantCulture);
+        var ticks = hours * TimeSpan.TicksPerHour
+            + minutes * TimeSpan.TicksPerMinute
+            + seconds * TimeSpan.TicksPerSecond
+            + milliseconds * TimeSpan.TicksPerMillisecond;
+        if (ticks < 0)
+        {
+            return false;
+        }
+
+        value = TimeSpan.FromTicks(ticks);
+        return true;
+    }
+
     private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
+
+    [GeneratedRegex(@"^(?:(?<Hours>\d{2,}):)?(?<Minutes>[0-5]\d):(?<Seconds>[0-5]\d)\.(?<Milliseconds>\d{3})$")]
+    private static partial Regex TimestampRegex();
 }

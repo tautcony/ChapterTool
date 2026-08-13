@@ -1,3 +1,5 @@
+using ChapterTool.Core.Diagnostics;
+
 namespace ChapterTool.Core.Importing.Cue;
 
 /// <summary>
@@ -38,7 +40,17 @@ public sealed class CueChapterImporter : IChapterImporter
             bytes = await File.ReadAllBytesAsync(request.Path, cancellationToken);
         }
 
-        var text = CueTextDecoder.Decode(bytes);
-        return CueSheetParser.Parse(text, request.Path);
+        var text = CueTextDecoder.Decode(bytes, out var usedEncodingFallback);
+        var result = CueSheetParser.Parse(text, request.Path);
+        if (!usedEncodingFallback)
+        {
+            return result;
+        }
+
+        var warning = new ChapterDiagnostic(
+            DiagnosticSeverity.Warning,
+            ChapterDiagnosticCode.CueEncodingFallback,
+            "CUE text is not valid UTF-8. Invalid byte sequences were replaced. The file may use a legacy encoding such as GBK or Shift-JIS.");
+        return result with { Diagnostics = [.. result.Diagnostics, warning] };
     }
 }

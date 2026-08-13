@@ -19,6 +19,7 @@ public readonly record struct ChapterDiagnosticCode(ChapterDiagnosticSource Sour
     public static readonly ChapterDiagnosticCode DependencyOutputMissing = new(ChapterDiagnosticSource.DependencyOutput, ChapterDiagnosticReason.Missing);
     public static readonly ChapterDiagnosticCode DependencyOutputTruncated = new(ChapterDiagnosticSource.DependencyOutput, ChapterDiagnosticReason.Truncated);
     public static readonly ChapterDiagnosticCode DependencyOutputUnrecognized = new(ChapterDiagnosticSource.DependencyOutput, ChapterDiagnosticReason.Unrecognized);
+    public static readonly ChapterDiagnosticCode CueEncodingFallback = new(ChapterDiagnosticSource.CueEncoding, ChapterDiagnosticReason.Unrecognized);
     public static readonly ChapterDiagnosticCode EmbeddedCueNotFound = new(ChapterDiagnosticSource.EmbeddedCue, ChapterDiagnosticReason.NotFound);
     public static readonly ChapterDiagnosticCode EmptyChapters = new(ChapterDiagnosticSource.Chapters, ChapterDiagnosticReason.Empty);
     public static readonly ChapterDiagnosticCode EmptyCueFile = new(ChapterDiagnosticSource.CueFile, ChapterDiagnosticReason.Empty);

@@ -37,7 +37,11 @@ internal sealed record MplsPlaylistProjection(
         for (var index = 0; index < playItems.Count; index++)
         {
             starts[index] = cursor;
-            cursor += playItems[index].OUTTime - playItems[index].INTime;
+
+            // Guard against uint wraparound when a malformed play item has OUTTime < INTime.
+            cursor += playItems[index].OUTTime >= playItems[index].INTime
+                ? playItems[index].OUTTime - playItems[index].INTime
+                : 0;
         }
 
         var chapters = BuildPlaylistChapters(playItems, marks, starts);
@@ -92,7 +96,7 @@ internal sealed record MplsPlaylistProjection(
             .. marks
                 .Select((mark, index) => new Chapter(
                     index + 1,
-                    MplsChapterImporter.PtsToTime(mark.MarkTimeStamp - offset),
+                    MplsChapterImporter.PtsToTime(mark.MarkTimeStamp >= offset ? mark.MarkTimeStamp - offset : 0),
                     $"Chapter {index + 1:D2}"))
         ];
     }

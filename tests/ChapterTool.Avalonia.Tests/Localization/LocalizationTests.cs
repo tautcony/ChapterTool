@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -98,6 +99,77 @@ public sealed partial class LocalizationTests
         Assert.Equal(
             AppLocalizationResources.All["zh-CN"][invalidIndexKey].Replace("{index}", "7", StringComparison.Ordinal),
             localizer.Format(invalidIndexKey, arguments));
+    }
+
+    [Fact]
+    public void ConstructorDoesNotChangeThreadCulture()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("zh-CN");
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("zh-CN");
+
+            _ = new AppLocalizationManager("en-US");
+
+            Assert.Equal("zh-CN", CultureInfo.CurrentCulture.Name);
+            Assert.Equal("zh-CN", CultureInfo.CurrentUICulture.Name);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
+    }
+
+    [Fact]
+    public void SetCultureAppliesThreadCultureWithoutEventWhenNameIsUnchanged()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        try
+        {
+            var localizer = new AppLocalizationManager("en-US");
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("zh-CN");
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("zh-CN");
+            var raised = 0;
+            localizer.CultureChanged += (_, _) => raised++;
+
+            localizer.SetCulture("en-US");
+
+            Assert.Equal("en-US", CultureInfo.CurrentCulture.Name);
+            Assert.Equal("en-US", CultureInfo.CurrentUICulture.Name);
+            Assert.Equal(0, raised);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
+    }
+
+    [Fact]
+    public void SetCultureAppliesThreadCultureAndRaisesEventOnChange()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        var originalUiCulture = CultureInfo.CurrentUICulture;
+        try
+        {
+            var localizer = new AppLocalizationManager("en-US");
+            var raised = 0;
+            localizer.CultureChanged += (_, _) => raised++;
+
+            localizer.SetCulture("ja-JP");
+
+            Assert.Equal("ja-JP", CultureInfo.CurrentUICulture.Name);
+            Assert.Equal(1, raised);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+            CultureInfo.CurrentUICulture = originalUiCulture;
+        }
     }
 
     [Fact]

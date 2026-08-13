@@ -41,10 +41,13 @@ public sealed class MatroskaChapterImporter(
                 location.Message ?? "mkvextract was not found."));
         }
 
+        // Resolve to an absolute path. The child process resolves relative paths
+        // against its own working directory, which is set to the file's parent.
+        var fullPath = Path.GetFullPath(request.Path);
         var processRequest = new ProcessRunRequest(
             location.Path,
-            ["chapters", request.Path],
-            Path.GetDirectoryName(request.Path),
+            ["chapters", fullPath],
+            Path.GetDirectoryName(fullPath),
             DefaultTimeout);
         ProcessRunResult result;
         try

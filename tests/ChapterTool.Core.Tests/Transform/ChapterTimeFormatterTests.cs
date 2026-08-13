@@ -22,13 +22,23 @@ public sealed class ChapterTimeFormatterTests
     }
 
     [Fact]
-    public void Format_preserves_legacy_second_rollover_without_carrying_minutes()
+    public void Format_carries_millisecond_rounding_through_seconds_and_minutes()
     {
         var time = new TimeSpan(0, 0, 59, 59, 999).Add(TimeSpan.FromTicks(9999));
 
         var actual = formatter.Format(time);
 
-        Assert.Equal("00:59:60.000", actual);
+        Assert.Equal("01:00:00.000", actual);
+    }
+
+    [Fact]
+    public void Format_carries_second_rollover_within_a_minute()
+    {
+        var time = new TimeSpan(0, 0, 0, 59, 999).Add(TimeSpan.FromTicks(9999));
+
+        var actual = formatter.Format(time);
+
+        Assert.Equal("00:01:00.000", actual);
     }
 
     [Fact]
@@ -42,13 +52,21 @@ public sealed class ChapterTimeFormatterTests
     }
 
     [Fact]
-    public void Format_uses_hour_component_for_times_over_one_day()
+    public void Format_uses_total_hours_for_times_over_one_day()
     {
         var time = TimeSpan.FromDays(1) + new TimeSpan(0, 1, 2, 3, 4);
 
         var actual = formatter.Format(time);
 
-        Assert.Equal("01:02:03.004", actual);
+        Assert.Equal("25:02:03.004", actual);
+    }
+
+    [Fact]
+    public void Format_clamps_negative_times_to_zero()
+    {
+        var actual = formatter.Format(new TimeSpan(0, 0, -1, -2, -500));
+
+        Assert.Equal("00:00:00.000", actual);
     }
 
     [Theory]
@@ -103,8 +121,9 @@ public sealed class ChapterTimeFormatterTests
     [Theory]
     [InlineData(0, 15, 19, 280, "15:19:21")]
     [InlineData(1, 2, 3, 4, "62:03:00")]
-    [InlineData(0, 0, 0, 999, "00:00:75")]
-    public void FormatCue_uses_total_minutes_and_75fps_legacy_frame_policy(
+    [InlineData(0, 0, 0, 999, "00:01:00")]
+    [InlineData(0, 0, 59, 999, "01:00:00")]
+    public void FormatCue_uses_total_minutes_and_carries_frame_75_into_seconds(
         int hours,
         int minutes,
         int seconds,
@@ -116,5 +135,23 @@ public sealed class ChapterTimeFormatterTests
         var actual = formatter.FormatCue(time);
 
         Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void FormatCue_uses_total_minutes_for_times_over_one_day()
+    {
+        var time = TimeSpan.FromDays(1) + new TimeSpan(0, 1, 2, 3, 0);
+
+        var actual = formatter.FormatCue(time);
+
+        Assert.Equal("1502:03:00", actual);
+    }
+
+    [Fact]
+    public void FormatCue_clamps_negative_times_to_zero()
+    {
+        var actual = formatter.FormatCue(TimeSpan.FromSeconds(-5));
+
+        Assert.Equal("00:00:00", actual);
     }
 }

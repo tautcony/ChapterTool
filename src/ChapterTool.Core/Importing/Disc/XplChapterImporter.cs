@@ -54,7 +54,7 @@ public sealed class XplChapterImporter : IChapterImporter
 
             return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], []);
         }
-        catch (Exception exception) when (exception is FormatException or InvalidDataException or InvalidOperationException or System.Xml.XmlException)
+        catch (Exception exception) when (exception is FormatException or InvalidDataException or InvalidOperationException or System.Xml.XmlException or OverflowException or DivideByZeroException)
         {
             return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.XplParseFailed, exception.Message));
         }
@@ -113,11 +113,24 @@ public sealed class XplChapterImporter : IChapterImporter
             return null;
         }
 
-        return double.Parse(value.Replace("fps", string.Empty, StringComparison.OrdinalIgnoreCase), CultureInfo.InvariantCulture);
+        var text = value.Replace("fps", string.Empty, StringComparison.OrdinalIgnoreCase);
+        if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            || !double.IsFinite(parsed)
+            || parsed <= 0)
+        {
+            throw new InvalidDataException($"Invalid XPL frame rate value: {value}");
+        }
+
+        return parsed;
     }
 
     private static TimeSpan ParseTime(string value, double timeBase, double tickBase, int tickBaseDivisor)
     {
+        if (tickBaseDivisor <= 0)
+        {
+            throw new InvalidDataException($"Invalid XPL tickBaseDivisor: {tickBaseDivisor}");
+        }
+
         var colon = value.LastIndexOf(':');
         if (colon <= 0)
         {
@@ -125,9 +138,20 @@ public sealed class XplChapterImporter : IChapterImporter
         }
 
         var main = TimeSpan.Parse(value[..colon], CultureInfo.InvariantCulture);
-        main = TimeSpan.FromSeconds(main.TotalSeconds / 60D * timeBase);
+        var scaledSeconds = main.TotalSeconds / 60D * timeBase;
+        if (!double.IsFinite(scaledSeconds) || Math.Abs(scaledSeconds) > TimeSpan.MaxValue.TotalSeconds)
+        {
+            throw new InvalidDataException($"HD-DVD time is out of range: {value}");
+        }
+
+        main = TimeSpan.FromSeconds(scaledSeconds);
         var tickDuration = TimeSpan.TicksPerSecond / ((decimal)tickBase / tickBaseDivisor);
         var ticks = decimal.Parse(value[(colon + 1)..], CultureInfo.InvariantCulture) * tickDuration;
+        if (ticks < long.MinValue || ticks > long.MaxValue)
+        {
+            throw new InvalidDataException($"HD-DVD tick value is out of range: {value}");
+        }
+
         return main.Add(TimeSpan.FromTicks((long)ticks));
     }
 

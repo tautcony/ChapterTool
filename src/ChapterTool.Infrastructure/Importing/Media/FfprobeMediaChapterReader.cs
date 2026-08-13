@@ -24,10 +24,13 @@ public sealed class FfprobeMediaChapterReader(
                 location.Message ?? "ffprobe was not found.");
         }
 
+        // Resolve to an absolute path. The child process resolves relative paths
+        // against its own working directory, which is set to the file's parent.
+        var fullPath = Path.GetFullPath(path);
         var request = new ProcessRunRequest(
             location.Path,
-            ["-v", "quiet", "-print_format", "json", "-show_chapters", path],
-            Path.GetDirectoryName(path),
+            ["-v", "quiet", "-print_format", "json", "-show_chapters", fullPath],
+            Path.GetDirectoryName(fullPath),
             DefaultTimeout);
 
         ProcessRunResult result;

@@ -18,6 +18,7 @@ public enum ChapterDiagnosticSource
     ChapterTimestamp,
     CombineSource,
     ContainerHeader,
+    CueEncoding,
     CueFile,
     CueSyntax,
     Dependency,

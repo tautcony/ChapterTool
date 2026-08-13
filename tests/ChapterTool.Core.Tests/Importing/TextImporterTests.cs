@@ -323,10 +323,62 @@ public sealed class TextImporterTests
         }
     }
 
+    [Fact]
+    public Task WebVttImporterAcceptsShortTimestampsWithoutHours()
+    {
+        try
+        {
+            var result = WebVttChapterImporter.ImportText(
+                """
+                WEBVTT
+
+                01:30.500 --> 10:03.500
+                Intro
+                """);
+
+            Assert.True(result.Success);
+            var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
+            Assert.Equal(new TimeSpan(0, 0, 1, 30, 500), chapter.StartTime);
+            Assert.Equal(new TimeSpan(0, 0, 10, 3, 500), chapter.EndTime);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
+    }
+
+    [Fact]
+    public Task WebVttImporterAcceptsTimestampsOverTwentyFourHours()
+    {
+        try
+        {
+            var result = WebVttChapterImporter.ImportText(
+                """
+                WEBVTT
+
+                25:00:00.000 --> 25:00:01.000
+                Marathon
+                """);
+
+            Assert.True(result.Success);
+            var chapter = result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single();
+            Assert.Equal(TimeSpan.FromHours(25), chapter.StartTime);
+            Assert.Equal(TimeSpan.FromHours(25) + TimeSpan.FromSeconds(1), chapter.EndTime);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
+    }
+
     [Theory]
     [InlineData("BAD\n\n00:00:00.000 --> 00:00:01.000\nIntro", ChapterDiagnosticSource.WebVttHeader, ChapterDiagnosticReason.Invalid)]
     [InlineData("WEBVTT\n\nbad timing\nIntro", ChapterDiagnosticSource.WebVttCue, ChapterDiagnosticReason.Malformed)]
     [InlineData("WEBVTT\n\n00:00:00.000 --> 00:00:01.000 align:start\nIntro", ChapterDiagnosticSource.WebVttTimingSettings, ChapterDiagnosticReason.Unsupported)]
+    [InlineData("WEBVTT\n\n00:60:00.000 --> 00:61:00.000\nIntro", ChapterDiagnosticSource.WebVttCue, ChapterDiagnosticReason.Malformed)]
+    [InlineData("WEBVTT\n\n99999999999999999999:00:00.000 --> 99999999999999999999:00:01.000\nIntro", ChapterDiagnosticSource.WebVttCue, ChapterDiagnosticReason.Malformed)]
     public Task WebVttImporterFailsMalformedInput(string text, ChapterDiagnosticSource source, ChapterDiagnosticReason reason)
     {
         try

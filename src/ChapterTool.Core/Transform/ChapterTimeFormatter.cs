@@ -16,15 +16,16 @@ public sealed partial class ChapterTimeFormatter : IChapterTimeFormatter
     /// <returns>The operation result.</returns>
     public string Format(TimeSpan time)
     {
-        var millisecond = (int)Math.Round(
-            (time.TotalSeconds - Math.Floor(time.TotalSeconds)) * 1000,
-            MidpointRounding.ToEven);
+        if (time < TimeSpan.Zero)
+        {
+            time = TimeSpan.Zero;
+        }
 
-        var seconds = millisecond == 1000
-            ? $"{time.Seconds + 1:D2}.000"
-            : $"{time.Seconds:D2}.{millisecond:D3}";
-
-        return $"{time.Hours:D2}:{time.Minutes:D2}:{seconds}";
+        // Rebuild from whole milliseconds so rounding carries through seconds, minutes and hours.
+        var totalMilliseconds = (long)Math.Round(time.TotalMilliseconds, MidpointRounding.ToEven);
+        var rounded = TimeSpan.FromMilliseconds(totalMilliseconds);
+        var hours = (long)rounded.TotalHours;
+        return $"{hours:D2}:{rounded.Minutes:D2}:{rounded.Seconds:D2}.{rounded.Milliseconds:D3}";
     }
 
     /// <summary>
@@ -66,13 +67,22 @@ public sealed partial class ChapterTimeFormatter : IChapterTimeFormatter
     /// <returns>The operation result.</returns>
     public string FormatCue(TimeSpan time)
     {
-        var frames = (int)Math.Round(time.Milliseconds * 75 / 1000F, MidpointRounding.ToEven);
-        if (frames > 99)
+        if (time < TimeSpan.Zero)
         {
-            frames = 99;
+            time = TimeSpan.Zero;
         }
 
-        return $"{time.Hours * 60 + time.Minutes:D2}:{time.Seconds:D2}:{frames:D2}";
+        var totalSeconds = (long)Math.Floor(time.TotalSeconds);
+        var frames = (int)Math.Round(time.Milliseconds * 75 / 1000F, MidpointRounding.ToEven);
+
+        // CUE frames are 0-74; a rounded value of 75 carries into the next second.
+        if (frames >= 75)
+        {
+            frames -= 75;
+            totalSeconds++;
+        }
+
+        return $"{totalSeconds / 60:D2}:{totalSeconds % 60:D2}:{frames:D2}";
     }
 
     private static bool TryParse(string text, out TimeSpan value)
