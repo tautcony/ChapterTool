@@ -1,5 +1,14 @@
 # __Change Log__
 
+## [23.3.1] - 2026.08.13
+
+- 完善原生 BDMV 导入：解析 INDEX、CLPI、BDJO 与 Movie Object，按完整播放列表发现标题，并以 eac3to 风格合并显示名称。
+- 对齐 libbluray 1.5.1 的 HDMV 位移与 CLPI 边界；加固导入器、时间格式化与本地化对异常输入的处理。
+- 统一 Avalonia 界面设计体系，改进载入入口与快捷键提示，并移除另存为入口。
+- 改进日志聚合与可读性。
+- 简化跨宿主 Avalonia 组合，桌面改用 Autofac 管理服务生命周期。
+- 完善 Node.js 包的 TypeScript 类型、测试与文档。
+
 ## [23.3.0] - 2026.07.30
 
 - 拆分桌面与命令行宿主：`ChapterTool.CommandLine` 成为独立 CLI 可执行文件与 .NET Tool；桌面 Avalonia 主机只负责图形界面启动，不再分发 CLI 参数。
