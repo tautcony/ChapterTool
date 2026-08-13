@@ -68,6 +68,7 @@ describe("ChapterTool package entry point", () => {
   it("rejects input above the shared byte limit before the WASM boundary", async () => {
     const tool = new ChapterTool();
 
+    await expect(tool.maxInputBytes()).resolves.toBe(MAX_INPUT_BYTES);
     await expect(tool.import("a".repeat(MAX_INPUT_BYTES + 1))).rejects.toMatchObject({
       name: "RangeError",
       code: "INPUT_TOO_LARGE",

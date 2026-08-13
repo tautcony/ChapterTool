@@ -40,15 +40,21 @@ public static class ChapterSavePath
     /// <param name="directory">The target directory.</param>
     /// <param name="baseFileName">The base file name without extension.</param>
     /// <param name="extension">The file extension, with or without a leading dot.</param>
+    /// <param name="fileExists">Reports whether a candidate path already exists. Desktop hosts pass <see cref="File.Exists"/>.</param>
     /// <returns>A unique absolute or relative path under the directory.</returns>
-    public static string AllocateUniqueFilePath(string directory, string baseFileName, string extension)
+    public static string AllocateUniqueFilePath(
+        string directory,
+        string baseFileName,
+        string extension,
+        Func<string, bool> fileExists)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
         ArgumentException.ThrowIfNullOrWhiteSpace(baseFileName);
+        ArgumentNullException.ThrowIfNull(fileExists);
 
         var normalizedExtension = NormalizeExtension(extension);
         var candidate = Path.Combine(directory, baseFileName + normalizedExtension);
-        if (!File.Exists(candidate))
+        if (!fileExists(candidate))
         {
             return candidate;
         }
@@ -56,7 +62,7 @@ public static class ChapterSavePath
         for (var index = 1; index < 10_000; index++)
         {
             candidate = Path.Combine(directory, $"{baseFileName}_{index}{normalizedExtension}");
-            if (!File.Exists(candidate))
+            if (!fileExists(candidate))
             {
                 return candidate;
             }

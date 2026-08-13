@@ -32,8 +32,8 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        var text = await TextImportUtilities.ReadTextAsync(request, cancellationToken);
-        return ImportText(text, request.Path);
+        var decoded = await TextImportUtilities.ReadTextAsync(request, cancellationToken);
+        return TextImportUtilities.WithEncodingFallback(ImportText(decoded.Text, request.Path), decoded.UsedEncodingFallback);
     }
 
     /// <summary>
@@ -73,7 +73,19 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
                     return PartialOrFailure(path, chapters, diagnostics, line);
                 }
 
-                timeCode = timeFormatter.ParseOrZero(TimeValueRegex().Match(line).Value) - initialTime;
+                var parsedTime = timeFormatter.ParseOrZero(TimeValueRegex().Match(line).Value) - initialTime;
+                if (parsedTime < TimeSpan.Zero)
+                {
+                    diagnostics.Add(new ChapterDiagnostic(
+                        DiagnosticSeverity.Warning,
+                        ChapterDiagnosticCode.PartialParse,
+                        "An OGM timestamp earlier than the first chapter was clamped to zero."));
+                    timeCode = TimeSpan.Zero;
+                }
+                else
+                {
+                    timeCode = parsedTime;
+                }
                 state = State.Name;
                 continue;
             }

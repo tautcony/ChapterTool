@@ -52,13 +52,27 @@ public sealed class SettingsMigrationTests
     }
 
     [Fact]
-    public async Task Non_lowercase_output_text_encoding_falls_back_to_utf8()
+    public async Task Mixed_case_output_text_encoding_ids_are_normalized()
     {
         var root = CreateTempDirectory();
         var store = new ChapterToolSettingsStore(root);
 
         await store.SaveAsync(
             new ChapterToolSettings { Application = new AppSettings(OutputTextEncoding: "UTF16LE") },
+            TestContext.Current.CancellationToken);
+
+        using var json = await ReadDocumentAsync(root);
+        Assert.Equal("utf16le", json.RootElement.GetProperty("application").GetProperty("outputTextEncoding").GetString());
+    }
+
+    [Fact]
+    public async Task Unknown_output_text_encoding_falls_back_to_utf8()
+    {
+        var root = CreateTempDirectory();
+        var store = new ChapterToolSettingsStore(root);
+
+        await store.SaveAsync(
+            new ChapterToolSettings { Application = new AppSettings(OutputTextEncoding: "latin1") },
             TestContext.Current.CancellationToken);
 
         using var json = await ReadDocumentAsync(root);

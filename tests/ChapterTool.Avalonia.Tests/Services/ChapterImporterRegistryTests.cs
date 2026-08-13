@@ -169,21 +169,7 @@ public sealed class ChapterImporterRegistryTests
         Assert.Null(registry.ResolveFallback("movie.mov", movPrimary, missingFfprobe));
     }
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.slnx")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
-    }
+    private static string RepositoryRoot() => ChapterTool.TestSupport.TestRepository.Root;
 
     private static RuntimeChapterImporterRegistry CreateRealRegistry()
         => RuntimeImportTestFactory.CreateRegistry();

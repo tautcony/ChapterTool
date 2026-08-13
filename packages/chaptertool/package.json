@@ -3,10 +3,14 @@
   "version": "23.3.0",
   "description": "Portable ChapterTool Core API for Node.js through .NET WebAssembly.",
   "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
     }
   },
   "files": [

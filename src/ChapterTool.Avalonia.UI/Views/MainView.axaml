@@ -484,18 +484,9 @@
           <ComboBox x:Name="FormatBox"
                     Grid.Column="1"
                     HorizontalAlignment="Stretch"
+                    ItemsSource="{Binding SaveFormatOptions}"
                     SelectedIndex="{Binding SaveFormatIndex}"
-                    AutomationProperties.AutomationId="ExportFormat">
-            <ComboBoxItem Content="TXT" />
-            <ComboBoxItem Content="XML" />
-            <ComboBoxItem Content="QPFile" />
-            <ComboBoxItem Content="TimeCodes" />
-            <ComboBoxItem Content="TsmuxerMeta" />
-            <ComboBoxItem Content="CUE" />
-            <ComboBoxItem Content="JSON" />
-            <ComboBoxItem Content="WebVTT" />
-            <ComboBoxItem Content="Celltimes" />
-          </ComboBox>
+                    AutomationProperties.AutomationId="ExportFormat" />
         </Grid>
 
         <Grid x:Name="ChapterNameOptionsGroup"

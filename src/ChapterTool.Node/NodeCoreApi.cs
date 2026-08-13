@@ -2,6 +2,7 @@ using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
@@ -13,7 +14,8 @@ namespace ChapterTool.Node;
 /// </summary>
 public static partial class NodeApi
 {
-    private static readonly ChapterEditingService EditingService = new(ChapterService!.TimeFormatter);
+    private static readonly ChapterContentService ChapterService = new();
+    private static readonly ChapterEditingService EditingService = new(ChapterService.TimeFormatter);
     private static readonly FrameRateService FrameRateService = new();
     private static readonly ChapterExpressionService ExpressionService = new();
     private static readonly ExpressionAuthoringService ExpressionAuthoringService = new();

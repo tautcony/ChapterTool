@@ -185,10 +185,15 @@ public sealed class BdmvImporterTests
     {
         if (!string.Equals(Environment.GetEnvironmentVariable("CHAPTERTOOL_RUN_FULL_DISC_PARITY"), "1", StringComparison.Ordinal))
         {
-            return;
+            Assert.Skip("Set CHAPTERTOOL_RUN_FULL_DISC_PARITY=1 to run full-disc parity.");
         }
 
-        var discRoot = @"D:\Downloads\[BDMV][アニメ][131213] 劇場版 STEINS;GATE 負荷領域のデジャヴ\BDISO";
+        var discRoot = Environment.GetEnvironmentVariable("CHAPTERTOOL_FULL_DISC_ROOT");
+        if (string.IsNullOrWhiteSpace(discRoot))
+        {
+            Assert.Skip("Set CHAPTERTOOL_FULL_DISC_ROOT to a BDMV disc root.");
+        }
+
         Assert.True(Directory.Exists(discRoot), $"Expected full disc: {discRoot}");
         var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(discRoot), CancellationToken.None);
         Assert.True(result.Success);

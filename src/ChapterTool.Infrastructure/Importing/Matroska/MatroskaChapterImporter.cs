@@ -28,7 +28,9 @@ public sealed class MatroskaChapterImporter(
     public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         ".mkv",
-        ".mka"
+        ".mka",
+        ".mks",
+        ".webm"
     };
 
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)

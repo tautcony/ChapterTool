@@ -1,3 +1,4 @@
+using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 
 namespace ChapterTool.Core.Importing.Cue;
@@ -28,16 +29,10 @@ public sealed class CueChapterImporter : IChapterImporter
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        byte[] bytes;
-        if (request.Content is not null)
+        var bytes = await PortableInputReader.ReadAllBytesAsync(request, cancellationToken);
+        if (bytes is null)
         {
-            using var memory = new MemoryStream();
-            await request.Content.CopyToAsync(memory, cancellationToken);
-            bytes = memory.ToArray();
-        }
-        else
-        {
-            bytes = await File.ReadAllBytesAsync(request.Path, cancellationToken);
+            return ChapterImportResult.Failed(PortableInputReader.TooLargeDiagnostic());
         }
 
         var text = CueTextDecoder.Decode(bytes, out var usedEncodingFallback);

@@ -12,7 +12,7 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
     private string selectedLanguage;
     private bool isRefreshingLanguages;
 
-    public LanguageToolViewModel(IPreferenceSink preferenceSink)
+    public LanguageToolViewModel(IPreferenceSink preferenceSink, Func<Exception, ValueTask>? errorHandler = null)
     {
         this.preferenceSink = preferenceSink;
         selectedLanguage = AppLanguage.Normalize(preferenceSink.UiLanguage);
@@ -28,7 +28,10 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
                 ? viewModel.SelectedLanguage
                 : AppLanguage.Normalize(parameter?.ToString());
             await preferenceSink.SaveUiLanguageAsync(language, token);
-        });
+        })
+        {
+            ErrorHandler = errorHandler
+        };
     }
 
     public IReadOnlyList<LanguageOptionViewModel> Languages => languages;

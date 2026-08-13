@@ -17,7 +17,7 @@ using Microsoft.Extensions.Logging;
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
 /// <summary>Coordinates the main window state, commands, and chapter workflows.</summary>
-public sealed partial class MainWindowViewModel : ObservableViewModel
+public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposable
 {
     private readonly IChapterEditingService editingService;
     private readonly ChapterSegmentService segmentService;
@@ -28,6 +28,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
     private readonly ProjectionFacade projectionFacade;
     private readonly StatusDiagnosticsPresenter statusDiagnosticsPresenter;
     private readonly DisplayOptionCoordinator displayOptionCoordinator;
+    private readonly EventHandler cultureChangedHandler;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     private FrameRateOption selectedFrameRateOption;
@@ -140,12 +141,20 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         RefreshXmlLanguageDisplayOptions(notify: false);
         RefreshChapterNameModeOptions();
         RefreshFrameRateDisplayOptions();
-        Localizer.CultureChanged += (_, _) => RefreshLocalizedState();
+        cultureChangedHandler = (_, _) => RefreshLocalizedState();
+        Localizer.CultureChanged += cultureChangedHandler;
         selectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
         Rows.CollectionChanged += OnRowsChanged;
 
         InitializeCommands();
+    }
+
+    public void Dispose()
+    {
+        Localizer.CultureChanged -= cultureChangedHandler;
+        ClipOptions.CollectionChanged -= OnClipOptionsChanged;
+        Rows.CollectionChanged -= OnRowsChanged;
     }
 
     /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
@@ -466,6 +475,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
         set => SaveFormat = ChapterExportFormats.AtIndex(value);
     }
 
+    public IReadOnlyList<string> SaveFormatOptions { get; } =
+        [.. ChapterExportFormats.All.Select(ChapterExportFormats.DisplayName)];
+
     public IReadOnlyList<string> XmlLanguageOptions { get; } =
         [.. XmlChapterLanguageCatalog.Languages.Select(static language => language.Code)];
 
@@ -620,7 +632,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel
 
         set
         {
-            if (isRefreshingChapterNameModeOptions)
+            if (isRefreshingChapterNameModeOptions || value == ChapterNameModeIndex)
             {
                 return;
             }

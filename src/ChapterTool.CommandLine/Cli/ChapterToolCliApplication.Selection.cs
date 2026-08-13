@@ -34,9 +34,15 @@ public sealed partial class ChapterToolCliApplication
         out ChapterImportSource? group,
         out CliSelectionResult? failure)
     {
-        var groupIndex = request.GroupIndex ?? (groups.Count == 1 ? 0 : null);
-        if (groupIndex is null || groupIndex < 0 || groupIndex >= groups.Count)
+        if (request.GroupIndex is null)
         {
+            if (groups.Count == 1)
+            {
+                group = groups[0];
+                failure = null;
+                return true;
+            }
+
             group = null;
             failure = CliSelectionResult.Failure(
                 localizer.GetString("Cli.Error.MultipleGroups"),
@@ -44,7 +50,16 @@ public sealed partial class ChapterToolCliApplication
             return false;
         }
 
-        group = groups[groupIndex.Value];
+        if (request.GroupIndex < 0 || request.GroupIndex >= groups.Count)
+        {
+            group = null;
+            failure = CliSelectionResult.Failure(
+                localizer.Format("Cli.Error.GroupIndex", new Dictionary<string, object?> { ["group"] = request.GroupIndex }),
+                AmbiguousSelectionDiagnostics(groups));
+            return false;
+        }
+
+        group = groups[request.GroupIndex.Value];
         failure = null;
         return true;
     }

@@ -55,7 +55,7 @@ The WebAssembly runtime is initialized once per Node.js process. Concurrent `Cha
 
 The package requires Node.js 20, 22, 24, or later. It accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It supports the byte-based import formats provided by `ChapterTool.Core`. It does not run desktop tools such as `ffprobe`, `ffmpeg`, or `mkvtoolnix`.
 
-Portable imports have a 64 MiB byte limit. The package checks the UTF-8 or binary byte count before it creates a conversion copy. An input above the limit throws a `RangeError` with `code` set to `INPUT_TOO_LARGE`.
+Portable imports have a 64 MiB byte limit. The package reads the live limit from `NodeApi.GetMaxInputBytes` after the runtime starts. The package checks the UTF-8 or binary byte count before it creates a conversion copy. An input above the limit throws a `RangeError` with `code` set to `INPUT_TOO_LARGE`.
 
 Supported export codes are `txt`, `xml`, `qpf`, `timecodes`, `tsmuxer`, `cue`, `json`, `vtt`, and `celltimes`.
 

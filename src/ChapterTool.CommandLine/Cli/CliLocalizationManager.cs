@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using ChapterTool.Core.Localization;
 
 namespace ChapterTool.CommandLine.Cli;
 
@@ -30,22 +31,20 @@ public sealed class CliLocalizationManager : ICliLocalizer
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? resources = null)
     {
         this.resources = resources ?? CliLocalizationResources.All;
-        CurrentCultureName = Normalize(initialCultureName);
-        ApplyCulture(CurrentCultureName);
+        CurrentCultureName = UiLanguageCode.Normalize(initialCultureName);
     }
 
     public string CurrentCultureName { get; private set; }
 
     public void SetCulture(string? cultureName)
     {
-        var normalized = Normalize(cultureName);
+        var normalized = UiLanguageCode.Normalize(cultureName);
         if (string.Equals(CurrentCultureName, normalized, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
 
         CurrentCultureName = normalized;
-        ApplyCulture(normalized);
     }
 
     public string GetString(string key) => TryGetString(key, out var value) ? value : key;
@@ -78,24 +77,13 @@ public sealed class CliLocalizationManager : ICliLocalizer
         {
             format = format.Replace(
                 "{" + name + "}",
-                Convert.ToString(value, CultureInfo.CurrentUICulture) ?? string.Empty,
+                Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
                 StringComparison.Ordinal);
         }
 
         return format;
     }
 
-    private static string Normalize(string? cultureName) =>
-        SupportedCultureNames.FirstOrDefault(culture =>
-            string.Equals(culture, cultureName?.Trim(), StringComparison.OrdinalIgnoreCase))
-        ?? DefaultCultureName;
-
-    private static void ApplyCulture(string cultureName)
-    {
-        var culture = CultureInfo.GetCultureInfo(cultureName);
-        CultureInfo.CurrentCulture = culture;
-        CultureInfo.CurrentUICulture = culture;
-    }
 }
 
 internal static class CliLocalizationResources

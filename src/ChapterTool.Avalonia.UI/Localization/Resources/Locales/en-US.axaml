@@ -84,6 +84,7 @@
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">The file is not a supported container.</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE text is empty or no chapters were parsed.</x:String>
   <x:String x:Key="Diagnostic.CueSyntax.Malformed" xml:space="preserve">CUE index syntax is unsupported or malformed.</x:String>
+  <x:String x:Key="Diagnostic.TextEncoding.Unrecognized" xml:space="preserve">Text is not valid UTF-8. Invalid byte sequences were replaced.</x:String>
   <x:String x:Key="Diagnostic.Dependency.Missing" xml:space="preserve">The required external tool was not found.</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">The operation was cancelled.</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Failed" xml:space="preserve">The operation failed: {message}</x:String>
@@ -419,6 +420,7 @@
   <x:String x:Key="Status.LoadingSource.Parse" xml:space="preserve">Parsing chapter text...</x:String>
   <x:String x:Key="Status.LoadingSource.Validate" xml:space="preserve">Validating source...</x:String>
   <x:String x:Key="Status.LuaExpressionPresetSelected" xml:space="preserve">Lua preset selected: {preset}</x:String>
+  <x:String x:Key="Status.LuaExpressionScriptLoadFailed" xml:space="preserve">Failed to load Lua script: {path}</x:String>
   <x:String x:Key="Status.LuaExpressionScriptLoaded" xml:space="preserve">Lua script loaded: {path}</x:String>
   <x:String x:Key="Status.NoCurrentMplsGroup" xml:space="preserve">No current MPLS group is loaded</x:String>
   <x:String x:Key="Status.NoPreview" xml:space="preserve">Nothing to preview.</x:String>

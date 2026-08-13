@@ -1,6 +1,6 @@
 import { dotnet } from "./runtime/_framework/dotnet.js";
 import { createRetryableLoader } from "./api-loader.js";
-import { requireFileName, toBytes } from "./utils/input.js";
+import { applyMaxInputBytes, requireFileName, toBytes } from "./utils/input.js";
 import { encodeJson, invokeJson } from "./utils/json.js";
 import {
   requireBoolean,
@@ -77,7 +77,9 @@ export class ChapterTool {
       .withMainAssembly("ChapterTool.Node")
       .create();
     const assembly = await runtime.getAssemblyExports<ChapterToolAssembly>("ChapterTool.Node");
-    return assembly.ChapterTool.Node.NodeApi;
+    const api = assembly.ChapterTool.Node.NodeApi;
+    applyMaxInputBytes(Number(api.GetMaxInputBytes()));
+    return api;
   });
 
   /**
@@ -131,8 +133,16 @@ export class ChapterTool {
    */
   async import(content: ChapterInput, options: { fileName?: string } = {}): Promise<ChapterImportResult> {
     const fileName = requireFileName(requireObject(options, "options").fileName);
+    await ChapterTool.#loadApi();
     const bytes = toBytes(content);
     return this.#invokeJson<ChapterImportResult>("Import", fileName, bytes.toString("base64"));
+  }
+
+  /**
+   * Returns the live portable input byte limit from the .NET Core.
+   */
+  async maxInputBytes(): Promise<number> {
+    return Number(await this.#invoke<number>("GetMaxInputBytes"));
   }
 
   /**

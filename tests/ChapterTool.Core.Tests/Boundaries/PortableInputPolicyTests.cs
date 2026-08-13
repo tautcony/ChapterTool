@@ -30,4 +30,64 @@ public sealed class PortableInputPolicyTests
         Assert.False(PortableInputPolicy.TryGetBase64DecodedLength("T$==", out _));
     }
 
+    [Fact]
+    public async Task CopyToBoundedMemoryRejectsSeekableStreamOverLimit()
+    {
+        using var source = new OversizedSeekableStream();
+        var copy = await PortableInputPolicy.CopyToBoundedMemoryAsync(source, TestContext.Current.CancellationToken);
+
+        Assert.True(copy.Exceeded);
+        Assert.Null(copy.Stream);
+        Assert.Equal(0, source.ReadCalls);
+    }
+
+    [Fact]
+    public async Task CopyToBoundedMemoryAcceptsSmallStream()
+    {
+        using var source = new MemoryStream("ok"u8.ToArray());
+        var copy = await PortableInputPolicy.CopyToBoundedMemoryAsync(source, TestContext.Current.CancellationToken);
+
+        Assert.False(copy.Exceeded);
+        Assert.NotNull(copy.Stream);
+        Assert.Equal("ok"u8.ToArray(), copy.Stream.ToArray());
+        await copy.Stream.DisposeAsync();
+    }
+
+    private sealed class OversizedSeekableStream : Stream
+    {
+        public int ReadCalls { get; private set; }
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => true;
+
+        public override bool CanWrite => false;
+
+        public override long Length => PortableInputPolicy.MaxBytes + 1;
+
+        public override long Position { get; set; }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            ReadCalls++;
+            return 0;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => Position = origin switch
+        {
+            SeekOrigin.Begin => offset,
+            SeekOrigin.Current => Position + offset,
+            SeekOrigin.End => Length + offset,
+            _ => Position
+        };
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
 }

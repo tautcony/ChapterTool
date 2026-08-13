@@ -24,6 +24,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
     private readonly ISettingsPickerService? picker;
     private readonly IShellService? shellService;
+    private readonly Func<Exception, ValueTask>? unexpectedErrorHandler;
     private readonly string? settingsDirectory;
     private readonly EventHandler cultureChangedHandler;
     private readonly EventHandler appearanceChangedHandler;
@@ -51,7 +52,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         IFontApplicationService? fontApplicationService = null,
         string? settingsDirectory = null,
         IRuntimeCapabilities? capabilities = null,
-        bool autoLoad = true)
+        bool autoLoad = true,
+        Func<Exception, ValueTask>? unexpectedErrorHandler = null)
     {
         this.preferenceSink = preferenceSink;
         this.SettingsStoreForTesting = settingsStore;
@@ -59,6 +61,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         this.picker = picker;
         this.ExternalToolLocatorForTesting = externalToolLocator;
         this.shellService = shellService;
+        this.unexpectedErrorHandler = unexpectedErrorHandler;
         this.settingsDirectory = settingsDirectory;
         Capabilities = capabilities ?? new RuntimeCapabilities(
             RuntimeSourceMode.LocalPath,
@@ -373,29 +376,45 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         Appearance.SetLiveApplyEnabled(false);
         try
         {
-            if (SettingsStoreForTesting is not null)
+            try
             {
-                var settings = await LoadSettingsOrDefaultAsync(cancellationToken);
-                savedSettings = ChapterToolSettings.Normalize(settings);
-                ApplyAppSettingsToFields(savedSettings.Application);
-                Appearance.ApplyThemeSettings(savedSettings.Theme);
-                Appearance.ApplyFontSettings(savedSettings.Font);
-                Appearance.ApplyToServices(savedSettings.Theme, savedSettings.Font);
+                if (SettingsStoreForTesting is not null)
+                {
+                    var settings = await LoadSettingsOrDefaultAsync(cancellationToken);
+                    savedSettings = ChapterToolSettings.Normalize(settings);
+                    ApplyAppSettingsToFields(savedSettings.Application);
+                    Appearance.ApplyThemeSettings(savedSettings.Theme);
+                    Appearance.ApplyFontSettings(savedSettings.Font);
+                    Appearance.ApplyToServices(savedSettings.Theme, savedSettings.Font);
 
-                // Capture the post-apply UI snapshot so resolved fonts/paths are not marked dirty.
-                savedSettings = CurrentSettings();
+                    // Capture the post-apply UI snapshot so resolved fonts/paths are not marked dirty.
+                    savedSettings = CurrentSettings();
+                }
+            }
+            finally
+            {
+                liveApplyEnabled = true;
+                Appearance.SetLiveApplyEnabled(true);
+            }
+
+            ApplyCurrentAppSettingsToOwner();
+            RefreshToolStatuses();
+            NotifyUnsavedChanges();
+            StatusText = StatusTextForCurrentLoadState();
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            SettingsLoadFailed = true;
+            StatusText = localizer.GetString("Status.UnexpectedError");
+            if (unexpectedErrorHandler is not null)
+            {
+                await unexpectedErrorHandler(exception);
             }
         }
-        finally
-        {
-            liveApplyEnabled = true;
-            Appearance.SetLiveApplyEnabled(true);
-        }
-
-        ApplyCurrentAppSettingsToOwner();
-        RefreshToolStatuses();
-        NotifyUnsavedChanges();
-        StatusText = StatusTextForCurrentLoadState();
     }
 
     private async ValueTask<ChapterToolSettings> LoadSettingsOrDefaultAsync(CancellationToken cancellationToken)
@@ -414,7 +433,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             SettingsLoadFailed = true;
             return ChapterToolSettings.Default;
         }
-        catch (Exception exception) when (exception.GetType().Name == "CorruptSettingsFileException")
+        catch (CorruptSettingsFileException)
         {
             SettingsLoadFailed = true;
             return ChapterToolSettings.Default;

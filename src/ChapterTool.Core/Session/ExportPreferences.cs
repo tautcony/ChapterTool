@@ -18,7 +18,7 @@ public sealed class ExportPreferences
     public OutputTextEncoding TextEncoding { get; private set; } = OutputTextEncoding.Utf8;
 
     /// <summary>Gets a value indicating whether a UTF BOM is emitted for text exports.</summary>
-    public bool EmitBom { get; private set; } = true;
+    public bool EmitBom { get; private set; }
 
     /// <summary>Configured save directory from settings (null means unresolved / source-relative).</summary>
     public string? SaveDirectory { get; private set; }

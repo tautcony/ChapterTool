@@ -144,13 +144,21 @@ public sealed class ChapterToolSettingsStore(string settingsDirectory) : ISettin
 
         try
         {
-            await using (var stream = File.Create(tempPath))
+            await using (var stream = new FileStream(
+                tempPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 4096,
+                FileOptions.Asynchronous))
             {
                 await JsonSerializer.SerializeAsync(
                     stream,
                     ChapterToolSettings.Normalize(settings),
                     AppJsonSerializerContext.Default.ChapterToolSettings,
                     cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+                stream.Flush(flushToDisk: true);
             }
 
             File.Move(tempPath, settingsPath, overwrite: true);

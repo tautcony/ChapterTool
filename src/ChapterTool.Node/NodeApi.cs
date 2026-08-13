@@ -14,8 +14,6 @@ namespace ChapterTool.Node;
 /// </summary>
 public static partial class NodeApi
 {
-    private static readonly ChapterContentService ChapterService = new();
-
     [JSExport]
     public static string Import(string fileName, string contentBase64)
     {
@@ -31,6 +29,11 @@ public static partial class NodeApi
             return SerializeImportFailure(
                 "INPUT_TOO_LARGE",
                 $"Input content exceeds the {PortableInputPolicy.MaxBytes:N0}-byte limit.");
+        }
+
+        if (contentLength == 0)
+        {
+            return SerializeImportFailure("EMPTY_INPUT", "Input content is empty.");
         }
 
         var content = Convert.FromBase64String(contentBase64);
@@ -80,6 +83,10 @@ public static partial class NodeApi
     [JSExport]
     public static bool IsBinaryExtension(string? extension) =>
         ChapterContentService.IsBinaryExtension(extension);
+
+    /// <summary>Returns the portable input byte limit from Core.</summary>
+    [JSExport]
+    public static double GetMaxInputBytes() => PortableInputPolicy.MaxBytes;
 
     private static NodeImportResponse ToImportResponse(ChapterImportResult result) =>
         new(
@@ -176,9 +183,19 @@ public static partial class NodeApi
             options.Expression,
             options.ExpressionPresetId,
             options.ExpressionSourceName,
-            Enum.Parse<OutputTextEncoding>(options.TextEncoding, ignoreCase: true),
+            ParseTextEncoding(options.TextEncoding),
             options.EmitBom,
             options.ProjectOutput);
+
+    private static OutputTextEncoding ParseTextEncoding(string? value)
+    {
+        if (OutputTextEncodings.TryParse(value, out var encoding))
+        {
+            return encoding;
+        }
+
+        throw new ArgumentException($"Unsupported text encoding: {value}", nameof(value));
+    }
 
     private static ChapterExportFormat ParseExportFormat(string code)
     {
@@ -263,7 +280,7 @@ public static partial class NodeApi
         string ExpressionPresetId = "",
         string ExpressionSourceName = "",
         string TextEncoding = "Utf8",
-        bool EmitBom = true,
+        bool EmitBom = false,
         bool ProjectOutput = true);
 
     [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]

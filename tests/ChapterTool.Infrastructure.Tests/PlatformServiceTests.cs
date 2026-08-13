@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.Infrastructure.Services;
@@ -48,6 +49,42 @@ public sealed class PlatformServiceTests
         Assert.Equal("cmd.exe", startInfo.FileName);
         Assert.Equal(directory, startInfo.WorkingDirectory);
         Assert.Equal(["/k"], startInfo.ArgumentList);
+    }
+
+    [Fact]
+    public async Task Shell_service_sends_windows_reveal_as_single_select_argument()
+    {
+        ProcessStartInfo? captured = null;
+        var service = new ShellService(null, startInfo =>
+        {
+            captured = startInfo;
+            return null;
+        });
+
+        if (!OperatingSystem.IsWindows())
+        {
+            await service.RevealInFolderAsync(@"C:\My File.mkv", TestContext.Current.CancellationToken);
+            return;
+        }
+
+        await service.RevealInFolderAsync(@"C:\My File.mkv", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(captured);
+        Assert.Equal("explorer", captured.FileName);
+        Assert.Equal(["/select,C:\\My File.mkv"], captured.ArgumentList);
+    }
+
+    [Fact]
+    public async Task Shell_service_logs_open_failures()
+    {
+        var logger = new RecordingLogger<ShellService>();
+        var service = new ShellService(logger, _ => throw new InvalidOperationException("launcher unavailable"));
+
+        await service.OpenAsync("missing.mkv", TestContext.Current.CancellationToken);
+
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Contains("missing.mkv", entry.Message, StringComparison.Ordinal);
     }
 
     [Fact]

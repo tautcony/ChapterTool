@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using ChapterTool.Core.Localization;
 
 namespace ChapterTool.Wasm.Services;
 
@@ -59,21 +60,7 @@ public sealed class WasmLocalizer
         T("Settings.About")
     ];
 
-    public static string Normalize(string? culture)
-    {
-        var normalized = culture?.Trim();
-        if (string.Equals(normalized, "zh-CN", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "zh", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "zh-Hans", StringComparison.OrdinalIgnoreCase))
-        {
-            return "zh-CN";
-        }
-
-        return string.Equals(normalized, "ja-JP", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(normalized, "ja", StringComparison.OrdinalIgnoreCase)
-            ? "ja-JP"
-            : "en-US";
-    }
+    public static string Normalize(string? culture) => UiLanguageCode.Normalize(culture);
 
     private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> LoadCatalog()
     {

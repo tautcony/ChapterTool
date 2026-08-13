@@ -83,7 +83,7 @@ public sealed class WasmWorkspace : IDisposable
         ExpressionPresetId = string.Empty;
         RoundFrames = true;
         TextEncoding = OutputTextEncoding.Utf8;
-        EmitBom = true;
+        EmitBom = false;
         FrameAccuracyTolerance = DefaultFrameAccuracyTolerance;
         selectedFrameRateIndex = 0;
         SetLocalizedStatus("Status.Ready");

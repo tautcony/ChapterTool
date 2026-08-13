@@ -17,7 +17,10 @@ public sealed record CliConvertRequest(
     string? SourceFileName,
     double? FrameRate,
     string? Expression = null,
-    string? ExpressionPreset = null);
+    string? ExpressionPreset = null,
+    bool Force = false,
+    string? TextEncoding = null,
+    bool EmitBom = false);
 
 public sealed record CliSelectionResult(bool IsSuccess, ChapterImportEntry? Entry, string Message, IReadOnlyList<ChapterDiagnostic> Diagnostics)
 {

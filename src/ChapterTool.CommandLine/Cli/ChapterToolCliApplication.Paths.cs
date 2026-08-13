@@ -1,4 +1,5 @@
-﻿using ChapterTool.Core.Exporting;
+﻿using ChapterTool.Contracts.Configuration;
+using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;
 
@@ -28,7 +29,7 @@ public sealed partial class ChapterToolCliApplication
 
         Directory.CreateDirectory(directory);
         var baseName = ChapterSavePath.BuildBaseFileName(info, request.InputPath);
-        return ChapterSavePath.AllocateUniqueFilePath(directory, baseName, format.FileExtension);
+        return ChapterSavePath.AllocateUniqueFilePath(directory, baseName, format.FileExtension, File.Exists);
     }
 
     private async Task<string?> ResolveDefaultOutputDirectoryAsync(string inputPath, CancellationToken cancellationToken)

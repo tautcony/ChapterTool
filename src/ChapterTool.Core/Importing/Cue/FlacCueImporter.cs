@@ -7,11 +7,8 @@ namespace ChapterTool.Core.Importing.Cue;
 /// <summary>
 /// Imports embedded CUE sheet chapter data from FLAC files.
 /// </summary>
-/// <param name="parser">The CUE sheet parser.</param>
-public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImporter
+public sealed class FlacCueImporter : IChapterImporter
 {
-    private readonly CueSheetParser parser = parser ?? new CueSheetParser();
-
     /// <summary>
     /// Gets the stable importer identifier.
     /// </summary>
@@ -33,35 +30,44 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        await using var stream = request.Content ?? File.OpenRead(request.Path);
-        string? cue;
+        Stream? ownedStream = null;
         try
         {
-            cue = ReadCue(stream);
-        }
-        catch (InvalidDataException exception) when (exception.Message == ChapterDiagnosticCode.InvalidContainerHeader.ToDisplayCode())
-        {
-            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidContainerHeader, "The file is not a FLAC container."));
-        }
+            var stream = request.Content ?? File.OpenRead(request.Path);
+            ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
+            string? cue;
+            try
+            {
+                cue = ReadCue(stream);
+            }
+            catch (InvalidDataException exception) when (exception.Message == ChapterDiagnosticCode.InvalidContainerHeader.ToDisplayCode())
+            {
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.InvalidContainerHeader, "The file is not a FLAC container."));
+            }
 
-        if (cue is null)
-        {
-            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.FlacEmbeddedCueNotFound, "No Vorbis cuesheet comment was found."));
-        }
+            if (cue is null)
+            {
+                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.FlacEmbeddedCueNotFound, "No Vorbis cuesheet comment was found."));
+            }
 
-        return CueSheetParser.Parse(cue, request.Path);
+            return CueSheetParser.Parse(cue, request.Path);
+        }
+        finally
+        {
+            ownedStream?.Dispose();
+        }
     }
 
     private static string? ReadCue(Stream stream)
     {
         Span<byte> header = stackalloc byte[4];
-        if (stream.Read(header) != 4 || Encoding.ASCII.GetString(header) != "fLaC")
+        if (!TryReadExact(stream, header) || Encoding.ASCII.GetString(header) != "fLaC")
         {
             throw new InvalidDataException(ChapterDiagnosticCode.InvalidContainerHeader.ToDisplayCode());
         }
 
         Span<byte> lengthBytes = stackalloc byte[3];
-        while (stream.Position < stream.Length)
+        while (true)
         {
             var blockHeader = stream.ReadByte();
             if (blockHeader < 0)
@@ -69,7 +75,7 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
                 break;
             }
 
-            if (stream.Read(lengthBytes) != 3)
+            if (!TryReadExact(stream, lengthBytes))
             {
                 break;
             }
@@ -78,7 +84,7 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
             var blockType = blockHeader & 0x7f;
             var length = (lengthBytes[0] << 16) | (lengthBytes[1] << 8) | lengthBytes[2];
             var block = new byte[length];
-            if (stream.Read(block) != length)
+            if (!TryReadExact(stream, block))
             {
                 break;
             }
@@ -99,6 +105,23 @@ public sealed class FlacCueImporter(CueSheetParser? parser = null) : IChapterImp
         }
 
         return null;
+    }
+
+    private static bool TryReadExact(Stream stream, Span<byte> buffer)
+    {
+        var offset = 0;
+        while (offset < buffer.Length)
+        {
+            var read = stream.Read(buffer[offset..]);
+            if (read == 0)
+            {
+                return false;
+            }
+
+            offset += read;
+        }
+
+        return true;
     }
 
     private static string? ReadVorbisComment(byte[] block)

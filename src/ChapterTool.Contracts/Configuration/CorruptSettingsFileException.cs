@@ -1,4 +1,4 @@
-namespace ChapterTool.Infrastructure.Configuration;
+namespace ChapterTool.Contracts.Configuration;
 
 public sealed class CorruptSettingsFileException : Exception
 {

@@ -57,7 +57,8 @@ public static class StandardToolCatalogFactory
                         context.FontFamilyCatalog,
                         context.FontApplicationService,
                         context.SettingsDirectory,
-                        context.Capabilities)
+                        context.Capabilities,
+                        unexpectedErrorHandler: context.Session.ReportUnexpectedUiException)
                 },
                 RequiresCloseConfirmation: true),
             new ToolDescriptor(
@@ -67,7 +68,9 @@ public static class StandardToolCatalogFactory
                 ToolRefreshPolicy.Reuse,
                 context => new LanguageToolView
                 {
-                    DataContext = new LanguageToolViewModel(context.Session.Preferences)
+                    DataContext = new LanguageToolViewModel(
+                        context.Session.Preferences,
+                        context.Session.ReportUnexpectedUiException)
                 }),
             new ToolDescriptor(
                 ToolIds.Expression,
@@ -79,7 +82,8 @@ public static class StandardToolCatalogFactory
                     DataContext = new ExpressionToolViewModel(
                         context.Session.Expression,
                         context.FilePicker,
-                        context.ExpressionAuthoringService)
+                        context.ExpressionAuthoringService,
+                        context.Session.ReportUnexpectedUiException)
                 }),
             new ToolDescriptor(
                 ToolIds.TemplateNames,
@@ -108,7 +112,9 @@ public static class StandardToolCatalogFactory
                 ToolRefreshPolicy.RefreshRequest,
                 context => new ForwardShiftToolView
                 {
-                    DataContext = new ForwardShiftToolViewModel(context.Session.ChapterEdit)
+                    DataContext = new ForwardShiftToolViewModel(
+                        context.Session.ChapterEdit,
+                        context.Session.ReportUnexpectedUiException)
                 })
         ]);
     }

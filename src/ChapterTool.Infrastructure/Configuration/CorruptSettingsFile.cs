@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using ChapterTool.Contracts.Configuration;
 
 namespace ChapterTool.Infrastructure.Configuration;
 
@@ -34,7 +35,15 @@ internal static class CorruptSettingsFile
             }
 
             var backupPath = NextBackupPath(path);
-            File.Move(path, backupPath);
+            try
+            {
+                File.Move(path, backupPath);
+            }
+            catch (Exception moveException) when (moveException is IOException or UnauthorizedAccessException)
+            {
+                return new CorruptSettingsFileException(path, backupPath + " (unavailable)", new AggregateException(exception, moveException));
+            }
+
             MarkConcurrentPreservation(key, backupPath);
             return new CorruptSettingsFileException(path, backupPath, exception);
         }

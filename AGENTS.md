@@ -13,6 +13,7 @@
   - `tests/ChapterTool.Infrastructure.Tests`
   - `tests/ChapterTool.Avalonia.Tests` (ViewModel/CLI/service unit tests)
   - `tests/ChapterTool.Avalonia.Headless.Tests` (Avalonia Headless UI tests in a separate process)
+  - `tests/ChapterTool.TestSupport` (shared repository root, fixture paths, and test logger)
 - Prefer `rg` for searching files and text.
 - Use `docs/code-map/` as the primary navigation index for the current codebase.
 - Update the applicable code-map files when feature work changes module ownership, entry points, runtime wiring, or primary tests.

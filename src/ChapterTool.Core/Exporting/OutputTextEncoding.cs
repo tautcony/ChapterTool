@@ -69,14 +69,41 @@ public static class OutputTextEncodings
     /// <summary>Parses a lowercase settings identifier, defaulting to UTF-8.</summary>
     public static OutputTextEncoding ParseOrDefault(string? value)
     {
-        return value switch
+        return TryParse(value, out var encoding) ? encoding : OutputTextEncoding.Utf8;
+    }
+
+    /// <summary>
+    /// Parses an encoding from a settings id such as <c>utf16le</c> or an enum name such as <c>Utf16LittleEndian</c>.
+    /// </summary>
+    public static bool TryParse(string? value, out OutputTextEncoding encoding)
+    {
+        encoding = OutputTextEncoding.Utf8;
+        if (string.IsNullOrWhiteSpace(value))
         {
-            "utf16le" => OutputTextEncoding.Utf16LittleEndian,
-            "utf16be" => OutputTextEncoding.Utf16BigEndian,
-            "utf32le" => OutputTextEncoding.Utf32LittleEndian,
-            "utf32be" => OutputTextEncoding.Utf32BigEndian,
-            _ => OutputTextEncoding.Utf8
-        };
+            return false;
+        }
+
+        var normalized = value.Trim();
+        switch (normalized.ToLowerInvariant())
+        {
+            case "utf8":
+                encoding = OutputTextEncoding.Utf8;
+                return true;
+            case "utf16le":
+                encoding = OutputTextEncoding.Utf16LittleEndian;
+                return true;
+            case "utf16be":
+                encoding = OutputTextEncoding.Utf16BigEndian;
+                return true;
+            case "utf32le":
+                encoding = OutputTextEncoding.Utf32LittleEndian;
+                return true;
+            case "utf32be":
+                encoding = OutputTextEncoding.Utf32BigEndian;
+                return true;
+        }
+
+        return Enum.TryParse(normalized, ignoreCase: true, out encoding) && Enum.IsDefined(encoding);
     }
 
     /// <summary>Returns the encoding name used in XML declarations.</summary>

@@ -111,7 +111,7 @@ public sealed class SettingsToolHeadlessTests
     {
         var shellService = new MainWindowHeadlessTestHost.FakeShellService();
         using var host = new MainWindowHeadlessTestHost(shellService: shellService);
-        var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool-settings-folder-test");
+        var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         using var viewModel = new SettingsToolViewModel(
             host.ViewModel.PortAdapters.Preferences,
             host.SettingsStore,

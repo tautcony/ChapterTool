@@ -28,9 +28,19 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         }
 
         var parsed = timeFormatter.Parse(text);
-        var value = parsed.Value >= TimeSpan.FromDays(1) ? TimeSpan.Zero : parsed.Value;
+        var diagnostics = parsed.Diagnostics.ToList();
+        var value = parsed.Value;
+        if (value >= TimeSpan.FromDays(1))
+        {
+            value = TimeSpan.Zero;
+            diagnostics.Add(new ChapterDiagnostic(
+                DiagnosticSeverity.Warning,
+                ChapterDiagnosticCode.InvalidTimeText,
+                "A chapter time of 24 hours or more was reset to zero."));
+        }
+
         chapters[index] = chapter with { StartTime = value };
-        return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, parsed.Diagnostics);
+        return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, diagnostics);
     }
 
     /// <summary>

@@ -30,5 +30,5 @@ public sealed record ChapterExportOptions(
     string ExpressionPresetId = "",
     string ExpressionSourceName = "",
     OutputTextEncoding TextEncoding = OutputTextEncoding.Utf8,
-    bool EmitBom = true,
+    bool EmitBom = false,
     bool ProjectOutput = true);

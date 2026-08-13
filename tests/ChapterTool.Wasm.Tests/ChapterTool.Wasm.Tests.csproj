@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ChapterTool.Wasm\ChapterTool.Wasm.csproj" />
+    <ProjectReference Include="..\ChapterTool.TestSupport\ChapterTool.TestSupport.csproj" />
   </ItemGroup>
 
 </Project>

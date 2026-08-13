@@ -83,6 +83,7 @@ public enum ChapterDiagnosticSource
     StandardOutput,
     Structure,
     TimecodeText,
+    TextEncoding,
     TimeText,
     WebVtt,
     WebVttCue,

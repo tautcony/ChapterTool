@@ -70,9 +70,18 @@ public sealed partial class ChapterToolCliApplication
             return false;
         }
 
-        if (request.FrameRate is <= 0)
+        if (request.FrameRate is { } frameRate && (!double.IsFinite(frameRate) || frameRate <= 0))
         {
             console.WriteErrorLine(localizer.GetString("Cli.Error.FrameRatePositive"));
+            format = null!;
+            errorCode = 1;
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.TextEncoding)
+            && !OutputTextEncodings.TryParse(request.TextEncoding, out _))
+        {
+            console.WriteErrorLine(localizer.Format("Cli.Error.UnsupportedEncoding", new Dictionary<string, object?> { ["encoding"] = request.TextEncoding }));
             format = null!;
             errorCode = 1;
             return false;
@@ -156,13 +165,26 @@ public sealed partial class ChapterToolCliApplication
             return 1;
         }
 
+        if (File.Exists(targetPath) && !request.Force)
+        {
+            console.WriteErrorLine(localizer.Format("Cli.Error.OutputExists", new Dictionary<string, object?> { ["path"] = targetPath }));
+            return 1;
+        }
+
         var directory = Path.GetDirectoryName(targetPath);
         if (!string.IsNullOrWhiteSpace(directory))
         {
             Directory.CreateDirectory(directory);
         }
 
-        await File.WriteAllTextAsync(targetPath, export.Content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
+        var encoding = OutputTextEncodings.TryParse(request.TextEncoding, out var parsedEncoding)
+            ? parsedEncoding
+            : OutputTextEncoding.Utf8;
+        await File.WriteAllTextAsync(
+            targetPath,
+            export.Content,
+            OutputTextEncodings.Create(encoding, request.EmitBom),
+            cancellationToken);
         console.WriteLine(targetPath);
 
         if (export.Diagnostics.Count > 0)

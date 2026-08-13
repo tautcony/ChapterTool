@@ -66,15 +66,9 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task AppendMplsMergesGroupsAndKeepsSessionOnFailure()
+    public async Task AppendMplsRejectsNonMplsWithoutClearingSession()
     {
         var workspace = CreateWorkspace();
-        var existing = CreateMplsImport("base.mpls", "A", TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(20));
-        var appended = CreateMplsImport("append.mpls", "B", TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(15));
-
-        // Seed via public load of text first, then inject MPLS groups through Append path by loading synthetic binary is hard.
-        // Instead exercise Append against a workspace prepared with a successful text load and replace via Append failure path,
-        // then verify non-MPLS append is rejected without clearing the session.
         await workspace.LoadAsync("sample.txt", [
             .. """
                CHAPTER01=00:00:00.000
@@ -88,10 +82,23 @@ public sealed class WasmWorkspaceTests
         await workspace.AppendMplsAsync("not-mpls.txt", [.. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=X\n"u8]);
         Assert.Equal(beforeCount, workspace.Rows.Count);
         Assert.False(string.IsNullOrWhiteSpace(workspace.SourcePath));
+    }
 
-        // Direct segment append contract covered by Core tests; browser workspace surfaces CanAppend only for MPLS sessions.
-        _ = existing;
-        _ = appended;
+    [Fact]
+    public async Task AppendMplsMergesPlaylistGroups()
+    {
+        var workspace = CreateWorkspace();
+        var firstPath = LocateFixture("Importing", "Disc", "Mpls", "00011_24_Eva.mpls");
+        var secondPath = LocateFixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls");
+        await workspace.LoadAsync(firstPath, await File.ReadAllBytesAsync(firstPath));
+        var firstClips = workspace.ClipOptions.Count;
+        var firstRows = workspace.Rows.Count;
+        Assert.True(workspace.CanAppendMpls);
+
+        await workspace.AppendMplsAsync(secondPath, await File.ReadAllBytesAsync(secondPath));
+
+        Assert.True(workspace.ClipOptions.Count >= firstClips);
+        Assert.True(workspace.Rows.Count >= firstRows);
     }
 
     [Fact]
@@ -122,13 +129,12 @@ public sealed class WasmWorkspaceTests
         Assert.True(workspace.IsRowSelected(0));
         Assert.True(workspace.IsRowSelected(2));
 
-        workspace.SelectedFrameRateIndex = 1; // pick a fixed rate when available
+        workspace.SelectedFrameRateIndex = 1;
         workspace.ApplyOptionsAndRefresh();
-        if (workspace.FramesPerSecond > 0)
-        {
-            var zones = workspace.CreateZonesForSelection();
-            Assert.False(string.IsNullOrWhiteSpace(zones));
-        }
+        Assert.True(workspace.FramesPerSecond > 0);
+        var zones = workspace.CreateZonesForSelection();
+        Assert.StartsWith("--zones ", zones, StringComparison.Ordinal);
+        Assert.Contains(",", zones, StringComparison.Ordinal);
 
         workspace.DeleteSelectedRows();
         Assert.Single(workspace.Rows);
@@ -276,8 +282,7 @@ public sealed class WasmWorkspaceTests
         Assert.True(workspace.HasDiagnostics);
         Assert.Contains(workspace.Diagnostics, diagnostic =>
             diagnostic.Code.Contains("Expression", StringComparison.OrdinalIgnoreCase)
-            || diagnostic.Code.Contains("Lua", StringComparison.OrdinalIgnoreCase)
-            || diagnostic.Message.Length > 0);
+            || diagnostic.Code.Contains("Lua", StringComparison.OrdinalIgnoreCase));
         Assert.False(string.IsNullOrWhiteSpace(workspace.StatusText));
         Assert.Contains(workspace.Diagnostics[0].Message, workspace.StatusText, StringComparison.Ordinal);
     }
@@ -366,41 +371,8 @@ public sealed class WasmWorkspaceTests
 
     private static WasmWorkspace CreateWorkspace() => new(new WasmChapterService());
 
-    private static string LocateFixture(params string[] segments)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            var candidate = Path.Combine(new[] { directory.FullName, "tests", "ChapterTool.Core.Tests", "Fixtures" }.Concat(segments).ToArray());
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            // Some layouts place fixtures next to the Core.Tests project root.
-            candidate = Path.Combine(new[] { directory.FullName }.Concat(segments).ToArray());
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        // Prefer Core.Tests FixtureResolver layout from repo root.
-        directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.slnx")))
-            {
-                return Path.Combine(new[] { directory.FullName, "tests", "ChapterTool.Core.Tests", "Fixtures" }.Concat(segments).ToArray());
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new FileNotFoundException("Could not locate test fixture: " + string.Join('/', segments));
-    }
+    private static string LocateFixture(params string[] segments) =>
+        ChapterTool.TestSupport.TestRepository.CoreFixture(segments);
 
     private static byte[] CreateFlacWithVorbisCue(string cue)
     {
@@ -431,20 +403,4 @@ public sealed class WasmWorkspaceTests
         stream.WriteByte((byte)((value >> 24) & 0xFF));
     }
 
-    private static ChapterImportSource CreateMplsImport(string path, string name, TimeSpan chapterTime, TimeSpan duration) =>
-        new(
-            path,
-            [
-                new ChapterImportEntry(
-                    "1",
-                    name,
-                    new ChapterSet(
-                        name,
-                        name,
-                        ChapterImportFormat.Mpls,
-                        24,
-                        duration,
-                        [new Chapter(1, TimeSpan.Zero, name), new Chapter(2, chapterTime, name + "-2")]),
-                    ReferencedMediaFiles: [new ReferencedMediaFile($"{name}.m2ts", $"../STREAM/{name}.m2ts")])
-            ]);
 }

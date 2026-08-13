@@ -33,6 +33,7 @@ public sealed class ExternalToolLocator(
         }
 
         var executableName = ExternalToolPathResolver.ExecutableName(toolId);
+        string? rejectedConfiguredPath = null;
 
         foreach (var candidate in ExternalToolPathResolver.ExpandConfiguredCandidates(configuredPath, executableName))
         {
@@ -40,6 +41,8 @@ public sealed class ExternalToolLocator(
             {
                 return Cache(cacheKey, new ExternalToolLocation(true, candidate));
             }
+
+            rejectedConfiguredPath = candidate;
         }
 
         foreach (var directory in searchDirectories ?? [])
@@ -72,11 +75,14 @@ public sealed class ExternalToolLocator(
             }
         }
 
+        var message = string.IsNullOrWhiteSpace(rejectedConfiguredPath)
+            ? $"External tool '{toolId}' was not found."
+            : $"External tool '{toolId}' was not found. The configured path '{rejectedConfiguredPath}' was not an executable candidate.";
         return Cache(cacheKey, new ExternalToolLocation(
             false,
             null,
             ChapterDiagnosticCode.MissingDependency,
-            $"External tool '{toolId}' was not found."));
+            message));
     }
 
     private static string? GetConfiguredPath(string toolId, AppSettings settings) =>

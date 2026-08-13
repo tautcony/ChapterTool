@@ -16,5 +16,6 @@
     <Project Path="tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj" />
     <Project Path="tests/ChapterTool.Wasm.Tests/ChapterTool.Wasm.Tests.csproj" />
     <Project Path="tests/ChapterTool.Infrastructure.Tests/ChapterTool.Infrastructure.Tests.csproj" />
+    <Project Path="tests/ChapterTool.TestSupport/ChapterTool.TestSupport.csproj" />
   </Folder>
 </Solution>

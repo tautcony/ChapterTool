@@ -35,7 +35,7 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
         {
             Directory.CreateDirectory(targetDirectory);
             var baseName = ChapterSavePath.BuildBaseFileName(info, sourcePath);
-            var path = ChapterSavePath.AllocateUniqueFilePath(targetDirectory, baseName, result.FileExtension);
+            var path = ChapterSavePath.AllocateUniqueFilePath(targetDirectory, baseName, result.FileExtension, File.Exists);
             await File.WriteAllTextAsync(
                 path,
                 result.Content,
