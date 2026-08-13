@@ -95,6 +95,33 @@ public sealed class XplImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
     }
 
+    [Theory]
+    [InlineData("tickBase=\"0fps\"", "titleDuration=\"00:00:10:00\"")]
+    [InlineData("timeBase=\"1e400fps\"", "titleDuration=\"00:00:10:00\"")]
+    [InlineData("", "titleDuration=\"99999999999:00:00:00\"")]
+    [InlineData("", "titleDuration=\"00:00:10:99999999999999999999999999999\"")]
+    public async Task XplImporterFailsMalformedNumericAttributesWithoutThrowing(string titleSetAttributes, string durationAttribute)
+    {
+        var xml = $"""
+                   <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
+                     <TitleSet {titleSetAttributes}>
+                       <Title {durationAttribute}>
+                         <ChapterList>
+                           <Chapter titleTimeBegin="00:00:00:00" />
+                         </ChapterList>
+                       </Title>
+                     </TitleSet>
+                   </Playlist>
+                   """;
+        var importer = new XplChapterImporter();
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml));
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("malformed.xpl", stream), TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
+    }
+
     [Fact]
     public async Task XplImporterRejectsDtdInput()
     {

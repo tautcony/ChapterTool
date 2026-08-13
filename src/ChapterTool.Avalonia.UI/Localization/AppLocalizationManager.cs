@@ -10,9 +10,11 @@ public sealed class AppLocalizationManager : IAppLocalizer
         string? initialCultureName = null,
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>? resources = null)
     {
+        // The constructor must not touch the thread culture. Secondary instances
+        // (for example fixed-language log-content localizers) only need resource
+        // lookup. Only an explicit SetCulture call applies the thread culture.
         this.resources = resources ?? AppLocalizationResources.All;
         CurrentCultureName = Normalize(initialCultureName);
-        ApplyCulture(CurrentCultureName, raiseEvent: false);
     }
 
     public event EventHandler? CultureChanged;
@@ -24,13 +26,12 @@ public sealed class AppLocalizationManager : IAppLocalizer
     public void SetCulture(string? cultureName)
     {
         var normalized = Normalize(cultureName);
-        if (string.Equals(CurrentCultureName, normalized, StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
+        var changed = !string.Equals(CurrentCultureName, normalized, StringComparison.OrdinalIgnoreCase);
         CurrentCultureName = normalized;
-        ApplyCulture(normalized, raiseEvent: true);
+
+        // Always re-apply the thread culture so an explicit SetCulture call can
+        // correct a polluted thread state, but raise the event only on change.
+        ApplyCulture(normalized, raiseEvent: changed);
     }
 
     public string GetString(string key) => TryGetString(key, out var value) ? value : key;

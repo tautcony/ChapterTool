@@ -164,12 +164,27 @@ public sealed class MatroskaChapterImporterTests
     {
         var runner = new FakeProcessRunner(Successful(ValidXml));
         var importer = NewImporter(runner: runner);
-        const string path = @"C:\media\movie with spaces.mkv";
+        var path = Path.Combine(Path.GetTempPath(), "media", "movie with spaces.mkv");
 
         await importer.ImportAsync(new ChapterImportRequest(path), TestContext.Current.CancellationToken);
 
         Assert.NotNull(runner.LastRequest);
-        Assert.Equal(["chapters", path], runner.LastRequest.Arguments);
+        Assert.Equal(["chapters", Path.GetFullPath(path)], runner.LastRequest.Arguments);
+    }
+
+    [Fact]
+    public async Task ImportAsyncNormalizesRelativePathsBeforeInvokingMkvextract()
+    {
+        var runner = new FakeProcessRunner(Successful(ValidXml));
+        var importer = NewImporter(runner: runner);
+        var relativePath = Path.Combine("media", "movie.mkv");
+
+        await importer.ImportAsync(new ChapterImportRequest(relativePath), TestContext.Current.CancellationToken);
+
+        var expectedPath = Path.GetFullPath(relativePath);
+        Assert.NotNull(runner.LastRequest);
+        Assert.Equal(["chapters", expectedPath], runner.LastRequest.Arguments);
+        Assert.Equal(Path.GetDirectoryName(expectedPath), runner.LastRequest.WorkingDirectory);
     }
 
     private static MatroskaChapterImporter NewImporter(

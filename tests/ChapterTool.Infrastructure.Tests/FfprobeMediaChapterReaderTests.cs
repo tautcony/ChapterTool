@@ -30,14 +30,15 @@ public sealed class FfprobeMediaChapterReaderTests
             }
             """));
         var reader = new FfprobeMediaChapterReader(new FakeToolLocator(new ExternalToolLocation(true, "/tools/ffprobe")), runner);
+        var path = Path.Combine(Path.GetTempPath(), "media", "movie with spaces.mkv");
 
-        var result = await reader.ReadAsync("/media/movie with spaces.mkv", TestContext.Current.CancellationToken);
+        var result = await reader.ReadAsync(path, TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, result.Message);
         Assert.NotNull(runner.LastRequest);
         Assert.Equal("/tools/ffprobe", runner.LastRequest.FileName);
         Assert.Equal(
-            ["-v", "quiet", "-print_format", "json", "-show_chapters", "/media/movie with spaces.mkv"],
+            ["-v", "quiet", "-print_format", "json", "-show_chapters", Path.GetFullPath(path)],
             runner.LastRequest.Arguments);
         Assert.Equal(TimeSpan.FromSeconds(30), runner.LastRequest.Timeout);
 
@@ -48,6 +49,21 @@ public sealed class FfprobeMediaChapterReaderTests
         Assert.Equal("5.000000", chapter.StartTime);
         Assert.Equal("日本語", chapter.Tags["title"]);
         Assert.Equal("100", chapter.Tags["EDITION_UID"]);
+    }
+
+    [Fact]
+    public async Task ReadAsyncNormalizesRelativePathsBeforeInvokingFfprobe()
+    {
+        var runner = new FakeProcessRunner(SuccessfulJson("""{"chapters":[{"id":1}]}"""));
+        var reader = new FfprobeMediaChapterReader(new FakeToolLocator(new ExternalToolLocation(true, "/tools/ffprobe")), runner);
+        var relativePath = Path.Combine("media", "movie.mkv");
+
+        await reader.ReadAsync(relativePath, TestContext.Current.CancellationToken);
+
+        var expectedPath = Path.GetFullPath(relativePath);
+        Assert.NotNull(runner.LastRequest);
+        Assert.Equal(expectedPath, runner.LastRequest.Arguments[^1]);
+        Assert.Equal(Path.GetDirectoryName(expectedPath), runner.LastRequest.WorkingDirectory);
     }
 
     [Fact]

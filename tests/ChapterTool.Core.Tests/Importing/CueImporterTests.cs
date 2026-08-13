@@ -99,6 +99,50 @@ public sealed class CueImporterTests
     }
 
     [Fact]
+    public async Task CueImporterDecodesNonUtf8BytesWithEncodingFallbackWarning()
+    {
+        // 0xC4 0xE3 is the GBK encoding of a CJK character and is not valid UTF-8.
+        var asciiPrefix = Encoding.ASCII.GetBytes("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"");
+        var asciiSuffix = Encoding.ASCII.GetBytes("\"\n    INDEX 01 00:00:00");
+        var bytes = asciiPrefix.Concat(new byte[] { 0xC4, 0xE3 }).Concat(asciiSuffix).ToArray();
+        var importer = new CueChapterImporter();
+        using var stream = new MemoryStream(bytes);
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("legacy-encoding.cue", stream), TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success);
+        var warning = Assert.Single(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.CueEncodingFallback);
+        Assert.Equal(DiagnosticSeverity.Warning, warning.Severity);
+    }
+
+    [Theory]
+    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 99999999999999 AUDIO\n    TITLE \"x\"\n    INDEX 01 00:00:00")]
+    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 99999999999999 00:00:00")]
+    [InlineData("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"x\"\n    INDEX 01 99999999999999:00:00")]
+    public void CueParserFailsOverflowingNumbersWithoutThrowing(string text)
+    {
+        var result = CueSheetParser.Parse(text);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.MalformedCueSyntax);
+    }
+
+    [Fact]
+    public void CueParserAcceptsLargeMinuteValuesWithinIntRange()
+    {
+        var result = CueSheetParser.Parse(
+            """
+            FILE "a.wav" WAVE
+              TRACK 01 AUDIO
+                TITLE "Track 1"
+                INDEX 01 100000:00:00
+            """);
+
+        Assert.True(result.Success);
+        Assert.Equal(TimeSpan.FromMinutes(100000), result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().StartTime);
+    }
+
+    [Fact]
     public void CueParserSkipsBlankLinesBetweenTracksAsIntentionalExpansion()
     {
         var result = CueSheetParser.Parse(

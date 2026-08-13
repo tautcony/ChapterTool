@@ -35,11 +35,28 @@ internal static class XmlLanguageDisplay
             }
 
             var cacheKey = (localizer.CurrentCultureName, language.Code);
-            return DisplayNameCache.GetOrAdd(cacheKey, _ => culture.DisplayName);
+            return DisplayNameCache.GetOrAdd(cacheKey, key => DisplayNameIn(culture, key.CultureName));
         }
         catch (CultureNotFoundException)
         {
             return EnglishDisplayName(language);
+        }
+    }
+
+    // CultureInfo.DisplayName renders in the ambient thread UI culture. Resolve
+    // against the localizer culture instead, so the label follows the app language
+    // deterministically regardless of the machine locale or thread state.
+    private static string DisplayNameIn(CultureInfo culture, string uiCultureName)
+    {
+        var original = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(uiCultureName);
+            return culture.DisplayName;
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = original;
         }
     }
 

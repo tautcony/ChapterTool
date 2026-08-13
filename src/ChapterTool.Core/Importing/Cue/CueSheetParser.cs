@@ -46,7 +46,12 @@ public sealed partial class CueSheetParser
 
             if (trackMatch.Success)
             {
-                currentNumber = int.Parse(trackMatch.Groups["Number"].Value, CultureInfo.InvariantCulture);
+                if (!int.TryParse(trackMatch.Groups["Number"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out currentNumber))
+                {
+                    malformed = true;
+                    break;
+                }
+
                 currentName = string.Empty;
                 continue;
             }
@@ -85,19 +90,24 @@ public sealed partial class CueSheetParser
                     break;
                 }
 
-                var index = int.Parse(indexMatch.Groups["Index"].Value, CultureInfo.InvariantCulture);
-                if (index == 0)
-                {
-                    continue;
-                }
-
-                if (index != 1 || currentNumber == 0)
+                if (!int.TryParse(indexMatch.Groups["Index"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index))
                 {
                     malformed = true;
                     break;
                 }
 
-                chapters.Add(new Chapter(currentNumber, ParseCueTime(indexMatch), currentName));
+                if (index == 0)
+                {
+                    continue;
+                }
+
+                if (index != 1 || currentNumber == 0 || !TryParseCueTime(indexMatch, out var time))
+                {
+                    malformed = true;
+                    break;
+                }
+
+                chapters.Add(new Chapter(currentNumber, time, currentName));
             }
         }
 
@@ -123,13 +133,22 @@ public sealed partial class CueSheetParser
         return new ChapterImportResult(true, [new ChapterImportSource(path, [entry])], []);
     }
 
-    private static TimeSpan ParseCueTime(Match match)
+    private static bool TryParseCueTime(Match match, out TimeSpan time)
     {
-        var minute = int.Parse(match.Groups["Minute"].Value, CultureInfo.InvariantCulture);
-        var second = int.Parse(match.Groups["Second"].Value, CultureInfo.InvariantCulture);
-        var frame = int.Parse(match.Groups["Frame"].Value, CultureInfo.InvariantCulture);
+        time = TimeSpan.Zero;
+        if (!int.TryParse(match.Groups["Minute"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var minute)
+            || !int.TryParse(match.Groups["Second"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var second)
+            || !int.TryParse(match.Groups["Frame"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var frame))
+        {
+            return false;
+        }
+
         var millisecond = (int)Math.Round(frame * (1000F / 75), MidpointRounding.ToEven);
-        return new TimeSpan(0, 0, minute, second, millisecond);
+
+        // Compute ticks in 64-bit so large minute values cannot overflow the TimeSpan constructor.
+        var ticks = (minute * 60L + second) * TimeSpan.TicksPerSecond + millisecond * TimeSpan.TicksPerMillisecond;
+        time = TimeSpan.FromTicks(ticks);
+        return true;
     }
 
     private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
