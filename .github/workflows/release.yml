@@ -3,7 +3,7 @@ name: Publish GitHub Release
 on:
   workflow_run:
     workflows:
-      - Publish to NuGet
+      - .NET 10 CI
     types:
       - completed
   workflow_dispatch:
@@ -55,7 +55,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ env.TAG }}
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            echo "run-id=$TRIGGER_RUN_ID" >> "$GITHUB_OUTPUT"
+            echo "Using triggering CI run $TRIGGER_RUN_ID for $TAG"
+            exit 0
+          fi
+
           run_id="$(
             gh run list \
               --repo "$GITHUB_REPOSITORY" \
