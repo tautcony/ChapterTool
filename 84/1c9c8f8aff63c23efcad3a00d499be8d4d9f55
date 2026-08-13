@@ -1,0 +1,20 @@
+ChangeLog.md
+  h_3705811fa4502c 3-11
+Directory.Build.props
+  h_3705811fa4502c 9
+packages/chaptertool/package-lock.json
+  h_3705811fa4502c 3,9
+packages/chaptertool/package.json
+  h_3705811fa4502c 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "841c9c8f8aff63c23efcad3a00d499be8d4d9f55",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
