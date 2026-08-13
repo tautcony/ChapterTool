@@ -74,6 +74,7 @@ describe("ChapterTool Core API mapping", () => {
       "importFormats",
       "insertBefore",
       "isBinaryExtension",
+      "maxInputBytes",
       "outputEncodings",
       "parseTime",
       "parseTimeOrZero",
