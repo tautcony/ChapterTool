@@ -78,6 +78,11 @@ internal sealed record ClpiCPI(
             for (var j = 0; j < entry.NumberOfEPCoarseEntries; j++)
             {
                 var refToEPFineID = coarseReader.ReadBits(18);
+                if (entry.NumberOfEPFineEntries > 0 && refToEPFineID >= entry.NumberOfEPFineEntries)
+                {
+                    refToEPFineID = entry.NumberOfEPFineEntries - 1;
+                }
+
                 var ptsEPCoarse = (ushort)coarseReader.ReadBits(14);
                 var spnEPCoarse = coarseReader.ReadBits(32);
                 coarseEntries.Add(new ClpiEPCoarseEntry(refToEPFineID, ptsEPCoarse, spnEPCoarse));

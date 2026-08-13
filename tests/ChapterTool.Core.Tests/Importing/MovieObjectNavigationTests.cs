@@ -241,6 +241,30 @@ public sealed class MovieObjectNavigationTests
         Assert.Equal(3U, result.ControlEvents[1].MarkId);
     }
 
+    [Theory]
+    [InlineData(12, 0u, 3u, 8u)]
+    [InlineData(12, 0u, 32u, 0u)]
+    [InlineData(13, 3u, 1u, 1u)]
+    [InlineData(13, 1u, 32u, 1u)]
+    [InlineData(14, 3u, 2u, 12u)]
+    [InlineData(14, 5u, 32u, 0u)]
+    [InlineData(15, 8u, 1u, 4u)]
+    [InlineData(15, 5u, 32u, 0u)]
+    public void ResolverUsesDefinedShiftSemanticsForWideBitCounts(byte setOption, uint initial, uint count, uint expected)
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(2, 2, 0, false, true, setOption: 1, destination: 0, source: initial),
+                Command(2, 2, 0, false, true, setOption: setOption, destination: 0, source: count),
+                Command(1, 0, 2, false, false, branchOption: 0, destination: 0)
+            ])
+        ]);
+
+        var result = new HdmvNavigationResolver().Resolve(file, 0);
+
+        Assert.Equal(expected, Assert.Single(result.Events).PlaylistId);
+    }
+
     [Fact]
     public void ResolverUpdatesPlaylistRelevantSetSystemRegisters()
     {
