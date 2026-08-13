@@ -1,0 +1,53 @@
+src/ChapterTool.Avalonia.UI/Resources/Styles.axaml
+  s_2524763d65d09a::t_6593187f410ef0 606,633,637,641,1344,1348-1350,1425-1426
+  s_2524763d65d09a::t_c0bf40a36b658f 19-54,620,622-626
+  s_2524763d65d09a::t_592f23961aff1d 1356-1415,1419,1424,1427
+  s_2524763d65d09a::t_ca5b6df4bd5ca6 638,1517,1524-1595,1599-1609
+  s_2524763d65d09a::t_793bf729019931 1596-1598
+  s_2524763d65d09a::t_83bae4f255191d 1347
+  s_2524763d65d09a::t_2fa34c040daef4 605
+  s_2524763d65d09a::t_12dc47759ac4d8 607-609
+  s_2524763d65d09a::t_2f949bda346773 617-619
+  s_2524763d65d09a::t_c4f1e09a0a5c41 621
+  s_2524763d65d09a::t_a6116771801013 627-629
+  s_2524763d65d09a::t_29e1a82f5dffd3 631-632
+  s_2524763d65d09a::t_48d553f17df437 635-636
+  s_2524763d65d09a::t_c241328e7a151d 639-640
+  s_2524763d65d09a::t_28d2fad8c7c178 1345-1346
+  s_2524763d65d09a::t_7abcf51a03c12c 1351-1352
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_2524763d65d09a::t_ca5b6df4bd5ca6 10,18-19,21,29-30,35,37,48,53,57-60,68,70-91,93-95,100,127,135-137,142,145-147,153,156-158,163,166-198,202-235,237-248,250-268,270-315,322,331,349,376-378,383,391,417,448,455,476-479,481-483
+src/ChapterTool.Avalonia.UI/Resources/Themes.axaml
+  s_2524763d65d09a::t_b1080cdda05ddf 66-85
+  s_2524763d65d09a::t_840f8e49736dcd 24-26,42-44,62-65
+openspec/changes/archive/2026-08-13-unify-sourcegit-design-system/.openspec.yaml
+  s_2524763d65d09a::t_a0267306a7e74c 1-2
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowInteractionHeadlessTests.cs
+  s_8a535c0b640a44::t_1438fb6394e8a1 175,185,230,233,246,249
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs
+  s_8a535c0b640a44::t_22e52198cbf0b8 83,178-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "840d1075527f245b4fbb949a6d38f3384a6d1310",
+  "prompts": {},
+  "sessions": {
+    "s_2524763d65d09a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "9d3c9cff-c887-4aac-9a44-2a9fbdf8755e",
+        "model": "claude-fable-5"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_8a535c0b640a44": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "b4ca477c-4bb7-4e41-b839-b067cbd21b43",
+        "model": "claude-fable-5"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
