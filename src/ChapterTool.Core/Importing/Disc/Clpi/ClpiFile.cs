@@ -120,6 +120,11 @@ internal sealed record ClpiFile(
         if (stc == null || CPI == null || CPI.StreamEntries.Count == 0 || CPI.EPMaps.Count == 0) return null;
         var stream = CPI.StreamEntries[0];
         var map = CPI.EPMaps[0];
+        if (map.FineEntries.Count == 0)
+        {
+            return new ClpiPacketLookupResult(stcId, stream.StreamPID, timestamp, 0, 0, -1, -1);
+        }
+
         ClpiPacketLookupResult? selected = null;
         for (var coarseIndex = 0; coarseIndex < map.CoarseEntries.Count; coarseIndex++)
         {

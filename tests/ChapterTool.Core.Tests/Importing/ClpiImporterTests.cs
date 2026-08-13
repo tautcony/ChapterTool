@@ -97,6 +97,22 @@ public sealed class ClpiImporterTests
     }
 
     [Fact]
+    public void SequenceInfoFindSTCSequenceRequiresOffsetLowerBound()
+    {
+        var sequence = new ClpiSequenceInfo(0, [
+            new ClpiATCSequence(0, 2, 2, [
+                new ClpiSTCSequence(0x1011, 0, 100, 200),
+                new ClpiSTCSequence(0x1012, 10, 300, 400)
+            ])
+        ]);
+
+        Assert.Null(sequence.FindSTCSequence(1));
+        Assert.Equal(100U, sequence.FindSTCSequence(2)!.PresentationStartTime);
+        Assert.Equal(300U, sequence.FindSTCSequence(3)!.PresentationStartTime);
+        Assert.Null(sequence.FindSTCSequence(4));
+    }
+
+    [Fact]
     public void RealClpiParsesCpiEntryPointMap()
     {
         var path = FixtureResolver.Fixture(
@@ -249,6 +265,101 @@ public sealed class ClpiImporterTests
         Assert.Equal(200U, lookup.SourcePacketNumber);
         Assert.Equal(200U << 8, lookup.EntryTimestamp);
         Assert.Equal((ushort)0x1011, lookup.StreamPID);
+    }
+
+    [Fact]
+    public void CpiParseClampsOutOfRangeEpFineReference()
+    {
+        using var stream = new MemoryStream(BuildCpiWithOutOfRangeFineReference());
+        var cpi = ClpiCPI.Read(stream);
+
+        var coarse = Assert.Single(Assert.Single(cpi.EPMaps).CoarseEntries);
+        Assert.Equal(0U, coarse.RefToEPFineID);
+        Assert.Equal(1U, Assert.Single(cpi.StreamEntries).NumberOfEPFineEntries);
+    }
+
+    [Fact]
+    public void ClpiPacketLookupReturnsZeroPacketWhenFineTableIsEmpty()
+    {
+        var sequence = new ClpiSequenceInfo(0, [
+            new ClpiATCSequence(0, 1, 0, [new ClpiSTCSequence(0x1011, 0, 0, 90_000)])
+        ]);
+        var file = new ClpiFile(
+            "HDMV",
+            "0200",
+            0,
+            0,
+            0,
+            0,
+            0,
+            new ClpiClipInfo(0, 1, 1, 0, 1_000, false, null, [], []),
+            sequence,
+            null,
+            new ClpiCPI(0, 1, [new ClpiEPStreamEntry(0x1011, 1, 1, 0, 0)], [new ClpiEPMap([new ClpiEPCoarseEntry(0, 0, 0)], [])]),
+            null);
+
+        var lookup = file.LookupPacket(0, 60_000);
+
+        Assert.NotNull(lookup);
+        Assert.Equal(0U, lookup.SourcePacketNumber);
+        Assert.Equal(-1, lookup.CoarseEntryIndex);
+        Assert.Equal(-1, lookup.FineEntryIndex);
+    }
+
+    private static byte[] BuildCpiWithOutOfRangeFineReference()
+    {
+        const uint length = 32;
+        var payload = new byte[length];
+        payload[1] = 1;
+        payload[3] = 1;
+        PackBits(
+            payload.AsSpan(4, 12),
+            (0x1011, 16),
+            (0, 10),
+            (1, 4),
+            (1, 16),
+            (1, 18),
+            (14, 32));
+        payload[16] = 0;
+        payload[17] = 0;
+        payload[18] = 0;
+        payload[19] = 12;
+        PackBits(payload.AsSpan(20, 8), (7, 18), (0, 14), (0, 32));
+        PackBits(payload.AsSpan(28, 4), (0, 1), (0, 3), (0, 11), (0, 17));
+
+        var bytes = new byte[4 + length];
+        bytes[0] = 0;
+        bytes[1] = 0;
+        bytes[2] = 0;
+        bytes[3] = (byte)length;
+        payload.CopyTo(bytes, 4);
+        return bytes;
+    }
+
+    private static void PackBits(Span<byte> destination, params (uint Value, int Width)[] fields)
+    {
+        uint buffer = 0;
+        var bits = 0;
+        var offset = 0;
+        foreach (var (value, width) in fields)
+        {
+            for (var index = width - 1; index >= 0; index--)
+            {
+                buffer = (buffer << 1) | ((value >> index) & 1u);
+                bits++;
+                if (bits == 8)
+                {
+                    destination[offset++] = (byte)buffer;
+                    buffer = 0;
+                    bits = 0;
+                }
+            }
+        }
+
+        if (bits != 0 || offset != destination.Length)
+        {
+            throw new InvalidOperationException("Packed bits must fill the destination exactly.");
+        }
     }
 
     private static byte[] BuildMinimalClpi(string version = "0200")

@@ -310,10 +310,18 @@ internal sealed class HdmvNavigationResolver
             case 9: newDst &= src; break;
             case 10: newDst |= src; break;
             case 11: newDst ^= src; break;
-            case 12: newDst |= 1u << (int)(src & 31); break;
-            case 13: newDst &= ~(1u << (int)(src & 31)); break;
-            case 14: newDst <<= (int)(src & 31); break;
-            case 15: newDst >>= (int)(src & 31); break;
+            case 12:
+                if (src < 32) newDst |= 1u << (int)src;
+                break;
+            case 13:
+                if (src < 32) newDst &= ~(1u << (int)src);
+                break;
+            case 14:
+                newDst = src < 32 ? dst << (int)src : 0;
+                break;
+            case 15:
+                newDst = src < 32 ? dst >> (int)src : 0;
+                break;
             default: return;
         }
 
