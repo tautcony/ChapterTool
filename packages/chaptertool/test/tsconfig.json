@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../src/**/*.ts", "../scripts/**/*.mjs"]
+}
