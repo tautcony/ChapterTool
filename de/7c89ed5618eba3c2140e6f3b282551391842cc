@@ -1,0 +1,72 @@
+docs/code-review/review-2026-08-13/00-审查计划.md
+  h_3705811fa4502c 1-41
+docs/code-review/review-2026-08-13/01-core.md
+  h_3705811fa4502c 1-372
+docs/code-review/review-2026-08-13/02-infrastructure-contracts.md
+  h_3705811fa4502c 1-194
+docs/code-review/review-2026-08-13/03-avalonia-ui.md
+  h_3705811fa4502c 1-224
+docs/code-review/review-2026-08-13/04-hosts.md
+  h_3705811fa4502c 1-254
+docs/code-review/review-2026-08-13/05-tests.md
+  h_3705811fa4502c 1-237
+docs/code-review/review-2026-08-13/99-汇总.md
+  h_3705811fa4502c 1-52
+docs/code-review/review-2026-08-13/fix-plan-p0.md
+  h_3705811fa4502c 1-32
+src/ChapterTool.Avalonia.UI/Localization/AppLocalizationManager.cs
+  h_3705811fa4502c 13-15,29,31-34
+src/ChapterTool.Avalonia.UI/ViewModels/XmlLanguageDisplay.cs
+  h_3705811fa4502c 38,46-62
+src/ChapterTool.Core/Diagnostics/ChapterDiagnosticCode.cs
+  h_3705811fa4502c 22
+src/ChapterTool.Core/Diagnostics/ChapterDiagnosticSource.cs
+  h_3705811fa4502c 21
+src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs
+  h_3705811fa4502c 1-2,43-54
+src/ChapterTool.Core/Importing/Cue/CueSheetParser.cs
+  h_3705811fa4502c 49-54,93-98,104,110,136,138-145,147-151
+src/ChapterTool.Core/Importing/Cue/CueTextDecoder.cs
+  h_3705811fa4502c 12-20,22-36,38-42
+src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs
+  h_3705811fa4502c 106
+src/ChapterTool.Core/Importing/Disc/MplsPlaylistProjection.cs
+  h_3705811fa4502c 40-44,99
+src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs
+  h_3705811fa4502c 57,116-124,129-133,141-147,150-154
+src/ChapterTool.Core/Importing/Text/WebVttChapterImporter.cs
+  h_3705811fa4502c 1-2,11,63,89-128,131-133
+src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs
+  h_3705811fa4502c 19-22,24-28,70-75,77-79,81-82,85
+src/ChapterTool.Infrastructure/Importing/Matroska/MatroskaChapterImporter.cs
+  h_3705811fa4502c 44-46,49-50
+src/ChapterTool.Infrastructure/Importing/Media/FfprobeMediaChapterReader.cs
+  h_3705811fa4502c 27-29,32-33
+tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs
+  h_3705811fa4502c 1-2,104-174
+tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs
+  h_3705811fa4502c 101-144
+tests/ChapterTool.Core.Tests/Importing/MplsProjectionWraparoundTests.cs
+  h_3705811fa4502c 1-70
+tests/ChapterTool.Core.Tests/Importing/TextImporterTests.cs
+  h_3705811fa4502c 326-375,380-381
+tests/ChapterTool.Core.Tests/Importing/XplImporterTests.cs
+  h_3705811fa4502c 98-124
+tests/ChapterTool.Core.Tests/Transform/ChapterTimeFormatterTests.cs
+  h_3705811fa4502c 25,31-41,55,61-69,124-126,139-156
+tests/ChapterTool.Infrastructure.Tests/FfprobeMediaChapterReaderTests.cs
+  h_3705811fa4502c 33,35,41,54-68
+tests/ChapterTool.Infrastructure.Tests/MatroskaChapterImporterTests.cs
+  h_3705811fa4502c 167,172-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "de7c89ed5618eba3c2140e6f3b282551391842cc",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
