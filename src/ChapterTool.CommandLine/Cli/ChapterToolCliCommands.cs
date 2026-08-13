@@ -1,3 +1,4 @@
+using ChapterTool.Core.Localization;
 using DotMake.CommandLine;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -32,7 +33,7 @@ public sealed class ConvertCliCommand
         AllowedValues = ["txt", "xml", "qpf", "timecodes", "tsmuxer", "cue", "json", "vtt", "celltimes"])]
     public string Format { get; set; } = "txt";
 
-    [CliOption(Description = "Output file path. If omitted, ChapterTool writes next to the input file.", Required = false)]
+    [CliOption(Description = "Output file path. If omitted, ChapterTool writes next to the input file and never overwrites an existing file. An explicit path refuses to overwrite unless --force is set.", Required = false)]
     public string? Output { get; set; }
 
     [CliOption(Alias = "-s", Description = "Write converted content to stdout instead of a file.", Required = false)]
@@ -62,12 +63,23 @@ public sealed class ConvertCliCommand
     [CliOption(Description = "Built-in expression preset id used to transform chapter times before export.", Required = false)]
     public string? ExpressionPreset { get; set; }
 
+    [CliOption(Description = "Overwrite an existing file when --output names that file.", Required = false)]
+    public bool Force { get; set; }
+
+    [CliOption(Description = "Output text encoding id or name. Default is utf8.", Required = false)]
+    public string? Encoding { get; set; }
+
+    [CliOption(Description = "Write a byte-order mark. Default is no BOM.", Required = false)]
+    public bool Bom { get; set; }
+
     [CliOption(Description = "User-interface language for terminal output.", Required = false)]
     public string? Language { get; set; }
 
     public async Task<int> RunAsync()
     {
-        var app = new ChapterToolCliApplication(localizer: new CliLocalizationManager(Language));
+        CliLanguage.WarnIfUnrecognized(Language);
+        var localizer = new CliLocalizationManager(Language);
+        var app = new ChapterToolCliApplication(localizer: localizer);
         return await app.ConvertAsync(
             new CliConvertRequest(
                 CliInputResolver.Resolve(Input, Source) ?? string.Empty,
@@ -81,7 +93,10 @@ public sealed class ConvertCliCommand
                 SourceFileName,
                 FrameRate,
                 Expression,
-                ExpressionPreset),
+                ExpressionPreset,
+                Force,
+                Encoding,
+                Bom),
             CancellationToken.None);
     }
 }
@@ -100,6 +115,7 @@ public sealed class InspectCliCommand
 
     public async Task<int> RunAsync()
     {
+        CliLanguage.WarnIfUnrecognized(Language);
         var app = new ChapterToolCliApplication(localizer: new CliLocalizationManager(Language));
         return await app.InspectAsync(
             new CliInspectRequest(CliInputResolver.Resolve(Input, Source) ?? string.Empty),
@@ -115,7 +131,21 @@ public sealed class FormatsCliCommand
 
     public int Run()
     {
+        CliLanguage.WarnIfUnrecognized(Language);
         var app = new ChapterToolCliApplication(localizer: new CliLocalizationManager(Language));
         return app.ShowFormats();
+    }
+}
+
+internal static class CliLanguage
+{
+    public static void WarnIfUnrecognized(string? language)
+    {
+        if (string.IsNullOrWhiteSpace(language) || UiLanguageCode.TryNormalize(language, out _))
+        {
+            return;
+        }
+
+        Console.Error.WriteLine($"Unrecognized language '{language}'. Using en-US.");
     }
 }

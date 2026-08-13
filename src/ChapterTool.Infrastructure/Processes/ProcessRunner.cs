@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 using ChapterTool.Infrastructure.Services;
@@ -7,6 +8,7 @@ namespace ChapterTool.Infrastructure.Processes;
 public sealed class ProcessRunner : IProcessRunner
 {
     private static readonly TimeSpan KillWaitTimeout = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan OutputDrainGrace = TimeSpan.FromMilliseconds(250);
 
     public async ValueTask<ProcessRunResult> RunAsync(ProcessRunRequest request, CancellationToken cancellationToken)
     {
@@ -15,6 +17,8 @@ public sealed class ProcessRunner : IProcessRunner
         using var linkedCts = timeoutCts is null
             ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
             : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+        using var drainCts = new CancellationTokenSource();
+        using var readCts = CancellationTokenSource.CreateLinkedTokenSource(linkedCts.Token, drainCts.Token);
         var stdoutTask = Task.FromResult(new CapturedOutput(string.Empty, false));
         var stderrTask = Task.FromResult(new CapturedOutput(string.Empty, false));
 
@@ -22,15 +26,16 @@ public sealed class ProcessRunner : IProcessRunner
         {
             process.Start();
             stdoutTask = request.RedirectOutput
-                ? ReadBoundedAsync(process.StandardOutput, request.MaxOutputCharacters)
+                ? ReadBoundedAsync(process.StandardOutput, request.MaxOutputCharacters, readCts.Token)
                 : stdoutTask;
             stderrTask = request.RedirectOutput
-                ? ReadBoundedAsync(process.StandardError, request.MaxOutputCharacters)
+                ? ReadBoundedAsync(process.StandardError, request.MaxOutputCharacters, readCts.Token)
                 : stderrTask;
 
             await process.WaitForExitAsync(linkedCts.Token);
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
+            drainCts.CancelAfter(KillWaitTimeout);
+            var stdout = await CaptureCompletedOutputAsync(stdoutTask);
+            var stderr = await CaptureCompletedOutputAsync(stderrTask);
 
             return new ProcessRunResult(
                 process.ExitCode,
@@ -46,6 +51,7 @@ public sealed class ProcessRunner : IProcessRunner
         catch (OperationCanceledException)
         {
             KillProcess(process);
+            await drainCts.CancelAsync();
             await WaitForKilledProcessAsync(process);
             var stdout = await CaptureCompletedOutputAsync(stdoutTask);
             var stderr = await CaptureCompletedOutputAsync(stderrTask);
@@ -97,7 +103,11 @@ public sealed class ProcessRunner : IProcessRunner
                 process.Kill(entireProcessTree: true);
             }
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or NotSupportedException
+                or Win32Exception
+                or AggregateException)
         {
         }
     }
@@ -106,11 +116,11 @@ public sealed class ProcessRunner : IProcessRunner
     {
         try
         {
-            return await outputTask.WaitAsync(KillWaitTimeout);
+            return await outputTask.WaitAsync(KillWaitTimeout + OutputDrainGrace);
         }
         catch (Exception exception) when (exception is TimeoutException or IOException or ObjectDisposedException or InvalidOperationException)
         {
-            return new CapturedOutput(string.Empty, false);
+            return new CapturedOutput(string.Empty, Truncated: true);
         }
     }
 
@@ -125,31 +135,44 @@ public sealed class ProcessRunner : IProcessRunner
         }
     }
 
-    private static async Task<CapturedOutput> ReadBoundedAsync(TextReader reader, int maxCharacters)
+    private static async Task<CapturedOutput> ReadBoundedAsync(
+        TextReader reader,
+        int maxCharacters,
+        CancellationToken cancellationToken)
     {
         maxCharacters = Math.Max(0, maxCharacters);
         var builder = new StringBuilder(capacity: Math.Min(maxCharacters, 4096));
         var buffer = new char[4096];
         var truncated = false;
 
-        while (true)
+        try
         {
-            var read = await reader.ReadAsync(buffer);
-            if (read == 0)
+            while (true)
             {
-                break;
-            }
+                var read = await reader.ReadAsync(buffer.AsMemory(), cancellationToken);
+                if (read == 0)
+                {
+                    break;
+                }
 
-            var remaining = maxCharacters - builder.Length;
-            if (remaining > 0)
-            {
-                builder.Append(buffer, 0, Math.Min(read, remaining));
-            }
+                var remaining = maxCharacters - builder.Length;
+                if (remaining > 0)
+                {
+                    builder.Append(buffer, 0, Math.Min(read, remaining));
+                }
 
-            if (read > remaining)
-            {
-                truncated = true;
+                if (read > remaining)
+                {
+                    truncated = true;
+                }
             }
+        }
+        catch (OperationCanceledException)
+        {
+            truncated = true;
+        }
+        catch (Exception exception) when (exception is IOException or ObjectDisposedException or InvalidOperationException)
+        {
         }
 
         return new CapturedOutput(builder.ToString(), truncated);

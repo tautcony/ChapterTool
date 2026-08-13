@@ -32,13 +32,11 @@ public sealed class TextChapterImporter(IChapterTimeFormatter timeFormatter) : I
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        var text = await TextImportUtilities.ReadTextAsync(request, cancellationToken);
-        if (premiereImporter.CanImportText(text))
-        {
-            return premiereImporter.ImportText(text, request.Path);
-        }
-
-        return ogmImporter.ImportText(text, request.Path);
+        var decoded = await TextImportUtilities.ReadTextAsync(request, cancellationToken);
+        var result = premiereImporter.CanImportText(decoded.Text)
+            ? premiereImporter.ImportText(decoded.Text, request.Path)
+            : ogmImporter.ImportText(decoded.Text, request.Path);
+        return TextImportUtilities.WithEncodingFallback(result, decoded.UsedEncodingFallback);
     }
 
     /// <summary>

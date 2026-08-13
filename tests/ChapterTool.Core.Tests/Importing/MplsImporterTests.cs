@@ -50,6 +50,22 @@ public sealed class MplsImporterTests
     }
 
     [Fact]
+    public async Task MplsImporterDoesNotDisposeCallerContentStream()
+    {
+        var path = FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls");
+        var bytes = await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken);
+        using var stream = new MemoryStream(bytes);
+        var importer = new MplsChapterImporter();
+
+        var first = await importer.ImportAsync(new ChapterImportRequest(path, stream), TestContext.Current.CancellationToken);
+        stream.Position = 0;
+        var second = await importer.ImportAsync(new ChapterImportRequest(path, stream), TestContext.Current.CancellationToken);
+
+        Assert.True(first.Success, Diagnostics(first));
+        Assert.True(second.Success, Diagnostics(second));
+    }
+
+    [Fact]
     public async Task InvalidExtensionDataAddressReturnsInvalidMplsDiagnostic()
     {
         var importer = new MplsChapterImporter();

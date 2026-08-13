@@ -31,9 +31,11 @@ public sealed class MplsChapterImporter : IChapterImporter
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
         var diagnostics = new List<ChapterDiagnostic>();
-        await using var stream = request.Content ?? File.OpenRead(request.Path);
+        Stream? ownedStream = null;
         try
         {
+            var stream = request.Content ?? File.OpenRead(request.Path);
+            ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
             var parsed = MplsPlaylistFile.Read(stream);
             _ = DiscoverClpiFromPath(request.Path, parsed, diagnostics);
             var projection = MplsPlaylistProjection.Create(parsed, BdmvPathHelper.FindBdmvRoot(request.Path));
@@ -43,6 +45,10 @@ public sealed class MplsChapterImporter : IChapterImporter
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
         {
             return ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidMpls, exception.Message));
+        }
+        finally
+        {
+            ownedStream?.Dispose();
         }
     }
 

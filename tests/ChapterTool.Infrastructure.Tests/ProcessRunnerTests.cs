@@ -95,6 +95,26 @@ public sealed class ProcessRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_drains_output_after_parent_exits_without_waiting_for_grandchild()
+    {
+        var runner = new ProcessRunner();
+        var started = DateTime.UtcNow;
+
+        var result = await runner.RunAsync(
+            ShellCommand.CreateOrphanedStdoutHolder("early-output"),
+            TestContext.Current.CancellationToken);
+
+        var elapsed = DateTime.UtcNow - started;
+        Assert.Equal(0, result.ExitCode);
+        Assert.False(result.TimedOut);
+        Assert.False(result.Cancelled);
+        Assert.True(elapsed < TimeSpan.FromSeconds(6), $"Drain waited {elapsed}.");
+        Assert.True(
+            result.OutputTruncated || result.StandardOutput.Contains("early-output", StringComparison.Ordinal),
+            $"stdout='{result.StandardOutput}', truncated={result.OutputTruncated}");
+    }
+
+    [Fact]
     public async Task RunAsync_can_disable_output_redirection()
     {
         var runner = new ProcessRunner();
@@ -161,6 +181,16 @@ public sealed class ProcessRunnerTests
             }
 
             return Create($"printf '{stderr}' 1>&2; sleep 5", timeout: timeout);
+        }
+
+        public static ProcessRunRequest CreateOrphanedStdoutHolder(string stdout)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                return Create($"echo {stdout} & start /b ping 127.0.0.1 -n 10 >nul");
+            }
+
+            return Create($"printf '{stdout}\\n'; sleep 10 &");
         }
     }
 }

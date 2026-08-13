@@ -6,6 +6,10 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 
 ## Test Projects
 
+- Shared test helpers:
+  - `tests/ChapterTool.TestSupport`
+  - `TestRepository` locates the repository root from `ChapterTool.slnx`.
+  - `TestApplicationLogger` builds loggers for Avalonia unit and Headless tests.
 - Core behavior:
   - `tests/ChapterTool.Core.Tests`
 - Browser WebAssembly workspace behavior:

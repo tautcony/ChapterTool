@@ -1,9 +1,26 @@
 /**
- * Maximum portable input size (64 MiB) shared with the .NET Core boundary.
- * Inputs whose UTF-8 byte length exceeds this value are rejected on the
- * JavaScript side before reaching the WASM runtime.
+ * Fallback portable input size (64 MiB) used before the .NET runtime reports
+ * the live Core byte limit.
  */
-export const MAX_INPUT_BYTES = 64 * 1024 * 1024;
+const DEFAULT_MAX_INPUT_BYTES = 64 * 1024 * 1024;
+
+/**
+ * Maximum portable input size shared with the .NET Core boundary.
+ * The Node host overwrites this value from {@code NodeApi.GetMaxInputBytes}
+ * after the WebAssembly runtime starts.
+ */
+export let MAX_INPUT_BYTES = DEFAULT_MAX_INPUT_BYTES;
+
+/**
+ * Replaces the JavaScript-side byte limit with the live Core value.
+ *
+ * @param value - Byte limit reported by {@code NodeApi.GetMaxInputBytes}.
+ */
+export function applyMaxInputBytes(value: number): void {
+  if (Number.isFinite(value) && value > 0) {
+    MAX_INPUT_BYTES = value;
+  }
+}
 
 /**
  * Converts supported chapter input values to a UTF-8 {@link Buffer} suitable

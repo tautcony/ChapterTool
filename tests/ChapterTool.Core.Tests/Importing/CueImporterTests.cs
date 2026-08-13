@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
@@ -128,6 +129,20 @@ public sealed class CueImporterTests
     }
 
     [Fact]
+    public async Task CueImporterRejectsStreamOverPortableLimit()
+    {
+        var importer = new CueChapterImporter();
+        using var stream = new OversizedSeekableStream();
+
+        var result = await importer.ImportAsync(
+            new ChapterImportRequest("huge.cue", stream),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InputTooLarge);
+    }
+
+    [Fact]
     public void CueParserAcceptsLargeMinuteValuesWithinIntRange()
     {
         var result = CueSheetParser.Parse(
@@ -192,6 +207,20 @@ public sealed class CueImporterTests
         using var stream = new MemoryStream(CreateFlac(cue, includeNativeCueSheetBlock: true));
 
         var result = await new FlacCueImporter().ImportAsync(new ChapterImportRequest("music.flac", stream), TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success);
+        Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+    }
+
+    [Fact]
+    public async Task FlacImporterReadsFromNonSeekableStreamWithoutDisposingCallerContent()
+    {
+        var bytes = CreateFlac(MinimalCue(), includeNativeCueSheetBlock: false);
+        using var stream = new NonSeekableReadStream(bytes);
+
+        var result = await new FlacCueImporter().ImportAsync(
+            new ChapterImportRequest("music.flac", stream),
+            TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
         Assert.Equal("Track 1", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
@@ -422,5 +451,68 @@ public sealed class CueImporterTests
         stream.WriteByte((byte)((data.Length >> 8) & 0xff));
         stream.WriteByte((byte)(data.Length & 0xff));
         stream.Write(data);
+    }
+
+    private sealed class OversizedSeekableStream : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => true;
+
+        public override bool CanWrite => false;
+
+        public override long Length => PortableInputPolicy.MaxBytes + 1;
+
+        public override long Position { get; set; }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => 0;
+
+        public override long Seek(long offset, SeekOrigin origin) => Position = offset;
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    private sealed class NonSeekableReadStream(byte[] data) : Stream
+    {
+        private int offset;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            var remaining = data.Length - this.offset;
+            var take = Math.Min(count, remaining);
+            Buffer.BlockCopy(data, this.offset, buffer, offset, take);
+            this.offset += take;
+            return take;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

@@ -83,6 +83,46 @@ public sealed class TextImporterTests
     }
 
     [Fact]
+    public Task OgmImporterClampsNegativeRelativeTimestamps()
+    {
+        try
+        {
+            var importer = new OgmChapterImporter(formatter);
+            var result = importer.ImportText(
+                """
+                CHAPTER01=00:01:00.000
+                CHAPTER01NAME=Intro
+                CHAPTER02=00:00:30.000
+                CHAPTER02NAME=Earlier
+                """);
+
+            Assert.True(result.Success);
+            var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
+            Assert.Equal(TimeSpan.Zero, chapters[0].StartTime);
+            Assert.Equal(TimeSpan.Zero, chapters[1].StartTime);
+            Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.PartialParse);
+            return Task.CompletedTask;
+        }
+        catch (Exception exception)
+        {
+            return Task.FromException(exception);
+        }
+    }
+
+    [Fact]
+    public async Task OgmImporterWarnsWhenBytesAreNotUtf8()
+    {
+        var importer = new OgmChapterImporter(formatter);
+        var bytes = "CHAPTER01=00:00:00.000\nCHAPTER01NAME="u8.ToArray().Concat(new byte[] { 0xC4, 0xE3, 0xBA, 0xC3 }).Concat("\n"u8.ToArray()).ToArray();
+        using var stream = new MemoryStream(bytes);
+
+        var result = await importer.ImportAsync(new ChapterImportRequest("chapters.txt", stream), TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.TextEncodingFallback);
+    }
+
+    [Fact]
     public Task OgmImporterFailsInvalidFirstLine()
     {
         try
@@ -398,6 +438,28 @@ public sealed class TextImporterTests
     }
 
     [Fact]
+    public async Task XmlImporterAcceptsNonSeekableContentStream()
+    {
+        var xml = """
+                  <Chapters>
+                    <EditionEntry>
+                      <ChapterAtom>
+                        <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                        <ChapterDisplay><ChapterString>Start</ChapterString></ChapterDisplay>
+                      </ChapterAtom>
+                    </EditionEntry>
+                  </Chapters>
+                  """;
+        using var stream = new NonSeekableReadStream(System.Text.Encoding.UTF8.GetBytes(xml));
+        var result = await new XmlChapterImporter(formatter).ImportAsync(
+            new ChapterImportRequest("chapters.xml", stream),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, string.Join("; ", result.Diagnostics.Select(static diagnostic => diagnostic.Message)));
+        Assert.Equal("Start", result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().Name);
+    }
+
+    [Fact]
     public Task XmlImporterCreatesOneOptionPerEdition()
     {
         try
@@ -557,6 +619,46 @@ public sealed class TextImporterTests
         {
             File.Delete(path);
         }
+    }
+
+    [Fact]
+    public void XmlImporterRejectsChapterAtomNestingBeyondLimit()
+    {
+        var xml = BuildNestedChapterAtoms(XmlChapterImporter.MaximumAtomDepth + 1);
+        var result = new XmlChapterImporter(formatter).ImportText(xml);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidXml);
+        Assert.Contains("nesting", result.Diagnostics[0].Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void XmlImporterAcceptsChapterAtomNestingAtLimit()
+    {
+        var xml = BuildNestedChapterAtoms(XmlChapterImporter.MaximumAtomDepth);
+        var result = new XmlChapterImporter(formatter).ImportText(xml);
+
+        Assert.True(result.Success, string.Join("; ", result.Diagnostics.Select(static diagnostic => diagnostic.Message)));
+        Assert.Equal("00:00:00.000", formatter.Format(result.Groups.Single().Entries.Single().ChapterSet.Chapters.Single().StartTime));
+    }
+
+    private static string BuildNestedChapterAtoms(int depth)
+    {
+        var builder = new System.Text.StringBuilder();
+        builder.Append("<Chapters><EditionEntry>");
+        for (var index = 0; index < depth; index++)
+        {
+            builder.Append("<ChapterAtom>");
+        }
+
+        builder.Append("<ChapterTimeStart>00:00:00.000</ChapterTimeStart>");
+        for (var index = 0; index < depth; index++)
+        {
+            builder.Append("</ChapterAtom>");
+        }
+
+        builder.Append("</EditionEntry></Chapters>");
+        return builder.ToString();
     }
 
     [Fact]
@@ -888,4 +990,42 @@ public sealed class TextImporterTests
 
     private static string Diagnostics(ChapterImportResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));
+
+    private sealed class NonSeekableReadStream(byte[] data) : Stream
+    {
+        private int offset;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            var remaining = data.Length - this.offset;
+            var take = Math.Min(count, remaining);
+            Buffer.BlockCopy(data, this.offset, buffer, offset, take);
+            this.offset += take;
+            return take;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
 }

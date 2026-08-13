@@ -84,6 +84,7 @@
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">このファイルはサポート対象のコンテナではありません。</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE テキストが空であるか、章節が解析されませんでした。</x:String>
   <x:String x:Key="Diagnostic.CueSyntax.Malformed" xml:space="preserve">CUE インデックス構文はサポート対象外または不正です。</x:String>
+  <x:String x:Key="Diagnostic.TextEncoding.Unrecognized" xml:space="preserve">テキストは有効な UTF-8 ではありません。無効なバイト列は置換されました。</x:String>
   <x:String x:Key="Diagnostic.Dependency.Missing" xml:space="preserve">必要な外部ツールが見つかりませんでした。</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">操作はキャンセルされました。</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Failed" xml:space="preserve">操作が失敗しました: {message}</x:String>
@@ -419,6 +420,7 @@
   <x:String x:Key="Status.LoadingSource.Parse" xml:space="preserve">チャプターを解析中...</x:String>
   <x:String x:Key="Status.LoadingSource.Validate" xml:space="preserve">ソースを検証中...</x:String>
   <x:String x:Key="Status.LuaExpressionPresetSelected" xml:space="preserve">Lua プリセットを選択しました: {preset}</x:String>
+  <x:String x:Key="Status.LuaExpressionScriptLoadFailed" xml:space="preserve">Lua スクリプトを読み込めませんでした: {path}</x:String>
   <x:String x:Key="Status.LuaExpressionScriptLoaded" xml:space="preserve">Lua スクリプトを読み込みました: {path}</x:String>
   <x:String x:Key="Status.NoCurrentMplsGroup" xml:space="preserve">現在の MPLS グループが読み込まれていません</x:String>
   <x:String x:Key="Status.NoPreview" xml:space="preserve">プレビューする内容がありません。</x:String>

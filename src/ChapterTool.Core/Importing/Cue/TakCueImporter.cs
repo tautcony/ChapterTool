@@ -1,4 +1,5 @@
 using System.Text;
+using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 
 namespace ChapterTool.Core.Importing.Cue;
@@ -6,11 +7,8 @@ namespace ChapterTool.Core.Importing.Cue;
 /// <summary>
 /// Imports embedded CUE sheet chapter data from TAK files.
 /// </summary>
-/// <param name="parser">The CUE sheet parser.</param>
-public sealed class TakCueImporter(CueSheetParser? parser = null) : IChapterImporter
+public sealed class TakCueImporter : IChapterImporter
 {
-    private readonly CueSheetParser parser = parser ?? new CueSheetParser();
-
     /// <summary>
     /// Gets the stable importer identifier.
     /// </summary>
@@ -32,16 +30,10 @@ public sealed class TakCueImporter(CueSheetParser? parser = null) : IChapterImpo
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        byte[] bytes;
-        if (request.Content is not null)
+        var bytes = await PortableInputReader.ReadAllBytesAsync(request, cancellationToken);
+        if (bytes is null)
         {
-            using var memory = new MemoryStream();
-            await request.Content.CopyToAsync(memory, cancellationToken);
-            bytes = memory.ToArray();
-        }
-        else
-        {
-            bytes = await File.ReadAllBytesAsync(request.Path, cancellationToken);
+            return ChapterImportResult.Failed(PortableInputReader.TooLargeDiagnostic());
         }
 
         if (bytes.Length < 4 || Encoding.ASCII.GetString(bytes, 0, 4) != "tBaK")

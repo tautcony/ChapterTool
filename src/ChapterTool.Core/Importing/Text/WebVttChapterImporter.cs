@@ -31,8 +31,8 @@ public sealed partial class WebVttChapterImporter : IChapterImporter
     /// <returns>The operation result.</returns>
     public async ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
-        var text = await TextImportUtilities.ReadTextAsync(request, cancellationToken);
-        return ImportText(text, request.Path);
+        var decoded = await TextImportUtilities.ReadTextAsync(request, cancellationToken);
+        return TextImportUtilities.WithEncodingFallback(ImportText(decoded.Text, request.Path), decoded.UsedEncodingFallback);
     }
 
     /// <summary>

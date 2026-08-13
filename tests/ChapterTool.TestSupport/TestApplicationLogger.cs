@@ -1,10 +1,16 @@
 using ChapterTool.Contracts.PlatformPorts;
 using Microsoft.Extensions.Logging;
 
-namespace ChapterTool.Avalonia.Headless.Tests;
+namespace ChapterTool.TestSupport;
 
-internal static class TestApplicationLogger
+/// <summary>
+/// Builds an <see cref="ILogger{T}"/> from the application log service used in tests.
+/// </summary>
+public static class TestApplicationLogger
 {
+    /// <summary>
+    /// Creates a typed logger that writes through the test log service provider.
+    /// </summary>
     public static ILogger<T> Create<T>(IApplicationLogService logService)
     {
         if (logService is not ILoggerProvider provider)

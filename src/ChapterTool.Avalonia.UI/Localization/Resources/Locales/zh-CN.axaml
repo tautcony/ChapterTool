@@ -84,6 +84,7 @@
   <x:String x:Key="Diagnostic.ContainerHeader.Invalid" xml:space="preserve">该文件不是受支持的容器。</x:String>
   <x:String x:Key="Diagnostic.CueFile.Empty" xml:space="preserve">CUE 文本为空，或未解析到章节。</x:String>
   <x:String x:Key="Diagnostic.CueSyntax.Malformed" xml:space="preserve">CUE 索引语法不受支持或格式错误。</x:String>
+  <x:String x:Key="Diagnostic.TextEncoding.Unrecognized" xml:space="preserve">文本不是有效的 UTF-8。无效字节已被替换。</x:String>
   <x:String x:Key="Diagnostic.Dependency.Missing" xml:space="preserve">未找到所需的外部工具。</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Cancelled" xml:space="preserve">操作已取消。</x:String>
   <x:String x:Key="Diagnostic.DependencyExecution.Failed" xml:space="preserve">操作失败：{message}</x:String>
@@ -419,6 +420,7 @@
   <x:String x:Key="Status.LoadingSource.Parse" xml:space="preserve">正在解析章节文本...</x:String>
   <x:String x:Key="Status.LoadingSource.Validate" xml:space="preserve">正在校验源结构...</x:String>
   <x:String x:Key="Status.LuaExpressionPresetSelected" xml:space="preserve">已选择 Lua 预设：{preset}</x:String>
+  <x:String x:Key="Status.LuaExpressionScriptLoadFailed" xml:space="preserve">无法加载 Lua 脚本：{path}</x:String>
   <x:String x:Key="Status.LuaExpressionScriptLoaded" xml:space="preserve">已加载 Lua 脚本：{path}</x:String>
   <x:String x:Key="Status.NoCurrentMplsGroup" xml:space="preserve">未载入当前 MPLS 分组</x:String>
   <x:String x:Key="Status.NoPreview" xml:space="preserve">没有可预览的内容。</x:String>

@@ -11,6 +11,8 @@ namespace ChapterTool.Core.Importing.Text;
 /// <param name="timeFormatter">The chapter time formatter.</param>
 public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IChapterImporter
 {
+    internal const int MaximumAtomDepth = 64;
+
     /// <summary>
     /// Gets the stable importer identifier.
     /// </summary>
@@ -37,7 +39,11 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
             try
             {
                 var document = SecureXmlLoader.LoadXmlDocument(request.Content);
-                request.Content.Position = 0;
+                if (request.Content.CanSeek)
+                {
+                    request.Content.Position = 0;
+                }
+
                 return ParseDocument(document, request.Path);
             }
             catch (XmlException exception)
@@ -116,7 +122,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
             {
                 if (atom.Name == "ChapterAtom")
                 {
-                    chapters.AddRange(ParseAtom(atom, ++atomIndex));
+                    chapters.AddRange(ParseAtom(atom, ++atomIndex, depth: 0));
                 }
                 else if (atom is { Name: "EditionFlagDefault", InnerText: "1" })
                 {
@@ -159,8 +165,13 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
         return new ChapterImportResult(true, groups, []);
     }
 
-    private IEnumerable<Chapter> ParseAtom(XmlNode atom, int index)
+    private IEnumerable<Chapter> ParseAtom(XmlNode atom, int index, int depth)
     {
+        if (depth >= MaximumAtomDepth)
+        {
+            throw new XmlException($"ChapterAtom nesting exceeds the supported maximum of {MaximumAtomDepth}.");
+        }
+
         var start = TimeSpan.Zero;
         TimeSpan? end = null;
         var name = string.Empty;
@@ -182,7 +193,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
                     name = child.ChildNodes.Cast<XmlNode>().FirstOrDefault(static node => node.Name == "ChapterString")?.InnerText ?? string.Empty;
                     break;
                 case "ChapterAtom":
-                    inner.AddRange(ParseAtom(child, index));
+                    inner.AddRange(ParseAtom(child, index, depth + 1));
                     break;
             }
         }

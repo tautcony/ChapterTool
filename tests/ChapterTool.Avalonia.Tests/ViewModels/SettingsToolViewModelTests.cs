@@ -13,6 +13,7 @@ using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.TestSupport;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -94,6 +95,32 @@ public sealed class SettingsToolViewModelTests
         Assert.True(viewModel.SettingsLoadFailed);
         Assert.Contains("defaults", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
         Assert.False(viewModel.HasUnsavedChanges);
+    }
+
+    [Fact]
+    public async Task LoadReportsUnexpectedApplyFailuresWithoutLeavingUnobservedTask()
+    {
+        var owner = CreateOwner();
+        var observed = 0;
+        Func<Exception, ValueTask> handler = exception =>
+        {
+            _ = exception;
+            observed++;
+            return ValueTask.CompletedTask;
+        };
+        var viewModel = new SettingsToolViewModel(
+            owner.PortAdapters.Preferences,
+            new FakeSettingsStore(new AppSettings()),
+            new AppLocalizationManager("en-US"),
+            themeApplicationService: new ThrowingThemeApplicationService(),
+            autoLoad: false,
+            unexpectedErrorHandler: handler);
+
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(viewModel.SettingsLoadFailed);
+        Assert.Contains("unexpectedly", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, observed);
     }
 
     [Fact]
@@ -857,6 +884,11 @@ public sealed class SettingsToolViewModelTests
         public ThemeSettings? LastApplied { get; private set; }
 
         public void Apply(ThemeSettings settings) => LastApplied = settings;
+    }
+
+    private sealed class ThrowingThemeApplicationService : IThemeApplicationService
+    {
+        public void Apply(ThemeSettings settings) => throw new InvalidOperationException("theme apply failed");
     }
 
     private sealed class FakeFontApplicationService(IFontFamilyCatalog catalog) : IFontApplicationService

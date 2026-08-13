@@ -12,6 +12,7 @@ using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.TestSupport;
 using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
@@ -560,6 +561,32 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(2, vm.ChapterNameModeIndex);
         Assert.Contains("Failed to load chapter name template", vm.StatusText, StringComparison.Ordinal);
         Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoadFailed");
+    }
+
+    [Fact]
+    public async Task LoadChapterNameTemplateFromMissingPathKeepsAutoGenerateNames()
+    {
+        var vm = CreateViewModel();
+        vm.AutoGenerateNames = true;
+
+        await vm.LoadChapterNameTemplateFromPathAsync(
+            Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "missing.txt"),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(vm.AutoGenerateNames);
+        Assert.Equal(0, vm.ChapterNameModeIndex);
+    }
+
+    [Fact]
+    public void SettingChapterNameModeIndexToCurrentValueDoesNotClearAutoGenerateNames()
+    {
+        var vm = CreateViewModel();
+        vm.AutoGenerateNames = true;
+
+        vm.ChapterNameModeIndex = 0;
+
+        Assert.True(vm.AutoGenerateNames);
+        Assert.Equal(0, vm.ChapterNameModeIndex);
     }
 
     [Fact]
@@ -1390,21 +1417,7 @@ public sealed class MainWindowViewModelTests
         return new ChapterImportResult(true, [new ChapterImportSource(path, entries)], []);
     }
 
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.slnx")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
-    }
+    private static string RepositoryRoot() => TestRepository.Root;
 
     private sealed class FakeLoadService(params ChapterImportResult[] results) : IChapterLoadService
     {

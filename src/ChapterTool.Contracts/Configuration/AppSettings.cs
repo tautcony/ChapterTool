@@ -9,7 +9,7 @@ public sealed record AppSettings(
     string DefaultSaveFormat = "Txt",
     string DefaultXmlLanguage = "und",
     string OutputTextEncoding = "utf8",
-    bool EmitBom = true,
+    bool EmitBom = false,
     decimal FrameAccuracyTolerance = 0.15m);
 
 public sealed record WindowLocation(int X, int Y);

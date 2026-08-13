@@ -13,7 +13,8 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
     public ExpressionToolViewModel(
         IExpressionSessionPort expressionSession,
         IFilePickerService? filePicker = null,
-        IExpressionAuthoringService? expressionAuthoringService = null)
+        IExpressionAuthoringService? expressionAuthoringService = null,
+        Func<Exception, ValueTask>? errorHandler = null)
     {
         this.expressionSession = expressionSession;
         this.filePicker = filePicker;
@@ -28,7 +29,10 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
                     new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
         ];
         SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
-        BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null);
+        BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null)
+        {
+            ErrorHandler = errorHandler
+        };
         ApplyCommand = new UiCommand((parameter, _) =>
         {
             if (parameter is ExpressionToolViewModel viewModel)
@@ -44,7 +48,10 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
             }
 
             return ValueTask.CompletedTask;
-        });
+        })
+        {
+            ErrorHandler = errorHandler
+        };
     }
 
     public IAppLocalizer Localizer => expressionSession.Localizer;
@@ -119,14 +126,22 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
             return;
         }
 
-        var text = await File.ReadAllTextAsync(path, cancellationToken);
-        Expression = text;
-        ExpressionSourceName = Path.GetFileName(path);
-        SelectedPresetIndex = -1;
-        var diagnostic = expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
-        StatusText = diagnostic is null
-            ? expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
-            : expressionSession.FormatDiagnosticForDisplay(diagnostic);
+        try
+        {
+            var text = await File.ReadAllTextAsync(path, cancellationToken);
+            Expression = text;
+            ExpressionSourceName = Path.GetFileName(path);
+            SelectedPresetIndex = -1;
+            var diagnostic = expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+            StatusText = diagnostic is null
+                ? expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
+                : expressionSession.FormatDiagnosticForDisplay(diagnostic);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            StatusText = expressionSession.Localizer.Format(
+                LocalizedMessage.Create("Status.LuaExpressionScriptLoadFailed", ("path", Path.GetFileName(path))));
+        }
     }
 }
 

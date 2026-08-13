@@ -34,17 +34,31 @@ public sealed class ChapterSavePathTests
             var first = Path.Combine(directory, "movie.txt");
             File.WriteAllText(first, "a");
 
-            var second = ChapterSavePath.AllocateUniqueFilePath(directory, "movie", ".txt");
+            var second = ChapterSavePath.AllocateUniqueFilePath(directory, "movie", ".txt", File.Exists);
             Assert.Equal(Path.Combine(directory, "movie_1.txt"), second);
             File.WriteAllText(second, "b");
 
-            var third = ChapterSavePath.AllocateUniqueFilePath(directory, "movie", "txt");
+            var third = ChapterSavePath.AllocateUniqueFilePath(directory, "movie", "txt", File.Exists);
             Assert.Equal(Path.Combine(directory, "movie_2.txt"), third);
         }
         finally
         {
             Directory.Delete(directory, recursive: true);
         }
+    }
+
+    [Fact]
+    public void AllocateUniqueFilePathUsesInjectedExistenceProbe()
+    {
+        var existing = new HashSet<string>(StringComparer.Ordinal)
+        {
+            Path.Combine("out", "movie.txt"),
+            Path.Combine("out", "movie_1.txt")
+        };
+
+        var path = ChapterSavePath.AllocateUniqueFilePath("out", "movie", ".txt", existing.Contains);
+
+        Assert.Equal(Path.Combine("out", "movie_2.txt"), path);
     }
 
     [Fact]

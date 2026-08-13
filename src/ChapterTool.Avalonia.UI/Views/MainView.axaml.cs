@@ -22,6 +22,7 @@ public sealed partial class MainView : UserControl
     private readonly IEmbeddedToolPresenter embeddedToolPresenter;
     private IFilePickerService? filePickerService;
     private bool windowCommandRefreshPending;
+    private bool commandStateSubscribed;
 
     public MainView()
     {
@@ -68,9 +69,7 @@ public sealed partial class MainView : UserControl
 
         InitializeComponent();
         DataContext = viewModel;
-        embeddedToolPresenter.ContentChanged += OnSecondarySurfaceChanged;
         UpdateSecondarySurface();
-        SubscribeViewModelCommandState();
         ApplyAdvancedOptionsLayout();
         RaiseCommandStates();
     }
@@ -79,6 +78,15 @@ public sealed partial class MainView : UserControl
     {
         base.OnAttachedToVisualTree(e);
         filePickerService ??= filePickerServiceFactory(this);
+        if (commandStateSubscribed)
+        {
+            return;
+        }
+
+        embeddedToolPresenter.ContentChanged += OnSecondarySurfaceChanged;
+        SubscribeViewModelCommandState();
+        commandStateSubscribed = true;
+        UpdateSecondarySurface();
     }
 
     private void OnSizeChanged(object? sender, SizeChangedEventArgs e) => ApplyAdvancedOptionsLayout();
@@ -429,9 +437,13 @@ public sealed partial class MainView : UserControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs args)
     {
-        UnsubscribeViewModelCommandState();
-        embeddedToolPresenter.ContentChanged -= OnSecondarySurfaceChanged;
-        Content = null;
+        if (commandStateSubscribed)
+        {
+            UnsubscribeViewModelCommandState();
+            embeddedToolPresenter.ContentChanged -= OnSecondarySurfaceChanged;
+            commandStateSubscribed = false;
+        }
+
         base.OnDetachedFromVisualTree(args);
     }
 

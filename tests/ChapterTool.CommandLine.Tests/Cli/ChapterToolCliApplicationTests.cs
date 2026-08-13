@@ -1,9 +1,13 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
+using ChapterTool.CommandLine;
 using ChapterTool.CommandLine.Cli;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Localization;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Runtime;
+using ChapterTool.TestSupport;
 
 namespace ChapterTool.CommandLine.Tests.Cli;
 
@@ -85,6 +89,30 @@ public sealed class ChapterToolCliApplicationTests
     public void Standalone_facade_shows_help_without_arguments()
     {
         Assert.Equal(0, ChapterToolCliHost.Run([]));
+    }
+
+    [Fact]
+    public void HostConfiguresUtf8ConsoleOutputEncoding()
+    {
+        var previous = Console.OutputEncoding;
+        try
+        {
+            var configured = ChapterToolCliHost.TryConfigureUtf8Console();
+
+            Assert.True(configured);
+            Assert.Equal(new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).CodePage, Console.OutputEncoding.CodePage);
+            Assert.Empty(Console.OutputEncoding.GetPreamble());
+        }
+        finally
+        {
+            try
+            {
+                Console.OutputEncoding = previous;
+            }
+            catch (IOException)
+            {
+            }
+        }
     }
 
     [Fact]
@@ -406,32 +434,202 @@ public sealed class ChapterToolCliApplicationTests
         Assert.Contains("Unsupported output format 'expr'.", console.Stderr, StringComparison.Ordinal);
     }
 
-    private static string XmlFixture() => Path.Combine(
-        RepositoryRoot(),
-        "tests",
-        "ChapterTool.Core.Tests",
-        "Fixtures",
+    [Fact]
+    public async Task ConvertFailsWhenInputPathIsMissing()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+        var missing = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "missing.xml");
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(missing, "txt", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains(missing, console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertFailsForUnsupportedInputExtension()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+        var path = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "notes.bin");
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        await File.WriteAllTextAsync(path, "not a chapter file", TestContext.Current.CancellationToken);
+        try
+        {
+            var exitCode = await app.ConvertAsync(
+                new CliConvertRequest(path, "txt", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, exitCode);
+            Assert.Contains(path, console.Stderr, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ConvertReadsMplsPlaylistFixture()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+        var input = TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00011_24_Eva.mpls");
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(input, "txt", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01=", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertRefusesExistingOutputUnlessForced()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+        var outputPath = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "existing.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+        await File.WriteAllTextAsync(outputPath, "sentinel", TestContext.Current.CancellationToken);
+
+        try
+        {
+            var refused = await app.ConvertAsync(
+                new CliConvertRequest(XmlFixture(), "txt", outputPath, Stdout: false, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, refused);
+            Assert.Contains("already exists", console.Stderr, StringComparison.Ordinal);
+            Assert.Equal("sentinel", await File.ReadAllTextAsync(outputPath, TestContext.Current.CancellationToken));
+
+            console = new RecordingCliConsole();
+            app = new ChapterToolCliApplication(console: console);
+            var overwritten = await app.ConvertAsync(
+                new CliConvertRequest(XmlFixture(), "txt", outputPath, Stdout: false, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null, Force: true),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, overwritten);
+            var content = await File.ReadAllTextAsync(outputPath, TestContext.Current.CancellationToken);
+            Assert.Contains("CHAPTER01=", content, StringComparison.Ordinal);
+        }
+        finally
+        {
+            var directory = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ConvertRejectsNonFiniteFrameRate()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var nan = await app.ConvertAsync(
+            new CliConvertRequest(XmlFixture(), "qpf", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: double.NaN),
+            TestContext.Current.CancellationToken);
+        var infinity = await app.ConvertAsync(
+            new CliConvertRequest(XmlFixture(), "qpf", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: double.PositiveInfinity),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, nan);
+        Assert.Equal(1, infinity);
+        Assert.Contains("finite number greater than zero", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertReportsOutOfRangeGroupIndex()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(XmlFixture(), "txt", OutputPath: null, Stdout: true, GroupIndex: 5, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Group index 5 is outside the available range.", console.Stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("Multiple groups are available", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWritesRequestedEncodingAndBom()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+        var outputPath = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"), "chapters.txt");
+
+        try
+        {
+            var exitCode = await app.ConvertAsync(
+                new CliConvertRequest(
+                    XmlFixture(),
+                    "txt",
+                    outputPath,
+                    Stdout: false,
+                    GroupIndex: 0,
+                    EntryIndex: 0,
+                    EntryId: null,
+                    XmlLanguage: null,
+                    SourceFileName: null,
+                    FrameRate: null,
+                    TextEncoding: "utf16le",
+                    EmitBom: true),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(0, exitCode);
+            var bytes = await File.ReadAllBytesAsync(outputPath, TestContext.Current.CancellationToken);
+            Assert.True(bytes.Length >= 2);
+            Assert.Equal(0xFF, bytes[0]);
+            Assert.Equal(0xFE, bytes[1]);
+        }
+        finally
+        {
+            var directory = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ConvertRejectsUnsupportedEncoding()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(XmlFixture(), "txt", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null, TextEncoding: "latin1"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Unsupported text encoding 'latin1'.", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LocalizationManagerAcceptsShortLanguageCodesWithoutRewritingThreadCulture()
+    {
+        var before = CultureInfo.CurrentUICulture;
+        var localizer = new CliLocalizationManager("zh");
+
+        Assert.Equal(UiLanguageCode.Chinese, localizer.CurrentCultureName);
+        Assert.Equal("输入格式", localizer.GetString("Cli.Header.InputFormats"));
+        Assert.Equal(before, CultureInfo.CurrentUICulture);
+    }
+
+    private static string XmlFixture() => TestRepository.CoreFixture(
         "Importing",
         "Text",
         "Xml",
         "xml (T2 - 4 Editions).xml");
-
-    private static string RepositoryRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
-        {
-            if (Directory.Exists(Path.Combine(current.FullName, "openspec")) &&
-                Directory.Exists(Path.Combine(current.FullName, "src")))
-            {
-                return current.FullName;
-            }
-
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Repository root could not be located from test output directory.");
-    }
 
     private sealed class RecordingCliConsole : ICliConsole
     {

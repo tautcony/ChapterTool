@@ -1,3 +1,4 @@
+using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
@@ -92,6 +93,52 @@ public sealed class IfoImporterTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == new ChapterDiagnosticCode(source, reason));
     }
 
+    [Fact]
+    public void IfoOffsetsUseUnsignedSixteenBitValues()
+    {
+        Assert.Equal(0x8000, IfoChapterImporter.ToUInt16([0x80, 0x00]));
+        Assert.Equal(0xFFFF, IfoChapterImporter.ToUInt16([0xFF, 0xFF]));
+    }
+
+    [Fact]
+    public async Task IfoImporterRejectsStreamOverPortableLimit()
+    {
+        var importer = new IfoChapterImporter();
+        using var stream = new OversizedSeekableStream();
+
+        var result = await importer.ImportAsync(
+            new ChapterImportRequest("huge.ifo", stream),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InputTooLarge);
+    }
+
     private static string Diagnostics(ChapterImportResult result) =>
         string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => $"{diagnostic.Code}: {diagnostic.Message}"));
+
+    private sealed class OversizedSeekableStream : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => true;
+
+        public override bool CanWrite => false;
+
+        public override long Length => PortableInputPolicy.MaxBytes + 1;
+
+        public override long Position { get; set; }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => 0;
+
+        public override long Seek(long offset, SeekOrigin origin) => Position = offset;
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
 }

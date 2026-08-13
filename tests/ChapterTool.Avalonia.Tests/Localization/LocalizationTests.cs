@@ -12,6 +12,7 @@ using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.TestSupport;
 
 namespace ChapterTool.Avalonia.Tests.Localization;
 

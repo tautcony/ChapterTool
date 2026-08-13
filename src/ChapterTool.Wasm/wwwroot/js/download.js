@@ -1,6 +1,6 @@
 window.chapterToolWasm = {
   downloadText: function (fileName, content, encodingId, emitBom) {
-    const bytes = encodeText(content || '', encodingId || 'utf8', emitBom !== false);
+    const bytes = encodeText(content || '', encodingId || 'utf8', emitBom === true);
     const blob = new Blob([bytes], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -31,13 +31,23 @@ window.chapterToolWasm = {
     area.remove();
   },
   getLocalStorage: function (key) {
-    return window.localStorage.getItem(key);
+    try {
+      return window.localStorage.getItem(key);
+    } catch (error) {
+      return null;
+    }
   },
   setLocalStorage: function (key, value) {
-    window.localStorage.setItem(key, value);
+    try {
+      window.localStorage.setItem(key, value);
+    } catch (error) {
+    }
   },
   removeLocalStorage: function (key) {
-    window.localStorage.removeItem(key);
+    try {
+      window.localStorage.removeItem(key);
+    } catch (error) {
+    }
   },
   applyAppearance: function (themeId, language, uiFont, monospaceFont) {
     const themes = {
@@ -73,13 +83,27 @@ window.chapterToolWasm = {
     }
     return !!el.isContentEditable;
   },
-  registerDropZone: function (elementId, dotNetRef) {
+  registerShortcutGuard: function () {
+    if (window.__chapterToolShortcutGuard) {
+      return;
+    }
+    window.__chapterToolShortcutGuard = true;
+    document.addEventListener('keydown', (event) => {
+      if (shouldPreventBrowserShortcut(event)) {
+        event.preventDefault();
+      }
+    }, true);
+  },
+  shouldPreventBrowserShortcut: function (event) {
+    return shouldPreventBrowserShortcut(event);
+  },
+  registerDropZone: function (elementId, dotNetRef, maxBytes) {
     const el = document.getElementById(elementId);
     if (!el || el.dataset.dropRegistered === '1') {
       return;
     }
     el.dataset.dropRegistered = '1';
-    const maxBytes = 64 * 1024 * 1024;
+    const limit = typeof maxBytes === 'number' && maxBytes > 0 ? maxBytes : 64 * 1024 * 1024;
 
     const setOver = (value) => {
       el.classList.toggle('drag-over', value);
@@ -110,7 +134,7 @@ window.chapterToolWasm = {
         await dotNetRef.invokeMethodAsync('OnBrowserFileDropped', '', new Uint8Array());
         return;
       }
-      if (file.size > maxBytes) {
+      if (file.size > limit) {
         await dotNetRef.invokeMethodAsync('OnBrowserFileDropRejected', 'too-large');
         return;
       }
@@ -123,6 +147,33 @@ window.chapterToolWasm = {
     });
   }
 };
+
+function isEditableShortcutTarget(el) {
+  if (!el) {
+    return false;
+  }
+  const tag = (el.tagName || '').toUpperCase();
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    return true;
+  }
+  return !!el.isContentEditable;
+}
+
+function shouldPreventBrowserShortcut(event) {
+  const key = event.key || '';
+  const ctrl = !!(event.ctrlKey || event.metaKey);
+  const reload = key === 'F5' || (ctrl && key.toLowerCase() === 'r');
+  if (reload) {
+    return true;
+  }
+  if (isEditableShortcutTarget(event.target)) {
+    return false;
+  }
+  if (ctrl && (key.toLowerCase() === 's' || key.toLowerCase() === 'o' || key.toLowerCase() === 'l')) {
+    return true;
+  }
+  return key === 'F11' || key === 'F9';
+}
 
 function encodeText(text, encodingId, emitBom) {
   if (encodingId === 'utf8' || !encodingId) {

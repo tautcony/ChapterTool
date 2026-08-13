@@ -6,7 +6,6 @@ public sealed class ShortcutRouter(MainWindowViewModel viewModel)
     {
         return gesture switch
         {
-            "Ctrl+O" => viewModel.LoadCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "Ctrl+S" => viewModel.SaveCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "Ctrl+R" or "F5" => viewModel.ReloadCommand.ExecuteAsync(cancellationToken: cancellationToken),
             "Ctrl+L" => viewModel.LogCommand.ExecuteAsync(cancellationToken: cancellationToken),

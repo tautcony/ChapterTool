@@ -28,6 +28,7 @@ public sealed partial class MainWindowViewModel
         var previousText = ChapterNameTemplateText;
         var previousStatus = ChapterNameTemplateStatus;
         var previousMode = ChapterNameModeIndex;
+        var previousAutoGenerateNames = AutoGenerateNames;
 
         try
         {
@@ -49,6 +50,7 @@ public sealed partial class MainWindowViewModel
         {
             // Restore mode first: a non-template mode clears template fields in the mode setter.
             ChapterNameModeIndex = previousMode;
+            AutoGenerateNames = previousAutoGenerateNames;
             ChapterNameTemplateText = previousText;
             ChapterNameTemplateStatus = previousStatus;
 

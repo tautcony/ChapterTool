@@ -4,18 +4,10 @@ namespace ChapterTool.Contracts.PlatformPorts;
 
 public interface IApplicationLogService
 {
-    event EventHandler<ApplicationLogEntry>? EntryAdded
-    {
-        add { }
-        remove { }
-    }
+    event EventHandler<ApplicationLogEntry>? EntryAdded;
 
     /// <summary>Raised after the entry history has been cleared.</summary>
-    event EventHandler? Cleared
-    {
-        add { }
-        remove { }
-    }
+    event EventHandler? Cleared;
 
     IReadOnlyList<ApplicationLogEntry> Entries { get; }
 

@@ -49,7 +49,18 @@ public sealed class MacMkvToolNixInstallProbe(
                 continue;
             }
 
-            foreach (var appDirectory in Directory.EnumerateDirectories(root, "MKVToolNix*.app").OrderByDescending(Path.GetFileName, StringComparer.OrdinalIgnoreCase))
+            IEnumerable<string> appDirectories;
+            try
+            {
+                appDirectories = Directory.EnumerateDirectories(root, "MKVToolNix*.app")
+                    .OrderByDescending(Path.GetFileName, StringComparer.OrdinalIgnoreCase);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var appDirectory in appDirectories)
             {
                 yield return Path.Combine(appDirectory, "Contents", "MacOS", executableName);
             }

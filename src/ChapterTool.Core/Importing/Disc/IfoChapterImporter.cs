@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 
@@ -34,6 +35,11 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         try
         {
             var stream = await OpenImportStreamAsync(request, cancellationToken);
+            if (stream is null)
+            {
+                return ChapterImportResult.Failed(PortableInputReader.TooLargeDiagnostic());
+            }
+
             ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
             var entries = GetStreams(request.Path, stream)
                 .Select((info, index) => new ChapterImportEntry(
@@ -146,8 +152,8 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         var chainOffset = GetChainOffset(stream, pcgit, programChain);
         var programCount = GetNumberOfPrograms(stream, pcgit, chainOffset);
         var chapters = new List<Chapter> { new(1, TimeSpan.Zero, "Chapter 01") };
-        var programMapOffset = ToInt16(ReadBlock(stream, pcgit + chainOffset + 230, 2));
-        var cellTableOffset = ToInt16(ReadBlock(stream, pcgit + chainOffset + 0xE8, 2));
+        var programMapOffset = ToUInt16(ReadBlock(stream, pcgit + chainOffset + 230, 2));
+        var cellTableOffset = ToUInt16(ReadBlock(stream, pcgit + chainOffset + 0xE8, 2));
 
         for (var currentProgram = 0; currentProgram < programCount; currentProgram++)
         {
@@ -188,7 +194,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         return stream.ReadByte();
     }
 
-    private static async ValueTask<Stream> OpenImportStreamAsync(ChapterImportRequest request, CancellationToken cancellationToken)
+    private static async ValueTask<Stream?> OpenImportStreamAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
         if (request.Content is null)
         {
@@ -197,14 +203,23 @@ public sealed partial class IfoChapterImporter : IChapterImporter
 
         if (request.Content.CanSeek)
         {
+            try
+            {
+                if (!PortableInputPolicy.IsWithinLimit(request.Content.Length - request.Content.Position))
+                {
+                    return null;
+                }
+            }
+            catch (NotSupportedException)
+            {
+            }
+
             request.Content.Position = 0;
             return request.Content;
         }
 
-        var memory = new MemoryStream();
-        await request.Content.CopyToAsync(memory, cancellationToken);
-        memory.Position = 0;
-        return memory;
+        var copy = await PortableInputPolicy.CopyToBoundedMemoryAsync(request.Content, cancellationToken);
+        return copy.Exceeded ? null : copy.Stream;
     }
 
     private static long GetPcgitPosition(Stream stream) => ToInt32(ReadBlock(stream, 0xCC, 4)) * 0x800L;
@@ -226,7 +241,7 @@ public sealed partial class IfoChapterImporter : IChapterImporter
         return stream.ReadExactBytes(count);
     }
 
-    private static short ToInt16(byte[] bytes) => (short)((bytes[0] << 8) + bytes[1]);
+    internal static int ToUInt16(byte[] bytes) => (bytes[0] << 8) | bytes[1];
 
     private static uint ToInt32(byte[] bytes) => (uint)((bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3]);
 

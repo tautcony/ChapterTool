@@ -38,7 +38,7 @@ internal sealed class BdmvPlaylistScanner
                     .Take(MaximumPlaylists)
             ];
         }
-        catch (IOException exception)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             diagnostics.Add(DiagnosticSeverity.Warning, ChapterDiagnosticCode.BdmvScanRejected, $"Unable to enumerate BDMV playlists: {exception.Message}");
             return [];
@@ -68,7 +68,7 @@ internal sealed class BdmvPlaylistScanner
 
                 candidates.Add(new BdmvPlaylistCandidate(name, path, projection, ["playlist-scan"]));
             }
-            catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
+            catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException or UnauthorizedAccessException)
             {
                 diagnostics.Add(DiagnosticSeverity.Warning, ChapterDiagnosticCode.BdmvScanRejected, $"Rejected BDMV playlist {name}: {exception.Message}", path);
             }

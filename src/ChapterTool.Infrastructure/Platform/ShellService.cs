@@ -24,11 +24,18 @@ public sealed class ShellService : IShellService
     public ValueTask OpenAsync(string target, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        using var p = Start(new ProcessStartInfo
+        try
         {
-            FileName = target,
-            UseShellExecute = true
-        });
+            using var p = Start(new ProcessStartInfo
+            {
+                FileName = target,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception, "Unable to open '{Target}'.", target);
+        }
 
         return ValueTask.CompletedTask;
     }
@@ -41,7 +48,7 @@ public sealed class ShellService : IShellService
             if (OperatingSystem.IsWindows())
             {
                 // explorer /select,"path" highlights the file in Explorer
-                Run("explorer", $"/select,\"{filePath}\"");
+                Run("explorer", $"/select,{filePath}");
             }
             else if (OperatingSystem.IsMacOS())
             {

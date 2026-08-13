@@ -189,19 +189,14 @@ internal sealed record MplsPlaylistProjection(
 
 internal static class MplsFrameRateCatalog
 {
-    private static readonly double[] Values =
-    [
-        0,
-        24000d / 1001d,
-        24,
-        25,
-        30000d / 1001d,
-        30,
-        50,
-        60000d / 1001d,
-        60
-    ];
-
-    internal static double FromCode(byte? code) =>
-        code is { } value && value < Values.Length ? Values[value] : 0;
+    internal static double FromCode(byte? code) => code switch
+    {
+        1 => 24000d / 1001d,
+        2 => 24,
+        3 => 25,
+        4 => 30000d / 1001d,
+        6 => 50,
+        7 => 60000d / 1001d,
+        _ => 0
+    };
 }

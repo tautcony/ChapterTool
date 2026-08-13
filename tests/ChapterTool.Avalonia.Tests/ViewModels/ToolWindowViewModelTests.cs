@@ -12,6 +12,7 @@ using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.TestSupport;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
 
@@ -184,6 +185,43 @@ public sealed class ToolWindowViewModelTests
         {
             File.Delete(scriptPath);
         }
+    }
+
+    [Fact]
+    public async Task ExpressionToolBrowseScriptReportsMissingFileInStatus()
+    {
+        var owner = CreateOwner(new AppLocalizationManager("en-US"));
+        var missing = Path.Combine(Path.GetTempPath(), $"chaptertool-missing-{Guid.NewGuid():N}.lua");
+        var picker = new FakeFilePicker(missing);
+        var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression, picker);
+
+        await expression.BrowseScriptCommand.ExecuteAsync();
+
+        Assert.Contains("Failed to load Lua script", expression.StatusText, StringComparison.Ordinal);
+        Assert.Null(expression.BrowseScriptCommand.ExecutionError);
+    }
+
+    [Fact]
+    public void ExpressionLanguageAndForwardShiftCommandsAcceptErrorHandler()
+    {
+        var owner = CreateOwner();
+        var observed = 0;
+        Func<Exception, ValueTask> handler = exception =>
+        {
+            _ = exception;
+            observed++;
+            return ValueTask.CompletedTask;
+        };
+
+        var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression, errorHandler: handler);
+        using var language = new LanguageToolViewModel(owner.PortAdapters.Preferences, handler);
+        var forward = new ForwardShiftToolViewModel(owner.PortAdapters.ChapterEdit, handler);
+
+        Assert.Same(handler, expression.BrowseScriptCommand.ErrorHandler);
+        Assert.Same(handler, expression.ApplyCommand.ErrorHandler);
+        Assert.Same(handler, language.ApplyCommand.ErrorHandler);
+        Assert.Same(handler, forward.ApplyCommand.ErrorHandler);
+        Assert.Equal(0, observed);
     }
 
     [Fact]

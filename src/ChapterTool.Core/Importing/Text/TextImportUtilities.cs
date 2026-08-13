@@ -1,4 +1,6 @@
 using System.Text;
+using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Importing.Cue;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Importing.Text;
@@ -6,20 +8,38 @@ namespace ChapterTool.Core.Importing.Text;
 internal static class TextImportUtilities
 {
     /// <summary>
-    /// Executes the ReadTextAsync operation.
+    /// Reads import text. Invalid UTF-8 falls back to a permissive decode.
     /// </summary>
-    /// <param name="request">The import request.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>The operation result.</returns>
-    public static async ValueTask<string> ReadTextAsync(ChapterImportRequest request, CancellationToken cancellationToken)
+    public static async ValueTask<DecodedImportText> ReadTextAsync(ChapterImportRequest request, CancellationToken cancellationToken)
     {
+        byte[] bytes;
         if (request.Content is not null)
         {
-            using var reader = new StreamReader(request.Content, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-            return await reader.ReadToEndAsync(cancellationToken);
+            using var memory = new MemoryStream();
+            await request.Content.CopyToAsync(memory, cancellationToken);
+            bytes = memory.ToArray();
+        }
+        else
+        {
+            bytes = await File.ReadAllBytesAsync(request.Path, cancellationToken);
         }
 
-        return await File.ReadAllTextAsync(request.Path, cancellationToken);
+        var text = CueTextDecoder.Decode(bytes, out var usedEncodingFallback);
+        return new DecodedImportText(text, usedEncodingFallback);
+    }
+
+    internal static ChapterImportResult WithEncodingFallback(ChapterImportResult result, bool usedEncodingFallback)
+    {
+        if (!usedEncodingFallback)
+        {
+            return result;
+        }
+
+        var warning = new ChapterDiagnostic(
+            DiagnosticSeverity.Warning,
+            ChapterDiagnosticCode.TextEncodingFallback,
+            "Text is not valid UTF-8. Invalid byte sequences were replaced. The file may use a legacy encoding such as GBK or Shift-JIS.");
+        return result with { Diagnostics = [.. result.Diagnostics, warning] };
     }
 
     /// <summary>
@@ -35,3 +55,5 @@ internal static class TextImportUtilities
         return ChapterImportResult.Succeeded(group);
     }
 }
+
+internal readonly record struct DecodedImportText(string Text, bool UsedEncodingFallback);

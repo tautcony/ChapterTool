@@ -261,7 +261,7 @@
                 <input id="orderShift"
                        class="order-shift-input"
                        type="number"
-                       min="-1000"
+                       min="0"
                        max="1000"
                        step="1"
                        @bind="orderShift"
@@ -699,7 +699,7 @@
     private bool roundFrames = true;
     private string uiLanguage = "en-US";
     private int outputTextEncodingIndex;
-    private bool emitBom = true;
+    private bool emitBom;
     private decimal frameAccuracyTolerance = 0.15m;
     private string themePresetId = "avalonia-default";
     private string uiFontFamily = "system-ui";
@@ -721,7 +721,7 @@
     private bool draftRoundFrames = true;
     private string draftUiLanguage = "en-US";
     private int draftOutputTextEncodingIndex;
-    private bool draftEmitBom = true;
+    private bool draftEmitBom;
     private decimal draftFrameAccuracyTolerance = 0.15m;
     private string draftThemePresetId = "avalonia-default";
     private string draftUiFontFamily = "system-ui";
@@ -754,49 +754,57 @@
         }
 
         dropZoneRef = DotNetObjectReference.Create(this);
-        await Js.InvokeVoidAsync("chapterToolWasm.registerDropZone", "chaptertool-shell", dropZoneRef);
-
-        var json = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", SettingsStorageKey);
-        if (string.IsNullOrWhiteSpace(json))
+        try
         {
-            foreach (var legacyKey in LegacySettingsStorageKeys)
+            await Js.InvokeVoidAsync("chapterToolWasm.registerShortcutGuard");
+            await Js.InvokeVoidAsync("chapterToolWasm.registerDropZone", "chaptertool-shell", dropZoneRef, WasmWorkspace.MaxLoadBytes);
+
+            var json = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", SettingsStorageKey);
+            if (string.IsNullOrWhiteSpace(json))
             {
-                var legacyJson = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", legacyKey);
-                if (!string.IsNullOrWhiteSpace(legacyJson))
+                foreach (var legacyKey in LegacySettingsStorageKeys)
                 {
-                    json = legacyJson;
-                    await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, legacyJson);
-                    break;
+                    var legacyJson = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", legacyKey);
+                    if (!string.IsNullOrWhiteSpace(legacyJson))
+                    {
+                        json = legacyJson;
+                        await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, legacyJson);
+                        break;
+                    }
                 }
             }
-        }
 
-        foreach (var legacyKey in LegacySettingsStorageKeys)
-        {
-            await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", legacyKey);
-        }
-
-        if (!string.IsNullOrWhiteSpace(json))
-        {
-            try
+            foreach (var legacyKey in LegacySettingsStorageKeys)
             {
-                var settings = JsonSerializer.Deserialize<WasmSettings>(json, SettingsJsonOptions);
-                if (settings is { SchemaVersion: 1, Application: not null, Theme: not null, Font: not null })
+                await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", legacyKey);
+            }
+
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                try
                 {
-                    ApplySettingsToWorkspace(settings);
-                    await ApplyAppearanceAsync();
-                    PullOptionsFromWorkspace();
-                    StateHasChanged();
+                    var settings = JsonSerializer.Deserialize<WasmSettings>(json, SettingsJsonOptions);
+                    if (settings is { SchemaVersion: 1, Application: not null, Theme: not null, Font: not null })
+                    {
+                        ApplySettingsToWorkspace(settings);
+                        await ApplyAppearanceAsync();
+                        PullOptionsFromWorkspace();
+                        StateHasChanged();
+                    }
+                    else
+                    {
+                        await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", SettingsStorageKey);
+                    }
                 }
-                else
+                catch (JsonException)
                 {
                     await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", SettingsStorageKey);
                 }
             }
-            catch (JsonException)
-            {
-                await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", SettingsStorageKey);
-            }
+        }
+        catch (JSException)
+        {
+            // Privacy mode or a missing JavaScript host must not block first render.
         }
     }
 
@@ -916,12 +924,6 @@
     private async Task OnProjectionOptionsChanged()
     {
         PushProjectionOptions();
-        if (chapterNameModeIndex != 2 && !string.IsNullOrEmpty(Workspace.ChapterNameTemplateText) && chapterNameModeIndex != 2)
-        {
-            // Switching away from Template keeps stored text until a new template is loaded,
-            // but export options only project template text in Template mode.
-        }
-
         Workspace.ApplyOptionsAndRefresh();
         await PersistSettingsAsync();
     }
@@ -1063,11 +1065,27 @@
         try
         {
             await using var stream = file.OpenReadStream(maxAllowedSize: WasmWorkspace.MaxLoadBytes);
-            using var memory = new MemoryStream();
-            await stream.CopyToAsync(memory);
+            var bytes = new byte[file.Size];
+            var read = 0;
+            while (read < bytes.Length)
+            {
+                var n = await stream.ReadAsync(bytes.AsMemory(read));
+                if (n == 0)
+                {
+                    break;
+                }
+
+                read += n;
+            }
+
+            if (read < bytes.Length)
+            {
+                Array.Resize(ref bytes, read);
+            }
+
             PushExportOptions();
             PushProjectionOptions();
-            await Workspace.LoadAsync(file.Name, memory.ToArray());
+            await Workspace.LoadAsync(file.Name, bytes);
             PullOptionsFromWorkspace();
         }
         catch (IOException)

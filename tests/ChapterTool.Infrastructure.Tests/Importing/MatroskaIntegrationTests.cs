@@ -13,11 +13,13 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
 {
     private ExternalToolLocation? mkvextractLocation;
     private string? skipReason;
+    private string? settingsRoot;
 
     public async ValueTask InitializeAsync()
     {
         var root = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
+        settingsRoot = root;
 
         var pathDirs = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
             .Split(Path.PathSeparator)
@@ -33,7 +35,21 @@ public sealed class MatroskaIntegrationTests : IAsyncLifetime
         }
     }
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        if (settingsRoot is not null)
+        {
+            try
+            {
+                Directory.Delete(settingsRoot, recursive: true);
+            }
+            catch (IOException)
+            {
+            }
+        }
+
+        return ValueTask.CompletedTask;
+    }
 
     [Fact]
     public async Task Importer_reads_chapters_from_real_mkv_file()

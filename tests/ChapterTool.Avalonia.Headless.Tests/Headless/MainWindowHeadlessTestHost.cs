@@ -18,6 +18,7 @@ using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
+using ChapterTool.TestSupport;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 
@@ -290,21 +291,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         ViewModel.UpdateSelectedRows(indexes.ToHashSet());
     }
 
-    public static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "ChapterTool.slnx")))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate repository root from test output directory.");
-    }
+    public static string RepositoryRoot() => TestRepository.Root;
 
     public void Dispose()
     {

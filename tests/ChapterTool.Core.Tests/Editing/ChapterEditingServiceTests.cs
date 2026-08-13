@@ -15,6 +15,7 @@ public sealed class ChapterEditingServiceTests
         var result = service.EditTime(Sample(), 1, "25:00:00.000");
 
         Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[1].StartTime);
+        Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidTimeText);
     }
 
     [Fact]
