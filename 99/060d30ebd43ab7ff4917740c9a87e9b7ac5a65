@@ -1,0 +1,24 @@
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs
+  s_5096dff3705f63::t_a22c7e1a486e27 68-72
+src/ChapterTool.Avalonia.UI/Resources/Styles.axaml
+  s_5096dff3705f63::t_0eedd8015e7388 842-849,927
+  s_5096dff3705f63::t_92e66d487ea705 928-930
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_5096dff3705f63::t_b4da41f9e68265 123-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "99060d30ebd43ab7ff4917740c9a87e9b7ac5a65",
+  "prompts": {},
+  "sessions": {
+    "s_5096dff3705f63": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a00ae8-5b74-70b1-8d32-6d968e13cef4",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
