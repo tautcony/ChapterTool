@@ -839,6 +839,14 @@
                               HorizontalAlignment="Center"
                               VerticalAlignment="Center"/>
 
+              <TextBlock Grid.Column="0"
+                         x:Name="PART_Checkmark"
+                         Text="✓"
+                         IsVisible="False"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Foreground="{TemplateBinding Foreground}" />
+
               <ContentPresenter Grid.Column="1"
                                 x:Name="PART_HeaderPresenter"
                                 Content="{TemplateBinding Header}"
@@ -913,6 +921,10 @@
     </Setter>
 
     <Style Selector="^:icon /template/ ContentControl#PART_IconPresenter">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="^:checked /template/ TextBlock#PART_Checkmark">
       <Setter Property="IsVisible" Value="True" />
     </Style>
 

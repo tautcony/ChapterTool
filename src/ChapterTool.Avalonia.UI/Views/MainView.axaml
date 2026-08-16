@@ -120,6 +120,17 @@
               <TextBlock VerticalAlignment="Center" Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" />
             </DataTemplate>
           </ComboBox.SelectionBoxItemTemplate>
+          <ComboBox.ContextMenu>
+            <ContextMenu x:DataType="vm:MainWindowViewModel"
+                         DataContext="{Binding #RootView.DataContext}">
+              <MenuItem x:Name="ClipCombineMenuItem"
+                        Header="{DynamicResource Main.Combine}"
+                        ToggleType="CheckBox"
+                        IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
+                        IsEnabled="{Binding CanCombine}"
+                        Command="{Binding CombineCommand}" />
+            </ContextMenu>
+          </ComboBox.ContextMenu>
         </ComboBox>
 
         <Grid Grid.Column="2"

@@ -65,7 +65,11 @@ public sealed class UiDesignSystemHeadlessTests
         Assert.True(changeFps.IsVisible);
         Assert.Equal(host.ViewModel.ChangeFpsCommand, changeFps.Command);
         Assert.False(string.IsNullOrWhiteSpace(AutomationProperties.GetName(changeFps)));
-        Assert.Null(host.RequiredControl<ComboBox>("ClipBox").ContextMenu);
+        var clipMenu = host.RequiredControl<ComboBox>("ClipBox").ContextMenu;
+        Assert.NotNull(clipMenu);
+        var combine = MainWindowHeadlessTestHost.RequiredMenuItem(host.RequiredControl<ComboBox>("ClipBox"), "ClipCombineMenuItem");
+        Assert.True(combine.IsEnabled);
+        Assert.False(combine.IsChecked);
         Assert.Null(host.RequiredControl<ComboBox>("FrameRateBox").ContextMenu);
     }
 
