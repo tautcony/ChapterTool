@@ -56,10 +56,10 @@
 - [x] 5.3 Add/adjust composition smoke or unit coverage that asserts reference identity (or a documented equivalent policy factory) for formatter, expression engine/authoring service, export inputs, and external-tool locator across GUI importer, save, main-window, settings-window, and expression-editor paths. Evidence: `AppCompositionRootIdentityHeadlessTests.Composition_reuses_shared_services_across_runtime_factories_and_tool_windows`.
 - [x] 5.4 Reaffirm Lua sandbox library surface with a focused Core test if not already covered in Slice A (no io/os/package; math/string/table + helpers only). Existing `LuaExpressionScriptServiceTests` exercises safe math and rejects `io.open`.
 - [x] 5.5 Slice E merge gate: `dotnet test ChapterTool.Avalonia.slnx`.
-- [x] 5.6 Final docs pass: `docs/code-map/*` consistency with shipped ownership; cross-link `docs/code-review-src.md` from the change PR summary. Evidence: updated `docs/code-map/core.md`, `docs/code-map/avalonia.md`, and change proposal/review links.
+- [x] 5.6 Final docs pass: `docs/code-map/*` consistency with shipped ownership; cross-link `docs/archive/code-review/review-2026-07-12/code-review-src.md` from the change PR summary. Evidence: updated `docs/code-map/core.md`, `docs/code-map/avalonia.md`, and change proposal/review links.
 
 ## 6. Close-out
 
 - [x] 6.1 Run `openspec validate "src-code-review-remediation" --strict`. Evidence: passed after implementation and test gates.
-- [x] 6.2 Ensure all tasks above are checked with PR references or notes where useful. Evidence: task notes include focused test/composition evidence; remaining residual risks stay documented in `docs/code-review-src.md`.
+- [x] 6.2 Ensure all tasks above are checked with PR references or notes where useful. Evidence: task notes include focused test/composition evidence; remaining residual risks stay documented in `docs/archive/code-review/review-2026-07-12/code-review-src.md`.
 - [x] 6.3 When implementation is complete and verified, archive the change with delta sync into `openspec/specs/` (do not archive with sync skipped). Evidence: archived as `openspec/changes/archive/2026-07-12-src-code-review-remediation/`; CLI synced all six delta specs before moving the change.

@@ -16,6 +16,8 @@
   - `tests/ChapterTool.TestSupport` (shared repository root, fixture paths, and test logger)
 - Prefer `rg` for searching files and text.
 - Use `docs/code-map/` as the primary navigation index for the current codebase.
+- Read only current documentation by default. Start with `docs/README.md`, `docs/code-map/`, and applicable current testing guidance.
+- Treat `docs/archive/` as historical reference. Do not read `docs/archive/code-review/` or `docs/archive/migrations/` unless the task explicitly requires review evidence, migration history, or comparison with an earlier implementation.
 - Update the applicable code-map files when feature work changes module ownership, entry points, runtime wiring, or primary tests.
 - For product-independent WinForms-to-Avalonia migration methods, start with `.agents/skills/README-winforms-to-avalonia.md` and the `winforms-to-avalonia` orchestrator skill.
 - The migration method has phases A through G.

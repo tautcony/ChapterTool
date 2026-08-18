@@ -1,6 +1,6 @@
 ## Why
 
-A full-source maintainability and security review (`docs/code-review-src.md`, 2026-07-12) found Core and Infrastructure in good shape after `decompose-main-window-session`, but left clear residual risk: the Avalonia shell still centers a ~2k-line ViewModel with incomplete extractions (dead Settings “modules”, dual command wrappers, ExpressionEditor self-wiring), and import paths lack explicit security baselines. Those gaps should be specified and fixed now before more features grow around the same hotspots.
+A full-source maintainability and security review (`docs/archive/code-review/review-2026-07-12/code-review-src.md`, 2026-07-12) found Core and Infrastructure in good shape after `decompose-main-window-session`, but left clear residual risk: the Avalonia shell still centers a ~2k-line ViewModel with incomplete extractions (dead Settings “modules”, dual command wrappers, ExpressionEditor self-wiring), and import paths lack explicit security baselines. Those gaps should be specified and fixed now before more features grow around the same hotspots.
 
 ## What Changes
 
@@ -11,12 +11,12 @@ A full-source maintainability and security review (`docs/code-review-src.md`, 20
 - **Expression composition (P1):** Inject shared expression authoring/engine services into `ExpressionEditor` instead of constructing private defaults outside the composition root.
 - **Composition lifecycle (P2):** Clarify singleton vs per-use factories for formatter, tool locator, export, and expression engine; reduce optional production dependencies that hide invariants.
 - **Verification:** Focused unit/Core importer tests for parser safety; Avalonia unit + Headless for shell slices; full-solution gates per merge slice.
-- **Docs:** Update `docs/code-map/` for new orchestration ownership; keep `docs/code-review-src.md` as the review source of truth (optional cross-link).
+- **Docs:** Update `docs/code-map/` for new orchestration ownership; keep `docs/archive/code-review/review-2026-07-12/code-review-src.md` as the review source of truth (optional cross-link).
 
 No intended chapter format semantics, export-content, or CLI product-scope expansion.
 Telemetry remains enabled by default under the current product decision; changing Sentry enablement, DSN handling, or PII defaults is explicitly outside this change.
 
-Review source and residual-risk record: [`docs/code-review-src.md`](../../docs/code-review-src.md); implementation follow-up checklist: [`docs/code-review-remediation-plan.md`](../../docs/code-review-remediation-plan.md).
+Review source and residual-risk record: [`docs/archive/code-review/review-2026-07-12/code-review-src.md`](../../../../docs/archive/code-review/review-2026-07-12/code-review-src.md); implementation follow-up checklist: [`docs/archive/code-review/review-2026-07-12/code-review-remediation-plan.md`](../../../../docs/archive/code-review/review-2026-07-12/code-review-remediation-plan.md).
 
 ## Capabilities
 
@@ -35,6 +35,6 @@ Review source and residual-risk record: [`docs/code-review-src.md`](../../docs/c
 - **Code (shell):** `MainWindowViewModel*`, new Avalonia orchestration types (e.g. under `Session/` or `ViewModels/Workflows/`), `MainWindow.axaml.cs`, `SettingsToolViewModel` + `ViewModels/Settings/*`, `ExpressionEditor.axaml.cs`, `AppCompositionRoot`.
 - **Specs:** deltas for the modified capabilities above.
 - **Tests:** Core importer/binary parser tests; Avalonia unit + Headless; no parallel multi-project `dotnet test` (solution or sequential).
-- **Docs:** `docs/code-map/avalonia.md`, `docs/code-map/core.md` / `infrastructure.md` if ownership moves; reference `docs/code-review-src.md`, including its recorded telemetry-policy exclusion.
+- **Docs:** `docs/code-map/avalonia.md`, `docs/code-map/core.md` / `infrastructure.md` if ownership moves; reference `docs/archive/code-review/review-2026-07-12/code-review-src.md`, including its recorded telemetry-policy exclusion.
 - **Risk:** Structural migration risk for shell slices (behavior-preserving); security changes should be low UX impact.
 - **Related prior work:** Continues after `openspec/changes/decompose-main-window-session` (workspace/session already introduced; this change finishes residual review debt rather than redoing session types).

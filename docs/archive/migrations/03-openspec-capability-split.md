@@ -1,13 +1,13 @@
 # Avalonia + .NET 10 OpenSpec 拆分總表
 
-本文件把 `docs/avalonia-rewrite-spec.md` 與 `docs/modules/*.md` 轉換為 OpenSpec change `rewrite-avalonia-dotnet10` 的 capability 邊界。拆分原則是：先以 SDD 固定需求契約，再在每個 capability 內以 TDD 建立測試基線，最後按依賴順序 apply。
+本文件把 `01-avalonia-rewrite-spec.md` 與 `02-module-plans/*.md` 轉換為 OpenSpec change `rewrite-avalonia-dotnet10` 的 capability 邊界。拆分原則是：先以 SDD 固定需求契約，再在每個 capability 內以 TDD 建立測試基線，最後按依賴順序 apply。
 
 ## 拆分總覽
 
 | Spec | 來源文檔 | 責任邊界 | 主要依賴 | 可並行 apply |
 | --- | --- | --- | --- | --- |
 | `chapter-core-transform-export` | `02-core-model-transform-export.md` | Core 模型、章節群組、時間/幀率、表達式、章節編輯、命名、zones、七種 exporter | 無，第一批先行 | 可與 solution scaffolding 並行；其接口穩定後解除 importer/UI 阻塞 |
-| `tests-build-distribution-assets` | `07-tests-build-distribution-assets.md`、`coverage-matrix.md` | .NET 10 solution、測試工程、fixtures、CI、包裝、版本、資產與授權 | 無，第一批先行 | 可與 core 並行 |
+| `tests-build-distribution-assets` | `02-module-plans/07-tests-build-distribution-assets.md`、`04-coverage-matrix.md` | .NET 10 solution、測試工程、fixtures、CI、包裝、版本、資產與授權 | 無，第一批先行 | 可與 core 並行 |
 | `supporting-ui-platform-services` | `06-supporting-ui-platform-services.md` | 設定、日誌、對話框、剪貼板、進程、工具定位、原生依賴、Windows-only 服務、輔助窗口 | solution scaffolding；部分接口需與 importer/UI 對齊 | 可與 importer 純解析工作並行 |
 | `chapter-importers-text-xml-matroska-vtt` | `03-text-xml-matroska-vtt-importers.md` | OGM/TXT、WebVTT、XML/Matroska XML、Matroska/mkvextract adapter | Core import result/diagnostic；Matroska 依賴 process/tool locator | OGM、VTT、XML 可並行；Matroska adapter 等 XML/process contract |
 | `cue-flac-tak-import-export` | `05-cue-flac-tak-importers.md` | CUE importer、FLAC/TAK embedded CUE、CUE exporter | Core model、diagnostic、export contract、encoding helper | CUE parser、FLAC reader、TAK scanner、CUE exporter 可並行 |

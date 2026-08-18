@@ -1,6 +1,6 @@
 ## Context
 
-The existing Time_Shift implementation mixes WinForms event handlers, chapter data models, importers, exporters, settings, external process calls, native DLL loading, registry access, and auxiliary windows. The rewrite targets Avalonia + .NET 10 while preserving legacy chapter behavior documented in `docs/avalonia-rewrite-spec.md` and `docs/modules/*.md`.
+The existing Time_Shift implementation mixes WinForms event handlers, chapter data models, importers, exporters, settings, external process calls, native DLL loading, registry access, and auxiliary windows. The rewrite targets Avalonia + .NET 10 while preserving legacy chapter behavior documented in `docs/archive/migrations/01-avalonia-rewrite-spec.md` and `docs/archive/migrations/02-module-plans/*.md`.
 
 The repository currently has no archived OpenSpec specs, so this change introduces the initial requirement set. Existing WinForms sources and `Time_Shift_Test` samples are compatibility references, not the target architecture.
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document turns the outstanding findings from `docs/code-review-src.md` and the follow-up implementation review into concrete, verifiable work. It covers only gaps that remain after the `src-code-review-remediation` change's current implementation.
+This document turns the outstanding findings from `code-review-src.md` and the follow-up implementation review into concrete, verifiable work. It covers only gaps that remain after the `src-code-review-remediation` change's current implementation.
 
 The work is ordered by risk. Do not archive the OpenSpec change until every acceptance criterion below has evidence from behavior tests and the final full-solution gate.
 
@@ -186,7 +186,7 @@ Update `docs/code-map/core.md` so it names the correct owners:
 - `BinaryReadExtensions.cs` and `DiscBinaryReadLimits` for generic exact-read bounds;
 - `MplsParseLimits.cs` for MPLS container/count/address limits.
 
-Update `docs/code-map/avalonia.md` after the command and lifecycle work above. Cross-link `docs/code-review-src.md` from the eventual PR summary.
+Update `docs/code-map/avalonia.md` after the command and lifecycle work above. Cross-link `code-review-src.md` from the eventual PR summary.
 
 ### Final Verification Order
 

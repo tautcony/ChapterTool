@@ -1,6 +1,6 @@
 # ChapterTool Avalonia 重寫功能規格
 
-本文件用於在不依賴 WinForms UI 代碼的前提下重建 ChapterTool。它是 Avalonia 重寫的主 spec 與索引：主文檔記錄全局產品契約、架構邊界與驗收清單；每個子功能的細節以 `docs/modules/*.md` 為準；文件級覆蓋以 `docs/coverage-matrix.md` 為準。
+本文件用於在不依賴 WinForms UI 代碼的前提下重建 ChapterTool。它是 Avalonia 重寫的主 spec 與索引：主文檔記錄全局產品契約、架構邊界與驗收清單；每個子功能的細節以 `02-module-plans/*.md` 為準；文件級覆蓋以 `04-coverage-matrix.md` 為準。
 
 ## 0. 子文檔索引、覆蓋與驗證狀態
 
@@ -8,17 +8,17 @@
 
 | 模塊 | 子文檔 | 主責範圍 |
 | --- | --- | --- |
-| 01 | `docs/modules/01-ui-shell-and-interactions.md` | 主窗口 UI、命令、快捷鍵、表格交互、語言切換入口、窗口狀態 |
-| 02 | `docs/modules/02-core-model-transform-export.md` | 核心模型、時間/幀率/表達式、章節編輯、七類導出 |
-| 03 | `docs/modules/03-text-xml-matroska-vtt-importers.md` | OGM/TXT、XML、Matroska、WebVTT importer |
-| 04 | `docs/modules/04-disc-playlist-media-importers.md` | MPLS、IFO/DVD、XPL、BDMV/eac3to、MP4/libmp4v2 importer |
-| 05 | `docs/modules/05-cue-flac-tak-importers.md` | CUE、FLAC embedded CUE、TAK embedded CUE importer 與 CUE exporter |
-| 06 | `docs/modules/06-supporting-ui-platform-services.md` | 輔助窗口、日誌、通知、配置、registry、資源、更新、平台服務、`ToolKits` |
-| 07 | `docs/modules/07-tests-build-distribution-assets.md` | 測試、樣例、csproj/sln、CI、NSIS、發佈資產、根文件 |
+| 01 | `02-module-plans/01-ui-shell-and-interactions.md` | 主窗口 UI、命令、快捷鍵、表格交互、語言切換入口、窗口狀態 |
+| 02 | `02-module-plans/02-core-model-transform-export.md` | 核心模型、時間/幀率/表達式、章節編輯、七類導出 |
+| 03 | `02-module-plans/03-text-xml-matroska-vtt-importers.md` | OGM/TXT、XML、Matroska、WebVTT importer |
+| 04 | `02-module-plans/04-disc-playlist-media-importers.md` | MPLS、IFO/DVD、XPL、BDMV/eac3to、MP4/libmp4v2 importer |
+| 05 | `02-module-plans/05-cue-flac-tak-importers.md` | CUE、FLAC embedded CUE、TAK embedded CUE importer 與 CUE exporter |
+| 06 | `02-module-plans/06-supporting-ui-platform-services.md` | 輔助窗口、日誌、通知、配置、registry、資源、更新、平台服務、`ToolKits` |
+| 07 | `02-module-plans/07-tests-build-distribution-assets.md` | 測試、樣例、csproj/sln、CI、NSIS、發佈資產、根文件 |
 
 覆蓋規則：
 
-- `docs/coverage-matrix.md` 列出每個源文件、測試文件、資產、根文件的 primary module 和 referenced modules。
+- `04-coverage-matrix.md` 列出每個源文件、測試文件、資產、根文件的 primary module 和 referenced modules。
 - 機械覆蓋校驗已覆蓋 `rg --files Time_Shift Time_Shift_Test dist .github` 以及根文件 `Time_Shift.sln`、`README.md`、`ChangeLog.md`、`LICENSE`、`.gitattributes`、`.gitignore`、`bump-version.pl`。
 - `ToolKits.cs` 的 primary module 是 06；時間/編碼/保存語義也在 02/03/05 交叉引用。
 - `SharpDvdInfo/LICENSE` 同時影響 04 的 DVD importer 授權與 07 的發佈/資產覆蓋。

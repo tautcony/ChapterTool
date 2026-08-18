@@ -1,6 +1,6 @@
 # ChapterTool `src` 代码库审查（高视角）
 
-本审查是 `src-code-review-remediation` 的依据；实现计划、任务证据和归档入口见 [`docs/code-review-remediation-plan.md`](code-review-remediation-plan.md) 与 [`openspec/changes/src-code-review-remediation/`](../openspec/changes/src-code-review-remediation/)。
+本审查是 `src-code-review-remediation` 的依据；实现计划、任务证据和归档入口见 [`code-review-remediation-plan.md`](./code-review-remediation-plan.md) 与 [`openspec/changes/src-code-review-remediation/`](../../../../openspec/changes/src-code-review-remediation/)。
 
 | 项 | 内容 |
 |---|---|
