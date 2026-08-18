@@ -44,10 +44,45 @@ Current automated GUI validation has three layers:
 2. XAML structure tests cover the real `MainWindow.axaml` surface: `DataGrid`, context menu, progress bar, advanced options, append entry point, and stable automation ids.
 3. Executable smoke tests launch the actual Avalonia executable, verify `--smoke-test` exits cleanly, and verify the normal GUI process does not exit immediately.
 
-Stable automation ids are documented in `docs/gui-verification.md`. A future UIA/FlaUI pass should use those ids to click through load, edit, save, context menu, drag/drop, and auxiliary-window workflows in the packaged executable.
+Stable automation ids are listed in the GUI Verification Procedure section below. A future UIA/FlaUI pass should use those ids to click through load, edit, save, context menu, drag/drop, and auxiliary-window workflows in the packaged executable.
 
 ## Residual Gaps
 
 - Auxiliary windows need feature-specific contents and behavior to fully satisfy preview/log/color/about/updater scenarios.
 - Full GUI automation should move from process-lifetime and XAML-structure checks to UIA/FlaUI interaction tests against the packaged Windows artifact.
 - Publish verification currently checks scripts and metadata. It should also run publish outputs and verify assets, licenses, and native dependency layout in produced artifacts.
+
+## GUI Verification Procedure
+
+This section records the GUI verification plan used with the module checks above.
+
+### Automated Checks
+
+- `ExecutableLaunchTests.SmokeTestArgumentBuildsAvaloniaAppAndExits` verifies that the Avalonia app bootstrap can be built.
+- `ExecutableLaunchTests.ExecutableStartsMainWindowAndDoesNotExitImmediately` verifies that the executable remains alive after startup.
+- `MainWindowViewModelTests` verify unloaded state, command availability, load/save orchestration, shortcuts, clip selection, chapter row edits, and auxiliary window entry points.
+- `MainWindowXamlTests` verify the editable chapter grid, context menu, advanced options, progress indicator, append entry point, and stable automation ids.
+- `RuntimeChapterLoadServiceTests` verify routing for `.mkv/.mka`, `.mp4/.m4a/.m4v`, and BDMV directories.
+
+Stable automation ids include `SourcePath`, `LoadButton`, `ExportFormat`, `SaveButton`, `ProgressBar`, `ClipSelectionPanel`, `ClipSelector`, `CombineButton`, `AppendMplsButton`, `AdvancedOptions`, `XmlLanguage`, `AutoNames`, `ExpressionText`, `ApplyExpression`, `OrderShift`, `TemplateNames`, `RefreshRows`, `ChapterGrid`, `PreviewWindow`, `LogWindow`, `ColorSettingsWindow`, `LanguageWindow`, `ExpressionWindow`, `TemplateNamesWindow`, `ZonesWindow`, and `ForwardShiftWindow`.
+
+Run the Avalonia unit tests with:
+
+```powershell
+dotnet test tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj --no-restore
+```
+
+### Manual Runtime Checks
+
+1. Start `src/ChapterTool.Avalonia/bin/Debug/net10.0/ChapterTool.Avalonia.exe`.
+2. Confirm that the `ChapterTool` window remains open.
+3. Load a fixture such as `Time_Shift_Test/[ogm_Sample]/00001.txt`.
+4. Confirm that chapter rows appear and the status changes to loaded.
+5. Save the chapters and confirm that the output file is written beside the source file.
+6. Repeat the load checks for `.vtt`, `.cue`, `.mpls`, `.ifo`, `.xpl`, `.mkv/.mka`, `.mp4/.m4a/.m4v`, and a BDMV root directory.
+
+The main window should keep a compact light layout. Load and Save must remain the primary actions. The chapter grid must occupy the central area. Save format, XML language, naming, order shift, expression, and log controls must stay in the bottom options area. Optional actions must not require Windows registry access during normal use.
+
+### Future GUI Automation
+
+The current checks cover process lifetime, ViewModel commands, and XAML structure. Deeper interaction automation should use Avalonia Headless tests or WinAppDriver/FlaUI-style process tests against packaged Windows artifacts. Parsing, export, and edit behavior belongs in Core tests. Platform and dependency behavior belongs in Infrastructure tests. Control lifetime and command wiring belong in Avalonia tests.

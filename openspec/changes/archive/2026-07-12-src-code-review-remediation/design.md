@@ -1,6 +1,6 @@
 ## Context
 
-Source of truth for residual debt: `docs/code-review-src.md`.
+Source of truth for residual debt: `docs/archive/code-review/review-2026-07-12/code-review-src.md`.
 
 Prior change `decompose-main-window-session` introduced Avalonia `Session/` (`ChapterWorkspace`, `ClipSession`, ports, tool registry, binding authority). That work is complete as an OpenSpec change but left:
 

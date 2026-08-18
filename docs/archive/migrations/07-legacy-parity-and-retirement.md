@@ -170,6 +170,55 @@
 
 ## 主要證據入口
 
+## 2026-06-12 退役判断摘要
+
+可以把产品主线切到 `src/` 新实现上继续完善。不建议把旧实现当成仍需共同维护的运行版本。但现在不应以“功能完全等价”为理由直接删除 `Time_Shift/`，除非你接受明确缺口或先补完这些缺口。
+
+### 核心章节、编辑和导出
+
+新实现已经覆盖主流程：章节模型、章节编辑、合并/追加、帧率、表达式主能力，以及 TXT/XML/QPF/TimeCodes/tsMuxeR/CUE/JSON 导出。
+
+仍有行为差异：
+
+- 旧表达式支持 `rand`、`dup`、`and/or/xor`，新实现部分显式不支持。
+- 旧 `ChangeFps` 按帧号换算时间。新实现主要按时间刷新帧号。
+- 旧 `Chapter2Qpfile(..., tcfile)` 支持 timecode 文件转 QP。新实现没有等价入口。
+- 新保存服务可能覆盖同名输出。旧实现会自增 `_1`、`_2`，避免覆盖。
+- XML UID 和格式不是完全兼容。
+
+判断：日常编辑和导出够用。无损兼容仍有缺口。
+
+### 导入格式
+
+大部分格式已有新实现路径：`.txt`、`.xml`、`.vtt`、`.cue`、`.flac`、`.tak`、`.mpls`、`.ifo`、`.xpl`、`.mkv`、`.mka` 和 BDMV 目录。
+
+MP4 是硬缺口：旧实现通过 Knuckleball 和 libmp4v2 读取 MP4。新实现虽然注册了 `Mp4ChapterImporter`，但 Avalonia 运行时注入的是 `MissingMp4ChapterReader`，因此会报告 native reader 不可用。
+
+BDMV/eac3to 还需要实机确认。旧实现读取 eac3to 生成的 `chapters.txt`。新实现把 stdout 当章节文本解析。
+
+判断：如果 MP4 导入是必须功能，不能直接删除旧实现。如果接受暂时放弃或后补 MP4，可以继续以新实现为主线。
+
+### Avalonia UI 工作流
+
+主窗口工作流基本迁移。载入、拖放、启动参数、保存格式、多 clip 选择、合并、追加、预览、日志、快捷键和章节编辑都有新入口。
+
+仍有用户可见缺口：颜色设置只保存，未确认实际应用到主题；UI 语言只保存设置，主界面文本仍有硬编码；About 缺失；文件关联仍是占位实现。
+
+判断：主工作流可以替代旧 UI。辅助工具仍需补入口或明确退役。
+
+### 平台、配置和打包
+
+新实现已经有意切断旧平台依赖。旧 updater、旧 App.config/Settings、ClickOnce、Fody/Costura、旧 WinForms 通知和系统菜单都可以退役。
+
+仍需决策：是否恢复 MP4/libmp4v2；是否明确不做 `.mpls` 文件关联；是否只通过配置或 PATH 发现 MKVToolNix，而不保留注册表自动发现。
+
+### 退役策略
+
+1. 只在 `src/` 上完善和更新功能。
+2. 将 `Time_Shift/` 降级为 legacy reference，不再接收新功能。
+3. 在删除 `Time_Shift/` 前，明确记录 MP4、BDMV 实机验证、保存覆盖策略、工具窗口入口、语言/颜色和文件关联的决策。
+4. 缺口补齐或明确标记为有意不兼容、已退役后，再删除旧实现。
+
 - 舊主窗口功能分發：`Time_Shift/Forms/Form1.cs`
 - 舊模型與導出：`Time_Shift/Util/ChapterInfo.cs`
 - 舊導入器：`Time_Shift/Util/ChapterData/*`

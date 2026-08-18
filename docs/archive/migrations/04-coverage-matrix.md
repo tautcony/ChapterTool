@@ -6,13 +6,13 @@
 
 | 模塊 | 文檔 | 責任範圍 |
 | --- | --- | --- |
-| 01 | `docs/modules/01-ui-shell-and-interactions.md` | 主窗口 UI、命令、快捷鍵、拖放、表格交互 |
-| 02 | `docs/modules/02-core-model-transform-export.md` | 核心模型、時間/幀率/表達式、章節編輯、導出 |
-| 03 | `docs/modules/03-text-xml-matroska-vtt-importers.md` | OGM/TXT、XML、Matroska、WebVTT |
-| 04 | `docs/modules/04-disc-playlist-media-importers.md` | MPLS、IFO/DVD、XPL、BDMV、MP4 |
-| 05 | `docs/modules/05-cue-flac-tak-importers.md` | CUE、FLAC、TAK、CueSharp |
-| 06 | `docs/modules/06-supporting-ui-platform-services.md` | 輔助窗口、控件、平台服務、配置、資源 |
-| 07 | `docs/modules/07-tests-build-distribution-assets.md` | 測試、樣例、CI、安裝包、工程/資產 |
+| 01 | `02-module-plans/01-ui-shell-and-interactions.md` | 主窗口 UI、命令、快捷鍵、拖放、表格交互 |
+| 02 | `02-module-plans/02-core-model-transform-export.md` | 核心模型、時間/幀率/表達式、章節編輯、導出 |
+| 03 | `02-module-plans/03-text-xml-matroska-vtt-importers.md` | OGM/TXT、XML、Matroska、WebVTT |
+| 04 | `02-module-plans/04-disc-playlist-media-importers.md` | MPLS、IFO/DVD、XPL、BDMV、MP4 |
+| 05 | `02-module-plans/05-cue-flac-tak-importers.md` | CUE、FLAC、TAK、CueSharp |
+| 06 | `02-module-plans/06-supporting-ui-platform-services.md` | 輔助窗口、控件、平台服務、配置、資源 |
+| 07 | `02-module-plans/07-tests-build-distribution-assets.md` | 測試、樣例、CI、安裝包、工程/資產 |
 
 ## 生產代碼與資源
 

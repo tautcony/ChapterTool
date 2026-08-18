@@ -4,6 +4,8 @@ This directory is the maintainer navigation index for the current codebase.
 
 Use it to locate the code behind a feature before you search the full repository.
 
+Do not search `docs/archive/` as part of normal feature work. That directory contains historical records only.
+
 ChapterTool is a cross-platform chapter editor for desktop, command-line, and browser use. The code map covers the Core library, platform services, command-line host, shared Avalonia UI, desktop and browser hosts, Node.js package, and test projects.
 
 ## Writing Standard
