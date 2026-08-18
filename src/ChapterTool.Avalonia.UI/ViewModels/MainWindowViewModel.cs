@@ -134,7 +134,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
         var toolSession = new MainWindowToolSession(this);
         ToolSession = toolSession;
-        PortAdapters = toolSession.PortAdapters;
         chapterNameTemplateStatus = Localizer.GetString("Status.TemplateNotSelected");
         statusText = string.Empty;
         statusDiagnosticsPresenter.SetStatus("Status.Ready");
@@ -159,9 +158,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
     internal ChapterWorkspace Workspace { get; } = new();
-
-    /// <summary>Compatibility access for existing tests and legacy callers.</summary>
-    internal MainWindowPortAdapters PortAdapters { get; }
 
     /// <summary>Session facade that owns the narrow ports used by auxiliary tools.</summary>
     public IWorkspaceToolSession ToolSession { get; }

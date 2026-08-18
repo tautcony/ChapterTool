@@ -33,6 +33,7 @@ public interface IWorkspaceToolSession
 /// <summary>Owns the narrow ports used by secondary tools beside the main shell.</summary>
 public sealed class MainWindowToolSession : IWorkspaceToolSession
 {
+    private readonly MainWindowPortAdapters portAdapters;
     private readonly Func<string> buildPreview;
     private readonly Func<string> logText;
     private readonly Func<string> createZonesText;
@@ -42,12 +43,12 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
     public MainWindowToolSession(MainWindowViewModel owner)
     {
         ArgumentNullException.ThrowIfNull(owner);
-        PortAdapters = new MainWindowPortAdapters(owner);
-        Expression = PortAdapters.Expression;
-        Preferences = PortAdapters.Preferences;
-        ExportPreferences = PortAdapters.ExportPreferences;
-        NamingPreferences = PortAdapters.NamingPreferences;
-        ChapterEdit = PortAdapters.ChapterEdit;
+        portAdapters = new MainWindowPortAdapters(owner);
+        Expression = portAdapters.Expression;
+        Preferences = portAdapters.Preferences;
+        ExportPreferences = portAdapters.ExportPreferences;
+        NamingPreferences = portAdapters.NamingPreferences;
+        ChapterEdit = portAdapters.ChapterEdit;
         LogService = owner.LogService;
         buildPreview = owner.BuildPreview;
         logText = owner.LogText;
@@ -55,8 +56,6 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
         clearLog = owner.ClearLog;
         reportUnexpectedUiException = owner.ReportUnexpectedUiException;
     }
-
-    public MainWindowPortAdapters PortAdapters { get; }
 
     public IExpressionSessionPort Expression { get; }
 
@@ -70,7 +69,7 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
 
     public IApplicationLogService LogService { get; }
 
-    public IMainShellNotificationPort Notifications => PortAdapters.Notifications;
+    public IMainShellNotificationPort Notifications => portAdapters.Notifications;
 
     public string BuildPreview() => buildPreview();
 

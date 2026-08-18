@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -1184,7 +1184,7 @@ public sealed class MainWindowViewModelTests
         vm.UpdateSelectedRows(new HashSet<int> { 0 });
 
         var zones = vm.CreateZonesText();
-        vm.PortAdapters.ChapterEdit.ShiftFramesForward(24);
+        vm.ToolSession.ChapterEdit.ShiftFramesForward(24);
 
         Assert.StartsWith("--zones ", zones, StringComparison.Ordinal);
         Assert.Single(vm.Rows);
@@ -1290,7 +1290,7 @@ public sealed class MainWindowViewModelTests
         var store = new FakeSettingsStore(new AppSettings(Language: string.Empty));
         var vm = CreateViewModel(settingsStore: store);
 
-        await vm.PortAdapters.Preferences.SaveUiLanguageAsync("en-US", TestContext.Current.CancellationToken);
+        await vm.ToolSession.Preferences.SaveUiLanguageAsync("en-US", TestContext.Current.CancellationToken);
 
         Assert.Equal("en-US", vm.UiLanguage);
         Assert.Equal("en-US", store.Current.Application.Language);
@@ -1377,7 +1377,7 @@ public sealed class MainWindowViewModelTests
         await File.WriteAllTextAsync(scriptPath, "return (");
         try
         {
-            var diagnostic = await vm.PortAdapters.Expression.LoadScriptAsync(scriptPath, CancellationToken.None);
+            var diagnostic = await vm.ToolSession.Expression.LoadScriptAsync(scriptPath, CancellationToken.None);
 
             Assert.NotNull(diagnostic);
             Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
@@ -1398,7 +1398,7 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(logService: log);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        vm.PortAdapters.Expression.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
+        vm.ToolSession.Expression.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
 
         Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
         Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));

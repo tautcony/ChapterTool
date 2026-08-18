@@ -166,7 +166,7 @@ public sealed class ToolViewsHeadlessTests
     public async Task Expression_tool_starts_with_compact_editor_height()
     {
         using var host = new MainWindowHeadlessTestHost();
-        var viewModel = new ExpressionToolViewModel(host.ViewModel.PortAdapters.Expression);
+        var viewModel = new ExpressionToolViewModel(host.ViewModel.ToolSession.Expression);
         var view = new ExpressionToolView { DataContext = viewModel };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(view, viewModel);
         try

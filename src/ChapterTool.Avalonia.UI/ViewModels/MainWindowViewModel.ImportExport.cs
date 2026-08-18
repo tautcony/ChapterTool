@@ -168,9 +168,6 @@ public sealed partial class MainWindowViewModel
     internal string? ResolveSaveDirectory(string? directoryOverride) =>
         ChapterSaveDirectory.Resolve(directoryOverride, SaveDirectory, CurrentPath);
 
-    internal static string? NormalizeConfiguredDirectory(string? path) =>
-        ChapterSavePath.CleanOptionalPath(path);
-
     private ValueTask AppendMplsAsync(string path, CancellationToken cancellationToken) =>
         AppendSourceAsync(new LocalPathChapterSource(path), cancellationToken);
 

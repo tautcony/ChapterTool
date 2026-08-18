@@ -129,7 +129,8 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 ### ViewModels
 
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel*.cs`
-- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs` (settings monologue by design; appearance lives in `SettingsAppearanceViewModel`)
+- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs` (bindable settings fields, commands, localization, and tool actions)
+- `src/ChapterTool.Avalonia.UI/ViewModels/SettingsSnapshotCoordinator.cs` (saved and draft settings snapshots and edit lifecycle)
 - `src/ChapterTool.Avalonia.UI/ViewModels/SettingsAppearanceViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/ChapterExpressionValidation.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/ChapterSaveDirectory.cs`
@@ -138,6 +139,7 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 - `src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs` (pure log projection and structured-data formatting)
 
 ### Runtime and UI services
 
@@ -290,11 +292,11 @@ Start with:
 - `src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml`
 - `src/ChapterTool.Avalonia/App.axaml`
 
-Output defaults, external-tool paths and statuses, and runtime/footer display state live in `SettingsToolViewModel`; it flows live preferences through `PreferenceSinkAdapter` (session save format is applied only when startup settings are loaded). There are no unused `Settings*Module` placeholder types. A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once, dirty-checks a single `ChapterToolSettings` snapshot, and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
+Output defaults, external-tool paths and statuses, and runtime/footer display state live in `SettingsToolViewModel`; it flows live preferences through `PreferenceSinkAdapter` (session save format is applied only when startup settings are loaded). `SettingsSnapshotCoordinator` owns distinct saved and draft snapshots and the load, live-apply, save, reset, and discard lifecycle. A directory chosen from the main-window save workflow updates only the current session and does not overwrite the configured default. `AppCompositionRoot` constructs one `ChapterToolSettingsStore` shared directly by runtime consumers; startup loads one aggregate snapshot for theme and font, while the settings tool loads once, dirty-checks a single `ChapterToolSettings` snapshot, and commits all child changes once. It also passes the resolved settings directory through `AvaloniaWindowService` so the settings footer can open the owning folder through `IShellService`.
 
 Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together. `DisplayOptionCoordinator` owns localized option construction, clip-list incremental synchronization, and frame-rate index mapping, while `ChapterCellEdit` and `ChapterGridColumnIds` are standalone binding-contract types.
 
-Secondary tool windows consume the stable interfaces in `PlatformPorts/SessionPorts/ShellPorts.cs` through `MainWindowPortAdapters`. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement those ports.
+Secondary tool windows consume the stable interfaces in `PlatformPorts/SessionPorts/ShellPorts.cs` through `IWorkspaceToolSession`. `MainWindowToolSession` owns one concrete `MainWindowPortAdapters` instance internally. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement or expose those concrete adapters.
 
 Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all imported `Color.*` tokens, and the Avalonia light or dark variant. `App.axaml` loads the imported theme foundation and applies later ChapterTool product styles.
 

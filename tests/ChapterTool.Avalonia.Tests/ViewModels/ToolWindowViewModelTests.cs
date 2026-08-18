@@ -1,4 +1,4 @@
-﻿using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -40,7 +40,7 @@ public sealed class ToolWindowViewModelTests
     {
         var owner = CreateOwner();
         owner.SaveFormat = ChapterExportFormat.Json;
-        var vm = new TextToolViewModel(() => "{\"name\":\"Intro\",\"time\":1}", new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.PortAdapters.ExportPreferences) });
+        var vm = new TextToolViewModel(() => "{\"name\":\"Intro\",\"time\":1}", new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.ToolSession.ExportPreferences) });
 
         Assert.Contains(Environment.NewLine, vm.Text, StringComparison.Ordinal);
         Assert.Contains(vm.Lines.SelectMany(line => line.Spans), span => span.Kind == TextToolSpanKind.Name);
@@ -52,7 +52,7 @@ public sealed class ToolWindowViewModelTests
     {
         var owner = CreateOwner();
         owner.SaveFormat = ChapterExportFormat.Xml;
-        var vm = new TextToolViewModel(() => "<Chapters><ChapterAtom><ChapterUID>1</ChapterUID></ChapterAtom></Chapters>", new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.PortAdapters.ExportPreferences) });
+        var vm = new TextToolViewModel(() => "<Chapters><ChapterAtom><ChapterUID>1</ChapterUID></ChapterAtom></Chapters>", new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.ToolSession.ExportPreferences) });
 
         Assert.Contains(Environment.NewLine, vm.Text, StringComparison.Ordinal);
         Assert.Contains(vm.Lines.SelectMany(line => line.Spans), span => span.Kind == TextToolSpanKind.Name);
@@ -63,7 +63,7 @@ public sealed class ToolWindowViewModelTests
     public void TextToolFormatSelectorUpdatesOwnerAndRefreshesPreviewKind()
     {
         var owner = CreateOwner();
-        var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.PortAdapters.ExportPreferences) })
+        var vm = new TextToolViewModel(owner.BuildPreview, new TextToolOptions { FormatSelector = new TextToolFormatSelector(owner.ToolSession.ExportPreferences) })
         {
             SelectedFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Json)
         };
@@ -82,7 +82,7 @@ public sealed class ToolWindowViewModelTests
     {
         var localizer = new AppLocalizationManager("en-US");
         var owner = CreateOwner(localizer);
-        var vm = new LanguageToolViewModel(owner.PortAdapters.Preferences);
+        var vm = new LanguageToolViewModel(owner.ToolSession.Preferences);
         var notifications = 0;
         vm.PropertyChanged += (_, args) =>
         {
@@ -104,11 +104,11 @@ public sealed class ToolWindowViewModelTests
         var owner = CreateOwner();
         await owner.LoadCommand.ExecuteAsync("movie.txt");
 
-        var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression) { Expression = "t + 1", ApplyExpression = true };
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression) { Expression = "t + 1", ApplyExpression = true };
         await expression.ApplyCommand.ExecuteAsync(expression);
-        var template = new TemplateNamesToolViewModel(owner.PortAdapters.NamingPreferences) { UseTemplateNames = true };
+        var template = new TemplateNamesToolViewModel(owner.ToolSession.NamingPreferences) { UseTemplateNames = true };
         await template.ApplyCommand.ExecuteAsync(template);
-        var forward = new ForwardShiftToolViewModel(owner.PortAdapters.ChapterEdit) { Frames = 24 };
+        var forward = new ForwardShiftToolViewModel(owner.ToolSession.ChapterEdit) { Frames = 24 };
         await forward.ApplyCommand.ExecuteAsync(forward);
 
         Assert.Equal("t + 1", owner.Expression);
@@ -164,7 +164,7 @@ public sealed class ToolWindowViewModelTests
         try
         {
             var picker = new FakeFilePicker(scriptPath);
-            var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression, picker) { ApplyExpression = true };
+            var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker) { ApplyExpression = true };
 
             expression.SelectedPresetIndex = expression.Presets.ToList().FindIndex(preset => preset.Id == "round-to-frame");
 
@@ -193,7 +193,7 @@ public sealed class ToolWindowViewModelTests
         var owner = CreateOwner(new AppLocalizationManager("en-US"));
         var missing = Path.Combine(Path.GetTempPath(), $"chaptertool-missing-{Guid.NewGuid():N}.lua");
         var picker = new FakeFilePicker(missing);
-        var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression, picker);
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker);
 
         await expression.BrowseScriptCommand.ExecuteAsync();
 
@@ -213,9 +213,9 @@ public sealed class ToolWindowViewModelTests
             return ValueTask.CompletedTask;
         };
 
-        var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression, errorHandler: handler);
-        using var language = new LanguageToolViewModel(owner.PortAdapters.Preferences, handler);
-        var forward = new ForwardShiftToolViewModel(owner.PortAdapters.ChapterEdit, handler);
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, errorHandler: handler);
+        using var language = new LanguageToolViewModel(owner.ToolSession.Preferences, handler);
+        var forward = new ForwardShiftToolViewModel(owner.ToolSession.ChapterEdit, handler);
 
         Assert.Same(handler, expression.BrowseScriptCommand.ErrorHandler);
         Assert.Same(handler, expression.ApplyCommand.ErrorHandler);
@@ -229,7 +229,7 @@ public sealed class ToolWindowViewModelTests
     {
         var owner = CreateOwner(new AppLocalizationManager("en-US"));
         await owner.LoadCommand.ExecuteAsync("movie.txt");
-        var expression = new ExpressionToolViewModel(owner.PortAdapters.Expression)
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression)
         {
             Expression = "return (",
             ApplyExpression = true

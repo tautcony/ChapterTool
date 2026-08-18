@@ -28,7 +28,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost(
             localizer: localizer,
             appSettings: new AppSettings(Language: "en-US", DefaultXmlLanguage: "jpn"));
-        using var viewModel = new SettingsToolViewModel(host.ViewModel.PortAdapters.Preferences, host.SettingsStore, host.Localizer, autoLoad: false);
+        using var viewModel = new SettingsToolViewModel(host.ViewModel.ToolSession.Preferences, host.SettingsStore, host.Localizer, autoLoad: false);
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         var window = new Window
         {
@@ -70,7 +70,7 @@ public sealed class SettingsToolHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost();
         using var viewModel = new SettingsToolViewModel(
-            host.ViewModel.PortAdapters.Preferences,
+            host.ViewModel.ToolSession.Preferences,
             host.SettingsStore,
             host.Localizer,
             autoLoad: false);
@@ -113,7 +113,7 @@ public sealed class SettingsToolHeadlessTests
         using var host = new MainWindowHeadlessTestHost(shellService: shellService);
         var settingsDirectory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
         using var viewModel = new SettingsToolViewModel(
-            host.ViewModel.PortAdapters.Preferences,
+            host.ViewModel.ToolSession.Preferences,
             host.SettingsStore,
             host.Localizer,
             shellService: shellService,
@@ -158,7 +158,7 @@ public sealed class SettingsToolHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost();
         using var viewModel = new SettingsToolViewModel(
-            host.ViewModel.PortAdapters.Preferences,
+            host.ViewModel.ToolSession.Preferences,
             host.SettingsStore,
             host.Localizer,
             autoLoad: false);
@@ -228,7 +228,7 @@ public sealed class SettingsToolHeadlessTests
         await host.LayoutAsync();
         var themeService = new AvaloniaThemeApplicationService();
         using var viewModel = new SettingsToolViewModel(
-            host.ViewModel.PortAdapters.Preferences,
+            host.ViewModel.ToolSession.Preferences,
             host.SettingsStore,
             host.Localizer,
             themeApplicationService: themeService,
@@ -294,7 +294,7 @@ public sealed class SettingsToolHeadlessTests
         await host.LoadAsync("movie.txt");
         var fontService = host.FontApplicationService;
         using var viewModel = new SettingsToolViewModel(
-            host.ViewModel.PortAdapters.Preferences,
+            host.ViewModel.ToolSession.Preferences,
             host.SettingsStore,
             host.Localizer,
             fontFamilyCatalog: host.FontFamilyCatalog,
@@ -396,7 +396,7 @@ public sealed class SettingsToolHeadlessTests
         var catalog = new AvaloniaFontFamilyCatalog(familyNames);
         var fontService = new AvaloniaFontApplicationService(catalog);
         using var viewModel = new SettingsToolViewModel(
-            host.ViewModel.PortAdapters.Preferences,
+            host.ViewModel.ToolSession.Preferences,
             host.SettingsStore,
             host.Localizer,
             fontFamilyCatalog: catalog,

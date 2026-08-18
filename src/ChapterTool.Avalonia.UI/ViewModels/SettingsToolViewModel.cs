@@ -26,18 +26,16 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private readonly IShellService? shellService;
     private readonly Func<Exception, ValueTask>? unexpectedErrorHandler;
     private readonly string? settingsDirectory;
+    private readonly SettingsSnapshotCoordinator snapshotCoordinator;
     private readonly EventHandler cultureChangedHandler;
     private readonly EventHandler appearanceChangedHandler;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
-    private ChapterToolSettings savedSettings = ChapterToolSettings.Default;
     private string selectedLanguage;
     private int defaultSaveFormatIndex;
     private int defaultXmlLanguageIndex;
     private int outputTextEncodingIndex;
     private decimal frameAccuracyTolerance;
     private double frameAccuracyToleranceSliderValue;
-    private bool liveApplyEnabled;
-    private bool isApplyingSnapshot;
     private bool isRefreshingLanguages;
 
     public SettingsToolViewModel(
@@ -56,6 +54,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         Func<Exception, ValueTask>? unexpectedErrorHandler = null)
     {
         this.preferenceSink = preferenceSink;
+        snapshotCoordinator = new SettingsSnapshotCoordinator(ChapterToolSettings.Default);
         this.SettingsStoreForTesting = settingsStore;
         this.localizer = localizer ?? preferenceSink.Localizer;
         this.picker = picker;
@@ -87,6 +86,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
+        UpdateDraftSnapshot();
+        snapshotCoordinator.Commit(snapshotCoordinator.Draft);
 
         SaveCommand = new UiCommand(
             async (_, token) => await SaveAsync(token),
@@ -218,7 +219,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         get;
         set
         {
-            if (SetProperty(ref field, CleanDirectory(value)))
+            if (SetProperty(ref field, ChapterSavePath.CleanOptionalPath(value)))
             {
                 ApplyLiveSettings();
             }
@@ -230,7 +231,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         get;
         set
         {
-            if (SetProperty(ref field, CleanOptionalPath(value)))
+            if (SetProperty(ref field, ChapterSavePath.CleanOptionalPath(value)))
             {
                 MkvToolnixStatus = FormatToolStatus(ValidateTool(value, "mkvextract"));
                 NotifyUnsavedChanges();
@@ -243,7 +244,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         get;
         set
         {
-            if (SetProperty(ref field, CleanOptionalPath(value)))
+            if (SetProperty(ref field, ChapterSavePath.CleanOptionalPath(value)))
             {
                 FfprobeStatus = FormatToolStatus(ValidateTool(value, "ffprobe"));
                 NotifyUnsavedChanges();
@@ -321,12 +322,21 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         FrameAccuracyTolerance.ToString("0.###", CultureInfo.InvariantCulture);
 
     public bool HasUnsavedChanges =>
-        SettingsStoreForTesting is not null && CurrentSettings() != savedSettings;
+        SettingsStoreForTesting is not null && HasUnsavedSettingsChanges();
 
     public bool SettingsLoadFailed
     {
-        get;
-        private set => SetProperty(ref field, value);
+        get => snapshotCoordinator.LoadFailed;
+        private set
+        {
+            if (snapshotCoordinator.LoadFailed == value)
+            {
+                return;
+            }
+
+            snapshotCoordinator.SetLoadFailed(value);
+            OnPropertyChanged();
+        }
     }
 
     public string StatusText
@@ -371,8 +381,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
+        snapshotCoordinator.BeginLoad();
         SettingsLoadFailed = false;
-        liveApplyEnabled = false;
         Appearance.SetLiveApplyEnabled(false);
         try
         {
@@ -381,23 +391,28 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
                 if (SettingsStoreForTesting is not null)
                 {
                     var settings = await LoadSettingsOrDefaultAsync(cancellationToken);
-                    savedSettings = ChapterToolSettings.Normalize(settings);
-                    ApplyAppSettingsToFields(savedSettings.Application);
-                    Appearance.ApplyThemeSettings(savedSettings.Theme);
-                    Appearance.ApplyFontSettings(savedSettings.Font);
-                    Appearance.ApplyToServices(savedSettings.Theme, savedSettings.Font);
+                    snapshotCoordinator.SetLoaded(settings);
+                    ApplyAppSettingsToFields(snapshotCoordinator.Saved.Application);
+                    Appearance.ApplyThemeSettings(snapshotCoordinator.Saved.Theme);
+                    Appearance.ApplyFontSettings(snapshotCoordinator.Saved.Font);
+                    Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
 
                     // Capture the post-apply UI snapshot so resolved fonts/paths are not marked dirty.
-                    savedSettings = CurrentSettings();
+                    UpdateDraftSnapshot();
+                    snapshotCoordinator.CaptureDraftAsSaved();
                 }
             }
             finally
             {
-                liveApplyEnabled = true;
+                snapshotCoordinator.EnableLiveApply();
                 Appearance.SetLiveApplyEnabled(true);
             }
 
             ApplyCurrentAppSettingsToOwner();
+            if (SettingsLoadFailed)
+            {
+                snapshotCoordinator.CaptureDraftAsSaved();
+            }
             RefreshToolStatuses();
             NotifyUnsavedChanges();
             StatusText = StatusTextForCurrentLoadState();
@@ -454,7 +469,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         {
             var settings = CurrentSettings();
             await SettingsStoreForTesting.SaveAsync(settings, cancellationToken);
-            savedSettings = settings;
+            snapshotCoordinator.Commit(settings);
             Appearance.ApplyThemeSettings(settings.Theme);
             Appearance.ApplyFontSettings(settings.Font);
             Appearance.ApplyToServices(settings.Theme, settings.Font);
@@ -468,30 +483,31 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     public void DiscardUnsavedAppearanceChanges()
     {
-        Appearance.ApplyThemeSettings(savedSettings.Theme);
-        Appearance.ApplyFontSettings(savedSettings.Font);
-        Appearance.ApplyToServices(savedSettings.Theme, savedSettings.Font);
+        Appearance.ApplyThemeSettings(snapshotCoordinator.Saved.Theme);
+        Appearance.ApplyFontSettings(snapshotCoordinator.Saved.Font);
+        Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
         NotifyUnsavedChanges();
     }
 
     public void DiscardUnsavedChanges()
     {
-        isApplyingSnapshot = true;
+        snapshotCoordinator.BeginSnapshot();
         Appearance.BeginSnapshot();
         try
         {
-            ApplyAppSettingsToFields(savedSettings.Application);
-            Appearance.ApplyThemeSettings(savedSettings.Theme);
-            Appearance.ApplyFontSettings(savedSettings.Font);
+            ApplyAppSettingsToFields(snapshotCoordinator.Saved.Application);
+            Appearance.ApplyThemeSettings(snapshotCoordinator.Saved.Theme);
+            Appearance.ApplyFontSettings(snapshotCoordinator.Saved.Font);
         }
         finally
         {
-            isApplyingSnapshot = false;
+            snapshotCoordinator.EndSnapshot();
             Appearance.EndSnapshot();
         }
 
         ApplyCurrentAppSettingsToOwner();
-        Appearance.ApplyToServices(savedSettings.Theme, savedSettings.Font);
+        Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
+        snapshotCoordinator.DiscardDraft();
         RefreshToolStatuses();
         NotifyUnsavedChanges();
     }
@@ -499,6 +515,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private void ApplyDefaults()
     {
         var defaults = ChapterToolSettings.Default;
+        snapshotCoordinator.ResetDraft();
         ApplyAppSettingsToFields(defaults.Application);
         Appearance.ApplyThemeSettings(defaults.Theme);
         Appearance.ApplyFontSettings(defaults.Font);
@@ -716,16 +733,21 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             : new SettingsToolStatus(SettingsToolStatusKind.Missing, candidate, executableName);
     }
 
-    private ChapterToolSettings CurrentSettings() =>
-        ChapterToolSettings.Normalize(savedSettings with
+    private ChapterToolSettings CurrentSettings()
+    {
+        var settings = ChapterToolSettings.Normalize(snapshotCoordinator.Saved with
         {
             Application = CurrentAppSettings(),
             Theme = Appearance.CurrentThemeSettings(),
             Font = Appearance.CurrentFontSettings(),
         });
 
+        snapshotCoordinator.UpdateDraft(settings);
+        return settings;
+    }
+
     private AppSettings CurrentAppSettings() =>
-        savedSettings.Application with
+        snapshotCoordinator.Saved.Application with
         {
             Language = SelectedLanguage,
             SavingPath = SaveDirectory,
@@ -753,7 +775,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     private void ApplyLiveSettings()
     {
-        if (!liveApplyEnabled || isApplyingSnapshot)
+        if (!snapshotCoordinator.LiveApplyEnabled || snapshotCoordinator.IsApplyingSnapshot)
         {
             return;
         }
@@ -764,11 +786,19 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     private void ApplyCurrentAppSettingsToOwner() => preferenceSink.ApplyLivePreferences(CurrentAppSettings());
 
-    private void NotifyUnsavedChanges() => OnPropertyChanged(nameof(HasUnsavedChanges));
+    private void NotifyUnsavedChanges()
+    {
+        UpdateDraftSnapshot();
+        OnPropertyChanged(nameof(HasUnsavedChanges));
+    }
 
-    private static string? CleanDirectory(string? value) => ChapterSavePath.CleanOptionalPath(value);
+    private void UpdateDraftSnapshot() => _ = CurrentSettings();
 
-    private static string? CleanOptionalPath(string? value) => ChapterSavePath.CleanOptionalPath(value);
+    private bool HasUnsavedSettingsChanges()
+    {
+        UpdateDraftSnapshot();
+        return snapshotCoordinator.HasUnsavedChanges;
+    }
 
     private static string InformationalVersion(Type type)
     {

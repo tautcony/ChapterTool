@@ -153,7 +153,7 @@ Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToo
 
 Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible FontAwesome icons.
 
-Log ViewModel coverage is in `LogToolViewModelTests`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, summary, structured data, raw JSON, theme changes, and narrow layout.
+Log projection coverage is in `LogToolViewModelTests` against `LogEntryViewModel`; log orchestration remains in `LogToolViewModel`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, summary, structured data, raw JSON, theme changes, and narrow layout.
 
 The settings Headless workflows verify the footer settings-folder action, including its left-side placement, accessible label, and routed shell target.
 
