@@ -155,7 +155,7 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
 
     private void ApplyPreferences(AppSettings settings, bool applyDefaultSaveFormat)
     {
-        owner.SaveDirectory = MainWindowViewModel.NormalizeConfiguredDirectory(settings.SavingPath);
+        owner.SaveDirectory = ChapterSavePath.CleanOptionalPath(settings.SavingPath);
         owner.UiLanguage = AppLanguage.Normalize(settings.Language);
         Localizer.SetCulture(owner.UiLanguage);
         if (applyDefaultSaveFormat

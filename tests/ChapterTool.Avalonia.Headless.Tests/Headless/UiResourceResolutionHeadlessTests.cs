@@ -54,13 +54,13 @@ public sealed class UiResourceResolutionHeadlessTests
             AssertResolvedApplicationBrush(application, "ChapterTool.LogErrorBrush");
 
             await AssertToolResolvesAsync(
-                new LanguageToolView { DataContext = new LanguageToolViewModel(host.ViewModel.PortAdapters.Preferences) });
+                new LanguageToolView { DataContext = new LanguageToolViewModel(host.ViewModel.ToolSession.Preferences) });
             await AssertToolResolvesAsync(
-                new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(host.ViewModel.PortAdapters.ChapterEdit) });
+                new ForwardShiftToolView { DataContext = new ForwardShiftToolViewModel(host.ViewModel.ToolSession.ChapterEdit) });
             await AssertToolResolvesAsync(
-                new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(host.ViewModel.PortAdapters.NamingPreferences) });
+                new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(host.ViewModel.ToolSession.NamingPreferences) });
             await AssertToolResolvesAsync(
-                new ExpressionToolView { DataContext = new ExpressionToolViewModel(host.ViewModel.PortAdapters.Expression) });
+                new ExpressionToolView { DataContext = new ExpressionToolViewModel(host.ViewModel.ToolSession.Expression) });
             await AssertToolResolvesAsync(
                 new TextToolView { DataContext = new TextToolViewModel(() => "00:00:00.000 Intro") });
 
@@ -70,7 +70,7 @@ public sealed class UiResourceResolutionHeadlessTests
             await AssertToolResolvesAsync(new LogToolView { DataContext = logViewModel });
 
             using var settingsViewModel = new SettingsToolViewModel(
-                host.ViewModel.PortAdapters.Preferences,
+                host.ViewModel.ToolSession.Preferences,
                 host.SettingsStore,
                 host.Localizer,
                 autoLoad: false);

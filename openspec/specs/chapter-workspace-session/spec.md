@@ -113,7 +113,7 @@ Save format, XML language, text encoding, BOM emission, and effective save-direc
 - **AND** that policy SHALL be implemented through the workspace preference surface rather than duplicated owner-specific branches in multiple ViewModels
 
 ### Requirement: Secondary tools consume narrow workspace ports
-Secondary tool ViewModels SHALL depend on narrow workspace or shell ports for the capabilities they need, not on the full main-window ViewModel type for unrelated session fields.
+Secondary tool ViewModels SHALL depend on narrow workspace or shell ports for the capabilities they need, not on the full main-window ViewModel type for unrelated session fields. The main-window ViewModel and session facade SHALL NOT expose a second concrete adapter access path for those ports.
 
 #### Scenario: Expression tool uses an expression port
 - **WHEN** the expression tool is constructed
@@ -129,6 +129,11 @@ Secondary tool ViewModels SHALL depend on narrow workspace or shell ports for th
 - **WHEN** the preview tool changes output format for preview rendering
 - **THEN** it SHALL update export format through a narrow export-preference port
 - **AND** preview content SHALL still match save projection rules for the same preferences
+
+#### Scenario: Concrete adapter access is not a second session route
+- **WHEN** secondary tools or tests obtain workspace ports
+- **THEN** they SHALL obtain them from `IWorkspaceToolSession`
+- **AND** `MainWindowViewModel` and `MainWindowToolSession` SHALL NOT expose `MainWindowPortAdapters` as a public or compatibility property
 
 ### Requirement: Workspace transitions are testable without Avalonia controls
 Clip mode transitions, load/replace, append, restore, projection refresh, and export-preference snapshot construction SHALL be unit-testable without constructing Avalonia windows or controls.

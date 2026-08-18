@@ -211,6 +211,9 @@ dist/windows/LICENSE
 artifacts/
 .idea/
 
+# macOS Finder metadata
+.DS_Store
+
 log*.txt
 .omo/
 .omx/

@@ -1,4 +1,4 @@
-﻿using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -109,7 +109,7 @@ public sealed class SettingsToolViewModelTests
             return ValueTask.CompletedTask;
         };
         var viewModel = new SettingsToolViewModel(
-            owner.PortAdapters.Preferences,
+            owner.ToolSession.Preferences,
             new FakeSettingsStore(new AppSettings()),
             new AppLocalizationManager("en-US"),
             themeApplicationService: new ThrowingThemeApplicationService(),
@@ -759,7 +759,7 @@ public sealed class SettingsToolViewModelTests
         }
 
         return new SettingsToolViewModel(
-            owner.PortAdapters.Preferences,
+            owner.ToolSession.Preferences,
             settingsStore,
             localizer,
             picker,

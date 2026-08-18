@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
@@ -177,7 +177,7 @@ public sealed partial class LocalizationTests
     public void LanguageToolListsAllSupportedLanguages()
     {
         var owner = CreateViewModel(new AppLocalizationManager("en-US"));
-        var tool = new LanguageToolViewModel(owner.PortAdapters.Preferences);
+        var tool = new LanguageToolViewModel(owner.ToolSession.Preferences);
 
         Assert.Equal(["zh-CN", "en-US", "ja-JP"], tool.Languages.Select(static language => language.CultureName).ToArray());
         Assert.Contains(

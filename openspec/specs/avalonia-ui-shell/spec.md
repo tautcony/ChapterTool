@@ -854,7 +854,7 @@ The Lua expression editor control SHALL separate authoring analysis from present
 - **AND** control-specific rendering helpers SHALL remain separable from analysis
 
 ### Requirement: Settings panel modules own distinct preference groups
-The settings panel implementation SHALL modularize durable preference groups so output defaults, external tools, appearance, and about/runtime info are not permanently accumulated as one undifferentiated mega-ViewModel without internal ownership boundaries.
+The settings panel implementation SHALL modularize durable preference groups so output defaults, external tools, appearance, and about/runtime info are not permanently accumulated as one undifferentiated mega-ViewModel without internal ownership boundaries. Saved and draft settings snapshots SHALL have one explicit lifecycle owner separate from the Avalonia binding properties.
 
 #### Scenario: Appearance remains a dedicated module
 - **WHEN** theme or font settings change
@@ -863,6 +863,11 @@ The settings panel implementation SHALL modularize durable preference groups so 
 #### Scenario: External tool path editing is isolatable
 - **WHEN** external tool browse/clear/validate/discover actions are exercised
 - **THEN** those actions SHALL be implementable and testable as an external-tools settings module without requiring unrelated about-panel logic
+
+#### Scenario: Settings snapshots preserve edit lifecycle
+- **WHEN** settings are loaded, changed, live-applied, saved, reset, or discarded
+- **THEN** a dedicated snapshot coordinator SHALL keep the saved snapshot distinct from the current draft
+- **AND** the ViewModel SHALL preserve the existing `HasUnsavedChanges`, load-failure, appearance rollback, and live-apply behavior
 
 ### Requirement: Desktop application uses the imported user interface foundation
 The Avalonia application SHALL load the imported theme and reusable control-style resources. It SHALL use the registered FontAwesome provider for product icons.

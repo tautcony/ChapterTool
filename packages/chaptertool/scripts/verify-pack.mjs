@@ -7,6 +7,11 @@ import { inspectRepositoryLayout, resolveBuildPaths } from "./check-environment.
 
 const paths = resolveBuildPaths();
 const { packageDirectory, packageOutputDirectory } = paths;
+const npmCliPath = process.env.npm_execpath;
+
+if (!npmCliPath) {
+  throw new Error("npm_execpath is required to verify the package.");
+}
 
 inspectRepositoryLayout(paths);
 
@@ -14,8 +19,8 @@ rmSync(packageOutputDirectory, { recursive: true, force: true });
 mkdirSync(packageOutputDirectory, { recursive: true });
 
 const packOutput = execFileSync(
-  "npm",
-  ["pack", "--ignore-scripts", "--json", "--pack-destination", packageOutputDirectory],
+  process.execPath,
+  [npmCliPath, "pack", "--ignore-scripts", "--json", "--pack-destination", packageOutputDirectory],
   { cwd: packageDirectory, encoding: "utf8" },
 ).trim();
 
@@ -54,8 +59,8 @@ try {
   );
 
   execFileSync(
-    "npm",
-    ["install", "--ignore-scripts", "--no-audit", "--no-fund", archivePath],
+    process.execPath,
+    [npmCliPath, "install", "--ignore-scripts", "--no-audit", "--no-fund", archivePath],
     { cwd: consumerDirectory, stdio: "inherit" },
   );
 
