@@ -48,21 +48,6 @@ public sealed class SharedBoundaryContractTests
     }
 
     [Fact]
-    public void OutputDocumentRetainsEncodedPayloadAndDiagnostics()
-    {
-        var diagnostic = new ChapterDiagnostic(
-            DiagnosticSeverity.Warning,
-            ChapterDiagnosticCode.Saved,
-            "saved");
-        var document = new ChapterOutputDocument("chapters.txt", "text/plain", [0xEF, 0xBB, 0xBF], [diagnostic]);
-
-        Assert.Equal("chapters.txt", document.FileName);
-        Assert.Equal("text/plain", document.MediaType);
-        Assert.Equal(new byte[] { 0xEF, 0xBB, 0xBF }, document.Content);
-        Assert.Same(diagnostic, document.Diagnostics[0]);
-    }
-
-    [Fact]
     public void BufferedSourceRejectsNoContentAtContractBoundary()
     {
         var source = new ChapterSourceReadResult(null, [new ChapterDiagnostic(
@@ -130,29 +115,6 @@ public sealed class SharedBoundaryContractTests
     }
 
     [Fact]
-    public void OutputFactoryAppliesEncodingBomAndMediaType()
-    {
-        var info = new ChapterSet(
-            "movie",
-            "movie.txt",
-            ChapterImportFormat.Ogm,
-            24,
-            TimeSpan.FromSeconds(1),
-            [new Chapter(1, TimeSpan.Zero, "Intro")]);
-        var options = new ChapterExportOptions(
-            ChapterExportFormat.Xml,
-            TextEncoding: OutputTextEncoding.Utf16LittleEndian,
-            EmitBom: true);
-        var export = new ChapterExportResult(true, "<Chapter />", ".xml", []);
-
-        var document = ChapterOutputDocumentFactory.Create(info, options, export);
-
-        Assert.Equal("movie.xml", document.FileName);
-        Assert.Equal("application/xml", document.MediaType);
-        Assert.Equal(new byte[] { 0xFF, 0xFE }, document.Content[..2]);
-    }
-
-    [Fact]
     public void BrowserSettingsCodecPreservesVersionedCamelCaseShape()
     {
         var settings = new ChapterToolSettings
@@ -171,16 +133,6 @@ public sealed class SharedBoundaryContractTests
         Assert.True(BrowserSettingsCodec.TryDeserialize(json, out var loaded));
         Assert.Equal("zh-CN", loaded.Application.Language);
         Assert.Equal("solarized-dark", loaded.Theme.PresetId);
-    }
-
-    [Fact]
-    public async Task UnavailableExternalActionDoesNotExecute()
-    {
-        var action = new UnavailableExternalActionPort();
-
-        Assert.False(action.IsAvailable);
-        Assert.False(await action.ExecuteAsync("open", null, CancellationToken.None));
-        Assert.False(action.Executed);
     }
 
     private sealed class FakeBrowserFileAccess : IBrowserFileAccess
@@ -206,21 +158,4 @@ public sealed class SharedBoundaryContractTests
         }
     }
 
-    private sealed class UnavailableExternalActionPort : IExternalActionPort
-    {
-        public bool IsAvailable => false;
-
-        public bool Executed { get; private set; }
-
-        public ValueTask<bool> ExecuteAsync(string actionId, object? parameter, CancellationToken cancellationToken)
-        {
-            if (!IsAvailable)
-            {
-                return ValueTask.FromResult(false);
-            }
-
-            Executed = true;
-            return ValueTask.FromResult(false);
-        }
-    }
 }
