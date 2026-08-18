@@ -15,9 +15,9 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - Browser WebAssembly workspace behavior:
   - `tests/ChapterTool.Wasm.Tests`
 - Node.js package behavior (Vitest, one worker for the WASM runtime):
-  - `packages/chaptertool/test/chaptertool.test.mjs`
-  - `packages/chaptertool/test/core-api.test.mjs`
-  - `packages/chaptertool/test/api-loader.test.mjs`
+  - `packages/chaptertool/test/chaptertool.test.ts`
+  - `packages/chaptertool/test/core-api.test.ts`
+  - `packages/chaptertool/test/api-loader.test.ts`
 - Infrastructure behavior:
   - `tests/ChapterTool.Infrastructure.Tests`
 - CommandLine workflows:
@@ -39,7 +39,7 @@ Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transfor
 
 Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
 
-Use `packages/chaptertool/test/chaptertool.test.mjs` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.mjs` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.mjs` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
+Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 
 The `.NET 10 CI` workflow builds `dist/` once for changes under `packages/chaptertool`. The build and test job runs `npm run typecheck` and `npm run test:built` against this output. The npm pack job downloads the same output. It runs `npm run pack:verify` without lifecycle scripts. The pack check installs the generated tarball into a temporary consumer and calls `ChapterTool.import`. The `Publish to npm` workflow uses npm Trusted Publishing after a successful version tag run. Configure the GitHub Actions trusted publisher for this workflow and the `npm` environment on npmjs.com.
 
@@ -172,7 +172,7 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 - CLI binding or workflow changed: start in `tests/ChapterTool.CommandLine.Tests`
 - viewmodel, localization, or runtime UI orchestration changed: start in `tests/ChapterTool.Avalonia.Tests`
 - XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
-- Node.js package or npm runtime packaging changed: start in `packages/chaptertool/test/chaptertool.test.mjs` and `packages/chaptertool/test/api-loader.test.mjs`
+- Node.js package or npm runtime packaging changed: start in `packages/chaptertool/test/chaptertool.test.ts` and `packages/chaptertool/test/api-loader.test.ts`
 
 ## Distribution Verification
 

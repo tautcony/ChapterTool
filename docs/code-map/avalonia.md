@@ -143,7 +143,7 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs`
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
-- `src/ChapterTool.Avalonia/Services/ChapterNameTemplateReader.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/ChapterNameTemplateReader.cs`
 - `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFilePickerService.cs`
@@ -151,9 +151,9 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/AvaloniaFontApplicationService.cs`
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/IFontFamilyCatalog.cs`
-- `src/ChapterTool.Avalonia/Services/FontFamilyCatalogEntry.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/FontFamilyCatalogEntry.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFontFamilyCatalog.cs`
-- `src/ChapterTool.Avalonia/Services/FontSettingsResolver.cs`
+- `src/ChapterTool.Avalonia.UI/PlatformPorts/FontSettingsResolver.cs`
 
 ### CLI
 

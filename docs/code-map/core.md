@@ -18,7 +18,7 @@ Canonical data contracts shared across the pipeline:
 - `src/ChapterTool.Core/Models/ChapterImportFormats.cs`
 - `src/ChapterTool.Core/Models/ChapterImportSource.cs`
 - `src/ChapterTool.Core/Models/ChapterImportEntry.cs`
-- `src/ChapterTool.Core/Models/MediaFileReference.cs`
+- `src/ChapterTool.Core/Models/ReferencedMediaFile.cs`
 
 `ChapterSet` is the main unit passed between import, edit, transform, and export flows.
 

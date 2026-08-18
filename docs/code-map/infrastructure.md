@@ -42,11 +42,11 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - process execution:
   - `src/ChapterTool.Infrastructure/Processes/ProcessRunner.cs`
 - service contracts:
-  - `src/ChapterTool.Infrastructure/Services/IExternalToolLocator.cs`
+  - `src/ChapterTool.Contracts/PlatformPorts/IExternalToolLocator.cs`
   - `src/ChapterTool.Infrastructure/Services/IProcessRunner.cs`
   - `src/ChapterTool.Infrastructure/Services/ProcessRunRequest.cs`
   - `src/ChapterTool.Infrastructure/Services/ProcessRunResult.cs`
-  - `src/ChapterTool.Infrastructure/Services/ExternalToolLocation.cs`
+  - `src/ChapterTool.Contracts/PlatformPorts/ExternalToolLocation.cs`
 
 ### Settings and configuration persistence
 
@@ -62,7 +62,7 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Contracts/PlatformPorts/ISettingsStore.cs`
 - corrupt-file handling:
   - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFile.cs`
-  - `src/ChapterTool.Infrastructure/Configuration/CorruptSettingsFileException.cs`
+  - `src/ChapterTool.Contracts/Configuration/CorruptSettingsFileException.cs`
   - `src/ChapterTool.Infrastructure/Configuration/UnsupportedSettingsVersionException.cs`
 - JSON source generation:
   - `src/ChapterTool.Infrastructure/Configuration/AppJsonSerializerContext.cs`
