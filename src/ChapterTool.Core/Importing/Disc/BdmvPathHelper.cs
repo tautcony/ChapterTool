@@ -19,7 +19,7 @@ internal static class BdmvPathHelper
                 if (Directory.Exists(Path.Combine(dir, "BDMV", "CLIPINF")) &&
                     Directory.Exists(Path.Combine(dir, "BDMV", "PLAYLIST")))
                 {
-                    return dir.Replace(Path.DirectorySeparatorChar, '/');
+                    return dir;
                 }
 
                 var parent = Path.GetDirectoryName(dir);
@@ -44,7 +44,7 @@ internal static class BdmvPathHelper
     internal static string? GetClpiPath(string bdmvRoot, string clipName) =>
         string.IsNullOrWhiteSpace(bdmvRoot) || string.IsNullOrWhiteSpace(clipName)
             ? null
-            : string.Join('/', bdmvRoot.TrimEnd('/', '\\'), "BDMV", "CLIPINF", $"{clipName}.clpi");
+            : Path.Combine(bdmvRoot, "BDMV", "CLIPINF", $"{clipName}.clpi");
 
     internal static IReadOnlyDictionary<string, Clpi.ClpiFile> DiscoverClpiFiles(
         string bdmvRoot,
@@ -130,7 +130,7 @@ internal static class BdmvPathHelper
     }
 
     internal static string? GetIndexPath(string bdmvRoot) =>
-        string.IsNullOrWhiteSpace(bdmvRoot) ? null : string.Join('/', bdmvRoot.TrimEnd('/', '\\'), "BDMV", "index.bdmv");
+        string.IsNullOrWhiteSpace(bdmvRoot) ? null : Path.Combine(bdmvRoot, "BDMV", "index.bdmv");
 
     internal static string? GetMetaXmlPath(string bdmvRoot)
     {
