@@ -76,7 +76,7 @@ packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 | Standalone CLI | `src/ChapterTool.CommandLine/Program.cs` | `src/ChapterTool.CommandLine/ChapterToolCliHost.cs` | `ChapterToolCliApplication.ImportAsync` | `ChapterToolCliApplication.ConvertAsync` | `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs` |
 | Avalonia desktop | `src/ChapterTool.Avalonia/Program.cs` | `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs` | `tests/ChapterTool.Avalonia.Tests` and `tests/ChapterTool.Avalonia.Headless.Tests` |
 | Blazor WebAssembly browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Pages/Home.razor` and `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` | `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` and `wwwroot/js/download.js` | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` |
-| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.mjs` and `core-api.test.mjs` |
+| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.ts` and `core-api.test.ts` |
 
 ### 2.1 Host Defaults
 
@@ -300,7 +300,7 @@ Start with these paths for Node.js package behavior:
 - Generated declaration output: `packages/chaptertool/dist/index.d.ts`
 - Runtime build: `packages/chaptertool/scripts/build.mjs`
 - Environment and repository layout check: `packages/chaptertool/scripts/check-environment.mjs`
-- Package tests: `packages/chaptertool/test/chaptertool.test.mjs`, `core-api.test.mjs`, and `api-loader.test.mjs`
+- Package tests: `packages/chaptertool/test/chaptertool.test.ts`, `core-api.test.ts`, and `api-loader.test.ts`
 
 The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input.
 
@@ -339,7 +339,7 @@ Use these rules when you change a capability:
 | Avalonia ViewModel or service behavior | `tests/ChapterTool.Avalonia.Tests` | Check the GUI workflow when the change affects desktop behavior |
 | Avalonia XAML or interaction behavior | `tests/ChapterTool.Avalonia.Headless.Tests` | Check user actions and workflow results |
 | Browser workspace or Blazor host behavior | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` | Build `src/ChapterTool.Wasm/ChapterTool.Wasm.csproj` and run browser smoke checks when host assets change |
-| Node.js package or npm runtime packaging | `packages/chaptertool/test/chaptertool.test.mjs` | Run `npm test` from `packages/chaptertool` |
+| Node.js package or npm runtime packaging | `packages/chaptertool/test/chaptertool.test.ts` | Run `npm test` from `packages/chaptertool` |
 | Cross-form behavior | All applicable test projects | Run `dotnet test ChapterTool.slnx --no-restore` sequentially |
 
 Do not use source-text assertions to test code or configuration.
