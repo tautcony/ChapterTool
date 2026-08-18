@@ -27,7 +27,9 @@ public sealed class BdmvPathHelperTests
         var mplsPath = BdmvFilePath("Detective Conan The Bride of Halloween/DISC1", "BDMV", "PLAYLIST", "00001.mpls");
         var root = BdmvPathHelper.FindBdmvRoot(mplsPath);
         Assert.NotNull(root);
-        Assert.EndsWith("Detective Conan The Bride of Halloween/DISC1", root);
+        Assert.Equal(
+            Path.GetFullPath(BdmvDir("Detective Conan The Bride of Halloween/DISC1")),
+            Path.GetFullPath(root));
     }
 
     [Fact]
@@ -36,7 +38,9 @@ public sealed class BdmvPathHelperTests
         var clpiPath = BdmvFilePath("Detective Conan Zero the Enforcer", "BDMV", "CLIPINF", "00000.clpi");
         var root = BdmvPathHelper.FindBdmvRoot(clpiPath);
         Assert.NotNull(root);
-        Assert.EndsWith("Detective Conan Zero the Enforcer", root);
+        Assert.Equal(
+            Path.GetFullPath(BdmvDir("Detective Conan Zero the Enforcer")),
+            Path.GetFullPath(root));
     }
 
     [Fact]
@@ -66,7 +70,7 @@ public sealed class BdmvPathHelperTests
     public void GetClpiPathConstructsCorrectPath()
     {
         var clpiPath = BdmvPathHelper.GetClpiPath("/bdmv/root", "00001");
-        Assert.Equal("/bdmv/root/BDMV/CLIPINF/00001.clpi", clpiPath);
+        Assert.Equal(Path.Combine("/bdmv/root", "BDMV", "CLIPINF", "00001.clpi"), clpiPath);
     }
 
     [Theory]
@@ -83,7 +87,7 @@ public sealed class BdmvPathHelperTests
     public void GetIndexPathConstructsCorrectPath()
     {
         var indexPath = BdmvPathHelper.GetIndexPath("/bdmv/root");
-        Assert.Equal("/bdmv/root/BDMV/index.bdmv", indexPath);
+        Assert.Equal(Path.Combine("/bdmv/root", "BDMV", "index.bdmv"), indexPath);
     }
 
     [Theory]
