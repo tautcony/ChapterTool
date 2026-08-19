@@ -21,11 +21,7 @@ public interface IWorkspaceToolSession
 
     string BuildPreview();
 
-    string LogText();
-
     string CreateZonesText();
-
-    void ClearLog();
 
     ValueTask ReportUnexpectedUiException(Exception exception);
 }
@@ -35,9 +31,7 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
 {
     private readonly MainWindowPortAdapters portAdapters;
     private readonly Func<string> buildPreview;
-    private readonly Func<string> logText;
     private readonly Func<string> createZonesText;
-    private readonly Action clearLog;
     private readonly Func<Exception, ValueTask> reportUnexpectedUiException;
 
     public MainWindowToolSession(MainWindowViewModel owner)
@@ -51,9 +45,7 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
         ChapterEdit = portAdapters.ChapterEdit;
         LogService = owner.LogService;
         buildPreview = owner.BuildPreview;
-        logText = owner.LogText;
         createZonesText = owner.CreateZonesText;
-        clearLog = owner.ClearLog;
         reportUnexpectedUiException = owner.ReportUnexpectedUiException;
     }
 
@@ -73,11 +65,7 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
 
     public string BuildPreview() => buildPreview();
 
-    public string LogText() => logText();
-
     public string CreateZonesText() => createZonesText();
-
-    public void ClearLog() => clearLog();
 
     public ValueTask ReportUnexpectedUiException(Exception exception) => reportUnexpectedUiException(exception);
 }

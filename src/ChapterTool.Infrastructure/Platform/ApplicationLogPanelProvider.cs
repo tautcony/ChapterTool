@@ -31,24 +31,6 @@ public sealed class ApplicationLogPanelProvider(
 
     public ILogger CreateLogger(string categoryName) => new ApplicationLogPanelLogger(this, categoryName);
 
-    public string Format(Func<ApplicationLogEntry, string>? formatter = null)
-    {
-        IReadOnlyList<ApplicationLogEntry> snapshot;
-        lock (gate)
-        {
-            snapshot = [.. entries];
-        }
-
-        return string.Join(
-            Environment.NewLine,
-            snapshot.Select(entry =>
-            {
-                var message = formatter is null ? entry.Message : formatter(entry);
-                var tag = entry.Operation is null ? string.Empty : $" [{entry.Operation}]";
-                return $"[{entry.Level}] {entry.Timestamp:yyyy-MM-dd HH:mm:ss}{tag} {message}";
-            }));
-    }
-
     public void Clear()
     {
         lock (gate)

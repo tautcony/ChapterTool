@@ -11,8 +11,6 @@ public interface IApplicationLogService
 
     IReadOnlyList<ApplicationLogEntry> Entries { get; }
 
-    string Format(Func<ApplicationLogEntry, string>? formatter = null);
-
     void Clear();
 }
 

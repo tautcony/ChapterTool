@@ -42,7 +42,6 @@ public sealed partial class TextToolView : UserControl
         if (subscribedViewModel is not null)
         {
             subscribedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            subscribedViewModel.DetachLiveRefresh();
         }
 
         subscribedViewModel = DataContext as TextToolViewModel;
@@ -63,7 +62,6 @@ public sealed partial class TextToolView : UserControl
         if (subscribedViewModel is not null)
         {
             subscribedViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-            subscribedViewModel.DetachLiveRefresh();
             subscribedViewModel = null;
         }
     }

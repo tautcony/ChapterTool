@@ -18,7 +18,6 @@ internal sealed partial class StatusDiagnosticsPresenter(
     IChapterTimeFormatter timeFormatter,
     Action<string> setStatusText)
 {
-    private readonly IAppLocalizer logContentLocalizer = new AppLocalizationManager("en-US");
     private LocalizedMessage? statusMessage;
     private LocalizedMessage? progressMessage;
 
@@ -207,17 +206,6 @@ internal sealed partial class StatusDiagnosticsPresenter(
         {
             setStatusText(localizer.Format(progressMessage));
         }
-    }
-
-    public string FormatLogEntry(ApplicationLogEntry entry)
-    {
-        if (entry.MessageKey is null)
-        {
-            return entry.Message;
-        }
-
-        var message = logContentLocalizer.Format(entry.MessageKey, entry.Arguments);
-        return string.IsNullOrWhiteSpace(entry.TechnicalDetail) ? message : $"{message} {entry.TechnicalDetail}";
     }
 
     private static Dictionary<string, object?> DiagnosticDetails(ChapterDiagnostic diagnostic) =>

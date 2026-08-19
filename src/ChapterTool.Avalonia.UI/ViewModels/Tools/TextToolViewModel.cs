@@ -1,8 +1,6 @@
 using System.Text.Json;
 using System.Xml.Linq;
-using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
-using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
@@ -13,7 +11,6 @@ public sealed class TextToolViewModel : ObservableViewModel
 
     private readonly Func<string> refreshText;
     private readonly TextToolOptions options;
-    private readonly IApplicationLogService? liveRefreshService;
     private string text;
     private TextToolKind kind;
     private IReadOnlyList<TextToolLineViewModel> lines;
@@ -22,7 +19,6 @@ public sealed class TextToolViewModel : ObservableViewModel
     {
         this.refreshText = refreshText;
         this.options = options ?? TextToolOptions.Default;
-        liveRefreshService = this.options.LiveRefreshService;
         kind = this.options.FormatSelector?.Kind ?? TextToolKind.Plain;
         text = Format(refreshText(), kind);
         lines = BuildLines(text, kind);
@@ -38,18 +34,6 @@ public sealed class TextToolViewModel : ObservableViewModel
             return ValueTask.CompletedTask;
         }, _ => this.options.ClearAction is not null);
 
-        if (liveRefreshService is { } service)
-        {
-            service.EntryAdded += OnEntryAdded;
-        }
-    }
-
-    public void DetachLiveRefresh()
-    {
-        if (liveRefreshService != null)
-        {
-            liveRefreshService.EntryAdded -= OnEntryAdded;
-        }
     }
 
     public string Text
@@ -112,22 +96,6 @@ public sealed class TextToolViewModel : ObservableViewModel
     public UiCommand RefreshCommand { get; }
 
     public UiCommand ClearCommand { get; }
-
-    private void OnEntryAdded(object? sender, ApplicationLogEntry entry)
-    {
-        if (Dispatcher.UIThread.CheckAccess())
-        {
-            RefreshText();
-            return;
-        }
-
-        Dispatcher.UIThread.Post(RefreshText);
-    }
-
-    private void RefreshText()
-    {
-        Text = Format(refreshText(), Kind);
-    }
 
     private static string Format(string text, TextToolKind kind)
     {
@@ -315,8 +283,6 @@ public sealed class TextToolOptions
     public Action? ClearAction { get; init; }
 
     public TextToolFormatSelector? FormatSelector { get; init; }
-
-    public IApplicationLogService? LiveRefreshService { get; init; }
 
     public Func<Exception, ValueTask>? ErrorHandler { get; init; }
 }

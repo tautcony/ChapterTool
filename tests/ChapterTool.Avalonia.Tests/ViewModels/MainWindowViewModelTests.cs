@@ -811,7 +811,6 @@ public sealed class MainWindowViewModelTests
             && entry.Arguments.TryGetValue("targetFps", out var targetFps)
             && string.Equals(sourceFps?.ToString(), "24", StringComparison.Ordinal)
             && string.Equals(targetFps?.ToString(), "50", StringComparison.Ordinal));
-        Assert.Contains("Convert to current FPS: source=24, target=50", vm.LogText(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1113,7 +1112,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task PreviewAndLogUseCurrentChapterState()
+    public async Task PreviewAndStructuredLogUseCurrentChapterState()
     {
         var log = new ApplicationLogPanelProvider();
         var vm = CreateViewModel(logService: log);
@@ -1122,13 +1121,9 @@ public sealed class MainWindowViewModelTests
         vm.SaveFormat = ChapterExportFormat.Txt;
 
         Assert.Contains("CHAPTER01=", vm.BuildPreview(), StringComparison.Ordinal);
-        Assert.Contains("Load completed: groups=1, entries=1, chapters=1", vm.LogText(), StringComparison.Ordinal);
         Assert.Contains(log.Entries, entry =>
             entry is { Level: LogLevel.Information, MessageKey: "Log.LoadingSource" } &&
             string.Equals(entry.Category, typeof(MainWindowViewModel).FullName, StringComparison.Ordinal));
-
-        vm.ClearLog();
-        Assert.Equal(string.Empty, vm.LogText());
     }
 
     [Fact]
@@ -1310,22 +1305,17 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task LocalizedStatusAndLogRefreshAfterLanguageSwitch()
+    public async Task LocalizedStatusRefreshesAfterLanguageSwitch()
     {
         var localizer = new AppLocalizationManager("en-US");
-        var log = new ApplicationLogPanelProvider();
-        var vm = CreateViewModel(logService: log, localizer: localizer);
+        var vm = CreateViewModel(localizer: localizer);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
         Assert.Equal("Loaded 1 chapters", vm.StatusText);
-        Assert.Contains("Loading source", vm.LogText(), StringComparison.Ordinal);
-
         localizer.SetCulture("ja-JP");
 
         Assert.Equal("1 個のチャプターを読み込みました", vm.StatusText);
-        Assert.Contains("Loading source", vm.LogText(), StringComparison.Ordinal);
-        Assert.DoesNotContain("読み込み中", vm.LogText(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1350,7 +1340,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task DiagnosticLogsCaptureSeverityAndFormatForLogWindow()
+    public async Task DiagnosticLogsCaptureSeverityAndStructuredState()
     {
         var diagnostic = new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.PartialParse, "stopped", "line 5", "tail");
         var log = new ApplicationLogPanelProvider();
@@ -1365,7 +1355,6 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(LogLevel.Warning, entry.Level);
         Assert.Equal("Parse.Partial", entry.Arguments?["code"]);
         Assert.Equal("tail", entry.TechnicalDetail);
-        Assert.Contains("Load diagnostic: severity=Warning, code=Parse.Partial", vm.LogText(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1383,7 +1372,6 @@ public sealed class MainWindowViewModelTests
             Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
             Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
             Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
-            Assert.Contains("Lua expression script diagnostic", vm.LogText(), StringComparison.Ordinal);
         }
         finally
         {

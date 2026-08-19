@@ -31,6 +31,7 @@ public sealed class WasmWorkspace : IDisposable
     private readonly long maxLoadBytes;
     private readonly List<WasmLogEntry> logs = [];
     private readonly HashSet<int> selectedRowIndexes = [];
+    private IReadOnlyList<DiagnosticView> diagnostics = [];
 
     private ChapterImportResult? importResult;
     private int activeGroupIndex;
@@ -230,11 +231,7 @@ public sealed class WasmWorkspace : IDisposable
     public bool IsXmlLanguageEnabled =>
         wasmChapterService.FormatAt(SaveFormatIndex) == ChapterExportFormat.Xml;
 
-    public IReadOnlyList<DiagnosticView> Diagnostics { get; private set; } = [];
-
     public IReadOnlyList<WasmLogEntry> Logs => logs;
-
-    public bool HasDiagnostics => Diagnostics.Count > 0;
 
     public int SelectedRowIndex { get; private set; } = -1;
 
@@ -535,7 +532,7 @@ public sealed class WasmWorkspace : IDisposable
                     ClearSession();
                 }
 
-                Diagnostics = ToDiagnostics(result.Diagnostics);
+                diagnostics = ToDiagnostics(result.Diagnostics);
                 StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.LoadFailed");
                 AddLog("Error", StatusText);
                 return;
@@ -557,7 +554,7 @@ public sealed class WasmWorkspace : IDisposable
             }
 
             StatusText = ex.Message;
-            Diagnostics = [];
+            diagnostics = [];
             AddLog("Error", localizer.T("Status.LoadFailed"), ex.ToString());
         }
         finally
@@ -896,7 +893,7 @@ public sealed class WasmWorkspace : IDisposable
             var format = wasmChapterService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
-            Diagnostics = ToDiagnostics(export.Diagnostics);
+            diagnostics = ToDiagnostics(export.Diagnostics);
             if (!export.Success)
             {
                 StatusText = FirstError(export.Diagnostics) ?? localizer.T("Status.PreviewFailed");
@@ -945,7 +942,7 @@ public sealed class WasmWorkspace : IDisposable
             var format = wasmChapterService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
-            Diagnostics = ToDiagnostics(export.Diagnostics);
+            diagnostics = ToDiagnostics(export.Diagnostics);
             if (!export.Success)
             {
                 StatusText = FirstError(export.Diagnostics) ?? localizer.T("Status.SaveFailed");
@@ -1047,7 +1044,7 @@ public sealed class WasmWorkspace : IDisposable
         SourcePath = fileName;
         selectedFrameRateIndex = Math.Max(0, PreferredFrameRateIndex);
         ClearSelection();
-        Diagnostics = [];
+        diagnostics = [];
         SyncUiFromClipSession(rebuildAllGroupOptions: true);
         RebuildFrameRateChoices(BaseChapterSet ?? new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []));
         RefreshDisplay(
@@ -1176,7 +1173,7 @@ public sealed class WasmWorkspace : IDisposable
         }
 
         var projectionDiagnostics = ToDiagnostics(projection.Diagnostics);
-        Diagnostics = projectionDiagnostics;
+        diagnostics = projectionDiagnostics;
         if (projectionDiagnostics.Count > 0)
         {
             AddLog(
@@ -1293,7 +1290,7 @@ public sealed class WasmWorkspace : IDisposable
         FramesPerSecond = 0;
         FrameRateChoices = [];
         ClearSelection();
-        Diagnostics = [];
+        diagnostics = [];
         if (!keepPath)
         {
             SourcePath = string.Empty;
@@ -1458,8 +1455,8 @@ public sealed class WasmWorkspace : IDisposable
 
     private void RecordDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics)
     {
-        Diagnostics = ToDiagnostics(diagnostics);
-        foreach (var diagnostic in Diagnostics)
+        this.diagnostics = ToDiagnostics(diagnostics);
+        foreach (var diagnostic in this.diagnostics)
         {
             AddLog(diagnostic.Severity, $"{diagnostic.Code}: {diagnostic.Message}", diagnostic.Details);
         }
@@ -1489,7 +1486,7 @@ public sealed class WasmWorkspace : IDisposable
 
 public sealed record FrameRateChoice(int Index, string DisplayName, FrameRateOption Option);
 
-public sealed record DiagnosticView(
+internal sealed record DiagnosticView(
     string Severity,
     string Code,
     string Message,

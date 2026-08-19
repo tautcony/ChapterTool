@@ -176,24 +176,5 @@ public sealed class ApplicationLogPanelProviderTests
         Assert.Empty(service.Entries);
     }
 
-    [Fact]
-    public void FormatIncludesLevelTimestampAndOperationTag()
-    {
-        var service = new ApplicationLogPanelProvider();
-        var logger = service.CreateLogger("ChapterTool.Tests");
-        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
-        {
-            ["MessageKey"] = "Log.SavingChapters",
-            ["Operation"] = "Save"
-        };
-
-        logger.Log(LogLevel.Warning, new EventId(0, "Log.SavingChapters"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
-
-        var formatted = service.Format();
-        Assert.Contains("[Warning]", formatted, StringComparison.Ordinal);
-        Assert.Contains("[Save]", formatted, StringComparison.Ordinal);
-        Assert.Contains("Log.SavingChapters", formatted, StringComparison.Ordinal);
-    }
-
     private sealed record ApplicationLogEntrySnapshot(string Message, IReadOnlyList<string> CurrentHistory);
 }

@@ -271,7 +271,7 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task InvalidExpressionSurfacesCoreDiagnosticToStatusAndDiagnostics()
+    public async Task InvalidExpressionSurfacesCoreDiagnosticToStatusAndLog()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
@@ -279,12 +279,9 @@ public sealed class WasmWorkspaceTests
         workspace.Expression = "return bad()";
         workspace.ApplyOptionsAndRefresh();
 
-        Assert.True(workspace.HasDiagnostics);
-        Assert.Contains(workspace.Diagnostics, diagnostic =>
-            diagnostic.Code.Contains("Expression", StringComparison.OrdinalIgnoreCase)
-            || diagnostic.Code.Contains("Lua", StringComparison.OrdinalIgnoreCase));
         Assert.False(string.IsNullOrWhiteSpace(workspace.StatusText));
-        Assert.Contains(workspace.Diagnostics[0].Message, workspace.StatusText, StringComparison.Ordinal);
+        Assert.Contains(workspace.Logs, entry =>
+            entry.Details?.Contains("Lua", StringComparison.OrdinalIgnoreCase) == true);
     }
 
     [Fact]

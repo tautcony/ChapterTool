@@ -46,9 +46,6 @@ public sealed partial class MainWindowViewModel
     private void Log(LogLevel level, string key, string? technicalDetail, params (string Name, object? Value)[] arguments)
         => statusDiagnosticsPresenter.Log(level, key, technicalDetail, arguments);
 
-    private string FormatLogEntry(ApplicationLogEntry entry)
-        => statusDiagnosticsPresenter.FormatLogEntry(entry);
-
     private void RefreshLocalizedState()
     {
         RefreshChapterNameModeOptions();

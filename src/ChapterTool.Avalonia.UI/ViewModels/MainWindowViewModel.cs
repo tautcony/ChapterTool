@@ -924,11 +924,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         return result.Content;
     }
 
-    public string LogText() => LogService.Format(FormatLogEntry);
-
     public IApplicationLogService LogService { get; }
-
-    public void ClearLog() => LogService.Clear();
 
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
