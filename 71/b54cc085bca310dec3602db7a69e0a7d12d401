@@ -1,0 +1,25 @@
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_082881a4322b77::t_cd5cdc7f545953 535,557,896,945,1047,1176,1293,1458-1459,1489
+  s_082881a4322b77::t_9915f2ee23b790 34
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  s_082881a4322b77::t_82dd0363560a57 1115,1308,1311,1343
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  s_082881a4322b77::t_cd5cdc7f545953 274,283
+  s_082881a4322b77::t_7abf63b196720f 284
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "71b54cc085bca310dec3602db7a69e0a7d12d401",
+  "prompts": {},
+  "sessions": {
+    "s_082881a4322b77": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0177a-4a35-7fe2-aa06-e20485c059bb",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
