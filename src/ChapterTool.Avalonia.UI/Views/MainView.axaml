@@ -333,7 +333,6 @@
             ColumnSpacing="16"
             RowSpacing="8"
             Margin="0"
-            Grid.IsSharedSizeScope="True"
             AutomationProperties.AutomationId="AdvancedOptions">
         <Grid x:Name="FormatOptionsGroup"
               Classes="optionCell"
@@ -341,7 +340,7 @@
               Grid.Column="0"
               ColumnSpacing="6">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" SharedSizeGroup="AdvancedOptionsLeftLabel" />
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.SaveFormat}" />
@@ -359,7 +358,7 @@
               Grid.Column="1"
               ColumnSpacing="6">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" SharedSizeGroup="AdvancedOptionsRightLabel" />
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
@@ -401,7 +400,7 @@
               Grid.Column="1"
               ColumnSpacing="6">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" SharedSizeGroup="AdvancedOptionsRightLabel" />
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <TextBlock x:Name="OrderShiftLabel"
@@ -429,7 +428,7 @@
               IsEnabled="{Binding IsXmlLanguageEnabled}"
               HorizontalAlignment="Stretch">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" SharedSizeGroup="AdvancedOptionsLeftLabel" />
+            <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.XmlLanguage}" />
@@ -459,7 +458,7 @@
               ColumnSpacing="6">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"
-                              SharedSizeGroup="AdvancedOptionsLeftLabel" />
+                              />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>

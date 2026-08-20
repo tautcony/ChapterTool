@@ -93,9 +93,10 @@ public sealed class MainWindowHeadlessTests
         Assert.Null(applyExpression.Content);
         Assert.False(string.IsNullOrWhiteSpace(ToolTip.GetTip(applyExpression)?.ToString()));
         Assert.True(chapterNameMode.Bounds.Width >= 128);
-        Assert.InRange(Math.Abs(formatBox.Bounds.Left - xmlLanguageBox.Bounds.Left), 0, 0.5);
-        Assert.InRange(Math.Abs(formatBox.Bounds.Left - expressionEditor.Bounds.Left), 0, 0.5);
-        Assert.InRange(Math.Abs(chapterNameMode.Bounds.Left - orderShiftBox.Bounds.Left), 0, 0.5);
+        Assert.True(formatBox.Bounds.Right <= options.Bounds.Right);
+        Assert.True(xmlLanguageBox.Bounds.Right <= options.Bounds.Right);
+        Assert.True(expressionEditor.Bounds.Right <= options.Bounds.Right);
+        Assert.True(orderShiftBox.Bounds.Right <= options.Bounds.Right);
 
         await host.LayoutAsync(width: 1100, height: 576);
 
@@ -103,7 +104,8 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
         Assert.True(expressionEditor.Bounds.Width >= 500);
         Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
-        Assert.InRange(Math.Abs(chapterNameMode.Bounds.Left - orderShiftBox.Bounds.Left), 0, 0.5);
+        Assert.True(chapterNameMode.Bounds.Right <= options.Bounds.Right);
+        Assert.True(orderShiftBox.Bounds.Right <= options.Bounds.Right);
     }
 
     [AvaloniaFact]

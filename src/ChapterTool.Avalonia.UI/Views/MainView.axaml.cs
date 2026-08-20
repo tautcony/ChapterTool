@@ -537,7 +537,6 @@ public sealed partial class MainView : UserControl
             SetGridPosition(XmlLanguageOptionsGroup, 1, 0);
             SetGridPosition(OrderShiftOptionsGroup, 1, 1);
             SetGridPosition(ExpressionOptionsGroup, 2, 0, 2);
-            ExpressionOptionsGroup.ColumnDefinitions[0].SharedSizeGroup = "AdvancedOptionsLeftLabel";
             return;
         }
 
@@ -549,7 +548,6 @@ public sealed partial class MainView : UserControl
         SetGridPosition(OrderShiftOptionsGroup, 0, 2);
         SetGridPosition(XmlLanguageOptionsGroup, 1, 0);
         SetGridPosition(ExpressionOptionsGroup, 1, 1, 2);
-        ExpressionOptionsGroup.ColumnDefinitions[0].SharedSizeGroup = "AdvancedOptionsRightLabel";
     }
 
     private static void SetGridPosition(Control control, int row, int column, int columnSpan = 1)
