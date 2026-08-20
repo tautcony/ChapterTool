@@ -12,6 +12,14 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 public sealed class MainWindowHeadlessTests
 {
     [AvaloniaFact]
+    public void Default_width_matches_minimum_width()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+
+        Assert.Equal(host.Window.MinWidth, host.Window.Width);
+    }
+
+    [AvaloniaFact]
     public async Task Xml_edition_selection_displays_selected_chapter_names()
     {
         using var host = CreateMultiOptionHost(

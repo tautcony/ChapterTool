@@ -113,7 +113,7 @@ public sealed partial class MainView : UserControl
         window.Height = nextHeight;
     }
 
-    internal static bool IsNarrowAdvancedOptions(double width) => width <= 760;
+    internal static bool IsNarrowAdvancedOptions(double width) => width <= 860;
 
     public UiCommand BrowseAndLoadCommand { get; }
 
