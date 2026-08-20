@@ -1,0 +1,99 @@
+src/ChapterTool.CommandLine/Resources/Locales/en-US.json
+  s_c8af254f02a145::t_958370c5e0b033 33
+  s_c8af254f02a145::t_f9b157b0ca9dc9 74,81,86,89,91,99-101,112,114
+  s_c8af254f02a145::t_2a37e007e721b0 19
+src/ChapterTool.CommandLine/Resources/Locales/ja-JP.json
+  s_c8af254f02a145::t_a6bebc36a0471e 10,18,32,37-38,45,51-52,54-56,98,102,105-106,111,113,119,123,131
+  s_c8af254f02a145::t_1a5348158bc377 85
+  s_c8af254f02a145::t_be84c1916c2eb9 3-5,9,16,19,33,39,44,48-49,53,57-58,62,66,73-74,76,80-81,86,89,91,99-101,112,114,120,124,127,130,132-133
+  s_c8af254f02a145::t_0d087a78f7d357 34-36,40-42,115-116
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_43351461ae283b::t_3a351c6f4adf0d 2-4,7-11,13,15-18,20-200,202-216,219-220,222-224,226-286,288,291,293-294,296,298-301,303,306-319,321-348,351,353-363,366-384,386-456,460-477
+docs/code-map/core.md
+  s_43351461ae283b::t_e2a61120cab645 145
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_43351461ae283b::t_3a351c6f4adf0d 2-4,7-11,13,15-18,20-200,202-213,216,219-224,226-272,274-286,288,291-293,296,298-302,306-327,329-348,351,353-363,366-384,386-456,460-477
+  s_43351461ae283b::t_cfacfca221c0d0 214-215
+  s_43351461ae283b::t_da3314808190ab 273
+scripts/axaml-to-json.py
+  s_43351461ae283b::t_8d588c5e1d66f8 63,65-66
+  s_43351461ae283b::t_855af2928b86da 1-62,64,69-79
+  s_43351461ae283b::t_14007db682435f 67-68
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_c8af254f02a145::t_e4d93fc18bb0a2 80,89-90,94,99,103,107,114-115,117,121-122,127,140-142,153,155,161,165,168,174
+  s_c8af254f02a145::t_da5bc566a5fa84 76,85,98,130,132,171,173,220,266,275,326,384,467
+  s_c8af254f02a145::t_1a5348158bc377 126,254,478
+  s_c8af254f02a145::t_a30ea3dd038cb0 222,227,303,344,370,441
+  s_c8af254f02a145::t_6737b9f2c7f2b9 392,396
+  s_c8af254f02a145::t_ddc586279710b8 322,354,357,369,377-379,389
+  s_c8af254f02a145::t_0d087a78f7d357 17,71-73,77-78,83,156-157
+  s_43351461ae283b::t_14007db682435f 219
+  s_c8af254f02a145::t_d7b7973e876bd3 259,292,308,368,449
+  s_c8af254f02a145::t_129ca4099fcfed 28,178-179,209,224,267,293,301-302,319,457
+  s_c8af254f02a145::t_5a1f8f2ba4f8af 463-465,468
+  s_c8af254f02a145::t_6c4eeb8ed12616 180-182,192,197
+  s_c8af254f02a145::t_59316cecd569e9 233-235,237-240,246-247,250-251,406,408,420-424,432-433,440,454
+  s_c8af254f02a145::t_1dba268cb8ccd4 397,447
+  s_c8af254f02a145::t_f18c9c962d33e7 74-75,86,92-93,95-97,139,143,146-147,152,154,160,164,172
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_43351461ae283b::t_14007db682435f 219
+  s_c8af254f02a145::t_f9b157b0ca9dc9 64,115,122,127,130,132,140-142,153,155,220,465,467
+  s_c8af254f02a145::t_2a37e007e721b0 275
+  s_c8af254f02a145::t_09a46c6001129e 266
+AGENTS.md
+  s_43351461ae283b::t_855af2928b86da 27
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_43351461ae283b::t_3a351c6f4adf0d 2-4,7-11,13,15-18,20-62,64-113,115-120,122-125,127-128,130,132-138,142-151,153,155-200,202-216,219-220,222-224,226-264,266-273,275-286,288,291,293-294,296,298-301,303,306-319,321-348,351,353-363,366-384,386-456,460-463,465,467-477
+  s_43351461ae283b::t_64023fc7a99db7 63
+  s_43351461ae283b::t_7a4333581a7f48 114
+  s_43351461ae283b::t_cc90d3a8c54b7a 121
+  s_43351461ae283b::t_746ca419644800 126
+  s_43351461ae283b::t_8d3ed19ffb160b 129
+  s_43351461ae283b::t_8c57c026f25fe0 131
+  s_43351461ae283b::t_627ffa689c70b9 139-141
+  s_43351461ae283b::t_c2b4bf16a56a63 152
+  s_43351461ae283b::t_6913b930cebca0 154
+  s_43351461ae283b::t_c8cb1bd143b013 265
+  s_43351461ae283b::t_4cd099db7c9461 274
+  s_43351461ae283b::t_1ad475f6b0a48c 464
+  s_43351461ae283b::t_3ac17689040445 466
+tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs
+  s_c8af254f02a145::t_958370c5e0b033 203
+.github/workflows/dotnet-ci.yml
+  s_43351461ae283b::t_198848c59f9065 47-49
+src/ChapterTool.Wasm/Services/WasmLocalizer.cs
+  s_43351461ae283b::t_2e502530161eaf 4,45-48,50-61
+  s_c8af254f02a145::t_247d61d478e55d 10,49,81-82
+  s_c8af254f02a145::t_478182e1fa6def 83
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_43351461ae283b::t_14007db682435f 219
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "152d7ceda345686644128ef9fa5061204df7c565",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_43351461ae283b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01f5d-bfb9-7c50-b4fb-88296ad0b47b",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_c8af254f02a145": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01f54-8ebd-7731-9716-3198a0f06e16",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
