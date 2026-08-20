@@ -1,0 +1,27 @@
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_1d1fe78c783614::t_d13c297c2cbe3b 343,361,403,431,461
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs
+  s_1d1fe78c783614::t_94eb26a9f0adb9 96-99
+  s_1d1fe78c783614::t_7956d2039bbb20 107-108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "8d0159f4f97d0d6facaef8129a15cd99fa0d3d8d",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_1d1fe78c783614": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01f49-e984-7590-a512-e46592424c2d",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
