@@ -61,7 +61,7 @@
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">This entry has no nested structured data.</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">This entry has no exception data.</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">Save</x:String>
-  <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">This platform-gated feature is not enabled in this build.</x:String>
+  <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">This platform feature is not enabled in this build.</x:String>
   <x:String x:Key="Common.Enable" xml:space="preserve">Enable</x:String>
   <x:String x:Key="Common.Use" xml:space="preserve">Use</x:String>
   <x:String x:Key="Copy.Name" xml:space="preserve">Copied chapter name(s) to clipboard.</x:String>
@@ -112,24 +112,24 @@
   <x:String x:Key="Diagnostic.ExpressionTernaryCondition.Missing" xml:space="preserve">Operator '?' requires a condition.</x:String>
   <x:String x:Key="Diagnostic.ExpressionTernaryQuestion.Unmatched" xml:space="preserve">Operator '?' requires a matching ':'.</x:String>
   <x:String x:Key="Diagnostic.ExpressionTernaryTrueExpression.Missing" xml:space="preserve">Operator ':' requires a true expression.</x:String>
-  <x:String x:Key="Diagnostic.ExpressionTime.Invalid" xml:space="preserve">The expression time is invalid: {message}</x:String>
+  <x:String x:Key="Diagnostic.ExpressionTime.Invalid" xml:space="preserve">The time obtained from the expression is invalid: {message}</x:String>
   <x:String x:Key="Diagnostic.ExpressionToken.Unknown" xml:space="preserve">Unknown token '{token}'.</x:String>
   <x:String x:Key="Diagnostic.ExpressionToken.Unsupported" xml:space="preserve">Unsupported token '{token}'.</x:String>
   <x:String x:Key="Diagnostic.Ffprobe.CannotStart" xml:space="preserve">ffprobe could not be started: {message}</x:String>
   <x:String x:Key="Diagnostic.Ffprobe.MissingDependency" xml:space="preserve">ffprobe was not found.</x:String>
   <x:String x:Key="Diagnostic.Ffprobe.ParseFailed" xml:space="preserve">ffprobe output could not be parsed: {message}</x:String>
   <x:String x:Key="Diagnostic.FfprobeOutput.Empty" xml:space="preserve">ffprobe did not return chapter JSON.</x:String>
-  <x:String x:Key="Diagnostic.FfprobeProcess.Cancelled" xml:space="preserve">ffprobe was cancelled.</x:String>
+  <x:String x:Key="Diagnostic.FfprobeProcess.Cancelled" xml:space="preserve">ffprobe execution was cancelled.</x:String>
   <x:String x:Key="Diagnostic.FfprobeProcess.Failed" xml:space="preserve">ffprobe exited with a non-zero code.</x:String>
   <x:String x:Key="Diagnostic.FfprobeProcess.TimedOut" xml:space="preserve">ffprobe timed out.</x:String>
   <x:String x:Key="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">No Vorbis cuesheet comment was found.</x:String>
   <x:String x:Key="Diagnostic.FrameRate.Invalid" xml:space="preserve">Frame rate must be greater than zero.</x:String>
-  <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">Frame text did not contain a frame number or fps was invalid.</x:String>
+  <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">Frame text did not contain a frame number or the frame rate was invalid.</x:String>
   <x:String x:Key="Diagnostic.Ifo.Invalid" xml:space="preserve">The IFO file is invalid: {message}</x:String>
   <x:String x:Key="Diagnostic.ImporterFallback.Used" xml:space="preserve">The primary importer was unavailable; a fallback importer was used.</x:String>
-  <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua expression was canceled.</x:String>
+  <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua expression execution was cancelled.</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">Lua expression syntax error: {message}</x:String>
-  <x:String x:Key="Diagnostic.LuaExpression.Invalid" xml:space="preserve">Lua expression failed: {message}</x:String>
+  <x:String x:Key="Diagnostic.LuaExpression.Invalid" xml:space="preserve">Lua expression execution failed: {message}</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.RuntimeFailed" xml:space="preserve">Lua expression runtime error: {message}</x:String>
   <x:String x:Key="Diagnostic.LuaExpressionReturn.Invalid" xml:space="preserve">Lua expression must return a finite number.</x:String>
   <x:String x:Key="Diagnostic.LuaExpressionReturn.Missing" xml:space="preserve">Lua expression did not return a value.</x:String>
@@ -137,9 +137,9 @@
   <x:String x:Key="Diagnostic.Matroska.CannotStart" xml:space="preserve">mkvextract could not be started: {message}</x:String>
   <x:String x:Key="Diagnostic.Matroska.MissingDependency" xml:space="preserve">mkvextract was not found.</x:String>
   <x:String x:Key="Diagnostic.MatroskaChapters.None" xml:space="preserve">mkvextract did not return chapter XML.</x:String>
-  <x:String x:Key="Diagnostic.MatroskaProcess.Cancelled" xml:space="preserve">mkvextract was cancelled: {message}</x:String>
-  <x:String x:Key="Diagnostic.MatroskaProcess.Failed" xml:space="preserve">mkvextract failed: {message}</x:String>
-  <x:String x:Key="Diagnostic.MatroskaProcess.TimedOut" xml:space="preserve">mkvextract timed out: {message}</x:String>
+  <x:String x:Key="Diagnostic.MatroskaProcess.Cancelled" xml:space="preserve">mkvextract execution was cancelled: {message}</x:String>
+  <x:String x:Key="Diagnostic.MatroskaProcess.Failed" xml:space="preserve">mkvextract execution failed: {message}</x:String>
+  <x:String x:Key="Diagnostic.MatroskaProcess.TimedOut" xml:space="preserve">mkvextract execution timed out: {message}</x:String>
   <x:String x:Key="Diagnostic.MediaRead.Failed" xml:space="preserve">Media chapters could not be read: {message}</x:String>
   <x:String x:Key="Diagnostic.Mp4File.Inaccessible" xml:space="preserve">The MP4 file could not be accessed: {message}</x:String>
   <x:String x:Key="Diagnostic.Mp4File.NotFound" xml:space="preserve">The MP4 file was not found: {message}</x:String>
@@ -150,9 +150,9 @@
   <x:String x:Key="Diagnostic.Mpls.Invalid" xml:space="preserve">The MPLS file is invalid: {message}</x:String>
   <x:String x:Key="Diagnostic.NativeLibrary.Missing" xml:space="preserve">A native dependency was not found: {message}</x:String>
   <x:String x:Key="Diagnostic.OgmFirstLine.Invalid" xml:space="preserve">The first OGM chapter line is missing or invalid.</x:String>
-  <x:String x:Key="Diagnostic.OrderShift.Normalized" xml:space="preserve">Chapter number shift {shift} would produce non-positive chapter numbers and was normalized to 0.</x:String>
+  <x:String x:Key="Diagnostic.OrderShift.Normalized" xml:space="preserve">Shifting chapter numbers by {shift} would produce non-positive numbers, so the shift was normalized to 0.</x:String>
   <x:String x:Key="Diagnostic.Parse.Partial" xml:space="preserve">Parsing stopped before all input was consumed.</x:String>
-  <x:String x:Key="Diagnostic.Path.Invalid" xml:space="preserve">Output directory was not resolved. Set a default save directory in settings or load a source with a valid path.</x:String>
+  <x:String x:Key="Diagnostic.Path.Invalid" xml:space="preserve">The output directory could not be resolved. Set a default save directory in settings or load a source file with a valid path.</x:String>
   <x:String x:Key="Diagnostic.PremiereMarkerList.Invalid" xml:space="preserve">Unable to parse the Adobe Premiere Pro chapter marker list.</x:String>
   <x:String x:Key="Diagnostic.Rows.NoneSelected" xml:space="preserve">Select one or more chapter rows first.</x:String>
   <x:String x:Key="Diagnostic.Save.Failed" xml:space="preserve">Save failed: {message}</x:String>
@@ -216,7 +216,8 @@
   <x:String x:Key="Grid.Time" xml:space="preserve">Time</x:String>
   <x:String x:Key="Label.ChapterName" xml:space="preserve">Chapter name</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">Clip / playlist entry</x:String>
-  <x:String x:Key="Label.Expression" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="Label.ClipOption" xml:space="preserve">{0} ({1} chapters)</x:String>
+  <x:String x:Key="Label.Expression" xml:space="preserve">Custom expression</x:String>
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">Frame rate used for Frames column</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">Order +</x:String>
@@ -262,7 +263,7 @@
   <x:String x:Key="Main.Combine" xml:space="preserve">Combine</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Create Zones</x:String>
   <x:String x:Key="Main.Delete" xml:space="preserve">Delete</x:String>
-  <x:String x:Key="Main.Expression" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="Main.Expression" xml:space="preserve">Expression editor</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">Forward Translation</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">Insert</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">Keep original</x:String>
@@ -271,7 +272,7 @@
   <x:String x:Key="Main.Log" xml:space="preserve">Log</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">Open Related Media</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">Order shift</x:String>
-  <x:String x:Key="Main.OutputDirectoryUnresolved" xml:space="preserve">Output directory unresolved</x:String>
+  <x:String x:Key="Main.OutputDirectoryUnresolved" xml:space="preserve">Output directory could not be resolved</x:String>
   <x:String x:Key="Main.Preview" xml:space="preserve">Preview</x:String>
   <x:String x:Key="Main.PreviewShort" xml:space="preserve">Preview</x:String>
   <x:String x:Key="Main.Reload" xml:space="preserve">Reload</x:String>
@@ -461,9 +462,9 @@
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">Apply expression</x:String>
   <x:String x:Key="Tool.Expression.BrowseLuaScript" xml:space="preserve">Browse Lua...</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Load Lua...</x:String>
-  <x:String x:Key="Tool.Expression.Placeholder" xml:space="preserve">Expression, e.g. t + 1</x:String>
+  <x:String x:Key="Tool.Expression.Placeholder" xml:space="preserve">Custom expression, e.g. t + 1</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">Preset</x:String>
-  <x:String x:Key="Tool.Expression.Title" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="Tool.Expression.Title" xml:space="preserve">Expression editor</x:String>
   <x:String x:Key="Tool.ForwardShift.Title" xml:space="preserve">Forward Shift</x:String>
   <x:String x:Key="Tool.Language.Title" xml:space="preserve">Language</x:String>
   <x:String x:Key="Tool.Log.Title" xml:space="preserve">Log</x:String>

@@ -1,12 +1,13 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ChapterTool.Core.Localization;
 
 namespace ChapterTool.Wasm.Services;
 
 /// <summary>Web-only localizer backed by the Web host's JSON resource catalog.</summary>
-public sealed class WasmLocalizer
+public sealed partial class WasmLocalizer
 {
     private static readonly Assembly ResourceAssembly = typeof(WasmLocalizer).Assembly;
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Catalog =
@@ -41,8 +42,23 @@ public sealed class WasmLocalizer
         return Catalog["en-US"].GetValueOrDefault(key, key);
     }
 
-    public string Format(string key, params object[] args) =>
-        string.Format(CultureInfo.GetCultureInfo(Culture), T(key), args);
+    public string Format(string key, params object[] args)
+    {
+        var format = T(key);
+        var indexes = new Dictionary<string, int>(StringComparer.Ordinal);
+        format = NamedFormatItemRegex().Replace(format, match =>
+        {
+            var name = match.Groups["name"].Value;
+            if (!indexes.TryGetValue(name, out var index))
+            {
+                index = indexes.Count;
+                indexes.Add(name, index);
+            }
+
+            return "{" + index + match.Groups["format"].Value + "}";
+        });
+        return string.Format(CultureInfo.GetCultureInfo(Culture), format, args);
+    }
 
     public IReadOnlyList<string> ChapterNameModes =>
     [
@@ -61,6 +77,9 @@ public sealed class WasmLocalizer
     ];
 
     public static string Normalize(string? culture) => UiLanguageCode.Normalize(culture);
+
+    [GeneratedRegex("\\{(?<name>[A-Za-z_][A-Za-z0-9_]*)(?<format>:[^}]*)?\\}")]
+    private static partial Regex NamedFormatItemRegex();
 
     private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> LoadCatalog()
     {

@@ -44,6 +44,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Verify localization resources
+        run: python3 scripts/axaml-to-json.py --check
+
       - name: Install .NET 10
         uses: actions/setup-dotnet@v5
         with:

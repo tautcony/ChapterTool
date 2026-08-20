@@ -216,6 +216,7 @@
   <x:String x:Key="Grid.Time" xml:space="preserve">时间</x:String>
   <x:String x:Key="Label.ChapterName" xml:space="preserve">章节名</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">片段 / 播放列表项</x:String>
+  <x:String x:Key="Label.ClipOption" xml:space="preserve">{0}（{1} 个章节）</x:String>
   <x:String x:Key="Label.Expression" xml:space="preserve">表达式</x:String>
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">用于帧列的帧率</x:String>

@@ -200,7 +200,7 @@ public sealed class ChapterToolCliApplicationTests
         Assert.Contains("Output formats", console.Stdout, StringComparison.Ordinal);
         Assert.Contains("txt", console.Stdout, StringComparison.Ordinal);
         Assert.Contains("xml", console.Stdout, StringComparison.Ordinal);
-        Assert.Contains("Convert supports optional Lua expressions and built-in expression presets.", console.Stdout, StringComparison.Ordinal);
+        Assert.Contains("Convert supports custom Lua expressions and built-in expression presets.", console.Stdout, StringComparison.Ordinal);
     }
 
     [Fact]
