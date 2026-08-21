@@ -115,16 +115,6 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     public ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes)
     {
         var chapters = info.Chapters.Where((_, index) => !indexes.Contains(index)).ToList();
-        if (chapters.Count > 0 && indexes.Contains(0))
-        {
-            var shift = chapters[0].StartTime;
-            chapters =
-            [
-                .. chapters.Select(chapter =>
-                    chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })
-            ];
-        }
-
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
 

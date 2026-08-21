@@ -42,11 +42,12 @@ public sealed class ChapterEditingServiceTests
     }
 
     [Fact]
-    public void Delete_first_chapter_shifts_remaining_times_to_zero()
+    public void Delete_chapter_preserves_remaining_times()
     {
         var result = service.Delete(Sample(), new HashSet<int> { 0 });
 
-        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(20), result.ChapterSet.Chapters[1].StartTime);
         Assert.Equal(1, result.ChapterSet.Chapters[0].DisplayNumber);
     }
 

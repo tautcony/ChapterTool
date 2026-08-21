@@ -111,9 +111,9 @@ The system SHALL expose chapter editing as Core operations callable by ViewModel
 - **WHEN** a chapter frame cell is edited and the current frame rate is valid
 - **THEN** Core SHALL convert the frame value to time using `frame / fps` and refresh derived frame display
 
-#### Scenario: Delete first chapter
-- **WHEN** the first chapter is deleted and chapters remain
-- **THEN** Core SHALL shift remaining chapter times so the new first chapter starts at zero
+#### Scenario: Delete chapter preserves remaining times
+- **WHEN** any chapter is deleted and chapters remain
+- **THEN** Core SHALL preserve the original start times of all remaining chapters
 
 #### Scenario: Insert chapter
 - **WHEN** exactly one chapter is selected for insertion
