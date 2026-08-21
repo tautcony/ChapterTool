@@ -1,0 +1,19 @@
+.github/workflows/dotnet-ci.yml
+  s_0ed334a3f24cfb::t_e972aed65ceeea 9,13,21,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e73839df65285338d7c0798e722a022d19f4ddce",
+  "prompts": {},
+  "sessions": {
+    "s_0ed334a3f24cfb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a022ea-ce7f-75f2-a267-dd8007753dcb",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
