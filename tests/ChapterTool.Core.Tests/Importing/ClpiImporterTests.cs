@@ -365,7 +365,7 @@ public sealed class ClpiImporterTests
     private static byte[] BuildMinimalClpi(string version = "0200")
     {
         using var builder = new ClpiBinaryBuilder();
-        var seqInfoAddr = checked((uint)(HeaderSize + 4 + ClipContentSize));
+        const uint seqInfoAddr = checked(HeaderSize + 4 + ClipContentSize);
 
         WriteHeader(builder, seqInfoAddr, seqInfoAddr + 6, seqInfoAddr + 12, version);
         WriteClipInfo(builder, isCC5: false);
@@ -379,8 +379,8 @@ public sealed class ClpiImporterTests
     {
         using var builder = new ClpiBinaryBuilder();
         const int stcContent = 1 + 1 + 4 + 1 + 1 + 2 + 4 + 4 + 4;
-        var seqInfoAddr = checked((uint)(HeaderSize + 4 + ClipContentSize));
-        var progInfoAddr = seqInfoAddr + 4 + stcContent;
+        const uint seqInfoAddr = checked(HeaderSize + 4 + ClipContentSize);
+        const uint progInfoAddr = seqInfoAddr + 4 + stcContent;
 
         WriteHeader(builder, seqInfoAddr, progInfoAddr, progInfoAddr + 6);
         WriteClipInfo(builder, isCC5: false);
@@ -405,7 +405,7 @@ public sealed class ClpiImporterTests
     private static byte[] BuildClpiWithCC5()
     {
         using var builder = new ClpiBinaryBuilder();
-        var seqInfoAddr = checked((uint)(HeaderSize + 4 + ClipCC5ContentSize));
+        const uint seqInfoAddr = checked(HeaderSize + 4 + ClipCC5ContentSize);
 
         WriteHeader(builder, seqInfoAddr, seqInfoAddr + 6, seqInfoAddr + 12);
         WriteClipInfo(builder, isCC5: true);
@@ -419,8 +419,8 @@ public sealed class ClpiImporterTests
     {
         using var builder = new ClpiBinaryBuilder();
         const int stcContent = 1 + 1 + 4 + 1 + 1 + 2 + 4 + 4 + 4 + 2 + 4 + 4 + 4;
-        var seqInfoAddr = checked((uint)(HeaderSize + 4 + ClipContentSize));
-        var progInfoAddr = seqInfoAddr + 4 + stcContent;
+        const uint seqInfoAddr = checked(HeaderSize + 4 + ClipContentSize);
+        const uint progInfoAddr = seqInfoAddr + 4 + stcContent;
 
         WriteHeader(builder, seqInfoAddr, progInfoAddr, progInfoAddr + 6);
         WriteClipInfo(builder, isCC5: false);

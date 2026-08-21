@@ -126,9 +126,20 @@ public sealed class FrameRateService : IFrameRateService
         ChapterSet info,
         FrameRateOption option,
         bool round,
+        decimal tolerance) => UpdateFrames(info, option, round ? 0 : -1, tolerance);
+
+    /// <summary>Calculates frame numbers with a fixed decimal-place format.</summary>
+    /// <param name="info">The chapter data to inspect.</param>
+    /// <param name="option">The selected frame rate option.</param>
+    /// <param name="decimalPlaces">The number of decimal places. Zero rounds to integers.</param>
+    /// <param name="tolerance">The acceptable frame deviation tolerance.</param>
+    public FrameInfoResult UpdateFrames(
+        ChapterSet info,
+        FrameRateOption option,
+        int decimalPlaces,
         decimal tolerance)
     {
-        var selectedOption = round && option.LegacyMplsCode == 0
+        var selectedOption = decimalPlaces == 0 && option.LegacyMplsCode == 0
             ? Detect(info, tolerance)
             : option;
 
@@ -138,7 +149,7 @@ public sealed class FrameRateService : IFrameRateService
         }
 
         var frameDisplays = info.Chapters
-            .Select(chapter => FormatFrames(chapter, selectedOption.Value, round, tolerance))
+            .Select(chapter => FormatFrames(chapter, selectedOption.Value, decimalPlaces, tolerance))
             .ToArray();
         var chapters = info.Chapters
             .Select((chapter, index) => chapter with
@@ -158,12 +169,17 @@ public sealed class FrameRateService : IFrameRateService
             [.. frameDisplays.Select(static display => display.Accuracy)]);
     }
 
-    private static FrameDisplay FormatFrames(Chapter chapter, decimal framesPerSecond, bool round, decimal tolerance)
+    private static FrameDisplay FormatFrames(Chapter chapter, decimal framesPerSecond, int decimalPlaces, decimal tolerance)
     {
         var frames = CalculateFrames(chapter, framesPerSecond);
-        if (!round)
+        if (decimalPlaces < 0)
         {
             return new FrameDisplay(frames.ToString(CultureInfo.InvariantCulture), FrameAccuracy.Neutral);
+        }
+
+        if (decimalPlaces > 0)
+        {
+            return new FrameDisplay(frames.ToString($"F{Math.Clamp(decimalPlaces, 1, 6)}", CultureInfo.InvariantCulture), FrameAccuracy.Neutral);
         }
 
         var rounded = ChapterRounding.RoundToInt64(frames);

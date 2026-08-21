@@ -455,13 +455,13 @@ public sealed class WasmWorkspace : IDisposable
         {
             SetLocalizedStatus("Status.ZonesGenerated");
             AddLog("Info", $"Generated zones for {indexes.Count} row(s).", result.Zones);
-            Notify();
         }
         else
         {
             StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.ZonesEmpty");
-            Notify();
         }
+
+        Notify();
 
         return result.Zones;
     }
@@ -1212,7 +1212,7 @@ public sealed class WasmWorkspace : IDisposable
         var option = ResolveSelectedFrameRateOption();
 
         // Auto (LegacyMplsCode == 0): detect when rounding, otherwise still need a valid option for fps.
-        return frameRateService.UpdateFrames(info, option, RoundFrames, FrameAccuracyTolerance);
+        return frameRateService.UpdateFrames(info, option, RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces, FrameAccuracyTolerance);
     }
 
     private FrameRateOption ResolveSelectedFrameRateOption()
@@ -1272,11 +1272,11 @@ public sealed class WasmWorkspace : IDisposable
             ApplyExpression: ApplyExpression,
             Expression: string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim(),
             ExpressionPresetId: ExpressionPresetId,
-            ExpressionSourceName: string.IsNullOrWhiteSpace(ExpressionPresetId)
-                ? string.Empty
-                : (ExpressionPresets.FirstOrDefault(preset =>
-                    string.Equals(preset.Id, ExpressionPresetId, StringComparison.OrdinalIgnoreCase))?.DisplayName
-                    ?? ExpressionPresetId),
+            ExpressionSourceName: !string.IsNullOrWhiteSpace(ExpressionPresetId)
+                ? ExpressionPresets.FirstOrDefault(preset =>
+                      string.Equals(preset.Id, ExpressionPresetId, StringComparison.OrdinalIgnoreCase))?.DisplayName
+                  ?? ExpressionPresetId
+                : string.Empty,
             TextEncoding: TextEncoding,
             EmitBom: EmitBom,
             ProjectOutput: true);

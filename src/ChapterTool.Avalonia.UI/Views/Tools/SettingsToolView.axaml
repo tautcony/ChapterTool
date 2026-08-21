@@ -112,7 +112,7 @@
         </TabItem.Header>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="8" Margin="16,12">
-            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.UiLanguage}" />
               <ComboBox x:Name="GeneralLanguageCombo"
                         Grid.Row="0"
@@ -268,7 +268,7 @@
         </TabItem.Header>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="8" Margin="16,12">
-            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
               <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
               <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
                 <Slider Grid.Column="0" Classes="toleranceSlider" Minimum="0.01" Maximum="0.30" Ticks="0.05,0.10,0.15,0.20,0.25,0.30" TickPlacement="BottomRight" IsSnapToTickEnabled="False" Value="{Binding FrameAccuracyToleranceSliderValue}" />
@@ -276,6 +276,12 @@
               </Grid>
               <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DeleteRowsTiming}" />
               <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding DeleteRowsTimingOptions}" SelectedIndex="{Binding DeleteRowsTimingModeIndex}" />
+              <TextBlock Grid.Row="2" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameDisplay}" />
+              <Grid Grid.Row="2" Grid.Column="1" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                <ComboBox Grid.Column="0" ItemsSource="{Binding FrameDisplayOptions}" SelectedIndex="{Binding FrameDisplayModeIndex}" />
+                <TextBlock Grid.Column="1" IsVisible="{Binding IsDecimalFrameDisplayMode}" VerticalAlignment="Center" Text="{DynamicResource Settings.FrameDecimalPlaces}" />
+                <NumericUpDown Grid.Column="2" IsVisible="{Binding IsDecimalFrameDisplayMode}" Minimum="1" Maximum="6" Value="{Binding FrameDecimalPlaces}" />
+              </Grid>
             </Grid>
           </StackPanel>
         </ScrollViewer>

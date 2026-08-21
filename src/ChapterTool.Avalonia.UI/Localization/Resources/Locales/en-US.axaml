@@ -355,6 +355,10 @@
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">External Tools</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">Frame tolerance</x:String>
+  <x:String x:Key="Settings.FrameDisplay" xml:space="preserve">Frame display</x:String>
+  <x:String x:Key="Settings.FrameDisplayRound" xml:space="preserve">Round to integer</x:String>
+  <x:String x:Key="Settings.FrameDisplayDecimalPlaces" xml:space="preserve">Keep decimal places</x:String>
+  <x:String x:Key="Settings.FrameDecimalPlaces" xml:space="preserve">Decimal places</x:String>
   <x:String x:Key="Settings.DeleteRowsTiming" xml:space="preserve">Delete row timing</x:String>
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">Preserve chapter times</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">Normalize chapter times</x:String>

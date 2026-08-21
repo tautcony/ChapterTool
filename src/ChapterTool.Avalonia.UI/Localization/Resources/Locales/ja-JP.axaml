@@ -355,6 +355,10 @@
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">外部ツール</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">フレーム誤差のしきい値</x:String>
+  <x:String x:Key="Settings.FrameDisplay" xml:space="preserve">フレーム表示</x:String>
+  <x:String x:Key="Settings.FrameDisplayRound" xml:space="preserve">整数に丸める</x:String>
+  <x:String x:Key="Settings.FrameDisplayDecimalPlaces" xml:space="preserve">小数点以下を保持</x:String>
+  <x:String x:Key="Settings.FrameDecimalPlaces" xml:space="preserve">小数点以下の桁数</x:String>
   <x:String x:Key="Settings.DeleteRowsTiming" xml:space="preserve">行削除時の時間処理</x:String>
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">チャプター時間を保持</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">チャプター時間を正規化</x:String>

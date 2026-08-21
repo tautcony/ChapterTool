@@ -714,6 +714,21 @@ input:disabled {
   align-items: center;
 }
 
+.settings-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.settings-inline > label {
+  white-space: nowrap;
+}
+
+.settings-inline > input[type="number"] {
+  width: 5rem;
+}
+
 .settings-grid > label:not(.settings-check) {
   min-height: 25.6px;
   display: flex;

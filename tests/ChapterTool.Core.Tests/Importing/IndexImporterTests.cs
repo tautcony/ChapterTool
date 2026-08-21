@@ -332,15 +332,15 @@ public sealed class IndexImporterTests
 
     private static byte[] BuildHeader(string version = "0100")
     {
-        var indexesAddress = HeaderSize + AppInfoSize;
-        var indexesTotalSize = IndexesLengthSize + IndexesMinContentSize;
-        var extAddress = indexesAddress + indexesTotalSize;
+        const int indexesAddress = HeaderSize + AppInfoSize;
+        const int indexesTotalSize = IndexesLengthSize + IndexesMinContentSize;
+        const int extAddress = indexesAddress + indexesTotalSize;
 
         using var builder = new IndexBinaryBuilder();
         builder.Ascii("INDX");
         builder.Ascii(version);
-        builder.UInt32BE((uint)indexesAddress);
-        builder.UInt32BE((uint)extAddress);
+        builder.UInt32BE(indexesAddress);
+        builder.UInt32BE(extAddress);
         builder.Reserved(24);
 
         builder.UInt32BE(AppInfoDataSize);
@@ -365,7 +365,7 @@ public sealed class IndexImporterTests
         (byte ObjectType, byte PlaybackType, string Data)[] titles,
         uint? extensionDataStartAddress = null)
     {
-        var indexesAddress = HeaderSize + AppInfoSize;
+        const int indexesAddress = HeaderSize + AppInfoSize;
         var indexesContentSize = TitleEntrySize + TitleEntrySize + 2 + titles.Length * TitleEntrySize;
         var paddedContentSize = Math.Max(indexesContentSize, IndexesMinContentSize);
         var indexesTotalSize = IndexesLengthSize + paddedContentSize;
@@ -376,7 +376,7 @@ public sealed class IndexImporterTests
         // Header
         builder.Ascii("INDX");
         builder.Ascii("0100");
-        builder.UInt32BE((uint)indexesAddress);
+        builder.UInt32BE(indexesAddress);
         builder.UInt32BE(extAddress);
         builder.Reserved(24);
 
@@ -412,17 +412,16 @@ public sealed class IndexImporterTests
 
     private static byte[] BuildIndexWithAppInfo(byte flags, byte videoFormat, byte frameRate)
     {
-        var indexesAddress = HeaderSize + AppInfoSize;
-        var indexesLength = IndexesMinContentSize;
-        var indexesTotalSize = IndexesLengthSize + indexesLength;
-        var extAddress = indexesAddress + indexesTotalSize;
+        const int indexesAddress = HeaderSize + AppInfoSize;
+        const int indexesTotalSize = IndexesLengthSize + IndexesMinContentSize;
+        const int extAddress = indexesAddress + indexesTotalSize;
 
         using var builder = new IndexBinaryBuilder();
 
         builder.Ascii("INDX");
         builder.Ascii("0100");
-        builder.UInt32BE((uint)indexesAddress);
-        builder.UInt32BE((uint)extAddress);
+        builder.UInt32BE(indexesAddress);
+        builder.UInt32BE(extAddress);
         builder.Reserved(24);
 
         builder.UInt32BE(AppInfoDataSize);
@@ -434,11 +433,11 @@ public sealed class IndexImporterTests
         builder.Reserved(32 - "FLAG TEST DISC".Length);
 
         builder.SeekTo(indexesAddress);
-        builder.UInt32BE((uint)indexesLength);
+        builder.UInt32BE(IndexesMinContentSize);
         builder.Reserved(TitleEntrySize);
         builder.Reserved(TitleEntrySize);
         builder.UInt16BE(0);
-        builder.Reserved(indexesLength - (TitleEntrySize + TitleEntrySize + 2));
+        builder.Reserved(IndexesMinContentSize - (TitleEntrySize + TitleEntrySize + 2));
 
         return builder.ToArray();
     }
@@ -473,8 +472,7 @@ public sealed class IndexImporterTests
         var appDataSize = 4 + userDataLength;
         var appTotalSize = 4 + appDataSize;
         var indexesAddress = HeaderSize + appTotalSize;
-        var indexesLength = IndexesMinContentSize;
-        var indexesTotalSize = IndexesLengthSize + indexesLength;
+        const int indexesTotalSize = IndexesLengthSize + IndexesMinContentSize;
         var extAddress = indexesAddress + indexesTotalSize;
 
         using var builder = new IndexBinaryBuilder();
@@ -497,11 +495,11 @@ public sealed class IndexImporterTests
         }
 
         builder.SeekTo(indexesAddress);
-        builder.UInt32BE((uint)indexesLength);
+        builder.UInt32BE((uint)IndexesMinContentSize);
         builder.Reserved(TitleEntrySize);
         builder.Reserved(TitleEntrySize);
         builder.UInt16BE(0);
-        builder.Reserved(indexesLength - (TitleEntrySize + TitleEntrySize + 2));
+        builder.Reserved(IndexesMinContentSize - (TitleEntrySize + TitleEntrySize + 2));
 
         return builder.ToArray();
     }

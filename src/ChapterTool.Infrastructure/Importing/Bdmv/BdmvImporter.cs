@@ -176,7 +176,7 @@ public sealed class BdmvImporter : IChapterImporter
 
             switch (title.ObjectReference)
             {
-                case IndexHdmvObjectReference hdmv when movieObject == null:
+                case IndexHdmvObjectReference when movieObject == null:
                 {
                     if (!unavailableLogged)
                     {

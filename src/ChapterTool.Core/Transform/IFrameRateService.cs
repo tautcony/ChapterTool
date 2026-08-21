@@ -48,4 +48,15 @@ public interface IFrameRateService
         FrameRateOption option,
         bool round,
         decimal tolerance);
+
+    /// <summary>Calculates frame numbers with a fixed decimal-place format.</summary>
+    /// <param name="info">The chapter data to inspect.</param>
+    /// <param name="option">The selected frame rate option.</param>
+    /// <param name="decimalPlaces">The number of decimal places. Zero rounds to integers.</param>
+    /// <param name="tolerance">The acceptable frame deviation tolerance.</param>
+    FrameInfoResult UpdateFrames(
+        ChapterSet info,
+        FrameRateOption option,
+        int decimalPlaces,
+        decimal tolerance);
 }

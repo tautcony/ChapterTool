@@ -36,6 +36,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private int outputTextEncodingIndex;
     private decimal frameAccuracyTolerance;
     private int deleteRowsTimingModeIndex;
+    private int frameDisplayModeIndex;
+    private int frameDecimalPlaces;
     private double frameAccuracyToleranceSliderValue;
     private bool isRefreshingLanguages;
 
@@ -85,6 +87,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, preferenceSink.OutputTextEncoding));
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(preferenceSink.FrameAccuracyTolerance);
         deleteRowsTimingModeIndex = preferenceSink.EditingOptions.DeleteRowsTiming == Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
+        frameDisplayModeIndex = preferenceSink.EditingOptions.FrameDisplay == Core.Editing.FrameDisplayMode.Round ? 0 : 1;
+        frameDecimalPlaces = preferenceSink.EditingOptions.EffectiveFrameDecimalPlaces;
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
@@ -315,6 +319,39 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         localizer.GetString("Settings.PreserveChapterTimes"),
         localizer.GetString("Settings.NormalizeChapterTimes")
     ];
+
+    public IReadOnlyList<string> FrameDisplayOptions =>
+    [
+        localizer.GetString("Settings.FrameDisplayRound"),
+        localizer.GetString("Settings.FrameDisplayDecimalPlaces")
+    ];
+
+    public int FrameDisplayModeIndex
+    {
+        get => frameDisplayModeIndex;
+        set
+        {
+            if (SetProperty(ref frameDisplayModeIndex, Math.Clamp(value, 0, 1)))
+            {
+                OnPropertyChanged(nameof(IsDecimalFrameDisplayMode));
+                ApplyLiveSettings();
+            }
+        }
+    }
+
+    public bool IsDecimalFrameDisplayMode => FrameDisplayModeIndex == 1;
+
+    public int FrameDecimalPlaces
+    {
+        get => frameDecimalPlaces;
+        set
+        {
+            if (SetProperty(ref frameDecimalPlaces, FrameDisplayModes.NormalizeDecimalPlaces(value)))
+            {
+                ApplyLiveSettings();
+            }
+        }
+    }
 
     public int DeleteRowsTimingModeIndex
     {
@@ -779,7 +816,9 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             OutputTextEncoding = OutputTextEncodings.Id(OutputEncodings[OutputTextEncodingIndex]),
             EmitBom = EmitBom,
             FrameAccuracyTolerance = FrameAccuracyTolerance,
-            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize)
+            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize),
+            FrameDisplayMode = FrameDisplayModes.Id(FrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces),
+            FrameDecimalPlaces = FrameDecimalPlaces
         };
 
     private void ApplyAppSettingsToFields(AppSettings settings)
@@ -794,6 +833,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         EmitBom = settings.EmitBom;
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
         DeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve ? 0 : 1;
+        FrameDisplayModeIndex = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == FrameDisplayMode.Round ? 0 : 1;
+        FrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces);
     }
 
     private void ApplyLiveSettings()

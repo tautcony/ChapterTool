@@ -95,6 +95,8 @@ public sealed class EmbeddedAuxiliaryToolHost : IAuxiliaryToolHost
                 case SettingsCloseAction.Discard:
                     settings.DiscardUnsavedChanges();
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 

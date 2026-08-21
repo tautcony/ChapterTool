@@ -306,13 +306,13 @@ public sealed class WasmWorkspaceTests
     public async Task WasmChapterServiceRoutesFlacEmbeddedCueThroughSharedImportPath()
     {
         var service = new WasmChapterService();
-        var cue = """
-                  TITLE "Album"
-                  FILE "audio.flac" WAVE
-                    TRACK 01 AUDIO
-                      TITLE "Track 1"
-                      INDEX 01 00:00:00
-                  """;
+        const string cue = """
+                           TITLE "Album"
+                           FILE "audio.flac" WAVE
+                             TRACK 01 AUDIO
+                               TITLE "Track 1"
+                               INDEX 01 00:00:00
+                           """;
         var content = CreateFlacWithVorbisCue(cue);
 
         var result = await service.ImportAsync("music.flac", content, TestContext.Current.CancellationToken);

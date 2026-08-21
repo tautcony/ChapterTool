@@ -62,7 +62,7 @@ internal sealed class ClipEditingCoordinator(
     public FrameUpdateOutcome UpdateFrames(
         ChapterSet current,
         FrameRateOption requestedOption,
-        bool roundFrames,
+        int frameDecimalPlaces,
         decimal tolerance,
         decimal? configuredFrameRate)
     {
@@ -74,7 +74,7 @@ internal sealed class ClipEditingCoordinator(
             appliedOption = detection.Option;
         }
 
-        var frameResult = frameRateService.UpdateFrames(current, appliedOption, roundFrames, tolerance);
+        var frameResult = frameRateService.UpdateFrames(current, appliedOption, frameDecimalPlaces, tolerance);
         var storedInfo = configuredFrameRate is null
             ? frameResult.Info
             : frameResult.Info with { FramesPerSecond = (double)configuredFrameRate.Value };

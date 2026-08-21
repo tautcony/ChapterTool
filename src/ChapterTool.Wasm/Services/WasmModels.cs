@@ -60,7 +60,9 @@ public sealed record WasmApplicationSettings(
     string OutputTextEncoding = "utf8",
     bool EmitBom = false,
     decimal FrameAccuracyTolerance = 0.15m,
-    string DeleteRowsTimingMode = "preserve");
+    string DeleteRowsTimingMode = "preserve",
+    string FrameDisplayMode = "round",
+    int FrameDecimalPlaces = 3);
 
 public sealed record WasmWindowLocation(int X, int Y);
 

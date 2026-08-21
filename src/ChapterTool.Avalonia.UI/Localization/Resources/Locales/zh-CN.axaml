@@ -355,6 +355,10 @@
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">外部工具</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">帧误差阈值</x:String>
+  <x:String x:Key="Settings.FrameDisplay" xml:space="preserve">帧显示</x:String>
+  <x:String x:Key="Settings.FrameDisplayRound" xml:space="preserve">取整</x:String>
+  <x:String x:Key="Settings.FrameDisplayDecimalPlaces" xml:space="preserve">保留小数位</x:String>
+  <x:String x:Key="Settings.FrameDecimalPlaces" xml:space="preserve">小数位数</x:String>
   <x:String x:Key="Settings.DeleteRowsTiming" xml:space="preserve">删除行时的时间处理</x:String>
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">保留章节时间</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">归一化章节时间</x:String>

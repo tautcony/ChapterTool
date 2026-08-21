@@ -75,7 +75,7 @@ internal sealed record MplsExtensionData(
                 MplsParseLimits.MaximumExtensionDataLength,
                 "extension entry");
 
-            switch ((entry.ExtDataType, entry.ExtDataVersion))
+            switch (entry.ExtDataType, entry.ExtDataVersion)
             {
                 case (1, 1):
                     pipMetadata.AddRange(ParsePipMetadata(entryContainer));

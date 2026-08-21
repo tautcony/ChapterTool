@@ -71,13 +71,13 @@ public sealed class ChapterContentServiceTests
     public async Task ImportAsyncRoutesFlacBytesToEmbeddedCueImporter()
     {
         var service = new ChapterContentService();
-        var cue = """
-                  TITLE "Album"
-                  FILE "audio.flac" WAVE
-                    TRACK 01 AUDIO
-                      TITLE "Track 1"
-                      INDEX 01 00:00:00
-                  """;
+        const string cue = """
+                           TITLE "Album"
+                           FILE "audio.flac" WAVE
+                             TRACK 01 AUDIO
+                               TITLE "Track 1"
+                               INDEX 01 00:00:00
+                           """;
         var content = CreateFlacWithVorbisCue(cue);
 
         var result = await service.ImportAsync("music.flac", content, TestContext.Current.CancellationToken);
@@ -91,13 +91,13 @@ public sealed class ChapterContentServiceTests
     public async Task ImportAsyncRoutesTakBytesToEmbeddedCueImporter()
     {
         var service = new ChapterContentService();
-        var cue = """
-                  TITLE "Album"
-                  FILE "audio.tak" WAVE
-                    TRACK 01 AUDIO
-                      TITLE "Track 1"
-                      INDEX 01 00:00:00
-                  """;
+        const string cue = """
+                           TITLE "Album"
+                           FILE "audio.tak" WAVE
+                             TRACK 01 AUDIO
+                               TITLE "Track 1"
+                               INDEX 01 00:00:00
+                           """;
         var content = System.Text.Encoding.UTF8.GetBytes("tBaKpaddingCUESHEET=" + cue + "\0\0\0\0\0\0trailer");
 
         var result = await service.ImportAsync("music.tak", content, TestContext.Current.CancellationToken);

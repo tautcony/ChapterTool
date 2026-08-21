@@ -90,7 +90,6 @@ public sealed partial class MainWindowViewModel
                 NotifyStateChanged();
                 return;
             case LoadWorkflowState.Failed:
-                break;
             case LoadWorkflowState.Succeeded:
                 break;
             default:
@@ -193,9 +192,7 @@ public sealed partial class MainWindowViewModel
                 NotifyStateChanged();
                 return;
             case AppendWorkflowState.FailedLoad:
-                break;
             case AppendWorkflowState.FailedTransition:
-                break;
             case AppendWorkflowState.Succeeded:
                 break;
             default:

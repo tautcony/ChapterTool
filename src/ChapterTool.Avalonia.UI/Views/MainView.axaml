@@ -338,11 +338,7 @@
               Classes="optionCell"
               Grid.Row="0"
               Grid.Column="0"
-              ColumnSpacing="6">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
+              ColumnSpacing="6" ColumnDefinitions="Auto,*">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.SaveFormat}" />
           <ComboBox x:Name="FormatBox"
                     Grid.Column="1"
@@ -356,12 +352,7 @@
               Classes="optionCell"
               Grid.Row="0"
               Grid.Column="1"
-              ColumnSpacing="6">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
+              ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.ChapterName}" />
           <ComboBox x:Name="ChapterNameModeBox"
                     Grid.Column="1"
@@ -398,11 +389,7 @@
               Classes="optionCell"
               Grid.Row="1"
               Grid.Column="1"
-              ColumnSpacing="6">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
+              ColumnSpacing="6" ColumnDefinitions="Auto,*">
           <TextBlock x:Name="OrderShiftLabel"
                      Grid.Column="0"
                      Classes="optionLabel"
@@ -426,11 +413,7 @@
               Grid.Column="0"
               ColumnSpacing="6"
               IsEnabled="{Binding IsXmlLanguageEnabled}"
-              HorizontalAlignment="Stretch">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
+              HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*">
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.XmlLanguage}" />
           <ComboBox x:Name="XmlLanguageBox"
                     Grid.Column="1"
@@ -455,13 +438,7 @@
               Classes="optionCell"
               Grid.Row="2"
               Grid.Column="0"
-              ColumnSpacing="6">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"
-                              />
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-          </Grid.ColumnDefinitions>
+              ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
           <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="6">
             <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.Expression}" />
             <CheckBox x:Name="ApplyExpressionBox"

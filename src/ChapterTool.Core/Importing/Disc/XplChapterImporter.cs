@@ -147,7 +147,7 @@ public sealed class XplChapterImporter : IChapterImporter
         main = TimeSpan.FromSeconds(scaledSeconds);
         var tickDuration = TimeSpan.TicksPerSecond / ((decimal)tickBase / tickBaseDivisor);
         var ticks = decimal.Parse(value[(colon + 1)..], CultureInfo.InvariantCulture) * tickDuration;
-        if (ticks < long.MinValue || ticks > long.MaxValue)
+        if (ticks is < long.MinValue or > long.MaxValue)
         {
             throw new InvalidDataException($"HD-DVD tick value is out of range: {value}");
         }

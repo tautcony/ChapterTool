@@ -24,7 +24,7 @@ public sealed partial class LocalizationTests
     {
         var expected = AppLocalizationResources.Fallback.Keys.Order(StringComparer.Ordinal).ToArray();
 
-        foreach (var (culture, resources) in AppLocalizationResources.All)
+        foreach (var (_, resources) in AppLocalizationResources.All)
         {
             Assert.Equal(expected, resources.Keys.Order(StringComparer.Ordinal).ToArray());
         }
@@ -36,7 +36,7 @@ public sealed partial class LocalizationTests
         var expected = AppLocalizationResources.Fallback
             .ToDictionary(pair => pair.Key, pair => Placeholders(pair.Value), StringComparer.Ordinal);
 
-        foreach (var (culture, resources) in AppLocalizationResources.All)
+        foreach (var (_, resources) in AppLocalizationResources.All)
         {
             foreach (var (key, value) in resources)
             {

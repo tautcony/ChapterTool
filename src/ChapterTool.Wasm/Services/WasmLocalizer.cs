@@ -79,7 +79,7 @@ public sealed partial class WasmLocalizer
 
     public static string Normalize(string? culture) => UiLanguageCode.Normalize(culture);
 
-    [GeneratedRegex("\\{(?<name>[A-Za-z_][A-Za-z0-9_]*)(?<format>:[^}]*)?\\}")]
+    [GeneratedRegex(@"\{(?<name>[A-Za-z_][A-Za-z0-9_]*)(?<format>:[^}]*)?\}")]
     private static partial Regex NamedFormatItemRegex();
 
     private static IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> LoadCatalog()

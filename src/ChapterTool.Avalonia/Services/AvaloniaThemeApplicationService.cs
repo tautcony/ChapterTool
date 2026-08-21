@@ -133,7 +133,7 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
             Channel(a.R, b.R),
             Channel(a.G, b.G),
             Channel(a.B, b.B)).ToString();
-        byte Channel(byte left, byte right) => (byte)Math.Round(left + ((right - left) * ratio));
+        byte Channel(byte left, byte right) => (byte)Math.Round(left + (right - left) * ratio);
     }
 
     private sealed record AuxiliaryThemePalette(

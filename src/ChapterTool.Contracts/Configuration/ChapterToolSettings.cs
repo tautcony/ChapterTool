@@ -32,7 +32,9 @@ public sealed record ChapterToolSettings
         {
             SavingPath = NormalizeDirectory(settings.SavingPath),
             OutputTextEncoding = OutputTextEncodings.Id(OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding)),
-            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode))
+            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode)),
+            FrameDisplayMode = FrameDisplayModes.Id(FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode)),
+            FrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces)
         };
     }
 

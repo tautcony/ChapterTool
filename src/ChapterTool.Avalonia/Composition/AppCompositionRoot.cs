@@ -25,8 +25,6 @@ namespace ChapterTool.Avalonia.Composition;
 public sealed class AppCompositionRoot : IDisposable
 {
     private static long latestCompositionGeneration;
-    private readonly AppCompositionOptions options;
-    private readonly string settingsDirectory;
     private readonly string? startupPath;
     private readonly long compositionGeneration;
     private bool mainWindowInitialized;
@@ -46,23 +44,23 @@ public sealed class AppCompositionRoot : IDisposable
         ArgumentNullException.ThrowIfNull(options);
         compositionGeneration = Interlocked.Increment(ref latestCompositionGeneration);
         this.startupPath = options.StartupPath;
-        settingsDirectory = options.SettingsDirectory ?? ChapterToolRuntimeComposition.ResolveSettingsDirectory();
-        this.options = options with { SettingsDirectory = settingsDirectory };
+        var settingsDirectory = options.SettingsDirectory ?? ChapterToolRuntimeComposition.ResolveSettingsDirectory();
+        var optionsValue = options with { SettingsDirectory = settingsDirectory };
 
         var builder = new ContainerBuilder();
-        if (this.options.RegisterProductionModules)
+        if (optionsValue.RegisterProductionModules)
         {
             builder.RegisterModule(new LoggingModule(settingsDirectory));
             builder.RegisterModule(new InfrastructureModule(settingsDirectory));
-            builder.RegisterModule(new WorkspaceModule(this.options));
-            builder.RegisterModule(new AvaloniaPlatformModule(this.options));
+            builder.RegisterModule(new WorkspaceModule(optionsValue));
+            builder.RegisterModule(new AvaloniaPlatformModule(optionsValue));
             builder.RegisterModule(new AuxiliaryToolsModule(settingsDirectory));
-            builder.RegisterModule(new ApplicationShellModule(this.options));
+            builder.RegisterModule(new ApplicationShellModule(optionsValue));
         }
-        this.options.ConfigureOverrides?.Invoke(builder);
+        optionsValue.ConfigureOverrides?.Invoke(builder);
 
         LifetimeScope = builder.Build();
-        if (this.options.RegisterProductionModules)
+        if (optionsValue.RegisterProductionModules)
         {
             _ = LifetimeScope.Resolve<AvaloniaLocalizationResourceAdapter>();
             LifetimeScope.Resolve<IThemeApplicationService>().Apply(ThemeSettings.Default);

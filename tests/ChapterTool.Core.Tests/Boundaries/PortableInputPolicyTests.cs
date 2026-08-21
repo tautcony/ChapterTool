@@ -44,7 +44,7 @@ public sealed class PortableInputPolicyTests
     [Fact]
     public async Task CopyToBoundedMemoryAcceptsSmallStream()
     {
-        using var source = new MemoryStream("ok"u8.ToArray());
+        using var source = new MemoryStream([.. "ok"u8]);
         var copy = await PortableInputPolicy.CopyToBoundedMemoryAsync(source, TestContext.Current.CancellationToken);
 
         Assert.False(copy.Exceeded);

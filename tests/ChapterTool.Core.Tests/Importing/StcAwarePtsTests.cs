@@ -157,9 +157,9 @@ public sealed class StcAwarePtsTests : IDisposable
         const int clipInfoContentSize = 144;
         const int stcSequenceContentSize = 24;
 
-        var seqInfoAddr = checked((uint)(headerSize + 4 + clipInfoContentSize));
-        var progInfoAddr = seqInfoAddr + 4 + stcSequenceContentSize;
-        var cpiAddr = progInfoAddr + 6;
+        const uint seqInfoAddr = checked(headerSize + 4 + clipInfoContentSize);
+        const uint progInfoAddr = seqInfoAddr + 4 + stcSequenceContentSize;
+        const uint cpiAddr = progInfoAddr + 6;
 
         // Header
         builder.Ascii("HDMV");

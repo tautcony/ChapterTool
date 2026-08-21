@@ -119,7 +119,7 @@ public static class PortableInputPolicy
             return false;
         }
 
-        byteCount = ((long)significantLength / 4 * 3) - padding;
+        byteCount = (long)significantLength / 4 * 3 - padding;
         return byteCount >= 0;
     }
 

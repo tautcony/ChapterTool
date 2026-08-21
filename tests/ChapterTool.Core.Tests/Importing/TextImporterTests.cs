@@ -113,7 +113,8 @@ public sealed class TextImporterTests
     public async Task OgmImporterWarnsWhenBytesAreNotUtf8()
     {
         var importer = new OgmChapterImporter(formatter);
-        var bytes = "CHAPTER01=00:00:00.000\nCHAPTER01NAME="u8.ToArray().Concat(new byte[] { 0xC4, 0xE3, 0xBA, 0xC3 }).Concat("\n"u8.ToArray()).ToArray();
+        var bytes = "CHAPTER01=00:00:00.000\nCHAPTER01NAME="u8.ToArray().Concat(new byte[] { 0xC4, 0xE3, 0xBA, 0xC3 }).Concat(
+            [.. "\n"u8]).ToArray();
         using var stream = new MemoryStream(bytes);
 
         var result = await importer.ImportAsync(new ChapterImportRequest("chapters.txt", stream), TestContext.Current.CancellationToken);
@@ -289,7 +290,6 @@ public sealed class TextImporterTests
     {
         try
         {
-            var importer = new WebVttChapterImporter();
             const string vttText = """
                                    WEBVTT
 
@@ -423,7 +423,6 @@ public sealed class TextImporterTests
     {
         try
         {
-            var importer = new WebVttChapterImporter();
             var result = WebVttChapterImporter.ImportText(text);
 
             Assert.False(result.Success);
@@ -440,16 +439,16 @@ public sealed class TextImporterTests
     [Fact]
     public async Task XmlImporterAcceptsNonSeekableContentStream()
     {
-        var xml = """
-                  <Chapters>
-                    <EditionEntry>
-                      <ChapterAtom>
-                        <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
-                        <ChapterDisplay><ChapterString>Start</ChapterString></ChapterDisplay>
-                      </ChapterAtom>
-                    </EditionEntry>
-                  </Chapters>
-                  """;
+        const string xml = """
+                           <Chapters>
+                             <EditionEntry>
+                               <ChapterAtom>
+                                 <ChapterTimeStart>00:00:00.000000000</ChapterTimeStart>
+                                 <ChapterDisplay><ChapterString>Start</ChapterString></ChapterDisplay>
+                               </ChapterAtom>
+                             </EditionEntry>
+                           </Chapters>
+                           """;
         await using var stream = new NonSeekableReadStream(System.Text.Encoding.UTF8.GetBytes(xml));
         var result = await new XmlChapterImporter(formatter).ImportAsync(
             new ChapterImportRequest("chapters.xml", stream),

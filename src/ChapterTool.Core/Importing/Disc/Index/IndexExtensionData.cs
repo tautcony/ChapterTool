@@ -44,7 +44,7 @@ internal sealed record IndexExtensionData(
             container.Position = entry.StartAddress - 4;
             var bytes = container.ReadExactBytes(checked((int)entry.Length));
             raw[$"{entry.Type}.{entry.Version}"] = bytes;
-            if (entry is { Type: 3, Version: 1 }) uhd = IndexUhdMetadata.TryRead(bytes);
+            if (entry is { Type: 3, Version: 1 }) uhd = IndexUhdMetadata.Read(bytes);
         }
 
         container.Complete("INDEX extension data");
@@ -61,7 +61,7 @@ internal sealed record IndexUhdMetadata(
     bool Hdr10Plus,
     bool DolbyVision)
 {
-    internal static IndexUhdMetadata? TryRead(byte[] data)
+    internal static IndexUhdMetadata Read(byte[] data)
     {
         if (data.Length < 12) throw new InvalidDataException("INDEX UHD extension is truncated.");
         var discType = (byte)(data[4] >> 4);
