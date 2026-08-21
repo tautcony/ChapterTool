@@ -1,0 +1,37 @@
+scripts/normalize-changed-text-files.py
+  s_11943dbd070d78::t_a984f397e5a487 1-16,19-45
+  s_11943dbd070d78::t_aad2c05a069648 17-18
+scripts/report-analyzers.py
+  s_11943dbd070d78::t_76313eea79af3e 1-45
+scripts/audit-ui-resources.py
+  s_11943dbd070d78::t_a984f397e5a487 1-53
+README.md
+  s_11943dbd070d78::t_e5b0a6240f49e5 151,153
+  s_11943dbd070d78::t_434d1727244c13 165
+  s_11943dbd070d78::t_7cc2bf14b5c4fa 166
+docs/code-map/testing.md
+  s_11943dbd070d78::t_e5b0a6240f49e5 181-182
+scripts/README.md
+  s_11943dbd070d78::t_e5b0a6240f49e5 8-11,22
+  s_11943dbd070d78::t_434d1727244c13 1-7,12-21
+scripts/generate-app-icons-macos.sh
+  s_11943dbd070d78::t_434d1727244c13 1-55
+scripts/test-coverage.py
+  s_11943dbd070d78::t_76313eea79af3e 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "d98723e9042a2bea1f9abdcc9031ce316dbb4401",
+  "prompts": {},
+  "sessions": {
+    "s_11943dbd070d78": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02240-1b21-7640-9bcc-659405d334a0",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
