@@ -138,7 +138,11 @@ public sealed partial class MainWindowViewModel
         var outcome = ClipEditingCoordinator.UpdateFrames(
             CurrentInfo,
             selectedFrameRateOption,
-            RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces,
+            RoundFrames
+                ? 0
+                : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces
+                    ? EditingOptions.EffectiveFrameDecimalPlaces
+                    : -1,
             FrameAccuracyTolerance,
             configuredFrameRate);
         var result = outcome.FrameResult;

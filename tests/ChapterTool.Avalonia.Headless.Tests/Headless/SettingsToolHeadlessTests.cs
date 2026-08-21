@@ -209,7 +209,7 @@ public sealed class SettingsToolHeadlessTests
             Assert.InRange(formEditorLeft / window.ClientSize.Width, 0.18, 0.30);
             Assert.True(saveDirectory.Bounds.Width >= window.ClientSize.Width * 0.60);
 
-            window.GetVisualDescendants().OfType<TabControl>().Single().SelectedIndex = 3;
+            SelectAppearanceTab(window);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             var themePreset = FindNamed<ComboBox>(window, "ThemePresetCombo");
             Assert.InRange(Math.Abs(Left(themePreset, window) - formEditorLeft), 0, 1);
@@ -246,7 +246,7 @@ public sealed class SettingsToolHeadlessTests
             settingsWindow.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             var tabControl = settingsWindow.GetVisualDescendants().OfType<TabControl>().Single();
-            tabControl.SelectedIndex = 3;
+            SelectAppearanceTab(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             var combo = settingsWindow.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "ThemePresetCombo");
             var preview = settingsWindow.GetVisualDescendants().OfType<ItemsControl>().Single(control => control.Name == "ThemePalettePreview");
@@ -317,7 +317,7 @@ public sealed class SettingsToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(textWindow);
             var tabControl = settingsWindow.GetVisualDescendants().OfType<TabControl>().Single();
-            tabControl.SelectedIndex = 3;
+            SelectAppearanceTab(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
 
             var uiCombo = settingsWindow.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "UiFontFamilyCombo");
@@ -415,7 +415,7 @@ public sealed class SettingsToolHeadlessTests
         {
             window.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
-            window.GetVisualDescendants().OfType<TabControl>().Single().SelectedIndex = 3;
+            SelectAppearanceTab(window);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             combo = window.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "UiFontFamilyCombo");
 
@@ -464,6 +464,15 @@ public sealed class SettingsToolHeadlessTests
 
     private static T FindNamed<T>(Window window, string name)
         where T : Control => window.GetVisualDescendants().OfType<T>().Single(control => control.Name == name);
+
+    private static void SelectAppearanceTab(Window window)
+    {
+        var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+        var tab = tabControl.ItemsView.OfType<TabItem>().Single(item =>
+            item.Header is TextBlock header
+            && header.Text is "外观" or "Appearance" or "外観");
+        tabControl.SelectedItem = tab;
+    }
 
     private static Color BrushColor(IBrush? brush) => Assert.IsType<SolidColorBrush>(brush).Color;
 }

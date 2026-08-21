@@ -221,7 +221,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             Assert.True(host.ContainsRenderedText("チャプター名"));
             Assert.Contains(
                 settings.Languages,
-                language => language is { CultureName: "en-US", DisplayName: "英語" });
+                language => language is { CultureName: "en-US", DisplayName: "English" });
             Assert.Equal("en-US", host.SettingsStore.Current.Application.Language);
         }
         finally
