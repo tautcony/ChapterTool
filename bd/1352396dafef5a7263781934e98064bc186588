@@ -1,0 +1,125 @@
+global.json
+  s_10d7901a7bbc7d::t_ea97b66bf6c1d9 1,4-5
+  s_10d7901a7bbc7d::t_0f8d9b86d06f10 2-3
+src/ChapterTool.Contracts/Configuration/ChapterToolSettings.cs
+  s_6c3dcf16d5cbcb::t_f3e4f002d9de9d 34-35
+src/ChapterTool.Core/Editing/ChapterEditingService.cs
+  s_6c3dcf16d5cbcb::t_d773a1a26c9f36 114
+  s_6c3dcf16d5cbcb::t_9920365e965764 116,119-120
+  s_6c3dcf16d5cbcb::t_f3e4f002d9de9d 121-124
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs
+  s_6c3dcf16d5cbcb::t_d55be97da16abb 315-316
+  s_6c3dcf16d5cbcb::t_27d1c5a871bc2a 320,322-323,325-330,781
+  s_6c3dcf16d5cbcb::t_814ac792f924ed 38,87,313-314,317-319,321,324,782,796
+  s_6c3dcf16d5cbcb::t_85e8ea7a04acf5 118
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml
+  s_6c3dcf16d5cbcb::t_93b992643e50df 219
+  s_6c3dcf16d5cbcb::t_8d4c3ad3c9c5e6 223,265-277,279-280
+  s_6c3dcf16d5cbcb::t_814ac792f924ed 278
+  s_6c3dcf16d5cbcb::t_1de7bbc7e332c0 281-283
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_6c3dcf16d5cbcb::t_8d4c3ad3c9c5e6 586-590,598
+  s_6c3dcf16d5cbcb::t_85e8ea7a04acf5 591-595,737,1258,1282,1320,1348
+  s_6c3dcf16d5cbcb::t_9beec05752f28e 5-6,1319
+  s_6c3dcf16d5cbcb::t_eff7b4abcda407 1347,1363-1364
+  s_6c3dcf16d5cbcb::t_7019cd6701e64d 558
+  h_3705811fa4502c 7
+  s_6c3dcf16d5cbcb::t_a6b005ecd0159a 596-597
+src/ChapterTool.Wasm/Services/WasmModels.cs
+  s_6c3dcf16d5cbcb::t_eff7b4abcda407 62-63
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_6c3dcf16d5cbcb::t_9717bcbdca8b28 364
+  s_6c3dcf16d5cbcb::t_85e8ea7a04acf5 359
+  s_6c3dcf16d5cbcb::t_8dea0cff735e7b 365
+  s_6c3dcf16d5cbcb::t_116be57b753d2c 357-358
+src/ChapterTool.Contracts/Configuration/AppSettings.cs
+  s_6c3dcf16d5cbcb::t_f3e4f002d9de9d 13-14
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_6c3dcf16d5cbcb::t_116be57b753d2c 357-358
+  s_6c3dcf16d5cbcb::t_8dea0cff735e7b 365
+  s_6c3dcf16d5cbcb::t_85e8ea7a04acf5 359
+  s_6c3dcf16d5cbcb::t_9717bcbdca8b28 364
+tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+  s_10d7901a7bbc7d::t_d01c18fa115aca 20-21
+src/ChapterTool.Contracts/Configuration/DeleteRowsTimingModes.cs
+  s_6c3dcf16d5cbcb::t_f3e4f002d9de9d 1-18
+src/ChapterTool.Core/Editing/ChapterEditingOptions.cs
+  s_6c3dcf16d5cbcb::t_d773a1a26c9f36 3,6,8,12,16
+  s_6c3dcf16d5cbcb::t_9920365e965764 1-2,4-5,7,9-11,13-15,17-18
+src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs
+  s_6c3dcf16d5cbcb::t_47d2e6977e742b 53
+  s_6c3dcf16d5cbcb::t_eff7b4abcda407 4
+  s_6c3dcf16d5cbcb::t_ad16a8c83934f1 54
+src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs
+  s_6c3dcf16d5cbcb::t_27d1c5a871bc2a 174-175
+  s_6c3dcf16d5cbcb::t_9920365e965764 138,172-173
+  s_6c3dcf16d5cbcb::t_ad16a8c83934f1 139
+  h_3705811fa4502c 5,8
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_6c3dcf16d5cbcb::t_814ac792f924ed 360
+  s_6c3dcf16d5cbcb::t_93b992643e50df 365
+  s_6c3dcf16d5cbcb::t_ef9f52ba79cfc7 366
+  s_6c3dcf16d5cbcb::t_47d2e6977e742b 358-359
+tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs
+  s_6c3dcf16d5cbcb::t_912e7d3008c953 55-65
+  s_6c3dcf16d5cbcb::t_06ed2faa131b84 54
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_6c3dcf16d5cbcb::t_814ac792f924ed 360
+  s_6c3dcf16d5cbcb::t_ef9f52ba79cfc7 366
+  s_6c3dcf16d5cbcb::t_93b992643e50df 365
+  s_6c3dcf16d5cbcb::t_47d2e6977e742b 358-359
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_6c3dcf16d5cbcb::t_116be57b753d2c 357-358
+  s_6c3dcf16d5cbcb::t_9717bcbdca8b28 364
+  s_6c3dcf16d5cbcb::t_85e8ea7a04acf5 359
+  s_6c3dcf16d5cbcb::t_8dea0cff735e7b 365
+src/ChapterTool.Wasm/Services/WasmLocalizer.cs
+  s_6c3dcf16d5cbcb::t_7019cd6701e64d 74
+  s_6c3dcf16d5cbcb::t_8d4c3ad3c9c5e6 75
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_6c3dcf16d5cbcb::t_9920365e965764 298,416-418
+  s_10d7901a7bbc7d::t_a8339ea9bd53a9 419
+src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+  s_6c3dcf16d5cbcb::t_9beec05752f28e 20
+src/ChapterTool.Avalonia.UI/Workflows/ClipEditingCoordinator.cs
+  s_6c3dcf16d5cbcb::t_9920365e965764 55
+src/ChapterTool.Core/Editing/IChapterEditingService.cs
+  s_6c3dcf16d5cbcb::t_9920365e965764 45
+  s_6c3dcf16d5cbcb::t_d773a1a26c9f36 43
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_6c3dcf16d5cbcb::t_eff7b4abcda407 89,207-208,399
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_6c3dcf16d5cbcb::t_93b992643e50df 365
+  s_6c3dcf16d5cbcb::t_814ac792f924ed 360
+  s_6c3dcf16d5cbcb::t_ef9f52ba79cfc7 366
+  s_6c3dcf16d5cbcb::t_47d2e6977e742b 358-359
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "bd1352396dafef5a7263781934e98064bc186588",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_10d7901a7bbc7d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02274-7e43-7713-b397-855fc8622c96",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_6c3dcf16d5cbcb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02272-37d2-7831-92a1-6b92f5a4d65d",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
