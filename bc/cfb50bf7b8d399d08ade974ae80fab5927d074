@@ -1,0 +1,19 @@
+tests/ChapterTool.Core.Tests/Transform/LuaExpressionScriptServiceTests.cs
+  s_4045a3329c161b::t_5fa884c2e6ac70 186-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "bccfb50bf7b8d399d08ade974ae80fab5927d074",
+  "prompts": {},
+  "sessions": {
+    "s_4045a3329c161b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02265-46be-7bf0-b11f-dd84fa28526f",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
