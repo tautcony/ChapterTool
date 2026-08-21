@@ -1,6 +1,7 @@
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform.Expressions;
 
@@ -48,6 +49,8 @@ public interface IPreferenceSink
     OutputTextEncoding OutputTextEncoding { get; }
 
     decimal FrameAccuracyTolerance { get; }
+
+    ChapterEditingOptions EditingOptions => ChapterEditingOptions.Default;
 
     void ApplyLoadedSettings(AppSettings settings);
 

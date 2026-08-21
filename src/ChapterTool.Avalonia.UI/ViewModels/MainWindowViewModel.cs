@@ -295,7 +295,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         {
             if (CurrentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes), EnglishLogText("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order()))));
+                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes, EditingOptions), EnglishLogText("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order()))));
             }
 
             return ValueTask.CompletedTask;
@@ -412,6 +412,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             }
         }
     } = 0.15m;
+
+    public ChapterEditingOptions EditingOptions { get; private set; } = ChapterEditingOptions.Default;
+
+    internal void ApplyEditingOptions(ChapterEditingOptions options) => EditingOptions = options ?? ChapterEditingOptions.Default;
 
     public int SelectedFrameRateIndex
     {

@@ -52,6 +52,18 @@ public sealed class ChapterEditingServiceTests
     }
 
     [Fact]
+    public void Delete_first_chapter_can_normalize_remaining_times()
+    {
+        var result = service.Delete(
+            Sample(),
+            new HashSet<int> { 0 },
+            new ChapterEditingOptions(DeleteRowsTimingMode.Normalize));
+
+        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].StartTime);
+    }
+
+    [Fact]
     public void InsertBefore_inserts_new_chapter_and_renumbers()
     {
         var result = service.InsertBefore(Sample(), 1);

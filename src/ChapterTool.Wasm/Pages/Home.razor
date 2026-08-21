@@ -2,6 +2,9 @@
 @implements IDisposable
 @using System.Text
 @using System.Text.Json
+@using DeleteRowsTimingModes = ChapterTool.Contracts.Configuration.DeleteRowsTimingModes
+@using ContractDeleteRowsTimingMode = ChapterTool.Contracts.Configuration.DeleteRowsTimingMode
+@using ChapterTool.Core.Editing
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
 @inject IJSRuntime Js
@@ -552,7 +555,7 @@
                 }
                 else if (settingsTab == 2)
                 {
-                    <h3>@L.T("Settings.Output")</h3>
+                    <h3>@L.T("Settings.OutputPreferences")</h3>
                     <div class="settings-grid">
                         <label for="settings-save-format">@L.T("Settings.DefaultSaveFormat")</label>
                         <select id="settings-save-format" @bind="draftSaveFormatIndex">
@@ -577,14 +580,22 @@
                         </select>
                         <label>@L.T("Settings.EmitBom")</label>
                         <label class="settings-check"><input type="checkbox" @bind="draftEmitBom" /> @L.T("Settings.EmitBomLabel")</label>
-                        <label for="settings-tolerance">@L.T("Settings.Tolerance")</label>
-                        <div class="range-setting">
-                            <input id="settings-tolerance" type="range" min="0.01" max="0.30" step="0.01" @bind="draftFrameAccuracyTolerance" />
-                            <output>@draftFrameAccuracyTolerance.ToString("0.##")</output>
-                        </div>
                     </div>
                 }
                 else if (settingsTab == 3)
+                {
+                    <h3>@L.T("Settings.Editing")</h3>
+                    <div class="settings-grid">
+                        <label for="settings-tolerance">@L.T("Settings.Tolerance")</label>
+                        <div class="range-setting"><input id="settings-tolerance" type="range" min="0.01" max="0.30" step="0.01" @bind="draftFrameAccuracyTolerance" /><output>@draftFrameAccuracyTolerance.ToString("0.##")</output></div>
+                        <label for="settings-delete-timing">@L.T("Settings.DeleteRowsTiming")</label>
+                        <select id="settings-delete-timing" @bind="draftDeleteRowsTimingModeIndex">
+                            <option value="0">@L.T("Settings.PreserveChapterTimes")</option>
+                            <option value="1">@L.T("Settings.NormalizeChapterTimes")</option>
+                        </select>
+                    </div>
+                }
+                else if (settingsTab == 4)
                 {
                     <h3>@L.T("Settings.Appearance")</h3>
                     <div class="settings-grid">
@@ -723,6 +734,7 @@
     private int draftOutputTextEncodingIndex;
     private bool draftEmitBom;
     private decimal draftFrameAccuracyTolerance = 0.15m;
+    private int draftDeleteRowsTimingModeIndex;
     private string draftThemePresetId = "avalonia-default";
     private string draftUiFontFamily = "system-ui";
     private string draftMonospaceFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
@@ -1243,6 +1255,7 @@
         draftOutputTextEncodingIndex = outputTextEncodingIndex;
         draftEmitBom = emitBom;
         draftFrameAccuracyTolerance = frameAccuracyTolerance;
+        draftDeleteRowsTimingModeIndex = Workspace.EditingOptions.DeleteRowsTiming == ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
         draftThemePresetId = themePresetId;
         draftUiFontFamily = uiFontFamily;
         draftMonospaceFontFamily = monospaceFontFamily;
@@ -1266,6 +1279,7 @@
         draftOutputTextEncodingIndex = 0;
         draftEmitBom = true;
         draftFrameAccuracyTolerance = 0.15m;
+        draftDeleteRowsTimingModeIndex = 0;
         draftThemePresetId = "avalonia-default";
         draftUiFontFamily = "system-ui";
         draftMonospaceFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
@@ -1302,6 +1316,8 @@
         outputTextEncodingIndex = Math.Max(0, OutputTextEncodings.All.ToList().IndexOf(OutputTextEncodings.ParseOrDefault(application.OutputTextEncoding)));
         emitBom = application.EmitBom;
         frameAccuracyTolerance = Math.Clamp(application.FrameAccuracyTolerance <= 0 ? 0.15m : application.FrameAccuracyTolerance, 0.01m, 0.30m);
+        draftDeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(application.DeleteRowsTimingMode) == ContractDeleteRowsTimingMode.Preserve ? 0 : 1;
+        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize);
         themePresetId = ThemeOptions.Any(option => string.Equals(option.Id, theme.PresetId, StringComparison.OrdinalIgnoreCase))
             ? theme.PresetId
             : "avalonia-default";
@@ -1328,7 +1344,8 @@
                 DefaultXmlLanguage: draftXmlLanguage,
                 OutputTextEncoding: OutputTextEncodings.Id(OutputTextEncodings.All[Math.Clamp(draftOutputTextEncodingIndex, 0, OutputTextEncodings.All.Count - 1)]),
                 EmitBom: draftEmitBom,
-                FrameAccuracyTolerance: draftFrameAccuracyTolerance),
+                FrameAccuracyTolerance: draftFrameAccuracyTolerance,
+                DeleteRowsTimingMode: draftDeleteRowsTimingModeIndex == 0 ? "preserve" : "normalize"),
             Theme: new WasmThemeSettings(draftThemePresetId),
             Font: new WasmFontSettings(
                 UiFontFamily: draftUiFontFamily == "system-ui" ? string.Empty : draftUiFontFamily,
@@ -1343,7 +1360,8 @@
                 DefaultXmlLanguage: xmlLanguage,
                 OutputTextEncoding: Workspace.OutputTextEncodingId,
                 EmitBom: emitBom,
-                FrameAccuracyTolerance: frameAccuracyTolerance),
+                FrameAccuracyTolerance: frameAccuracyTolerance,
+                DeleteRowsTimingMode: Workspace.EditingOptions.DeleteRowsTiming == ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve ? "preserve" : "normalize"),
             Theme: new WasmThemeSettings(themePresetId),
             Font: new WasmFontSettings(
                 UiFontFamily: uiFontFamily == "system-ui" ? string.Empty : uiFontFamily,

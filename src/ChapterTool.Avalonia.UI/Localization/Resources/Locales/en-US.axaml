@@ -355,12 +355,15 @@
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">External Tools</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">Frame tolerance</x:String>
+  <x:String x:Key="Settings.DeleteRowsTiming" xml:space="preserve">Delete row timing</x:String>
+  <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">Preserve chapter times</x:String>
+  <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">Normalize chapter times</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">General</x:String>
   <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix</x:String>
   <x:String x:Key="Settings.MonoFont" xml:space="preserve">Monospace font</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">Open settings folder</x:String>
-  <x:String x:Key="Settings.Output" xml:space="preserve">Output defaults</x:String>
-  <x:String x:Key="Settings.OutputDefaults" xml:space="preserve">Output Defaults</x:String>
+  <x:String x:Key="Settings.OutputPreferences" xml:space="preserve">Output preferences</x:String>
+  <x:String x:Key="Settings.Editing" xml:space="preserve">Editing preferences</x:String>
   <x:String x:Key="Settings.OutputTextEncoding" xml:space="preserve">Text encoding</x:String>
   <x:String x:Key="Settings.Preset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Settings.Preview" xml:space="preserve">Preview</x:String>

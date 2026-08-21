@@ -111,10 +111,17 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
     /// </summary>
     /// <param name="info">The chapter data to process.</param>
     /// <param name="indexes">The zero-based chapter indexes.</param>
+    /// <param name="options">The editing options. The default preserves chapter times.</param>
     /// <returns>The operation result.</returns>
-    public ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes)
+    public ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes, ChapterEditingOptions? options = null)
     {
         var chapters = info.Chapters.Where((_, index) => !indexes.Contains(index)).ToList();
+        if ((options ?? ChapterEditingOptions.Default).DeleteRowsTiming == DeleteRowsTimingMode.Normalize
+            && chapters.Count > 0 && indexes.Contains(0))
+        {
+            var shift = chapters[0].StartTime;
+            chapters = [.. chapters.Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })];
+        }
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
 

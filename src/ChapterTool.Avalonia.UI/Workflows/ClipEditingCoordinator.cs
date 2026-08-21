@@ -52,7 +52,7 @@ internal sealed class ClipEditingCoordinator(
             _ => new ChapterEditResult(current, [])
         };
 
-    public ChapterEditResult Delete(ChapterSet current, IReadOnlySet<int> indexes) => editingService.Delete(current, indexes);
+    public ChapterEditResult Delete(ChapterSet current, IReadOnlySet<int> indexes, ChapterEditingOptions options) => editingService.Delete(current, indexes, options);
 
     public ChapterEditResult InsertBefore(ChapterSet current, int index) => editingService.InsertBefore(current, index);
 

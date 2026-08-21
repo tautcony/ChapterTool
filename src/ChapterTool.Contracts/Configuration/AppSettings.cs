@@ -10,6 +10,7 @@ public sealed record AppSettings(
     string DefaultXmlLanguage = "und",
     string OutputTextEncoding = "utf8",
     bool EmitBom = false,
-    decimal FrameAccuracyTolerance = 0.15m);
+    decimal FrameAccuracyTolerance = 0.15m,
+    string DeleteRowsTimingMode = "preserve");
 
 public sealed record WindowLocation(int X, int Y);

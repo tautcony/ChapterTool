@@ -355,12 +355,15 @@
   <x:String x:Key="Settings.ExternalTools" xml:space="preserve">外部工具</x:String>
   <x:String x:Key="Settings.FfprobePath" xml:space="preserve">ffprobe</x:String>
   <x:String x:Key="Settings.FrameAccuracyTolerance" xml:space="preserve">帧误差阈值</x:String>
+  <x:String x:Key="Settings.DeleteRowsTiming" xml:space="preserve">删除行时的时间处理</x:String>
+  <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">保留章节时间</x:String>
+  <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">归一化章节时间</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">常规</x:String>
   <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix</x:String>
   <x:String x:Key="Settings.MonoFont" xml:space="preserve">等宽字体</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">打开设置文件夹</x:String>
-  <x:String x:Key="Settings.Output" xml:space="preserve">输出默认值</x:String>
-  <x:String x:Key="Settings.OutputDefaults" xml:space="preserve">输出默认值</x:String>
+  <x:String x:Key="Settings.OutputPreferences" xml:space="preserve">输出偏好</x:String>
+  <x:String x:Key="Settings.Editing" xml:space="preserve">编辑偏好</x:String>
   <x:String x:Key="Settings.OutputTextEncoding" xml:space="preserve">文本编码</x:String>
   <x:String x:Key="Settings.Preset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Settings.Preview" xml:space="preserve">预览</x:String>

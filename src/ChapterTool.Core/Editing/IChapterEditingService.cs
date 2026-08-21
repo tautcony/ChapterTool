@@ -40,8 +40,9 @@ public interface IChapterEditingService
     /// </summary>
     /// <param name="info">The chapter data to edit.</param>
     /// <param name="indexes">The zero-based chapter indexes to delete.</param>
+    /// <param name="options">The editing options. The default preserves chapter times.</param>
     /// <returns>The edit result.</returns>
-    ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes);
+    ChapterEditResult Delete(ChapterSet info, IReadOnlySet<int> indexes, ChapterEditingOptions? options = null);
 
     /// <summary>
     /// Inserts a chapter before the specified index.

@@ -31,7 +31,8 @@ public sealed record ChapterToolSettings
         return settings with
         {
             SavingPath = NormalizeDirectory(settings.SavingPath),
-            OutputTextEncoding = OutputTextEncodings.Id(OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding))
+            OutputTextEncoding = OutputTextEncodings.Id(OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding)),
+            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode))
         };
     }
 

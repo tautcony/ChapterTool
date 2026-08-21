@@ -86,6 +86,7 @@ public sealed class WasmWorkspace : IDisposable
         TextEncoding = OutputTextEncoding.Utf8;
         EmitBom = false;
         FrameAccuracyTolerance = DefaultFrameAccuracyTolerance;
+        EditingOptions = ChapterEditingOptions.Default;
         selectedFrameRateIndex = 0;
         SetLocalizedStatus("Status.Ready");
         chapterNameTemplateStatus = this.localizer.T("Status.TemplateNotSelected");
@@ -202,6 +203,8 @@ public sealed class WasmWorkspace : IDisposable
             ? DefaultFrameAccuracyTolerance
             : Math.Clamp(value, 0.01m, 0.30m);
     }
+
+    public ChapterEditingOptions EditingOptions { get; set; } = ChapterEditingOptions.Default;
 
     public string OutputTextEncodingId => OutputTextEncodings.Id(TextEncoding);
 
@@ -393,7 +396,7 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var result = editingService.Delete(BaseChapterSet, indexes);
+        var result = editingService.Delete(BaseChapterSet, indexes, EditingOptions);
         selectedRowIndexes.Clear();
         SelectedRowIndex = -1;
         selectionAnchor = -1;

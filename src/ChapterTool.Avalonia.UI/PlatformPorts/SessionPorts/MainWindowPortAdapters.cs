@@ -2,8 +2,10 @@ using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform.Expressions;
+using DeleteRowsTimingMode = ChapterTool.Contracts.Configuration.DeleteRowsTimingMode;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 
@@ -133,6 +135,8 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
 
     public decimal FrameAccuracyTolerance => owner.FrameAccuracyTolerance;
 
+    public ChapterEditingOptions EditingOptions => owner.EditingOptions;
+
     public void ApplyLoadedSettings(AppSettings settings) => ApplyPreferences(settings, applyDefaultSaveFormat: true);
 
     public void ApplyLivePreferences(AppSettings settings) => ApplyPreferences(settings, applyDefaultSaveFormat: false);
@@ -165,6 +169,10 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
         }
 
         owner.FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
+        owner.ApplyEditingOptions(new ChapterEditingOptions(
+            DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve
+                ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve
+                : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize));
         owner.XmlLanguage = string.IsNullOrWhiteSpace(settings.DefaultXmlLanguage) ? "und" : settings.DefaultXmlLanguage;
         owner.EmitBom = settings.EmitBom;
         owner.OutputTextEncoding = OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding);

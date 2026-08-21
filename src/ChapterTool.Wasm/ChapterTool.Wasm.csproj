@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\ChapterTool.Contracts\ChapterTool.Contracts.csproj" />
     <ProjectReference Include="..\..\src\ChapterTool.Core\ChapterTool.Core.csproj" />
     <EmbeddedResource Include="Resources\Locales\*.json" />
   </ItemGroup>

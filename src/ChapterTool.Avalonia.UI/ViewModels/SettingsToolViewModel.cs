@@ -35,6 +35,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     private int defaultXmlLanguageIndex;
     private int outputTextEncodingIndex;
     private decimal frameAccuracyTolerance;
+    private int deleteRowsTimingModeIndex;
     private double frameAccuracyToleranceSliderValue;
     private bool isRefreshingLanguages;
 
@@ -83,6 +84,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         defaultXmlLanguageIndex = XmlLanguageIndex(preferenceSink.XmlLanguage);
         outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, preferenceSink.OutputTextEncoding));
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(preferenceSink.FrameAccuracyTolerance);
+        deleteRowsTimingModeIndex = preferenceSink.EditingOptions.DeleteRowsTiming == ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
@@ -113,6 +115,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             RefreshLanguages();
             Appearance.RefreshLocalizedOptions();
             RefreshXmlLanguageDisplayOptions(notify: true);
+            OnPropertyChanged(nameof(DeleteRowsTimingOptions));
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
             {
@@ -305,6 +308,24 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     {
         get => frameAccuracyTolerance;
         set => SetFrameAccuracyTolerance(value, updateSlider: true);
+    }
+
+    public IReadOnlyList<string> DeleteRowsTimingOptions =>
+    [
+        localizer.GetString("Settings.PreserveChapterTimes"),
+        localizer.GetString("Settings.NormalizeChapterTimes")
+    ];
+
+    public int DeleteRowsTimingModeIndex
+    {
+        get => deleteRowsTimingModeIndex;
+        set
+        {
+            if (SetProperty(ref deleteRowsTimingModeIndex, Math.Clamp(value, 0, 1)))
+            {
+                ApplyLiveSettings();
+            }
+        }
     }
 
     public double FrameAccuracyToleranceSliderValue
@@ -757,7 +778,8 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
             OutputTextEncoding = OutputTextEncodings.Id(OutputEncodings[OutputTextEncodingIndex]),
             EmitBom = EmitBom,
-            FrameAccuracyTolerance = FrameAccuracyTolerance
+            FrameAccuracyTolerance = FrameAccuracyTolerance,
+            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize)
         };
 
     private void ApplyAppSettingsToFields(AppSettings settings)
@@ -771,6 +793,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         OutputTextEncodingIndex = TextEncodingIndex(settings.OutputTextEncoding);
         EmitBom = settings.EmitBom;
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
+        DeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve ? 0 : 1;
     }
 
     private void ApplyLiveSettings()

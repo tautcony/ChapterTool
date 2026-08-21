@@ -216,11 +216,11 @@
 
       <TabItem>
         <TabItem.Header>
-          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.OutputDefaults}" />
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.OutputPreferences}" />
         </TabItem.Header>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
         <StackPanel Spacing="8" Margin="16,12">
-          <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+          <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
             <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DefaultSaveFormat}" />
             <ComboBox x:Name="DefaultSaveFormatCombo"
                       Grid.Row="0"
@@ -257,22 +257,27 @@
                       Grid.Column="1"
                       IsChecked="{Binding EmitBom}"
                       VerticalAlignment="Center" />
-            <TextBlock Grid.Row="4" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
-            <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
-              <Slider Grid.Column="0"
-                      Classes="toleranceSlider"
-                      Minimum="0.01"
-                      Maximum="0.30"
-                      Ticks="0.05,0.10,0.15,0.20,0.25,0.30"
-                      TickPlacement="BottomRight"
-                      IsSnapToTickEnabled="False"
-                      Value="{Binding FrameAccuracyToleranceSliderValue}" />
-              <TextBlock Grid.Column="1"
-                         Classes="valueBadge"
-                         Text="{Binding FrameAccuracyToleranceDisplayText}" />
-            </Grid>
           </Grid>
         </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.Editing}" />
+        </TabItem.Header>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="8" Margin="16,12">
+            <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="12">
+              <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FrameAccuracyTolerance}" />
+              <Grid Grid.Row="0" Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Slider Grid.Column="0" Classes="toleranceSlider" Minimum="0.01" Maximum="0.30" Ticks="0.05,0.10,0.15,0.20,0.25,0.30" TickPlacement="BottomRight" IsSnapToTickEnabled="False" Value="{Binding FrameAccuracyToleranceSliderValue}" />
+                <TextBlock Grid.Column="1" Classes="valueBadge" Text="{Binding FrameAccuracyToleranceDisplayText}" />
+              </Grid>
+              <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.DeleteRowsTiming}" />
+              <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding DeleteRowsTimingOptions}" SelectedIndex="{Binding DeleteRowsTimingModeIndex}" />
+            </Grid>
+          </StackPanel>
         </ScrollViewer>
       </TabItem>
 
