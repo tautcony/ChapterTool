@@ -1,0 +1,22 @@
+packages/chaptertool/README.md
+  s_ffb3e0f769e5e2::t_e599ee8346ea53 56
+README.md
+  s_ffb3e0f769e5e2::t_2f31596a72d7c1 5-7
+  s_ffb3e0f769e5e2::t_fb2065828bc7ec 15-16,105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "c307e304d58a24a6d40c476ed48612f117fb314b",
+  "prompts": {},
+  "sessions": {
+    "s_ffb3e0f769e5e2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0222f-09f2-7ea0-8171-93c477ff7a48",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
