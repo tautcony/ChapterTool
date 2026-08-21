@@ -495,7 +495,7 @@ public sealed class IndexImporterTests
         }
 
         builder.SeekTo(indexesAddress);
-        builder.UInt32BE((uint)IndexesMinContentSize);
+        builder.UInt32BE(IndexesMinContentSize);
         builder.Reserved(TitleEntrySize);
         builder.Reserved(TitleEntrySize);
         builder.UInt16BE(0);

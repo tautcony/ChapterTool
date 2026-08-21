@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
@@ -248,6 +247,4 @@ public sealed partial class IfoChapterImporter : IChapterImporter
     private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>
         new(DiagnosticSeverity.Error, code, message);
 
-    [GeneratedRegex(@"^VTS_(?<Title>\d+)_0\.IFO$", RegexOptions.IgnoreCase)]
-    private static partial Regex IfoNameRegex();
 }

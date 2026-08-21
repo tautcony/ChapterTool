@@ -1,5 +1,6 @@
 root = true
 
+# Keep generated and source files consistent across platforms.
 [*.{cs,md,axaml,json,xml,yml,yaml,props,targets,sln,slnx,sh}]
 end_of_line = lf
 
@@ -9,12 +10,17 @@ indent_style = space
 indent_size = 4
 insert_final_newline = true
 
-# Keep StyleCop diagnostics visible in editors without blocking the existing build.
+# Keep StyleCop diagnostics visible without blocking the existing build.
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.severity = suggestion
 
-# These rules do not match the repository's current source conventions.
+# These StyleCop rules do not match the repository's current source conventions.
+dotnet_diagnostic.SA0001.severity = none
+dotnet_diagnostic.SA1009.severity = none
 dotnet_diagnostic.SA1101.severity = none
+dotnet_diagnostic.SA1111.severity = none
+dotnet_diagnostic.SA1116.severity = none
 dotnet_diagnostic.SA1117.severity = none
+dotnet_diagnostic.SA1118.severity = none
 dotnet_diagnostic.SA1200.severity = none
 dotnet_diagnostic.SA1201.severity = none
 dotnet_diagnostic.SA1202.severity = none
@@ -23,6 +29,7 @@ dotnet_diagnostic.SA1208.severity = none
 dotnet_diagnostic.SA1402.severity = none
 dotnet_diagnostic.SA1407.severity = none
 dotnet_diagnostic.SA1413.severity = none
+dotnet_diagnostic.SA1500.severity = none
 dotnet_diagnostic.SA1507.severity = none
 dotnet_diagnostic.SA1508.severity = none
 dotnet_diagnostic.SA1513.severity = none
@@ -36,18 +43,23 @@ dotnet_diagnostic.SA1623.severity = none
 dotnet_diagnostic.SA1633.severity = none
 dotnet_diagnostic.SA1642.severity = none
 dotnet_diagnostic.SA1649.severity = none
-dotnet_diagnostic.SA1116.severity = none
-dotnet_diagnostic.SA1500.severity = none
-dotnet_diagnostic.SA1118.severity = none
-dotnet_diagnostic.SA1009.severity = none
-dotnet_diagnostic.SA1111.severity = none
-dotnet_diagnostic.CA1859.severity = none
-dotnet_diagnostic.SA0001.severity = none
+
+# These analyzer rules do not match the repository's current source conventions.
 dotnet_diagnostic.CA1826.severity = none
+dotnet_diagnostic.CA1859.severity = none
+
+# Keep low-value ReSharper style suggestions out of the editor.
 resharper_arrange_object_creation_when_type_not_evident_highlighting = none
-resharper_unused_auto_property_accessor_global_highlighting = none
-resharper_collection_never_queried_local_highlighting = none
 resharper_auto_property_can_be_made_get_only_local_highlighting = none
+resharper_collection_never_queried_local_highlighting = none
 resharper_convert_if_statement_to_return_statement_highlighting = none
-resharper_use_deconstruction_highlighting = none
 resharper_inconsistent_naming_highlighting = none
+resharper_unused_auto_property_accessor_global_highlighting = none
+resharper_use_deconstruction_highlighting = none
+resharper_xaml_style_class_not_found_highlighting = none
+resharper_not_accessed_positional_property_global_highlighting = none
+
+[tests/**/*.cs]
+resharper_parameter_only_used_for_precondition_check_local_highlighting = none
+resharper_access_to_disposed_closure_highlighting = none
+resharper_collection_never_queried_global_highlighting = none

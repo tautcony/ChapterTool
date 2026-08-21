@@ -580,11 +580,6 @@ public sealed partial class ExpressionEditor : UserControl
         return GetDocumentOffsetAnchorOffset(completion.ReplacementStart + completion.ReplacementLength);
     }
 
-    private Point GetDiagnosticAnchorOffset(int offset)
-    {
-        return GetDocumentOffsetAnchorOffset(offset);
-    }
-
     private Point GetDocumentOffsetAnchorOffset(int offset)
     {
         var textView = editor.TextArea.TextView;

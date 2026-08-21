@@ -173,11 +173,11 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
             DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve
                 ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve
                 : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize,
-            ChapterTool.Contracts.Configuration.FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == ChapterTool.Contracts.Configuration.FrameDisplayMode.Round
-                ? ChapterTool.Core.Editing.FrameDisplayMode.Round
-                : ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces,
-            ChapterTool.Contracts.Configuration.FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces)));
-        owner.RoundFrames = ChapterTool.Contracts.Configuration.FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == ChapterTool.Contracts.Configuration.FrameDisplayMode.Round;
+            FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round
+                ? Core.Editing.FrameDisplayMode.Round
+                : Core.Editing.FrameDisplayMode.DecimalPlaces,
+            FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces)));
+        owner.RoundFrames = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round;
         owner.XmlLanguage = string.IsNullOrWhiteSpace(settings.DefaultXmlLanguage) ? "und" : settings.DefaultXmlLanguage;
         owner.EmitBom = settings.EmitBom;
         owner.OutputTextEncoding = OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding);

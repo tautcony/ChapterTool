@@ -20,7 +20,6 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposable
 {
     private readonly IChapterEditingService editingService;
-    private readonly ChapterSegmentService segmentService;
     private readonly IFrameRateService frameRateService;
     private readonly ChapterExportService exportService;
     private readonly IShellService? shellService;
@@ -104,7 +103,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         ArgumentNullException.ThrowIfNull(exportService);
 
         this.editingService = editingService;
-        this.segmentService = segmentService;
         this.AuxiliaryToolHost = auxiliaryToolHost;
         this.frameRateService = frameRateService;
         this.ExpressionEngine = expressionEngine;

@@ -11,9 +11,6 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Contains chapter load and save behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
-    private ChapterExportOptions CurrentExportOptions() =>
-        projectionFacade.CreateExportOptions();
-
     /// <summary>
     /// Loads a chapter name template from a path selected by the UI.
     /// Owns file read, naming mode, status, and failure handling.

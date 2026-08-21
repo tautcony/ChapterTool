@@ -81,13 +81,13 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
                 StatusText = expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
             }
         }
-    } = -1;
+    }
 
     public string Expression
     {
         get;
         set => SetProperty(ref field, value);
-    } = "t";
+    }
 
     public bool ApplyExpression
     {
@@ -99,7 +99,7 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
     {
         get;
         set => SetProperty(ref field, value);
-    } = string.Empty;
+    }
 
     public string StatusText
     {

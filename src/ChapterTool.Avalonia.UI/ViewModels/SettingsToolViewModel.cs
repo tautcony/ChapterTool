@@ -766,31 +766,6 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
             : new SettingsToolStatus(SettingsToolStatusKind.InvalidPath, text, executableName);
     }
 
-    private static SettingsToolStatus ValidateToolDirectory(string? configuredPath, string toolId)
-    {
-        if (string.IsNullOrWhiteSpace(configuredPath))
-        {
-            return new SettingsToolStatus(
-                SettingsToolStatusKind.Discovery,
-                null,
-                ExternalToolExecutableNames.ExecutableName(toolId));
-        }
-
-        var text = configuredPath.Trim();
-        var executableName = ExternalToolExecutableNames.ExecutableName(toolId);
-        if (!Directory.Exists(text))
-        {
-            return File.Exists(text)
-                ? new SettingsToolStatus(SettingsToolStatusKind.NotDirectory, text, executableName)
-                : new SettingsToolStatus(SettingsToolStatusKind.InvalidPath, text, executableName);
-        }
-
-        var candidate = Path.Combine(text, executableName);
-        return File.Exists(candidate)
-            ? new SettingsToolStatus(SettingsToolStatusKind.Found, candidate, executableName)
-            : new SettingsToolStatus(SettingsToolStatusKind.Missing, candidate, executableName);
-    }
-
     private ChapterToolSettings CurrentSettings()
     {
         var settings = ChapterToolSettings.Normalize(snapshotCoordinator.Saved with

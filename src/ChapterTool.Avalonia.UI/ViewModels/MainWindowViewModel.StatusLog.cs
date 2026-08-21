@@ -22,16 +22,6 @@ public sealed partial class MainWindowViewModel
 
     private void ClearProgressStatus() => statusDiagnosticsPresenter.ClearProgress();
 
-    private static string ProgressStatusKey(ChapterImportProgressPhase phase) => phase switch
-    {
-        ChapterImportProgressPhase.LoadingSource => "Status.LoadingSource",
-        ChapterImportProgressPhase.ValidatingSource => "Status.LoadingSource.Validate",
-        ChapterImportProgressPhase.DiscoveringTitles => "Status.LoadingSource.Discover",
-        ChapterImportProgressPhase.ExportingChapters => "Status.LoadingSource.Export",
-        ChapterImportProgressPhase.ParsingChapters => "Status.LoadingSource.Parse",
-        _ => "Status.LoadingSource"
-    };
-
     internal string LocalizeDiagnostic(ChapterDiagnostic diagnostic) => statusDiagnosticsPresenter.LocalizeDiagnostic(diagnostic);
 
     internal void LogStatus(LogLevel level = LogLevel.Information) => Log(level, "Log.Status", ("status", StatusText));

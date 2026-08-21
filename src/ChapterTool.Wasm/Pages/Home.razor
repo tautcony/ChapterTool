@@ -1268,7 +1268,7 @@
         draftOutputTextEncodingIndex = outputTextEncodingIndex;
         draftEmitBom = emitBom;
         draftFrameAccuracyTolerance = frameAccuracyTolerance;
-        draftFrameDisplayModeIndex = Workspace.EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.Round ? 0 : 1;
+        draftFrameDisplayModeIndex = Workspace.EditingOptions.FrameDisplay == FrameDisplayMode.Round ? 0 : 1;
         draftFrameDecimalPlaces = Workspace.EditingOptions.EffectiveFrameDecimalPlaces;
         draftDeleteRowsTimingModeIndex = Workspace.EditingOptions.DeleteRowsTiming == DeleteRowsTimingMode.Preserve ? 0 : 1;
         draftThemePresetId = themePresetId;
@@ -1336,7 +1336,7 @@
         draftFrameDisplayModeIndex = FrameDisplayModes.ParseOrDefault(application.FrameDisplayMode) == ContractFrameDisplayMode.Round ? 0 : 1;
         draftFrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(application.FrameDecimalPlaces);
         draftDeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(application.DeleteRowsTimingMode) == ContractDeleteRowsTimingMode.Preserve ? 0 : 1;
-        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize, draftFrameDisplayModeIndex == 0 ? ChapterTool.Core.Editing.FrameDisplayMode.Round : ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces, draftFrameDecimalPlaces);
+        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize, draftFrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces, draftFrameDecimalPlaces);
         draftRoundFrames = draftFrameDisplayModeIndex == 0;
         themePresetId = ThemeOptions.Any(option => string.Equals(option.Id, theme.PresetId, StringComparison.OrdinalIgnoreCase))
             ? theme.PresetId
@@ -1384,7 +1384,7 @@
                 EmitBom: emitBom,
                 FrameAccuracyTolerance: frameAccuracyTolerance,
                 DeleteRowsTimingMode: Workspace.EditingOptions.DeleteRowsTiming == DeleteRowsTimingMode.Preserve ? "preserve" : "normalize",
-                FrameDisplayMode: Workspace.EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.Round ? "round" : "decimal-places",
+                FrameDisplayMode: Workspace.EditingOptions.FrameDisplay == FrameDisplayMode.Round ? "round" : "decimal-places",
                 FrameDecimalPlaces: Workspace.EditingOptions.EffectiveFrameDecimalPlaces),
             Theme: new WasmThemeSettings(themePresetId),
             Font: new WasmFontSettings(

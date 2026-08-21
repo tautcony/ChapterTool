@@ -1109,38 +1109,6 @@ public sealed class WasmWorkspace : IDisposable
         ];
     }
 
-    private void LoadBaseFromSelectedClip()
-    {
-        if (ClipSessionState is not null)
-        {
-            SyncUiFromClipSession();
-            if (BaseChapterSet is not null)
-            {
-                RebuildFrameRateChoices(BaseChapterSet);
-            }
-
-            return;
-        }
-
-        if (importResult is null || ClipOptions.Count == 0)
-        {
-            ClearSession(keepPath: true, keepReload: true);
-            return;
-        }
-
-        var clip = ClipOptions.FirstOrDefault(option => option.Id == SelectedClipId) ?? ClipOptions[0];
-        SelectedClipId = clip.Id;
-        activeGroupIndex = clip.GroupIndex;
-        SetBaseChapterSet(importResult.Groups[clip.GroupIndex].Entries[clip.EntryIndex].ChapterSet);
-        RebuildFrameRateChoices(BaseChapterSet!);
-    }
-
-    private ChapterImportSource? ResolveActiveGroup() =>
-        ClipSessionState?.OriginalGroup
-        ?? (importResult is { Groups.Count: > 0 }
-            ? importResult.Groups[Math.Clamp(activeGroupIndex, 0, importResult.Groups.Count - 1)]
-            : null);
-
     private void RefreshDisplay(bool updateStatus, string? statusKey, params object[] statusArgs)
     {
         if (BaseChapterSet is null)

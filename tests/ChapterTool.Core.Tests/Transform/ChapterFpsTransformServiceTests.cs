@@ -6,8 +6,6 @@ namespace ChapterTool.Core.Tests.Transform;
 
 public sealed class ChapterFpsTransformServiceTests
 {
-    private readonly ChapterFpsTransformService service = new();
-
     [Fact]
     public void ChangeFps_preserves_chapter_frame_numbers()
     {
