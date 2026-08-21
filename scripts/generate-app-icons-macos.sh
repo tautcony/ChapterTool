@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Generate the application icons from the SVG source.
-# Requires ImageMagick (`magick`) and macOS `iconutil`.
+# Generate the application icons from the SVG source on macOS.
+# Requires ImageMagick (`magick`) and the macOS `iconutil` command.
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

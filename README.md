@@ -148,9 +148,9 @@ dotnet build ChapterTool.slnx --no-restore
 dotnet test ChapterTool.slnx --no-restore
 ```
 
-Run coverage with `./scripts/test-coverage.sh`. The script writes reports to `artifacts/coverage`.
+Run coverage with `python3 scripts/test-coverage.py`. The script writes reports to `artifacts/coverage`.
 
-Inspect compiler and analyzer diagnostics with `./scripts/analyzer-report.sh`. The script builds the solution, writes the raw SARIF report to `artifacts/analyzers/analyzers.sarif`, and prints diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to keep only StyleCop diagnostics.
+Inspect compiler and analyzer diagnostics with `python3 scripts/report-analyzers.py`. The script builds the solution, writes the raw SARIF report to `artifacts/analyzers/analyzers.sarif`, and prints diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to keep only StyleCop diagnostics.
 
 Publish a local desktop artifact:
 
@@ -161,6 +161,8 @@ Publish a local desktop artifact:
 ```
 
 Use `scripts/publish.ps1` on Windows.
+
+See [`scripts/README.md`](scripts/README.md) for the script platform and dependency matrix.
 
 ## Project Layout
 
