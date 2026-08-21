@@ -1,0 +1,27 @@
+tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs
+  s_ffb3e0f769e5e2::t_3fdb287dc86743 183
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LanguageToolViewModel.cs
+  s_ffb3e0f769e5e2::t_3fdb287dc86743 101
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_ffb3e0f769e5e2::t_71985e4a913fce 663,665
+src/ChapterTool.Avalonia.UI/Localization/AppLanguage.cs
+  s_ffb3e0f769e5e2::t_3fdb287dc86743 3,9-11
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs
+  s_ffb3e0f769e5e2::t_3fdb287dc86743 630
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "dacba6960157aad2011984ad78efdf59fc9e814e",
+  "prompts": {},
+  "sessions": {
+    "s_ffb3e0f769e5e2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0222f-09f2-7ea0-8171-93c477ff7a48",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
