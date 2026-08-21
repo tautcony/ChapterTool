@@ -128,12 +128,12 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
         var a = Color.Parse(first);
         var b = Color.Parse(second);
         var ratio = Math.Clamp(amount, 0, 1);
-        byte Channel(byte left, byte right) => (byte)Math.Round(left + ((right - left) * ratio));
         return Color.FromArgb(
             Channel(a.A, b.A),
             Channel(a.R, b.R),
             Channel(a.G, b.G),
             Channel(a.B, b.B)).ToString();
+        byte Channel(byte left, byte right) => (byte)Math.Round(left + ((right - left) * ratio));
     }
 
     private sealed record AuxiliaryThemePalette(

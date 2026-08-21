@@ -1255,7 +1255,7 @@
         draftOutputTextEncodingIndex = outputTextEncodingIndex;
         draftEmitBom = emitBom;
         draftFrameAccuracyTolerance = frameAccuracyTolerance;
-        draftDeleteRowsTimingModeIndex = Workspace.EditingOptions.DeleteRowsTiming == ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
+        draftDeleteRowsTimingModeIndex = Workspace.EditingOptions.DeleteRowsTiming == DeleteRowsTimingMode.Preserve ? 0 : 1;
         draftThemePresetId = themePresetId;
         draftUiFontFamily = uiFontFamily;
         draftMonospaceFontFamily = monospaceFontFamily;
@@ -1317,7 +1317,7 @@
         emitBom = application.EmitBom;
         frameAccuracyTolerance = Math.Clamp(application.FrameAccuracyTolerance <= 0 ? 0.15m : application.FrameAccuracyTolerance, 0.01m, 0.30m);
         draftDeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(application.DeleteRowsTimingMode) == ContractDeleteRowsTimingMode.Preserve ? 0 : 1;
-        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize);
+        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize);
         themePresetId = ThemeOptions.Any(option => string.Equals(option.Id, theme.PresetId, StringComparison.OrdinalIgnoreCase))
             ? theme.PresetId
             : "avalonia-default";
@@ -1361,7 +1361,7 @@
                 OutputTextEncoding: Workspace.OutputTextEncodingId,
                 EmitBom: emitBom,
                 FrameAccuracyTolerance: frameAccuracyTolerance,
-                DeleteRowsTimingMode: Workspace.EditingOptions.DeleteRowsTiming == ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve ? "preserve" : "normalize"),
+                DeleteRowsTimingMode: Workspace.EditingOptions.DeleteRowsTiming == DeleteRowsTimingMode.Preserve ? "preserve" : "normalize"),
             Theme: new WasmThemeSettings(themePresetId),
             Font: new WasmFontSettings(
                 UiFontFamily: uiFontFamily == "system-ui" ? string.Empty : uiFontFamily,
@@ -1533,7 +1533,7 @@
 
     private async Task OnKeyDownAsync(KeyboardEventArgs args)
     {
-        var typing = false;
+        bool typing;
         try
         {
             typing = await Js.InvokeAsync<bool>("chapterToolWasm.isEditableTarget");

@@ -450,7 +450,7 @@ public sealed class TextImporterTests
                     </EditionEntry>
                   </Chapters>
                   """;
-        using var stream = new NonSeekableReadStream(System.Text.Encoding.UTF8.GetBytes(xml));
+        await using var stream = new NonSeekableReadStream(System.Text.Encoding.UTF8.GetBytes(xml));
         var result = await new XmlChapterImporter(formatter).ImportAsync(
             new ChapterImportRequest("chapters.xml", stream),
             TestContext.Current.CancellationToken);
@@ -1013,19 +1013,19 @@ public sealed class TextImporterTests
         {
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(byte[] buffer, int offsetValue, int count)
         {
             var remaining = data.Length - this.offset;
             var take = Math.Min(count, remaining);
-            Buffer.BlockCopy(data, this.offset, buffer, offset, take);
+            Buffer.BlockCopy(data, this.offset, buffer, offsetValue, take);
             this.offset += take;
             return take;
         }
 
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override long Seek(long offsetValue, SeekOrigin origin) => throw new NotSupportedException();
 
         public override void SetLength(long value) => throw new NotSupportedException();
 
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offsetValue, int count) => throw new NotSupportedException();
     }
 }

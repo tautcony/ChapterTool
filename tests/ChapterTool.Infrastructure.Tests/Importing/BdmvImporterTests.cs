@@ -112,7 +112,7 @@ public sealed class BdmvImporterTests
 
         Assert.All(results, result => Assert.True(result.Success));
         var signatures = results.Select(result => result.Groups.SelectMany(static group => group.Entries)
-            .Select(static entry => (entry.Id, entry.ChapterSet.Duration, Count: entry.ChapterSet.Chapters.Count))
+            .Select(static entry => (entry.Id, entry.ChapterSet.Duration, entry.ChapterSet.Chapters.Count))
             .ToArray()).ToArray();
         Assert.All(signatures, signature => Assert.Equal(signatures[0], signature));
     }

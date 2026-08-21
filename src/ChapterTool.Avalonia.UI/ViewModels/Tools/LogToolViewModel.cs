@@ -1,13 +1,5 @@
-using System.Collections;
-using System.Globalization;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Text.Unicode;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Contracts.PlatformPorts;
-using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
 

@@ -1,4 +1,3 @@
-using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 
 namespace ChapterTool.Core.Importing.Cue;

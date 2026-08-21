@@ -1,7 +1,6 @@
 ﻿using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
-using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.CommandLine.Cli;
 

@@ -11,7 +11,6 @@ using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
-using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Platform;
 using ChapterTool.TestSupport;
 
@@ -102,25 +101,28 @@ public sealed class SettingsToolViewModelTests
     {
         var owner = CreateOwner();
         var observed = 0;
-        Func<Exception, ValueTask> handler = exception =>
-        {
-            _ = exception;
-            observed++;
-            return ValueTask.CompletedTask;
-        };
+
         var viewModel = new SettingsToolViewModel(
             owner.ToolSession.Preferences,
             new FakeSettingsStore(new AppSettings()),
             new AppLocalizationManager("en-US"),
             themeApplicationService: new ThrowingThemeApplicationService(),
             autoLoad: false,
-            unexpectedErrorHandler: handler);
+            unexpectedErrorHandler: ErrorHandler);
 
         await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(viewModel.SettingsLoadFailed);
         Assert.Contains("unexpectedly", viewModel.StatusText, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(1, observed);
+        return;
+
+        ValueTask ErrorHandler(Exception exception)
+        {
+            _ = exception;
+            observed++;
+            return ValueTask.CompletedTask;
+        }
     }
 
     [Fact]

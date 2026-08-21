@@ -103,11 +103,11 @@ public sealed class CueImporterTests
     public async Task CueImporterDecodesNonUtf8BytesWithEncodingFallbackWarning()
     {
         // 0xC4 0xE3 is the GBK encoding of a CJK character and is not valid UTF-8.
-        var asciiPrefix = Encoding.ASCII.GetBytes("FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \"");
-        var asciiSuffix = Encoding.ASCII.GetBytes("\"\n    INDEX 01 00:00:00");
+        var asciiPrefix = "FILE \"a.wav\" WAVE\n  TRACK 01 AUDIO\n    TITLE \""u8.ToArray();
+        var asciiSuffix = "\"\n    INDEX 01 00:00:00"u8.ToArray();
         var bytes = asciiPrefix.Concat(new byte[] { 0xC4, 0xE3 }).Concat(asciiSuffix).ToArray();
         var importer = new CueChapterImporter();
-        using var stream = new MemoryStream(bytes);
+        await using var stream = new MemoryStream(bytes);
 
         var result = await importer.ImportAsync(new ChapterImportRequest("legacy-encoding.cue", stream), TestContext.Current.CancellationToken);
 
@@ -132,7 +132,7 @@ public sealed class CueImporterTests
     public async Task CueImporterRejectsStreamOverPortableLimit()
     {
         var importer = new CueChapterImporter();
-        using var stream = new OversizedSeekableStream();
+        await using var stream = new OversizedSeekableStream();
 
         var result = await importer.ImportAsync(
             new ChapterImportRequest("huge.cue", stream),
@@ -216,7 +216,7 @@ public sealed class CueImporterTests
     public async Task FlacImporterReadsFromNonSeekableStreamWithoutDisposingCallerContent()
     {
         var bytes = CreateFlac(MinimalCue(), includeNativeCueSheetBlock: false);
-        using var stream = new NonSeekableReadStream(bytes);
+        await using var stream = new NonSeekableReadStream(bytes);
 
         var result = await new FlacCueImporter().ImportAsync(
             new ChapterImportRequest("music.flac", stream),
@@ -500,19 +500,19 @@ public sealed class CueImporterTests
         {
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override int Read(byte[] buffer, int offsetValue, int count)
         {
             var remaining = data.Length - this.offset;
             var take = Math.Min(count, remaining);
-            Buffer.BlockCopy(data, this.offset, buffer, offset, take);
+            Buffer.BlockCopy(data, this.offset, buffer, offsetValue, take);
             this.offset += take;
             return take;
         }
 
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override long Seek(long offsetValue, SeekOrigin origin) => throw new NotSupportedException();
 
         public override void SetLength(long value) => throw new NotSupportedException();
 
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offsetValue, int count) => throw new NotSupportedException();
     }
 }

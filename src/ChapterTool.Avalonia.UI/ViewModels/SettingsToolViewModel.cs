@@ -84,7 +84,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         defaultXmlLanguageIndex = XmlLanguageIndex(preferenceSink.XmlLanguage);
         outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, preferenceSink.OutputTextEncoding));
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(preferenceSink.FrameAccuracyTolerance);
-        deleteRowsTimingModeIndex = preferenceSink.EditingOptions.DeleteRowsTiming == ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
+        deleteRowsTimingModeIndex = preferenceSink.EditingOptions.DeleteRowsTiming == Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);

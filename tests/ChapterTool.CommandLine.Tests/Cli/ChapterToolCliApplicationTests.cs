@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Text;
-using ChapterTool.CommandLine;
 using ChapterTool.CommandLine.Cli;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Localization;

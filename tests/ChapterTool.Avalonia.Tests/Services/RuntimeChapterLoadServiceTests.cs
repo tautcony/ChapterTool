@@ -279,7 +279,7 @@ public sealed class RuntimeChapterLoadServiceTests
         Assert.Equal(7, info.Chapters.Count);
     }
 
-    private static string RepositoryRoot() => ChapterTool.TestSupport.TestRepository.Root;
+    private static string RepositoryRoot() => TestSupport.TestRepository.Root;
 
     private static string MatroskaFixture() =>
         Path.Combine(

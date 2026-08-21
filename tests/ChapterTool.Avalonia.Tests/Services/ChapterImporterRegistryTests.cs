@@ -169,7 +169,7 @@ public sealed class ChapterImporterRegistryTests
         Assert.Null(registry.ResolveFallback("movie.mov", movPrimary, missingFfprobe));
     }
 
-    private static string RepositoryRoot() => ChapterTool.TestSupport.TestRepository.Root;
+    private static string RepositoryRoot() => TestSupport.TestRepository.Root;
 
     private static RuntimeChapterImporterRegistry CreateRealRegistry()
         => RuntimeImportTestFactory.CreateRegistry();

@@ -1,5 +1,4 @@
-﻿using System.Text;
-using ChapterTool.Core.Exporting;
+﻿using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.CommandLine.Cli;

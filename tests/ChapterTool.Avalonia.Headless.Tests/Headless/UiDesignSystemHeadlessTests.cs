@@ -6,7 +6,6 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -113,13 +112,13 @@ public sealed class UiDesignSystemHeadlessTests
         Assert.True(changeFps.BorderThickness.Left > 0);
         Assert.NotNull(preview.GetVisualDescendants().OfType<Border>().FirstOrDefault(border => border.Name == "PART_Border"));
         Assert.NotNull(changeFps.GetVisualDescendants().OfType<Border>().FirstOrDefault(border => border.Name == "PART_Border"));
-        Assert.False(preview.Background is ISolidColorBrush brush && brush.Color.A == 0);
+        Assert.False(preview.Background is ISolidColorBrush { Color.A: 0 });
 
         preview.Background = new SolidColorBrush(Color.Parse("#D6E9F8"));
         await host.LayoutAsync();
         var previewBorder = preview.GetVisualDescendants().OfType<Border>().First(border => border.Name == "PART_Border");
         Assert.Equal(1, previewBorder.BorderThickness.Left);
-        Assert.False(previewBorder.BorderBrush is ISolidColorBrush hoverBorder && hoverBorder.Color.A == 0);
+        Assert.False(previewBorder.BorderBrush is ISolidColorBrush { Color.A: 0 });
     }
 
     private static void AssertNamed(Control control)

@@ -104,7 +104,7 @@ public sealed class IfoImporterTests
     public async Task IfoImporterRejectsStreamOverPortableLimit()
     {
         var importer = new IfoChapterImporter();
-        using var stream = new OversizedSeekableStream();
+        await using var stream = new OversizedSeekableStream();
 
         var result = await importer.ImportAsync(
             new ChapterImportRequest("huge.ifo", stream),

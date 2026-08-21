@@ -753,7 +753,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         }
     }
 
-    public bool IsOperationRunning => Progress > 0 && Progress < 1;
+    public bool IsOperationRunning => Progress is > 0 and < 1;
 
     public string SaveButtonTooltip
     {

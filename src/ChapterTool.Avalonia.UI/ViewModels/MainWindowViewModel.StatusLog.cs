@@ -1,6 +1,5 @@
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.Workflows;
-using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using Microsoft.Extensions.Logging;

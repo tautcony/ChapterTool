@@ -369,7 +369,7 @@ public sealed class WasmWorkspaceTests
     private static WasmWorkspace CreateWorkspace() => new(new WasmChapterService());
 
     private static string LocateFixture(params string[] segments) =>
-        ChapterTool.TestSupport.TestRepository.CoreFixture(segments);
+        TestSupport.TestRepository.CoreFixture(segments);
 
     private static byte[] CreateFlacWithVorbisCue(string cue)
     {

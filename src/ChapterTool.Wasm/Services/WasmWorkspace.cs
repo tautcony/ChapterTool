@@ -1094,17 +1094,17 @@ public sealed class WasmWorkspace : IDisposable
         }
     }
 
-    private IReadOnlyList<ClipOption> BuildClipOptionsFromSession(ClipSession session, int groupIndex)
+    private IReadOnlyList<ClipOption> BuildClipOptionsFromSession(ClipSession sessionValue, int groupIndex)
     {
-        if (session.IsCombined)
+        if (sessionValue.IsCombined)
         {
-            var combined = session.ClipOptions[0];
+            var combined = sessionValue.ClipOptions[0];
             return [ToClipOption(combined, $"combined:{groupIndex}", groupIndex, -1)];
         }
 
         return
         [
-            .. session.ClipOptions
+            .. sessionValue.ClipOptions
                 .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{entry.Id}", groupIndex, index))
         ];
     }
@@ -1456,9 +1456,9 @@ public sealed class WasmWorkspace : IDisposable
         Notify();
     }
 
-    private void RecordDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics)
+    private void RecordDiagnostics(IEnumerable<ChapterDiagnostic> diagnosticsValue)
     {
-        this.diagnostics = ToDiagnostics(diagnostics);
+        this.diagnostics = ToDiagnostics(diagnosticsValue);
         foreach (var diagnostic in this.diagnostics)
         {
             AddLog(diagnostic.Severity, $"{diagnostic.Code}: {diagnostic.Message}", diagnostic.Details);

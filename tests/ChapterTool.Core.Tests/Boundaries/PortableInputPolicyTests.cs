@@ -33,7 +33,7 @@ public sealed class PortableInputPolicyTests
     [Fact]
     public async Task CopyToBoundedMemoryRejectsSeekableStreamOverLimit()
     {
-        using var source = new OversizedSeekableStream();
+        await using var source = new OversizedSeekableStream();
         var copy = await PortableInputPolicy.CopyToBoundedMemoryAsync(source, TestContext.Current.CancellationToken);
 
         Assert.True(copy.Exceeded);

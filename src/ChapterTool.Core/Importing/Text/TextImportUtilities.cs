@@ -1,4 +1,3 @@
-using System.Text;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Cue;
 using ChapterTool.Core.Models;

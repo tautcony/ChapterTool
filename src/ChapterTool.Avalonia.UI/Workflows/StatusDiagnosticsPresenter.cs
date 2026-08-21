@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using ChapterTool.Avalonia.UI.Localization;
-using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;

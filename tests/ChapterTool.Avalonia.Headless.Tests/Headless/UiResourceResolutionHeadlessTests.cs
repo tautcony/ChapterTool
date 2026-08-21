@@ -6,7 +6,6 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
-using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
@@ -19,11 +18,11 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class UiResourceResolutionHeadlessTests
 {
-    public static TheoryData<string> PresetIds { get; } = new()
-    {
+    public static TheoryData<string> PresetIds { get; } =
+    [
         ThemePresetCatalog.DefaultPresetId,
         "ayu-dark"
-    };
+    ];
 
     [AvaloniaTheory]
     [MemberData(nameof(PresetIds))]

@@ -1,8 +1,6 @@
 ﻿using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.Tests.PlatformPorts;

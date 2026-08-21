@@ -12,7 +12,7 @@ using ChapterTool.Core.Transform.Expressions;
 namespace ChapterTool.Avalonia.UI.PlatformPorts;
 
 /// <summary>Identifies one auxiliary tool independently of its presentation host.</summary>
-public readonly record struct ToolId : IEquatable<ToolId>
+public readonly record struct ToolId
 {
     public ToolId(string value)
     {
