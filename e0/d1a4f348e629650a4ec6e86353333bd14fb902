@@ -1,0 +1,79 @@
+tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs
+  h_3705811fa4502c 115
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  h_3705811fa4502c 756
+tests/ChapterTool.Core.Tests/Importing/IfoImporterTests.cs
+  h_3705811fa4502c 107
+tests/ChapterTool.Core.Tests/Importing/TextImporterTests.cs
+  s_e3097aee6d7724::t_a52153ee21ac5d 1029
+  s_e3097aee6d7724::t_716858d8008715 1016
+  s_e3097aee6d7724::t_193f49b9c37b13 1020
+  h_3705811fa4502c 453,1025
+src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs
+  h_3705811fa4502c 15
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs
+  s_e3097aee6d7724::t_17c8509769f3ae 121
+  h_3705811fa4502c 115
+tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs
+  h_3705811fa4502c 111,118-120
+  h_3705811fa4502c 104,121-125
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs
+  h_3705811fa4502c 87
+tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterLoadServiceTests.cs
+  h_3705811fa4502c 282
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Convert.cs
+  h_3705811fa4502c 1
+tests/ChapterTool.Avalonia.Tests/Services/ChapterImporterRegistryTests.cs
+  h_3705811fa4502c 172
+tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs
+  s_e3097aee6d7724::t_82a535b62e8d42 110
+  h_3705811fa4502c 106-107,135
+  s_e3097aee6d7724::t_ffb84f2d279280 507
+  s_e3097aee6d7724::t_f52847f8ec06dd 503
+  s_e3097aee6d7724::t_838fa82a6911d8 516
+  s_e3097aee6d7724::t_bd427b2c9ae1ff 219
+  s_e3097aee6d7724::t_1f398b05388003 512
+src/ChapterTool.Wasm/Pages/Home.razor
+  h_3705811fa4502c 1536
+  h_3705811fa4502c 1258,1320,1364
+tests/ChapterTool.Core.Tests/Boundaries/PortableInputPolicyTests.cs
+  h_3705811fa4502c 36
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiResourceResolutionHeadlessTests.cs
+  h_3705811fa4502c 22,25
+  h_3705811fa4502c 21
+src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs
+  h_3705811fa4502c 136
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiScreenshotCaptureHeadlessTests.cs
+  h_3705811fa4502c 35-37
+  h_3705811fa4502c 39-46,48-72,74-77,79-85
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_e3097aee6d7724::t_c85fadf644b5c9 1461
+  s_e3097aee6d7724::t_710158ced45a3e 1107
+  s_e3097aee6d7724::t_5825532c3bc865 1101
+  s_e3097aee6d7724::t_55a93593c5e95e 1099
+  s_e3097aee6d7724::t_4d34051c68613d 1459
+  s_e3097aee6d7724::t_fcf5fbd1cfac3d 1097
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  h_3705811fa4502c 372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e0d1a4f348e629650a4ec6e86353333bd14fb902",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_e3097aee6d7724": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1787280204193",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
