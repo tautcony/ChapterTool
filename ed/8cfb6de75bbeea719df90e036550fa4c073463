@@ -1,0 +1,28 @@
+.github/workflows/dotnet-ci.yml
+  s_0ed334a3f24cfb::t_94f3ca941ecac1 107
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs
+  s_0ed334a3f24cfb::t_ea2cd647e2ce9b 224
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs
+  s_0ed334a3f24cfb::t_27d81fc8bf2dab 212,249,320,418,468
+  s_0ed334a3f24cfb::t_b80b40df60abe2 472-473
+  s_0ed334a3f24cfb::t_ea2cd647e2ce9b 469-471,474-475
+  s_0ed334a3f24cfb::t_055d31cf14b502 476
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs
+  s_0ed334a3f24cfb::t_f52f777be08bdf 141-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ed8cfb6de75bbeea719df90e036550fa4c073463",
+  "prompts": {},
+  "sessions": {
+    "s_0ed334a3f24cfb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a022ea-ce7f-75f2-a267-dd8007753dcb",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
