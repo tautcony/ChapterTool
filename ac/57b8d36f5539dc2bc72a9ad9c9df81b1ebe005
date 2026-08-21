@@ -1,0 +1,45 @@
+src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs
+  h_3705811fa4502c 176-178,180
+  h_3705811fa4502c 179
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_27b54028fcb2e2::t_48317ecaf75baa 1339
+  h_3705811fa4502c 1387
+  h_3705811fa4502c 1271
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/ExpressionToolViewModel.cs
+  h_3705811fa4502c 102
+  h_3705811fa4502c 84,90
+tests/ChapterTool.Core.Tests/Importing/IndexImporterTests.cs
+  h_3705811fa4502c 498
+.editorconfig
+  s_27b54028fcb2e2::t_e9d93eb9143c58 64-65
+  s_c37d935df2abd3::t_79199abad7ac92 3,13,16-18,20-21,23,32,46-47,49-51,54,57-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ac57b8d36f5539dc2bc72a9ad9c9df81b1ebe005",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_27b54028fcb2e2": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1787299828369",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_c37d935df2abd3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0232b-320e-7e13-a56e-459c9811dfd0",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
