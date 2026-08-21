@@ -1,0 +1,21 @@
+openspec/specs/supporting-ui-platform-services/spec.md
+  s_4175585b5715ce::t_8b3c45b7c38279 114,118,122,126,133-137,570
+openspec/specs/autofac-desktop-composition/spec.md
+  s_4175585b5715ce::t_8b3c45b7c38279 1-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5e6c64fa0d37b451ea6705b86c4e3bfdf78aaaa1",
+  "prompts": {},
+  "sessions": {
+    "s_4175585b5715ce": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02215-9d67-7df3-b7e1-a9ef769b2563",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
