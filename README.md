@@ -2,8 +2,9 @@
 
 [![License: GPL v3](https://img.shields.io/github/license/tautcony/chaptertool.svg)](LICENSE)
 [![.NET 10 CI](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/tautcony/ChapterTool/actions/workflows/dotnet-ci.yml)
-[![NuGet tool](https://img.shields.io/nuget/v/ChapterTool?logo=nuget)](https://www.nuget.org/packages/ChapterTool/)
-[![NuGet Core](https://img.shields.io/nuget/v/ChapterTool.Core?logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
+[![NuGet CLI tool](https://img.shields.io/nuget/v/ChapterTool?label=NuGet%20CLI%20tool&logo=nuget)](https://www.nuget.org/packages/ChapterTool/)
+[![NuGet Core library](https://img.shields.io/nuget/v/ChapterTool.Core?label=NuGet%20Core%20library&logo=nuget)](https://www.nuget.org/packages/ChapterTool.Core/)
+[![npm @chaptertool/node](https://img.shields.io/npm/v/%40chaptertool%2Fnode?label=npm%20%40chaptertool%2Fnode&logo=npm)](https://www.npmjs.com/package/@chaptertool/node)
 [![GitHub downloads](https://img.shields.io/github/downloads/tautcony/chaptertool/total.svg)](https://github.com/tautcony/ChapterTool/releases)
 [![WASM](https://img.shields.io/badge/wasm-GitHub%20Pages-blue)](https://tautcony.github.io/ChapterTool/)
 
@@ -11,7 +12,8 @@ ChapterTool is a cross-platform chapter editor for desktop and browser. It impor
 
 ## Features
 
-- Import text, XML, WebVTT, CUE, Blu-ray, DVD, HD-DVD, Matroska, and other media chapter sources.
+- Import text, XML, WebVTT, CUE, FLAC/TAK embedded CUE, Blu-ray BDMV, DVD, HD-DVD, Matroska, and other media chapter sources.
+- Import Premiere Marker lists and media-container chapters through configured reader adapters.
 - Combine supported multi-segment sources such as MPLS and IFO.
 - Edit chapter names and timestamps.
 - Calculate frame numbers from chapter times and frame-rate settings.
@@ -100,7 +102,7 @@ Install it in a Node.js project:
 npm install @chaptertool/node
 ```
 
-The package requires Node.js 20, 22, 24, or later. Package consumers need Node.js only. They do not need the .NET SDK.
+The package requires Node.js 20.x, 22.x, or 24 and later. Package consumers need Node.js only. They do not need the .NET SDK.
 
 Build and test the package from its directory:
 
