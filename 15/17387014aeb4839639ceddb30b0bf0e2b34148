@@ -1,0 +1,137 @@
+src/ChapterTool.Core/Editing/ChapterEditingOptions.cs
+  s_6c3dcf16d5cbcb::t_801bcb012f756d 12-20,23-25,29-33
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_6c3dcf16d5cbcb::t_8b768b047f61ef 357-360
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs
+  s_6c3dcf16d5cbcb::t_9381be7f96aff5 39-40,90-91,323-335,337-340,343-355,819-821,836-837
+  s_6c3dcf16d5cbcb::t_73e91667304bbc 336,341-342
+src/ChapterTool.Core/Importing/Disc/Index/IndexExtensionData.cs
+  s_e3097aee6d7724::t_4204c7763018a2 64
+  h_3705811fa4502c 47
+src/ChapterTool.Contracts/Configuration/FrameDisplayModes.cs
+  s_6c3dcf16d5cbcb::t_a6ca5e982a0b1e 1-20
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_6c3dcf16d5cbcb::t_faa5263670d2a9 593,748-749,1271-1272,1297-1298,1337,1339
+  s_6c3dcf16d5cbcb::t_a1d0600dda00ba 7-8,1336,1340
+  s_6c3dcf16d5cbcb::t_45a2967e133851 594-601
+  s_6c3dcf16d5cbcb::t_75d8e24bb464c2 1368-1370,1386-1388
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_6c3dcf16d5cbcb::t_47e069ff90dea4 358-361
+tests/ChapterTool.Core.Tests/Importing/TextImporterTests.cs
+  h_3705811fa4502c 117,442
+  s_6c3dcf16d5cbcb::t_20da6bdfa42a5b 116,443-451
+src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs
+  h_3705811fa4502c 150
+src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs
+  h_3705811fa4502c 122
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_6c3dcf16d5cbcb::t_47e069ff90dea4 358-361
+src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs
+  s_6c3dcf16d5cbcb::t_9381be7f96aff5 176,179-180
+  s_6c3dcf16d5cbcb::t_13348ff476b7a1 175,177-178
+tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs
+  h_3705811fa4502c 27,39
+src/ChapterTool.Avalonia.UI/Workflows/ClipEditingCoordinator.cs
+  s_6c3dcf16d5cbcb::t_801bcb012f756d 65,77
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_6c3dcf16d5cbcb::t_47e069ff90dea4 358-361
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsSnapshotCoordinator.cs
+  h_3705811fa4502c 11-12,15,17,25,36-37,40,45-46,50,56,58
+src/ChapterTool.Wasm/Services/WasmModels.cs
+  s_6c3dcf16d5cbcb::t_13348ff476b7a1 63-65
+src/ChapterTool.Avalonia.UI/PlatformPorts/EmbeddedAuxiliaryToolHost.cs
+  h_3705811fa4502c 98-99
+src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs
+  h_3705811fa4502c 136
+src/ChapterTool.Core/Importing/Disc/MplsExtensionData.cs
+  h_3705811fa4502c 78
+tests/ChapterTool.Core.Tests/Importing/ClpiImporterTests.cs
+  s_e3097aee6d7724::t_b8c8128488988d 368,382
+  h_3705811fa4502c 383,422-423
+  s_e3097aee6d7724::t_8cbffb64ce23d4 408
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs
+  s_6c3dcf16d5cbcb::t_13348ff476b7a1 141
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  h_3705811fa4502c 464,1275-1276,1278-1279
+  s_6c3dcf16d5cbcb::t_13348ff476b7a1 1215
+  s_6c3dcf16d5cbcb::t_612578fb265071 465,1277
+src/ChapterTool.Contracts/Configuration/AppSettings.cs
+  s_6c3dcf16d5cbcb::t_a6ca5e982a0b1e 14-16
+src/ChapterTool.Core/Transform/FrameRateService.cs
+  s_6c3dcf16d5cbcb::t_a6ca5e982a0b1e 130,136-138
+  s_6c3dcf16d5cbcb::t_801bcb012f756d 139,142,152,172,180-182
+  s_6c3dcf16d5cbcb::t_29e54c38635806 131-135
+  s_6c3dcf16d5cbcb::t_d4f7a7d67d6e3b 129,175
+  s_6c3dcf16d5cbcb::t_607b84357db213 183-184
+tests/ChapterTool.Core.Tests/Importing/IndexImporterTests.cs
+  h_3705811fa4502c 416,436,440,475,498,502
+  s_e3097aee6d7724::t_0ea2458697936a 337,417
+  s_e3097aee6d7724::t_3d3b64109a9904 335-336
+  s_6c3dcf16d5cbcb::t_6205aecd195ea1 342-343,368,379,415,423-424
+tests/ChapterTool.Core.Tests/Boundaries/PortableInputPolicyTests.cs
+  h_3705811fa4502c 47
+src/ChapterTool.Wasm/Services/WasmLocalizer.cs
+  h_3705811fa4502c 82
+tests/ChapterTool.Core.Tests/Importing/StcAwarePtsTests.cs
+  h_3705811fa4502c 160
+  s_e3097aee6d7724::t_42d65fb362b65a 161-162
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  h_3705811fa4502c 309-311
+  s_6c3dcf16d5cbcb::t_93d6b531cd56d8 312-315
+src/ChapterTool.Core/Importing/Disc/Index/IndexParseLimits.cs
+  h_3705811fa4502c 5
+src/ChapterTool.Contracts/Configuration/ChapterToolSettings.cs
+  s_6c3dcf16d5cbcb::t_13348ff476b7a1 35-37
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_6c3dcf16d5cbcb::t_8b768b047f61ef 357-360
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_6c3dcf16d5cbcb::t_8b768b047f61ef 357-360
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml
+  s_6c3dcf16d5cbcb::t_45a2967e133851 115,280-284
+  s_6c3dcf16d5cbcb::t_47e069ff90dea4 279
+  s_6c3dcf16d5cbcb::t_73e91667304bbc 271
+tests/ChapterTool.Core.Tests/Importing/ChapterContentServiceTests.cs
+  h_3705811fa4502c 74-76
+  s_6c3dcf16d5cbcb::t_beb267a9982e46 77-80,94-100
+src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvImporter.cs
+  h_3705811fa4502c 179
+src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs
+  s_e3097aee6d7724::t_7703eb5487f8a3 48,51,55-56,58,60,63
+  s_6c3dcf16d5cbcb::t_9c5cb20a6fad94 47
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  h_3705811fa4502c 341,355,392,416,441
+src/ChapterTool.Wasm/wwwroot/css/app.css
+  s_6c3dcf16d5cbcb::t_5825401eb9be40 717-731
+src/ChapterTool.Core/Transform/IFrameRateService.cs
+  s_6c3dcf16d5cbcb::t_a6ca5e982a0b1e 51,57-61
+  s_6c3dcf16d5cbcb::t_29e54c38635806 52-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "1517387014aeb4839639ceddb30b0bf0e2b34148",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_6c3dcf16d5cbcb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02272-37d2-7831-92a1-6b92f5a4d65d",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_e3097aee6d7724": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1787280204193",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
