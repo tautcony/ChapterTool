@@ -183,6 +183,8 @@ public sealed class LuaExpressionScriptServiceTests
     [Fact(Timeout = 2000)]
     public void Infinite_loop_is_cancelled_with_structured_diagnostic()
     {
+        TestContext.Current.CancellationToken.ThrowIfCancellationRequested();
+
         var result = service.Evaluate(
             "function transform(chapter) while true do end end",
             Context(timeSeconds: 10, fps: 24));
