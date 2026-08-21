@@ -180,9 +180,7 @@ public sealed partial class LocalizationTests
         var tool = new LanguageToolViewModel(owner.ToolSession.Preferences);
 
         Assert.Equal(["zh-CN", "en-US", "ja-JP"], tool.Languages.Select(static language => language.CultureName).ToArray());
-        Assert.Contains(
-            tool.Languages,
-            language => language.DisplayName == AppLocalizationResources.All["en-US"]["Language.Japanese"]);
+        Assert.Equal(["简体中文", "English", "日本語"], tool.Languages.Select(static language => language.DisplayName).ToArray());
     }
 
     private static string[] Placeholders(string value) =>

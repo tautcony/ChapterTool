@@ -98,7 +98,7 @@ public sealed class LanguageToolViewModel : ObservableViewModel, IDisposable
         .. preferenceSink.Localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
-                preferenceSink.Localizer.GetString(language.DisplayNameKey)))
+                language.NativeDisplayName))
     ];
 
     private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> options)

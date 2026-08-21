@@ -627,7 +627,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
         .. localizer.SupportedLanguages
             .Select(language => new LanguageOptionViewModel(
                 language.CultureName,
-                localizer.GetString(language.DisplayNameKey)))
+                language.NativeDisplayName))
     ];
 
     private void ReplaceLanguages(IReadOnlyList<LanguageOptionViewModel> entries)
