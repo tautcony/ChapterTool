@@ -1,0 +1,21 @@
+tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs
+  s_3543091d51ff6a::t_a4e70c3e3de5f3 45,49-50
+openspec/specs/chapter-core-transform-export/spec.md
+  s_3543091d51ff6a::t_619768049bbbbb 114-116
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "5e749d06a5625837b653eed0b8ab40e8dca99fa1",
+  "prompts": {},
+  "sessions": {
+    "s_3543091d51ff6a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a02203-0518-7db3-8fd9-1dd5560dc8a6",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
