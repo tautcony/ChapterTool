@@ -1,0 +1,18 @@
+src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj
+  h_3705811fa4502c 28
+src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj
+  h_3705811fa4502c 6
+src/ChapterTool.Avalonia.UI/ChapterTool.Avalonia.UI.csproj
+  h_3705811fa4502c 24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "3d9eda44b1aa1cd4829af8944800bbf4225dcaee",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
