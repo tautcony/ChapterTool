@@ -1,0 +1,24 @@
+AGENTS.md
+  s_8a4fe125baad0b::t_54d451b9bc04d1 83-84,87-89,94
+  s_8a4fe125baad0b::t_9c2faba5cf808c 44-46,51-52,61-62,66
+  s_8a4fe125baad0b::t_cdde8738aaa185 10-11,13-14,72,74,78
+  s_8a4fe125baad0b::t_e9ba39ac8ca6ee 22,24-25,28,35-40
+  s_8a4fe125baad0b::t_df6bcf5bd4cb3c 33-34,41
+  s_8a4fe125baad0b::t_542b918dd68d6b 82,85-86,90-93
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "cb08bb689226e114046cadcac6e980b98917dd33",
+  "prompts": {},
+  "sessions": {
+    "s_8a4fe125baad0b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03d79-0f30-70c0-8029-3485e0608a6c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
