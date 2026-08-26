@@ -1,0 +1,27 @@
+.github/workflows/dotnet-ci.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 40,46,51,62,109,117,126,154,157,162,183,196,199,204,214
+.github/workflows/nuget-publish.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 33,38,90
+.github/workflows/npm-publish.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 46,51
+.github/workflows/github-pages.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 44,47,122,125,131
+.github/workflows/release.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "acf3955be4833cab7699190a9bae1fcc2df62798",
+  "prompts": {},
+  "sessions": {
+    "s_8179f259e9adc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03d0d-5482-7ce2-8fc3-3ce428e499ba",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
