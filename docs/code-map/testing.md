@@ -37,7 +37,7 @@ Desktop composition coverage:
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
-Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
+Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the browser shortcut guard.
 
 Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 
@@ -54,14 +54,16 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Importing/XplImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/MediaChapterImporterTests.cs`
 - editing
-  - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs`
+  - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs` (delete-rows timing and frame display options coverage)
   - `tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Editing/SampleChapterNameTemplateTests.cs`
+  - `tests/ChapterTool.Core.Tests/Editing/ChapterContentServiceTests.cs`
 - transform
   - `tests/ChapterTool.Core.Tests/Transform/FrameRateServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterFpsTransformServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterTimeFormatterTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterRoundingTests.cs`
+  - `tests/ChapterTool.Core.Tests/Transform/ChapterExpressionServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/LuaExpressionScriptServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ExpressionAuthoringServiceTests.cs`
 - exporting
@@ -69,6 +71,11 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Exporting/ChapterOutputProjectionServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Exporting/ChapterConversionServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Exporting/XmlChapterLanguageCatalogTests.cs`
+  - `tests/ChapterTool.Core.Tests/Exporting/OutputTextEncodingTests.cs`
+  - `tests/ChapterTool.Core.Tests/Exporting/ChapterSavePathTests.cs`
+- boundaries and localization
+  - `tests/ChapterTool.Core.Tests/Boundaries/PortableInputPolicyTests.cs`
+  - `tests/ChapterTool.Core.Tests/Localization/UiLanguageCodeTests.cs`
 
 Fixtures:
 
@@ -118,15 +125,26 @@ High-signal test files:
 - view models
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsSnapshotCoordinatorTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolViewModelPortConstructionTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs`
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Services/`
+  - `tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterLoadServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterSaveServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaPickerServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/ChapterImporterRegistryTests.cs`
+- views and expression presentation
+  - `tests/ChapterTool.Avalonia.Tests/Views/MainViewLayoutTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Views/ExpressionThemeBrushesTests.cs`
 - cross-host contracts
   - `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/PlatformPorts/SharedBoundaryContractTests.cs`
+- architecture and guards
+  - `tests/ChapterTool.Avalonia.Tests/Architecture/HostDependencyBoundaryTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/NoAvaloniaHeadlessAttributeGuardTests.cs`
 - CLI
   - `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs`
   - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
@@ -141,7 +159,12 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/EmbeddedPresenterHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiResourceResolutionHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiScreenshotCaptureHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/HeadlessTestCollectionGuardTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AutofacCompositionHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`
@@ -151,7 +174,9 @@ Use `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.c
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
 
-Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible FontAwesome icons.
+Editing-preference coverage for delete-rows timing and frame display is in `ChapterEditingServiceTests` at the Core level and `SettingsToolViewModelTests` for draft/apply lifecycle.
+
+Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible `Optris.Icons.Avalonia.FontAwesome` icons.
 
 Log projection coverage is in `LogToolViewModelTests` against `LogEntryViewModel`; log orchestration remains in `LogToolViewModel`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, summary, structured data, raw JSON, theme changes, and narrow layout.
 

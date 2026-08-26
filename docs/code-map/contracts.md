@@ -12,6 +12,11 @@ Use this project when a desktop, browser, or command-line host needs the same pe
   - `src/ChapterTool.Contracts/Configuration/FontSettings.cs`
   - `src/ChapterTool.Contracts/Configuration/ThemeSettings.cs`
   - `src/ChapterTool.Contracts/Configuration/ThemePresetCatalog.cs`
+  - `src/ChapterTool.Contracts/Configuration/DeleteRowsTimingModes.cs`
+  - `src/ChapterTool.Contracts/Configuration/FrameDisplayModes.cs`
+
+`DeleteRowsTimingModes` and `FrameDisplayModes` parse and serialize the persisted editing-preference ids in `AppSettings`. `DeleteRowsTimingMode` selects whether deleted-row timing stays unchanged or shifts to restart at zero. `FrameDisplayMode` selects integer rounding or fixed decimal places for frame values.
+
 - settings store contract:
   - `src/ChapterTool.Contracts/PlatformPorts/ISettingsStore.cs`
 - shared platform contracts:

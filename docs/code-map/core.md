@@ -75,8 +75,11 @@ In-memory chapter mutations:
 
 - `src/ChapterTool.Core/Editing/IChapterEditingService.cs`
 - `src/ChapterTool.Core/Editing/ChapterEditingService.cs`
+- `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs`
 - `src/ChapterTool.Core/Editing/ChapterSegmentService.cs`
 - `src/ChapterTool.Core/Editing/ChapterEditResult.cs`
+
+`ChapterEditingOptions` controls delete-rows timing (`Preserve` or `Normalize`) and frame display (`Round` or `DecimalPlaces` with one to six places). `IChapterEditingService.Delete` applies the delete-rows timing mode.
 
 ### Session (shared host kernel)
 
@@ -86,8 +89,15 @@ Host-agnostic interactive session state shared by Avalonia and WASM:
 - `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — host-neutral session state, edit buffer, revision and session-token commit rules for Avalonia and WASM
 - `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
+- `src/ChapterTool.Core/Session/ChapterSourceDocument.cs` — host-neutral chapter source identity (`LocalPathChapterSource`, `BufferedChapterSource`)
 
 Primary tests: `tests/ChapterTool.Core.Tests/Session/`
+
+### Boundaries and localization
+
+- `src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs` — shared 64 MiB byte budget and bounded stream copy for portable hosts
+- `src/ChapterTool.Core/Importing/PortableInputReader.cs` — bounded byte reading for stream-based import requests
+- `src/ChapterTool.Core/Localization/UiLanguageCode.cs` — supported UI language codes and normalization for every host
 
 ### Disc MPLS types
 
@@ -100,6 +110,7 @@ MPLS playlist records are split by type under `src/ChapterTool.Core/Importing/Di
 
 Frame/time and expression logic:
 
+- `src/ChapterTool.Core/Transform/IFrameRateService.cs`
 - `src/ChapterTool.Core/Transform/FrameRateService.cs`
 - `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs`
 - `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
@@ -124,6 +135,7 @@ Output projection and format serialization:
 - `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`
+- `src/ChapterTool.Core/Exporting/ChapterSavePath.cs` — deterministic output file names and non-colliding path allocation
 
 ## Browser / WebAssembly
 
@@ -140,11 +152,12 @@ Browser host:
 - `src/ChapterTool.Wasm` is the Blazor WebAssembly browser app. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
 - `src/ChapterTool.Wasm/Pages/Home.razor` is the browser workspace page.
 - `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, projection, export orchestration, diagnostics, activity logs, and localized status strings.
+- `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` blocks browser shortcut keys during text editing.
 - `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, projection, and export services.
 - Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
 - The JSON resources are generated from the Avalonia AXAML locales by `scripts/axaml-to-json.py`. Use its `--check` mode to detect drift.
-- Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. The host stores settings in browser storage through the workspace path.
-- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, and export behavior.
+- Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. `WasmApplicationSettings` mirrors the Contracts `AppSettings` fields, including the delete-rows timing and frame display preferences. The host stores settings in browser storage through the workspace path.
+- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, and export behavior. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.
 - GitHub Pages deploys the app through `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 
 ## Feature Lookup
@@ -164,6 +177,10 @@ Use these shortcuts:
 Start with:
 
 - `src/ChapterTool.Core/Editing/ChapterEditingService.cs`
+
+For delete-rows timing or frame display preferences:
+
+- `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs`
 
 For multi-part behavior, segment combining, or append flows:
 
