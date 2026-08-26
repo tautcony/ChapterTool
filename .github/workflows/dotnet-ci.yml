@@ -171,7 +171,13 @@ jobs:
           dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
 
       - name: Publish Avalonia
-        run: ./scripts/publish.sh -Runtime ${{ matrix.runtime }} -NoRestore -PublishSingleFile
+        run: >-
+          ./scripts/publish.sh
+          -Configuration Release
+          -Runtime ${{ matrix.runtime }}
+          -SelfContained=false
+          -NoRestore
+          -PublishSingleFile
 
       - name: Upload Avalonia artifact
         uses: actions/upload-artifact@v5

@@ -190,6 +190,7 @@ Coverage entry point:
   - `.github/workflows/release.yml`
 - The `ChapterTool` NuGet package installs the `chaptertool` command. `src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj` owns its package metadata.
 - `.github/workflows/dotnet-ci.yml` packs `ChapterTool.Core` and `ChapterTool` in the build job. It uploads the packages as `ChapterTool-Core-nuget` and `ChapterTool-Cli-nuget`. Each `pack-dotnet` runtime matrix job uploads one `ChapterTool-Avalonia-<runtime>` artifact.
+- The Avalonia publish scripts omit symbols, documentation files, and development diagnostics. They reject duplicate top-level assemblies in single-file output. The `pack-dotnet` jobs run this validation before artifact upload.
 - `.github/workflows/nuget-publish.yml` applies one release version to both NuGet packages and publishes them. It does not install the CLI package during CI.
 - `.github/workflows/release.yml` creates the GitHub Release after a successful `.NET 10 CI` push to a version tag. It publishes the artifacts from that CI run. A manual `workflow_dispatch` may select a tag that already has a successful CI run.
 - Use `src/ChapterTool.CommandLine/README.md` for the NuGet Tool installation and external-tool requirements.
