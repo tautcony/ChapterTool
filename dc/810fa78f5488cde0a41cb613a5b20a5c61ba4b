@@ -1,0 +1,51 @@
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_05f5942e5dc670::t_638571602cc2c7 365
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml
+  s_f306e9cfb613a2::t_90f6106167436c 167-169,181,184-186,198
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_05f5942e5dc670::t_815c3d456c0607 366
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_05f5942e5dc670::t_638571602cc2c7 365
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_05f5942e5dc670::t_815c3d456c0607 366
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs
+  s_f306e9cfb613a2::t_56435423b9b423 139-140,502
+  s_f306e9cfb613a2::t_a8048fd57ee58c 110-138,141-147
+  s_f306e9cfb613a2::t_bf90d380c1b569 109
+  s_f306e9cfb613a2::t_08e30ab1702b24 503
+Directory.Build.props
+  s_05f5942e5dc670::t_f4d78445cd8e24 8-10
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_05f5942e5dc670::t_815c3d456c0607 366
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_05f5942e5dc670::t_638571602cc2c7 365
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "dc810fa78f5488cde0a41cb613a5b20a5c61ba4b",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_05f5942e5dc670": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03c92-2d0e-7ec2-9d55-9e968442f486",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_f306e9cfb613a2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03ccd-8a36-7ce1-aa8e-1539243b24ed",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
