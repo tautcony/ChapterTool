@@ -5,6 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Keep the StyleCop rules disabled in .editorconfig from blocking publish when
+         the SDK analyzer invocation does not load the repository editor config. -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);SA0001;SA1009;SA1101;SA1111;SA1116;SA1117;SA1118;SA1200;SA1201;SA1202;SA1204;SA1208;SA1402;SA1407;SA1413;SA1500;SA1507;SA1508;SA1513;SA1514;SA1600;SA1602;SA1611;SA1615;SA1617;SA1623;SA1633;SA1642;SA1649;CA1826;CA1859</WarningsNotAsErrors>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <VersionPrefix>23.3.1</VersionPrefix>
     <Authors>TautCony</Authors>

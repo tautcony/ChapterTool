@@ -164,9 +164,9 @@
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
           <StackPanel Spacing="8" Margin="16,12">
             <Grid ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto,Auto" RowSpacing="8" ColumnSpacing="12">
-              <TextBlock Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.MkvToolnixPath}" />
-              <Grid Grid.Row="0" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <TextBox Text="{Binding MkvToolnixPath, Mode=TwoWay}">
+              <Grid Grid.Row="0" Grid.ColumnSpan="2" ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="3" ColumnSpacing="12">
+                <TextBlock x:Name="MkvToolnixLabel" Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.MkvToolnixPath}" />
+                <TextBox x:Name="MkvToolnixTextBox" Grid.Row="0" Grid.Column="1" Text="{Binding MkvToolnixPath, Mode=TwoWay}">
                   <TextBox.InnerRightContent>
                     <StackPanel Orientation="Horizontal">
                       <Button Classes="icon_button compact inputAction" Command="{Binding BrowseMkvToolnixCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
@@ -178,12 +178,12 @@
                     </StackPanel>
                   </TextBox.InnerRightContent>
                 </TextBox>
-                <TextBlock Grid.Row="1" Classes="status" Text="{Binding MkvToolnixStatus}" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="status" Text="{Binding MkvToolnixStatus}" />
               </Grid>
 
-              <TextBlock Grid.Row="1" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfprobePath}" />
-              <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="3">
-                <TextBox Text="{Binding FfprobePath, Mode=TwoWay}">
+              <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="3" ColumnSpacing="12">
+                <TextBlock x:Name="FfprobeLabel" Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfprobePath}" />
+                <TextBox x:Name="FfprobeTextBox" Grid.Row="0" Grid.Column="1" Text="{Binding FfprobePath, Mode=TwoWay}">
                   <TextBox.InnerRightContent>
                     <StackPanel Orientation="Horizontal">
                       <Button Classes="icon_button compact inputAction" Command="{Binding BrowseFfprobeCommand}" AutomationProperties.Name="{DynamicResource Settings.BrowseExecutable}" ToolTip.Tip="{DynamicResource Settings.BrowseExecutable}">
@@ -195,7 +195,7 @@
                     </StackPanel>
                   </TextBox.InnerRightContent>
                 </TextBox>
-                <TextBlock Grid.Row="1" Classes="status" Text="{Binding FfprobeStatus}" />
+                <TextBlock Grid.Row="1" Grid.Column="1" Classes="status" Text="{Binding FfprobeStatus}" />
               </Grid>
 
               <Button Grid.Row="2"

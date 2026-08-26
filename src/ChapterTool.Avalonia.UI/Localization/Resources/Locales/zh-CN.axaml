@@ -363,7 +363,7 @@
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">保留章节时间</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">归一化章节时间</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">常规</x:String>
-  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">MKVToolNix</x:String>
+  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">mkvextract</x:String>
   <x:String x:Key="Settings.MonoFont" xml:space="preserve">等宽字体</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">打开设置文件夹</x:String>
   <x:String x:Key="Settings.OutputPreferences" xml:space="preserve">输出偏好</x:String>

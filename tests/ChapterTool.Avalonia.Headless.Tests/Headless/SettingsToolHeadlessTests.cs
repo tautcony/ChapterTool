@@ -107,6 +107,45 @@ public sealed class SettingsToolHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task External_tool_labels_align_with_their_input_boxes()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        using var viewModel = new SettingsToolViewModel(
+            host.ViewModel.ToolSession.Preferences,
+            host.SettingsStore,
+            host.Localizer,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 760,
+            Height = 520
+        };
+
+        try
+        {
+            window.Show();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+            tabControl.SelectedIndex = 1;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            var mkvLabel = FindNamed<TextBlock>(window, "MkvToolnixLabel");
+            var mkvInput = FindNamed<TextBox>(window, "MkvToolnixTextBox");
+            var ffprobeLabel = FindNamed<TextBlock>(window, "FfprobeLabel");
+            var ffprobeInput = FindNamed<TextBox>(window, "FfprobeTextBox");
+
+            Assert.InRange(Math.Abs(CenterY(mkvLabel, window) - CenterY(mkvInput, window)), 0, 1);
+            Assert.InRange(Math.Abs(CenterY(ffprobeLabel, window) - CenterY(ffprobeInput, window)), 0, 1);
+        }
+        finally
+        {
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Settings_footer_opens_the_configured_settings_folder_from_the_leftmost_button()
     {
         var shellService = new MainWindowHeadlessTestHost.FakeShellService();
@@ -459,6 +498,8 @@ public sealed class SettingsToolHeadlessTests
     private static double Top(Control control, Window window) =>
         control.TranslatePoint(default, window)?.Y
         ?? throw new InvalidOperationException($"Could not translate {control.Name} bounds.");
+
+    private static double CenterY(Control control, Window window) => Top(control, window) + control.Bounds.Height / 2;
 
     private static double Right(Control control, Window window) => Left(control, window) + control.Bounds.Width;
 

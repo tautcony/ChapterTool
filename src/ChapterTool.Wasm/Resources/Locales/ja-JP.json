@@ -362,7 +362,7 @@
   "Settings.PreserveChapterTimes": "チャプター時間を保持",
   "Settings.NormalizeChapterTimes": "チャプター時間を正規化",
   "Settings.General": "一般",
-  "Settings.MkvToolnixPath": "MKVToolNix",
+  "Settings.MkvToolnixPath": "mkvextract",
   "Settings.MonoFont": "等幅フォント",
   "Settings.OpenSettingsFolder": "設定フォルダーを開く",
   "Settings.OutputPreferences": "出力設定",

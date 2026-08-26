@@ -362,7 +362,7 @@
   "Settings.PreserveChapterTimes": "Preserve chapter times",
   "Settings.NormalizeChapterTimes": "Normalize chapter times",
   "Settings.General": "General",
-  "Settings.MkvToolnixPath": "MKVToolNix",
+  "Settings.MkvToolnixPath": "mkvextract",
   "Settings.MonoFont": "Monospace font",
   "Settings.OpenSettingsFolder": "Open settings folder",
   "Settings.OutputPreferences": "Output preferences",

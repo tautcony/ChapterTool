@@ -362,7 +362,7 @@
   "Settings.PreserveChapterTimes": "保留章节时间",
   "Settings.NormalizeChapterTimes": "归一化章节时间",
   "Settings.General": "常规",
-  "Settings.MkvToolnixPath": "MKVToolNix",
+  "Settings.MkvToolnixPath": "mkvextract",
   "Settings.MonoFont": "等宽字体",
   "Settings.OpenSettingsFolder": "打开设置文件夹",
   "Settings.OutputPreferences": "输出偏好",
