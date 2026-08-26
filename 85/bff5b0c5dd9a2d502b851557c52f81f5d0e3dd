@@ -1,0 +1,30 @@
+scripts/audit-ui-resources.py
+  s_f91b548499d971::t_0891e488630745 9-14,65,70
+  s_f91b548499d971::t_01165c7a148593 32,35-39,48-49,61,66-69,72-75
+  s_f91b548499d971::t_35589dfbd19a13 60
+  s_f91b548499d971::t_dd162a336d1cb7 71,76
+scripts/README.md
+  s_f91b548499d971::t_a00198f18a0ecf 5
+  s_f91b548499d971::t_5014753fb57158 3,13-22,24-26,29-32
+  s_f91b548499d971::t_2186b731cd974c 27
+  s_f91b548499d971::t_c044f5a7bf9814 28
+  s_f91b548499d971::t_e324e60dee1101 4
+.gitignore
+  s_f91b548499d971::t_68b5d5580d26c7 170-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "85bff5b0c5dd9a2d502b851557c52f81f5d0e3dd",
+  "prompts": {},
+  "sessions": {
+    "s_f91b548499d971": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03d36-b1db-7011-a81a-47f2ea95e65b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
