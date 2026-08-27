@@ -1,0 +1,26 @@
+src/ChapterTool.Contracts/Configuration/CorruptSettingsFileException.cs
+  h_3705811fa4502c 3-6,8,10
+openspec/specs/avalonia-ui-shell/spec.md
+  s_217c9e5fa8c273::t_e286ba64dfc869 416
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "9f9166ccc8295ceb3bd40429ac7222c4d423bb93",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_217c9e5fa8c273": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0433b-a552-7303-b43c-9e5fab401785",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
