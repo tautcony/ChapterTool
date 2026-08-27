@@ -22,7 +22,6 @@ public static class BrowserSettingsCodec
             Application = ChapterToolSettings.Normalize(settings).Application with
             {
                 SavingPath = null,
-                MainWindowLocation = null,
                 MkvToolnixPath = null,
                 FfprobePath = null
             }
