@@ -1,0 +1,40 @@
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_44ee6fad66499d::t_3ad34f2dde5167 305
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_44ee6fad66499d::t_47916499551c8d 306
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_44ee6fad66499d::t_3ad34f2dde5167 305
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_44ee6fad66499d::t_ac4dddfc4a3ccc 63,76,143,150,152,171,173,228,238,252,272,292,356,443
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_44ee6fad66499d::t_47916499551c8d 306
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_44ee6fad66499d::t_3ad34f2dde5167 305
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_44ee6fad66499d::t_549ee9409a429a 430
+  s_44ee6fad66499d::t_ac4dddfc4a3ccc 41,411,454-455,547-556,578,629,639,665-666
+src/ChapterTool.Avalonia.UI/Views/Tools/TextToolView.axaml
+  s_44ee6fad66499d::t_549ee9409a429a 51-52
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml
+  s_44ee6fad66499d::t_ac4dddfc4a3ccc 168
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_44ee6fad66499d::t_47916499551c8d 306
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  s_44ee6fad66499d::t_ac4dddfc4a3ccc 360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "2de7616c1a6d0485a88a178295f9c64e97d1b998",
+  "prompts": {},
+  "sessions": {
+    "s_44ee6fad66499d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0430d-6083-79e0-a41b-256954ca159d",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
