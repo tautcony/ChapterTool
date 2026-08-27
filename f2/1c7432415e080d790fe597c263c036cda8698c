@@ -1,0 +1,27 @@
+docs/code-map/program-form-capability-map.md
+  s_f91b548499d971::t_c5b92d1ad39461 21,147-148,178
+docs/code-map/avalonia.md
+  s_f91b548499d971::t_be26422ddff7d4 121-122,126,142,156-157,164-176,180-181,319-321
+docs/code-map/contracts.md
+  s_f91b548499d971::t_ee35f4b13e16c4 15-19
+docs/code-map/core.md
+  s_f91b548499d971::t_bde347ed0b391d 78,82-83,92,96-101,113,138,155,159-160,181-184
+docs/code-map/infrastructure.md
+  s_f91b548499d971::t_cc7d7621798763 41-42,51-52,55-56,86-87,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f21c7432415e080d790fe597c263c036cda8698c",
+  "prompts": {},
+  "sessions": {
+    "s_f91b548499d971": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03d36-b1db-7011-a81a-47f2ea95e65b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}

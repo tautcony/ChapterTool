@@ -1,0 +1,52 @@
+scripts/README.md
+  s_2a0d47cb282dd0::t_20c9fcd7e4d85b 12-13,19
+  s_2a0d47cb282dd0::t_7e6556d9e0ed28 20
+docs/code-map/testing.md
+  s_2a0d47cb282dd0::t_20c9fcd7e4d85b 193
+.github/workflows/dotnet-ci.yml
+  s_2a0d47cb282dd0::t_795146499f84ef 174-180
+  s_8179f259e9adc2::t_db98a9d9fa9f92 40,46,51,62,109,117,126,154,157,162,183,196,199,204,214
+scripts/publish.sh
+  s_2a0d47cb282dd0::t_075aa4e060646a 112
+  s_2a0d47cb282dd0::t_363f217314876b 76-77
+  s_2a0d47cb282dd0::t_10027f2b344987 69-74
+  s_2a0d47cb282dd0::t_20c9fcd7e4d85b 114-117,124-125,129-138,141-152
+  s_2a0d47cb282dd0::t_ba6111d27c5763 126-128
+scripts/publish.ps1
+  s_2a0d47cb282dd0::t_ba6111d27c5763 61-65
+  s_2a0d47cb282dd0::t_10027f2b344987 11-14,31-33
+  s_2a0d47cb282dd0::t_20c9fcd7e4d85b 45-49,56-58,66-82
+  s_2a0d47cb282dd0::t_075aa4e060646a 44
+.github/workflows/nuget-publish.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 33,38,90
+.github/workflows/npm-publish.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 46,51
+.github/workflows/github-pages.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 44,47,122,125,131
+.github/workflows/release.yml
+  s_8179f259e9adc2::t_db98a9d9fa9f92 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "c73ea0934708d4d8154312d3ecc96722a08b7a35",
+  "prompts": {},
+  "sessions": {
+    "s_2a0d47cb282dd0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03cd7-d59d-7bf0-b89a-80f4998ed718",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_8179f259e9adc2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a03d0d-5482-7ce2-8fc3-3ce428e499ba",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
