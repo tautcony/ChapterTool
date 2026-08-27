@@ -1,0 +1,24 @@
+src/ChapterTool.Avalonia.UI/ChapterTool.Avalonia.UI.csproj
+  s_cc16645886853f::t_5ed0f093f775e2 21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "66f2c4c268a06919491829e29a35eafe1abb1a84",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_cc16645886853f": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1787831324733",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
