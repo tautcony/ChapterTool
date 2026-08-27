@@ -357,6 +357,7 @@ public sealed class WasmWorkspaceTests
         foreach (var culture in new[] { "en-US", "zh-CN", "ja-JP" })
         {
             localizer.SetCulture(culture);
+            Assert.Equal("mkvextract", localizer.T("Settings.MkvextractPath"));
             foreach (var key in WasmLocalizer.EnglishKeys)
             {
                 var value = localizer.T(key);

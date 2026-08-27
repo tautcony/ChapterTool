@@ -48,8 +48,8 @@
                 Width="32"
                 Height="32"
                 Click="OnCopyClicked"
-                AutomationProperties.Name="{DynamicResource Common.Copy}"
-                ToolTip.Tip="{DynamicResource Common.Copy}">
+                AutomationProperties.Name="{DynamicResource Text.Copy}"
+                ToolTip.Tip="{DynamicResource Text.Copy}">
           <i:Icon Value="fa-solid fa-copy" FontSize="13" />
         </Button>
         <Button Classes="icon_button"

@@ -4,13 +4,9 @@
   <x:String x:Key="Text.Copy" xml:space="preserve">コピー</x:String>
   <x:String x:Key="Text.Paste" xml:space="preserve">貼り付け</x:String>
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">MPLS を追加…</x:String>
-  <x:String x:Key="Action.Apply" xml:space="preserve">保存</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">テンプレートを参照…</x:String>
-  <x:String x:Key="Action.Cancel" xml:space="preserve">キャンセル</x:String>
-  <x:String x:Key="Action.Clear" xml:space="preserve">クリア</x:String>
   <x:String x:Key="Action.Close" xml:space="preserve">閉じる</x:String>
   <x:String x:Key="Action.CombineSegments" xml:space="preserve">セグメントを結合: オプション数={entries}, ソース種別={sourceType}</x:String>
-  <x:String x:Key="Action.Copy" xml:space="preserve">コピー</x:String>
   <x:String x:Key="Action.DeleteRows" xml:space="preserve">行を削除: インデックス={indexes}</x:String>
   <x:String x:Key="Action.Download" xml:space="preserve">ダウンロード</x:String>
   <x:String x:Key="Action.EditCell" xml:space="preserve">{kind}を編集: 行={row}, 値='{value}'</x:String>
@@ -23,7 +19,6 @@
   <x:String x:Key="Action.Refresh" xml:space="preserve">行を更新</x:String>
   <x:String x:Key="Action.Reload" xml:space="preserve">再読み込み</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">既定に戻す</x:String>
-  <x:String x:Key="Action.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">設定</x:String>
   <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">チャプターを前へ移動: フレーム数={frames}</x:String>
   <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">結合済みセグメントを分割: オプション数={entries}, ソース種別={sourceType}</x:String>
@@ -31,7 +26,6 @@
   <x:String x:Key="Common.Apply" xml:space="preserve">適用</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">キャンセル</x:String>
   <x:String x:Key="Common.Clear" xml:space="preserve">クリア</x:String>
-  <x:String x:Key="Common.Copy" xml:space="preserve">コピー</x:String>
   <x:String x:Key="Common.Refresh" xml:space="preserve">更新</x:String>
   <x:String x:Key="Tool.Log.FilterAll" xml:space="preserve">すべてのレベル</x:String>
   <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">情報</x:String>
@@ -44,7 +38,6 @@
   <x:String x:Key="Tool.Log.TechnicalDetail" xml:space="preserve">技術情報</x:String>
   <x:String x:Key="Tool.Log.StructuredData" xml:space="preserve">構造化データ</x:String>
   <x:String x:Key="Tool.Log.Exception" xml:space="preserve">例外</x:String>
-  <x:String x:Key="Tool.Log.Category" xml:space="preserve">カテゴリ</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">現在のフィルターに一致するログはありません。</x:String>
   <x:String x:Key="Tool.Log.EntryCount" xml:space="preserve">{count} 件のログ</x:String>
   <x:String x:Key="Tool.Log.NoOverviewData" xml:space="preserve">このログに追加情報はありません。</x:String>
@@ -52,18 +45,10 @@
   <x:String x:Key="Tool.Log.Properties" xml:space="preserve">プロパティ</x:String>
   <x:String x:Key="Tool.Log.Raw" xml:space="preserve">生データ</x:String>
   <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">ログを検索…</x:String>
-  <x:String x:Key="Tool.Log.Metadata" xml:space="preserve">ログ情報</x:String>
-  <x:String x:Key="Tool.Log.Timestamp" xml:space="preserve">時刻</x:String>
-  <x:String x:Key="Tool.Log.Level" xml:space="preserve">レベル</x:String>
-  <x:String x:Key="Tool.Log.Operation" xml:space="preserve">操作</x:String>
-  <x:String x:Key="Tool.Log.Event" xml:space="preserve">イベント</x:String>
-  <x:String x:Key="Tool.Log.MessageKey" xml:space="preserve">メッセージキー</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">このログにネストされた構造化データはありません。</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">このログに例外データはありません。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
-  <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">このビルドでは、このプラットフォーム依存機能は有効化されていません。</x:String>
   <x:String x:Key="Common.Enable" xml:space="preserve">有効化</x:String>
-  <x:String x:Key="Common.Use" xml:space="preserve">使用</x:String>
   <x:String x:Key="Copy.Name" xml:space="preserve">チャプター名をクリップボードにコピーしました。</x:String>
   <x:String x:Key="Copy.Preview" xml:space="preserve">プレビューテキストをクリップボードにコピーしました。</x:String>
   <x:String x:Key="Copy.Row" xml:space="preserve">行をクリップボードにコピーしました。</x:String>
@@ -174,31 +159,12 @@
   <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">XPL プレイリストの解析に失敗しました: {message}</x:String>
   <x:String x:Key="EditKind.Frame" xml:space="preserve">フレーム</x:String>
   <x:String x:Key="EditKind.Name" xml:space="preserve">名前</x:String>
-  <x:String x:Key="EditKind.StartTime" xml:space="preserve">時間</x:String>
   <x:String x:Key="Empty.Hint" xml:space="preserve">ファイルを読み込むか、ここにドロップするか、サンプルを読み込むと、フレーム数と式の結果が計算されます。</x:String>
   <x:String x:Key="Empty.Title" xml:space="preserve">チャプターはまだ読み込まれていません</x:String>
-  <x:String x:Key="Expression.Suggestion.AddLeftOperand" xml:space="preserve">この演算子の前に左オペランドを追加してください。</x:String>
   <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">このトークンを使用する前に、不足しているオペランドを追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperandBeforeParen" xml:space="preserve">閉じ括弧の前にオペランドを追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperator" xml:space="preserve">隣接する値の間に演算子を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperatorBeforeFunction" xml:space="preserve">関数呼び出しの前に演算子を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperatorBeforeParen" xml:space="preserve">開き括弧の前に演算子を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.AddTernaryCondition" xml:space="preserve">'?' の前に条件式を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.AddTernaryTrueExpression" xml:space="preserve">'?' と ':' の間に真の場合の式を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.BalanceParentheses" xml:space="preserve">すべての '(' に対応する ')' があるように括弧を調整してください。</x:String>
   <x:String x:Key="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">参照している Lua 変数と関数が存在するか確認してください。</x:String>
   <x:String x:Key="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">Lua 式の構文を確認してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.CheckSyntax" xml:space="preserve">式の構文を確認してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.CompleteExpression" xml:space="preserve">1 つの値を生成するように式を補完してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.FixComma" xml:space="preserve">カンマは関数引数の区切りにのみ使用してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.MatchTernaryColon" xml:space="preserve">対応する ':' と偽の場合の式を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.MatchTernaryQuestion" xml:space="preserve">この ':' の前に対応する '?' を追加してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.RemoveInvalidCharacter" xml:space="preserve">無効な文字を削除するか、対応しているトークンに置き換えてください。</x:String>
   <x:String x:Key="Expression.Suggestion.ReturnNumber" xml:space="preserve">有限の数値を秒単位で返してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.UseKnownToken" xml:space="preserve">対応している変数、定数、関数、または演算子を使用してください。</x:String>
-  <x:String x:Key="Expression.Suggestion.UseSupportedFunction" xml:space="preserve">対応している式関数に置き換えてください。</x:String>
-  <x:String x:Key="Expression.Suggestion.UseSupportedOperator" xml:space="preserve">対応している式演算子に置き換えてください。</x:String>
-  <x:String x:Key="Expression.Suggestion.UseSupportedToken" xml:space="preserve">対応している式トークンに置き換えてください。</x:String>
   <x:String x:Key="ExpressionPreset.Custom" xml:space="preserve">カスタム</x:String>
   <x:String x:Key="FilePicker.AppendMpls.Title" xml:space="preserve">MPLS を追加</x:String>
   <x:String x:Key="FilePicker.ExecutableFiles" xml:space="preserve">実行ファイル</x:String>
@@ -207,7 +173,6 @@
   <x:String x:Key="FilePicker.OpenChapterNameTemplate.Title" xml:space="preserve">チャプター名テンプレートを開く</x:String>
   <x:String x:Key="FilePicker.OpenLuaExpressionScript.Title" xml:space="preserve">Lua 式スクリプトを開く</x:String>
   <x:String x:Key="FilePicker.OpenSource.Title" xml:space="preserve">ソースファイルを開く</x:String>
-  <x:String x:Key="FilePicker.SaveChaptersTo.Title" xml:space="preserve">チャプターの保存先</x:String>
   <x:String x:Key="FilePicker.SourceFiles" xml:space="preserve">チャプターとメディアファイル</x:String>
   <x:String x:Key="FilePicker.TextFiles" xml:space="preserve">テキストファイル</x:String>
   <x:String x:Key="Grid.Frames" xml:space="preserve">フレーム</x:String>
@@ -223,7 +188,6 @@
   <x:String x:Key="Label.OrderShift" xml:space="preserve">番号 +</x:String>
   <x:String x:Key="Label.RoundFrames" xml:space="preserve">フレームを丸める</x:String>
   <x:String x:Key="Label.Format" xml:space="preserve">形式</x:String>
-  <x:String x:Key="Label.TemplateStatus" xml:space="preserve">テンプレート</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">有効にする</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML 言語</x:String>
   <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">簡体字中国語</x:String>
@@ -236,8 +200,6 @@
   <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} diagnostic: severity={severity}, code={code}{location} message='{message}'{details}</x:String>
   <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}: チャプター数 {before} -&gt; {after}</x:String>
   <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">フレーム情報を更新: オプション={option}, fps={fps}, 丸め={round}, チャプター数={chapters}</x:String>
-  <x:String x:Key="Log.ImportEntry" xml:space="preserve">{operation} エントリ {entryIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, チャプター数={chapters}, duration={duration}, fps={fps}</x:String>
-  <x:String x:Key="Log.ImportGroup" xml:space="preserve">{operation} グループ {groupIndex}: sourcePath='{sourcePath}', defaultEntryIndex={defaultEntryIndex}, entries={entries}</x:String>
   <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
   <x:String x:Key="Log.LanguageSet" xml:space="preserve">言語を {language} に設定しました</x:String>
   <x:String x:Key="Log.LoadingSource" xml:space="preserve">ソースを読み込み中: path='{path}'</x:String>
@@ -255,31 +217,17 @@
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自動</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 個のチャプター</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">現在の FPS に変換</x:String>
-  <x:String x:Key="Main.ChapterName" xml:space="preserve">チャプター名</x:String>
-  <x:String x:Key="Main.ColumnFrames" xml:space="preserve">フレーム数</x:String>
-  <x:String x:Key="Main.ColumnName" xml:space="preserve">チャプター名</x:String>
-  <x:String x:Key="Main.ColumnNumber" xml:space="preserve">#</x:String>
-  <x:String x:Key="Main.ColumnTime" xml:space="preserve">時刻</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">結合</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Zones を生成</x:String>
-  <x:String x:Key="Main.Delete" xml:space="preserve">削除</x:String>
-  <x:String x:Key="Main.Expression" xml:space="preserve">式エディター</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">フレームを前へ移動</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">挿入</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">元の名前を保持</x:String>
-  <x:String x:Key="Main.Load" xml:space="preserve">読み込み</x:String>
   <x:String x:Key="Main.LoadTooltip" xml:space="preserve">読み込み (Ctrl+O)</x:String>
-  <x:String x:Key="Main.Log" xml:space="preserve">ログ</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">関連メディアを開く</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">番号シフト</x:String>
-  <x:String x:Key="Main.OutputDirectoryUnresolved" xml:space="preserve">出力ディレクトリを解決できません</x:String>
-  <x:String x:Key="Main.Preview" xml:space="preserve">プレビュー</x:String>
-  <x:String x:Key="Main.PreviewShort" xml:space="preserve">プレビュー</x:String>
   <x:String x:Key="Main.Reload" xml:space="preserve">再読み込み</x:String>
-  <x:String x:Key="Main.RoundFrames" xml:space="preserve">フレームを丸める</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存形式</x:String>
   <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
-  <x:String x:Key="Main.SettingsShort" xml:space="preserve">設定</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">標準テンプレート</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">テンプレートファイル</x:String>
   <x:String x:Key="Main.XmlLanguage" xml:space="preserve">XML 言語</x:String>
@@ -297,7 +245,6 @@
   <x:String x:Key="Menu.Select" xml:space="preserve">行を選択</x:String>
   <x:String x:Key="Menu.Split" xml:space="preserve">結合クリップを分割</x:String>
   <x:String x:Key="Menu.Zones" xml:space="preserve">Zones</x:String>
-  <x:String x:Key="Modal.ApplyShift" xml:space="preserve">適用</x:String>
   <x:String x:Key="Modal.ForwardTitle" xml:space="preserve">フレームを前へ移動</x:String>
   <x:String x:Key="Modal.Frames" xml:space="preserve">前へ移動するフレーム数</x:String>
   <x:String x:Key="Modal.LogEmpty" xml:space="preserve">操作履歴はまだありません。</x:String>
@@ -308,13 +255,6 @@
   <x:String x:Key="NameMode.AsIs" xml:space="preserve">元の名前を保持</x:String>
   <x:String x:Key="NameMode.Auto" xml:space="preserve">自動生成</x:String>
   <x:String x:Key="NameMode.Template" xml:space="preserve">テンプレート</x:String>
-  <x:String x:Key="Operation.AppendEdit" xml:space="preserve">追加編集</x:String>
-  <x:String x:Key="Operation.AppendLoad" xml:space="preserve">追加読み込み</x:String>
-  <x:String x:Key="Operation.CreateZones" xml:space="preserve">Zone を作成</x:String>
-  <x:String x:Key="Operation.Load" xml:space="preserve">読み込み</x:String>
-  <x:String x:Key="Operation.LuaExpressionScript" xml:space="preserve">Lua 式スクリプト</x:String>
-  <x:String x:Key="Operation.OutputProjection" xml:space="preserve">出力プロジェクション</x:String>
-  <x:String x:Key="Operation.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Related.Absolute" xml:space="preserve">絶対パス</x:String>
   <x:String x:Key="Related.BrowserLimit" xml:space="preserve">ブラウザーではローカルの絶対パスを開けません。ホストから提供されていない相対パスは、参照情報としてのみ表示されます。</x:String>
   <x:String x:Key="Related.Relative" xml:space="preserve">相対パス</x:String>
@@ -363,8 +303,7 @@
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">チャプター時間を保持</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">チャプター時間を正規化</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">一般</x:String>
-  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">mkvextract</x:String>
-  <x:String x:Key="Settings.MonoFont" xml:space="preserve">等幅フォント</x:String>
+  <x:String x:Key="Settings.MkvextractPath" xml:space="preserve">mkvextract</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">設定フォルダーを開く</x:String>
   <x:String x:Key="Settings.OutputPreferences" xml:space="preserve">出力設定</x:String>
   <x:String x:Key="Settings.Editing" xml:space="preserve">編集設定</x:String>
@@ -379,7 +318,6 @@
   <x:String x:Key="Settings.Status.Ready" xml:space="preserve">設定を読み込みました</x:String>
   <x:String x:Key="Settings.Status.Reset" xml:space="preserve">既定値を復元しました</x:String>
   <x:String x:Key="Settings.Status.Saved" xml:space="preserve">設定を保存しました</x:String>
-  <x:String x:Key="Settings.TextEncoding" xml:space="preserve">テキストエンコーディング</x:String>
   <x:String x:Key="Settings.Tolerance" xml:space="preserve">フレーム精度の許容誤差</x:String>
   <x:String x:Key="Settings.ToolNote" xml:space="preserve">このブラウザーワークスペースでは、ネイティブ実行ファイルのパスを設定できません。</x:String>
   <x:String x:Key="Settings.ToolStatus.Discovery" xml:space="preserve">未設定です。PATH またはプラットフォームの自動検出を使用します</x:String>
@@ -390,7 +328,6 @@
   <x:String x:Key="Settings.ToolStatus.Unsupported" xml:space="preserve">このプラットフォームでは未対応です</x:String>
   <x:String x:Key="Settings.ToolUnavailable" xml:space="preserve">ブラウザー WASM では利用できません</x:String>
   <x:String x:Key="Settings.Tools" xml:space="preserve">外部ツール</x:String>
-  <x:String x:Key="Settings.UiFont" xml:space="preserve">UI フォント</x:String>
   <x:String x:Key="Settings.UiLanguage" xml:space="preserve">UI 言語</x:String>
   <x:String x:Key="Settings.Unsaved.Discard" xml:space="preserve">破棄</x:String>
   <x:String x:Key="Settings.Unsaved.Message" xml:space="preserve">設定の変更は現在のセッションにすでに反映されていますが、まだ保存されていません。閉じる前に保存しますか？</x:String>
@@ -467,9 +404,7 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">現在のオプションでグリッドを更新</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">現在のオプションで書き出してダウンロード</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">式を適用</x:String>
-  <x:String x:Key="Tool.Expression.BrowseLuaScript" xml:space="preserve">Lua スクリプトを参照…</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Lua スクリプトを読み込む…</x:String>
-  <x:String x:Key="Tool.Expression.Placeholder" xml:space="preserve">カスタム式（例: t + 1）</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">プリセット</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">式エディター</x:String>
   <x:String x:Key="Tool.ForwardShift.Title" xml:space="preserve">フレームを前へ移動</x:String>
@@ -480,7 +415,5 @@
   <x:String x:Key="Tool.TemplateNames.Title" xml:space="preserve">テンプレート名</x:String>
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">標準テンプレート名を使用</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
-  <x:String x:Key="Tool.ffprobe" xml:space="preserve">Ffprobe パス</x:String>
-  <x:String x:Key="Tool.mkvtoolnix" xml:space="preserve">MkvToolnix パス</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">未確定</x:String>
 </ResourceDictionary>

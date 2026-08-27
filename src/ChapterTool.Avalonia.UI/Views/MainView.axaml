@@ -60,7 +60,7 @@
                 FontSize="{DynamicResource ChapterTool.FontSize.Small}"
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="LogWindow"
-                Content="{DynamicResource Main.Log}"
+                Content="{DynamicResource Action.Log}"
                 Command="{Binding LogCommand}" />
       </Grid>
     </Border>
@@ -73,7 +73,7 @@
           <SplitButton x:Name="LoadButton"
                        Classes="flat"
                        AutomationProperties.AutomationId="LoadButton"
-                       Content="{DynamicResource Main.Load}"
+                       Content="{DynamicResource Action.Load}"
                        Command="{Binding #RootView.BrowseAndLoadCommand}"
                        ToolTip.Tip="{DynamicResource Main.LoadTooltip}">
             <SplitButton.Flyout>
@@ -140,16 +140,16 @@
               MinWidth="208">
           <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <CheckBox x:Name="RoundFramesBox"
-                      Content="{DynamicResource Main.RoundFrames}"
+                      Content="{DynamicResource Label.RoundFrames}"
                       IsChecked="{Binding RoundFrames}" />
             <Button x:Name="PreviewButton"
                     Classes="icon_button"
                     Width="32"
                     Height="32"
                     AutomationProperties.AutomationId="PreviewWindow"
-                    AutomationProperties.Name="{DynamicResource Main.Preview}"
+                    AutomationProperties.Name="{DynamicResource Action.Preview}"
                     Command="{Binding PreviewCommand}"
-                    ToolTip.Tip="{DynamicResource Main.Preview}">
+                    ToolTip.Tip="{DynamicResource Action.Preview}">
               <i:Icon Value="fa-solid fa-eye" FontSize="14" />
             </Button>
             <Button x:Name="RefreshButton"
@@ -168,9 +168,9 @@
                     Width="32"
                     Height="32"
                     AutomationProperties.AutomationId="SettingsWindow"
-                    AutomationProperties.Name="{DynamicResource Main.SettingsShort}"
+                    AutomationProperties.Name="{DynamicResource Action.Settings}"
                     Command="{Binding SettingsCommand}"
-                    ToolTip.Tip="{DynamicResource Main.SettingsShort}">
+                    ToolTip.Tip="{DynamicResource Action.Settings}">
               <i:Icon Value="fa-solid fa-gear" FontSize="14" />
             </Button>
           </StackPanel>
@@ -225,7 +225,7 @@
             <ContextMenu x:DataType="vm:MainWindowViewModel"
                          DataContext="{Binding #RootView.DataContext}">
               <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" InputGesture="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}" />
-              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Main.Delete}" InputGesture="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}" />
+              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" InputGesture="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}" />
               <MenuItem x:Name="GridCombineMenuItem"
                         Header="{DynamicResource Main.Combine}"
                         ToggleType="CheckBox"
@@ -235,7 +235,7 @@
               <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding OpenRelatedMediaCommand}" />
               <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootView.OpenZonesCommand}" />
               <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}" />
-              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Main.Preview}" InputGesture="F11" Command="{Binding PreviewCommand}" />
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="F11" Command="{Binding PreviewCommand}" />
             </ContextMenu>
           </DataGrid.ContextMenu>
           <DataGrid.Columns>
@@ -249,7 +249,7 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnTime}"
+            <DataGridTemplateColumn Header="{DynamicResource Grid.Time}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Time}"
                                     Width="136"
                                     MinWidth="106">
@@ -269,7 +269,7 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellEditingTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnName}"
+            <DataGridTemplateColumn Header="{DynamicResource Grid.Name}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Name}"
                                     Width="*"
                                     MinWidth="144">
@@ -289,7 +289,7 @@
                 </DataTemplate>
               </DataGridTemplateColumn.CellEditingTemplate>
             </DataGridTemplateColumn>
-            <DataGridTemplateColumn Header="{DynamicResource Main.ColumnFrames}"
+            <DataGridTemplateColumn Header="{DynamicResource Grid.Frames}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Frames}"
                                     Width="120"
                                     MinWidth="80">
@@ -353,7 +353,7 @@
               Grid.Row="0"
               Grid.Column="1"
               ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
-          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.ChapterName}" />
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Label.ChapterName}" />
           <ComboBox x:Name="ChapterNameModeBox"
                     Grid.Column="1"
                     MinWidth="96"
@@ -440,7 +440,7 @@
               Grid.Column="0"
               ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
           <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="6">
-            <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.Expression}" />
+            <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
             <CheckBox x:Name="ApplyExpressionBox"
                       Grid.Column="1"
                       AutomationProperties.Name="{DynamicResource Common.Enable}"

@@ -38,7 +38,7 @@
                         disabled="@(!Workspace.CanSave)"
                         @onclick="SaveAsync"
                         title="@L.T("Title.Save")">
-                    @L.T("Action.Save")
+                    @L.T("Common.Save")
                 </button>
                 <InputFile id="loadFileInput"
                            class="hidden-file"
@@ -408,7 +408,7 @@
                 }
             </div>
             <footer class="modal-footer">
-                <button type="button" class="secondary" @onclick="Workspace.ClearLogs">@L.T("Action.Clear")</button>
+                <button type="button" class="secondary" @onclick="Workspace.ClearLogs">@L.T("Common.Clear")</button>
                 <button type="button" class="secondary" @onclick="CloseLogs">@L.T("Action.Close")</button>
             </footer>
         </section>
@@ -427,7 +427,7 @@
                 <pre class="preview-text">@previewText</pre>
             </div>
             <footer class="modal-footer">
-                <button type="button" class="secondary" @onclick="CopyPreviewAsync" disabled="@(previewText.Length == 0)">@L.T("Action.Copy")</button>
+                <button type="button" class="secondary" @onclick="CopyPreviewAsync" disabled="@(previewText.Length == 0)">@L.T("Text.Copy")</button>
                 <button type="button" class="secondary" @onclick="DownloadPreviewAsync" disabled="@(previewText.Length == 0)">@L.T("Action.Download")</button>
                 <span class="modal-spacer"></span>
                 <button type="button" class="secondary" @onclick="ClosePreview">@L.T("Action.Close")</button>
@@ -451,8 +451,8 @@
                 </div>
             </div>
             <footer class="modal-footer">
-                <button type="button" class="secondary" @onclick="CloseForwardModal">@L.T("Action.Cancel")</button>
-                <button type="button" class="secondary" @onclick="ApplyForwardShift">@L.T("Modal.ApplyShift")</button>
+                <button type="button" class="secondary" @onclick="CloseForwardModal">@L.T("Common.Cancel")</button>
+                <button type="button" class="secondary" @onclick="ApplyForwardShift">@L.T("Common.Apply")</button>
             </footer>
         </section>
     </div>
@@ -544,14 +544,16 @@
                 {
                     <h3>@L.T("Settings.Tools")</h3>
                     <div class="settings-grid settings-disabled-page">
-                        @foreach (var tool in ExternalToolIds)
-                        {
-                            <label for="tool-@tool">@L.T($"Tool.{tool}")</label>
-                            <div class="tool-setting">
-                                <input id="tool-@tool" value="@L.T("Settings.ToolUnavailable")" disabled />
-                                <span>@L.T("Settings.ToolNote")</span>
-                            </div>
-                        }
+                        <label for="tool-mkvextract">@L.T("Settings.MkvextractPath")</label>
+                        <div class="tool-setting">
+                            <input id="tool-mkvextract" value="@L.T("Settings.ToolUnavailable")" disabled />
+                            <span>@L.T("Settings.ToolNote")</span>
+                        </div>
+                        <label for="tool-ffprobe">@L.T("Settings.FfprobePath")</label>
+                        <div class="tool-setting">
+                            <input id="tool-ffprobe" value="@L.T("Settings.ToolUnavailable")" disabled />
+                            <span>@L.T("Settings.ToolNote")</span>
+                        </div>
                     </div>
                     <button type="button" class="secondary" disabled title="@L.T("Settings.ToolUnavailable")">@L.T("Settings.ValidateTools")</button>
                 }
@@ -573,7 +575,7 @@
                                 <option value="@language">@language</option>
                             }
                         </select>
-                        <label for="settings-encoding">@L.T("Settings.TextEncoding")</label>
+                        <label for="settings-encoding">@L.T("Settings.OutputTextEncoding")</label>
                         <select id="settings-encoding" @bind="draftOutputTextEncodingIndex">
                             @for (var encodingIndex = 0; encodingIndex < OutputTextEncodings.All.Count; encodingIndex++)
                             {
@@ -624,7 +626,7 @@
                                 <span style="background:@swatch" title="@swatch"></span>
                             }
                         </div>
-                        <label for="settings-ui-font">@L.T("Settings.UiFont")</label>
+                        <label for="settings-ui-font">@L.T("Settings.Appearance.UiFont")</label>
                         <div class="font-setting">
                             <select id="settings-ui-font" @bind="draftUiFontFamily">
                                 @foreach (var font in UiFontOptions)
@@ -634,7 +636,7 @@
                             </select>
                             <div class="font-preview" style="font-family:@draftUiFontFamily">ChapterTool UI preview</div>
                         </div>
-                        <label for="settings-mono-font">@L.T("Settings.MonoFont")</label>
+                        <label for="settings-mono-font">@L.T("Settings.Appearance.MonospaceFont")</label>
                         <div class="font-setting">
                             <select id="settings-mono-font" @bind="draftMonospaceFontFamily">
                                 @foreach (var font in MonospaceFontOptions)
@@ -660,8 +662,8 @@
             <footer class="modal-footer">
                 <button type="button" class="secondary" @onclick="ResetSettings">@L.T("Action.RestoreDefaults")</button>
                 <span class="modal-spacer"></span>
-                <button type="button" class="secondary" @onclick="CancelSettings">@L.T("Action.Cancel")</button>
-                <button type="button" class="secondary" @onclick="ApplySettingsAsync">@L.T("Action.Apply")</button>
+                <button type="button" class="secondary" @onclick="CancelSettings">@L.T("Common.Cancel")</button>
+                <button type="button" class="secondary" @onclick="ApplySettingsAsync">@L.T("Common.Save")</button>
             </footer>
         </section>
     </div>
@@ -686,7 +688,6 @@
         new("en-US", "English"),
         new("ja-JP", "日本語")
     ];
-    private static readonly string[] ExternalToolIds = ["mkvtoolnix", "ffprobe"];
     private static readonly WasmFontOption[] UiFontOptions =
     [
         new("system-ui", "System UI"),

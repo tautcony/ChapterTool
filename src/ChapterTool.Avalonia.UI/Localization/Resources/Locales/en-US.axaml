@@ -4,13 +4,9 @@
   <x:String x:Key="Text.Copy" xml:space="preserve">Copy</x:String>
   <x:String x:Key="Text.Paste" xml:space="preserve">Paste</x:String>
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">Append MPLS…</x:String>
-  <x:String x:Key="Action.Apply" xml:space="preserve">Save</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">Browse template…</x:String>
-  <x:String x:Key="Action.Cancel" xml:space="preserve">Cancel</x:String>
-  <x:String x:Key="Action.Clear" xml:space="preserve">Clear</x:String>
   <x:String x:Key="Action.Close" xml:space="preserve">Close</x:String>
   <x:String x:Key="Action.CombineSegments" xml:space="preserve">Combine segments: entries={entries}, sourceType={sourceType}</x:String>
-  <x:String x:Key="Action.Copy" xml:space="preserve">Copy</x:String>
   <x:String x:Key="Action.DeleteRows" xml:space="preserve">Delete rows: indexes={indexes}</x:String>
   <x:String x:Key="Action.Download" xml:space="preserve">Download</x:String>
   <x:String x:Key="Action.EditCell" xml:space="preserve">Edit {kind}: row={row}, value='{value}'</x:String>
@@ -23,7 +19,6 @@
   <x:String x:Key="Action.Refresh" xml:space="preserve">Refresh rows</x:String>
   <x:String x:Key="Action.Reload" xml:space="preserve">Reload</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">Restore defaults</x:String>
-  <x:String x:Key="Action.Save" xml:space="preserve">Save</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">Settings</x:String>
   <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">Shift frames forward: frames={frames}</x:String>
   <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">Split combined segments: entries={entries}, sourceType={sourceType}</x:String>
@@ -31,7 +26,6 @@
   <x:String x:Key="Common.Apply" xml:space="preserve">Apply</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">Cancel</x:String>
   <x:String x:Key="Common.Clear" xml:space="preserve">Clear</x:String>
-  <x:String x:Key="Common.Copy" xml:space="preserve">Copy</x:String>
   <x:String x:Key="Common.Refresh" xml:space="preserve">Refresh</x:String>
   <x:String x:Key="Tool.Log.FilterAll" xml:space="preserve">All levels</x:String>
   <x:String x:Key="Tool.Log.FilterInformation" xml:space="preserve">Information</x:String>
@@ -44,7 +38,6 @@
   <x:String x:Key="Tool.Log.TechnicalDetail" xml:space="preserve">Technical detail</x:String>
   <x:String x:Key="Tool.Log.StructuredData" xml:space="preserve">Structured data</x:String>
   <x:String x:Key="Tool.Log.Exception" xml:space="preserve">Exception</x:String>
-  <x:String x:Key="Tool.Log.Category" xml:space="preserve">Category</x:String>
   <x:String x:Key="Tool.Log.Empty" xml:space="preserve">No log entries match the current filter.</x:String>
   <x:String x:Key="Tool.Log.EntryCount" xml:space="preserve">{count} entries</x:String>
   <x:String x:Key="Tool.Log.NoOverviewData" xml:space="preserve">No additional details for this entry.</x:String>
@@ -52,18 +45,10 @@
   <x:String x:Key="Tool.Log.Properties" xml:space="preserve">Properties</x:String>
   <x:String x:Key="Tool.Log.Raw" xml:space="preserve">Raw data</x:String>
   <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">Search log entries…</x:String>
-  <x:String x:Key="Tool.Log.Metadata" xml:space="preserve">Record</x:String>
-  <x:String x:Key="Tool.Log.Timestamp" xml:space="preserve">Timestamp</x:String>
-  <x:String x:Key="Tool.Log.Level" xml:space="preserve">Level</x:String>
-  <x:String x:Key="Tool.Log.Operation" xml:space="preserve">Operation</x:String>
-  <x:String x:Key="Tool.Log.Event" xml:space="preserve">Event</x:String>
-  <x:String x:Key="Tool.Log.MessageKey" xml:space="preserve">Message key</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">This entry has no nested structured data.</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">This entry has no exception data.</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">Save</x:String>
-  <x:String x:Key="Common.UnsupportedFeature" xml:space="preserve">This platform feature is not enabled in this build.</x:String>
   <x:String x:Key="Common.Enable" xml:space="preserve">Enable</x:String>
-  <x:String x:Key="Common.Use" xml:space="preserve">Use</x:String>
   <x:String x:Key="Copy.Name" xml:space="preserve">Copied chapter name(s) to clipboard.</x:String>
   <x:String x:Key="Copy.Preview" xml:space="preserve">Copied preview text to clipboard.</x:String>
   <x:String x:Key="Copy.Row" xml:space="preserve">Copied row(s) to clipboard.</x:String>
@@ -174,31 +159,12 @@
   <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">The XPL playlist could not be parsed: {message}</x:String>
   <x:String x:Key="EditKind.Frame" xml:space="preserve">frame</x:String>
   <x:String x:Key="EditKind.Name" xml:space="preserve">name</x:String>
-  <x:String x:Key="EditKind.StartTime" xml:space="preserve">time</x:String>
   <x:String x:Key="Empty.Hint" xml:space="preserve">Load a file, drop one here, or load the sample to compute frames and expressions.</x:String>
   <x:String x:Key="Empty.Title" xml:space="preserve">No chapters loaded</x:String>
-  <x:String x:Key="Expression.Suggestion.AddLeftOperand" xml:space="preserve">Add a left operand before this operator.</x:String>
   <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">Add the missing operand before applying this token.</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperandBeforeParen" xml:space="preserve">Add an operand before the closing parenthesis.</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperator" xml:space="preserve">Add an operator between adjacent values.</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperatorBeforeFunction" xml:space="preserve">Add an operator before the function call.</x:String>
-  <x:String x:Key="Expression.Suggestion.AddOperatorBeforeParen" xml:space="preserve">Add an operator before the opening parenthesis.</x:String>
-  <x:String x:Key="Expression.Suggestion.AddTernaryCondition" xml:space="preserve">Add a condition before '?'.</x:String>
-  <x:String x:Key="Expression.Suggestion.AddTernaryTrueExpression" xml:space="preserve">Add the true expression between '?' and ':'.</x:String>
-  <x:String x:Key="Expression.Suggestion.BalanceParentheses" xml:space="preserve">Add or remove parentheses so every '(' has a matching ')'.</x:String>
   <x:String x:Key="Expression.Suggestion.CheckLuaRuntime" xml:space="preserve">Check that referenced Lua variables and functions exist.</x:String>
   <x:String x:Key="Expression.Suggestion.CheckLuaSyntax" xml:space="preserve">Check the Lua expression syntax.</x:String>
-  <x:String x:Key="Expression.Suggestion.CheckSyntax" xml:space="preserve">Check the expression syntax.</x:String>
-  <x:String x:Key="Expression.Suggestion.CompleteExpression" xml:space="preserve">Complete the expression so it produces one value.</x:String>
-  <x:String x:Key="Expression.Suggestion.FixComma" xml:space="preserve">Use commas only between function arguments.</x:String>
-  <x:String x:Key="Expression.Suggestion.MatchTernaryColon" xml:space="preserve">Add a matching ':' and false expression.</x:String>
-  <x:String x:Key="Expression.Suggestion.MatchTernaryQuestion" xml:space="preserve">Add a matching '?' before this ':'.</x:String>
-  <x:String x:Key="Expression.Suggestion.RemoveInvalidCharacter" xml:space="preserve">Remove the invalid character or replace it with a supported token.</x:String>
   <x:String x:Key="Expression.Suggestion.ReturnNumber" xml:space="preserve">Return a finite number of seconds.</x:String>
-  <x:String x:Key="Expression.Suggestion.UseKnownToken" xml:space="preserve">Use a supported variable, constant, function, or operator.</x:String>
-  <x:String x:Key="Expression.Suggestion.UseSupportedFunction" xml:space="preserve">Replace the function with a supported expression function.</x:String>
-  <x:String x:Key="Expression.Suggestion.UseSupportedOperator" xml:space="preserve">Replace the operator with a supported expression operator.</x:String>
-  <x:String x:Key="Expression.Suggestion.UseSupportedToken" xml:space="preserve">Replace the token with a supported expression token.</x:String>
   <x:String x:Key="ExpressionPreset.Custom" xml:space="preserve">Custom</x:String>
   <x:String x:Key="FilePicker.AppendMpls.Title" xml:space="preserve">Append MPLS</x:String>
   <x:String x:Key="FilePicker.ExecutableFiles" xml:space="preserve">Executable files</x:String>
@@ -207,7 +173,6 @@
   <x:String x:Key="FilePicker.OpenChapterNameTemplate.Title" xml:space="preserve">Open Chapter Name Template</x:String>
   <x:String x:Key="FilePicker.OpenLuaExpressionScript.Title" xml:space="preserve">Open Lua expression script</x:String>
   <x:String x:Key="FilePicker.OpenSource.Title" xml:space="preserve">Open Source</x:String>
-  <x:String x:Key="FilePicker.SaveChaptersTo.Title" xml:space="preserve">Save Chapters To</x:String>
   <x:String x:Key="FilePicker.SourceFiles" xml:space="preserve">Chapter and media files</x:String>
   <x:String x:Key="FilePicker.TextFiles" xml:space="preserve">Text files</x:String>
   <x:String x:Key="Grid.Frames" xml:space="preserve">Frames</x:String>
@@ -223,7 +188,6 @@
   <x:String x:Key="Label.OrderShift" xml:space="preserve">Order +</x:String>
   <x:String x:Key="Label.RoundFrames" xml:space="preserve">Round frames</x:String>
   <x:String x:Key="Label.Format" xml:space="preserve">Format</x:String>
-  <x:String x:Key="Label.TemplateStatus" xml:space="preserve">Template</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">Use</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML lang</x:String>
   <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">Simplified Chinese</x:String>
@@ -236,8 +200,6 @@
   <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} diagnostic: severity={severity}, code={code}{location} message='{message}'{details}</x:String>
   <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}: chapters {before} -&gt; {after}</x:String>
   <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">Frame info updated: option={option}, fps={fps}, round={round}, chapters={chapters}</x:String>
-  <x:String x:Key="Log.ImportEntry" xml:space="preserve">{operation} entry {entryIndex}: id='{id}', label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, duration={duration}, fps={fps}</x:String>
-  <x:String x:Key="Log.ImportGroup" xml:space="preserve">{operation} group {groupIndex}: sourcePath='{sourcePath}', defaultEntryIndex={defaultEntryIndex}, entries={entries}</x:String>
   <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
   <x:String x:Key="Log.LanguageSet" xml:space="preserve">Language set to {language}</x:String>
   <x:String x:Key="Log.LoadingSource" xml:space="preserve">Loading source: path='{path}'</x:String>
@@ -255,31 +217,17 @@
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">Auto</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} chapters</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">Convert to current FPS</x:String>
-  <x:String x:Key="Main.ChapterName" xml:space="preserve">Chapter name</x:String>
-  <x:String x:Key="Main.ColumnFrames" xml:space="preserve">Frames</x:String>
-  <x:String x:Key="Main.ColumnName" xml:space="preserve">Name</x:String>
-  <x:String x:Key="Main.ColumnNumber" xml:space="preserve">#</x:String>
-  <x:String x:Key="Main.ColumnTime" xml:space="preserve">Time</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">Combine</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Create Zones</x:String>
-  <x:String x:Key="Main.Delete" xml:space="preserve">Delete</x:String>
-  <x:String x:Key="Main.Expression" xml:space="preserve">Expression editor</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">Forward Translation</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">Insert</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">Keep original</x:String>
-  <x:String x:Key="Main.Load" xml:space="preserve">Load</x:String>
   <x:String x:Key="Main.LoadTooltip" xml:space="preserve">Load (Ctrl+O)</x:String>
-  <x:String x:Key="Main.Log" xml:space="preserve">Log</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">Open Related Media</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">Order shift</x:String>
-  <x:String x:Key="Main.OutputDirectoryUnresolved" xml:space="preserve">Output directory could not be resolved</x:String>
-  <x:String x:Key="Main.Preview" xml:space="preserve">Preview</x:String>
-  <x:String x:Key="Main.PreviewShort" xml:space="preserve">Preview</x:String>
   <x:String x:Key="Main.Reload" xml:space="preserve">Reload</x:String>
-  <x:String x:Key="Main.RoundFrames" xml:space="preserve">Round frames</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">Save format</x:String>
   <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
-  <x:String x:Key="Main.SettingsShort" xml:space="preserve">Settings</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">Standard template</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">Template file</x:String>
   <x:String x:Key="Main.XmlLanguage" xml:space="preserve">XML language</x:String>
@@ -297,7 +245,6 @@
   <x:String x:Key="Menu.Select" xml:space="preserve">Select row</x:String>
   <x:String x:Key="Menu.Split" xml:space="preserve">Split combined clips</x:String>
   <x:String x:Key="Menu.Zones" xml:space="preserve">Zones</x:String>
-  <x:String x:Key="Modal.ApplyShift" xml:space="preserve">Apply</x:String>
   <x:String x:Key="Modal.ForwardTitle" xml:space="preserve">Forward translation</x:String>
   <x:String x:Key="Modal.Frames" xml:space="preserve">Frames to shift</x:String>
   <x:String x:Key="Modal.LogEmpty" xml:space="preserve">No activity yet.</x:String>
@@ -308,13 +255,6 @@
   <x:String x:Key="NameMode.AsIs" xml:space="preserve">As is</x:String>
   <x:String x:Key="NameMode.Auto" xml:space="preserve">Auto generate</x:String>
   <x:String x:Key="NameMode.Template" xml:space="preserve">Template</x:String>
-  <x:String x:Key="Operation.AppendEdit" xml:space="preserve">Append edit</x:String>
-  <x:String x:Key="Operation.AppendLoad" xml:space="preserve">Append load</x:String>
-  <x:String x:Key="Operation.CreateZones" xml:space="preserve">Create zones</x:String>
-  <x:String x:Key="Operation.Load" xml:space="preserve">Load</x:String>
-  <x:String x:Key="Operation.LuaExpressionScript" xml:space="preserve">Lua expression script</x:String>
-  <x:String x:Key="Operation.OutputProjection" xml:space="preserve">Output projection</x:String>
-  <x:String x:Key="Operation.Save" xml:space="preserve">Save</x:String>
   <x:String x:Key="Related.Absolute" xml:space="preserve">Absolute path</x:String>
   <x:String x:Key="Related.BrowserLimit" xml:space="preserve">Local absolute paths cannot be opened by the browser. Relative paths are informational only unless the host serves them.</x:String>
   <x:String x:Key="Related.Relative" xml:space="preserve">Relative path</x:String>
@@ -363,8 +303,7 @@
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">Preserve chapter times</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">Normalize chapter times</x:String>
   <x:String x:Key="Settings.General" xml:space="preserve">General</x:String>
-  <x:String x:Key="Settings.MkvToolnixPath" xml:space="preserve">mkvextract</x:String>
-  <x:String x:Key="Settings.MonoFont" xml:space="preserve">Monospace font</x:String>
+  <x:String x:Key="Settings.MkvextractPath" xml:space="preserve">mkvextract</x:String>
   <x:String x:Key="Settings.OpenSettingsFolder" xml:space="preserve">Open settings folder</x:String>
   <x:String x:Key="Settings.OutputPreferences" xml:space="preserve">Output preferences</x:String>
   <x:String x:Key="Settings.Editing" xml:space="preserve">Editing preferences</x:String>
@@ -379,7 +318,6 @@
   <x:String x:Key="Settings.Status.Ready" xml:space="preserve">Settings loaded</x:String>
   <x:String x:Key="Settings.Status.Reset" xml:space="preserve">Defaults restored</x:String>
   <x:String x:Key="Settings.Status.Saved" xml:space="preserve">Settings saved</x:String>
-  <x:String x:Key="Settings.TextEncoding" xml:space="preserve">Text encoding</x:String>
   <x:String x:Key="Settings.Tolerance" xml:space="preserve">Frame accuracy tolerance</x:String>
   <x:String x:Key="Settings.ToolNote" xml:space="preserve">Native executable paths are not available in this browser workspace.</x:String>
   <x:String x:Key="Settings.ToolStatus.Discovery" xml:space="preserve">Not configured; PATH or platform discovery will be used</x:String>
@@ -390,7 +328,6 @@
   <x:String x:Key="Settings.ToolStatus.Unsupported" xml:space="preserve">Unsupported on this platform</x:String>
   <x:String x:Key="Settings.ToolUnavailable" xml:space="preserve">Unavailable in browser WASM</x:String>
   <x:String x:Key="Settings.Tools" xml:space="preserve">External tools</x:String>
-  <x:String x:Key="Settings.UiFont" xml:space="preserve">UI font</x:String>
   <x:String x:Key="Settings.UiLanguage" xml:space="preserve">UI language</x:String>
   <x:String x:Key="Settings.Unsaved.Discard" xml:space="preserve">Discard</x:String>
   <x:String x:Key="Settings.Unsaved.Message" xml:space="preserve">Settings changes are already applied to this session but have not been saved. Save them before closing?</x:String>
@@ -467,9 +404,7 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">Refresh grid from current options</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">Export with current options and download</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">Apply expression</x:String>
-  <x:String x:Key="Tool.Expression.BrowseLuaScript" xml:space="preserve">Browse Lua...</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Load Lua...</x:String>
-  <x:String x:Key="Tool.Expression.Placeholder" xml:space="preserve">Custom expression, e.g. t + 1</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">Expression editor</x:String>
   <x:String x:Key="Tool.ForwardShift.Title" xml:space="preserve">Forward Shift</x:String>
@@ -480,7 +415,5 @@
   <x:String x:Key="Tool.TemplateNames.Title" xml:space="preserve">Template Names</x:String>
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">Use standard template names</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
-  <x:String x:Key="Tool.ffprobe" xml:space="preserve">Ffprobe path</x:String>
-  <x:String x:Key="Tool.mkvtoolnix" xml:space="preserve">MkvToolnix path</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">Undetermined</x:String>
 </ResourceDictionary>
