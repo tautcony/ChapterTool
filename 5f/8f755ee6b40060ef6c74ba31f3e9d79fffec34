@@ -1,0 +1,26 @@
+.github/workflows/dotnet-ci.yml
+  h_3705811fa4502c 48-50
+scripts/README.md
+  h_3705811fa4502c 44-45
+scripts/normalize-changed-text-files.py
+  h_3705811fa4502c 25-26,36-43,45-46,48-49
+scripts/pyproject.toml
+  h_3705811fa4502c 12-28
+scripts/report-analyzers.py
+  h_3705811fa4502c 13,17-20,22-28,31,34-35,45,48-49,52,55,75-76,86-88,94-97,99-101,105-108,111-112,115-116,121-122,124-127,130-137,139-142,145-147,149-156,160-182,184-187,191-197,199-203,206-214,217-218,225-243
+scripts/test-coverage.py
+  h_3705811fa4502c 10,14-58,67-69,73-76,78-81,83-84,86-87,89-92,95
+scripts/uv.lock
+  h_3705811fa4502c 13-17,21-23,32-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "5f8f755ee6b40060ef6c74ba31f3e9d79fffec34",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
