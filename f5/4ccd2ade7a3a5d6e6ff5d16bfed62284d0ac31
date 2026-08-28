@@ -1,0 +1,24 @@
+scripts/README.md
+  s_08a29178a5b894::t_b3a81acddf3ac8 9
+scripts/test-coverage.py
+  s_08a29178a5b894::t_b3a81acddf3ac8 4,47-48
+  s_08a29178a5b894::t_8efa970c63f992 7,37-46,49-51
+docs/code-map/testing.md
+  s_08a29178a5b894::t_b3a81acddf3ac8 206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f54ccd2ade7a3a5d6e6ff5d16bfed62284d0ac31",
+  "prompts": {},
+  "sessions": {
+    "s_08a29178a5b894": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0434a-30c3-7520-a2d5-31c7686d230e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
