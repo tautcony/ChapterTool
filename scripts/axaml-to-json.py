@@ -7,7 +7,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from xml.etree import ElementTree
+from defusedxml import ElementTree
 
 XAML_NAMESPACE = "http://schemas.microsoft.com/winfx/2006/xaml"
 STRING_TAG = f"{{{XAML_NAMESPACE}}}String"

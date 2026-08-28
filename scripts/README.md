@@ -6,7 +6,7 @@ Each script name identifies one repository task. The file extension identifies t
 
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
-| `test-coverage.py` | Python 3; cross-platform | Python standard library, .NET SDK; optional `reportgenerator` | Build test projects, run their assemblies through VSTest, and collect coverage. |
+| `test-coverage.py` | Python 3; cross-platform | Python standard library, `defusedxml` (uv-managed), .NET SDK; optional `reportgenerator` | Build test projects, run their assemblies through VSTest, and collect coverage. |
 | `report-analyzers.py` | Python 3; cross-platform | Python standard library, .NET SDK | Build the solution and summarize SARIF diagnostics. |
 | `publish.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate Linux, macOS, or Windows runtime artifacts. macOS bundles require a macOS host. |
 | `publish.ps1` | PowerShell 7; Windows | .NET SDK | Publish and validate Windows runtime artifacts. |
@@ -39,3 +39,5 @@ Each publish script rejects debug symbols and development diagnostics. Single-fi
 The scripts under `packages/chaptertool/scripts/` belong to the npm package. They use Node.js modules and are invoked through the package scripts in `packages/chaptertool/package.json`.
 
 Run Python scripts with Python 3. Run Bash scripts with Bash. Run PowerShell scripts with PowerShell 7 (`pwsh`).
+
+`scripts/pyproject.toml` pins Python dependencies for scripts that need third-party packages (`test-coverage.py`, `axaml-to-json.py`). Install them once with `uv sync --project scripts`, then run the script through `uv run --project scripts scripts/<name>.py ...` so the virtual environment is used. CI installs `uv` and invokes `axaml-to-json.py` through `uv run`.

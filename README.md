@@ -148,7 +148,7 @@ dotnet build ChapterTool.slnx --no-restore
 dotnet test ChapterTool.slnx --no-restore
 ```
 
-Run coverage with `python3 scripts/test-coverage.py`. The script writes reports to `artifacts/coverage`.
+Run coverage with `uv run --project scripts scripts/test-coverage.py`. The script writes reports to `artifacts/coverage`. The `scripts/` project pins its Python dependencies through `uv`; run `uv sync --project scripts` once before the first invocation.
 
 Inspect compiler and analyzer diagnostics with `python3 scripts/report-analyzers.py`. The script builds the solution, writes the raw SARIF report to `artifacts/analyzers/analyzers.sarif`, and prints diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to keep only StyleCop diagnostics.
 

@@ -4,7 +4,7 @@ import argparse
 import os
 import shutil
 import subprocess
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from pathlib import Path
 
 def run(args):

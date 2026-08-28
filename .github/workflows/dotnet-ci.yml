@@ -39,8 +39,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
       - name: Verify localization resources
-        run: python3 scripts/axaml-to-json.py --check
+        run: uv run --project scripts scripts/axaml-to-json.py --check
 
       - name: Install .NET 10
         uses: actions/setup-dotnet@v6
