@@ -367,20 +367,17 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        // Stable column identity via Tag — not localized header text.
-        var columnId = args.Column.Tag as string
-            ?? args.Column.Tag?.ToString();
-        switch (columnId)
+        var columnId = args.Column.Tag as string ?? args.Column.Tag?.ToString();
+        var edit = columnId switch
         {
-            case ChapterGridColumnIds.Time:
-                await viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText));
-                break;
-            case ChapterGridColumnIds.Name:
-                await viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name));
-                break;
-            case ChapterGridColumnIds.Frames:
-                await viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo));
-                break;
+            ChapterGridColumnIds.Time => (Func<ValueTask>)(() => viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText))),
+            ChapterGridColumnIds.Name => () => viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name)),
+            ChapterGridColumnIds.Frames => () => viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo)),
+            _ => null
+        };
+        if (edit is not null)
+        {
+            await edit();
         }
     }
 

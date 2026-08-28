@@ -10,26 +10,17 @@ public sealed partial class ChapterToolCliApplication
 {
     private async Task<CliImportExecution> ImportAsync(string inputPath, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(inputPath))
+        if (!TryValidateInput(inputPath, out var importer, out var failure))
         {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MissingInput, localizer.GetString("Cli.Error.InputRequired")));
+            return failure!;
         }
 
-        if (!File.Exists(inputPath) && !Directory.Exists(inputPath))
-        {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InputNotFound, localizer.Format("Cli.Error.InputNotFound", new Dictionary<string, object?> { ["path"] = inputPath })));
-        }
+        var resolvedImporter = importer!;
 
-        var importer = importerRegistry.Resolve(inputPath);
-        if (importer is null)
-        {
-            return CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedInput, localizer.Format("Cli.Error.UnsupportedInput", new Dictionary<string, object?> { ["path"] = inputPath })));
-        }
-
-        var result = await importer.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
+        var result = await resolvedImporter.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
         if (!result.Success)
         {
-            var fallback = importerRegistry.ResolveFallback(inputPath, importer, result);
+            var fallback = importerRegistry.ResolveFallback(inputPath, resolvedImporter, result);
             if (fallback is not null)
             {
                 result = await fallback.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
@@ -39,7 +30,7 @@ public sealed partial class ChapterToolCliApplication
                         new ChapterDiagnostic(
                             DiagnosticSeverity.Info,
                             ChapterDiagnosticCode.ImporterFallbackUsed,
-                            $"Primary importer '{importer.Id}' could not be invoked; fallback importer '{fallback.Id}' was used.")
+                            $"Primary importer '{resolvedImporter.Id}' could not be invoked; fallback importer '{fallback.Id}' was used.")
                     ]).ToList();
 
                     return new CliImportExecution(true, fallback, result with { Diagnostics = diagnostics });
@@ -47,6 +38,29 @@ public sealed partial class ChapterToolCliApplication
             }
         }
 
-        return new CliImportExecution(result.Success, importer, result);
+        return new CliImportExecution(result.Success, resolvedImporter, result);
+    }
+
+    private bool TryValidateInput(string inputPath, out IChapterImporter? importer, out CliImportExecution? failure)
+    {
+        importer = null;
+        failure = null;
+        if (string.IsNullOrWhiteSpace(inputPath))
+        {
+            failure = CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MissingInput, localizer.GetString("Cli.Error.InputRequired")));
+            return false;
+        }
+        if (!File.Exists(inputPath) && !Directory.Exists(inputPath))
+        {
+            failure = CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InputNotFound, localizer.Format("Cli.Error.InputNotFound", new Dictionary<string, object?> { ["path"] = inputPath })));
+            return false;
+        }
+        importer = importerRegistry.Resolve(inputPath);
+        if (importer is not null)
+        {
+            return true;
+        }
+        failure = CliImportExecution.Failure(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedInput, localizer.Format("Cli.Error.UnsupportedInput", new Dictionary<string, object?> { ["path"] = inputPath })));
+        return false;
     }
 }

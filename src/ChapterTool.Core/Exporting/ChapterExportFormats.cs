@@ -5,6 +5,19 @@ namespace ChapterTool.Core.Exporting;
 /// </summary>
 public static class ChapterExportFormats
 {
+    private static readonly IReadOnlyDictionary<ChapterExportFormat, (string Code, string Extension, string DisplayName, string Description)> Definitions =
+        new Dictionary<ChapterExportFormat, (string, string, string, string)>
+        {
+            [ChapterExportFormat.Txt] = ("txt", ".txt", "TXT", "OGM chapter pairs"),
+            [ChapterExportFormat.Xml] = ("xml", ".xml", "XML", "Matroska chapter XML"),
+            [ChapterExportFormat.Qpfile] = ("qpf", ".qpf", "QPFile", "QPFile keyframe list"),
+            [ChapterExportFormat.TimeCodes] = ("timecodes", ".TimeCodes.txt", "TimeCodes", "Chapter start times only"),
+            [ChapterExportFormat.TsMuxerMeta] = ("tsmuxer", ".TsMuxeR_Meta.txt", "TsmuxerMeta", "tsMuxeR meta chapter list"),
+            [ChapterExportFormat.Cue] = ("cue", ".cue", "CUE", "CUE sheet"),
+            [ChapterExportFormat.Json] = ("json", ".json", "JSON", "Structured JSON chapter payload"),
+            [ChapterExportFormat.WebVtt] = ("vtt", ".vtt", "WebVTT", "WebVTT cue list"),
+            [ChapterExportFormat.Celltimes] = ("celltimes", ".txt", "Celltimes", "Celltimes frame list")
+        };
     /// <summary>
     /// Supported export formats in UI and CLI presentation order.
     /// </summary>
@@ -51,74 +64,26 @@ public static class ChapterExportFormats
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The stable code.</returns>
-    public static string Code(ChapterExportFormat format) => format switch
-    {
-        ChapterExportFormat.Txt => "txt",
-        ChapterExportFormat.Xml => "xml",
-        ChapterExportFormat.Qpfile => "qpf",
-        ChapterExportFormat.TimeCodes => "timecodes",
-        ChapterExportFormat.TsMuxerMeta => "tsmuxer",
-        ChapterExportFormat.Cue => "cue",
-        ChapterExportFormat.Json => "json",
-        ChapterExportFormat.WebVtt => "vtt",
-        ChapterExportFormat.Celltimes => "celltimes",
-        _ => string.Empty
-    };
+    public static string Code(ChapterExportFormat format) => Definitions.TryGetValue(format, out var definition) ? definition.Code : string.Empty;
 
     /// <summary>
     /// Returns the default file extension for an export format.
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The default file extension, including the leading dot.</returns>
-    public static string Extension(ChapterExportFormat format) => format switch
-    {
-        ChapterExportFormat.Txt => ".txt",
-        ChapterExportFormat.Xml => ".xml",
-        ChapterExportFormat.Qpfile => ".qpf",
-        ChapterExportFormat.TimeCodes => ".TimeCodes.txt",
-        ChapterExportFormat.TsMuxerMeta => ".TsMuxeR_Meta.txt",
-        ChapterExportFormat.Cue => ".cue",
-        ChapterExportFormat.Json => ".json",
-        ChapterExportFormat.WebVtt => ".vtt",
-        ChapterExportFormat.Celltimes => ".txt",
-        _ => string.Empty
-    };
+    public static string Extension(ChapterExportFormat format) => Definitions.TryGetValue(format, out var definition) ? definition.Extension : string.Empty;
 
     /// <summary>
     /// Returns the short user-facing label for an export format.
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The display label.</returns>
-    public static string DisplayName(ChapterExportFormat format) => format switch
-    {
-        ChapterExportFormat.Txt => "TXT",
-        ChapterExportFormat.Xml => "XML",
-        ChapterExportFormat.Qpfile => "QPFile",
-        ChapterExportFormat.TimeCodes => "TimeCodes",
-        ChapterExportFormat.TsMuxerMeta => "TsmuxerMeta",
-        ChapterExportFormat.Cue => "CUE",
-        ChapterExportFormat.Json => "JSON",
-        ChapterExportFormat.WebVtt => "WebVTT",
-        ChapterExportFormat.Celltimes => "Celltimes",
-        _ => string.Empty
-    };
+    public static string DisplayName(ChapterExportFormat format) => Definitions.TryGetValue(format, out var definition) ? definition.DisplayName : string.Empty;
 
     /// <summary>
     /// Returns the CLI description for an export format.
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The description.</returns>
-    public static string Description(ChapterExportFormat format) => format switch
-    {
-        ChapterExportFormat.Txt => "OGM chapter pairs",
-        ChapterExportFormat.Xml => "Matroska chapter XML",
-        ChapterExportFormat.Qpfile => "QPFile keyframe list",
-        ChapterExportFormat.TimeCodes => "Chapter start times only",
-        ChapterExportFormat.TsMuxerMeta => "tsMuxeR meta chapter list",
-        ChapterExportFormat.Cue => "CUE sheet",
-        ChapterExportFormat.Json => "Structured JSON chapter payload",
-        ChapterExportFormat.WebVtt => "WebVTT cue list",
-        ChapterExportFormat.Celltimes => "Celltimes frame list",
-        _ => string.Empty
-    };
+    public static string Description(ChapterExportFormat format) => Definitions.TryGetValue(format, out var definition) ? definition.Description : string.Empty;
 }

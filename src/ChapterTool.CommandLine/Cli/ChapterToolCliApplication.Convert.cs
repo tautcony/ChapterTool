@@ -61,41 +61,43 @@ public sealed partial class ChapterToolCliApplication
 
     private bool TryValidateRequest(CliConvertRequest request, out CliOutputFormatDefinition format, out int errorCode)
     {
-        if (request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath))
-        {
-            console.WriteErrorLine(localizer.GetString("Cli.Error.StdoutOutputConflict"));
-            format = null!;
-            errorCode = 1;
-            return false;
-        }
+        format = null!;
+        errorCode = 1;
+        return ValidateOutputTarget(request)
+            && ValidateFrameRate(request)
+            && ValidateEncoding(request)
+            && ValidateFormat(request, out format)
+            ? (errorCode = 0) == 0
+            : false;
+    }
 
-        if (request.FrameRate is { } frameRate && (!double.IsFinite(frameRate) || frameRate <= 0))
-        {
-            console.WriteErrorLine(localizer.GetString("Cli.Error.FrameRatePositive"));
-            format = null!;
-            errorCode = 1;
-            return false;
-        }
+    private bool ValidateOutputTarget(CliConvertRequest request) => !(request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath)) || WriteValidationError("Cli.Error.StdoutOutputConflict");
 
-        if (!string.IsNullOrWhiteSpace(request.TextEncoding)
-            && !OutputTextEncodings.TryParse(request.TextEncoding, out _))
-        {
-            console.WriteErrorLine(localizer.Format("Cli.Error.UnsupportedEncoding", new Dictionary<string, object?> { ["encoding"] = request.TextEncoding }));
-            format = null!;
-            errorCode = 1;
-            return false;
-        }
+    private bool ValidateFrameRate(CliConvertRequest request) => request.FrameRate is not { } frameRate || (double.IsFinite(frameRate) && frameRate > 0) || WriteValidationError("Cli.Error.FrameRatePositive");
 
-        if (!ChapterToolCliSupport.TryParseFormat(request.Format, out format))
-        {
-            console.WriteErrorLine(localizer.Format("Cli.Error.UnsupportedFormat", new Dictionary<string, object?> { ["format"] = request.Format }));
-            console.WriteErrorLine(localizer.GetString("Cli.Error.FormatsHint"));
-            errorCode = 1;
-            return false;
-        }
+    private bool ValidateEncoding(CliConvertRequest request) => string.IsNullOrWhiteSpace(request.TextEncoding) || OutputTextEncodings.TryParse(request.TextEncoding, out _) || WriteValidationMessage(localizer.Format("Cli.Error.UnsupportedEncoding", new Dictionary<string, object?> { ["encoding"] = request.TextEncoding }));
 
-        errorCode = 0;
-        return true;
+    private bool ValidateFormat(CliConvertRequest request, out CliOutputFormatDefinition format)
+    {
+        if (ChapterToolCliSupport.TryParseFormat(request.Format, out format))
+        {
+            return true;
+        }
+        console.WriteErrorLine(localizer.Format("Cli.Error.UnsupportedFormat", new Dictionary<string, object?> { ["format"] = request.Format }));
+        console.WriteErrorLine(localizer.GetString("Cli.Error.FormatsHint"));
+        return false;
+    }
+
+    private bool WriteValidationError(string message)
+    {
+        console.WriteErrorLine(localizer.GetString(message));
+        return false;
+    }
+
+    private bool WriteValidationMessage(string message)
+    {
+        console.WriteErrorLine(message);
+        return false;
     }
 
     private bool TryResolveExpression(

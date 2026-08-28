@@ -401,26 +401,39 @@ public sealed class LogEntryViewModel(
 
     private static bool TryNormalizeScalar(object? value, out object? normalized)
     {
-        switch (value)
+        if (value is null || value is string || value is bool || IsNumeric(value))
         {
-            case null or string or bool or byte or sbyte or short or ushort or int or uint or long or ulong
-                or float or double or decimal:
-                normalized = value;
-                return true;
-            case char or Enum or Guid or Uri or TimeSpan:
-                normalized = value.ToString();
-                return true;
-            case DateTime dateTime:
-                normalized = dateTime.ToString("O", CultureInfo.InvariantCulture);
-                return true;
-            case DateTimeOffset dateTimeOffset:
-                normalized = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
-                return true;
-            default:
-                normalized = null;
-                return false;
+            normalized = value;
+            return true;
         }
+
+        if (value is DateTime dateTime)
+        {
+            normalized = dateTime.ToString("O", CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            normalized = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        if (value is char or Enum or Guid or Uri or TimeSpan)
+        {
+            normalized = value.ToString();
+            return true;
+        }
+
+        normalized = null;
+        return false;
     }
+
+    private static bool IsNumeric(object value) => value switch
+    {
+        byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal => true,
+        _ => false
+    };
 
     private static object? NormalizeContainer(object value, int depth, HashSet<object> path) => value switch
     {

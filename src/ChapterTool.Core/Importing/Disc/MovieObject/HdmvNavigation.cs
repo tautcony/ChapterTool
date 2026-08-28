@@ -326,35 +326,7 @@ internal sealed class HdmvNavigationResolver
 
     private static void ExecuteSet(ExecutionState state, byte option, MovieObjectCommand command, uint dst, uint src)
     {
-        var newDst = dst;
-        var newSrc = src;
-        switch (option)
-        {
-            case 1: newDst = src; break;
-            case 2: (newDst, newSrc) = (src, dst); break;
-            case 3: newDst = SaturatingAdd(dst, src); break;
-            case 4: newDst = dst > src ? dst - src : 0; break;
-            case 5: newDst = SaturatingMultiply(dst, src); break;
-            case 6: newDst = src == 0 ? uint.MaxValue : dst / src; break;
-            case 7: newDst = src == 0 ? uint.MaxValue : dst % src; break;
-            case 8: newDst = state.NextRandom(src); break;
-            case 9: newDst &= src; break;
-            case 10: newDst |= src; break;
-            case 11: newDst ^= src; break;
-            case 12:
-                if (src < 32) newDst |= 1u << (int)src;
-                break;
-            case 13:
-                if (src < 32) newDst &= ~(1u << (int)src);
-                break;
-            case 14:
-                newDst = src < 32 ? dst << (int)src : 0;
-                break;
-            case 15:
-                newDst = src < 32 ? dst >> (int)src : 0;
-                break;
-            default: return;
-        }
+        if (!TryApplySetOperation(state, option, dst, src, out var newDst, out var newSrc)) return;
 
         if (!state.WriteOperand(command.DestinationOperand, command.Instruction.Operand1Immediate, newDst))
         {
@@ -367,6 +339,31 @@ internal sealed class HdmvNavigationResolver
             state.Diagnostics.Add(DiagnosticSeverity.Warning, ChapterDiagnosticCode.NavigationSource,
                 "HDMV normal SET attempted to write a non-writable operand.");
         }
+    }
+
+    private static bool TryApplySetOperation(ExecutionState state, byte option, uint dst, uint src, out uint newDst, out uint newSrc)
+    {
+        newDst = option switch
+        {
+            1 => src,
+            2 => src,
+            3 => SaturatingAdd(dst, src),
+            4 => dst > src ? dst - src : 0,
+            5 => SaturatingMultiply(dst, src),
+            6 => src == 0 ? uint.MaxValue : dst / src,
+            7 => src == 0 ? uint.MaxValue : dst % src,
+            8 => state.NextRandom(src),
+            9 => dst & src,
+            10 => dst | src,
+            11 => dst ^ src,
+            12 => src < 32 ? dst | (1u << (int)src) : dst,
+            13 => src < 32 ? dst & ~(1u << (int)src) : dst,
+            14 => src < 32 ? dst << (int)src : 0,
+            15 => src < 32 ? dst >> (int)src : 0,
+            _ => 0
+        };
+        newSrc = option == 2 ? dst : src;
+        return option is >= 1 and <= 15;
     }
 
     private static void ExecuteSetSystem(ExecutionState state, byte option, uint dst, uint src)

@@ -1024,12 +1024,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         }
 
         var reference = parameter as ReferencedMediaFile ?? RelatedMediaReferences.FirstOrDefault();
-        var target = reference?.AbsolutePath;
-        if (string.IsNullOrWhiteSpace(target) && reference is not null && !string.IsNullOrWhiteSpace(CurrentPath))
-        {
-            var baseDirectory = Directory.Exists(CurrentPath) ? CurrentPath : Path.GetDirectoryName(CurrentPath);
-            target = baseDirectory is null ? reference.RelativePath : Path.GetFullPath(Path.Combine(baseDirectory, reference.RelativePath));
-        }
+        var target = ResolveRelatedMediaPath(reference);
 
         if (string.IsNullOrWhiteSpace(target) || !File.Exists(target))
         {
@@ -1046,6 +1041,24 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         SetStatus("Status.OpenedFile", ("fileName", Path.GetFileName(target)));
         Log("Log.OpenedPath", ("status", StatusText), ("path", target));
         NotifyStateChanged();
+    }
+
+    private string? ResolveRelatedMediaPath(ReferencedMediaFile? reference)
+    {
+        if (reference is null)
+        {
+            return null;
+        }
+        if (!string.IsNullOrWhiteSpace(reference.AbsolutePath))
+        {
+            return reference.AbsolutePath;
+        }
+        if (string.IsNullOrWhiteSpace(CurrentPath))
+        {
+            return reference.RelativePath;
+        }
+        var baseDirectory = Directory.Exists(CurrentPath) ? CurrentPath : Path.GetDirectoryName(CurrentPath);
+        return baseDirectory is null ? reference.RelativePath : Path.GetFullPath(Path.Combine(baseDirectory, reference.RelativePath));
     }
 
     public static decimal NormalizeFrameAccuracyTolerance(decimal value)
