@@ -1,0 +1,28 @@
+src/ChapterTool.Avalonia.UI/Views/Controls/ExpressionEditor.axaml.cs
+  s_63062c6d8beec7::t_442c1160fed6e6 109,357,375-380,387-392,617,630-638,702,710,714
+  s_63062c6d8beec7::t_8e047e648bd13f 106,351,353,359-374,381,383-386,639-642,694,699-701,704,707,712-713,716,718
+  s_63062c6d8beec7::t_5f25d7404f31f3 105
+  s_63062c6d8beec7::t_52a0270d883960 107-108
+  s_63062c6d8beec7::t_0f9624ca7b860c 110-111
+  s_63062c6d8beec7::t_5cde9dde904646 703
+  s_63062c6d8beec7::t_1b2c510df5749c 705-706
+  s_63062c6d8beec7::t_eb7bf099623d86 708-709
+  s_63062c6d8beec7::t_d943f0ebefb7b1 711
+  s_63062c6d8beec7::t_c089435b609747 719
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "cad5d3b09b0cb3b75ddf77f7a949f2c92f546a1b",
+  "prompts": {},
+  "sessions": {
+    "s_63062c6d8beec7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04671-2566-78e3-a81e-07396c0f2c0e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
