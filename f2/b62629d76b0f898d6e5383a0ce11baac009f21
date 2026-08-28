@@ -1,0 +1,30 @@
+.editorconfig
+  h_3705811fa4502c 51-54
+CodeMetricsConfig.txt
+  h_3705811fa4502c 1
+Directory.Build.props
+  h_3705811fa4502c 23-24
+Directory.Build.targets
+  h_3705811fa4502c 4-13
+docs/code-map/testing.md
+  h_3705811fa4502c 209-234
+scripts/report-analyzers.py
+  h_3705811fa4502c 2,5-6,9,13-101,108,110-112,114-136,142-155,157-158,160,162-165
+src/ChapterTool.Core/Importing/Cue/CueSheetParser.cs
+  h_3705811fa4502c 69,72,79,82,85,97-129
+src/ChapterTool.Core/Importing/Disc/XplChapterImporter.cs
+  h_3705811fa4502c 66,72,74,79,85-125
+src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvSourceLayout.cs
+  h_3705811fa4502c 29,32,36-37,41-44,70-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f2b62629d76b0f898d6e5383a0ce11baac009f21",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
