@@ -1,0 +1,28 @@
+.github/workflows/dotnet-ci.yml
+  h_3705811fa4502c 42-44,46
+.gitignore
+  h_3705811fa4502c 173
+README.md
+  h_3705811fa4502c 151
+scripts/README.md
+  h_3705811fa4502c 9,42-43
+scripts/axaml-to-json.py
+  h_3705811fa4502c 10
+scripts/pyproject.toml
+  h_3705811fa4502c 1-11
+scripts/test-coverage.py
+  h_3705811fa4502c 7
+scripts/uv.lock
+  h_3705811fa4502c 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f786e7ba5467631a06887f290c6c0fa96f41f03c",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
