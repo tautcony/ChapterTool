@@ -217,68 +217,99 @@ internal sealed class HdmvNavigationResolver
         var src = insn.OperandCount > 1 ? state.ReadOperand(command.SourceOperand, insn.Operand2Immediate) : 0;
         var next = pc + 1;
 
-        switch (insn.Group)
+        if (insn.Group == 0)
         {
-            case 0 when insn.Subgroup == 0:
-                switch (insn.BranchOption)
-                {
-                    case 1:
-                        next = dst > int.MaxValue ? int.MaxValue : (int)dst;
-                        break;
-                    case 2:
-                        state.ProgramCounter = int.MaxValue; return;
-                }
-                break;
-            case 0 when insn.Subgroup == 1:
-                switch (insn.BranchOption)
-                {
-                    case 0: state.EnterObject((int)dst, -1); return;
-                    case 1 when state.TitleObjects.TryGetValue(dst, out var titleObject): state.EnterObject(titleObject, (int)dst); return;
-                    case 2: state.Call((int)dst, next, limits); return;
-                    case 3 when state.TitleObjects.TryGetValue(dst, out var calledObject): state.Call(calledObject, next, limits); return;
-                    case 4:
-                        if (state.Return()) return;
-                        state.ProgramCounter = int.MaxValue;
-                        return;
-                }
-                break;
-            case 0 when insn.Subgroup == 2:
-                if (state.Events.Count < limits.MaximumEvents && insn.BranchOption <= 2)
-                {
-                    state.Events.Add(new HdmvNavigationEvent(
-                        dst,
-                        insn.BranchOption == 1 ? src : null,
-                        insn.BranchOption == 2 ? src : null,
-                        state.TitleNumber,
-                        state.ObjectId,
-                        pc,
-                        state.Profile.Name,
-                        insn.BranchOption switch { 0 => "PlayPL", 1 => "PlayPLPI", _ => "PlayPLPM" }));
-                }
-                else if (state.ControlEvents.Count < limits.MaximumEvents && insn.BranchOption is >= 3 and <= 5)
-                {
-                    state.ControlEvents.Add(new HdmvNavigationControlEvent(
-                        insn.BranchOption switch { 3 => "PlayStop", 4 => "LinkPI", _ => "LinkMK" },
-                        insn.BranchOption == 4 ? dst : null,
-                        insn.BranchOption == 5 ? dst : null,
-                        state.ObjectId,
-                        pc,
-                        state.Profile.Name));
-                    if (insn.BranchOption == 3) next = int.MaxValue;
-                }
-                break;
-            case 1:
-                if (!Compare(insn.CompareOption, dst, src)) next++;
-                break;
-            case 2 when insn.Subgroup == 0:
-                ExecuteSet(state, insn.SetOption, command, dst, src);
-                break;
-            case 2 when insn.Subgroup == 1:
-                ExecuteSetSystem(state, insn.SetOption, dst, src);
-                break;
+            if (ExecuteBranchGroup(state, command, dst, src, pc, ref next)) return;
+        }
+        else if (insn.Group == 1)
+        {
+            if (!Compare(insn.CompareOption, dst, src)) next++;
+        }
+        else if (insn.Group == 2)
+        {
+            ExecuteSetGroup(state, insn, command, dst, src);
         }
 
         state.ProgramCounter = next;
+    }
+
+    private bool ExecuteBranchGroup(ExecutionState state, MovieObjectCommand command, uint dst, uint src, int pc, ref int next)
+    {
+        var instruction = command.Instruction;
+        switch (instruction.Subgroup)
+        {
+            case 0:
+                return ExecuteJump(state, instruction.BranchOption, dst, ref next);
+            case 1:
+                return ExecuteObjectBranch(state, instruction.BranchOption, dst, next);
+            case 2:
+                ExecutePlay(state, instruction.BranchOption, dst, src, pc, ref next);
+                break;
+        }
+
+        return false;
+    }
+
+    private static bool ExecuteJump(ExecutionState state, byte option, uint dst, ref int next)
+    {
+        if (option == 1)
+        {
+            next = dst > int.MaxValue ? int.MaxValue : (int)dst;
+        }
+        else if (option == 2)
+        {
+            state.ProgramCounter = int.MaxValue;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool ExecuteObjectBranch(ExecutionState state, byte option, uint dst, int next)
+    {
+        switch (option)
+        {
+            case 0: state.EnterObject((int)dst, -1); return true;
+            case 1 when state.TitleObjects.TryGetValue(dst, out var titleObject): state.EnterObject(titleObject, (int)dst); return true;
+            case 2: state.Call((int)dst, next, limits); return true;
+            case 3 when state.TitleObjects.TryGetValue(dst, out var calledObject): state.Call(calledObject, next, limits); return true;
+            case 4:
+                if (state.Return()) return true;
+                state.ProgramCounter = int.MaxValue;
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ExecutePlay(ExecutionState state, byte option, uint dst, uint src, int pc, ref int next)
+    {
+        if (state.Events.Count < limits.MaximumEvents && option <= 2)
+        {
+            state.Events.Add(new HdmvNavigationEvent(dst, option == 1 ? src : null, option == 2 ? src : null,
+                state.TitleNumber, state.ObjectId, pc, state.Profile.Name,
+                option switch { 0 => "PlayPL", 1 => "PlayPLPI", _ => "PlayPLPM" }));
+            return;
+        }
+
+        if (state.ControlEvents.Count >= limits.MaximumEvents || option is < 3 or > 5) return;
+        state.ControlEvents.Add(new HdmvNavigationControlEvent(
+            option switch { 3 => "PlayStop", 4 => "LinkPI", _ => "LinkMK" },
+            option == 4 ? dst : null, option == 5 ? dst : null,
+            state.ObjectId, pc, state.Profile.Name));
+        if (option == 3) next = int.MaxValue;
+    }
+
+    private static void ExecuteSetGroup(ExecutionState state, MovieObjectInstruction instruction, MovieObjectCommand command, uint dst, uint src)
+    {
+        if (instruction.Subgroup == 0)
+        {
+            ExecuteSet(state, instruction.SetOption, command, dst, src);
+        }
+        else if (instruction.Subgroup == 1)
+        {
+            ExecuteSetSystem(state, instruction.SetOption, dst, src);
+        }
     }
 
     private static bool Compare(byte option, uint left, uint right) => option switch

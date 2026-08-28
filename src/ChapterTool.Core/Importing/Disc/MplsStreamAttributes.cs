@@ -30,89 +30,104 @@ internal sealed record MplsStreamAttributes(
         }
 
         var streamCodingType = container.ReadByteChecked();
-        byte? videoFormat = null;
-        byte? frameRate = null;
-        byte? dynamicRangeType = null;
-        byte? colorSpace = null;
-        bool? crFlag = null;
-        bool? hdrPlusFlag = null;
-        byte? audioFormat = null;
-        byte? sampleRate = null;
-        byte? characterCode = null;
-        string? languageCode = null;
-
-        switch (streamCodingType)
-        {
-            case 0x01:
-            case 0x02:
-            case 0x1B:
-            case 0x20:
-            case 0xEA:
-                ReadVideoInfo(container, out videoFormat, out frameRate);
-                break;
-            case 0x24:
-                ReadVideoInfo(container, out videoFormat, out frameRate);
-                var dynamicRangeAndColor = container.ReadByteChecked();
-                dynamicRangeType = (byte)(dynamicRangeAndColor >> 4);
-                colorSpace = (byte)(dynamicRangeAndColor & 0x0f);
-                var hdrFlags = container.ReadByteChecked();
-                crFlag = ((hdrFlags >> 7) & 1) == 1;
-                hdrPlusFlag = ((hdrFlags >> 6) & 1) == 1;
-                break;
-            case 0x03:
-            case 0x04:
-            case 0x80:
-            case 0x81:
-            case 0x82:
-            case 0x83:
-            case 0x84:
-            case 0x85:
-            case 0x86:
-                ReadAudioInfo(container, out audioFormat, out sampleRate);
-                languageCode = container.ReadAscii(3);
-                break;
-            case 0x90:
-            case 0x91:
-                languageCode = container.ReadAscii(3);
-                break;
-            case 0x92:
-                characterCode = container.ReadByteChecked();
-                languageCode = container.ReadAscii(3);
-                break;
-            case 0xA1:
-            case 0xA2:
-                ReadAudioInfo(container, out audioFormat, out sampleRate);
-                languageCode = container.ReadAscii(3);
-                break;
-        }
+        var fields = ReadCodingFields(container, streamCodingType);
 
         container.Complete("stream attributes");
         return new MplsStreamAttributes(
             length,
             streamCodingType,
-            videoFormat,
-            frameRate,
-            dynamicRangeType,
-            colorSpace,
-            crFlag,
-            hdrPlusFlag,
-            audioFormat,
-            sampleRate,
-            characterCode,
-            languageCode);
+            fields.VideoFormat,
+            fields.FrameRate,
+            fields.DynamicRangeType,
+            fields.ColorSpace,
+            fields.CrFlag,
+            fields.HdrPlusFlag,
+            fields.AudioFormat,
+            fields.SampleRate,
+            fields.CharacterCode,
+            fields.LanguageCode);
     }
 
-    private static void ReadVideoInfo(Stream stream, out byte? videoFormat, out byte? frameRate)
+    private static CodingFields ReadCodingFields(Stream stream, byte streamCodingType)
+    {
+        var fields = new CodingFields();
+        switch (streamCodingType)
+        {
+            case 0x01 or 0x02 or 0x1B or 0x20 or 0xEA:
+                ReadVideoFields(stream, fields);
+                break;
+            case 0x24:
+                ReadHdrVideoFields(stream, fields);
+                break;
+            case 0x03 or 0x04 or 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0xA1 or 0xA2:
+                ReadAudioFields(stream, fields);
+                break;
+            case 0x90 or 0x91:
+                fields.LanguageCode = stream.ReadAscii(3);
+                break;
+            case 0x92:
+                fields.CharacterCode = stream.ReadByteChecked();
+                fields.LanguageCode = stream.ReadAscii(3);
+                break;
+        }
+
+        return fields;
+    }
+
+    private static void ReadVideoFields(Stream stream, CodingFields fields)
+    {
+        (fields.VideoFormat, fields.FrameRate) = ReadVideoInfo(stream);
+    }
+
+    private static void ReadHdrVideoFields(Stream stream, CodingFields fields)
+    {
+        (fields.VideoFormat, fields.FrameRate) = ReadVideoInfo(stream);
+        var dynamicRangeAndColor = stream.ReadByteChecked();
+        fields.DynamicRangeType = (byte)(dynamicRangeAndColor >> 4);
+        fields.ColorSpace = (byte)(dynamicRangeAndColor & 0x0f);
+        var hdrFlags = stream.ReadByteChecked();
+        fields.CrFlag = ((hdrFlags >> 7) & 1) == 1;
+        fields.HdrPlusFlag = ((hdrFlags >> 6) & 1) == 1;
+    }
+
+    private static void ReadAudioFields(Stream stream, CodingFields fields)
+    {
+        (fields.AudioFormat, fields.SampleRate) = ReadAudioInfo(stream);
+        fields.LanguageCode = stream.ReadAscii(3);
+    }
+
+    private sealed class CodingFields
+    {
+        internal byte? VideoFormat { get; set; }
+
+        internal byte? FrameRate { get; set; }
+
+        internal byte? DynamicRangeType { get; set; }
+
+        internal byte? ColorSpace { get; set; }
+
+        internal bool? CrFlag { get; set; }
+
+        internal bool? HdrPlusFlag { get; set; }
+
+        internal byte? AudioFormat { get; set; }
+
+        internal byte? SampleRate { get; set; }
+
+        internal byte? CharacterCode { get; set; }
+
+        internal string? LanguageCode { get; set; }
+    }
+
+    private static (byte VideoFormat, byte FrameRate) ReadVideoInfo(Stream stream)
     {
         var videoInfo = stream.ReadByteChecked();
-        videoFormat = (byte)(videoInfo >> 4);
-        frameRate = (byte)(videoInfo & 0x0f);
+        return ((byte)(videoInfo >> 4), (byte)(videoInfo & 0x0f));
     }
 
-    private static void ReadAudioInfo(Stream stream, out byte? audioFormat, out byte? sampleRate)
+    private static (byte AudioFormat, byte SampleRate) ReadAudioInfo(Stream stream)
     {
         var audioInfo = stream.ReadByteChecked();
-        audioFormat = (byte)(audioInfo >> 4);
-        sampleRate = (byte)(audioInfo & 0x0f);
+        return ((byte)(audioInfo >> 4), (byte)(audioInfo & 0x0f));
     }
 }

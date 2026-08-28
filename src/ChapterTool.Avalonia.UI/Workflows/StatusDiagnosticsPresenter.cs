@@ -17,6 +17,27 @@ internal sealed partial class StatusDiagnosticsPresenter(
     IChapterTimeFormatter timeFormatter,
     Action<string> setStatusText)
 {
+    private static readonly IReadOnlyDictionary<string, string> OperationByMessageKey =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["Log.LoadingSource"] = "Load",
+            ["Log.StatusFromPath"] = "Load",
+            ["Log.SavingChapters"] = "Save",
+            ["Log.AppendingMpls"] = "Append",
+            ["Log.TemplateLoaded"] = "Template",
+            ["Log.TemplateLoadFailed"] = "Template",
+            ["Log.EditChapters"] = "Edit",
+            ["Log.ChangeFps"] = "Edit",
+            ["Log.FrameInfoUpdated"] = "Edit",
+            ["Log.AutoFrameRateDetection"] = "Edit",
+            ["Log.SelectedSourceOption"] = "Edit",
+            ["Log.CreateZones"] = "Zones",
+            ["Log.OpenedPath"] = "Open",
+            ["Log.RelatedMediaNotFound"] = "Open",
+            ["Log.LanguageSet"] = "Settings",
+            ["Log.SettingsLoaded"] = "Settings"
+        };
+
     private LocalizedMessage? statusMessage;
     private LocalizedMessage? progressMessage;
 
@@ -157,19 +178,8 @@ internal sealed partial class StatusDiagnosticsPresenter(
     }
 
     /// <summary>Maps well-known message keys to the operation that produced them.</summary>
-    private static string? OperationForKey(string key) => key switch
-    {
-        "Log.LoadingSource" or "Log.StatusFromPath" => "Load",
-        "Log.SavingChapters" => "Save",
-        "Log.AppendingMpls" => "Append",
-        "Log.TemplateLoaded" or "Log.TemplateLoadFailed" => "Template",
-        "Log.EditChapters" or "Log.ChangeFps" or "Log.FrameInfoUpdated"
-            or "Log.AutoFrameRateDetection" or "Log.SelectedSourceOption" => "Edit",
-        "Log.CreateZones" => "Zones",
-        "Log.OpenedPath" or "Log.RelatedMediaNotFound" => "Open",
-        "Log.LanguageSet" or "Log.SettingsLoaded" => "Settings",
-        _ => null
-    };
+    private static string? OperationForKey(string key) =>
+        OperationByMessageKey.TryGetValue(key, out var operation) ? operation : null;
 
     public void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
     {

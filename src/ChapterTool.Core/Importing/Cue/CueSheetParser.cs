@@ -23,114 +23,130 @@ public sealed partial class CueSheetParser
             return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmptyCueFile, "CUE text is empty."));
         }
 
-        var title = string.Empty;
-        var sourceName = string.Empty;
-        var chapters = new List<Chapter>();
-        var currentNumber = 0;
-        var currentName = string.Empty;
-        var malformed = false;
+        var state = new CueParseState();
 
         foreach (var rawLine in text.Split('\n'))
         {
-            var line = rawLine.Trim();
-            if (line.Length == 0)
+            if (!TryApplyLine(rawLine, state))
             {
-                continue;
-            }
-
-            var titleMatch = TitleRegex().Match(line);
-            var fileMatch = FileRegex().Match(line);
-            var trackMatch = TrackRegex().Match(line);
-            var performerMatch = PerformerRegex().Match(line);
-            var indexMatch = IndexRegex().Match(line);
-
-            if (trackMatch.Success)
-            {
-                if (!int.TryParse(trackMatch.Groups["Number"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out currentNumber))
-                {
-                    malformed = true;
-                    break;
-                }
-
-                currentName = string.Empty;
-                continue;
-            }
-
-            if (fileMatch.Success && sourceName.Length == 0)
-            {
-                sourceName = fileMatch.Groups["Name"].Value;
-                continue;
-            }
-
-            if (titleMatch.Success)
-            {
-                if (currentNumber == 0)
-                {
-                    title = titleMatch.Groups["Title"].Value;
-                }
-                else
-                {
-                    currentName = titleMatch.Groups["Title"].Value;
-                }
-
-                continue;
-            }
-
-            if (performerMatch.Success && currentNumber != 0)
-            {
-                currentName += $" [{performerMatch.Groups["Performer"].Value}]";
-                continue;
-            }
-
-            if (line.StartsWith("INDEX", StringComparison.OrdinalIgnoreCase))
-            {
-                if (!indexMatch.Success)
-                {
-                    malformed = true;
-                    break;
-                }
-
-                if (!int.TryParse(indexMatch.Groups["Index"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index))
-                {
-                    malformed = true;
-                    break;
-                }
-
-                if (index == 0)
-                {
-                    continue;
-                }
-
-                if (index != 1 || currentNumber == 0 || !TryParseCueTime(indexMatch, out var time))
-                {
-                    malformed = true;
-                    break;
-                }
-
-                chapters.Add(new Chapter(currentNumber, time, currentName));
+                break;
             }
         }
 
-        if (malformed)
+        if (state.Malformed)
         {
             return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.MalformedCueSyntax, "CUE index syntax is unsupported or malformed."));
         }
 
-        if (chapters.Count == 0)
+        if (state.Chapters.Count == 0)
         {
             return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.EmptyCueFile, "No CUE chapters were parsed."));
         }
 
-        var ordered = chapters.OrderBy(static chapter => chapter.DisplayNumber).ToList();
+        var ordered = state.Chapters.OrderBy(static chapter => chapter.DisplayNumber).ToList();
         var info = new ChapterSet(
-            title,
-            sourceName.Length == 0 ? Path.GetFileName(path) : sourceName,
+            state.Title,
+            state.SourceName.Length == 0 ? Path.GetFileName(path) : state.SourceName,
             ChapterImportFormat.Cue,
             0,
             ordered[^1].StartTime,
             ordered);
         var entry = new ChapterImportEntry("default", "CUE Chapters", info);
         return new ChapterImportResult(true, [new ChapterImportSource(path, [entry])], []);
+    }
+
+    private static bool TryApplyLine(string rawLine, CueParseState state)
+    {
+        var line = rawLine.Trim();
+        if (line.Length == 0)
+        {
+            return true;
+        }
+
+        var titleMatch = TitleRegex().Match(line);
+        var fileMatch = FileRegex().Match(line);
+        var trackMatch = TrackRegex().Match(line);
+        var performerMatch = PerformerRegex().Match(line);
+        var indexMatch = IndexRegex().Match(line);
+
+        if (trackMatch.Success)
+        {
+            if (!int.TryParse(trackMatch.Groups["Number"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var currentNumber))
+            {
+                state.Malformed = true;
+                return false;
+            }
+
+            state.CurrentNumber = currentNumber;
+            state.CurrentName = string.Empty;
+            return true;
+        }
+
+        if (fileMatch.Success && state.SourceName.Length == 0)
+        {
+            state.SourceName = fileMatch.Groups["Name"].Value;
+            return true;
+        }
+
+        if (titleMatch.Success)
+        {
+            if (state.CurrentNumber == 0)
+            {
+                state.Title = titleMatch.Groups["Title"].Value;
+            }
+            else
+            {
+                state.CurrentName = titleMatch.Groups["Title"].Value;
+            }
+
+            return true;
+        }
+
+        if (performerMatch.Success && state.CurrentNumber != 0)
+        {
+            state.CurrentName += $" [{performerMatch.Groups["Performer"].Value}]";
+            return true;
+        }
+
+        if (!line.StartsWith("INDEX", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (!indexMatch.Success || !int.TryParse(indexMatch.Groups["Index"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index))
+        {
+            state.Malformed = true;
+            return false;
+        }
+
+        if (index == 0)
+        {
+            return true;
+        }
+
+        if (index != 1 || state.CurrentNumber == 0 || !TryParseCueTime(indexMatch, out var time))
+        {
+            state.Malformed = true;
+            return false;
+        }
+
+        state.Chapters.Add(new Chapter(state.CurrentNumber, time, state.CurrentName));
+        return true;
+    }
+
+    private sealed class CueParseState
+    {
+        internal string Title { get; set; } = string.Empty;
+
+        internal string SourceName { get; set; } = string.Empty;
+
+        internal List<Chapter> Chapters { get; } = [];
+
+        internal int CurrentNumber { get; set; }
+
+        internal string CurrentName { get; set; } = string.Empty;
+
+        internal bool Malformed { get; set; }
     }
 
     private static bool TryParseCueTime(Match match, out TimeSpan time)
