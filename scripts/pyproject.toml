@@ -9,3 +9,20 @@ dependencies = [
 
 [tool.uv]
 package = false
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.5",
+]
+
+[tool.ruff]
+# Keep cyclomatic complexity under 16 (CA1502 parity with CodeMetricsConfig.txt).
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+# C901: cyclomatic complexity; E701-E703: one statement per line.
+select = ["C901", "E701", "E702", "E703"]
+
+[tool.ruff.lint.mccabe]
+# C901 flags functions whose complexity exceeds this value; 15 rejects 16 and above.
+max-complexity = 15

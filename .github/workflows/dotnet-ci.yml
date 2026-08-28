@@ -45,6 +45,9 @@ jobs:
       - name: Verify localization resources
         run: uv run --project scripts scripts/axaml-to-json.py --check
 
+      - name: Lint Python scripts
+        run: uv run --project scripts ruff check scripts/
+
       - name: Install .NET 10
         uses: actions/setup-dotnet@v6
         with:
