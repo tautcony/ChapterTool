@@ -1,4 +1,14 @@
 <Project>
   <!-- Override Avalonia.BuildServices' build-time telemetry target repository-wide. -->
   <Target Name="AvaloniaStats" />
+
+  <!-- When report-analyzers.py passes -p:ReportErrorLog, give each target
+       framework its own ErrorLog file. Placed here (after the project body)
+       so $(TargetFramework) is already set for single-target projects. The
+       inner builds of a multi-targeted project run in parallel, so writing
+       every compile to one shared file would interleave the SARIF JSON
+       documents and corrupt the report. -->
+  <PropertyGroup Condition="'$(ReportErrorLog)' != ''">
+    <ErrorLog>$(ReportErrorLog).$(TargetFramework).sarif</ErrorLog>
+  </PropertyGroup>
 </Project>

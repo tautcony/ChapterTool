@@ -48,6 +48,10 @@ dotnet_diagnostic.SA1649.severity = none
 dotnet_diagnostic.CA1826.severity = none
 dotnet_diagnostic.CA1859.severity = none
 
+# Cyclomatic complexity metric: report methods above the threshold set in CodeMetricsConfig.txt.
+# Suggestion severity keeps the metric visible in SARIF without blocking the build (TreatWarningsAsErrors).
+dotnet_diagnostic.CA1502.severity = suggestion
+
 # Keep low-value ReSharper style suggestions out of the editor.
 resharper_arrange_object_creation_when_type_not_evident_highlighting = none
 resharper_auto_property_can_be_made_get_only_local_highlighting = none

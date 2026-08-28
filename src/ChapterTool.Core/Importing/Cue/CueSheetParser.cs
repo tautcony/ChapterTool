@@ -63,45 +63,26 @@ public sealed partial class CueSheetParser
             return true;
         }
 
-        var titleMatch = TitleRegex().Match(line);
-        var fileMatch = FileRegex().Match(line);
         var trackMatch = TrackRegex().Match(line);
-        var performerMatch = PerformerRegex().Match(line);
-        var indexMatch = IndexRegex().Match(line);
-
         if (trackMatch.Success)
         {
-            if (!int.TryParse(trackMatch.Groups["Number"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var currentNumber))
-            {
-                state.Malformed = true;
-                return false;
-            }
-
-            state.CurrentNumber = currentNumber;
-            state.CurrentName = string.Empty;
-            return true;
+            return TryApplyTrack(trackMatch, state);
         }
 
+        var fileMatch = FileRegex().Match(line);
         if (fileMatch.Success && state.SourceName.Length == 0)
         {
             state.SourceName = fileMatch.Groups["Name"].Value;
             return true;
         }
 
+        var titleMatch = TitleRegex().Match(line);
         if (titleMatch.Success)
         {
-            if (state.CurrentNumber == 0)
-            {
-                state.Title = titleMatch.Groups["Title"].Value;
-            }
-            else
-            {
-                state.CurrentName = titleMatch.Groups["Title"].Value;
-            }
-
-            return true;
+            return TryApplyTitle(titleMatch, state);
         }
 
+        var performerMatch = PerformerRegex().Match(line);
         if (performerMatch.Success && state.CurrentNumber != 0)
         {
             state.CurrentName += $" [{performerMatch.Groups["Performer"].Value}]";
@@ -113,6 +94,39 @@ public sealed partial class CueSheetParser
             return true;
         }
 
+        return TryApplyIndex(line, state);
+    }
+
+    private static bool TryApplyTrack(Match trackMatch, CueParseState state)
+    {
+        if (!int.TryParse(trackMatch.Groups["Number"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var currentNumber))
+        {
+            state.Malformed = true;
+            return false;
+        }
+
+        state.CurrentNumber = currentNumber;
+        state.CurrentName = string.Empty;
+        return true;
+    }
+
+    private static bool TryApplyTitle(Match titleMatch, CueParseState state)
+    {
+        if (state.CurrentNumber == 0)
+        {
+            state.Title = titleMatch.Groups["Title"].Value;
+        }
+        else
+        {
+            state.CurrentName = titleMatch.Groups["Title"].Value;
+        }
+
+        return true;
+    }
+
+    private static bool TryApplyIndex(string line, CueParseState state)
+    {
+        var indexMatch = IndexRegex().Match(line);
         if (!indexMatch.Success || !int.TryParse(indexMatch.Groups["Index"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var index))
         {
             state.Malformed = true;

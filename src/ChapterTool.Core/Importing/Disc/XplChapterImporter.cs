@@ -63,47 +63,64 @@ public sealed class XplChapterImporter : IChapterImporter
     private static IEnumerable<ChapterImportEntry> Parse(XDocument document, string path)
     {
         var playlist = document.Element(Namespace + "Playlist") ?? throw new InvalidDataException("Missing XPL Playlist root.");
+        var defaultTitleName = Path.GetFileNameWithoutExtension(path);
         var optionIndex = 0;
         foreach (var titleSet in playlist.Elements(Namespace + "TitleSet"))
         {
             var timeBase = ParseFps((string?)titleSet.Attribute("timeBase")) ?? 60;
             var tickBase = ParseFps((string?)titleSet.Attribute("tickBase")) ?? 24;
-            foreach (var title in titleSet.Elements(Namespace + "Title").Where(static title => title.Element(Namespace + "ChapterList") is not null))
+            foreach (var title in titleSet.Elements(Namespace + "Title"))
             {
-                var tickBaseDivisor = (int?)title.Attribute("tickBaseDivisor") ?? 1;
-                var titleName = Path.GetFileNameWithoutExtension(path);
-                titleName = (string?)title.Attribute("id") ?? titleName;
-                titleName = (string?)title.Attribute("displayName") ?? titleName;
-                var durationText = (string?)title.Attribute("titleDuration") ?? throw new InvalidDataException("Missing titleDuration.");
-                var chapters = title.Element(Namespace + "ChapterList")!
-                    .Elements(Namespace + "Chapter")
-                    .Select((chapter, index) =>
-                    {
-                        var name = (string?)chapter.Attribute("displayName") ?? (string?)chapter.Attribute("id") ?? string.Empty;
-                        var timeText = (string?)chapter.Attribute("titleTimeBegin") ?? throw new InvalidDataException("Missing titleTimeBegin.");
-                        return new Chapter(index + 1, ParseTime(timeText, timeBase, tickBase, tickBaseDivisor), name);
-                    })
-                    .ToList();
-                if (chapters.Count == 0)
+                if (!TryCreateEntry(title, defaultTitleName, timeBase, tickBase, optionIndex, out var entry))
                 {
                     continue;
                 }
 
-                var sourceName = (string?)title.Element(Namespace + "PrimaryAudioVideoClip")?.Attribute("src") ?? string.Empty;
-                var info = new ChapterSet(
-                    titleName,
-                    sourceName,
-                    ChapterImportFormat.HdDvdXpl,
-                    24,
-                    ParseTime(durationText, timeBase, tickBase, tickBaseDivisor),
-                    chapters);
-                IReadOnlyList<ReferencedMediaFile> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
-                    ? []
-                    : [new ReferencedMediaFile(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
-                yield return new ChapterImportEntry($"title-{optionIndex}", info.Title, info, ReferencedMediaFiles: mediaReferences);
+                yield return entry;
                 optionIndex++;
             }
         }
+    }
+
+    private static bool TryCreateEntry(XElement title, string defaultTitleName, double timeBase, double tickBase, int optionIndex, out ChapterImportEntry entry)
+    {
+        entry = null!;
+        if (title.Element(Namespace + "ChapterList") is not { } chapterList)
+        {
+            return false;
+        }
+
+        var tickBaseDivisor = (int?)title.Attribute("tickBaseDivisor") ?? 1;
+        var titleName = (string?)title.Attribute("displayName") ?? (string?)title.Attribute("id") ?? defaultTitleName;
+        var durationText = (string?)title.Attribute("titleDuration") ?? throw new InvalidDataException("Missing titleDuration.");
+        var chapters = chapterList.Elements(Namespace + "Chapter")
+            .Select((chapter, index) => CreateChapter(chapter, index, timeBase, tickBase, tickBaseDivisor))
+            .ToList();
+        if (chapters.Count == 0)
+        {
+            return false;
+        }
+
+        var sourceName = (string?)title.Element(Namespace + "PrimaryAudioVideoClip")?.Attribute("src") ?? string.Empty;
+        var info = new ChapterSet(
+            titleName,
+            sourceName,
+            ChapterImportFormat.HdDvdXpl,
+            24,
+            ParseTime(durationText, timeBase, tickBase, tickBaseDivisor),
+            chapters);
+        IReadOnlyList<ReferencedMediaFile> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
+            ? []
+            : [new ReferencedMediaFile(Path.GetFileName(sourceName), Path.Combine("..", "HVDVD_TS", Path.GetFileName(sourceName)))];
+        entry = new ChapterImportEntry($"title-{optionIndex}", info.Title, info, ReferencedMediaFiles: mediaReferences);
+        return true;
+    }
+
+    private static Chapter CreateChapter(XElement chapter, int index, double timeBase, double tickBase, int tickBaseDivisor)
+    {
+        var name = (string?)chapter.Attribute("displayName") ?? (string?)chapter.Attribute("id") ?? string.Empty;
+        var timeText = (string?)chapter.Attribute("titleTimeBegin") ?? throw new InvalidDataException("Missing titleTimeBegin.");
+        return new Chapter(index + 1, ParseTime(timeText, timeBase, tickBase, tickBaseDivisor), name);
     }
 
     private static double? ParseFps(string? value)

@@ -206,12 +206,37 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 - XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
 - Node.js package or npm runtime packaging changed: start in `packages/chaptertool/test/chaptertool.test.ts` and `packages/chaptertool/test/api-loader.test.ts`
 
+## Analyzer Report
+
+`scripts/report-analyzers.py` collects compiler and analyzer diagnostics at build time. It does not run tests. It is faster than `scripts/test-coverage.py`, which runs every test assembly. It skips the browser-wasm projects because they add no C# metrics and their Emscripten builds are slow.
+
+Usage:
+
+- `python3 scripts/report-analyzers.py` prints all diagnostics from every project.
+- `python3 scripts/report-analyzers.py -Prefix SA` prints only StyleCop diagnostics.
+- `python3 scripts/report-analyzers.py -Rebuild -Prefix CA1502` prints cyclomatic complexity diagnostics above the threshold.
+
+The script requires Python 3 and the .NET SDK. It builds each project in dependency order. It writes one SARIF file per project per target framework under `artifacts/analyzers/raw`. It merges these files into `artifacts/analyzers/analyzers.sarif`.
+
+Options:
+
+- `-Configuration <name>` sets the build configuration. The default is `Release`.
+- `-Prefix <prefix>` keeps only diagnostics whose rule ID starts with the prefix. Examples: `SA`, `CA1502`.
+- `-Rebuild` forces a full rebuild. Use it when the report is empty or stale. The analyzer does not rerun for up-to-date projects.
+- `-NoRestore` skips the restore step.
+- `-Output <path>` writes the merged report to a custom path. The default is `artifacts/analyzers/analyzers.sarif`.
+
+Incremental behavior: on an unchanged tree, a run without `-Rebuild` skips every project and reports nothing. This run is fast. Use `-Rebuild` for a complete report.
+
+Cyclomatic complexity (CA1502): the threshold is 10, set in `CodeMetricsConfig.txt` at the repository root. The analyzer reports methods whose complexity is 11 or higher. `CA1502` is a suggestion in `.editorconfig`, so it never fails the build. Each CA1502 result carries the source file, line, column, and the enclosing type (class, struct, interface, record, or enum). The script derives the file path and the type from the source code because the compiler writes CA1502 without a location.
+
+Per-target-framework reports: `Directory.Build.targets` sets a separate `ErrorLog` file for each target framework. Parallel compilers of a multi-target project cannot corrupt a shared file. The parser also accepts several concatenated JSON documents, so combined files do not break the report.
+
 ## Distribution Verification
 
 Coverage entry point:
 
 - `scripts/test-coverage.py` builds the five test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
-- `scripts/report-analyzers.py` builds the main solution with the compiler `ErrorLog` property. It parses SARIF with the Python standard library. It prints all diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to select StyleCop diagnostics. The script writes the raw report under `artifacts/analyzers`.
 
 - Maintained publish entry points:
   - `scripts/publish.sh`
