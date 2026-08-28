@@ -3,7 +3,6 @@ namespace ChapterTool.Contracts.Configuration;
 public sealed record AppSettings(
     string? SavingPath = null,
     string Language = "",
-    WindowLocation? MainWindowLocation = null,
     string? MkvToolnixPath = null,
     string? FfprobePath = null,
     string DefaultSaveFormat = "Txt",
@@ -14,5 +13,3 @@ public sealed record AppSettings(
     string DeleteRowsTimingMode = "preserve",
     string FrameDisplayMode = "round",
     int FrameDecimalPlaces = 3);
-
-public sealed record WindowLocation(int X, int Y);

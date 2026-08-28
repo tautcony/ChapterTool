@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -17,13 +18,24 @@ public sealed partial class ChapterToolCliApplication
             return 1;
         }
 
-        console.WriteLine($"{localizer.GetString("Cli.Header.Source")}: {Path.GetFullPath(request.InputPath)}");
+        RenderInspect(import, request.InputPath);
+        return 0;
+    }
+
+    private void RenderInspect(CliImportExecution import, string inputPath)
+    {
+        console.WriteLine($"{localizer.GetString("Cli.Header.Source")}: {Path.GetFullPath(inputPath)}");
         console.WriteLine($"{localizer.GetString("Cli.Header.Importer")}: {import.Importer.Id}");
         console.WriteLine($"{localizer.GetString("Cli.Header.Groups")}: {import.Result.Groups.Count}");
+        RenderGroups(import.Result.Groups);
+        RenderDiagnostics(import.Result.Diagnostics);
+    }
 
-        for (var groupIndex = 0; groupIndex < import.Result.Groups.Count; groupIndex++)
+    private void RenderGroups(IReadOnlyList<ChapterImportSource> groups)
+    {
+        for (var groupIndex = 0; groupIndex < groups.Count; groupIndex++)
         {
-            var group = import.Result.Groups[groupIndex];
+            var group = groups[groupIndex];
             console.WriteLine();
             console.WriteLine($"[{groupIndex}] {Path.GetFileName(group.SourcePath)}");
             foreach (var optionLine in DescribeGroup(group))
@@ -31,18 +43,21 @@ public sealed partial class ChapterToolCliApplication
                 console.WriteLine(optionLine);
             }
         }
+    }
 
-        if (import.Result.Diagnostics.Count > 0)
+    private void RenderDiagnostics(IReadOnlyList<ChapterDiagnostic> diagnostics)
+    {
+        if (diagnostics.Count == 0)
         {
-            console.WriteLine();
-            console.WriteLine(localizer.GetString("Cli.Header.Diagnostics"));
-            foreach (var line in FormatDiagnostics(import.Result.Diagnostics))
-            {
-                console.WriteLine($"  {line}");
-            }
+            return;
         }
 
-        return 0;
+        console.WriteLine();
+        console.WriteLine(localizer.GetString("Cli.Header.Diagnostics"));
+        foreach (var line in FormatDiagnostics(diagnostics))
+        {
+            console.WriteLine($"  {line}");
+        }
     }
 
     private static IEnumerable<string> DescribeGroup(ChapterImportSource group)

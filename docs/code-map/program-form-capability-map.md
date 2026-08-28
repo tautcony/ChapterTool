@@ -18,7 +18,7 @@ Use this document to compare the supported functions of every program form.
 
 Keep code identifiers, paths, commands, and user interface strings exact.
 
-Last reviewed: 2026-07-30
+Last reviewed: 2026-08-26
 
 ## 1. Program Forms
 
@@ -144,6 +144,8 @@ They do not describe product priority.
 | Edit chapter time | Provides `ChapterEditingService` | Does not edit rows interactively | Uses DataGrid editing | Uses browser input editing | `src/ChapterTool.Core/Editing/ChapterEditingService.cs` `[Host variant]` |
 | Edit chapter name | Provides `ChapterEditingService` | Does not edit rows interactively | Uses DataGrid editing | Uses browser input editing | `src/ChapterTool.Core/Editing/ChapterEditingService.cs` `[Host variant]` |
 | Insert and delete rows | Provides edit operations | Does not provide row commands | Provides insert and delete commands | Provides insert and delete actions | Core editing service plus host command layer `[Host variant]` |
+| Delete-rows timing preference | Provides `ChapterEditingOptions.DeleteRowsTiming` (`Preserve` or `Normalize`) | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; reaches Core through `ClipEditingCoordinator.Delete` | Drafts and applies through `Home.razor`; reaches Core through `WasmWorkspace.EditingOptions` | `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs` `[Host variant]` |
+| Frame display preference | Provides `ChapterEditingOptions.FrameDisplay` (`Round` or `DecimalPlaces`) and `EffectiveFrameDecimalPlaces` | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; drives frame-update precision in `MainWindowViewModel.Editing.cs` | Drafts and applies through `Home.razor`; drives `WasmWorkspace.EditingOptions` | `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs` `[Host variant]` |
 | Select multiple rows | Provides model collections only | Does not provide row selection | Uses DataGrid selection | Uses `WasmWorkspace.SelectRow` | `MainWindowViewModel` and `WasmWorkspace` `[Host variant]` |
 | Combine and restore clips | Provides `ChapterSegmentService` | Does not provide interactive clip state | Uses `ClipSession` | Uses `WasmWorkspace` clip state | `src/ChapterTool.Core/Editing/ChapterSegmentService.cs` `[Host variant]` |
 | Forward frame shift | Provides frame transform services | Provides frame-rate and export options only | Provides `ForwardShiftToolView` | Provides a browser forward-shift action | `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs` `[Host variant]` |
@@ -173,6 +175,7 @@ They do not describe product priority.
 | --- | --- | --- | --- | --- | --- |
 | Settings model | Provides no host settings store | Reads shared `ChapterToolSettings` for CLI output defaults | Reads and writes shared `ChapterToolSettings` | Uses a browser settings model | `ChapterToolSettings` and `WasmSettings` `[Host variant]` |
 | Settings persistence | Provides no persistence boundary | Uses `settings.json` under the shared ChapterTool settings directory | Uses the same `settings.json` directory | Uses `localStorage` | `ChapterToolRuntimeComposition`, `ChapterToolSettingsStore`, and `Home.razor` `[Host variant]` |
+| Settings close confirmation | Provides no UI boundary | Not applicable | Asks whether to keep the settings tool open when unapplied changes exist through `AvaloniaSettingsCloseConfirmationService` | Not applicable | `src/ChapterTool.Avalonia/Services/AvaloniaSettingsCloseConfirmationService.cs` `[Desktop only]` |
 | Save directory | Provides no directory policy | Uses `--output`, settings, or the source directory | Uses a picker, settings, or the source directory | Uses the browser download directory | `ChapterToolCliApplication`, `ChapterSaveDirectory`, and `download.js` `[Host variant]` |
 | External tool configuration | Provides no native tool boundary | Reads configured tool paths and `PATH` search directories | Reads and edits configured tool paths | Does not use native tools | `ChapterToolRuntimeComposition` and `ExternalToolLocator` `[Desktop and CLI]` |
 | Process execution | Provides no process boundary | Runs external import tools through Infrastructure | Runs external import tools through Infrastructure | Cannot start local processes | `src/ChapterTool.Infrastructure/Processes/ProcessRunner.cs` `[Desktop and CLI]` |
@@ -232,7 +235,8 @@ Start with these paths for CLI behavior:
 
 - Product facade: `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
 - DotMake commands: `src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs`
-- CLI workflow application: `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
+- CLI workflow application: `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs` and partials (`Convert`, `Import`, `Inspect`, `Paths`, `Selection`)
+- CLI models: `src/ChapterTool.CommandLine/Cli/ChapterToolCliModels.cs`
 - CLI parsing and run policy: `src/ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs`
 - Console boundary: `src/ChapterTool.CommandLine/Cli/CliConsole.cs`
 - Standalone process host: `src/ChapterTool.CommandLine/Program.cs`

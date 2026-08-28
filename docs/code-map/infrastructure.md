@@ -38,6 +38,8 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - tool lookup:
   - `src/ChapterTool.Infrastructure/Tools/ExternalToolLocator.cs`
   - `src/ChapterTool.Infrastructure/Tools/ExternalToolPathResolver.cs`
+  - `src/ChapterTool.Infrastructure/Tools/ExternalToolDefaultCandidateProvider.cs`
+  - `src/ChapterTool.Infrastructure/Tools/IExternalToolDefaultCandidateProvider.cs`
   - `src/ChapterTool.Infrastructure/Tools/MkvToolNixInstallProbe.cs`
 - process execution:
   - `src/ChapterTool.Infrastructure/Processes/ProcessRunner.cs`
@@ -46,7 +48,11 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Infrastructure/Services/IProcessRunner.cs`
   - `src/ChapterTool.Infrastructure/Services/ProcessRunRequest.cs`
   - `src/ChapterTool.Infrastructure/Services/ProcessRunResult.cs`
+  - `src/ChapterTool.Infrastructure/Services/IDialogService.cs`
+  - `src/ChapterTool.Infrastructure/Services/DialogRequest.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/ExternalToolLocation.cs`
+
+`ExternalToolDefaultCandidateProvider` supplies the default executable candidate list for a tool id. `IDialogService` and `DialogRequest` define the host-neutral message dialog boundary that `ScriptedDialogService` implements for tests. `MkvToolNixInstallProbe` selects a platform-specific probe. `WindowsRegistryInstallProbe` reads the Windows registry and returns no values on other platforms.
 
 ### Settings and configuration persistence
 
@@ -77,6 +83,8 @@ All runtime consumers receive the same aggregate store. `SettingsToolViewModel` 
 
 `AppSettings.OutputTextEncoding` persists the lowercase output encoding id (`utf8`, `utf16le`, `utf16be`, `utf32le`, or `utf32be`); UTF-8 is the default.
 
+`AppSettings` also persists the editing preferences: `DeleteRowsTimingMode` (`preserve` or `normalize`), `FrameDisplayMode` (`round` or `decimal-places`), and `FrameDecimalPlaces` (one to six).
+
 ### Platform services
 
 - shell/OS launch behavior:
@@ -84,6 +92,7 @@ All runtime consumers receive the same aggregate store. `SettingsToolViewModel` 
 - native dependency lookup:
   - `src/ChapterTool.Infrastructure/Platform/FileSystemNativeDependencyService.cs`
   - `src/ChapterTool.Infrastructure/Platform/INativeDependencyService.cs`
+  - `src/ChapterTool.Infrastructure/Platform/NativeDependencyLocation.cs`
 - app log surface:
   - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
 - test/dummy platform services:

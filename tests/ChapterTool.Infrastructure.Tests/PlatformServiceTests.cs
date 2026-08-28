@@ -101,6 +101,109 @@ public sealed class PlatformServiceTests
         Assert.Contains("missing.mkv", entry.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Shell_service_opens_successfully_without_logging()
+    {
+        var logger = new RecordingLogger<ShellService>();
+        var service = new ShellService(logger, _ => new Process());
+
+        await service.OpenAsync("file.mkv", TestContext.Current.CancellationToken);
+
+        Assert.Empty(logger.Entries);
+    }
+
+    [Fact]
+    public async Task Shell_service_reveals_in_folder_successfully()
+    {
+        ProcessStartInfo? captured = null;
+        var service = new ShellService(null, startInfo =>
+        {
+            captured = startInfo;
+            return new Process();
+        });
+
+        await service.RevealInFolderAsync("/media/file.mkv", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(captured);
+        if (OperatingSystem.IsMacOS())
+        {
+            Assert.Equal("open", captured.FileName);
+            Assert.Equal(["-R", "/media/file.mkv"], captured.ArgumentList);
+        }
+        else if (OperatingSystem.IsWindows())
+        {
+            Assert.Equal("explorer", captured.FileName);
+        }
+        else
+        {
+            Assert.Equal("xdg-open", captured.FileName);
+        }
+    }
+
+    [Fact]
+    public async Task Shell_service_opens_terminal_successfully()
+    {
+        ProcessStartInfo? captured = null;
+        var service = new ShellService(null, startInfo =>
+        {
+            captured = startInfo;
+            return new Process();
+        });
+
+        await service.OpenTerminalAsync("/workspace", TestContext.Current.CancellationToken);
+
+        Assert.NotNull(captured);
+        if (OperatingSystem.IsMacOS())
+        {
+            Assert.Equal("open", captured.FileName);
+            Assert.Equal(["-a", "Terminal", "/workspace"], captured.ArgumentList);
+        }
+        else if (OperatingSystem.IsWindows())
+        {
+            Assert.Equal("wt", captured.FileName);
+            Assert.Equal(["-d", "/workspace"], captured.ArgumentList);
+        }
+        else
+        {
+            Assert.Equal("x-terminal-emulator", captured.FileName);
+            Assert.Equal(["--working-directory", "/workspace"], captured.ArgumentList);
+        }
+    }
+
+    [Fact]
+    public async Task Shell_service_falls_back_to_cmd_when_windows_terminal_unavailable()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var calls = 0;
+        var service = new ShellService(null, _ => calls++ == 0 ? null : new Process());
+
+        await service.OpenTerminalAsync(@"C:\Temp", TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task Shell_service_logs_terminal_failure_on_linux()
+    {
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        var logger = new RecordingLogger<ShellService>();
+        var service = new ShellService(logger, _ => null);
+
+        await service.OpenTerminalAsync("/workspace", TestContext.Current.CancellationToken);
+
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Contains("/workspace", entry.Message, StringComparison.Ordinal);
+    }
+
     private sealed class RecordingLogger<T> : ILogger<T>
     {
         public List<LogEntry> Entries { get; } = [];

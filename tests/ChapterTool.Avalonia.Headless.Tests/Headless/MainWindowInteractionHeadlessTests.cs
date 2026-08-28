@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Exporting;
@@ -50,6 +51,32 @@ public sealed class MainWindowInteractionHeadlessTests
         // Language-independent routing: stable Tag identity, not header text.
         await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, $"Renamed-{culture}"));
         Assert.Equal($"Renamed-{culture}", host.ViewModel.Rows[0].Name);
+    }
+
+    [AvaloniaFact]
+    public async Task Grid_cell_edit_commit_updates_the_row()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        await host.LoadAsync("movie.txt");
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        grid.Focus();
+        host.Window.KeyPress(Key.Home, RawInputModifiers.None, PhysicalKey.Home, string.Empty);
+        host.Window.KeyPress(Key.Right, RawInputModifiers.None, PhysicalKey.ArrowRight, string.Empty);
+        host.Window.KeyPress(Key.F2, RawInputModifiers.None, PhysicalKey.F2, string.Empty);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        var editor = grid.GetVisualDescendants()
+            .OfType<TextBox>()
+            .Single(textBox => textBox.Classes.Contains("gridEditor"));
+
+        editor.Text = "00:00:10.000";
+        host.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, string.Empty);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        Assert.Contains(host.ViewModel.Rows, row => row.TimeText.StartsWith("00:00:10", StringComparison.Ordinal));
     }
 
     [AvaloniaFact]

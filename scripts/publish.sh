@@ -66,9 +66,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Runtime becomes part of a directory that the script removes before publication.
+if [[ ! "$Runtime" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+  echo "ERROR: invalid runtime identifier '$Runtime'" >&2
+  exit 2
+fi
+
 # ---- paths ----
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+repo_root="$(cd "$script_dir/.." && pwd -P)"
 project="$repo_root/src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj"
 
 if [[ "$SelfContained" == "true" ]]; then
@@ -103,18 +109,47 @@ publish_args=(
   --runtime "$Runtime"
   --self-contained:"$SelfContained"
   --output "$dotnet_output"
+  --no-restore
   -p:PublishSingleFile="$PublishSingleFile"
+  -p:DebugType=None
+  -p:DebugSymbols=false
+  -p:CopyOutputSymbolsToPublishDirectory=false
+  -p:PublishDocumentationFiles=false
 )
 
 if [[ "$PublishSingleFile" == "true" ]]; then
   publish_args+=(-p:IncludeNativeLibrariesForSelfExtract=true)
 fi
 
-if [[ "$NoRestore" == "true" ]]; then
-  publish_args+=(--no-restore)
+dotnet "${publish_args[@]}"
+
+# Some native runtime packages classify their PDB files as runtime assets.
+find "$dotnet_output" -type f \( -iname '*.pdb' -o -iname '*.dbg' \) -delete
+
+# ---- artifact validation ----
+unexpected_files=()
+while IFS= read -r file; do
+  unexpected_files+=("$file")
+done < <(find "$dotnet_output" -type f \( -iname '*.pdb' -o -iname '*.dbg' -o -name '.DS_Store' -o -name 'AvaloniaUI.DiagnosticsSupport*.dll' \) -print)
+
+if (( ${#unexpected_files[@]} > 0 )); then
+  printf 'ERROR: publish output contains development-only files:\n' >&2
+  printf '  %s\n' "${unexpected_files[@]}" >&2
+  exit 1
 fi
 
-dotnet "${publish_args[@]}"
+if [[ "$PublishSingleFile" == "true" ]]; then
+  duplicate_assemblies=()
+  while IFS= read -r file; do
+    duplicate_assemblies+=("$file")
+  done < <(find "$dotnet_output" -maxdepth 1 -type f -iname '*.dll' -print)
+
+  if (( ${#duplicate_assemblies[@]} > 0 )); then
+    printf 'ERROR: single-file publish output contains duplicate top-level assemblies:\n' >&2
+    printf '  %s\n' "${duplicate_assemblies[@]}" >&2
+    exit 1
+  fi
+fi
 
 # ---- macOS .app bundle ----
 # Build a proper .app bundle on macOS so the Dock/Finder show the real icon.

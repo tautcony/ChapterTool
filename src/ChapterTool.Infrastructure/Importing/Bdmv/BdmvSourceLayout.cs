@@ -26,36 +26,22 @@ internal sealed record BdmvSourceLayout(
         }
 
         var fullPath = Path.GetFullPath(inputPath);
-        string? discRoot = null;
+        string? discRoot;
         if (Directory.Exists(fullPath))
         {
-            if (Directory.Exists(Path.Combine(fullPath, "BDMV", "PLAYLIST")) ||
-                Directory.Exists(Path.Combine(fullPath, "BDMV", "BACKUP", "PLAYLIST")))
-            {
-                discRoot = fullPath;
-            }
-            else if (string.Equals(Path.GetFileName(fullPath), "BDMV", StringComparison.OrdinalIgnoreCase) &&
-                     (Directory.Exists(Path.Combine(fullPath, "PLAYLIST")) ||
-                      Directory.Exists(Path.Combine(fullPath, "BACKUP", "PLAYLIST"))))
-            {
-                discRoot = Directory.GetParent(fullPath)?.FullName;
-            }
+            discRoot = ResolveDirectoryRoot(fullPath);
         }
         else if (File.Exists(fullPath))
         {
-            if (!string.Equals(Path.GetFileName(fullPath), "index.bdmv", StringComparison.OrdinalIgnoreCase))
+            discRoot = ResolveFileRoot(fullPath, out error);
+            if (error is not null)
             {
-                error = "Only the primary BDMV/index.bdmv file is accepted as a direct BDMV file input.";
                 return null;
             }
-
-            var bdmvDirectory = Directory.GetParent(fullPath);
-            if (bdmvDirectory != null && string.Equals(bdmvDirectory.Name, "BDMV", StringComparison.OrdinalIgnoreCase) &&
-                (Directory.Exists(Path.Combine(bdmvDirectory.FullName, "PLAYLIST")) ||
-                 Directory.Exists(Path.Combine(bdmvDirectory.FullName, "BACKUP", "PLAYLIST"))))
-            {
-                discRoot = bdmvDirectory.Parent?.FullName;
-            }
+        }
+        else
+        {
+            discRoot = null;
         }
 
         if (discRoot == null)
@@ -81,4 +67,47 @@ internal sealed record BdmvSourceLayout(
             Path.Combine(bdmv, "STREAM"),
             Path.Combine(bdmv, "META", "DL"));
     }
+
+    private static string? ResolveDirectoryRoot(string fullPath)
+    {
+        if (HasBdmvSubdirectory(fullPath))
+        {
+            return fullPath;
+        }
+
+        if (string.Equals(Path.GetFileName(fullPath), "BDMV", StringComparison.OrdinalIgnoreCase) &&
+            HasBdmvPlaylists(fullPath))
+        {
+            return Directory.GetParent(fullPath)?.FullName;
+        }
+
+        return null;
+    }
+
+    private static string? ResolveFileRoot(string fullPath, out string? error)
+    {
+        error = null;
+        if (!string.Equals(Path.GetFileName(fullPath), "index.bdmv", StringComparison.OrdinalIgnoreCase))
+        {
+            error = "Only the primary BDMV/index.bdmv file is accepted as a direct BDMV file input.";
+            return null;
+        }
+
+        var bdmvDirectory = Directory.GetParent(fullPath);
+        if (bdmvDirectory != null && string.Equals(bdmvDirectory.Name, "BDMV", StringComparison.OrdinalIgnoreCase) &&
+            HasBdmvPlaylists(bdmvDirectory.FullName))
+        {
+            return bdmvDirectory.Parent?.FullName;
+        }
+
+        return null;
+    }
+
+    private static bool HasBdmvSubdirectory(string directory) =>
+        Directory.Exists(Path.Combine(directory, "BDMV", "PLAYLIST")) ||
+        Directory.Exists(Path.Combine(directory, "BDMV", "BACKUP", "PLAYLIST"));
+
+    private static bool HasBdmvPlaylists(string directory) =>
+        Directory.Exists(Path.Combine(directory, "PLAYLIST")) ||
+        Directory.Exists(Path.Combine(directory, "BACKUP", "PLAYLIST"));
 }

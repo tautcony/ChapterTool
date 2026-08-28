@@ -9,6 +9,7 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
@@ -670,6 +671,100 @@ public sealed class MainWindowViewModelTests
         var folded = Assert.IsType<Dictionary<string, object?>>(Assert.Single(diagnostics));
         Assert.Equal("Clpi.Available", folded["code"]);
         Assert.Equal("Loaded 12 CLPI files for 12 unique clips.", folded["message"]);
+    }
+
+    [Fact]
+    public async Task LoadWithEmptyDisplayNameReportsNoSourceSelected()
+    {
+        var vm = CreateViewModel();
+
+        await vm.LoadCommand.ExecuteAsync(new BufferedChapterSource(string.Empty, []));
+
+        Assert.Contains("No source selected", vm.StatusText, StringComparison.Ordinal);
+        Assert.False(vm.SaveCommand.CanExecute());
+    }
+
+    [Fact]
+    public async Task LoadFailureReportsLoadFailedStatus()
+    {
+        var failed = new ChapterImportResult(
+            false,
+            [],
+            [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.Unavailable, "boom")]);
+        var vm = CreateViewModel(new FakeLoadService(failed));
+
+        await vm.LoadCommand.ExecuteAsync("bad.mpls");
+
+        Assert.Contains("boom", vm.StatusText, StringComparison.Ordinal);
+        Assert.False(vm.SaveCommand.CanExecute());
+    }
+
+    [Fact]
+    public async Task AppendMplsAfterSuccessfulLoadReportsAppendedStatus()
+    {
+        var load = new FakeLoadService(
+            ImportResult("base.mpls", Info(ChapterImportFormat.Mpls, "base", new Chapter(1, TimeSpan.Zero, "Base"))),
+            ImportResult("append.mpls", Info(ChapterImportFormat.Mpls, "append", new Chapter(1, TimeSpan.Zero, "Append"))));
+        var vm = CreateViewModel(load);
+
+        await vm.LoadCommand.ExecuteAsync("base.mpls");
+        await vm.AppendMplsCommand.ExecuteAsync("append.mpls");
+
+        Assert.Contains("Appended", vm.StatusText, StringComparison.Ordinal);
+        Assert.True(vm.IsClipCombineChecked);
+    }
+
+    [Fact]
+    public async Task AppendMplsFailureReportsAppendFailedStatus()
+    {
+        var failed = new ChapterImportResult(
+            false,
+            [],
+            [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.Unavailable, "boom")]);
+        var load = new FakeLoadService(
+            ImportResult("base.mpls", Info(ChapterImportFormat.Mpls, "base", new Chapter(1, TimeSpan.Zero, "Base"))),
+            failed);
+        var vm = CreateViewModel(load);
+
+        await vm.LoadCommand.ExecuteAsync("base.mpls");
+        await vm.AppendMplsCommand.ExecuteAsync("append.mpls");
+
+        Assert.Contains("boom", vm.StatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LoadChapterNameTemplateFromEmptyPathReturnsImmediately()
+    {
+        var vm = CreateViewModel();
+        var initialStatus = vm.StatusText;
+
+        await vm.LoadChapterNameTemplateFromPathAsync(string.Empty, TestContext.Current.CancellationToken);
+
+        Assert.Equal(initialStatus, vm.StatusText);
+        Assert.Equal(0, vm.ChapterNameModeIndex);
+    }
+
+    [Fact]
+    public async Task LoadChapterNameTemplateFromEmptyFileReportsFailure()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "empty.txt");
+        await File.WriteAllTextAsync(path, string.Empty);
+
+        try
+        {
+            var vm = CreateViewModel();
+
+            await vm.LoadChapterNameTemplateFromPathAsync(path, TestContext.Current.CancellationToken);
+
+            Assert.Contains("Failed to load chapter name template", vm.StatusText, StringComparison.Ordinal);
+            Assert.Equal(0, vm.ChapterNameModeIndex);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 
     [Fact]

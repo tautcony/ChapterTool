@@ -118,11 +118,12 @@ This is the first file to inspect when dependency wiring or service registration
 
 - `Themes.axaml` contains the imported light and dark token dictionaries. Surface colors use `Brush.*` tokens.
 - `Styles.axaml` contains the reusable control styles for Avalonia 12.1. Shared classes include `flat`, `icon_button`, `toolFooter`, `toolToolbar`, `optionLabel`, `optionCell`, `gridEditor`, and `frameText`.
-- `SharedResources.axaml` keeps fonts, font-size tokens, and semantic `ChapterTool.*` brushes for frame accuracy, diagnostics, log levels, and expression highlighting.
+- `SharedResources.axaml` keeps fonts, font-size tokens, and semantic `ChapterTool.*` brushes for frame accuracy, diagnostics, log levels, and expression highlighting. It also merges `Themes.axaml`.
+- `SharedStyles.axaml` composes the style layer. It loads `FluentTheme`, the AvaloniaEdit theme, the DataGrid theme, and `Styles.axaml`, and sets base Window and control styles.
 - `NOTICE.md` records the source, license scope, exclusions, and compatibility adaptations.
 - Only `Themes.axaml` and `Styles.axaml` contain adapted SourceGit MIT material.
 
-`App.axaml` loads these resources after the Avalonia base themes. It loads ChapterTool product styles after the imported theme layer.
+`App.axaml` merges `SharedResources.axaml` as application resources and includes `SharedStyles.axaml` as the single application style entry point.
 
 The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. Change FPS is a visible `icon_button` next to the frame-rate selector.
 
@@ -138,6 +139,7 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 - `src/ChapterTool.Avalonia.UI/ViewModels/ChapterRowViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/XmlLanguageDisplay.cs` (localized XML chapter language selector options)
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs` (pure log projection and structured-data formatting)
 
@@ -151,16 +153,32 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 - `src/ChapterTool.Avalonia/Services/AvaloniaFilePickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaSettingsPickerService.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs`
+- `src/ChapterTool.Avalonia/Services/AvaloniaClipboardService.cs`
+- `src/ChapterTool.Avalonia/Services/AvaloniaSettingsCloseConfirmationService.cs`
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/AvaloniaFontApplicationService.cs`
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/IFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/FontFamilyCatalogEntry.cs`
 - `src/ChapterTool.Avalonia/Services/AvaloniaFontFamilyCatalog.cs`
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/FontSettingsResolver.cs`
 
+Port contracts for these services live in `src/ChapterTool.Avalonia.UI/PlatformPorts/`:
+
+- `IChapterLoadService.cs`, `IChapterSaveService.cs` — load and save boundaries
+- `IFilePickerService.cs`, `ISettingsPickerService.cs` — file and settings pickers
+- `ISettingsCloseConfirmationService.cs` — unsaved-changes confirmation before settings close
+- `IClipboardService` (Contracts), `IThemeApplicationService.cs`, `IFontApplicationService.cs` — theme, font, and clipboard
+- `SourcePorts.cs` — `IChapterSourcePicker` and `IChapterSourceLoader`
+- `RuntimeCapabilities.cs` — `IRuntimeCapabilities` and the source/output/secondary-surface mode enums
+- `ExternalToolExecutableNames.cs` — executable name sets per platform
+- `BrowserSettingsCodec.cs` — settings JSON encode and decode for browser-portable flows
+
+`AvaloniaSettingsCloseConfirmationService` asks the user whether to keep the settings tool open when unapplied changes exist.
+
 ### CLI
 
 - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
-- `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs`
+- `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs` — command entry, split into partials: `ChapterToolCliApplication.Convert.cs`, `.Import.cs`, `.Inspect.cs`, `.Paths.cs`, and `.Selection.cs`
+- `src/ChapterTool.CommandLine/Cli/ChapterToolCliModels.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs`
 - `src/ChapterTool.CommandLine/Cli/ChapterToolCliSupport.cs`
 - `src/ChapterTool.CommandLine/Cli/CliLocalizationManager.cs`
@@ -298,7 +316,9 @@ Main-window selectors with runtime-localized display text, including the automat
 
 Secondary tool windows consume the stable interfaces in `PlatformPorts/SessionPorts/ShellPorts.cs` through `IWorkspaceToolSession`. `MainWindowToolSession` owns one concrete `MainWindowPortAdapters` instance internally. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement or expose those concrete adapters.
 
-Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all imported `Color.*` tokens, and the Avalonia light or dark variant. `App.axaml` loads the imported theme foundation and applies later ChapterTool product styles.
+Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all imported `Color.*` tokens, and the Avalonia light or dark variant. `SharedStyles.axaml` loads the imported theme foundation through `Styles.axaml` after `FluentTheme`.
+
+Editing preferences (delete-rows timing, frame display mode, decimal places) are draft fields in `SettingsToolViewModel` read from `IPreferenceSink.EditingOptions`. Delete-row edits pass `ChapterEditingOptions` through `ClipEditingCoordinator.Delete`; frame display drives the frame-update precision in `MainWindowViewModel.Editing.cs`. When unapplied changes exist, `AvaloniaSettingsCloseConfirmationService` asks the user whether to keep the settings tool open.
 
 Font appearance is split into independent UI and monospace families. `AvaloniaFontFamilyCatalog` snapshots and canonicalizes system fonts, lazily resolves localized family metadata for the active UI culture, and keeps canonical names for persistence. `AvaloniaFontApplicationService` resolves unavailable choices and updates `ChapterTool.UiFontFamily` and `ChapterTool.MonospaceFontFamily`. `App.axaml` applies the UI family through window inheritance and table headers, while chapter `DataGridCell`, `OrderShiftBox`, `ExpressionEditor`, and `TextToolView` consume the monospace resource so existing surfaces refresh at runtime without changing icon fonts.
 

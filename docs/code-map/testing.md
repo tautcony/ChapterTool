@@ -37,7 +37,7 @@ Desktop composition coverage:
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
-Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`.
+Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the browser shortcut guard.
 
 Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 
@@ -49,19 +49,23 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Importing/TextImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/DiscImporterTests.cs`
+  - `tests/ChapterTool.Core.Tests/Importing/MovieObjectNavigationTests.cs`
+  - `tests/ChapterTool.Core.Tests/Importing/MplsExtensionDataTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/IfoImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/MplsImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/XplImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/MediaChapterImporterTests.cs`
 - editing
-  - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs`
+  - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs` (delete-rows timing and frame display options coverage)
   - `tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Editing/SampleChapterNameTemplateTests.cs`
+  - `tests/ChapterTool.Core.Tests/Editing/ChapterContentServiceTests.cs`
 - transform
   - `tests/ChapterTool.Core.Tests/Transform/FrameRateServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterFpsTransformServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterTimeFormatterTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterRoundingTests.cs`
+  - `tests/ChapterTool.Core.Tests/Transform/ChapterExpressionServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/LuaExpressionScriptServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ExpressionAuthoringServiceTests.cs`
 - exporting
@@ -69,6 +73,11 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Exporting/ChapterOutputProjectionServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Exporting/ChapterConversionServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Exporting/XmlChapterLanguageCatalogTests.cs`
+  - `tests/ChapterTool.Core.Tests/Exporting/OutputTextEncodingTests.cs`
+  - `tests/ChapterTool.Core.Tests/Exporting/ChapterSavePathTests.cs`
+- boundaries and localization
+  - `tests/ChapterTool.Core.Tests/Boundaries/PortableInputPolicyTests.cs`
+  - `tests/ChapterTool.Core.Tests/Localization/UiLanguageCodeTests.cs`
 
 Fixtures:
 
@@ -93,13 +102,17 @@ High-signal test files:
   - `tests/ChapterTool.Infrastructure.Tests/Importing/MatroskaIntegrationTests.cs`
 - BDMV:
   - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvBdjoNavigationTests.cs`
 - process runner:
   - `tests/ChapterTool.Infrastructure.Tests/ProcessRunnerTests.cs`
+- runtime composition:
+  - `tests/ChapterTool.Infrastructure.Tests/ChapterToolRuntimeCompositionTests.cs`
 - platform services:
   - `tests/ChapterTool.Infrastructure.Tests/PlatformServiceTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs`
 - settings persistence:
   - `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/CorruptSettingsFileTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ChapterToolSettingsFontTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ThemePresetCatalogTests.cs`
 
@@ -118,15 +131,26 @@ High-signal test files:
 - view models
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsSnapshotCoordinatorTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolViewModelPortConstructionTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs`
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
-  - `tests/ChapterTool.Avalonia.Tests/Services/`
+  - `tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterLoadServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterSaveServiceTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaPickerServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/AvaloniaFontFamilyCatalogTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Services/ChapterImporterRegistryTests.cs`
+- views and expression presentation
+  - `tests/ChapterTool.Avalonia.Tests/Views/MainViewLayoutTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/Views/ExpressionThemeBrushesTests.cs`
 - cross-host contracts
   - `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/PlatformPorts/SharedBoundaryContractTests.cs`
+- architecture and guards
+  - `tests/ChapterTool.Avalonia.Tests/Architecture/HostDependencyBoundaryTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/NoAvaloniaHeadlessAttributeGuardTests.cs`
 - CLI
   - `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs`
   - `src/ChapterTool.CommandLine/ChapterToolCliHost.cs`
@@ -140,8 +164,14 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaSettingsCloseConfirmationHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/EmbeddedPresenterHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiResourceResolutionHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiScreenshotCaptureHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/HeadlessTestCollectionGuardTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Services/AvaloniaThemeApplicationServiceTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AutofacCompositionHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`
@@ -151,7 +181,9 @@ Use `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.c
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
 
-Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible FontAwesome icons.
+Editing-preference coverage for delete-rows timing and frame display is in `ChapterEditingServiceTests` at the Core level and `SettingsToolViewModelTests` for draft/apply lifecycle.
+
+Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible `Optris.Icons.Avalonia.FontAwesome` icons.
 
 Log projection coverage is in `LogToolViewModelTests` against `LogEntryViewModel`; log orchestration remains in `LogToolViewModel`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, summary, structured data, raw JSON, theme changes, and narrow layout.
 
@@ -174,12 +206,37 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 - XAML shell, rendered controls, or Headless interaction flows changed: start in `tests/ChapterTool.Avalonia.Headless.Tests`
 - Node.js package or npm runtime packaging changed: start in `packages/chaptertool/test/chaptertool.test.ts` and `packages/chaptertool/test/api-loader.test.ts`
 
+## Analyzer Report
+
+`scripts/report-analyzers.py` collects compiler and analyzer diagnostics at build time. It does not run tests. It is faster than `scripts/test-coverage.py`, which runs every test assembly. It skips the browser-wasm projects because they add no C# metrics and their Emscripten builds are slow.
+
+Usage:
+
+- `python3 scripts/report-analyzers.py` prints all diagnostics from every project.
+- `python3 scripts/report-analyzers.py -Prefix SA` prints only StyleCop diagnostics.
+- `python3 scripts/report-analyzers.py -Rebuild -Prefix CA1502` prints cyclomatic complexity diagnostics above the threshold.
+
+The script requires Python 3 and the .NET SDK. It builds each project in dependency order. It writes one SARIF file per project per target framework under `artifacts/analyzers/raw`. It merges these files into `artifacts/analyzers/analyzers.sarif`.
+
+Options:
+
+- `-Configuration <name>` sets the build configuration. The default is `Release`.
+- `-Prefix <prefix>` keeps only diagnostics whose rule ID starts with the prefix. Examples: `SA`, `CA1502`.
+- `-Rebuild` forces a full rebuild. Use it when the report is empty or stale. The analyzer does not rerun for up-to-date projects.
+- `-NoRestore` skips the restore step.
+- `-Output <path>` writes the merged report to a custom path. The default is `artifacts/analyzers/analyzers.sarif`.
+
+Incremental behavior: on an unchanged tree, a run without `-Rebuild` skips every project and reports nothing. This run is fast. Use `-Rebuild` for a complete report.
+
+Cyclomatic complexity (CA1502): the threshold is 10, set in `CodeMetricsConfig.txt` at the repository root. The analyzer reports methods whose complexity is 11 or higher. `CA1502` is a suggestion in `.editorconfig`, so it never fails the build. Each CA1502 result carries the source file, line, column, and the enclosing type (class, struct, interface, record, or enum). The script derives the file path and the type from the source code because the compiler writes CA1502 without a location.
+
+Per-target-framework reports: `Directory.Build.targets` sets a separate `ErrorLog` file for each target framework. Parallel compilers of a multi-target project cannot corrupt a shared file. The parser also accepts several concatenated JSON documents, so combined files do not break the report.
+
 ## Distribution Verification
 
 Coverage entry point:
 
-- `scripts/test-coverage.py` runs the four test projects in sequence. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
-- `scripts/report-analyzers.py` builds the main solution with the compiler `ErrorLog` property. It parses SARIF with the Python standard library. It prints all diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to select StyleCop diagnostics. The script writes the raw report under `artifacts/analyzers`.
+- `scripts/test-coverage.py` builds the five test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
 
 - Maintained publish entry points:
   - `scripts/publish.sh`
@@ -190,6 +247,7 @@ Coverage entry point:
   - `.github/workflows/release.yml`
 - The `ChapterTool` NuGet package installs the `chaptertool` command. `src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj` owns its package metadata.
 - `.github/workflows/dotnet-ci.yml` packs `ChapterTool.Core` and `ChapterTool` in the build job. It uploads the packages as `ChapterTool-Core-nuget` and `ChapterTool-Cli-nuget`. Each `pack-dotnet` runtime matrix job uploads one `ChapterTool-Avalonia-<runtime>` artifact.
+- The Avalonia publish scripts omit symbols, documentation files, and development diagnostics. They reject duplicate top-level assemblies in single-file output. The `pack-dotnet` jobs run this validation before artifact upload.
 - `.github/workflows/nuget-publish.yml` applies one release version to both NuGet packages and publishes them. It does not install the CLI package during CI.
 - `.github/workflows/release.yml` creates the GitHub Release after a successful `.NET 10 CI` push to a version tag. It publishes the artifacts from that CI run. A manual `workflow_dispatch` may select a tag that already has a successful CI run.
 - Use `src/ChapterTool.CommandLine/README.md` for the NuGet Tool installation and external-tool requirements.

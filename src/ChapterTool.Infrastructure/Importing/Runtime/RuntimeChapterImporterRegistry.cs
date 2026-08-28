@@ -12,17 +12,21 @@ using ChapterTool.Infrastructure.Services;
 
 namespace ChapterTool.Infrastructure.Importing.Runtime;
 
-public sealed class RuntimeChapterImporterRegistry(
-    IChapterTimeFormatter formatter,
-    IExternalToolLocator toolLocator,
-    IProcessRunner processRunner,
-    IMediaChapterReader mediaChapterReader,
-    IMediaChapterReader mp4FallbackChapterReader) : IChapterImporterRegistry
+public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
 {
+    private static readonly IReadOnlySet<string> Mp4Extensions = CreateExtensionSet(".mp4", ".m4a", ".m4v");
+    private static readonly IReadOnlySet<string> MatroskaExtensions = CreateExtensionSet(".mkv", ".mka", ".mks", ".webm");
+    private static readonly IReadOnlySet<string> MediaExtensions = CreateExtensionSet(
+        ".mp4", ".m4a", ".m4v", ".mov", ".qt", ".3gp", ".3g2",
+        ".asf", ".wmv", ".wma", ".mp3", ".aac", ".ogg", ".oga", ".ogv",
+        ".opus", ".wav", ".nut", ".aa", ".aax", ".ffmetadata", ".ffmeta");
+
+    private readonly IChapterTimeFormatter formatter;
+    private readonly IExternalToolLocator toolLocator;
     private readonly BdmvImporter bdmvImporter = new();
-    private readonly TextChapterImporter textImporter = new(formatter);
-    private readonly PremiereMarkerListImporter premiereMarkerListImporter = new(formatter);
-    private readonly XmlChapterImporter xmlImporter = new(formatter);
+    private readonly TextChapterImporter textImporter;
+    private readonly PremiereMarkerListImporter premiereMarkerListImporter;
+    private readonly XmlChapterImporter xmlImporter;
     private readonly WebVttChapterImporter webVttImporter = new();
     private readonly CueChapterImporter cueImporter = new();
     private readonly FlacCueImporter flacCueImporter = new();
@@ -30,9 +34,28 @@ public sealed class RuntimeChapterImporterRegistry(
     private readonly MplsChapterImporter mplsImporter = new();
     private readonly IfoChapterImporter ifoImporter = new();
     private readonly XplChapterImporter xplImporter = new();
-    private readonly MatroskaChapterImporter matroskaImporter = new(toolLocator, processRunner, formatter);
-    private readonly MediaChapterImporter mediaImporter = new(mediaChapterReader);
-    private readonly MediaChapterImporter mp4FallbackImporter = new(mp4FallbackChapterReader, [".mp4", ".m4a", ".m4v"]);
+    private readonly MatroskaChapterImporter matroskaImporter;
+    private readonly MediaChapterImporter mediaImporter;
+    private readonly MediaChapterImporter mp4FallbackImporter;
+    private readonly IReadOnlyDictionary<string, IChapterImporter> importers;
+
+    public RuntimeChapterImporterRegistry(
+        IChapterTimeFormatter formatter,
+        IExternalToolLocator toolLocator,
+        IProcessRunner processRunner,
+        IMediaChapterReader mediaChapterReader,
+        IMediaChapterReader mp4FallbackChapterReader)
+    {
+        this.formatter = formatter;
+        this.toolLocator = toolLocator;
+        textImporter = new TextChapterImporter(formatter);
+        premiereMarkerListImporter = new PremiereMarkerListImporter(formatter);
+        xmlImporter = new XmlChapterImporter(formatter);
+        matroskaImporter = new MatroskaChapterImporter(toolLocator, processRunner, formatter);
+        mediaImporter = new MediaChapterImporter(mediaChapterReader);
+        mp4FallbackImporter = new MediaChapterImporter(mp4FallbackChapterReader, Mp4Extensions);
+        importers = CreateImporterMap();
+    }
 
     internal IChapterTimeFormatter Formatter => formatter;
 
@@ -45,39 +68,86 @@ public sealed class RuntimeChapterImporterRegistry(
             return bdmvImporter;
         }
 
-        return Path.GetExtension(path).ToLowerInvariant() switch
+        return importers.TryGetValue(Path.GetExtension(path), out var importer) ? importer : null;
+    }
+
+    private IReadOnlyDictionary<string, IChapterImporter> CreateImporterMap()
+    {
+        var map = new Dictionary<string, IChapterImporter>(StringComparer.OrdinalIgnoreCase)
         {
-            ".txt" => textImporter,
-            ".csv" => premiereMarkerListImporter,
-            ".xml" => xmlImporter,
-            ".vtt" => webVttImporter,
-            ".cue" => cueImporter,
-            ".flac" => flacCueImporter,
-            ".tak" => takCueImporter,
-            ".mpls" => mplsImporter,
-            ".ifo" => ifoImporter,
-            ".xpl" => xplImporter,
-            ".bdmv" => bdmvImporter,
-            ".mkv" or ".mka" or ".mks" or ".webm" => matroskaImporter,
-            ".mp4" or ".m4a" or ".m4v" or ".mov" or ".qt" or ".3gp" or ".3g2" => mediaImporter,
-            ".asf" or ".wmv" or ".wma" or ".mp3" or ".aac" or ".ogg" or ".oga" or ".ogv" or ".opus" or ".wav" or ".nut" or ".aa" or ".aax" or ".ffmetadata" or ".ffmeta" => mediaImporter,
-            _ => null
+            [".txt"] = textImporter,
+            [".csv"] = premiereMarkerListImporter,
+            [".xml"] = xmlImporter,
+            [".vtt"] = webVttImporter,
+            [".cue"] = cueImporter,
+            [".flac"] = flacCueImporter,
+            [".tak"] = takCueImporter,
+            [".mpls"] = mplsImporter,
+            [".ifo"] = ifoImporter,
+            [".xpl"] = xplImporter,
+            [".bdmv"] = bdmvImporter
         };
+        RegisterImporterGroup(map, matroskaImporter, MatroskaExtensions);
+        RegisterImporterGroup(map, mediaImporter, MediaExtensions);
+        return map;
+    }
+
+    private static IReadOnlySet<string> CreateExtensionSet(params string[] extensions) =>
+        new HashSet<string>(extensions, StringComparer.OrdinalIgnoreCase);
+
+    private static void RegisterImporterGroup(
+        IDictionary<string, IChapterImporter> map,
+        IChapterImporter importer,
+        IEnumerable<string> extensions)
+    {
+        foreach (var extension in extensions)
+        {
+            map.Add(extension, importer);
+        }
     }
 
     public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult)
     {
         var extension = Path.GetExtension(path).ToLowerInvariant();
-        return extension switch
+        return ResolveMp4Fallback(extension, primaryImporter, primaryResult)
+            ?? ResolveMatroskaFallback(extension, primaryImporter, primaryResult)
+            ?? ResolveFlacFallback(extension, primaryImporter, primaryResult);
+    }
+
+    private IChapterImporter? ResolveMp4Fallback(string extension, IChapterImporter primaryImporter, ChapterImportResult primaryResult)
+    {
+        if (Mp4Extensions.Contains(extension)
+            && ReferenceEquals(primaryImporter, mediaImporter)
+            && HasDiagnostic(primaryResult, ChapterDiagnosticCode.FfprobeMissingDependency, ChapterDiagnosticCode.FfprobeCannotStart))
         {
-            ".mp4" or ".m4a" or ".m4v" when ReferenceEquals(primaryImporter, mediaImporter) && HasDiagnostic(primaryResult, ChapterDiagnosticCode.FfprobeMissingDependency, ChapterDiagnosticCode.FfprobeCannotStart)
-                => mp4FallbackImporter,
-            ".mkv" or ".mka" or ".mks" or ".webm" when primaryImporter is MatroskaChapterImporter && HasDiagnostic(primaryResult, ChapterDiagnosticCode.MatroskaMissingDependency, ChapterDiagnosticCode.MatroskaCannotStart)
-                => mediaImporter,
-            ".flac" when primaryImporter is FlacCueImporter && HasDiagnostic(primaryResult, ChapterDiagnosticCode.FlacEmbeddedCueNotFound)
-                => mediaImporter,
-            _ => null
-        };
+            return mp4FallbackImporter;
+        }
+
+        return null;
+    }
+
+    private IChapterImporter? ResolveMatroskaFallback(string extension, IChapterImporter primaryImporter, ChapterImportResult primaryResult)
+    {
+        if (MatroskaExtensions.Contains(extension)
+            && primaryImporter is MatroskaChapterImporter
+            && HasDiagnostic(primaryResult, ChapterDiagnosticCode.MatroskaMissingDependency, ChapterDiagnosticCode.MatroskaCannotStart))
+        {
+            return mediaImporter;
+        }
+
+        return null;
+    }
+
+    private IChapterImporter? ResolveFlacFallback(string extension, IChapterImporter primaryImporter, ChapterImportResult primaryResult)
+    {
+        if (extension == ".flac"
+            && primaryImporter is FlacCueImporter
+            && HasDiagnostic(primaryResult, ChapterDiagnosticCode.FlacEmbeddedCueNotFound))
+        {
+            return mediaImporter;
+        }
+
+        return null;
     }
 
     private static bool HasDiagnostic(ChapterImportResult result, params ChapterDiagnosticCode[] codes) =>

@@ -29,66 +29,7 @@ internal sealed record ClpiStreamCodingInfo(
 
         var reader = new ClpiBitReader(payload);
         var streamCodingType = (byte)reader.ReadBits(8);
-        byte? videoFormat = null;
-        byte? frameRate = null;
-        byte? videoAspect = null;
-        bool? ocFlag = null;
-        byte? dynamicRangeType = null;
-        byte? colorSpace = null;
-        bool? crFlag = null;
-        bool? hdrPlusFlag = null;
-        byte? audioFormat = null;
-        byte? sampleRate = null;
-        byte? characterCode = null;
-        string? languageCode = null;
-
-        switch (streamCodingType)
-        {
-            case 0x01:
-            case 0x02:
-            case 0x1B:
-            case 0x20:
-            case 0xEA:
-                ReadVideoInfo(reader, out videoFormat, out frameRate, out videoAspect);
-                reader.SkipBits(2);
-                ocFlag = reader.ReadBits(1) != 0;
-                reader.SkipBits(17);
-                break;
-            case 0x24:
-                ReadVideoInfo(reader, out videoFormat, out frameRate, out videoAspect);
-                reader.SkipBits(2);
-                ocFlag = reader.ReadBits(1) != 0;
-                crFlag = reader.ReadBits(1) != 0;
-                dynamicRangeType = (byte)reader.ReadBits(4);
-                colorSpace = (byte)reader.ReadBits(4);
-                hdrPlusFlag = reader.ReadBits(1) != 0;
-                reader.SkipBits(7);
-                break;
-            case 0x03:
-            case 0x04:
-            case 0x80:
-            case 0x81:
-            case 0x82:
-            case 0x83:
-            case 0x84:
-            case 0x85:
-            case 0x86:
-            case 0xA1:
-            case 0xA2:
-                ReadAudioInfo(reader, out audioFormat, out sampleRate);
-                languageCode = reader.ReadAscii(3);
-                break;
-            case 0x90:
-            case 0x91:
-            case 0xA0:
-                languageCode = reader.ReadAscii(3);
-                reader.SkipBits(8);
-                break;
-            case 0x92:
-                characterCode = (byte)reader.ReadBits(8);
-                languageCode = reader.ReadAscii(3);
-                break;
-        }
+        var fields = ReadCodingFields(reader, streamCodingType);
 
         byte[]? isrc = null;
         if (reader.RemainingBytes >= 12)
@@ -98,32 +39,117 @@ internal sealed record ClpiStreamCodingInfo(
         return new ClpiStreamCodingInfo(
             length,
             streamCodingType,
-            videoFormat,
-            frameRate,
-            videoAspect,
-            ocFlag,
-            dynamicRangeType,
-            colorSpace,
-            crFlag,
-            hdrPlusFlag,
-            audioFormat,
-            sampleRate,
-            characterCode,
-            languageCode,
+            fields.VideoFormat,
+            fields.FrameRate,
+            fields.VideoAspect,
+            fields.OcFlag,
+            fields.DynamicRangeType,
+            fields.ColorSpace,
+            fields.CrFlag,
+            fields.HdrPlusFlag,
+            fields.AudioFormat,
+            fields.SampleRate,
+            fields.CharacterCode,
+            fields.LanguageCode,
             isrc);
     }
 
-    private static void ReadVideoInfo(ClpiBitReader reader, out byte? videoFormat, out byte? frameRate, out byte? videoAspect)
+    private static CodingFields ReadCodingFields(ClpiBitReader reader, byte streamCodingType)
     {
-        videoFormat = (byte)reader.ReadBits(4);
-        frameRate = (byte)reader.ReadBits(4);
-        videoAspect = (byte)reader.ReadBits(4);
+        var fields = new CodingFields();
+        switch (streamCodingType)
+        {
+            case 0x01 or 0x02 or 0x1B or 0x20 or 0xEA:
+                ReadVideoFields(reader, fields);
+                break;
+            case 0x24:
+                ReadHdrVideoFields(reader, fields);
+                break;
+            case 0x03 or 0x04 or 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0xA1 or 0xA2:
+                ReadAudioFields(reader, fields);
+                break;
+            case 0x90 or 0x91 or 0xA0:
+                fields.LanguageCode = reader.ReadAscii(3);
+                reader.SkipBits(8);
+                break;
+            case 0x92:
+                fields.CharacterCode = (byte)reader.ReadBits(8);
+                fields.LanguageCode = reader.ReadAscii(3);
+                break;
+        }
+
+        return fields;
     }
 
-    private static void ReadAudioInfo(ClpiBitReader reader, out byte? audioFormat, out byte? sampleRate)
+    private static void ReadVideoFields(ClpiBitReader reader, CodingFields fields)
     {
-        audioFormat = (byte)reader.ReadBits(4);
-        sampleRate = (byte)reader.ReadBits(4);
+        var (videoFormat, frameRate, videoAspect) = ReadVideoInfo(reader);
+        fields.VideoFormat = videoFormat;
+        fields.FrameRate = frameRate;
+        fields.VideoAspect = videoAspect;
+        reader.SkipBits(2);
+        fields.OcFlag = reader.ReadBits(1) != 0;
+        reader.SkipBits(17);
+    }
+
+    private static void ReadHdrVideoFields(ClpiBitReader reader, CodingFields fields)
+    {
+        var (videoFormat, frameRate, videoAspect) = ReadVideoInfo(reader);
+        fields.VideoFormat = videoFormat;
+        fields.FrameRate = frameRate;
+        fields.VideoAspect = videoAspect;
+        reader.SkipBits(2);
+        fields.OcFlag = reader.ReadBits(1) != 0;
+        fields.CrFlag = reader.ReadBits(1) != 0;
+        fields.DynamicRangeType = (byte)reader.ReadBits(4);
+        fields.ColorSpace = (byte)reader.ReadBits(4);
+        fields.HdrPlusFlag = reader.ReadBits(1) != 0;
+        reader.SkipBits(7);
+    }
+
+    private static void ReadAudioFields(ClpiBitReader reader, CodingFields fields)
+    {
+        var (audioFormat, sampleRate) = ReadAudioInfo(reader);
+        fields.AudioFormat = audioFormat;
+        fields.SampleRate = sampleRate;
+        fields.LanguageCode = reader.ReadAscii(3);
+    }
+
+    private sealed class CodingFields
+    {
+        internal byte? VideoFormat { get; set; }
+
+        internal byte? FrameRate { get; set; }
+
+        internal byte? VideoAspect { get; set; }
+
+        internal bool? OcFlag { get; set; }
+
+        internal byte? DynamicRangeType { get; set; }
+
+        internal byte? ColorSpace { get; set; }
+
+        internal bool? CrFlag { get; set; }
+
+        internal bool? HdrPlusFlag { get; set; }
+
+        internal byte? AudioFormat { get; set; }
+
+        internal byte? SampleRate { get; set; }
+
+        internal byte? CharacterCode { get; set; }
+
+        internal string? LanguageCode { get; set; }
+    }
+
+    private static (byte VideoFormat, byte FrameRate, byte VideoAspect) ReadVideoInfo(ClpiBitReader reader)
+    {
+        return ((byte)reader.ReadBits(4), (byte)reader.ReadBits(4), (byte)reader.ReadBits(4));
+    }
+
+    private static (byte AudioFormat, byte SampleRate) ReadAudioInfo(ClpiBitReader reader)
+    {
+        return ((byte)reader.ReadBits(4), (byte)reader.ReadBits(4));
     }
 
     private sealed class ClpiBitReader(byte[] bytes)

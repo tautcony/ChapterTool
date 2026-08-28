@@ -76,6 +76,15 @@ public sealed class ExpressionAuthoringServiceTests
     }
 
     [Fact]
+    public void Analyze_returns_member_suffix_completion_when_full_prefix_has_no_direct_match()
+    {
+        var result = service.Analyze("chapter.time.", 13);
+
+        Assert.Contains(result.Completions, item => item.Text == "chapter.time");
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
     public void Analyze_returns_completion_for_lua_global_prefix()
     {
         var result = service.Analyze("cha", 3);

@@ -167,6 +167,11 @@ ClientBin/
 node_modules/
 bower_components/
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+.venv/
+
 # RIA/Silverlight projects
 Generated_Code/
 

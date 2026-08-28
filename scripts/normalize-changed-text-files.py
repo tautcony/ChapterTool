@@ -22,7 +22,8 @@ def main():
     for value in args.paths:
         path = (root / value).resolve()
         if not path.exists():
-            print(f"Warning: Path not found: {value}"); continue
+            print(f"Warning: Path not found: {value}")
+            continue
         candidates.update(str(item.relative_to(root)).replace("\\", "/") for item in (path.rglob("*") if path.is_dir() else [path]) if item.is_file())
     candidates.update(git_paths(root, "diff", "--name-only"))
     candidates.update(git_paths(root, "diff", "--cached", "--name-only"))
@@ -32,14 +33,20 @@ def main():
     for relative in sorted(candidates):
         path = root / relative
         if path.suffix.lower() not in EXTENSIONS and path.name.lower() not in NAMES:
-            skipped.append(relative); continue
-        if not path.is_file(): continue
-        raw = path.read_bytes(); text = raw.decode("utf-8-sig")
-        if not raw.startswith(b"\xef\xbb\xbf") and "\r" not in text: continue
+            skipped.append(relative)
+            continue
+        if not path.is_file():
+            continue
+        raw = path.read_bytes()
+        text = raw.decode("utf-8-sig")
+        if not raw.startswith(b"\xef\xbb\xbf") and "\r" not in text:
+            continue
         normalized.append(relative)
-        if not args.what_if: path.write_text(text.replace("\r\n", "\n").replace("\r", "\n"), encoding="utf-8", newline="\n")
+        if not args.what_if:
+            path.write_text(text.replace("\r\n", "\n").replace("\r", "\n"), encoding="utf-8", newline="\n")
     print("Normalized files:\n" + "\n".join(f"  {p}" for p in normalized) if normalized else "No changed text files required normalization.")
-    if skipped: print("Skipped non-text paths:\n" + "\n".join(f"  {p}" for p in skipped))
+    if skipped:
+        print("Skipped non-text paths:\n" + "\n".join(f"  {p}" for p in skipped))
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -134,19 +134,27 @@ public sealed class WindowsRegistryInstallProbe : IWindowsRegistryInstallProbe
     {
         foreach (var (hive, view, path) in UninstallKeys)
         {
-            using var baseKey = RegistryKey.OpenBaseKey(hive, view);
-            using var key = baseKey.OpenSubKey(path);
-            if (key is null)
+            foreach (var value in ReadKeyValues(hive, view, path))
             {
-                continue;
+                yield return value;
             }
+        }
+    }
 
-            foreach (var name in new[] { "InstallLocation", "DisplayIcon" })
+    [SupportedOSPlatform("windows")]
+    private static IEnumerable<string> ReadKeyValues(RegistryHive hive, RegistryView view, string path)
+    {
+        using var baseKey = RegistryKey.OpenBaseKey(hive, view);
+        using var key = baseKey.OpenSubKey(path);
+        if (key is null)
+        {
+            yield break;
+        }
+        foreach (var name in new[] { "InstallLocation", "DisplayIcon" })
+        {
+            if (key.GetValue(name) is string value && !string.IsNullOrWhiteSpace(value))
             {
-                if (key.GetValue(name) is string value && !string.IsNullOrWhiteSpace(value))
-                {
-                    yield return value;
-                }
+                yield return value;
             }
         }
     }

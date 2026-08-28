@@ -20,6 +20,16 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         "+", "-", "*", "/", "%", "^", "#", "==", "~=", "<=", ">=", "<", ">", "=", ".."
     };
 
+    private static readonly HashSet<string> VariableNames = new(StringComparer.Ordinal)
+    {
+        "t", "fps", "index", "count", "chapter"
+    };
+
+    private static readonly HashSet<string> FunctionNames = new(StringComparer.Ordinal)
+    {
+        "floor", "ceil", "round", "abs", "min", "max", "sqrt", "sin", "cos", "tan", "sign"
+    };
+
     private readonly IChapterExpressionEngine expressionEngine = expressionEngine ?? new Expressions.Lua.LuaExpressionScriptService();
 
     /// <summary>
@@ -221,64 +231,72 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         var spans = new List<ExpressionTokenSpan>();
         for (var i = 0; i < expression.Length;)
         {
-            var c = expression[i];
-            if (char.IsWhiteSpace(c))
+            if (char.IsWhiteSpace(expression[i]))
             {
                 i++;
                 continue;
             }
 
-            if (c == '-' && i + 1 < expression.Length && expression[i + 1] == '-')
+            if (TryReadComment(expression, ref i, out var comment))
             {
-                spans.Add(new ExpressionTokenSpan(i, expression.Length - i, expression[i..], ExpressionTokenKind.Comment));
+                spans.Add(comment!);
                 break;
             }
 
-            if (char.IsDigit(c) || c == '.')
-            {
-                var number = TryReadNumberOrDot(expression, ref i);
-                spans.Add(number);
-                continue;
-            }
-
-            if (char.IsLetter(c) || c == '_')
-            {
-                spans.Add(ReadIdentifierChain(expression, ref i));
-                continue;
-            }
-
-            var two = i + 1 < expression.Length ? expression.Substring(i, 2) : string.Empty;
-            if (Operators.Contains(two))
-            {
-                spans.Add(new ExpressionTokenSpan(i, 2, two, ExpressionTokenKind.Operator));
-                i += 2;
-                continue;
-            }
-
-            if (Operators.Contains(c.ToString(CultureInfo.InvariantCulture)))
-            {
-                spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Operator));
-                i++;
-                continue;
-            }
-
-            switch (c)
-            {
-                case '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']':
-                    spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Punctuation));
-                    i++;
-                    continue;
-                case '\'' or '"':
-                    spans.Add(ReadString(expression, ref i));
-                    continue;
-                default:
-                    spans.Add(new ExpressionTokenSpan(i, 1, c.ToString(CultureInfo.InvariantCulture), ExpressionTokenKind.Unknown));
-                    i++;
-                    break;
-            }
+            spans.Add(ReadToken(expression, ref i));
         }
 
         return spans;
+    }
+
+    private static bool TryReadComment(string expression, ref int index, out ExpressionTokenSpan? comment)
+    {
+        if (expression[index] == '-' && index + 1 < expression.Length && expression[index + 1] == '-')
+        {
+            comment = new ExpressionTokenSpan(index, expression.Length - index, expression[index..], ExpressionTokenKind.Comment);
+            return true;
+        }
+
+        comment = default;
+        return false;
+    }
+
+    private static ExpressionTokenSpan ReadToken(string expression, ref int index)
+    {
+        var c = expression[index];
+        if (char.IsDigit(c) || c == '.')
+        {
+            return TryReadNumberOrDot(expression, ref index);
+        }
+
+        if (char.IsLetter(c) || c == '_')
+        {
+            return ReadIdentifierChain(expression, ref index);
+        }
+
+        var text = c.ToString(CultureInfo.InvariantCulture);
+        if (index + 1 < expression.Length && Operators.Contains(expression.Substring(index, 2)))
+        {
+            text = expression.Substring(index, 2);
+            index += 2;
+            return new ExpressionTokenSpan(index - 2, 2, text, ExpressionTokenKind.Operator);
+        }
+
+        index++;
+        if (Operators.Contains(text))
+        {
+            return new ExpressionTokenSpan(index - 1, 1, text, ExpressionTokenKind.Operator);
+        }
+        var kind = c is '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']' ? ExpressionTokenKind.Punctuation
+            : c is '\'' or '"' ? ExpressionTokenKind.String
+            : ExpressionTokenKind.Unknown;
+        if (kind == ExpressionTokenKind.String)
+        {
+            index--;
+            return ReadString(expression, ref index);
+        }
+
+        return new ExpressionTokenSpan(index - 1, 1, text, kind);
     }
 
     private static ExpressionTokenSpan TryReadNumberOrDot(string expression, ref int i)
@@ -353,12 +371,12 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
             return ExpressionTokenKind.Keyword;
         }
 
-        if (text is "t" or "fps" or "index" or "count" or "chapter" || text.StartsWith("chapter.", StringComparison.Ordinal))
+        if (VariableNames.Contains(text) || text.StartsWith("chapter.", StringComparison.Ordinal))
         {
             return ExpressionTokenKind.Variable;
         }
 
-        if (text.StartsWith("math.", StringComparison.Ordinal) || text is "floor" or "ceil" or "round" or "abs" or "min" or "max" or "sqrt" or "sin" or "cos" or "tan" or "sign")
+        if (text.StartsWith("math.", StringComparison.Ordinal) || FunctionNames.Contains(text))
         {
             return ExpressionTokenKind.Function;
         }

@@ -52,7 +52,6 @@ public sealed record WasmSettings(
 public sealed record WasmApplicationSettings(
     string? SavingPath = null,
     string Language = "",
-    WasmWindowLocation? MainWindowLocation = null,
     string? MkvToolnixPath = null,
     string? FfprobePath = null,
     string DefaultSaveFormat = "Txt",
@@ -63,8 +62,6 @@ public sealed record WasmApplicationSettings(
     string DeleteRowsTimingMode = "preserve",
     string FrameDisplayMode = "round",
     int FrameDecimalPlaces = 3);
-
-public sealed record WasmWindowLocation(int X, int Y);
 
 public sealed record WasmThemeSettings(string PresetId = "avalonia-default");
 

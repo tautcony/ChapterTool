@@ -370,17 +370,9 @@ public sealed class LogEntryViewModel(
 
     private static object? NormalizeRawValue(object? value, int depth, HashSet<object> path)
     {
-        switch (value)
+        if (TryNormalizeScalar(value, out var scalar))
         {
-            case null or string or bool or byte or sbyte or short or ushort or int or uint or long or ulong
-                or float or double or decimal:
-                return value;
-            case char or Enum or Guid or Uri or TimeSpan:
-                return value.ToString();
-            case DateTime dateTime:
-                return dateTime.ToString("O", CultureInfo.InvariantCulture);
-            case DateTimeOffset dateTimeOffset:
-                return dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+            return scalar;
         }
 
         if (depth >= 32)
@@ -388,45 +380,83 @@ public sealed class LogEntryViewModel(
             return "[depth limit]";
         }
 
-        if (!value.GetType().IsValueType && !path.Add(value))
+        var runtimeType = value!.GetType();
+        if (!runtimeType.IsValueType && !path.Add(value))
         {
             return "[cycle]";
         }
 
         try
         {
-            switch (value)
-            {
-                case IReadOnlyDictionary<string, object?> readOnlyDictionary:
-                    return readOnlyDictionary.ToDictionary(
-                        static pair => pair.Key,
-                        pair => NormalizeRawValue(pair.Value, depth + 1, path),
-                        StringComparer.Ordinal);
-                case IDictionary dictionary:
-                {
-                    var normalized = new Dictionary<string, object?>(StringComparer.Ordinal);
-                    foreach (DictionaryEntry item in dictionary)
-                    {
-                        normalized[item.Key?.ToString() ?? string.Empty] = NormalizeRawValue(item.Value, depth + 1, path);
-                    }
-
-                    return normalized;
-                }
-                case IEnumerable enumerable:
-                    return enumerable.Cast<object?>()
-                        .Select(item => NormalizeRawValue(item, depth + 1, path))
-                        .ToList();
-                default:
-                    return value.ToString();
-            }
+            return NormalizeContainer(value, depth, path);
         }
         finally
         {
-            if (!value.GetType().IsValueType)
+            if (!runtimeType.IsValueType)
             {
                 path.Remove(value);
             }
         }
+    }
+
+    private static bool TryNormalizeScalar(object? value, out object? normalized)
+    {
+        if (value is null || value is string || value is bool || IsNumeric(value))
+        {
+            normalized = value;
+            return true;
+        }
+
+        if (value is DateTime dateTime)
+        {
+            normalized = dateTime.ToString("O", CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        if (value is DateTimeOffset dateTimeOffset)
+        {
+            normalized = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+            return true;
+        }
+
+        if (value is char or Enum or Guid or Uri or TimeSpan)
+        {
+            normalized = value.ToString();
+            return true;
+        }
+
+        normalized = null;
+        return false;
+    }
+
+    private static bool IsNumeric(object value) => value switch
+    {
+        byte or sbyte or short or ushort or int or uint or long or ulong or float or double or decimal => true,
+        _ => false
+    };
+
+    private static object? NormalizeContainer(object value, int depth, HashSet<object> path) => value switch
+    {
+        IReadOnlyDictionary<string, object?> readOnlyDictionary => readOnlyDictionary.ToDictionary(
+            static pair => pair.Key,
+            pair => NormalizeRawValue(pair.Value, depth + 1, path),
+            StringComparer.Ordinal),
+        IDictionary dictionary => NormalizeDictionary(dictionary, depth, path),
+        IEnumerable enumerable => enumerable.Cast<object?>()
+            .Select(item => NormalizeRawValue(item, depth + 1, path))
+            .ToList(),
+        _ => value.ToString()
+    };
+
+    private static Dictionary<string, object?> NormalizeDictionary(IDictionary dictionary, int depth, HashSet<object> path)
+    {
+        var normalized = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach (DictionaryEntry item in dictionary)
+        {
+            normalized[item.Key?.ToString() ?? string.Empty] = NormalizeRawValue(item.Value, depth + 1, path);
+        }
+
+        return normalized;
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

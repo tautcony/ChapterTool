@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
 using System.Text;
 using ChapterTool.CommandLine.Cli;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Importing;
 using ChapterTool.Core.Localization;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;
@@ -27,6 +29,66 @@ public sealed class ChapterToolCliApplicationTests
         localizer.SetCulture("ja-JP");
 
         Assert.Equal("入力形式", localizer.GetString("Cli.Header.InputFormats"));
+    }
+
+    [Fact]
+    public void CliLocalizationSettingTheSameCultureReturnsEarly()
+    {
+        var localizer = new CliLocalizationManager("en-US");
+
+        localizer.SetCulture("en-US");
+
+        Assert.Equal("en-US", localizer.CurrentCultureName);
+    }
+
+    [Fact]
+    public void CliLocalizationFallsBackToEnglishWhenCurrentCultureMissesAKey()
+    {
+        var localizer = new CliLocalizationManager(
+            "zh-CN",
+            new Dictionary<string, IReadOnlyDictionary<string, string>>
+            {
+                ["zh-CN"] = new Dictionary<string, string>()
+            });
+
+        Assert.True(localizer.TryGetString("Cli.Header.InputFormats", out var value));
+        Assert.Equal("Input formats", value);
+    }
+
+    [Fact]
+    public void CliLocalizationFormatWithoutArgumentsReturnsRawString()
+    {
+        var localizer = new CliLocalizationManager("en-US");
+
+        Assert.Equal("Input formats", localizer.Format("Cli.Header.InputFormats"));
+    }
+
+    [Fact]
+    public void SystemCliConsoleWritesThroughStandardStreams()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        try
+        {
+            using var output = new StringWriter();
+            using var error = new StringWriter();
+            Console.SetOut(output);
+            Console.SetError(error);
+            var console = new SystemCliConsole();
+
+            console.Write("out");
+            console.WriteLine("line");
+            console.WriteError("err");
+            console.WriteErrorLine("line");
+
+            Assert.Equal("outline\n", output.ToString());
+            Assert.Equal("errline\n", error.ToString());
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
     }
 
     [Fact]
@@ -385,6 +447,65 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
+    public async Task ConvertWithNoOutputPathResolvesDirectoryBesideSource()
+    {
+        using var temp = new TempDirectory();
+        var input = Path.Combine(temp.Path, "chapters.xml");
+        File.Copy(XmlFixture(), input);
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(
+            console: console,
+            settingsDirectory: Path.Combine(temp.Path, "settings"));
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(input, "xml", OutputPath: null, Stdout: false, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        var written = Assert.Single(Directory.GetFiles(temp.Path, "*.xml"), file => !string.Equals(file, input, StringComparison.Ordinal));
+        Assert.Contains(written, console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithNoOutputPathUsesConfiguredSavingPath()
+    {
+        using var temp = new TempDirectory();
+        var input = Path.Combine(temp.Path, "chapters.xml");
+        File.Copy(XmlFixture(), input);
+        var outputDir = Path.Combine(temp.Path, "out");
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, configuredSavingPath: outputDir);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(input, "xml", OutputPath: null, Stdout: false, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        var written = Assert.Single(Directory.GetFiles(outputDir, "*.xml"));
+        Assert.Contains(written, console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithNoOutputPathFallsBackWhenSettingsAreUnreadable()
+    {
+        using var temp = new TempDirectory();
+        var input = Path.Combine(temp.Path, "chapters.xml");
+        File.Copy(XmlFixture(), input);
+        var settingsPath = Path.Combine(temp.Path, "settings");
+        Directory.CreateDirectory(settingsPath);
+        Directory.CreateDirectory(Path.Combine(settingsPath, "settings.json"));
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, settingsDirectory: settingsPath);
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(input, "xml", OutputPath: null, Stdout: false, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("chapters", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ConvertFailsWhenSelectionIsAmbiguous()
     {
         var console = new RecordingCliConsole();
@@ -614,6 +735,251 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
+    public async Task ConvertPropagatesOperationCancellation()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => app.ConvertAsync(
+                new CliConvertRequest(
+                    XmlFixture(),
+                    "txt",
+                    OutputPath: null,
+                    Stdout: true,
+                    GroupIndex: 0,
+                    EntryIndex: 0,
+                    EntryId: null,
+                    XmlLanguage: null,
+                    SourceFileName: null,
+                    FrameRate: null),
+                cts.Token));
+    }
+
+    [Fact]
+    public async Task InspectPropagatesOperationCancellation()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => app.InspectAsync(new CliInspectRequest(XmlFixture()), cts.Token));
+    }
+
+    [Fact]
+    public async Task ConvertUsesFallbackImporterWhenPrimaryFails()
+    {
+        var console = new RecordingCliConsole();
+        var store = new ChapterToolSettingsStore(Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
+        var real = ChapterToolRuntimeComposition.CreateImporterRegistry(store);
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FailingThenFallbackRegistry(real));
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(XmlFixture(), "txt", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01=", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithNoGroupsReportsNoGroupsError()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(SelectionResult()));
+
+        var exitCode = await app.ConvertAsync(ConvertRequest(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("No chapter groups were imported.", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithEmptyGroupReportsEmptyGroupError()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(SelectionResult(Group("a.mpls"))));
+
+        var exitCode = await app.ConvertAsync(ConvertRequest(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("contains no selectable chapter entries", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithMultipleGroupsAndNoGroupIndexReportsAmbiguity()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(
+            SelectionResult(Group("a.mpls", Entry("e1", "A")), Group("b.mpls", Entry("e2", "B")))));
+
+        var exitCode = await app.ConvertAsync(
+            ConvertRequest(groupIndex: null, entryIndex: null, entryId: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Multiple groups are available.", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithEntryIdSelectsEntry()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(
+            SelectionResult(Group("a.mpls", Entry("e1", "A"), Entry("e2", "B")))));
+
+        var exitCode = await app.ConvertAsync(
+            ConvertRequest(groupIndex: 0, entryIndex: null, entryId: "e2"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01NAME=B", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithUnknownEntryIdReportsNotFound()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(
+            SelectionResult(Group("a.mpls", Entry("e1", "A")))));
+
+        var exitCode = await app.ConvertAsync(
+            ConvertRequest(groupIndex: 0, entryIndex: null, entryId: "missing"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("was not found in group", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithOutOfRangeEntryIndexReportsError()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(
+            SelectionResult(Group("a.mpls", Entry("e1", "A")))));
+
+        var exitCode = await app.ConvertAsync(
+            ConvertRequest(groupIndex: 0, entryIndex: 99, entryId: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("is out of range for group", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithSingleEntryGroupSelectsTheOnlyEntry()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(
+            SelectionResult(Group("a.mpls", Entry("e1", "A")))));
+
+        var exitCode = await app.ConvertAsync(
+            ConvertRequest(groupIndex: null, entryIndex: null, entryId: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01NAME=A", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InspectWithEmptyInputReportsInputRequired()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console);
+
+        var exitCode = await app.InspectAsync(new CliInspectRequest(string.Empty), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Input", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InspectRendersImportDiagnosticsSection()
+    {
+        var console = new RecordingCliConsole();
+        var result = new ChapterImportResult(
+            true,
+            [Group("a.mpls", Entry("e1", "A"))],
+            [new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.BdmvScanCandidate, "scanned 1 playlist")]);
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FixedImportRegistry(result));
+
+        var exitCode = await app.InspectAsync(new CliInspectRequest(XmlFixture()), TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("Diagnostics", console.Stdout, StringComparison.Ordinal);
+        Assert.Contains("scanned 1 playlist", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task InspectCommandRunsThroughTheCliHost()
+    {
+        using var temp = new TempDirectory();
+        var input = Path.Combine(temp.Path, "chapters.xml");
+        File.Copy(XmlFixture(), input);
+        var originalOut = Console.Out;
+        try
+        {
+            using var writer = new StringWriter();
+            Console.SetOut(writer);
+            var command = new InspectCliCommand { Input = input };
+
+            var exitCode = await command.RunAsync();
+
+            Assert.Equal(0, exitCode);
+            Assert.Contains("Groups: 1", writer.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
+    [Fact]
+    public void UnrecognizedLanguageWarnsOnStandardError()
+    {
+        var originalError = Console.Error;
+        try
+        {
+            using var writer = new StringWriter();
+            Console.SetError(writer);
+            CliLanguage.WarnIfUnrecognized("bogus");
+            Assert.Contains("Unrecognized language 'bogus'", writer.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Console.SetError(originalError);
+        }
+    }
+
+    [Fact]
+    public async Task ConvertWithUnavailableFallbackReportsImportFailure()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FailingNoFallbackRegistry());
+
+        var exitCode = await app.ConvertAsync(ConvertRequest(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Import failed", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConvertWithFailingFallbackReportsImportFailure()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FailingFallbackRegistry());
+
+        var exitCode = await app.ConvertAsync(ConvertRequest(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Import failed", console.Stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void LocalizationManagerAcceptsShortLanguageCodesWithoutRewritingThreadCulture()
     {
         var before = CultureInfo.CurrentUICulture;
@@ -629,6 +995,120 @@ public sealed class ChapterToolCliApplicationTests
         "Text",
         "Xml",
         "xml (T2 - 4 Editions).xml");
+
+    private static CliConvertRequest ConvertRequest(
+        int? groupIndex = 0,
+        int? entryIndex = 0,
+        string? entryId = null) =>
+        new(XmlFixture(), "txt", OutputPath: null, Stdout: true, GroupIndex: groupIndex, EntryIndex: entryIndex, EntryId: entryId, XmlLanguage: null, SourceFileName: null, FrameRate: null);
+
+    private static ChapterImportResult SelectionResult(params ChapterImportSource[] groups) =>
+        new(true, groups, []);
+
+    private static ChapterImportSource Group(string source, params ChapterImportEntry[] entries) =>
+        new(source, entries);
+
+    private static ChapterImportEntry Entry(string id, string name) =>
+        new(id, name, new ChapterSet(name, name, ChapterImportFormat.Ogm, 24, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, name)]));
+
+    private sealed class ThrowingCancellationImporter : IChapterImporter
+    {
+        public string Id => "cancel-probe";
+
+        public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string> { ".xml" };
+
+        public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new OperationCanceledException(cancellationToken);
+        }
+    }
+
+    private sealed class ThrowingCancellationRegistry : IChapterImporterRegistry
+    {
+        private readonly IChapterImporter importer = new ThrowingCancellationImporter();
+
+        public IChapterImporter? Resolve(string path) => importer;
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
+    }
+
+    private sealed class FailingThenFallbackRegistry : IChapterImporterRegistry
+    {
+        private readonly IChapterImporterRegistry inner;
+
+        public FailingThenFallbackRegistry(IChapterImporterRegistry inner) => this.inner = inner;
+
+        public IChapterImporter? Resolve(string path) => new FailingImporter();
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => inner.Resolve(path);
+    }
+
+    private sealed class FailingNoFallbackRegistry : IChapterImporterRegistry
+    {
+        public IChapterImporter? Resolve(string path) => new FailingImporter();
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
+    }
+
+    private sealed class FailingFallbackRegistry : IChapterImporterRegistry
+    {
+        public IChapterImporter? Resolve(string path) => new FailingImporter();
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => new FailingImporter();
+    }
+
+    private sealed class FailingImporter : IChapterImporter
+    {
+        public string Id => "failing-primary";
+
+        public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string> { ".xml" };
+
+        public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(ChapterImportResult.Failed(
+                new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.Unavailable, "Primary importer failed.")));
+    }
+
+    private sealed class FixedImportRegistry(ChapterImportResult result) : IChapterImporterRegistry
+    {
+        public IChapterImporter? Resolve(string path) => new FixedImporter(result);
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
+    }
+
+    private sealed class FixedImporter(ChapterImportResult result) : IChapterImporter
+    {
+        public string Id => "fixed";
+
+        public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string> { ".xml" };
+
+        public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(result);
+    }
+
+    private sealed class TempDirectory : IDisposable
+    {
+        public string Path { get; } = System.IO.Path.Combine(
+            System.IO.Path.GetTempPath(),
+            "ChapterTool_Cli_" + Guid.NewGuid().ToString("N"));
+
+        public TempDirectory() => Directory.CreateDirectory(Path);
+
+        public void Dispose()
+        {
+            try
+            {
+                if (Directory.Exists(Path))
+                {
+                    Directory.Delete(Path, recursive: true);
+                }
+            }
+            catch
+            {
+                // best-effort cleanup
+            }
+        }
+    }
 
     private sealed class RecordingCliConsole : ICliConsole
     {

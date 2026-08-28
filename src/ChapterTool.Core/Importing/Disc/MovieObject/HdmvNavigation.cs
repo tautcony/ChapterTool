@@ -217,68 +217,99 @@ internal sealed class HdmvNavigationResolver
         var src = insn.OperandCount > 1 ? state.ReadOperand(command.SourceOperand, insn.Operand2Immediate) : 0;
         var next = pc + 1;
 
-        switch (insn.Group)
+        if (insn.Group == 0)
         {
-            case 0 when insn.Subgroup == 0:
-                switch (insn.BranchOption)
-                {
-                    case 1:
-                        next = dst > int.MaxValue ? int.MaxValue : (int)dst;
-                        break;
-                    case 2:
-                        state.ProgramCounter = int.MaxValue; return;
-                }
-                break;
-            case 0 when insn.Subgroup == 1:
-                switch (insn.BranchOption)
-                {
-                    case 0: state.EnterObject((int)dst, -1); return;
-                    case 1 when state.TitleObjects.TryGetValue(dst, out var titleObject): state.EnterObject(titleObject, (int)dst); return;
-                    case 2: state.Call((int)dst, next, limits); return;
-                    case 3 when state.TitleObjects.TryGetValue(dst, out var calledObject): state.Call(calledObject, next, limits); return;
-                    case 4:
-                        if (state.Return()) return;
-                        state.ProgramCounter = int.MaxValue;
-                        return;
-                }
-                break;
-            case 0 when insn.Subgroup == 2:
-                if (state.Events.Count < limits.MaximumEvents && insn.BranchOption <= 2)
-                {
-                    state.Events.Add(new HdmvNavigationEvent(
-                        dst,
-                        insn.BranchOption == 1 ? src : null,
-                        insn.BranchOption == 2 ? src : null,
-                        state.TitleNumber,
-                        state.ObjectId,
-                        pc,
-                        state.Profile.Name,
-                        insn.BranchOption switch { 0 => "PlayPL", 1 => "PlayPLPI", _ => "PlayPLPM" }));
-                }
-                else if (state.ControlEvents.Count < limits.MaximumEvents && insn.BranchOption is >= 3 and <= 5)
-                {
-                    state.ControlEvents.Add(new HdmvNavigationControlEvent(
-                        insn.BranchOption switch { 3 => "PlayStop", 4 => "LinkPI", _ => "LinkMK" },
-                        insn.BranchOption == 4 ? dst : null,
-                        insn.BranchOption == 5 ? dst : null,
-                        state.ObjectId,
-                        pc,
-                        state.Profile.Name));
-                    if (insn.BranchOption == 3) next = int.MaxValue;
-                }
-                break;
-            case 1:
-                if (!Compare(insn.CompareOption, dst, src)) next++;
-                break;
-            case 2 when insn.Subgroup == 0:
-                ExecuteSet(state, insn.SetOption, command, dst, src);
-                break;
-            case 2 when insn.Subgroup == 1:
-                ExecuteSetSystem(state, insn.SetOption, dst, src);
-                break;
+            if (ExecuteBranchGroup(state, command, dst, src, pc, ref next)) return;
+        }
+        else if (insn.Group == 1)
+        {
+            if (!Compare(insn.CompareOption, dst, src)) next++;
+        }
+        else if (insn.Group == 2)
+        {
+            ExecuteSetGroup(state, insn, command, dst, src);
         }
 
         state.ProgramCounter = next;
+    }
+
+    private bool ExecuteBranchGroup(ExecutionState state, MovieObjectCommand command, uint dst, uint src, int pc, ref int next)
+    {
+        var instruction = command.Instruction;
+        switch (instruction.Subgroup)
+        {
+            case 0:
+                return ExecuteJump(state, instruction.BranchOption, dst, ref next);
+            case 1:
+                return ExecuteObjectBranch(state, instruction.BranchOption, dst, next);
+            case 2:
+                ExecutePlay(state, instruction.BranchOption, dst, src, pc, ref next);
+                break;
+        }
+
+        return false;
+    }
+
+    private static bool ExecuteJump(ExecutionState state, byte option, uint dst, ref int next)
+    {
+        if (option == 1)
+        {
+            next = dst > int.MaxValue ? int.MaxValue : (int)dst;
+        }
+        else if (option == 2)
+        {
+            state.ProgramCounter = int.MaxValue;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool ExecuteObjectBranch(ExecutionState state, byte option, uint dst, int next)
+    {
+        switch (option)
+        {
+            case 0: state.EnterObject((int)dst, -1); return true;
+            case 1 when state.TitleObjects.TryGetValue(dst, out var titleObject): state.EnterObject(titleObject, (int)dst); return true;
+            case 2: state.Call((int)dst, next, limits); return true;
+            case 3 when state.TitleObjects.TryGetValue(dst, out var calledObject): state.Call(calledObject, next, limits); return true;
+            case 4:
+                if (state.Return()) return true;
+                state.ProgramCounter = int.MaxValue;
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ExecutePlay(ExecutionState state, byte option, uint dst, uint src, int pc, ref int next)
+    {
+        if (state.Events.Count < limits.MaximumEvents && option <= 2)
+        {
+            state.Events.Add(new HdmvNavigationEvent(dst, option == 1 ? src : null, option == 2 ? src : null,
+                state.TitleNumber, state.ObjectId, pc, state.Profile.Name,
+                option switch { 0 => "PlayPL", 1 => "PlayPLPI", _ => "PlayPLPM" }));
+            return;
+        }
+
+        if (state.ControlEvents.Count >= limits.MaximumEvents || option is < 3 or > 5) return;
+        state.ControlEvents.Add(new HdmvNavigationControlEvent(
+            option switch { 3 => "PlayStop", 4 => "LinkPI", _ => "LinkMK" },
+            option == 4 ? dst : null, option == 5 ? dst : null,
+            state.ObjectId, pc, state.Profile.Name));
+        if (option == 3) next = int.MaxValue;
+    }
+
+    private static void ExecuteSetGroup(ExecutionState state, MovieObjectInstruction instruction, MovieObjectCommand command, uint dst, uint src)
+    {
+        if (instruction.Subgroup == 0)
+        {
+            ExecuteSet(state, instruction.SetOption, command, dst, src);
+        }
+        else if (instruction.Subgroup == 1)
+        {
+            ExecuteSetSystem(state, instruction.SetOption, dst, src);
+        }
     }
 
     private static bool Compare(byte option, uint left, uint right) => option switch
@@ -295,35 +326,7 @@ internal sealed class HdmvNavigationResolver
 
     private static void ExecuteSet(ExecutionState state, byte option, MovieObjectCommand command, uint dst, uint src)
     {
-        var newDst = dst;
-        var newSrc = src;
-        switch (option)
-        {
-            case 1: newDst = src; break;
-            case 2: (newDst, newSrc) = (src, dst); break;
-            case 3: newDst = SaturatingAdd(dst, src); break;
-            case 4: newDst = dst > src ? dst - src : 0; break;
-            case 5: newDst = SaturatingMultiply(dst, src); break;
-            case 6: newDst = src == 0 ? uint.MaxValue : dst / src; break;
-            case 7: newDst = src == 0 ? uint.MaxValue : dst % src; break;
-            case 8: newDst = state.NextRandom(src); break;
-            case 9: newDst &= src; break;
-            case 10: newDst |= src; break;
-            case 11: newDst ^= src; break;
-            case 12:
-                if (src < 32) newDst |= 1u << (int)src;
-                break;
-            case 13:
-                if (src < 32) newDst &= ~(1u << (int)src);
-                break;
-            case 14:
-                newDst = src < 32 ? dst << (int)src : 0;
-                break;
-            case 15:
-                newDst = src < 32 ? dst >> (int)src : 0;
-                break;
-            default: return;
-        }
+        if (!TryApplySetOperation(state, option, dst, src, out var newDst, out var newSrc)) return;
 
         if (!state.WriteOperand(command.DestinationOperand, command.Instruction.Operand1Immediate, newDst))
         {
@@ -338,37 +341,89 @@ internal sealed class HdmvNavigationResolver
         }
     }
 
+    private static bool TryApplySetOperation(ExecutionState state, byte option, uint dst, uint src, out uint newDst, out uint newSrc)
+    {
+        if (option is < 1 or > 15)
+        {
+            newDst = 0;
+            newSrc = src;
+            return false;
+        }
+
+        newDst = SetOperationResults[option](state, dst, src);
+        newSrc = option == 2 ? dst : src;
+        return true;
+    }
+
+    private static readonly Func<ExecutionState, uint, uint, uint>[] SetOperationResults =
+    [
+        (_, _, _) => 0,
+        (_, _, src) => src,
+        (_, _, src) => src,
+        (_, dst, src) => SaturatingAdd(dst, src),
+        (_, dst, src) => dst > src ? dst - src : 0,
+        (_, dst, src) => SaturatingMultiply(dst, src),
+        (_, dst, src) => src == 0 ? uint.MaxValue : dst / src,
+        (_, dst, src) => src == 0 ? uint.MaxValue : dst % src,
+        (state, _, src) => state.NextRandom(src),
+        (_, dst, src) => dst & src,
+        (_, dst, src) => dst | src,
+        (_, dst, src) => dst ^ src,
+        (_, dst, src) => src < 32 ? dst | (1u << (int)src) : dst,
+        (_, dst, src) => src < 32 ? dst & ~(1u << (int)src) : dst,
+        (_, dst, src) => src < 32 ? dst << (int)src : 0,
+        (_, dst, src) => src < 32 ? dst >> (int)src : 0
+    ];
+
     private static void ExecuteSetSystem(ExecutionState state, byte option, uint dst, uint src)
     {
-        switch (option)
+        if (SetSystemOperations.TryGetValue(option, out var operation))
         {
-            case 1:
-                if ((dst & 0x80000000) != 0) state.Psr[1] = dst >> 16 & 0x0fff;
-                if ((src & 0x80000000) != 0) state.Psr[0] = src >> 16 & 0xff;
-                if ((src & 0x00008000) != 0) state.Psr[3] = src & 0xff;
-                if ((dst & 0x00008000) != 0) state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
-                state.Psr[2] = state.Psr[2] & 0x7fffffff | (dst & 0x4000) << 17;
-                break;
-            case 2: state.Psr[9] = src & 0xffff; break;
-            case 3:
-                if ((dst & 0x80000000) != 0) state.Psr[10] = dst & 0xffff;
-                if ((src & 0x80000000) != 0) state.Psr[11] = src & 0xff;
-                AddControlDiagnostic(state, "SetButtonPage");
-                break;
-            case 4: AddControlDiagnostic(state, "EnableButton"); break;
-            case 5: AddControlDiagnostic(state, "DisableButton"); break;
-            case 6:
-                if ((dst & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
-                if ((src & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
-                break;
-            case 7: AddControlDiagnostic(state, "PopupOff"); break;
-            case 8: AddControlDiagnostic(state, "StillOn"); break;
-            case 9: AddControlDiagnostic(state, "StillOff"); break;
-            case 10: state.Psr[22] = state.Psr[22] & ~1U | dst & 1; break;
-            case 11: AddControlDiagnostic(state, "SetStreamSS"); break;
-            case 16: state.Psr[103] = dst; break;
+            operation(state, dst, src);
         }
     }
+
+    private static readonly IReadOnlyDictionary<byte, Action<ExecutionState, uint, uint>> SetSystemOperations =
+        new Dictionary<byte, Action<ExecutionState, uint, uint>>
+        {
+            [1] = ApplySetSystemOption1,
+            [2] = (state, _, src) => state.Psr[9] = src & 0xffff,
+            [3] = ApplySetSystemOption3,
+            [4] = Control("EnableButton"),
+            [5] = Control("DisableButton"),
+            [6] = ApplySetSystemOption6,
+            [7] = Control("PopupOff"),
+            [8] = Control("StillOn"),
+            [9] = Control("StillOff"),
+            [10] = (state, dst, _) => state.Psr[22] = state.Psr[22] & ~1U | dst & 1,
+            [11] = Control("SetStreamSS"),
+            [16] = (state, dst, _) => state.Psr[103] = dst
+        };
+
+    private static void ApplySetSystemOption1(ExecutionState state, uint dst, uint src)
+    {
+        if ((dst & 0x80000000) != 0) state.Psr[1] = dst >> 16 & 0x0fff;
+        if ((src & 0x80000000) != 0) state.Psr[0] = src >> 16 & 0xff;
+        if ((src & 0x00008000) != 0) state.Psr[3] = src & 0xff;
+        if ((dst & 0x00008000) != 0) state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
+        state.Psr[2] = state.Psr[2] & 0x7fffffff | (dst & 0x4000) << 17;
+    }
+
+    private static void ApplySetSystemOption3(ExecutionState state, uint dst, uint src)
+    {
+        if ((dst & 0x80000000) != 0) state.Psr[10] = dst & 0xffff;
+        if ((src & 0x80000000) != 0) state.Psr[11] = src & 0xff;
+        AddControlDiagnostic(state, "SetButtonPage");
+    }
+
+    private static void ApplySetSystemOption6(ExecutionState state, uint dst, uint src)
+    {
+        if ((dst & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
+        if ((src & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
+    }
+
+    private static Action<ExecutionState, uint, uint> Control(string instruction) =>
+        (state, _, _) => AddControlDiagnostic(state, instruction);
 
     private static void AddControlDiagnostic(ExecutionState state, string instruction) =>
         state.Diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,

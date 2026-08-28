@@ -413,7 +413,7 @@ The settings panel SHALL organize the durable configurable features discovered f
 
 #### Scenario: General settings are editable
 - **WHEN** the settings panel is opened
-- **THEN** it SHALL expose UI language, default save directory, and main window location reset controls
+- **THEN** it SHALL expose UI language and default save directory controls
 
 #### Scenario: External tool settings are editable
 - **WHEN** the settings panel is opened

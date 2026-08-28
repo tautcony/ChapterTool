@@ -248,32 +248,85 @@ public sealed class BdmvImporter : IChapterImporter
         List<ChapterDiagnostic> diagnostics)
     {
         var name = reference.Name;
-        var primaryPath = Path.Combine(layout.PrimaryBdjoDirectory, $"{name}.bdjo");
-        var backupPath = Path.Combine(layout.BackupBdjoDirectory, $"{name}.bdjo");
-        var bdjo = BdjoFile.TryRead(primaryPath, out var primaryError);
-        var selectedPath = primaryPath;
-        if (bdjo == null)
+        if (!TryReadBdjo(layout, name, out var bdjo, out var source, out var selectedPath, diagnostics))
         {
-            bdjo = BdjoFile.TryRead(backupPath, out var backupError);
-            selectedPath = backupPath;
-            if (bdjo == null)
-            {
-                diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.UnsupportedDynamicBdJNavigation,
-                    $"BD-J object {name} could not be parsed. Primary: {primaryError}; Backup: {backupError}."));
-                return;
-            }
+            return;
         }
 
         diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,
-            $"Loaded {(selectedPath == backupPath ? "backup" : "primary")} BDJO {name}.", selectedPath));
-        foreach (var playlist in bdjo.AccessiblePlaylists.Names)
+            $"Loaded {source} BDJO {name}.", selectedPath));
+        ReportAccessiblePlaylists(bdjo!, name, evidence, evidenceOrder, selectedPath, diagnostics);
+    }
+
+    private static bool TryReadBdjo(
+        BdmvSourceLayout layout,
+        string name,
+        out BdjoFile? bdjo,
+        out string source,
+        out string selectedPath,
+        List<ChapterDiagnostic> diagnostics)
+    {
+        var primaryPath = Path.Combine(layout.PrimaryBdjoDirectory, $"{name}.bdjo");
+        var backupPath = Path.Combine(layout.BackupBdjoDirectory, $"{name}.bdjo");
+
+        bdjo = BdjoFile.TryRead(primaryPath, out var primaryError);
+        selectedPath = primaryPath;
+        source = "primary";
+        if (bdjo is not null)
         {
-            AddEvidence(evidence, evidenceOrder, $"{playlist}.mpls", bdjo.AccessiblePlaylists.AutostartFirstPlaylist && playlist == bdjo.AccessiblePlaylists.Names[0]
-                ? $"BDJO-autostart:{name}"
-                : $"BDJO-accessible:{name}");
+            return true;
         }
 
-        if (bdjo.AccessiblePlaylists.AccessToAll || bdjo.AccessiblePlaylists.Names.Count == 0)
+        bdjo = BdjoFile.TryRead(backupPath, out var backupError);
+        selectedPath = backupPath;
+        source = "backup";
+        if (bdjo is not null)
+        {
+            return true;
+        }
+
+        diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.UnsupportedDynamicBdJNavigation,
+            $"BD-J object {name} could not be parsed. Primary: {primaryError}; Backup: {backupError}."));
+        return false;
+    }
+
+    private static void ReportAccessiblePlaylists(
+        BdjoFile bdjo,
+        string name,
+        Dictionary<string, List<string>> evidence,
+        List<string> evidenceOrder,
+        string selectedPath,
+        List<ChapterDiagnostic> diagnostics)
+    {
+        var playlists = bdjo.AccessiblePlaylists;
+        ReportPlaylistEvidence(playlists, name, evidence, evidenceOrder);
+        ReportDynamicSelectionWarning(playlists, name, selectedPath, diagnostics);
+    }
+
+    private static void ReportPlaylistEvidence(
+        BdjoAccessiblePlaylists playlists,
+        string name,
+        Dictionary<string, List<string>> evidence,
+        List<string> evidenceOrder)
+    {
+        foreach (var playlist in playlists.Names)
+        {
+            AddEvidence(evidence, evidenceOrder, $"{playlist}.mpls", PlaylistEvidenceSource(playlists, name, playlist));
+        }
+    }
+
+    private static string PlaylistEvidenceSource(BdjoAccessiblePlaylists playlists, string name, string playlist) =>
+        playlists.AutostartFirstPlaylist && playlist == playlists.Names[0]
+            ? $"BDJO-autostart:{name}"
+            : $"BDJO-accessible:{name}";
+
+    private static void ReportDynamicSelectionWarning(
+        BdjoAccessiblePlaylists playlists,
+        string name,
+        string selectedPath,
+        List<ChapterDiagnostic> diagnostics)
+    {
+        if (playlists.AccessToAll || playlists.Names.Count == 0)
         {
             diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.UnsupportedDynamicBdJNavigation,
                 $"BD-J object {name} may select playlists dynamically. JAR and Xlet execution is not supported; bounded playlist scan is used as fallback.", selectedPath));
