@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -620,10 +620,20 @@ public sealed class MainWindowViewModelTests
     public async Task LoadImportSummaryFoldsGroupAndEntryRecordsIntoStructuredState()
     {
         var log = new ApplicationLogPanelProvider();
-        var load = new FakeLoadService(ImportResult(
-            "movie.mpls",
-            Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")),
-            Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(10), "B"))));
+        var firstInfo = Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A"));
+        var secondInfo = Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(10), "B"));
+        var load = new FakeLoadService(new ChapterImportResult(true, [new ChapterImportSource("movie.mpls", [
+            new ChapterImportEntry(
+                "entry-0",
+                "00001.m2ts",
+                firstInfo,
+                MediaTracks:
+                [
+                    new ChapterImportMediaTrack("video", "h264/AVC, 1080p24/1.001 (16:9)", Codec: "h264/AVC", Format: "1080p24/1.001", AspectRatio: "16:9"),
+                    new ChapterImportMediaTrack("audio", "RAW/PCM, [jpn], stereo, 48kHz", Codec: "RAW/PCM", Language: "jpn", Channels: "stereo", SampleRate: "48kHz")
+                ]),
+            new ChapterImportEntry("entry-1", "00002.m2ts", secondInfo)
+        ])], []));
         var vm = CreateViewModel(load, logService: log);
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
@@ -639,6 +649,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(2, entries.Count);
         Assert.Equal("entry-0", Assert.IsType<Dictionary<string, object?>>(entries[0])["id"]);
         Assert.Equal("entry-1", Assert.IsType<Dictionary<string, object?>>(entries[1])["id"]);
+        var mediaTracks = Assert.IsType<List<object?>>(Assert.IsType<Dictionary<string, object?>>(entries[0])["mediaTracks"]);
+        Assert.Equal("h264/AVC, 1080p24/1.001 (16:9)", Assert.IsType<Dictionary<string, object?>>(mediaTracks[0])["summary"]);
     }
 
     [Fact]

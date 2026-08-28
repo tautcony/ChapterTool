@@ -101,6 +101,34 @@ public sealed class ClipSessionTests
     }
 
     [Fact]
+    public void ToggleCombine_deduplicates_media_tracks_from_source_entries()
+    {
+        var video = new ChapterImportMediaTrack("video", "h264/AVC, 1080p24", Codec: "h264/AVC", Format: "1080p24");
+        var audio = new ChapterImportMediaTrack("audio", "RAW/PCM, stereo", Codec: "RAW/PCM", Channels: "stereo");
+        var group = new ChapterImportSource(
+            "movie.mpls",
+            [
+                new ChapterImportEntry("clip-0", "00001", Info(ChapterImportFormat.Mpls, "00001", new Chapter(1, TimeSpan.Zero, "A")), MediaTracks: [video, audio]),
+                new ChapterImportEntry("clip-1", "00002", Info(ChapterImportFormat.Mpls, "00002", new Chapter(1, TimeSpan.FromSeconds(1), "B")), MediaTracks: [video, audio])
+            ]);
+
+        var combined = Assert.IsType<CombinedClipSession>(ClipSessionTransitions.ToggleCombine(ClipSessionTransitions.FromLoad(group)).Session);
+
+        Assert.Equal([video, audio], combined.CombinedEntry.MediaTracks);
+    }
+
+    [Fact]
+    public void CreateCombinedClipOption_uses_empty_media_track_list_when_sources_have_none()
+    {
+        var combined = ClipSessionTransitions.CreateCombinedClipOption(
+            MultiMplsGroup(),
+            Info(ChapterImportFormat.Mpls, "combined", new Chapter(1, TimeSpan.Zero, "Combined")));
+
+        Assert.NotNull(combined.MediaTracks);
+        Assert.Empty(combined.MediaTracks!);
+    }
+
+    [Fact]
     public void WriteBack_OnSplit_UpdatesSelectedEntryOwnership()
     {
         var session = ClipSessionTransitions.FromLoad(MultiMplsGroup());

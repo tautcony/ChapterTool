@@ -263,6 +263,10 @@ public static class ClipSessionTransitions
             .SelectMany(static entry => entry.ReferencedMediaFiles ?? [])
             .Distinct()
             .ToArray();
+        var mediaTracks = sourceGroup.Entries
+            .SelectMany(static entry => entry.MediaTracks ?? [])
+            .Distinct()
+            .ToArray();
         var displayName = combinedInfo.ImportFormat == ChapterImportFormat.Mpls
             ? MplsPlaylistProjection.ClipListDisplay(mediaReferences.Select(static reference => Path.GetFileNameWithoutExtension(reference.DisplayName)))
             : sourceGroup.Entries.FirstOrDefault()?.DisplayName ?? combinedInfo.Title;
@@ -275,7 +279,8 @@ public static class ClipSessionTransitions
             displayName,
             combinedInfo,
             CanCombine: true,
-            ReferencedMediaFiles: mediaReferences);
+            ReferencedMediaFiles: mediaReferences,
+            MediaTracks: mediaTracks);
     }
 
     private static ChapterSet EmptyChapterSet() =>

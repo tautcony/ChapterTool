@@ -157,7 +157,18 @@ internal sealed partial class StatusDiagnosticsPresenter(
                     ["sourceType"] = ChapterImportFormats.DisplayName(info.ImportFormat),
                     ["chapters"] = info.Chapters.Count,
                     ["duration"] = timeFormatter.Format(info.Duration),
-                    ["fps"] = $"{info.FramesPerSecond:0.###}"
+                    ["fps"] = $"{info.FramesPerSecond:0.###}",
+                    ["mediaTracks"] = entry.MediaTracks?.Select(static track => new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["kind"] = track.Kind,
+                        ["summary"] = track.Summary,
+                        ["codec"] = track.Codec ?? string.Empty,
+                        ["format"] = track.Format ?? string.Empty,
+                        ["language"] = track.Language ?? string.Empty,
+                        ["channels"] = track.Channels ?? string.Empty,
+                        ["sampleRate"] = track.SampleRate ?? string.Empty,
+                        ["aspectRatio"] = track.AspectRatio ?? string.Empty
+                    }).Cast<object?>().ToList() ?? []
                 });
             }
 

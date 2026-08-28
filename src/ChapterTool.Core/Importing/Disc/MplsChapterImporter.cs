@@ -37,9 +37,9 @@ public sealed class MplsChapterImporter : IChapterImporter
             var stream = request.Content ?? File.OpenRead(request.Path);
             ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
             var parsed = MplsPlaylistFile.Read(stream);
-            _ = DiscoverClpiFromPath(request.Path, parsed, diagnostics);
+            var clpiByClip = DiscoverClpiFromPath(request.Path, parsed, diagnostics);
             var projection = MplsPlaylistProjection.Create(parsed, BdmvPathHelper.FindBdmvRoot(request.Path));
-            var entries = parsed.PlayList.PlayItems.Select((_, index) => ToOption(projection, index)).ToList();
+            var entries = parsed.PlayList.PlayItems.Select((_, index) => ToOption(projection, index, clpiByClip)).ToList();
             return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
@@ -100,7 +100,10 @@ public sealed class MplsChapterImporter : IChapterImporter
         return clpiMap.Count > 0 ? clpiMap : null;
     }
 
-    private static ChapterImportEntry ToOption(MplsPlaylistProjection projection, int playItemIndex)
+    private static ChapterImportEntry ToOption(
+        MplsPlaylistProjection projection,
+        int playItemIndex,
+        IReadOnlyDictionary<string, ClpiFile>? clpiByClip)
     {
         var playItem = projection.Playlist.PlayList.PlayItems[playItemIndex];
         var chapters = projection.ChaptersForPlayItem(playItemIndex);
@@ -113,7 +116,14 @@ public sealed class MplsChapterImporter : IChapterImporter
             chapters);
         var refs = projection.ReferencesForPlayItem(playItemIndex);
         var displayName = projection.ClipDisplayNameForPlayItem(playItemIndex);
-        return new ChapterImportEntry($"clip-{playItemIndex}", displayName, info, CanCombine: true, ReferencedMediaFiles: refs);
+        var mediaTracks = MplsMediaTrackProjection.ForPlayItem(playItem, clpiByClip);
+        return new ChapterImportEntry(
+            $"clip-{playItemIndex}",
+            displayName,
+            info,
+            CanCombine: true,
+            ReferencedMediaFiles: refs,
+            MediaTracks: mediaTracks);
     }
 
 }

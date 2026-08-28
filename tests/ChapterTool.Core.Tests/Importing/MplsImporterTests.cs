@@ -131,6 +131,10 @@ public sealed class MplsImporterTests
         var reference = Assert.Single(entry.ReferencedMediaFiles ?? []);
         Assert.Equal("00002.m2ts", reference.DisplayName);
         Assert.Equal(Path.Combine(discRoot, "BDMV", "STREAM", "00002.m2ts"), reference.AbsolutePath);
+        Assert.NotNull(entry.MediaTracks);
+        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "video" && track.Summary.Contains("h264/AVC", StringComparison.Ordinal));
+        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "video" && track.Summary.Contains("1080p24/1.001", StringComparison.Ordinal));
+        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "audio" && track.Summary.Contains("48kHz", StringComparison.Ordinal));
     }
 
     public static TheoryData<SampleExpectation> SampleExpectations() =>

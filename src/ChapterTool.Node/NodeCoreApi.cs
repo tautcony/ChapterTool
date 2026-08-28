@@ -300,7 +300,16 @@ public static partial class NodeApi
                     entry.ReferencedMediaFiles?.Select(static media => new ReferencedMediaFile(
                         media.DisplayName,
                         media.RelativePath,
-                        media.AbsolutePath)).ToArray()))
+                        media.AbsolutePath)).ToArray(),
+                    entry.MediaTracks?.Select(static track => new ChapterImportMediaTrack(
+                        track.Kind,
+                        track.Summary,
+                        track.Codec,
+                        track.Format,
+                        track.Language,
+                        track.Channels,
+                        track.SampleRate,
+                        track.AspectRatio)).ToArray()))
             ],
             source.DefaultEntryIndex);
     }

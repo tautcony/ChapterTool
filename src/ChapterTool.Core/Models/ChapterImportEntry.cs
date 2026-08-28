@@ -8,12 +8,14 @@ namespace ChapterTool.Core.Models;
 /// <param name="ChapterSet">The chapter data represented by this import entry.</param>
 /// <param name="CanCombine">Whether this entry can be combined with sibling entries from the same source.</param>
 /// <param name="ReferencedMediaFiles">The media files referenced by this chapter entry, when known.</param>
+/// <param name="MediaTracks">The media track summaries associated with this chapter entry, when known.</param>
 public sealed record ChapterImportEntry(
     string Id,
     string DisplayName,
     ChapterSet ChapterSet,
     bool CanCombine = false,
-    IReadOnlyList<ReferencedMediaFile>? ReferencedMediaFiles = null)
+    IReadOnlyList<ReferencedMediaFile>? ReferencedMediaFiles = null,
+    IReadOnlyList<ChapterImportMediaTrack>? MediaTracks = null)
 {
     /// <inheritdoc />
     public override string ToString() => DisplayName;

@@ -104,7 +104,16 @@ public static partial class NodeApi
                             entry.ReferencedMediaFiles?.Select(static media => new NodeReferencedMediaFile(
                                 media.DisplayName,
                                 media.RelativePath,
-                                media.AbsolutePath)).ToArray()))
+                                media.AbsolutePath)).ToArray(),
+                            entry.MediaTracks?.Select(static track => new NodeImportMediaTrack(
+                                track.Kind,
+                                track.Summary,
+                                track.Codec,
+                                track.Format,
+                                track.Language,
+                                track.Channels,
+                                track.SampleRate,
+                                track.AspectRatio)).ToArray()))
                     ],
                     group.DefaultEntryIndex))
             ],
@@ -226,7 +235,18 @@ public static partial class NodeApi
         string DisplayName,
         NodeChapterSet ChapterSet,
         bool CanCombine = false,
-        IReadOnlyList<NodeReferencedMediaFile>? ReferencedMediaFiles = null);
+        IReadOnlyList<NodeReferencedMediaFile>? ReferencedMediaFiles = null,
+        IReadOnlyList<NodeImportMediaTrack>? MediaTracks = null);
+
+    private sealed record NodeImportMediaTrack(
+        string Kind,
+        string Summary,
+        string? Codec = null,
+        string? Format = null,
+        string? Language = null,
+        string? Channels = null,
+        string? SampleRate = null,
+        string? AspectRatio = null);
 
     private sealed record NodeReferencedMediaFile(
         string DisplayName,

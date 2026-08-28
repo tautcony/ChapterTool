@@ -60,7 +60,7 @@ public sealed class BdmvImporter : IChapterImporter
             .ThenByDescending(static candidate => candidate.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        _ = BdmvPathHelper.DiscoverClpiFiles(
+        var clpiByClip = BdmvPathHelper.DiscoverClpiFiles(
             layout.DiscRoot,
             candidates.SelectMany(static candidate => candidate.Projection.Playlist.PlayList.PlayItems)
                 .SelectMany(static item => item.FullName.Split('&', StringSplitOptions.RemoveEmptyEntries)),
@@ -89,7 +89,8 @@ public sealed class BdmvImporter : IChapterImporter
                 DisplayName(candidate),
                 chapterSet,
                 CanCombine: true,
-                ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles));
+                ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles,
+                MediaTracks: MplsMediaTrackProjection.ForPlayItems(candidate.Projection.Playlist.PlayList.PlayItems, clpiByClip)));
         }
 
         if (entries.Count == 0)

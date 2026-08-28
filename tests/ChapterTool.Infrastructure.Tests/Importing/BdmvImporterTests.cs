@@ -293,6 +293,20 @@ public sealed class BdmvImporterTests
     }
 
     [Fact]
+    public async Task ImportEntriesExposeMediaTrackSummaries()
+    {
+        var bdmvDir = CoreFixtureDir("MAYONAKA_PUNCH/MAYONAKA_PUNCH_DISC2");
+        var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(bdmvDir), CancellationToken.None);
+
+        Assert.True(result.Success);
+        var entry = Assert.Single(result.Groups.SelectMany(static group => group.Entries), static candidate => candidate.Id == "00001.mpls");
+        Assert.NotNull(entry.MediaTracks);
+        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "video" && track.Summary.Contains("h264/AVC", StringComparison.Ordinal));
+        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "video" && track.Summary.Contains("1080p24/1.001", StringComparison.Ordinal));
+        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "audio" && track.Summary == "RAW/PCM, [jpn], stereo, 48kHz");
+    }
+
+    [Fact]
     public async Task ImportWithFailedIndexFallsBackToScan()
     {
         using var tempDir = new TempDirectory();

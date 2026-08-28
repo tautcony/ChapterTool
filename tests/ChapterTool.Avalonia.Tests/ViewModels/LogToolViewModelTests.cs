@@ -105,6 +105,158 @@ public sealed class LogToolViewModelTests
     }
 
     [Fact]
+    public void ViewModel_formats_disc_import_summary_in_eac3to_like_overview_text()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["MessageKey"] = "Log.ImportSummary",
+            ["operation"] = "Load",
+            ["result"] = "completed",
+            ["entries"] = 2,
+            ["chapters"] = 10,
+            ["details"] = new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["groups"] = new object?[]
+                {
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["sourcePath"] = @"C:\disc\00015.mpls",
+                        ["entries"] = new object?[]
+                        {
+                            new Dictionary<string, object?>(StringComparer.Ordinal)
+                            {
+                                ["label"] = "00007.m2ts",
+                                ["source"] = "00007",
+                                ["sourceType"] = "Blu-ray MPLS",
+                                ["chapters"] = 3,
+                                ["duration"] = "0:23:41",
+                                ["fps"] = "23.976",
+                                ["mediaTracks"] = new object?[]
+                                {
+                                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                                    {
+                                        ["kind"] = "video",
+                                        ["summary"] = "h264/AVC, 1080p24/1.001 (16:9)"
+                                    },
+                                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                                    {
+                                        ["kind"] = "audio",
+                                        ["summary"] = "RAW/PCM, [jpn], stereo, 48kHz"
+                                    },
+                                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                                    {
+                                        ["kind"] = "audio",
+                                        ["summary"] = "RAW/PCM, [jpn], stereo, 48kHz"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["sourcePath"] = @"C:\dvd\VTS_05_0.IFO",
+                        ["entries"] = new object?[]
+                        {
+                            new Dictionary<string, object?>(StringComparer.Ordinal)
+                            {
+                                ["label"] = "VTS_05_1",
+                                ["source"] = "VTS_05_1",
+                                ["sourceType"] = "DVD IFO",
+                                ["chapters"] = 7,
+                                ["duration"] = "1:49:12",
+                                ["fps"] = "29.97"
+                            }
+                        }
+                    }
+                },
+                ["diagnostics"] = new object?[]
+                {
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["severity"] = "Info",
+                        ["code"] = "Clpi.Available",
+                        ["message"] = "Loaded 12 CLPI files for 12 unique clips."
+                    }
+                }
+            }
+        };
+        logger.Log(LogLevel.Information, new EventId(0, "Log.ImportSummary"), state, null,
+            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+
+        using var viewModel = new LogToolViewModel(service, localizer);
+
+        var entry = Assert.Single(viewModel.FilteredEntries);
+        var importProperty = Assert.Single(entry.StructuredProperties, static property => property.Name == "Import Entries");
+        Assert.Contains("1) 00015.mpls, 00007.m2ts, 0:23:41", importProperty.Value, StringComparison.Ordinal);
+        Assert.Contains("   - Chapters, 3 chapters", importProperty.Value, StringComparison.Ordinal);
+        Assert.Contains("   - h264/AVC, 1080p24/1.001 (16:9)", importProperty.Value, StringComparison.Ordinal);
+        Assert.Equal(2, importProperty.Value.Split("RAW/PCM, [jpn], stereo, 48kHz", StringSplitOptions.None).Length - 1);
+        Assert.Contains("2) VTS_05_0.IFO, VTS_05_1, 1:49:12", importProperty.Value, StringComparison.Ordinal);
+        Assert.Contains("   - Chapters, 7 chapters", importProperty.Value, StringComparison.Ordinal);
+        Assert.Contains("   - Format, DVD IFO", importProperty.Value, StringComparison.Ordinal);
+        Assert.Contains("Diagnostics:", entry.Details, StringComparison.Ordinal);
+        Assert.Contains("- Info: Loaded 12 CLPI files for 12 unique clips.", entry.Details, StringComparison.Ordinal);
+        Assert.DoesNotContain("Group Index", entry.Details, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ViewModel_formats_bdmv_import_summary_without_duplicate_duration_suffix()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var service = new ApplicationLogPanelProvider();
+        var logger = service.CreateLogger("ChapterTool.Tests");
+        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            ["MessageKey"] = "Log.ImportSummary",
+            ["operation"] = "Load",
+            ["result"] = "completed",
+            ["details"] = new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["groups"] = new object?[]
+                {
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["sourcePath"] = @"C:\disc\DISC2",
+                        ["entries"] = new object?[]
+                        {
+                            new Dictionary<string, object?>(StringComparer.Ordinal)
+                            {
+                                ["label"] = "00001.mpls (1:38:41) 00002.m2ts",
+                                ["source"] = "00001.mpls",
+                                ["sourceType"] = "Blu-ray MPLS",
+                                ["chapters"] = 12,
+                                ["duration"] = "1:38:41",
+                                ["fps"] = "23.976",
+                                ["mediaTracks"] = new object?[]
+                                {
+                                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                                    {
+                                        ["kind"] = "video",
+                                        ["summary"] = "h264/AVC, 1080p24/1.001 (16:9)"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                ["diagnostics"] = Array.Empty<object?>()
+            }
+        };
+        logger.Log(LogLevel.Information, new EventId(0, "Log.ImportSummary"), state, null,
+            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+
+        using var viewModel = new LogToolViewModel(service, localizer);
+
+        var entry = Assert.Single(viewModel.FilteredEntries);
+        var importProperty = Assert.Single(entry.StructuredProperties, static property => property.Name == "Import Entries");
+        Assert.Contains("1) 00001.mpls (1:38:41) 00002.m2ts", importProperty.Value, StringComparison.Ordinal);
+        Assert.DoesNotContain("00002.m2ts, 1:38:41", importProperty.Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ViewModel_copies_selected_summary_and_details_through_clipboard_service()
     {
         var localizer = new AppLocalizationManager("en-US");
