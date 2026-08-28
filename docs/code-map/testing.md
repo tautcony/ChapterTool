@@ -203,7 +203,7 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 
 Coverage entry point:
 
-- `scripts/test-coverage.py` runs the four test projects in sequence. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
+- `scripts/test-coverage.py` builds the four test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
 - `scripts/report-analyzers.py` builds the main solution with the compiler `ErrorLog` property. It parses SARIF with the Python standard library. It prints all diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to select StyleCop diagnostics. The script writes the raw report under `artifacts/analyzers`.
 
 - Maintained publish entry points:

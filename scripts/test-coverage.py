@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Build tests sequentially and collect Cobertura coverage."""
 import argparse
+import os
 import shutil
 import subprocess
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 def run(args):
@@ -32,8 +34,21 @@ def main():
             if args.NoRestore: command.append("--no-restore")
             print(f"Building {project}"); run(command)
     for project in tests:
-        command = ["dotnet", "test", str(project), "--configuration", args.Configuration, "--no-build", "--collect:XPlat Code Coverage", "--settings", str(runsettings), "--results-directory", str(results)]
-        if args.NoRestore or not args.NoBuild: command.append("--no-restore")
+        assembly = project.parent / "bin" / args.Configuration / "net10.0" / f"{project.stem}.dll"
+        root_element = ET.parse(project).getroot()
+        collector = next((ref for ref in root_element.iter("PackageReference")
+                          if ref.get("Include") == "coverlet.collector"), None)
+        if collector is None or not collector.get("Version"):
+            raise RuntimeError(f"coverlet.collector is not declared with a version in {project}")
+        package_root = Path(os.environ.get("NUGET_PACKAGES", Path.home() / ".nuget" / "packages"))
+        adapter_path = package_root / "coverlet.collector" / collector.get("Version") / "build" / "net10.0"
+        if not assembly.is_file(): raise FileNotFoundError(f"test assembly was not found at {assembly}")
+        if not adapter_path.is_dir(): raise FileNotFoundError(f"Coverlet adapter was not found at {adapter_path}")
+        # global.json opts dotnet test into Microsoft.Testing.Platform, which does not
+        # load Coverlet's VSTest data collector. Run the built module through vstest.
+        command = ["dotnet", "vstest", str(assembly), "--collect:XPlat Code Coverage",
+                   f"/TestAdapterPath:{adapter_path}", f"/Settings:{runsettings}",
+                   f"/ResultsDirectory:{results}"]
         print(f"Collecting coverage from {project}"); run(command)
     coverage = list(results.rglob("coverage.cobertura.xml"))
     if not coverage: raise RuntimeError("no coverage.cobertura.xml file was produced")

@@ -6,7 +6,7 @@ Each script name identifies one repository task. The file extension identifies t
 
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
-| `test-coverage.py` | Python 3; cross-platform | Python standard library, .NET SDK; optional `reportgenerator` | Run test projects in sequence and collect coverage. |
+| `test-coverage.py` | Python 3; cross-platform | Python standard library, .NET SDK; optional `reportgenerator` | Build test projects, run their assemblies through VSTest, and collect coverage. |
 | `report-analyzers.py` | Python 3; cross-platform | Python standard library, .NET SDK | Build the solution and summarize SARIF diagnostics. |
 | `publish.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate Linux, macOS, or Windows runtime artifacts. macOS bundles require a macOS host. |
 | `publish.ps1` | PowerShell 7; Windows | .NET SDK | Publish and validate Windows runtime artifacts. |
