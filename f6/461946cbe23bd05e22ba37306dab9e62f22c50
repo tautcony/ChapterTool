@@ -1,0 +1,46 @@
+docs/code-map/testing.md
+  h_3705811fa4502c 53,105,108-109,115,167,213
+scripts/test-coverage.py
+  h_3705811fa4502c 23-24
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaSettingsCloseConfirmationHeadlessTests.cs
+  h_3705811fa4502c 1-65
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs
+  h_3705811fa4502c 250-279
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowInteractionHeadlessTests.cs
+  h_3705811fa4502c 5,56-81
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs
+  h_3705811fa4502c 1,3,7-8,47-125
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  h_3705811fa4502c 12,676-769
+tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs
+  h_3705811fa4502c 34-93,449-507,789-981,999-1013,1047-1060,1072-1112
+tests/ChapterTool.Core.Tests/Importing/ClpiImporterTests.cs
+  h_3705811fa4502c 179-204
+tests/ChapterTool.Core.Tests/Importing/MplsExtensionDataTests.cs
+  h_3705811fa4502c 1-265
+tests/ChapterTool.Core.Tests/Importing/MplsStreamAttributesTests.cs
+  h_3705811fa4502c 1-23
+tests/ChapterTool.Core.Tests/Transform/ExpressionAuthoringServiceTests.cs
+  h_3705811fa4502c 78-86
+tests/ChapterTool.Infrastructure.Tests/ChapterToolRuntimeCompositionTests.cs
+  h_3705811fa4502c 1-31
+tests/ChapterTool.Infrastructure.Tests/CorruptSettingsFileTests.cs
+  h_3705811fa4502c 1-124
+tests/ChapterTool.Infrastructure.Tests/ExternalToolLocatorTests.cs
+  h_3705811fa4502c 338-383
+tests/ChapterTool.Infrastructure.Tests/Importing/BdmvBdjoNavigationTests.cs
+  h_3705811fa4502c 1-289
+tests/ChapterTool.Infrastructure.Tests/PlatformServiceTests.cs
+  h_3705811fa4502c 104-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "f6461946cbe23bd05e22ba37306dab9e62f22c50",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
