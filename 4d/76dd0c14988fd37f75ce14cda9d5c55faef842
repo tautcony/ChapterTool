@@ -1,0 +1,58 @@
+openspec/changes/reduce-high-crap-score/design.md
+  s_63062c6d8beec7::t_f19ee8525f9d04 1-17
+src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvNavigation.cs
+  s_63062c6d8beec7::t_1d4f0c8a8d3670 329,344-366
+  s_63062c6d8beec7::t_34ae7f962e33e4 367-368
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs
+  s_63062c6d8beec7::t_5cb27d316e25b5 370-371,373-380
+src/ChapterTool.Infrastructure/Tools/MkvToolNixInstallProbe.cs
+  s_63062c6d8beec7::t_5cb27d316e25b5 141-142,144-148,153-154
+  s_63062c6d8beec7::t_ae9654f8d6e0c5 137,139,149-152,155,157
+src/ChapterTool.Core/Models/ChapterImportFormats.cs
+  s_63062c6d8beec7::t_80f2f5fb977f6f 8-21,27,34
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  s_63062c6d8beec7::t_fc61eab77444c3 404-410,412-419,421-429,432-436
+  s_63062c6d8beec7::t_5bcfeb006c5d76 437
+openspec/changes/reduce-high-crap-score/.openspec.yaml
+  s_63062c6d8beec7::t_6e38d464c2aa1e 1-2
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_63062c6d8beec7::t_c7f644daf43b31 1027,1046-1047,1060-1061
+  s_63062c6d8beec7::t_8a3d33a195372a 1048-1059
+  s_63062c6d8beec7::t_5a1be449f4f1c6 1062-1063
+openspec/changes/reduce-high-crap-score/tasks.md
+  s_63062c6d8beec7::t_f19ee8525f9d04 1,3-4,8-9,11-13,15-16,18-20,22-25
+  s_63062c6d8beec7::t_45f78e8d0d0a7f 2,5-7,10,14,17,21
+  s_63062c6d8beec7::t_07299ef195de23 26-27
+openspec/changes/reduce-high-crap-score/specs/complexity-reduction/spec.md
+  s_63062c6d8beec7::t_a67264c89abd88 16-19,23-26,30-33
+  s_63062c6d8beec7::t_52512ebb8bee04 1,6-9,13-15,20-22,27-29,34-36
+  s_63062c6d8beec7::t_f19ee8525f9d04 2-5,10-12
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Convert.cs
+  s_63062c6d8beec7::t_c6afcef4bd89a4 82,84
+  s_63062c6d8beec7::t_fc61eab77444c3 64-72,74,76,79-81,86-89,91-93,100
+  s_63062c6d8beec7::t_c82a21200cceca 78,94-99
+src/ChapterTool.Core/Exporting/ChapterExportFormats.cs
+  s_63062c6d8beec7::t_80f2f5fb977f6f 8-20,67,74,81,88
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Import.cs
+  s_63062c6d8beec7::t_c7f644daf43b31 42-43,45,47-57,63-64
+  s_63062c6d8beec7::t_8a3d33a195372a 13,15,18,20,23,33,41,59-62
+  s_63062c6d8beec7::t_30c3889781cf45 44,46,58
+openspec/changes/reduce-high-crap-score/proposal.md
+  s_63062c6d8beec7::t_f19ee8525f9d04 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "4d76dd0c14988fd37f75ce14cda9d5c55faef842",
+  "prompts": {},
+  "sessions": {
+    "s_63062c6d8beec7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a04671-2566-78e3-a81e-07396c0f2c0e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
