@@ -1,0 +1,50 @@
+src/ChapterTool.Core/Importing/Disc/Clpi/ClpiStreamCodingInfo.cs
+  s_08a29178a5b894::t_7da8f01d1b0a72 86-89,97-100,112-114,145,147,150,152
+  s_08a29178a5b894::t_de4317f89f16a3 32,34-59,62-63,66,68-69,71-72,76-77,81-85,90-96,101-111,115-120,122,124,126,128,130,132,134,136,138,140,142
+  s_08a29178a5b894::t_d45e057d225632 121,123,125,127,129,131,133,135,137,139,141
+src/ChapterTool.Avalonia.UI/Workflows/StatusDiagnosticsPresenter.cs
+  s_08a29178a5b894::t_b1fa35ca0afa71 20-40,181-182
+src/ChapterTool.Core/Importing/Cue/CueSheetParser.cs
+  s_08a29178a5b894::t_658ebc03fa6ebd 26,34,36-39,41-44,46-60,65-70,72-73,76-77,81-92,102,105,107-108,116-121,127-139,141,143,145,147,149
+  s_08a29178a5b894::t_cd24fa8b2ca01d 61-64,93,95,97,99,111,113,122-125
+  s_08a29178a5b894::t_bc1a2fe0ca2070 74,80,101,126,140,142,144,146,148
+  s_08a29178a5b894::t_a7a105b82a64f0 30,32
+src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvNavigation.cs
+  s_08a29178a5b894::t_065b439cb6348f 220,223-235,237-241,245-246,251,254-261,263,266-267,269-271,276,278,280,283-312
+  s_08a29178a5b894::t_398cb59defa338 222,236,242,244,250,253,262,264-265,268,272-275,277,279,281-282
+  s_08a29178a5b894::t_598508c0b89e68 252
+src/ChapterTool.Core/Importing/Disc/MplsStreamAttributes.cs
+  s_08a29178a5b894::t_96cd07c1a1c3a8 33,35-53,56-57,60,62-63,65-66,69-70,74-119
+  s_08a29178a5b894::t_e31bf199c6eb14 122,125,128,131
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  s_08a29178a5b894::t_f0c29fcd3a5c7d 373,375,402-447
+  s_08a29178a5b894::t_14a975836fbd74 383-384,391,395
+  s_08a29178a5b894::t_d74c5fec8ed835 448
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs
+  s_08a29178a5b894::t_b1bf14045755bf 18-30
+  s_08a29178a5b894::t_96118911e04e51 325,327,330,332,335,337,340-348,350-351,354
+src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs
+  s_08a29178a5b894::t_377c2196f26009 100-109,111-128,130-134,136-138
+  s_08a29178a5b894::t_c5df9a2259911b 129,135
+  s_08a29178a5b894::t_97227fd93c76e0 15,17-18,20-22,30-51,64-91,93-94
+src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs
+  s_08a29178a5b894::t_18263db25d08b3 242,252,267-269,272-275,286-289
+  s_08a29178a5b894::t_7d49f86345a9f3 23-32,374,379
+  s_08a29178a5b894::t_10277b9b8ebd37 234,240,246-247,249-250,253-258,260-262,264-266,276-285,290-299
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "4dafdf1acdecb14bb7f45e77d8192d638295048a",
+  "prompts": {},
+  "sessions": {
+    "s_08a29178a5b894": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0434a-30c3-7520-a2d5-31c7686d230e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
