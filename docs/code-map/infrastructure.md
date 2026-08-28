@@ -52,7 +52,7 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Infrastructure/Services/DialogRequest.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/ExternalToolLocation.cs`
 
-`ExternalToolDefaultCandidateProvider` supplies the default executable candidate list for a tool id. `IDialogService` and `DialogRequest` define the host-neutral message dialog boundary that `ScriptedDialogService` implements for tests.
+`ExternalToolDefaultCandidateProvider` supplies the default executable candidate list for a tool id. `IDialogService` and `DialogRequest` define the host-neutral message dialog boundary that `ScriptedDialogService` implements for tests. `MkvToolNixInstallProbe` selects a platform-specific probe. `WindowsRegistryInstallProbe` reads the Windows registry and returns no values on other platforms.
 
 ### Settings and configuration persistence
 

@@ -50,6 +50,7 @@ public sealed partial class ExpressionEditor : UserControl
     private readonly Expression.ExpressionDiagnosticPresentation diagnosticRenderer;
     private readonly DispatcherTimer diagnosticHideTimer;
     private readonly DispatcherTimer diagnosticRenderTimer;
+    private readonly IReadOnlyDictionary<Key, Action<KeyEventArgs>> completionNavigationKeys;
     private bool updatingText;
     private bool settingEditorTextFromProperty;
     private bool shouldShowCompletion;
@@ -101,6 +102,13 @@ public sealed partial class ExpressionEditor : UserControl
         editor.TextArea.LostFocus += OnEditorFocusChanged;
         editor.TextArea.Focusable = true;
         EditorHost.Content = editor;
+        completionNavigationKeys = new Dictionary<Key, Action<KeyEventArgs>>
+        {
+            [Key.Down] = _ => MoveCompletionSelection(1),
+            [Key.Up] = _ => MoveCompletionSelection(-1),
+            [Key.Tab] = _ => AcceptSelectedCompletion(),
+            [Key.Escape] = HandleEscape
+        };
         UpdateMultilineState();
         AnalyzeAndRender(renderDiagnosticsImmediately: true);
     }
@@ -335,45 +343,53 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void HandleCompletionKeys(KeyEventArgs args)
     {
-        if (args.Handled)
+        if (args.Handled || TryHandlePlusKey(args))
         {
             return;
         }
 
-        var hasCommandModifier = args.KeyModifiers.HasFlag(KeyModifiers.Control)
+        if (CompletionPopup.IsOpen && CurrentCompletions.Count > 0)
+        {
+            HandleOpenCompletionKey(args);
+            return;
+        }
+
+        if (args.Key == Key.Escape)
+        {
+            HandleEscape(args);
+        }
+    }
+
+    private void HandleOpenCompletionKey(KeyEventArgs args)
+    {
+        if (!completionNavigationKeys.TryGetValue(args.Key, out var action))
+        {
+            return;
+        }
+
+        action(args);
+        args.Handled = true;
+    }
+
+    private bool TryHandlePlusKey(KeyEventArgs args)
+    {
+        var modified = args.KeyModifiers.HasFlag(KeyModifiers.Control)
             || args.KeyModifiers.HasFlag(KeyModifiers.Alt)
             || args.KeyModifiers.HasFlag(KeyModifiers.Meta);
-        if (!hasCommandModifier
-            && (args.Key == Key.Add
-                || (args.Key == Key.OemPlus && args.KeyModifiers.HasFlag(KeyModifiers.Shift))))
+        if (modified || (args.Key != Key.Add && !(args.Key == Key.OemPlus && args.KeyModifiers.HasFlag(KeyModifiers.Shift))))
         {
-            ReplaceSelection("+");
-            args.Handled = true;
-            return;
+            return false;
         }
+        ReplaceSelection("+");
+        args.Handled = true;
+        return true;
+    }
 
-        switch (args.Key)
-        {
-            case Key.Down when CompletionPopup.IsOpen && CurrentCompletions.Count > 0:
-                MoveCompletionSelection(1);
-                args.Handled = true;
-                return;
-            case Key.Up when CompletionPopup.IsOpen && CurrentCompletions.Count > 0:
-                MoveCompletionSelection(-1);
-                args.Handled = true;
-                return;
-            case Key.Tab when CompletionPopup.IsOpen && CurrentCompletions.Count > 0:
-                AcceptSelectedCompletion();
-                args.Handled = true;
-                return;
-            case Key.Escape:
-            {
-                var wasOpen = CompletionPopup.IsOpen;
-                CloseCompletionPopup();
-                args.Handled = wasOpen;
-                break;
-            }
-        }
+    private void HandleEscape(KeyEventArgs args)
+    {
+        var wasOpen = CompletionPopup.IsOpen;
+        CloseCompletionPopup();
+        args.Handled = wasOpen;
     }
 
     private void ReplaceSelection(string text)
@@ -598,18 +614,7 @@ public sealed partial class ExpressionEditor : UserControl
             return;
         }
 
-        var textView = editor.TextArea.TextView;
-        textView.EnsureVisualLines();
-        var position = textView.GetPosition(args.GetPosition(textView));
-        if (position is null)
-        {
-            ScheduleDiagnosticPopupHide();
-            return;
-        }
-
-        var offset = editor.Document.GetOffset(position.Value.Line, position.Value.Column);
-        var endOffset = primaryDiagnostic.Start + primaryDiagnostic.Length;
-        if (offset < primaryDiagnostic.Start || offset > endOffset)
+        if (!IsPointerOverDiagnostic(args))
         {
             ScheduleDiagnosticPopupHide();
             return;
@@ -620,6 +625,19 @@ public sealed partial class ExpressionEditor : UserControl
         DiagnosticPopup.HorizontalOffset = 8;
         DiagnosticPopup.VerticalOffset = 4;
         DiagnosticPopup.IsOpen = true;
+    }
+
+    private bool IsPointerOverDiagnostic(PointerEventArgs args)
+    {
+        var textView = editor.TextArea.TextView;
+        textView.EnsureVisualLines();
+        var position = textView.GetPosition(args.GetPosition(textView));
+        if (position is null)
+        {
+            return false;
+        }
+        var offset = editor.Document.GetOffset(position.Value.Line, position.Value.Column);
+        return offset >= primaryDiagnostic!.Start && offset <= primaryDiagnostic.Start + primaryDiagnostic.Length;
     }
 
     private void OnTextViewPointerExited(object? sender, PointerEventArgs args)
@@ -673,13 +691,7 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void OnCompletionListPointerPressed(object? sender, PointerPressedEventArgs args)
     {
-        if (!CompletionPopup.IsOpen || !args.GetCurrentPoint(CompletionList).Properties.IsLeftButtonPressed)
-        {
-            return;
-        }
-
-        var item = (args.Source as Visual)?.FindAncestorOfType<ListBoxItem>();
-        if (item?.DataContext is not ExpressionCompletion completion)
+        if (!TryResolveCompletion(args, out var completion))
         {
             return;
         }
@@ -687,6 +699,28 @@ public sealed partial class ExpressionEditor : UserControl
         args.Handled = true;
         CompletionList.SelectedItem = completion;
         InsertCompletion(completion);
+    }
+
+    private bool TryResolveCompletion(PointerPressedEventArgs args, out ExpressionCompletion completion)
+    {
+        completion = null!;
+        return IsOpenLeftClick(args) && TryGetCompletionSource(args, out completion);
+    }
+
+    private bool IsOpenLeftClick(PointerPressedEventArgs args) =>
+        CompletionPopup.IsOpen && args.GetCurrentPoint(CompletionList).Properties.IsLeftButtonPressed;
+
+    private bool TryGetCompletionSource(PointerPressedEventArgs args, out ExpressionCompletion completion)
+    {
+        var item = (args.Source as Visual)?.FindAncestorOfType<ListBoxItem>();
+        if (item?.DataContext is ExpressionCompletion found)
+        {
+            completion = found;
+            return true;
+        }
+
+        completion = null!;
+        return false;
     }
 
     private void OnCompletionListDoubleTapped(object? sender, RoutedEventArgs args)

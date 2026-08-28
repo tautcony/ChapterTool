@@ -35,17 +35,29 @@ public sealed partial class ChapterToolCliApplication
     {
         this.console = console ?? new SystemCliConsole();
         this.localizer = localizer ?? new CliLocalizationManager();
-        var directory = ChapterToolRuntimeComposition.ResolveSettingsDirectory(settingsDirectory);
-        this.settingsStore = settingsStore ?? new ChapterToolSettingsStore(directory);
 
         // Shared factories with GUI composition; injection seams remain for tests.
-        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
-        this.importerRegistry = importerRegistry
-            ?? ChapterToolRuntimeComposition.CreateImporterRegistry(this.settingsStore);
-        this.exporter = exporter
-            ?? ChapterToolRuntimeComposition.CreateExportService(this.expressionEngine);
+        (this.settingsStore, this.expressionEngine) = ResolveCoreDefaults(settingsStore, settingsDirectory, expressionEngine);
+        (this.importerRegistry, this.exporter) = ResolveCompositeServices(importerRegistry, exporter, this.settingsStore, this.expressionEngine);
         this.configuredSavingPath = configuredSavingPath;
     }
+
+    private static (ISettingsStore<ChapterToolSettings> SettingsStore, IChapterExpressionEngine ExpressionEngine) ResolveCoreDefaults(
+        ISettingsStore<ChapterToolSettings>? settingsStore,
+        string? settingsDirectory,
+        IChapterExpressionEngine? expressionEngine) =>
+        (
+            settingsStore ?? new ChapterToolSettingsStore(ChapterToolRuntimeComposition.ResolveSettingsDirectory(settingsDirectory)),
+            expressionEngine ?? new LuaExpressionScriptService());
+
+    private static (IChapterImporterRegistry ImporterRegistry, ChapterExportService Exporter) ResolveCompositeServices(
+        IChapterImporterRegistry? importerRegistry,
+        ChapterExportService? exporter,
+        ISettingsStore<ChapterToolSettings> settingsStore,
+        IChapterExpressionEngine expressionEngine) =>
+        (
+            importerRegistry ?? ChapterToolRuntimeComposition.CreateImporterRegistry(settingsStore),
+            exporter ?? ChapterToolRuntimeComposition.CreateExportService(expressionEngine));
 
     public int ShowFormats()
     {

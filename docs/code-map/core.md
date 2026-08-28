@@ -59,6 +59,7 @@ Important format entry points:
 - `MplsPlaylistProjection` supplies shared chapter, clip-name, frame-rate, duration, and media-reference values to direct MPLS and BDMV import.
 - BDMV navigation uses typed INDEX references under `Disc/Index/`, bounded MovieObject parsing and HDMV resolution under `Disc/MovieObject/`, and BDJO accessible-playlist parsing under `Disc/Bdjo/`.
 - `HdmvNavigationResolver.ResolveProfileVariants` creates bounded player profiles only for Player Status Registers (PSRs) that MovieObject commands read. It merges playlist events in stable profile order.
+- `HdmvNavigationResolver` routes normal `SET` options through `SetOperationResults` and `SetSystem` options through `SetSystemOperations`. Unknown options are explicit no-ops.
 - `IndexFile.ExtensionData` exposes validated UHD/HDR extension 3.1 metadata. `IndexTitleEntry` exposes prohibited and hidden access state.
 - `ClpiFile.LookupPacket` uses STC and CPI EP Map records for bounded source-packet lookup. The lookup does not change MPLS chapter time.
 - `BdjoFile` parses terminal, cache, application, key-interest, file-access, and accessible-playlist records. It never executes BD-J code.

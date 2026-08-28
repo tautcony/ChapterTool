@@ -49,6 +49,7 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Importing/TextImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/DiscImporterTests.cs`
+  - `tests/ChapterTool.Core.Tests/Importing/MovieObjectNavigationTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/IfoImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/MplsImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/XplImporterTests.cs`

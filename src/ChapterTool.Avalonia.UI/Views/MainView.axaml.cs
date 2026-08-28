@@ -244,33 +244,53 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        var gesture = Gesture(args);
-        switch (args.Key)
+        if (await TryHandleEditKeyAsync(args))
         {
-            case Key.Insert:
-                args.Handled = true;
-                await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
-                return;
-            case Key.Delete:
-                args.Handled = true;
-                await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
-                return;
+            return;
         }
 
+        var gesture = Gesture(args);
         if (gesture is null)
         {
             return;
         }
 
         args.Handled = true;
+        if (await TryHandleKnownGestureAsync(gesture) || TryHandleSaveFormatGesture(gesture))
+        {
+            return;
+        }
+
+        await shortcutRouter.RouteAsync(gesture);
+    });
+
+    private async Task<bool> TryHandleEditKeyAsync(KeyEventArgs args)
+    {
+        switch (args.Key)
+        {
+            case Key.Insert:
+                args.Handled = true;
+                await viewModel.InsertCommand.ExecuteAsync(SelectedRowIndex());
+                return true;
+            case Key.Delete:
+                args.Handled = true;
+                await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private async Task<bool> TryHandleKnownGestureAsync(string gesture)
+    {
         switch (gesture)
         {
             case "Ctrl+S":
                 await viewModel.SaveCommand.ExecuteAsync();
-                return;
+                return true;
             case "Ctrl+O":
                 await BrowseAndLoadAsync();
-                return;
+                return true;
             case "PageUp" or "PageDown":
             {
                 var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
@@ -279,23 +299,28 @@ public sealed partial class MainView : UserControl
                     await viewModel.SelectClipCommand.ExecuteAsync(next);
                 }
 
-                return;
+                return true;
             }
+            default:
+                return false;
         }
+    }
 
-        if (gesture.StartsWith("Alt+", StringComparison.Ordinal) && int.TryParse(gesture["Alt+".Length..], out var saveIndex))
+    private bool TryHandleSaveFormatGesture(string gesture)
+    {
+        if (!gesture.StartsWith("Alt+", StringComparison.Ordinal) || !int.TryParse(gesture["Alt+".Length..], out var saveIndex))
         {
-            var mapped = saveIndex == 0 ? ChapterExportFormats.All.Count - 1 : saveIndex - 1;
-            if (mapped >= 0 && mapped < ChapterExportFormats.All.Count)
-            {
-                viewModel.SaveFormatIndex = mapped;
-            }
-
-            return;
+            return false;
         }
 
-        await shortcutRouter.RouteAsync(gesture);
-    });
+        var mapped = saveIndex == 0 ? ChapterExportFormats.All.Count - 1 : saveIndex - 1;
+        if (mapped >= 0 && mapped < ChapterExportFormats.All.Count)
+        {
+            viewModel.SaveFormatIndex = mapped;
+        }
+
+        return true;
+    }
 
     private bool IsTextInputKeyScope(Visual? source)
     {
@@ -356,30 +381,43 @@ public sealed partial class MainView : UserControl
 
     private async ValueTask CommitCellEditAsync(DataGridCellEditEndedEventArgs args)
     {
-        if (args.EditAction != DataGridEditAction.Commit || args.Row.DataContext is not ChapterRowViewModel row)
-        {
-            return;
-        }
-
-        var index = viewModel.Rows.IndexOf(row);
-        if (index < 0)
-        {
-            return;
-        }
-
-        var columnId = args.Column.Tag as string ?? args.Column.Tag?.ToString();
-        var edit = columnId switch
-        {
-            ChapterGridColumnIds.Time => (Func<ValueTask>)(() => viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText))),
-            ChapterGridColumnIds.Name => () => viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name)),
-            ChapterGridColumnIds.Frames => () => viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo)),
-            _ => null
-        };
+        var edit = CreateCellEdit(args);
         if (edit is not null)
         {
             await edit();
         }
     }
+
+    private Func<ValueTask>? CreateCellEdit(DataGridCellEditEndedEventArgs args)
+    {
+        var row = GetCommittedRow(args);
+        if (row is null)
+        {
+            return null;
+        }
+
+        var index = viewModel.Rows.IndexOf(row);
+        if (index < 0)
+        {
+            return null;
+        }
+
+        return CreateCellEditAction(index, row, ColumnTagId(args.Column));
+    }
+
+    private static ChapterRowViewModel? GetCommittedRow(DataGridCellEditEndedEventArgs args) =>
+        args.EditAction == DataGridEditAction.Commit ? args.Row.DataContext as ChapterRowViewModel : null;
+
+    private static string? ColumnTagId(DataGridColumn column) =>
+        column.Tag as string ?? column.Tag?.ToString();
+
+    private Func<ValueTask>? CreateCellEditAction(int index, ChapterRowViewModel row, string? columnId) => columnId switch
+    {
+        ChapterGridColumnIds.Time => () => viewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(index, row.TimeText)),
+        ChapterGridColumnIds.Name => () => viewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(index, row.Name)),
+        ChapterGridColumnIds.Frames => () => viewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(index, row.FramesInfo)),
+        _ => null
+    };
 
     private async ValueTask InsertSelectedAsync()
     {

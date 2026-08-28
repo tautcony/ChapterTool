@@ -1,4 +1,5 @@
-﻿using ChapterTool.Core.Exporting;
+﻿using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -20,36 +21,13 @@ public sealed partial class ChapterToolCliApplication
             return 1;
         }
 
-        var import = await ImportAsync(request.InputPath, cancellationToken);
-        if (!import.Success)
+        var info = await SelectChapterSetAsync(request, cancellationToken);
+        if (info is null)
         {
-            RenderFailure(localizer.GetString("Cli.Error.ImportFailed"), import.Result.Diagnostics);
             return 1;
         }
 
-        var selection = SelectOption(import.Result.Groups, request);
-        if (selection is not { IsSuccess: true })
-        {
-            RenderFailure(selection?.Message ?? localizer.GetString("Cli.Error.SelectionFailed"), selection?.Diagnostics ?? []);
-            return 1;
-        }
-
-        var info = selection.Entry!.ChapterSet;
-        var export = exporter.Export(
-            info with
-            {
-                FramesPerSecond = request.FrameRate ?? info.FramesPerSecond
-            },
-            new ChapterExportOptions(
-                format.Format,
-                XmlLanguage: request.XmlLanguage,
-                SourceFileName: request.SourceFileName,
-                ApplyExpression: expression is not null,
-                Expression: expression ?? "t",
-                ExpressionPresetId: expressionPresetId,
-                ExpressionSourceName: expressionSourceName,
-                ProjectOutput: true));
-
+        var export = CreateExport(format, info, request, expression, expressionPresetId, expressionSourceName);
         if (!export.Success)
         {
             RenderFailure(localizer.GetString("Cli.Error.ExportFailed"), export.Diagnostics);
@@ -59,16 +37,74 @@ public sealed partial class ChapterToolCliApplication
         return await WriteExportOutputAsync(request, format, info, export, cancellationToken);
     }
 
+    private async Task<ChapterSet?> SelectChapterSetAsync(CliConvertRequest request, CancellationToken cancellationToken)
+    {
+        var import = await ImportAsync(request.InputPath, cancellationToken);
+        if (!import.Success)
+        {
+            RenderImportFailure(import.Result.Diagnostics);
+            return null;
+        }
+
+        var selection = SelectOption(import.Result.Groups, request);
+        if (selection is not { IsSuccess: true })
+        {
+            RenderSelectionFailure(selection);
+            return null;
+        }
+
+        return selection.Entry!.ChapterSet;
+    }
+
+    private void RenderImportFailure(IReadOnlyList<ChapterDiagnostic> diagnostics) =>
+        RenderFailure(localizer.GetString("Cli.Error.ImportFailed"), diagnostics);
+
+    private void RenderSelectionFailure(CliSelectionResult? selection)
+    {
+        if (selection is null)
+        {
+            RenderFailure(localizer.GetString("Cli.Error.SelectionFailed"), []);
+            return;
+        }
+
+        RenderFailure(selection.Message, selection.Diagnostics);
+    }
+
+    private ChapterExportResult CreateExport(
+        CliOutputFormatDefinition format,
+        ChapterSet info,
+        CliConvertRequest request,
+        string? expression,
+        string expressionPresetId,
+        string expressionSourceName)
+    {
+        var projected = info with { FramesPerSecond = request.FrameRate ?? info.FramesPerSecond };
+        var options = new ChapterExportOptions(
+            format.Format,
+            XmlLanguage: request.XmlLanguage,
+            SourceFileName: request.SourceFileName,
+            ApplyExpression: expression is not null,
+            Expression: expression ?? "t",
+            ExpressionPresetId: expressionPresetId,
+            ExpressionSourceName: expressionSourceName,
+            ProjectOutput: true);
+        return exporter.Export(projected, options);
+    }
+
     private bool TryValidateRequest(CliConvertRequest request, out CliOutputFormatDefinition format, out int errorCode)
     {
-        format = null!;
-        errorCode = 1;
-        return ValidateOutputTarget(request)
+        if (ValidateOutputTarget(request)
             && ValidateFrameRate(request)
             && ValidateEncoding(request)
-            && ValidateFormat(request, out format)
-            ? (errorCode = 0) == 0
-            : false;
+            && ValidateFormat(request, out format))
+        {
+            errorCode = 0;
+            return true;
+        }
+
+        format = null!;
+        errorCode = 1;
+        return false;
     }
 
     private bool ValidateOutputTarget(CliConvertRequest request) => !(request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath)) || WriteValidationError("Cli.Error.StdoutOutputConflict");
@@ -154,8 +190,7 @@ public sealed partial class ChapterToolCliApplication
     {
         if (request.Stdout)
         {
-            console.Write(export.Content);
-            WriteDiagnosticsToError(export.Diagnostics);
+            WriteToStdout(export);
             return 0;
         }
 
@@ -166,12 +201,36 @@ public sealed partial class ChapterToolCliApplication
             return 1;
         }
 
-        if (File.Exists(targetPath) && !request.Force)
+        if (!CanWriteToPath(targetPath, request.Force))
         {
-            console.WriteErrorLine(localizer.Format("Cli.Error.OutputExists", new Dictionary<string, object?> { ["path"] = targetPath }));
             return 1;
         }
 
+        await WriteFileAsync(targetPath, export, request, cancellationToken);
+        console.WriteLine(targetPath);
+        WriteExportDiagnostics(export.Diagnostics);
+        return 0;
+    }
+
+    private void WriteToStdout(ChapterExportResult export)
+    {
+        console.Write(export.Content);
+        WriteDiagnosticsToError(export.Diagnostics);
+    }
+
+    private bool CanWriteToPath(string targetPath, bool force)
+    {
+        if (!File.Exists(targetPath) || force)
+        {
+            return true;
+        }
+
+        console.WriteErrorLine(localizer.Format("Cli.Error.OutputExists", new Dictionary<string, object?> { ["path"] = targetPath }));
+        return false;
+    }
+
+    private async Task WriteFileAsync(string targetPath, ChapterExportResult export, CliConvertRequest request, CancellationToken cancellationToken)
+    {
         var directory = Path.GetDirectoryName(targetPath);
         if (!string.IsNullOrWhiteSpace(directory))
         {
@@ -186,16 +245,18 @@ public sealed partial class ChapterToolCliApplication
             export.Content,
             OutputTextEncodings.Create(encoding, request.EmitBom),
             cancellationToken);
-        console.WriteLine(targetPath);
+    }
 
-        if (export.Diagnostics.Count > 0)
+    private void WriteExportDiagnostics(IReadOnlyList<ChapterDiagnostic> diagnostics)
+    {
+        if (diagnostics.Count == 0)
         {
-            foreach (var line in FormatDiagnostics(export.Diagnostics))
-            {
-                console.WriteLine($"  {line}");
-            }
+            return;
         }
 
-        return 0;
+        foreach (var line in FormatDiagnostics(diagnostics))
+        {
+            console.WriteLine($"  {line}");
+        }
     }
 }

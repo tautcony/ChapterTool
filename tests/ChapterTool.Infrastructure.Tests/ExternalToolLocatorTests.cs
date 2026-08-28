@@ -322,6 +322,19 @@ public sealed class ExternalToolLocatorTests
         Assert.Empty(probe.FindMkvExtractCandidates("mkvextract"));
     }
 
+    [Fact]
+    public void WindowsRegistryProbe_returns_no_values_without_throwing_on_non_windows()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("Windows reads the live registry; this regression targets non-Windows platforms.");
+        }
+
+        var probe = new WindowsRegistryInstallProbe();
+
+        Assert.Empty(probe.ReadMkvToolNixInstallValues());
+    }
+
     private static string ToolExecutable(string name) => OperatingSystem.IsWindows() ? $"{name}.exe" : name;
 
     private static async Task CreateToolFileAsync(string path)

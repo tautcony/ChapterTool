@@ -343,60 +343,87 @@ internal sealed class HdmvNavigationResolver
 
     private static bool TryApplySetOperation(ExecutionState state, byte option, uint dst, uint src, out uint newDst, out uint newSrc)
     {
-        newDst = option switch
+        if (option is < 1 or > 15)
         {
-            1 => src,
-            2 => src,
-            3 => SaturatingAdd(dst, src),
-            4 => dst > src ? dst - src : 0,
-            5 => SaturatingMultiply(dst, src),
-            6 => src == 0 ? uint.MaxValue : dst / src,
-            7 => src == 0 ? uint.MaxValue : dst % src,
-            8 => state.NextRandom(src),
-            9 => dst & src,
-            10 => dst | src,
-            11 => dst ^ src,
-            12 => src < 32 ? dst | (1u << (int)src) : dst,
-            13 => src < 32 ? dst & ~(1u << (int)src) : dst,
-            14 => src < 32 ? dst << (int)src : 0,
-            15 => src < 32 ? dst >> (int)src : 0,
-            _ => 0
-        };
+            newDst = 0;
+            newSrc = src;
+            return false;
+        }
+
+        newDst = SetOperationResults[option](state, dst, src);
         newSrc = option == 2 ? dst : src;
-        return option is >= 1 and <= 15;
+        return true;
     }
+
+    private static readonly Func<ExecutionState, uint, uint, uint>[] SetOperationResults =
+    [
+        (_, _, _) => 0,
+        (_, _, src) => src,
+        (_, _, src) => src,
+        (_, dst, src) => SaturatingAdd(dst, src),
+        (_, dst, src) => dst > src ? dst - src : 0,
+        (_, dst, src) => SaturatingMultiply(dst, src),
+        (_, dst, src) => src == 0 ? uint.MaxValue : dst / src,
+        (_, dst, src) => src == 0 ? uint.MaxValue : dst % src,
+        (state, _, src) => state.NextRandom(src),
+        (_, dst, src) => dst & src,
+        (_, dst, src) => dst | src,
+        (_, dst, src) => dst ^ src,
+        (_, dst, src) => src < 32 ? dst | (1u << (int)src) : dst,
+        (_, dst, src) => src < 32 ? dst & ~(1u << (int)src) : dst,
+        (_, dst, src) => src < 32 ? dst << (int)src : 0,
+        (_, dst, src) => src < 32 ? dst >> (int)src : 0
+    ];
 
     private static void ExecuteSetSystem(ExecutionState state, byte option, uint dst, uint src)
     {
-        switch (option)
+        if (SetSystemOperations.TryGetValue(option, out var operation))
         {
-            case 1:
-                if ((dst & 0x80000000) != 0) state.Psr[1] = dst >> 16 & 0x0fff;
-                if ((src & 0x80000000) != 0) state.Psr[0] = src >> 16 & 0xff;
-                if ((src & 0x00008000) != 0) state.Psr[3] = src & 0xff;
-                if ((dst & 0x00008000) != 0) state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
-                state.Psr[2] = state.Psr[2] & 0x7fffffff | (dst & 0x4000) << 17;
-                break;
-            case 2: state.Psr[9] = src & 0xffff; break;
-            case 3:
-                if ((dst & 0x80000000) != 0) state.Psr[10] = dst & 0xffff;
-                if ((src & 0x80000000) != 0) state.Psr[11] = src & 0xff;
-                AddControlDiagnostic(state, "SetButtonPage");
-                break;
-            case 4: AddControlDiagnostic(state, "EnableButton"); break;
-            case 5: AddControlDiagnostic(state, "DisableButton"); break;
-            case 6:
-                if ((dst & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
-                if ((src & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
-                break;
-            case 7: AddControlDiagnostic(state, "PopupOff"); break;
-            case 8: AddControlDiagnostic(state, "StillOn"); break;
-            case 9: AddControlDiagnostic(state, "StillOff"); break;
-            case 10: state.Psr[22] = state.Psr[22] & ~1U | dst & 1; break;
-            case 11: AddControlDiagnostic(state, "SetStreamSS"); break;
-            case 16: state.Psr[103] = dst; break;
+            operation(state, dst, src);
         }
     }
+
+    private static readonly IReadOnlyDictionary<byte, Action<ExecutionState, uint, uint>> SetSystemOperations =
+        new Dictionary<byte, Action<ExecutionState, uint, uint>>
+        {
+            [1] = ApplySetSystemOption1,
+            [2] = (state, _, src) => state.Psr[9] = src & 0xffff,
+            [3] = ApplySetSystemOption3,
+            [4] = Control("EnableButton"),
+            [5] = Control("DisableButton"),
+            [6] = ApplySetSystemOption6,
+            [7] = Control("PopupOff"),
+            [8] = Control("StillOn"),
+            [9] = Control("StillOff"),
+            [10] = (state, dst, _) => state.Psr[22] = state.Psr[22] & ~1U | dst & 1,
+            [11] = Control("SetStreamSS"),
+            [16] = (state, dst, _) => state.Psr[103] = dst
+        };
+
+    private static void ApplySetSystemOption1(ExecutionState state, uint dst, uint src)
+    {
+        if ((dst & 0x80000000) != 0) state.Psr[1] = dst >> 16 & 0x0fff;
+        if ((src & 0x80000000) != 0) state.Psr[0] = src >> 16 & 0xff;
+        if ((src & 0x00008000) != 0) state.Psr[3] = src & 0xff;
+        if ((dst & 0x00008000) != 0) state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
+        state.Psr[2] = state.Psr[2] & 0x7fffffff | (dst & 0x4000) << 17;
+    }
+
+    private static void ApplySetSystemOption3(ExecutionState state, uint dst, uint src)
+    {
+        if ((dst & 0x80000000) != 0) state.Psr[10] = dst & 0xffff;
+        if ((src & 0x80000000) != 0) state.Psr[11] = src & 0xff;
+        AddControlDiagnostic(state, "SetButtonPage");
+    }
+
+    private static void ApplySetSystemOption6(ExecutionState state, uint dst, uint src)
+    {
+        if ((dst & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
+        if ((src & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
+    }
+
+    private static Action<ExecutionState, uint, uint> Control(string instruction) =>
+        (state, _, _) => AddControlDiagnostic(state, instruction);
 
     private static void AddControlDiagnostic(ExecutionState state, string instruction) =>
         state.Diagnostics.Add(DiagnosticSeverity.Info, ChapterDiagnosticCode.NavigationSource,

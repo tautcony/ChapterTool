@@ -282,6 +282,45 @@ public sealed class MovieObjectNavigationTests
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Message.Contains("SetButtonPage", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(4, "EnableButton")]
+    [InlineData(5, "DisableButton")]
+    [InlineData(7, "PopupOff")]
+    [InlineData(8, "StillOn")]
+    [InlineData(9, "StillOff")]
+    [InlineData(11, "SetStreamSS")]
+    public void ResolverRecognizesSetSystemControlOptions(byte setOption, string instruction)
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(2, 2, 1, true, true, setOption: setOption, destination: 0, source: 0),
+                Command(1, 0, 2, true, false, branchOption: 0, destination: 1)
+            ])
+        ]);
+
+        var result = new HdmvNavigationResolver().Resolve(file, 0);
+
+        Assert.True(result.Events.Count > 0, string.Join("; ", result.Diagnostics.Select(static d => d.Message)));
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains(instruction, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(2, 0x80000009, 7u, 7u)]
+    [InlineData(16, 0x80000067, 5u, 5u)]
+    public void ResolverUpdatesSetSystemRegistersForPlaylistSelection(byte setOption, uint playlistPsrOperand, uint registerValue, uint expectedPlaylist)
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(2, 2, 1, true, true, setOption: setOption, destination: registerValue, source: registerValue),
+                Command(1, 0, 2, false, false, branchOption: 0, destination: playlistPsrOperand)
+            ])
+        ]);
+
+        var result = new HdmvNavigationResolver().Resolve(file, 0);
+
+        Assert.Equal(expectedPlaylist, Assert.Single(result.Events).PlaylistId);
+    }
+
     private static MovieObjectCommand Command(
         byte operandCount,
         byte group,

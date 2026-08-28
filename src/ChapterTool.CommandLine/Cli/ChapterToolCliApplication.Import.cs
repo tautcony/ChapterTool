@@ -16,29 +16,45 @@ public sealed partial class ChapterToolCliApplication
         }
 
         var resolvedImporter = importer!;
-
         var result = await resolvedImporter.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
         if (!result.Success)
         {
-            var fallback = importerRegistry.ResolveFallback(inputPath, resolvedImporter, result);
+            var fallback = await TryImportWithFallbackAsync(inputPath, resolvedImporter, result, cancellationToken);
             if (fallback is not null)
             {
-                result = await fallback.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
-                if (result.Success)
-                {
-                    var diagnostics = result.Diagnostics.Concat([
-                        new ChapterDiagnostic(
-                            DiagnosticSeverity.Info,
-                            ChapterDiagnosticCode.ImporterFallbackUsed,
-                            $"Primary importer '{resolvedImporter.Id}' could not be invoked; fallback importer '{fallback.Id}' was used.")
-                    ]).ToList();
-
-                    return new CliImportExecution(true, fallback, result with { Diagnostics = diagnostics });
-                }
+                return fallback;
             }
         }
 
         return new CliImportExecution(result.Success, resolvedImporter, result);
+    }
+
+    private async Task<CliImportExecution?> TryImportWithFallbackAsync(
+        string inputPath,
+        IChapterImporter primaryImporter,
+        ChapterImportResult primaryResult,
+        CancellationToken cancellationToken)
+    {
+        var fallback = importerRegistry.ResolveFallback(inputPath, primaryImporter, primaryResult);
+        if (fallback is null)
+        {
+            return null;
+        }
+
+        var fallbackResult = await fallback.ImportAsync(new ChapterImportRequest(inputPath), cancellationToken);
+        if (!fallbackResult.Success)
+        {
+            return null;
+        }
+
+        var diagnostics = fallbackResult.Diagnostics.Concat([
+            new ChapterDiagnostic(
+                DiagnosticSeverity.Info,
+                ChapterDiagnosticCode.ImporterFallbackUsed,
+                $"Primary importer '{primaryImporter.Id}' could not be invoked; fallback importer '{fallback.Id}' was used.")
+        ]).ToList();
+
+        return new CliImportExecution(true, fallback, fallbackResult with { Diagnostics = diagnostics });
     }
 
     private bool TryValidateInput(string inputPath, out IChapterImporter? importer, out CliImportExecution? failure)

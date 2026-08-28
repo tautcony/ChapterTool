@@ -1,7 +1,9 @@
 ﻿using System.Globalization;
 using System.Text;
 using ChapterTool.CommandLine.Cli;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Importing;
 using ChapterTool.Core.Localization;
 using ChapterTool.Core.Models;
 using ChapterTool.Infrastructure.Configuration;
@@ -614,6 +616,58 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
+    public async Task ConvertPropagatesOperationCancellation()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => app.ConvertAsync(
+                new CliConvertRequest(
+                    XmlFixture(),
+                    "txt",
+                    OutputPath: null,
+                    Stdout: true,
+                    GroupIndex: 0,
+                    EntryIndex: 0,
+                    EntryId: null,
+                    XmlLanguage: null,
+                    SourceFileName: null,
+                    FrameRate: null),
+                cts.Token));
+    }
+
+    [Fact]
+    public async Task InspectPropagatesOperationCancellation()
+    {
+        var console = new RecordingCliConsole();
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => app.InspectAsync(new CliInspectRequest(XmlFixture()), cts.Token));
+    }
+
+    [Fact]
+    public async Task ConvertUsesFallbackImporterWhenPrimaryFails()
+    {
+        var console = new RecordingCliConsole();
+        var store = new ChapterToolSettingsStore(Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
+        var real = ChapterToolRuntimeComposition.CreateImporterRegistry(store);
+        var app = new ChapterToolCliApplication(console: console, importerRegistry: new FailingThenFallbackRegistry(real));
+
+        var exitCode = await app.ConvertAsync(
+            new CliConvertRequest(XmlFixture(), "txt", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: null),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, exitCode);
+        Assert.Contains("CHAPTER01=", console.Stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void LocalizationManagerAcceptsShortLanguageCodesWithoutRewritingThreadCulture()
     {
         var before = CultureInfo.CurrentUICulture;
@@ -629,6 +683,50 @@ public sealed class ChapterToolCliApplicationTests
         "Text",
         "Xml",
         "xml (T2 - 4 Editions).xml");
+
+    private sealed class ThrowingCancellationImporter : IChapterImporter
+    {
+        public string Id => "cancel-probe";
+
+        public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string> { ".xml" };
+
+        public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new OperationCanceledException(cancellationToken);
+        }
+    }
+
+    private sealed class ThrowingCancellationRegistry : IChapterImporterRegistry
+    {
+        private readonly IChapterImporter importer = new ThrowingCancellationImporter();
+
+        public IChapterImporter? Resolve(string path) => importer;
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
+    }
+
+    private sealed class FailingThenFallbackRegistry : IChapterImporterRegistry
+    {
+        private readonly IChapterImporterRegistry inner;
+
+        public FailingThenFallbackRegistry(IChapterImporterRegistry inner) => this.inner = inner;
+
+        public IChapterImporter? Resolve(string path) => new FailingImporter();
+
+        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => inner.Resolve(path);
+    }
+
+    private sealed class FailingImporter : IChapterImporter
+    {
+        public string Id => "failing-primary";
+
+        public IReadOnlySet<string> SupportedExtensions { get; } = new HashSet<string> { ".xml" };
+
+        public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(ChapterImportResult.Failed(
+                new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.Unavailable, "Primary importer failed.")));
+    }
 
     private sealed class RecordingCliConsole : ICliConsole
     {

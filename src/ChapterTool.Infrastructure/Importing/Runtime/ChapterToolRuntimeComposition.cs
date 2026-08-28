@@ -39,16 +39,25 @@ public static class ChapterToolRuntimeComposition
         IMediaChapterReader? mediaChapterReader = null,
         IMediaChapterReader? mp4FallbackChapterReader = null)
     {
-        formatter ??= new ChapterTimeFormatter();
-        toolLocator ??= new ExternalToolLocator(settingsStore, [.. PathSearchDirectories()]);
-        processRunner ??= new ProcessRunner();
+        var (resolvedFormatter, resolvedToolLocator, resolvedProcessRunner) =
+            ResolveCoreServices(settingsStore, formatter, toolLocator, processRunner);
         return new RuntimeChapterImporterRegistry(
-            formatter,
-            toolLocator,
-            processRunner,
-            mediaChapterReader ?? new FfprobeMediaChapterReader(toolLocator, processRunner),
+            resolvedFormatter,
+            resolvedToolLocator,
+            resolvedProcessRunner,
+            mediaChapterReader ?? new FfprobeMediaChapterReader(resolvedToolLocator, resolvedProcessRunner),
             mp4FallbackChapterReader ?? new AtlMp4ChapterReader());
     }
+
+    private static (IChapterTimeFormatter Formatter, IExternalToolLocator ToolLocator, IProcessRunner ProcessRunner) ResolveCoreServices(
+        ISettingsStore<ChapterToolSettings> settingsStore,
+        IChapterTimeFormatter? formatter,
+        IExternalToolLocator? toolLocator,
+        IProcessRunner? processRunner) =>
+        (
+            formatter ?? new ChapterTimeFormatter(),
+            toolLocator ?? new ExternalToolLocator(settingsStore, [.. PathSearchDirectories()]),
+            processRunner ?? new ProcessRunner());
 
     public static ChapterExportService CreateExportService(IChapterExpressionEngine? expressionEngine = null) =>
         new(new ChapterTimeFormatter(), expressionEngine ?? new LuaExpressionScriptService());
