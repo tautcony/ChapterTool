@@ -50,6 +50,7 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/DiscImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/MovieObjectNavigationTests.cs`
+  - `tests/ChapterTool.Core.Tests/Importing/MplsExtensionDataTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/IfoImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/MplsImporterTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/XplImporterTests.cs`
@@ -101,13 +102,17 @@ High-signal test files:
   - `tests/ChapterTool.Infrastructure.Tests/Importing/MatroskaIntegrationTests.cs`
 - BDMV:
   - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvBdjoNavigationTests.cs`
 - process runner:
   - `tests/ChapterTool.Infrastructure.Tests/ProcessRunnerTests.cs`
+- runtime composition:
+  - `tests/ChapterTool.Infrastructure.Tests/ChapterToolRuntimeCompositionTests.cs`
 - platform services:
   - `tests/ChapterTool.Infrastructure.Tests/PlatformServiceTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs`
 - settings persistence:
   - `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/CorruptSettingsFileTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ChapterToolSettingsFontTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ThemePresetCatalogTests.cs`
 
@@ -159,6 +164,7 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaSettingsCloseConfirmationHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/EmbeddedPresenterHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs`
@@ -204,7 +210,7 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 
 Coverage entry point:
 
-- `scripts/test-coverage.py` builds the four test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
+- `scripts/test-coverage.py` builds the five test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
 - `scripts/report-analyzers.py` builds the main solution with the compiler `ErrorLog` property. It parses SARIF with the Python standard library. It prints all diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to select StyleCop diagnostics. The script writes the raw report under `artifacts/analyzers`.
 
 - Maintained publish entry points:

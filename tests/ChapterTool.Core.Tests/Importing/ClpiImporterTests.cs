@@ -177,6 +177,32 @@ public sealed class ClpiImporterTests
     }
 
     [Fact]
+    public void HdrVideoCodingType24ReadsDynamicRangeAndColorFields()
+    {
+        var payload = new byte[17];
+        payload[0] = 0x24;
+        payload[1] = 0x23;
+        payload[2] = 0x12;
+        payload[3] = 0xAB;
+        payload[4] = 0x80;
+        "ISRC-TEST-01"u8.ToArray().CopyTo(payload, 5);
+        using var stream = new MemoryStream([17, .. payload]);
+
+        var codingInfo = ClpiStreamCodingInfo.Read(stream);
+
+        Assert.Equal((byte)0x24, codingInfo.StreamCodingType);
+        Assert.Equal((byte)2, codingInfo.VideoFormat);
+        Assert.Equal((byte)3, codingInfo.FrameRate);
+        Assert.Equal((byte)1, codingInfo.VideoAspect);
+        Assert.True(codingInfo.OCFlag);
+        Assert.False(codingInfo.CRFlag);
+        Assert.Equal((byte)0xA, codingInfo.DynamicRangeType);
+        Assert.Equal((byte)0xB, codingInfo.ColorSpace);
+        Assert.True(codingInfo.HDRPlusFlag);
+        Assert.Equal("ISRC-TEST-01"u8.ToArray(), codingInfo.Isrc);
+    }
+
+    [Fact]
     public void SubtitleClipInfoExposesFontRecords()
     {
         using var builder = new ClpiBinaryBuilder();

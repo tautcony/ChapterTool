@@ -1,7 +1,11 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.VisualTree;
+using AvaloniaEdit;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Controls;
@@ -33,6 +37,85 @@ public sealed class ToolViewsHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
             Assert.Equal("floor()", editor.EditorText);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_navigates_completion_list_with_arrow_keys()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var editor = new ExpressionEditor
+        {
+            Localizer = localizer,
+            Text = string.Empty
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            editor.InsertTextForTesting("flo");
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            var completionPopup = editor.GetVisualDescendants()
+                .OfType<Popup>()
+                .First(popup => popup.Name == "CompletionPopup");
+            Assert.True(completionPopup.IsOpen);
+
+            window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, string.Empty);
+            window.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, string.Empty);
+            window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, string.Empty);
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal("floor()", editor.EditorText);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_editor_opens_diagnostic_popup_when_pointer_hovers_a_diagnostic()
+    {
+        var localizer = new AppLocalizationManager("en-US");
+        var editor = new ExpressionEditor
+        {
+            Localizer = localizer,
+            Text = "t +"
+        };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(editor, new object());
+        try
+        {
+            var diagnosticPopup = editor.GetVisualDescendants()
+                .OfType<Popup>()
+                .First(popup => popup.Name == "DiagnosticPopup");
+            Assert.False(diagnosticPopup.IsOpen);
+
+            var textEditor = editor.GetVisualDescendants().OfType<TextEditor>().First();
+            var textView = textEditor.TextArea.TextView;
+            textView.EnsureVisualLines();
+            foreach (var local in new[]
+                     {
+                         new Point(2, 2),
+                         new Point(20, 10),
+                         new Point(textView.Bounds.Width / 2, textView.Bounds.Height / 2),
+                         new Point(0, 0)
+                     })
+            {
+                var windowPoint = textView.TranslatePoint(local, window);
+                Assert.NotNull(windowPoint);
+                window.MouseMove(windowPoint.Value);
+                await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+                if (diagnosticPopup.IsOpen)
+                {
+                    break;
+                }
+            }
+
+            Assert.True(diagnosticPopup.IsOpen);
         }
         finally
         {

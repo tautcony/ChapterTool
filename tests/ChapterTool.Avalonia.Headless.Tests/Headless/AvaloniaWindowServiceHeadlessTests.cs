@@ -247,6 +247,36 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         Assert.Null(window.Content);
     }
 
+    [AvaloniaFact]
+    public async Task Standard_tool_catalog_constructs_every_tool_window()
+    {
+        using var host = new MainWindowHeadlessTestHost(appSettings: new AppSettings(Language: "en-US", SavingPath: "saved"));
+        using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
+        await host.LayoutAsync();
+
+        foreach (var toolId in new[]
+                 {
+                     ToolIds.Preview,
+                     ToolIds.Log,
+                     ToolIds.Language,
+                     ToolIds.TemplateNames,
+                     ToolIds.Zones,
+                     ToolIds.ForwardShift
+                 })
+        {
+            var request = new AuxiliaryToolRequest(
+                host.ViewModel.ToolSession,
+                host.Localizer,
+                Capabilities: host.ViewModel.Capabilities);
+            var result = await service.OpenAsync(toolId, request, TestContext.Current.CancellationToken);
+            Assert.Equal(AuxiliaryToolResultKind.Opened, result.Kind);
+
+            await DrainUiAsync();
+            await service.CloseAsync(toolId, TestContext.Current.CancellationToken);
+            await DrainUiAsync();
+        }
+    }
+
     private static AvaloniaWindowService CreateService(
         MainWindowHeadlessTestHost host,
         ISettingsCloseConfirmationService confirmation) =>

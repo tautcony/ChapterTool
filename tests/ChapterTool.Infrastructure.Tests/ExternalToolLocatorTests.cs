@@ -335,6 +335,52 @@ public sealed class ExternalToolLocatorTests
         Assert.Empty(probe.ReadMkvToolNixInstallValues());
     }
 
+    [Fact]
+    public void DefaultMkvToolNixProbe_is_platform_specific_and_never_throws()
+    {
+        var probe = MkvToolNixInstallProbe.CreateDefault();
+
+        Assert.NotNull(probe);
+        _ = probe.FindMkvExtractCandidates(ToolExecutable("mkvextract")).ToArray();
+    }
+
+    [Fact]
+    public void ExternalToolPathResolver_appends_exe_suffix_on_windows_only()
+    {
+        Assert.Equal(
+            OperatingSystem.IsWindows() ? "mkvextract.exe" : "mkvextract",
+            ExternalToolPathResolver.ExecutableName("mkvextract"));
+        Assert.Equal("ffmpeg.exe", ExternalToolPathResolver.ExecutableName("ffmpeg.exe"));
+    }
+
+    [Fact]
+    public void ExternalToolPathResolver_expands_directory_configured_paths_and_leaves_files_alone()
+    {
+        var directory = CreateTempDirectory();
+        var file = Path.Combine(directory, "tool");
+
+        try
+        {
+            Assert.Equal([Path.Combine(directory, "mkvextract")], ExternalToolPathResolver.ExpandConfiguredCandidates(directory, "mkvextract"));
+            Assert.Equal([file], ExternalToolPathResolver.ExpandConfiguredCandidates(file, "mkvextract"));
+            Assert.Empty(ExternalToolPathResolver.ExpandConfiguredCandidates("  ", "mkvextract"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ExternalToolPathResolver_default_candidates_include_app_base_and_platform_directories()
+    {
+        var candidates = ExternalToolPathResolver.DefaultCandidates("mkvextract", "mkvextract").ToArray();
+
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, "mkvextract"), candidates[0]);
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, "tools", "mkvextract"), candidates[1]);
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, "mkvextract", "mkvextract"), candidates[2]);
+    }
+
     private static string ToolExecutable(string name) => OperatingSystem.IsWindows() ? $"{name}.exe" : name;
 
     private static async Task CreateToolFileAsync(string path)
