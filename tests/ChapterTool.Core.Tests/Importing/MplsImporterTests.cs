@@ -109,6 +109,38 @@ public sealed class MplsImporterTests
     }
 
     [Fact]
+    public async Task ImportEntriesIncludeCompleteSummaryDisplayNames()
+    {
+        var path = FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls");
+
+        var result = await new MplsChapterImporter().ImportAsync(
+            new ChapterImportRequest(path),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        Assert.All(
+            result.Groups.Single().Entries,
+            entry => Assert.StartsWith(
+                $"{Path.GetFileName(path)}, {entry.DisplayName}, ",
+                entry.ImportDisplayName,
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ImportDisplayNameAcceptsWindowsPathWhenRunningOnUnix()
+    {
+        var fixture = FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00001_fch.mpls");
+        await using var content = File.OpenRead(fixture);
+
+        var result = await new MplsChapterImporter().ImportAsync(
+            new ChapterImportRequest(@"C:\disc\00001_fch.mpls", content),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        Assert.All(result.Groups.Single().Entries, entry => Assert.StartsWith("00001_fch.mpls, ", entry.ImportDisplayName, StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task MplsLoadedFromBdmvUsesDiscRootForMediaReferences()
     {
         var discRoot = Path.Combine(

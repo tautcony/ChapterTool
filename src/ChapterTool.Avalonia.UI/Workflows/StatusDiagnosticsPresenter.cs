@@ -134,7 +134,59 @@ internal sealed partial class StatusDiagnosticsPresenter(
                 : "failed"),
             ("success", result.Success), ("partial", result.IsPartial), ("groups", result.Groups.Count),
             ("entries", entryCount), ("chapters", chapterCount), ("diagnostics", result.Diagnostics.Count),
-            ("details", ImportDetails(result)));
+            ("details", ImportDetails(result)),
+            ("importOverview", ImportOverview(result)));
+    }
+
+    private static string ImportOverview(ChapterImportResult result)
+    {
+        var lines = new List<string>();
+        var index = 1;
+        foreach (var entry in result.Groups.SelectMany(static group => group.Entries))
+        {
+            if (string.IsNullOrWhiteSpace(entry.ImportDisplayName))
+            {
+                continue;
+            }
+
+            if (lines.Count > 0)
+            {
+                lines.Add(string.Empty);
+            }
+
+            lines.Add($"{index++}) {entry.ImportDisplayName}");
+            var chapterCount = entry.ChapterSet.Chapters.Count;
+            lines.Add($"   - Chapters, {chapterCount} chapter{(chapterCount == 1 ? string.Empty : "s")}");
+            if (entry.MediaTracks is { Count: > 0 })
+            {
+                lines.AddRange(entry.MediaTracks.Select(static track => $"   - {track.Summary}"));
+                continue;
+            }
+
+            var format = ChapterImportFormats.DisplayName(entry.ChapterSet.ImportFormat);
+            if (!string.IsNullOrWhiteSpace(format))
+            {
+                lines.Add($"   - Format, {format}");
+            }
+            if (entry.ChapterSet.FramesPerSecond > 0)
+            {
+                lines.Add($"   - FPS, {entry.ChapterSet.FramesPerSecond:0.###}");
+            }
+        }
+
+        var diagnostics = result.Diagnostics
+            .Select(static diagnostic => string.IsNullOrWhiteSpace(diagnostic.Message)
+                ? $"- {diagnostic.Severity}"
+                : $"- {diagnostic.Severity}: {diagnostic.Message}")
+            .ToList();
+        if (lines.Count > 0 && diagnostics.Count > 0)
+        {
+            lines.Add(string.Empty);
+            lines.Add("Diagnostics:");
+            lines.AddRange(diagnostics);
+        }
+
+        return string.Join(Environment.NewLine, lines);
     }
 
     private Dictionary<string, object?> ImportDetails(ChapterImportResult result)
@@ -153,6 +205,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
                     ["entryIndex"] = entryIndex + 1,
                     ["id"] = entry.Id,
                     ["label"] = entry.DisplayName,
+                    ["importDisplayName"] = entry.ImportDisplayName ?? string.Empty,
                     ["source"] = info.SourceName ?? string.Empty,
                     ["sourceType"] = ChapterImportFormats.DisplayName(info.ImportFormat),
                     ["chapters"] = info.Chapters.Count,

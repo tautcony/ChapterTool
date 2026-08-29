@@ -39,7 +39,7 @@ public sealed class MplsChapterImporter : IChapterImporter
             var parsed = MplsPlaylistFile.Read(stream);
             var clpiByClip = DiscoverClpiFromPath(request.Path, parsed, diagnostics);
             var projection = MplsPlaylistProjection.Create(parsed, BdmvPathHelper.FindBdmvRoot(request.Path));
-            var entries = parsed.PlayList.PlayItems.Select((_, index) => ToOption(projection, index, clpiByClip)).ToList();
+            var entries = parsed.PlayList.PlayItems.Select((_, index) => ToOption(request.Path, projection, index, clpiByClip)).ToList();
             return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
         }
         catch (Exception exception) when (exception is InvalidDataException or EndOfStreamException or IOException)
@@ -101,6 +101,7 @@ public sealed class MplsChapterImporter : IChapterImporter
     }
 
     private static ChapterImportEntry ToOption(
+        string sourcePath,
         MplsPlaylistProjection projection,
         int playItemIndex,
         IReadOnlyDictionary<string, ClpiFile>? clpiByClip)
@@ -123,7 +124,16 @@ public sealed class MplsChapterImporter : IChapterImporter
             info,
             CanCombine: true,
             ReferencedMediaFiles: refs,
-            MediaTracks: mediaTracks);
+            MediaTracks: mediaTracks,
+            ImportDisplayName: ImportDisplayName(sourcePath, displayName, info.Duration));
     }
+
+    private static string ImportDisplayName(string sourcePath, string displayName, TimeSpan duration) =>
+        string.Join(", ", new[]
+        {
+            Path.GetFileName(sourcePath.Replace('\\', Path.DirectorySeparatorChar)),
+            displayName,
+            duration.ToString(@"h\:mm\:ss", System.Globalization.CultureInfo.InvariantCulture)
+        }.Where(static value => !string.IsNullOrWhiteSpace(value)));
 
 }

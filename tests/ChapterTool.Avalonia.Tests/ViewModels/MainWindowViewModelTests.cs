@@ -631,7 +631,8 @@ public sealed class MainWindowViewModelTests
                 [
                     new ChapterImportMediaTrack("video", "h264/AVC, 1080p24/1.001 (16:9)", Codec: "h264/AVC", Format: "1080p24/1.001", AspectRatio: "16:9"),
                     new ChapterImportMediaTrack("audio", "RAW/PCM, [jpn], stereo, 48kHz", Codec: "RAW/PCM", Language: "jpn", Channels: "stereo", SampleRate: "48kHz")
-                ]),
+                ],
+                ImportDisplayName: "movie.mpls, 00001.m2ts, 0:00:00"),
             new ChapterImportEntry("entry-1", "00002.m2ts", secondInfo)
         ])], []));
         var vm = CreateViewModel(load, logService: log);
@@ -641,6 +642,10 @@ public sealed class MainWindowViewModelTests
         var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
         Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey is "Log.ImportGroup" or "Log.ImportEntry");
         Assert.Equal("Load", summary.Operation);
+        Assert.Contains(
+            "1) movie.mpls, 00001.m2ts, 0:00:00",
+            summary.StructuredState?["importOverview"]?.ToString(),
+            StringComparison.Ordinal);
         var details = Assert.IsType<Dictionary<string, object?>>(summary.StructuredState?["details"]);
         var groups = Assert.IsType<List<object?>>(details["groups"]);
         var group = Assert.IsType<Dictionary<string, object?>>(Assert.Single(groups));

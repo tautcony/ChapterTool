@@ -46,7 +46,8 @@ public sealed partial class IfoChapterImporter : IChapterImporter
                     info.SourceName ?? $"PGC {index + 1}",
                     info,
                     CanCombine: true,
-                    ReferencedMediaFiles: [new ReferencedMediaFile($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")]))
+                    ReferencedMediaFiles: [new ReferencedMediaFile($"{info.SourceName}.VOB", $"{info.SourceName}.VOB")],
+                    ImportDisplayName: ImportDisplayName(request.Path, info)))
                 .ToList();
             if (entries.Count == 0)
             {
@@ -142,6 +143,14 @@ public sealed partial class IfoChapterImporter : IChapterImporter
             duration,
             chapters);
     }
+
+    private static string ImportDisplayName(string sourcePath, ChapterSet info) =>
+        string.Join(", ", new[]
+        {
+            Path.GetFileName(sourcePath.Replace('\\', Path.DirectorySeparatorChar)),
+            info.SourceName,
+            info.Duration.ToString(@"h\:mm\:ss", System.Globalization.CultureInfo.InvariantCulture)
+        }.Where(static value => !string.IsNullOrWhiteSpace(value)));
 
     private static List<Chapter> GetChapters(Stream stream, int programChain, out TimeSpan duration, out bool isNtsc)
     {

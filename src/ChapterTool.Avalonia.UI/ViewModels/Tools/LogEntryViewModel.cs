@@ -26,7 +26,6 @@ public sealed class LogEntryViewModel(
 {
     private string? rawText;
     private string? searchableText;
-    private string? formattedImportEntries;
 
     public ApplicationLogEntry Entry => entry;
 
@@ -77,9 +76,9 @@ public sealed class LogEntryViewModel(
             var builder = new StringBuilder();
             Append(builder, entry.TechnicalDetail);
             Append(builder, entry.ExceptionText);
-            if (TryGetFormattedImportEntries(out var formattedImport))
+            if (TryGetImportOverview(out var importOverview))
             {
-                Append(builder, formattedImport);
+                Append(builder, importOverview);
             }
             else if (HasStructuredTree)
             {
@@ -153,7 +152,6 @@ public sealed class LogEntryViewModel(
         OnPropertyChanged(nameof(LevelText));
         rawText = null;
         searchableText = null;
-        formattedImportEntries = null;
         OnPropertyChanged(nameof(Summary));
         OnPropertyChanged(nameof(Details));
         OnPropertyChanged(nameof(RawText));
@@ -187,17 +185,20 @@ public sealed class LogEntryViewModel(
             .Select(static pair => new LogPropertyViewModel(HumanizeKey(pair.Key), FormatValue(pair.Value)))
             .ToList();
 
-        if (TryGetFormattedImportEntries(out var formattedImport))
+        if (TryGetImportOverview(out var importOverview))
         {
-            properties.Insert(0, new LogPropertyViewModel("Import Entries", formattedImport));
+            properties.Insert(0, new LogPropertyViewModel("Import Entries", importOverview));
         }
 
         return properties;
     }
 
-    private bool TryGetFormattedImportEntries(out string value)
+    private bool TryGetImportOverview(out string value)
     {
-        value = formattedImportEntries ??= ImportSummaryFormatter.Format(entry);
+        value = entry.StructuredState is not null
+            && entry.StructuredState.TryGetValue("importOverview", out var overview)
+            ? overview?.ToString() ?? string.Empty
+            : string.Empty;
         return !string.IsNullOrWhiteSpace(value);
     }
 
@@ -357,6 +358,7 @@ public sealed class LogEntryViewModel(
         IsHiddenStructuredKey(key) ||
         string.Equals(key, "severity", StringComparison.Ordinal) ||
         string.Equals(key, "message", StringComparison.Ordinal) ||
+        string.Equals(key, "importOverview", StringComparison.Ordinal) ||
         string.Equals(key, "details", StringComparison.Ordinal);
 
     private static bool IsContainer(object? value) =>

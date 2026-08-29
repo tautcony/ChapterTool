@@ -90,7 +90,8 @@ public sealed class BdmvImporter : IChapterImporter
                 chapterSet,
                 CanCombine: true,
                 ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles,
-                MediaTracks: MplsMediaTrackProjection.ForPlayItems(candidate.Projection.Playlist.PlayList.PlayItems, clpiByClip)));
+                MediaTracks: MplsMediaTrackProjection.ForPlayItems(candidate.Projection.Playlist.PlayList.PlayItems, clpiByClip),
+                ImportDisplayName: DisplayName(candidate)));
         }
 
         if (entries.Count == 0)

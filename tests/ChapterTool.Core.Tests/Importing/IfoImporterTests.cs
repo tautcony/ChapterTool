@@ -35,6 +35,9 @@ public sealed class IfoImporterTests
                 "01:49:12.679"
             ],
             info.Chapters.Select(chapter => formatter.Format(chapter.StartTime)));
+        Assert.Equal(
+            $"VTS_05_0.IFO, VTS_05_1, {info.Duration.ToString(@"h\:mm\:ss", System.Globalization.CultureInfo.InvariantCulture)}",
+            result.Groups.Single().Entries[0].ImportDisplayName);
     }
 
     [Fact]

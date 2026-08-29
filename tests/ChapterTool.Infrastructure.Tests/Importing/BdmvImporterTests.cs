@@ -51,6 +51,7 @@ public sealed class BdmvImporterTests
         Assert.True(result.Success);
         var entry = Assert.Single(result.Groups.SelectMany(static group => group.Entries), candidate => candidate.Id == "00001.mpls");
         Assert.Matches(@"^00001\.mpls \(\d{1,2}:\d{2}:\d{2}\) 00002\.m2ts$", entry.DisplayName);
+        Assert.Equal(entry.DisplayName, entry.ImportDisplayName);
     }
 
     [Fact]

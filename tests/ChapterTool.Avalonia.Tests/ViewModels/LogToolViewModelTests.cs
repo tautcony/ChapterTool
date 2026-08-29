@@ -117,6 +117,19 @@ public sealed class LogToolViewModelTests
             ["result"] = "completed",
             ["entries"] = 2,
             ["chapters"] = 10,
+            ["importOverview"] = string.Join(Environment.NewLine,
+                "1) 00015.mpls, 00007.m2ts, 0:23:41",
+                "   - Chapters, 3 chapters",
+                "   - h264/AVC, 1080p24/1.001 (16:9)",
+                "   - RAW/PCM, [jpn], stereo, 48kHz",
+                "   - RAW/PCM, [jpn], stereo, 48kHz",
+                string.Empty,
+                "2) VTS_05_0.IFO, VTS_05_1, 1:49:12",
+                "   - Chapters, 7 chapters",
+                "   - Format, DVD IFO",
+                string.Empty,
+                "Diagnostics:",
+                "- Info: Loaded 12 CLPI files for 12 unique clips."),
             ["details"] = new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["groups"] = new object?[]
@@ -213,6 +226,7 @@ public sealed class LogToolViewModelTests
             ["MessageKey"] = "Log.ImportSummary",
             ["operation"] = "Load",
             ["result"] = "completed",
+            ["importOverview"] = "1) 00001.mpls (1:38:41) 00002.m2ts",
             ["details"] = new Dictionary<string, object?>(StringComparer.Ordinal)
             {
                 ["groups"] = new object?[]
