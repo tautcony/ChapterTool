@@ -139,20 +139,8 @@ internal sealed class HdmvNavigationResolver
         IReadOnlyDictionary<uint, ushort>? titleObjects = null,
         int titleNumber = 1)
     {
-        var defaultProfile = HdmvPlayerProfile.Default;
-        var psrs = ReadPsrIndices(file);
-        var profiles = new List<HdmvPlayerProfile> { defaultProfile };
-        foreach (var psr in psrs)
-        {
-            foreach (var value in VariantValues(psr, defaultProfile.Psr[psr]))
-            {
-                if (profiles.Count >= limits.MaximumProfileVariants) break;
-                if (value == defaultProfile.Psr[psr]) continue;
-                profiles.Add(defaultProfile.WithPsr(psr, value, $"psr{psr}={value}"));
-            }
-
-            if (profiles.Count >= limits.MaximumProfileVariants) break;
-        }
+        var psrs = HdmvProfileVariantFactory.ReadPsrIndices(file);
+        var profiles = HdmvProfileVariantFactory.Create(file, limits);
 
         var events = new List<HdmvNavigationEvent>();
         var controls = new List<HdmvNavigationControlEvent>();
@@ -181,34 +169,6 @@ internal sealed class HdmvNavigationResolver
             ControlEvents = [.. controls.Distinct()]
         };
     }
-
-    private static IReadOnlyList<int> ReadPsrIndices(MovieObjectFile file)
-    {
-        var result = new SortedSet<int>();
-        foreach (var command in file.Objects.SelectMany(static item => item.Commands))
-        {
-            var instruction = command.Instruction;
-            if (instruction is { OperandCount: > 0, Operand1Immediate: false } && (command.DestinationOperand & PsrFlag) != 0)
-                result.Add((int)(command.DestinationOperand & 0x7f));
-            if (instruction is { OperandCount: > 1, Operand2Immediate: false } && (command.SourceOperand & PsrFlag) != 0)
-                result.Add((int)(command.SourceOperand & 0x7f));
-        }
-
-        return [.. result.Where(static index => index < 128)];
-    }
-
-    private static IReadOnlyList<uint> VariantValues(int psr, uint current) => psr switch
-    {
-        8 => [0, 1],
-        9 => [1, 2],
-        10 => [0, 1],
-        12 => [0, 1],
-        13 => [0, 1],
-        14 => [0, 1],
-        15 => [0, 1],
-        20 => [1, 2],
-        _ => [current]
-    };
 
     private void Execute(ExecutionState state, MovieObjectCommand command, int pc)
     {
@@ -314,7 +274,7 @@ internal sealed class HdmvNavigationResolver
 
     private static bool Compare(byte option, uint left, uint right) => option switch
     {
-        1 => (left & ~right) != 0,
+        1 => (right & ~left) == 0,
         2 => left == right,
         3 => left != right,
         4 => left >= right,
