@@ -70,6 +70,23 @@ Important format entry points:
 - `MplsBoundedStream.cs` enforces each declared parent-container byte budget while it parses nested entries.
 - Media normalization contract: `src/ChapterTool.Core/Importing/Media/MediaChapterImporter.cs`, `src/ChapterTool.Core/Importing/Media/IMediaChapterReader.cs`
 
+### libbluray compatibility map
+
+`libbluray/` is a vendored C reference snapshot at commit `ea3e318b` (the `hdmv: fix INSN_BC instruction` change). ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
+
+| libbluray reference | ChapterTool implementation | Boundary or difference |
+| --- | --- | --- |
+| `libbluray/src/libbluray/bdnav/index_parse.c`, `index_data.h`, `extdata_parse.c` | `src/ChapterTool.Core/Importing/Disc/Index/IndexFile.cs`, `IndexIndexes.cs`, `IndexTitleEntry.cs`, `IndexExtensionData.cs` | Both parse `index.bdmv`, title object references, access flags, and extension records. ChapterTool validates lengths and addresses with managed limits. |
+| `libbluray/src/libbluray/bdnav/mpls_parse.c`, `mpls_data.h` | `src/ChapterTool.Core/Importing/Disc/Mpls*.cs`, `MplsBoundedStream.cs`, `MplsParseLimits.cs` | Both parse playlist, play-item, mark, stream, and extension records. ChapterTool projects chapters and media references for import. |
+| `libbluray/src/libbluray/bdnav/clpi_parse.c`, `clpi_data.h` | `src/ChapterTool.Core/Importing/Disc/Clpi/` | Both use STC and EP-map data for packet lookup. ChapterTool keeps chapter time based on MPLS marks. |
+| `libbluray/src/libbluray/hdmv/mobj_parse.c`, `mobj_data.h` | `src/ChapterTool.Core/Importing/Disc/MovieObject/MovieObjectModels.cs`, `MovieObjectParseLimits.cs` | Both decode the MOBJ header, object flags, 12-byte instructions, and operands. ChapterTool adds bounded stream and count validation. |
+| `libbluray/src/libbluray/hdmv/hdmv_vm.c`, `hdmv_insn.h` | `src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvNavigation.cs` | ChapterTool implements bounded playlist/control navigation, PSR/GPR operands, calls, and deterministic profile variants. It emits structured evidence instead of driving playback. |
+| `INSN_BC` in `hdmv_vm.c` | `HdmvNavigationResolver.Compare` option `1` | The managed predicate is `(source & ~destination) == 0`. This matches the corrected native condition `!!(src & ~dst)` as used by the native VM's skip-next-instruction convention. |
+| `libbluray/src/libbluray/bdj/bdjo_parse.c`, `bdjo_data.h` | `src/ChapterTool.Core/Importing/Disc/Bdjo/BdjoModels.cs` | Both parse BDJO metadata and accessible playlists. ChapterTool reports dynamic BD-J selection as unsupported and never executes Java/Xlets. |
+| `libbluray/src/libbluray/bdnav/navigation.c`, `bdmv_parse.c` | `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvImporter.cs`, `BdmvSourceLayout.cs`, `BdmvPlaylistScanner.cs` | Both combine disc metadata, INDEX references, MovieObject/BDJO navigation, and playlist discovery. ChapterTool uses navigation as evidence and falls back to a bounded playlist scan. |
+
+When updating BDMV behavior, inspect the native reference and the managed row in this table together. Update the row when ownership, entry points, or an intentional compatibility boundary changes.
+
 ### Editing
 
 In-memory chapter mutations:

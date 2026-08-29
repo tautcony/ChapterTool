@@ -103,6 +103,12 @@ High-signal test files:
 - BDMV:
   - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvBdjoNavigationTests.cs`
+
+BDMV compatibility tests:
+
+- `tests/ChapterTool.Core.Tests/Importing/MovieObjectNavigationTests.cs` covers MovieObject decoding, bounded HDMV execution, PSR/GPR behavior, control events, arithmetic, and compare options. The `ResolverUsesDesiredSourceBitsForBitCompare` theory protects the `libbluray` `INSN_BC` operand direction.
+- `tests/ChapterTool.Core.Tests/Importing/DiscImporterTests.cs`, `IndexImporterTests.cs`, and `ClpiImporterTests.cs` cover the managed INDEX and CLPI boundaries that correspond to `libbluray/src/libbluray/bdnav/`.
+- `tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs` and `BdmvBdjoNavigationTests.cs` cover navigation evidence, primary/backup selection, and playlist fallback. They do not execute the native `libbluray` code.
 - process runner:
   - `tests/ChapterTool.Infrastructure.Tests/ProcessRunnerTests.cs`
 - runtime composition:

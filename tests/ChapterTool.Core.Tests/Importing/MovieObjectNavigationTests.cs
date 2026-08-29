@@ -90,6 +90,30 @@ public sealed class MovieObjectNavigationTests
         Assert.Equal(11U, emitted.PlaylistId);
     }
 
+    [Theory]
+    [InlineData(0b0011u, 0b0001u, 101u)]
+    [InlineData(0b0001u, 0b0011u, 202u)]
+    [InlineData(0b0001u, 0b0001u, 101u)]
+    public void ResolverUsesDesiredSourceBitsForBitCompare(uint destination, uint source, uint expectedPlaylist)
+    {
+        var file = new MovieObjectFile("MOBJ", "0100", 0, [
+            new MovieObjectObject(false, false, false, [
+                Command(2, 1, 0, true, true, compareOption: 1, destination: destination, source: source),
+                Command(1, 0, 0, true, false, branchOption: 1, destination: 4),
+                Command(1, 0, 0, true, false, branchOption: 1, destination: 6),
+                Command(1, 0, 0, true, false, branchOption: 2),
+                Command(1, 0, 2, true, false, branchOption: 0, destination: 101),
+                Command(1, 0, 0, true, false, branchOption: 2),
+                Command(1, 0, 2, true, false, branchOption: 0, destination: 202),
+                Command(1, 0, 0, true, false, branchOption: 2)
+            ])
+        ]);
+
+        var result = new HdmvNavigationResolver().Resolve(file, 0);
+
+        Assert.Equal(expectedPlaylist, Assert.Single(result.Events).PlaylistId);
+    }
+
     [Fact]
     public void ResolverSaturatesArithmeticAndRejectsPsrWrites()
     {
