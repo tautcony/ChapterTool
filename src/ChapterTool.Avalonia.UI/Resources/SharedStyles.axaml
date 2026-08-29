@@ -1,8 +1,12 @@
-<Styles xmlns="https://github.com/avaloniaui">
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <FluentTheme />
   <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
   <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
   <StyleInclude Source="avares://ChapterTool.Avalonia.UI/Resources/Styles.axaml" />
+  <Styles.Resources>
+    <SolidColorBrush x:Key="DataGridGridLinesBrush" Color="{DynamicResource Color.Border1}" />
+  </Styles.Resources>
   <Style Selector="Window">
     <Setter Property="Background" Value="{DynamicResource Brush.Window}" />
     <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
@@ -25,6 +29,7 @@
     <Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
     <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}" />
+    <Setter Property="SeparatorBrush" Value="{DynamicResource Brush.Border1}" />
   </Style>
   <Style Selector="DataGridColumnHeader:pointerover">
     <Setter Property="Background" Value="{DynamicResource Brush.Hover}" />
@@ -34,6 +39,12 @@
   </Style>
   <Style Selector="DataGridColumnHeader /template/ Path">
     <Setter Property="Fill" Value="{DynamicResource Brush.FG1}" />
+  </Style>
+  <Style Selector="DataGridColumnHeader /template/ Rectangle#VerticalSeparator">
+    <Setter Property="Fill" Value="{DynamicResource Brush.Border1}" />
+  </Style>
+  <Style Selector="DataGrid /template/ Rectangle#PART_ColumnHeadersAndRowsSeparator">
+    <Setter Property="Fill" Value="{DynamicResource Brush.Border1}" />
   </Style>
   <Style Selector="DataGridCell">
     <Setter Property="Background" Value="{DynamicResource Brush.Contents}" />

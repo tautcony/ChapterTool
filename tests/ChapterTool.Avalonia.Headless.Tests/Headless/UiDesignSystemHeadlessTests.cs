@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media;
@@ -119,6 +120,31 @@ public sealed class UiDesignSystemHeadlessTests
         var previewBorder = preview.GetVisualDescendants().OfType<Border>().First(border => border.Name == "PART_Border");
         Assert.Equal(1, previewBorder.BorderThickness.Left);
         Assert.False(previewBorder.BorderBrush is ISolidColorBrush { Color.A: 0 });
+    }
+
+    [AvaloniaFact]
+    public async Task Chapter_grid_header_lines_use_shared_border_brush()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var expected = ResourceBrushColor("Brush.Border1");
+        var headers = grid.GetVisualDescendants().OfType<DataGridColumnHeader>().ToArray();
+        Assert.NotEmpty(headers);
+        Assert.All(headers, header => Assert.Equal(expected, BrushColor(header.SeparatorBrush)));
+
+        var verticalSeparators = grid.GetVisualDescendants()
+            .OfType<Rectangle>()
+            .Where(rectangle => rectangle.Name == "VerticalSeparator")
+            .ToArray();
+        Assert.NotEmpty(verticalSeparators);
+        Assert.All(verticalSeparators, separator => Assert.Equal(expected, BrushColor(separator.Fill)));
+
+        var headerSeparator = grid.GetVisualDescendants()
+            .OfType<Rectangle>()
+            .Single(rectangle => rectangle.Name == "PART_ColumnHeadersAndRowsSeparator");
+        Assert.Equal(expected, BrushColor(headerSeparator.Fill));
     }
 
     private static void AssertNamed(Control control)
