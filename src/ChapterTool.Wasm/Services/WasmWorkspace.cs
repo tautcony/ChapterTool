@@ -458,7 +458,7 @@ public sealed class WasmWorkspace : IDisposable
         }
         else
         {
-            StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.ZonesEmpty");
+            StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.ZonesEmpty");
         }
 
         Notify();
@@ -492,7 +492,7 @@ public sealed class WasmWorkspace : IDisposable
             && result.Diagnostics.Any(static d => d.Severity == DiagnosticSeverity.Error))
         {
             RecordDiagnostics(result.Diagnostics);
-            StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.CannotShift");
+            StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.CannotShift");
             Notify();
             return;
         }
@@ -535,8 +535,8 @@ public sealed class WasmWorkspace : IDisposable
                     ClearSession();
                 }
 
-                diagnostics = ToDiagnostics(result.Diagnostics);
-                StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.LoadFailed");
+                diagnostics = WasmWorkspaceProjection.ToDiagnostics(result.Diagnostics);
+                StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.LoadFailed");
                 AddLog("Error", StatusText);
                 return;
             }
@@ -618,7 +618,7 @@ public sealed class WasmWorkspace : IDisposable
             if (!result.Success || result.Groups.Count == 0)
             {
                 RecordDiagnostics(result.Diagnostics);
-                StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.AppendFailed");
+                StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.AppendFailed");
                 AddLog("Error", StatusText);
                 return;
             }
@@ -629,7 +629,7 @@ public sealed class WasmWorkspace : IDisposable
             {
                 // Keep current session on append failure.
                 RecordDiagnostics(transition.EditResult.Diagnostics);
-                StatusText = FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.AppendFailed");
+                StatusText = WasmWorkspaceProjection.FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.AppendFailed");
                 AddLog("Error", StatusText);
                 return;
             }
@@ -724,7 +724,7 @@ public sealed class WasmWorkspace : IDisposable
         if (!transition.Succeeded || transition.Session is null)
         {
             RecordDiagnostics(transition.EditResult.Diagnostics);
-            StatusText = FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.CombineFailed");
+            StatusText = WasmWorkspaceProjection.FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.CombineFailed");
             Notify();
             return;
         }
@@ -764,7 +764,7 @@ public sealed class WasmWorkspace : IDisposable
         if (!result.Success)
         {
             RecordDiagnostics(result.Diagnostics);
-            StatusText = FirstError(result.Diagnostics) ?? localizer.T("Status.ChangeFpsFailed");
+            StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.ChangeFpsFailed");
             Notify();
             return;
         }
@@ -896,10 +896,10 @@ public sealed class WasmWorkspace : IDisposable
             var format = wasmChapterService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
-            diagnostics = ToDiagnostics(export.Diagnostics);
+            diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
             if (!export.Success)
             {
-                StatusText = FirstError(export.Diagnostics) ?? localizer.T("Status.PreviewFailed");
+                StatusText = WasmWorkspaceProjection.FirstError(export.Diagnostics) ?? localizer.T("Status.PreviewFailed");
                 Notify();
                 return new PreviewResult(false, StatusText);
             }
@@ -945,10 +945,10 @@ public sealed class WasmWorkspace : IDisposable
             var format = wasmChapterService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
-            diagnostics = ToDiagnostics(export.Diagnostics);
+            diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
             if (!export.Success)
             {
-                StatusText = FirstError(export.Diagnostics) ?? localizer.T("Status.SaveFailed");
+                StatusText = WasmWorkspaceProjection.FirstError(export.Diagnostics) ?? localizer.T("Status.SaveFailed");
                 Notify();
                 return new SaveResult(false, StatusText);
             }
@@ -1069,7 +1069,7 @@ public sealed class WasmWorkspace : IDisposable
 
         if (rebuildAllGroupOptions && importResult is not null && importResult.Groups.Count > 1 && !ClipSessionState.IsCombined)
         {
-            ClipOptions = BuildClipOptions(importResult);
+            ClipOptions = WasmWorkspaceProjection.BuildClipOptions(importResult, localizer);
             var selectedEntry = ClipSessionState.SelectedIndex >= 0 && ClipSessionState.SelectedIndex < ClipSessionState.ClipOptions.Count
                 ? ClipSessionState.ClipOptions[ClipSessionState.SelectedIndex]
                 : null;
@@ -1082,7 +1082,7 @@ public sealed class WasmWorkspace : IDisposable
         }
         else
         {
-            ClipOptions = BuildClipOptionsFromSession(ClipSessionState, activeGroupIndex);
+            ClipOptions = WasmWorkspaceProjection.BuildClipOptionsFromSession(ClipSessionState, activeGroupIndex, localizer);
             SelectedClipId = ClipOptions.ElementAtOrDefault(Math.Max(0, ClipSessionState.SelectedIndex))?.Id
                 ?? ClipOptions.FirstOrDefault()?.Id;
         }
@@ -1092,21 +1092,6 @@ public sealed class WasmWorkspace : IDisposable
         {
             FramesPerSecond = BaseChapterSet.FramesPerSecond;
         }
-    }
-
-    private IReadOnlyList<ClipOption> BuildClipOptionsFromSession(ClipSession sessionValue, int groupIndex)
-    {
-        if (sessionValue.IsCombined)
-        {
-            var combined = sessionValue.ClipOptions[0];
-            return [ToClipOption(combined, $"combined:{groupIndex}", groupIndex, -1)];
-        }
-
-        return
-        [
-            .. sessionValue.ClipOptions
-                .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{entry.Id}", groupIndex, index))
-        ];
     }
 
     private void RefreshDisplay(bool updateStatus, string? statusKey, params object[] statusArgs)
@@ -1133,7 +1118,7 @@ public sealed class WasmWorkspace : IDisposable
         rows =
         [
             .. projection.Info.Chapters
-                .Select(chapter => ToRow(chapter, wasmChapterService.TimeFormatter))
+                .Select(chapter => WasmWorkspaceProjection.ToRow(chapter, wasmChapterService.TimeFormatter))
         ];
 
         // Drop selection indexes that no longer exist after edits.
@@ -1143,7 +1128,7 @@ public sealed class WasmWorkspace : IDisposable
             SelectedRowIndex = selectedRowIndexes.Count > 0 ? selectedRowIndexes.Max() : -1;
         }
 
-        var projectionDiagnostics = ToDiagnostics(projection.Diagnostics);
+        var projectionDiagnostics = WasmWorkspaceProjection.ToDiagnostics(projection.Diagnostics);
         diagnostics = projectionDiagnostics;
         if (projectionDiagnostics.Count > 0)
         {
@@ -1295,74 +1280,6 @@ public sealed class WasmWorkspace : IDisposable
         return [];
     }
 
-    private List<ClipOption> BuildClipOptions(ChapterImportResult result)
-    {
-        var options = new List<ClipOption>();
-        for (var groupIndex = 0; groupIndex < result.Groups.Count; groupIndex++)
-        {
-            var group = result.Groups[groupIndex];
-            for (var entryIndex = 0; entryIndex < group.Entries.Count; entryIndex++)
-            {
-                var entry = group.Entries[entryIndex];
-                var id = $"{groupIndex}:{entryIndex}:{entry.Id}";
-                var display = string.IsNullOrWhiteSpace(entry.DisplayName)
-                    ? $"Entry {entryIndex + 1}"
-                    : entry.DisplayName;
-                if (result.Groups.Count > 1)
-                {
-                    display = $"{Path.GetFileName(group.SourcePath)} · {display}";
-                }
-
-                options.Add(ToClipOption(entry, id, groupIndex, entryIndex, display));
-            }
-        }
-
-        return options;
-    }
-
-    private ClipOption ToClipOption(
-        ChapterImportEntry entry,
-        string id,
-        int groupIndex,
-        int entryIndex,
-        string? prefix = null)
-    {
-        var display = ChapterImportDisplay.From(entry);
-        var mainText = prefix ?? display.MainText;
-        var displayText = display.ChapterCount > 0
-            ? localizer.Format("Label.ClipOption", mainText, display.ChapterCount)
-            : mainText;
-        return new ClipOption(id, displayText, groupIndex, entryIndex);
-    }
-
-    private static ChapterRowModel ToRow(Chapter chapter, IChapterTimeFormatter formatter) =>
-        new()
-        {
-            Number = chapter.DisplayNumber,
-            TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.StartTime),
-            Name = chapter.Name,
-            FramesInfo = chapter.FramesInfo,
-            IsSeparator = chapter.IsSeparator,
-            IsFrameAccurate = chapter.FrameAccuracy == FrameAccuracy.Accurate,
-            IsFrameInexact = chapter.FrameAccuracy == FrameAccuracy.Inexact
-        };
-
-    private static IReadOnlyList<DiagnosticView> ToDiagnostics(IEnumerable<ChapterDiagnostic> diagnostics) =>
-    [
-        .. diagnostics.Select(static diagnostic => new DiagnosticView(
-            diagnostic.Severity.ToString(),
-            diagnostic.DisplayCode,
-            diagnostic.Message,
-            diagnostic.Details))
-    ];
-
-    private static string? FirstError(IEnumerable<ChapterDiagnostic> diagnostics)
-    {
-        var chapterDiagnostics = diagnostics.ToList();
-        return chapterDiagnostics.FirstOrDefault(static d => d.Severity == DiagnosticSeverity.Error)?.Message
-               ?? chapterDiagnostics.FirstOrDefault()?.Message;
-    }
-
     private void BeginBusy(string status)
     {
         IsBusy = true;
@@ -1412,8 +1329,8 @@ public sealed class WasmWorkspace : IDisposable
         if (ClipSessionState is not null)
         {
             ClipOptions = importResult is { Groups.Count: > 1 } && !ClipSessionState.IsCombined
-                ? BuildClipOptions(importResult)
-                : BuildClipOptionsFromSession(ClipSessionState, activeGroupIndex);
+                ? WasmWorkspaceProjection.BuildClipOptions(importResult, localizer)
+                : WasmWorkspaceProjection.BuildClipOptionsFromSession(ClipSessionState, activeGroupIndex, localizer);
         }
 
         if (statusLocalizationKey is not null)
@@ -1426,7 +1343,7 @@ public sealed class WasmWorkspace : IDisposable
 
     private void RecordDiagnostics(IEnumerable<ChapterDiagnostic> diagnosticsValue)
     {
-        this.diagnostics = ToDiagnostics(diagnosticsValue);
+        this.diagnostics = WasmWorkspaceProjection.ToDiagnostics(diagnosticsValue);
         foreach (var diagnostic in this.diagnostics)
         {
             AddLog(diagnostic.Severity, $"{diagnostic.Code}: {diagnostic.Message}", diagnostic.Details);
