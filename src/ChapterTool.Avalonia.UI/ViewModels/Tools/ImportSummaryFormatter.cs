@@ -128,9 +128,15 @@ internal static class ImportSummaryFormatter
         return string.Join(Environment.NewLine, lines);
     }
 
+    private static string GetCrossPlatformFileName(string path)
+    {
+        var lastSeparator = path.LastIndexOfAny(['/', '\\']);
+        return lastSeparator >= 0 ? path[(lastSeparator + 1)..] : path;
+    }
+
     private static string FormatImportHeader(string? sourcePath, string? label, string? duration)
     {
-        var sourceName = Path.GetFileName(sourcePath ?? string.Empty);
+        var sourceName = GetCrossPlatformFileName(sourcePath ?? string.Empty);
         var isFileImport = HasExtension(sourceName, ".mpls") || HasExtension(sourceName, ".ifo");
 
         if (isFileImport)
