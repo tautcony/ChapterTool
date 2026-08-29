@@ -42,4 +42,6 @@ Run Python scripts with Python 3. Run Bash scripts with Bash. Run PowerShell scr
 
 `scripts/pyproject.toml` pins Python dependencies for scripts that need third-party packages (`test-coverage.py`, `axaml-to-json.py`). Install them once with `uv sync --project scripts`, then run the script through `uv run --project scripts scripts/<name>.py ...` so the virtual environment is used. CI installs `uv` and invokes `axaml-to-json.py` through `uv run`.
 
+When `test-coverage.py` needs an HTML report and `reportgenerator` is missing, it asks before coverage starts whether it should install the global tool. Non-interactive runs skip HTML generation unless the tool is already available. Use `-SkipHtml` to intentionally produce XML only.
+
 `ruff` is a dev dependency of the same environment. Run `uv run --project scripts ruff check scripts/` to lint the Python scripts. Rule `C901` keeps function cyclomatic complexity under 16. This matches the `CA1502: 16` threshold in `CodeMetricsConfig.txt`. Rules `E701` through `E703` require one statement per line. CI runs the same check.

@@ -4,6 +4,7 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 import defusedxml.ElementTree as ET
 from pathlib import Path
 
@@ -47,12 +48,55 @@ def collect_coverage(args, tests, runsettings, results):
         run(command)
 
 
-def write_html_report(results, report_dir):
-    if shutil.which("reportgenerator") is None:
-        print("HTML report skipped: reportgenerator was not found on PATH.\nInstall it with: dotnet tool install -g dotnet-reportgenerator-globaltool\nOr rerun with -SkipHtml to intentionally produce XML only.")
+REPORTGENERATOR_PACKAGE = "dotnet-reportgenerator-globaltool"
+
+
+def find_reportgenerator():
+    command = shutil.which("reportgenerator")
+    if command:
+        return command
+
+    tools_dir = Path.home() / ".dotnet" / "tools"
+    for name in ("reportgenerator", "reportgenerator.exe"):
+        candidate = tools_dir / name
+        if candidate.is_file():
+            return str(candidate)
+    return None
+
+
+def prepare_html_report(skip_html):
+    if skip_html:
+        return None
+
+    command = find_reportgenerator()
+    if command:
+        return command
+
+    print("reportgenerator was not found. HTML coverage requires the .NET global tool.")
+    if not sys.stdin.isatty():
+        print("HTML report skipped in a non-interactive session. Rerun with -SkipHtml to intentionally produce XML only.")
+        return None
+
+    try:
+        answer = input(f"Install {REPORTGENERATOR_PACKAGE} now? [Y/n]: ").strip().lower()
+    except EOFError:
+        answer = "n"
+    if answer not in ("", "y", "yes"):
+        print("HTML report skipped. Rerun without -SkipHtml after installing reportgenerator.")
+        return None
+
+    run(["dotnet", "tool", "install", "-g", REPORTGENERATOR_PACKAGE])
+    command = find_reportgenerator()
+    if command is None:
+        print("HTML report skipped: reportgenerator was installed but is not available yet. Restart the shell and rerun the script.")
+    return command
+
+
+def write_html_report(results, report_dir, command):
+    if command is None:
         return
     report_dir.mkdir(parents=True, exist_ok=True)
-    run(["reportgenerator", f"-reports:{results}/**/coverage.cobertura.xml", f"-targetdir:{report_dir}", "-filefilters:-*/obj/*;-*.g.cs", "-reporttypes:Html"])
+    run([command, f"-reports:{results}/**/coverage.cobertura.xml", f"-targetdir:{report_dir}", "-filefilters:-*/obj/*;-*.g.cs", "-reporttypes:Html"])
     print(f"HTML coverage report: {report_dir / 'index.html'}")
 
 
@@ -77,6 +121,7 @@ def main():
     for project in tests:
         if not project.is_file():
             raise FileNotFoundError(f"test project was not found at {project}")
+    html_report_command = prepare_html_report(args.SkipHtml)
     shutil.rmtree(output, ignore_errors=True)
     results.mkdir(parents=True)
     if not args.NoBuild:
@@ -89,7 +134,7 @@ def main():
     if args.SkipHtml:
         print("Skipped HTML report generation.")
         return 0
-    write_html_report(results, report_dir)
+    write_html_report(results, report_dir, html_report_command)
     return 0
 
 
