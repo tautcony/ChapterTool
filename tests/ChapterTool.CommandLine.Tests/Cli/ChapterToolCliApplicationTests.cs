@@ -81,8 +81,8 @@ public sealed class ChapterToolCliApplicationTests
             console.WriteError("err");
             console.WriteErrorLine("line");
 
-            Assert.Equal("outline\n", output.ToString());
-            Assert.Equal("errline\n", error.ToString());
+            Assert.Equal($"outline{Environment.NewLine}", output.ToString());
+            Assert.Equal($"errline{Environment.NewLine}", error.ToString());
         }
         finally
         {
