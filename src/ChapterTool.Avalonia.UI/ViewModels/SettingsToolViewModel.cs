@@ -13,7 +13,7 @@ using ChapterTool.Core.Exporting;
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
 /// <summary>Provides settings state and commands for the settings tool.</summary>
-public sealed partial class SettingsToolViewModel : ObservableViewModel, IDisposable
+public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
 
@@ -768,7 +768,7 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
 
     private ChapterToolSettings CurrentSettings()
     {
-        var settings = ChapterToolSettings.Normalize(snapshotCoordinator.Saved with
+        var settings = ChapterToolSettings.Normalize(new ChapterToolSettings
         {
             Application = CurrentAppSettings(),
             Theme = Appearance.CurrentThemeSettings(),
@@ -780,21 +780,19 @@ public sealed partial class SettingsToolViewModel : ObservableViewModel, IDispos
     }
 
     private AppSettings CurrentAppSettings() =>
-        snapshotCoordinator.Saved.Application with
-        {
-            Language = SelectedLanguage,
-            SavingPath = SaveDirectory,
-            MkvToolnixPath = MkvToolnixPath,
-            FfprobePath = FfprobePath,
-            DefaultSaveFormat = SaveFormats[DefaultSaveFormatIndex].ToString(),
-            DefaultXmlLanguage = XmlLanguageOptions[DefaultXmlLanguageIndex],
-            OutputTextEncoding = OutputTextEncodings.Id(OutputEncodings[OutputTextEncodingIndex]),
-            EmitBom = EmitBom,
-            FrameAccuracyTolerance = FrameAccuracyTolerance,
-            DeleteRowsTimingMode = DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize),
-            FrameDisplayMode = FrameDisplayModes.Id(FrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces),
-            FrameDecimalPlaces = FrameDecimalPlaces
-        };
+        new(
+            SavingPath: SaveDirectory,
+            Language: SelectedLanguage,
+            MkvToolnixPath: MkvToolnixPath,
+            FfprobePath: FfprobePath,
+            DefaultSaveFormat: SaveFormats[DefaultSaveFormatIndex].ToString(),
+            DefaultXmlLanguage: XmlLanguageOptions[DefaultXmlLanguageIndex],
+            OutputTextEncoding: OutputTextEncodings.Id(OutputEncodings[OutputTextEncodingIndex]),
+            EmitBom: EmitBom,
+            FrameAccuracyTolerance: FrameAccuracyTolerance,
+            DeleteRowsTimingMode: DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize),
+            FrameDisplayMode: FrameDisplayModes.Id(FrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces),
+            FrameDecimalPlaces: FrameDecimalPlaces);
 
     private void ApplyAppSettingsToFields(AppSettings settings)
     {
