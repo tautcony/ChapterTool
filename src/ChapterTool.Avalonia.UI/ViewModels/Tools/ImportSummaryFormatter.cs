@@ -130,7 +130,7 @@ internal static class ImportSummaryFormatter
 
     private static string FormatImportHeader(string? sourcePath, string? label, string? duration)
     {
-        var sourceName = Path.GetFileName(sourcePath ?? string.Empty);
+        var sourceName = GetCrossPlatformFileName(sourcePath);
         var isFileImport = HasExtension(sourceName, ".mpls") || HasExtension(sourceName, ".ifo");
 
         if (isFileImport)
@@ -169,6 +169,20 @@ internal static class ImportSummaryFormatter
         }
 
         return duration ?? string.Empty;
+    }
+
+    private static string GetCrossPlatformFileName(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var alternateSeparator = Path.DirectorySeparatorChar == Path.AltDirectorySeparatorChar
+            ? '\\'
+            : Path.AltDirectorySeparatorChar;
+        var normalizedPath = path.Replace(alternateSeparator, Path.DirectorySeparatorChar);
+        return Path.GetFileName(normalizedPath);
     }
 
     private static bool IsDiscImportEntry(string? sourcePath, string? label, string? sourceType)

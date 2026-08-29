@@ -86,6 +86,37 @@ public sealed class ImportSummaryFormatterTests
         Assert.DoesNotContain("00002.m2ts, 1:38:41", formatted, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(@"C:\disc\00015.mpls", "00015.mpls")]
+    [InlineData("/disc/00015.mpls", "00015.mpls")]
+    public void Formats_source_filename_independently_of_path_separator(string sourcePath, string expectedFileName)
+    {
+        var entry = CreateEntry(
+            new Dictionary<string, object?>(StringComparer.Ordinal)
+            {
+                ["groups"] = new object?[]
+                {
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["sourcePath"] = sourcePath,
+                        ["entries"] = new object?[]
+                        {
+                            new Dictionary<string, object?>(StringComparer.Ordinal)
+                            {
+                                ["label"] = "00007.m2ts",
+                                ["sourceType"] = "Blu-ray MPLS",
+                                ["duration"] = "0:23:41"
+                            }
+                        }
+                    }
+                }
+            });
+
+        var formatted = ImportSummaryFormatter.Format(entry);
+
+        Assert.StartsWith($"1) {expectedFileName}, 00007.m2ts, 0:23:41", formatted, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Returns_empty_for_non_import_summary_or_without_disc_entries()
     {
