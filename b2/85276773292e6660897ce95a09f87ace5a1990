@@ -1,0 +1,229 @@
+docs/code-map/testing.md
+  s_33681f37e1a371::t_bbcbbcf69fecaa 146,197
+  s_33681f37e1a371::t_1abceb750bd4a4 119
+  s_265d9d22f9fa2b::t_34bd7c382639ba 145
+tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs
+  s_33681f37e1a371::t_af3e7e3cc11bd5 1,65-107,124-146
+  s_265d9d22f9fa2b::t_540f72b9cb9f91 2-28,30-60,62-64,108-123,147
+  s_265d9d22f9fa2b::t_ee8ce47ac4e539 29,61
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_265d9d22f9fa2b::t_8f780207bfc91b 60-65
+  s_33681f37e1a371::t_52ec91c5e412ab 34-38,40-44,46
+  s_33681f37e1a371::t_a8db904111d954 39,45
+docs/code-map/contracts.md
+  s_33681f37e1a371::t_bbcbbcf69fecaa 29-34
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs
+  s_33681f37e1a371::t_13fe4f726b7ef4 259
+src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs
+  s_33681f37e1a371::t_7d235784fc6141 38-44
+  s_265d9d22f9fa2b::t_e643df2ee0031b 1-16,18-37,45-99
+  s_265d9d22f9fa2b::t_540f72b9cb9f91 17
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml.cs
+  s_33681f37e1a371::t_46e706302740d8 20-21,23,56,58-61,76-78,81-82,84-85,108,122-130,132-133,149-153,155,195-198
+  s_33681f37e1a371::t_ce3ee4fd91d0e9 2
+  s_33681f37e1a371::t_21c29c5b900b45 5,8-9,13,157-187,189-194,199-202
+  s_b91dfae653a48f::t_b07b917b6f8b6a 7,37-38
+  s_33681f37e1a371::t_7bf966e7dd74d9 6,131
+  s_33681f37e1a371::t_3f2b40db8a88e3 97
+  s_33681f37e1a371::t_d6d23f0439902d 64
+  s_33681f37e1a371::t_527ad8af79fa57 65-67
+  s_b91dfae653a48f::t_9d2f67bd7328d6 10-12,24,29-36,39-42,73-74,80,134-148
+  s_33681f37e1a371::t_feafc6eb89cf19 83,89-96,98-104
+  h_3705811fa4502c 1,4,188
+  s_33681f37e1a371::t_73ae2e93cfeacc 22,25,43-55,57,62-63,68-72,75,79,86-88,105-107,109-121,154,156
+src/ChapterTool.Avalonia/Composition/AuxiliaryToolsModule.cs
+  s_265d9d22f9fa2b::t_fe39631c18228d 12
+  s_265d9d22f9fa2b::t_e456b6903cc902 4
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_33681f37e1a371::t_523a622fc5a142 35-39,41-45,47
+  s_33681f37e1a371::t_75c378aa5d2cb4 40,46
+  s_265d9d22f9fa2b::t_b4370a08626cf8 65-66
+  s_265d9d22f9fa2b::t_f3ebddda3ddee3 61-64
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml
+  s_33681f37e1a371::t_488b48f1926ac7 124,169,180,190,369-377,384,389-393,395-399,402-411
+  s_b91dfae653a48f::t_c58f6349d93775 413-429,431-432,434,448-452,454-455
+  s_33681f37e1a371::t_42b52c4b9ddc52 313-314
+  s_33681f37e1a371::t_b01039fd5065d1 221-228,355,358-359,361
+  s_33681f37e1a371::t_c3d168f30660f3 311
+  s_33681f37e1a371::t_5dcc3cf530b291 394
+  s_33681f37e1a371::t_5521498e80d619 29,247-248,267,272,309
+  s_33681f37e1a371::t_4cf79e02d669aa 141
+  s_33681f37e1a371::t_18b754890e4a5c 275-279,286-296,299-300
+  s_33681f37e1a371::t_c67ed81507b3ed 156,168,179,189
+  s_b91dfae653a48f::t_917ea90949dba5 433,435-436,439-441,447
+  s_b91dfae653a48f::t_25839d8a95fed2 446
+  s_33681f37e1a371::t_c893f457e433ed 6,8-9,12-28,30-47,49-123,125-140,142-155,157-167,170-178,181-188,191-196,207-215,217,219-220,237,249-250,268-270,273-274,297-298,301-302,305,308,310,312,315-316,324,326-327,330-331,333,336-353,360,362-368,430,456-457,462-463,466-471
+  s_33681f37e1a371::t_87d00b31d2c414 10-11,236,357
+  s_33681f37e1a371::t_7238e49b901299 197-206
+  s_33681f37e1a371::t_7b9e14f5174afe 216,400-401
+  s_33681f37e1a371::t_d2a64849f2f2de 378-382,385-388
+  s_b91dfae653a48f::t_23d584a6355aa8 280-285
+src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs
+  s_265d9d22f9fa2b::t_e643df2ee0031b 17-39
+  s_265d9d22f9fa2b::t_56a10bc8a747b3 40
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  s_265d9d22f9fa2b::t_21937608f99a9a 12-13,28-30,34,70,72,139-140,152,169-171,285-288,291-292,296-298,300,302-303,305-309,311-312,314-317,346,349
+  s_33681f37e1a371::t_1c5dfb7a09125b 128-138,141-142,153,168,318,347,418,771,823-826,848-856
+  h_3705811fa4502c 14,21-27,32-33,49-62,95,114,162,172-173,213,222,232,238,245,251,515-523,537-538,540-543
+  s_33681f37e1a371::t_2c89e0c7a3980c 195
+  s_265d9d22f9fa2b::t_d1456b1286dc85 31
+  s_33681f37e1a371::t_d7074459a7951b 525-526,528,530-533,535-536,539,544-572,581-582
+  s_33681f37e1a371::t_90d352297ddd24 92-93,334
+  s_33681f37e1a371::t_d24cbd5f17ac82 233-235,243-244,246-248,256,259,372-373,385-392,396-417
+  s_33681f37e1a371::t_b82830c9cdf99e 46-47,632-634,636-649,668-673,675,680-702,705-709,718-720,729-733,740-746,748-751,757-770
+  s_33681f37e1a371::t_184de552c84786 44-45,65,115-127,143-151,154-161,163-167,197,289,293-295,324,326-332,336,345,348,354-355,362-371,381-382,420-425,427,438,440-442,444-448,452,454,456-467,470-484,486,488-498,501,503-509,527
+  s_33681f37e1a371::t_0399dfcd591c96 48,573-580
+  s_33681f37e1a371::t_5435f739dbe52a 66,94,96-99,112,290,299,301,304,310,313,325,335,352-353,356-361,374-380,383-384,393-395,419,426,428-436,439,443,449-451,453,455,468-469,485,487,499-500,502,510
+  s_33681f37e1a371::t_27d554375ce915 236-237,239-242,249-250,252-255,257-258
+  s_265d9d22f9fa2b::t_5716e7cf6ad09c 15-19
+  s_b91dfae653a48f::t_5127cdaa29578f 219-220
+  s_33681f37e1a371::t_3dff2d65e2621b 529,534
+  s_33681f37e1a371::t_cdd018c1be948b 196
+  s_33681f37e1a371::t_9459b90c140a12 319
+  s_33681f37e1a371::t_a8eed4ad446ce7 437
+  s_33681f37e1a371::t_6deb51f6759826 772
+  h_3705811fa4502c 113,524
+tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs
+  s_265d9d22f9fa2b::t_540f72b9cb9f91 179,181-192,194-195
+  s_33681f37e1a371::t_1dd333fcb60c81 180,193
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs
+  s_33681f37e1a371::t_65eb1800b9224e 147,365
+  s_33681f37e1a371::t_a6a0ef5ad27a7d 204-253
+  s_33681f37e1a371::t_5e79ec9dc4a34f 5,26,54-56,59-63,65-76,90-91,94-95,97,101-102,105-107,136-146,148-156,176-177,180,183,185
+  s_265d9d22f9fa2b::t_27b282ae2cacc2 46-51
+  s_33681f37e1a371::t_51e724adcf218a 111-120,122-126,128
+  s_33681f37e1a371::t_d50b7dbff491a6 162-163
+  s_33681f37e1a371::t_349f01c3f752b0 98-100
+  s_33681f37e1a371::t_36943cba9f80bc 18,323
+  s_33681f37e1a371::t_ca15adc851473a 127,196-201,282-322,324,326-328,332-364,366-375,379-386
+  s_33681f37e1a371::t_761473a31451ec 277-278
+  s_265d9d22f9fa2b::t_546810a353ec19 58
+  s_33681f37e1a371::t_ca3ef09937c38d 78-79
+  s_33681f37e1a371::t_0ddd9483853e97 157-161,164
+  s_33681f37e1a371::t_18c35c7778f150 203,254-276,280
+  s_33681f37e1a371::t_025de4e0cca7bb 2
+  s_b91dfae653a48f::t_3f8dc6e49b7769 108-110,279,281
+  s_33681f37e1a371::t_b324cb335c35b8 195
+  s_33681f37e1a371::t_48b45e35684175 184
+  s_33681f37e1a371::t_7699a69d5c52d1 325
+  s_33681f37e1a371::t_4af6985be19244 187-192
+  s_33681f37e1a371::t_d7c19b2114bff8 376-377
+  s_33681f37e1a371::t_858e81747b005e 193-194
+  s_33681f37e1a371::t_168372601e211c 378
+  s_b91dfae653a48f::t_704c9b5a4a64f6 329-331
+  s_33681f37e1a371::t_163af6357a1fd3 77
+  s_33681f37e1a371::t_cd349a5d18214f 165
+  s_33681f37e1a371::t_5caba70d3495b7 202
+  s_b91dfae653a48f::t_28ffa406f8aef6 57
+docs/code-map/infrastructure.md
+  s_33681f37e1a371::t_bbcbbcf69fecaa 98-99,104-109,169
+tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs
+  s_33681f37e1a371::t_d2ad8ecfaef756 75,86,434,456,673,683,694,705
+  s_33681f37e1a371::t_dc16059782230c 435-455,457-468
+  s_33681f37e1a371::t_0680310fe3c470 702
+  s_33681f37e1a371::t_8f3d5538ed1a8a 134-160
+  s_33681f37e1a371::t_ee97617ceaf29a 76-85,87-96
+  s_33681f37e1a371::t_959cb7242ec0e7 14-74
+  s_33681f37e1a371::t_3346868448177a 122-123,568-672,906-907,912-916
+  s_33681f37e1a371::t_4581bcd5876ae1 2
+  s_33681f37e1a371::t_02bb057055a9f5 710-712
+  s_265d9d22f9fa2b::t_27b282ae2cacc2 730,803,805-816,819-821,824-826,829-831,861-888,901-905,908-911,917-920
+  s_33681f37e1a371::t_3f3054fbed13eb 804,817-818,827-828
+  s_265d9d22f9fa2b::t_82cbceb57b23d2 822-823
+  s_33681f37e1a371::t_a8963a0bebc314 682,684,690,703-704,706,713-714,718-729
+  s_33681f37e1a371::t_9f87de76d01b07 13,133,433,832-860
+  s_265d9d22f9fa2b::t_cbdfea36ba8433 731
+src/ChapterTool.Avalonia/Services/StandardToolCatalogFactory.cs
+  s_33681f37e1a371::t_a0fa5884f7c518 42-43
+  s_265d9d22f9fa2b::t_6604c7ac0294b3 41
+  s_265d9d22f9fa2b::t_fe39631c18228d 12
+  s_265d9d22f9fa2b::t_e456b6903cc902 5
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs
+  s_33681f37e1a371::t_d80fb75f923a2a 208
+  s_33681f37e1a371::t_b4984d38d512fc 403,405-406,484-488
+  s_33681f37e1a371::t_c2eab3a05478e1 1,69,72,80,150-151,177-178,212,214-217,279-280,319,458-459
+  s_33681f37e1a371::t_39960925abbed1 310,314,318,320,322
+  s_b91dfae653a48f::t_dfe250c991bfdf 437
+  s_33681f37e1a371::t_6abe507e7c452e 18-23,31,36,38-41,49,59,62,64-66,73-79,81,85,94-99,105,107,112-117,123-124,126,149,152-155,157-176,179-192,198-207,209-211,213,218-221,232-239,253-257,261-265,269,271,276-278,281-283,285-287,289-290,293,296,298,303-304,306-309,312,316,321,324-341,343-345,347-348,350-358,363,365,368-372,386,389-390,393,395-402,407-409,412,415,418-422,426-428,430-436,441-447,454-455,457,460-464,468-471,476,478,480-482,490-505
+  h_3705811fa4502c 137,156
+  s_b91dfae653a48f::t_e278c39c67e740 438-440
+  s_33681f37e1a371::t_85e49bf608d4b5 3,30,42-43,50-51,58
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_33681f37e1a371::t_523a622fc5a142 35-39,41-45,47
+  s_265d9d22f9fa2b::t_f3ebddda3ddee3 61-64
+  s_33681f37e1a371::t_75c378aa5d2cb4 40,46
+  s_265d9d22f9fa2b::t_b4370a08626cf8 65-66
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_33681f37e1a371::t_52ec91c5e412ab 34-38,40-44,46
+  s_33681f37e1a371::t_a8db904111d954 39,45
+  s_265d9d22f9fa2b::t_8f780207bfc91b 60-65
+docs/code-map/avalonia.md
+  s_33681f37e1a371::t_bbcbbcf69fecaa 117,119,121-122,259,261
+  s_265d9d22f9fa2b::t_34bd7c382639ba 115-116,118,120,123-124
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_265d9d22f9fa2b::t_b4370a08626cf8 65-66
+  s_33681f37e1a371::t_523a622fc5a142 35-39,41-45,47
+  s_265d9d22f9fa2b::t_f3ebddda3ddee3 61-64
+  s_33681f37e1a371::t_75c378aa5d2cb4 40,46
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_33681f37e1a371::t_52ec91c5e412ab 34-38,40-44,46
+  s_265d9d22f9fa2b::t_8f780207bfc91b 60-65
+  s_33681f37e1a371::t_a8db904111d954 39,45
+src/ChapterTool.Avalonia/Composition/LoggingModule.cs
+  s_265d9d22f9fa2b::t_6604c7ac0294b3 19-21
+openspec/changes/archive/2026-08-31-log-tool-enhancements/README.md
+  s_33681f37e1a371::t_34bfe5534ae710 1-8
+openspec/changes/archive/2026-08-31-log-tool-enhancements/design.md
+  s_33681f37e1a371::t_310ccb9ccb2e76 1-194
+openspec/changes/archive/2026-08-31-log-tool-enhancements/proposal.md
+  s_33681f37e1a371::t_7e2c843b506987 1-93
+openspec/changes/archive/2026-08-31-log-tool-enhancements/specs/log-export-archive/spec.md
+  s_33681f37e1a371::t_f7d34df1ec2c9a 1-60
+openspec/changes/archive/2026-08-31-log-tool-enhancements/specs/log-tool-viewing/spec.md
+  s_33681f37e1a371::t_ee6467194286c3 1-159
+openspec/changes/archive/2026-08-31-log-tool-enhancements/.openspec.yaml
+  h_3705811fa4502c 1-3
+openspec/changes/archive/2026-08-31-log-tool-enhancements/tasks.md
+  h_3705811fa4502c 1-75
+openspec/specs/log-export-archive/spec.md
+  h_3705811fa4502c 1-64
+openspec/specs/log-tool-viewing/spec.md
+  h_3705811fa4502c 1-163
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "b285276773292e6660897ce95a09f87ace5a1990",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_265d9d22f9fa2b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05331-fe5d-7940-b821-2e4cf156a29f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_33681f37e1a371": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05656-4f39-7cd1-9fc4-ee1b8cb9661c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_b91dfae653a48f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a057e2-4dd0-7f22-8806-7b7a23417f9a",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
