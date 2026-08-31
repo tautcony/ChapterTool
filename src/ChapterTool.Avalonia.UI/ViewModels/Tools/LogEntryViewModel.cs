@@ -11,30 +11,6 @@ public sealed record LogPropertyViewModel(string Name, string Value);
 
 public sealed record LogHighlightRun(string Text, bool IsMatch);
 
-public sealed class LogStructuredNodeViewModel(
-    string name,
-    string value,
-    IReadOnlyList<LogStructuredNodeViewModel> children,
-    bool isInitiallyExpanded)
-    : ObservableViewModel
-{
-    public string Name { get; } = name;
-
-    public string Value { get; } = value;
-
-    public IReadOnlyList<LogStructuredNodeViewModel> Children { get; } = children;
-
-    public bool IsInitiallyExpanded { get; } = isInitiallyExpanded;
-
-    public bool IsExpanded
-    {
-        get;
-        set => SetProperty(ref field, value);
-    } = isInitiallyExpanded;
-
-    public bool HasChildren => Children.Count > 0;
-}
-
 public sealed class LogEntryViewModel(
     ApplicationLogEntry entry,
     IAppLocalizer localizer,
@@ -43,8 +19,6 @@ public sealed class LogEntryViewModel(
 {
     private const int MaxSearchDepth = 32;
     private const int MaxSearchValues = 4096;
-    private const int MaxStructuredDepth = 32;
-    private const int MaxStructuredNodes = 4096;
     private const int MaxCompactSummaryLength = 180;
 
     private static readonly Dictionary<string, string> SpecialMessageMap = new(StringComparer.Ordinal)
@@ -66,8 +40,6 @@ public sealed class LogEntryViewModel(
     private string? compactSummary;
 
     public ApplicationLogEntry Entry => entry;
-
-    public string Timestamp => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
 
     public string Time => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
 
@@ -145,7 +117,7 @@ public sealed class LogEntryViewModel(
             {
                 ["level"] = LevelText,
                 ["summary"] = CompactSummary,
-                ["time"] = Timestamp,
+                ["time"] = Time,
                 ["context"] = Context
             })
         + (HasAdditionalSearchMatch ? $" {SearchMatchIndicatorText}" : string.Empty);
@@ -172,35 +144,11 @@ public sealed class LogEntryViewModel(
         private set => SetProperty(ref field, value);
     } = [];
 
-    public string Details
-    {
-        get
-        {
-            var builder = new StringBuilder();
-            Append(builder, entry.TechnicalDetail);
-            Append(builder, entry.ExceptionText);
-            if (TryGetImportOverview(out var importOverview))
-            {
-                Append(builder, importOverview);
-            }
-            else if (HasStructuredTree)
-            {
-                Append(builder, FormatNodes(StructuredTree));
-            }
-
-            return builder.ToString();
-        }
-    }
-
-    public bool HasDetails => HasInspectorContent;
-
-    public bool HasInspectorContent => HasTechnicalDetail || HasException || HasStructuredProperties || HasStructuredTree;
+    public bool HasInspectorContent => HasTechnicalDetail || HasException || HasStructuredProperties;
 
     public string TechnicalDetail => entry.TechnicalDetail?.Trim() ?? string.Empty;
 
     public bool HasTechnicalDetail => !string.IsNullOrWhiteSpace(TechnicalDetail);
-
-    public bool HasOverviewContent => HasTechnicalDetail || HasStructuredProperties;
 
     public string ExceptionText => entry.ExceptionText?.Trim() ?? string.Empty;
 
@@ -218,44 +166,7 @@ public sealed class LogEntryViewModel(
 
     public bool HasNoStructuredProperties => !HasStructuredProperties;
 
-    public IReadOnlyList<LogStructuredNodeViewModel> StructuredTree =>
-        field ??= entry.StructuredState is not { Count: > 0 }
-            ? []
-            : CreateNodes(
-                entry.StructuredState
-                    .Where(static pair => !IsHiddenStructuredKey(pair.Key))
-                    .Where(static pair => IsContainer(pair.Value))
-                    .OrderBy(static pair => pair.Key, StringComparer.Ordinal));
-
-    public bool HasStructuredTree => StructuredTree.Count > 0;
-
-    /// <summary>Gets or sets a value indicating whether stores the outer structured-data disclosure state for this entry.</summary>
-    public bool IsStructuredExpanded
-    {
-        get;
-        set
-        {
-            if (SetProperty(ref field, value))
-            {
-                OnPropertyChanged(nameof(ShowNoDetails));
-            }
-        }
-    }
-
-    /// <summary>Gets or sets a value indicating whether stores the raw-data disclosure state for this entry.</summary>
-    public bool IsRawExpanded
-    {
-        get;
-        set
-        {
-            if (SetProperty(ref field, value))
-            {
-                OnPropertyChanged(nameof(ShowNoDetails));
-            }
-        }
-    }
-
-    public bool ShowNoDetails => !HasInspectorContent && !IsRawExpanded;
+    public bool ShowNoDetails => !HasInspectorContent;
 
     public bool IsInformation => entry.Level == LogLevel.Information;
 
@@ -325,8 +236,7 @@ public sealed class LogEntryViewModel(
         compactSummary = null;
 
         // Clear derived text before raising notifications so bindings never read a stale
-        // accessible name or summary during a culture switch. Keep structured nodes intact
-        // because their expansion state belongs to the selected entry.
+        // accessible name or summary during a culture switch.
         OnPropertyChanged(nameof(LevelText));
         OnPropertyChanged(nameof(DetailsActionText));
         OnPropertyChanged(nameof(SearchMatchIndicatorText));
@@ -334,13 +244,10 @@ public sealed class LogEntryViewModel(
         OnPropertyChanged(nameof(HasSummary));
         OnPropertyChanged(nameof(CompactSummary));
         OnPropertyChanged(nameof(AccessibleName));
-        OnPropertyChanged(nameof(Details));
         OnPropertyChanged(nameof(RawText));
         OnPropertyChanged(nameof(TechnicalDetail));
         OnPropertyChanged(nameof(ExceptionText));
         OnPropertyChanged(nameof(StructuredProperties));
-        OnPropertyChanged(nameof(StructuredTree));
-        OnPropertyChanged(nameof(HasStructuredTree));
         OnPropertyChanged(nameof(Context));
         OnPropertyChanged(nameof(RowContext));
         OnPropertyChanged(nameof(IdentityText));
@@ -605,184 +512,12 @@ public sealed class LogEntryViewModel(
         return !string.IsNullOrWhiteSpace(value);
     }
 
-    private static void Append(StringBuilder builder, string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return;
-        }
-
-        if (builder.Length > 0)
-        {
-            builder.AppendLine();
-        }
-
-        builder.Append(value.Trim());
-    }
-
     private static string LevelKey(LogLevel level) => level switch
     {
         LogLevel.Warning => "Tool.Log.FilterWarning",
         LogLevel.Error or LogLevel.Critical => "Tool.Log.FilterError",
         _ => "Tool.Log.FilterInformation"
     };
-
-    private static IReadOnlyList<LogStructuredNodeViewModel> CreateNodes(
-        IEnumerable<KeyValuePair<string, object?>> values,
-        int depth = 0,
-        StructuredNodeBudget? budget = null,
-        HashSet<object>? path = null)
-    {
-        budget ??= new StructuredNodeBudget();
-        path ??= new HashSet<object>(ReferenceEqualityComparer.Instance);
-        var nodes = new List<LogStructuredNodeViewModel>();
-        foreach (var pair in values)
-        {
-            if (!budget.TryTake())
-            {
-                break;
-            }
-
-            nodes.Add(CreateNode(pair.Key, pair.Value, depth, budget, path));
-        }
-
-        return nodes;
-    }
-
-    private static string FormatNodes(IEnumerable<LogStructuredNodeViewModel> nodes, int depth = 0)
-    {
-        var lines = new List<string>();
-        foreach (var node in nodes)
-        {
-            var value = string.IsNullOrEmpty(node.Value) ? string.Empty : $" = {node.Value}";
-            lines.Add($"{new string(' ', depth * 2)}{node.Name}{value}");
-            if (node.HasChildren)
-            {
-                lines.Add(FormatNodes(node.Children, depth + 1));
-            }
-        }
-
-        return string.Join(Environment.NewLine, lines);
-    }
-
-    private static LogStructuredNodeViewModel CreateNode(
-        string name,
-        object? value,
-        int depth,
-        StructuredNodeBudget budget,
-        HashSet<object> path)
-    {
-        if (depth >= MaxStructuredDepth)
-        {
-            return new LogStructuredNodeViewModel(HumanizeKey(name), "[depth limit]", [], false);
-        }
-
-        var runtimeType = value?.GetType();
-        var trackReference = value is not null && runtimeType is { IsValueType: false };
-        if (trackReference && !path.Add(value!))
-        {
-            return new LogStructuredNodeViewModel(HumanizeKey(name), "[cycle]", [], false);
-        }
-
-        try
-        {
-            var children = CreateChildren(value, depth + 1, budget, path);
-            return new LogStructuredNodeViewModel(
-                HumanizeKey(name),
-                FormatContainer(value, children),
-                children,
-                depth == 0 && children.Count > 0);
-        }
-        finally
-        {
-            if (trackReference)
-            {
-                path.Remove(value!);
-            }
-        }
-    }
-
-    private static IReadOnlyList<LogStructuredNodeViewModel> CreateChildren(
-        object? value,
-        int depth,
-        StructuredNodeBudget budget,
-        HashSet<object> path)
-    {
-        switch (value)
-        {
-            case IReadOnlyDictionary<string, object?> readOnlyDictionary:
-                return CreateNodes(
-                    readOnlyDictionary
-                        .Where(static pair => !IsHiddenStructuredKey(pair.Key))
-                        .OrderBy(static pair => pair.Key, StringComparer.Ordinal),
-                    depth,
-                    budget,
-                    path);
-            case IDictionary dictionary:
-            {
-                var pairs = new List<KeyValuePair<string, object?>>();
-                foreach (DictionaryEntry entry in dictionary)
-                {
-                    pairs.Add(new KeyValuePair<string, object?>(entry.Key?.ToString() ?? string.Empty, entry.Value));
-                }
-
-                return CreateNodes(
-                    pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal),
-                    depth,
-                    budget,
-                    path);
-            }
-        }
-
-        if (value is IEnumerable enumerable and not string)
-        {
-            var index = 0;
-            var children = new List<LogStructuredNodeViewModel>();
-            foreach (var item in enumerable)
-            {
-                if (!budget.TryTake())
-                {
-                    break;
-                }
-
-                children.Add(CreateNode($"#{++index}", item, depth, budget, path));
-            }
-
-            return children;
-        }
-
-        return [];
-    }
-
-    private sealed class StructuredNodeBudget
-    {
-        private int remaining = MaxStructuredNodes;
-
-        public bool TryTake()
-        {
-            if (remaining <= 0)
-            {
-                return false;
-            }
-
-            remaining--;
-            return true;
-        }
-    }
-
-    private static string FormatContainer(object? value, IReadOnlyList<LogStructuredNodeViewModel> children)
-    {
-        if (children.Count == 0)
-        {
-            return FormatValue(value);
-        }
-
-        return value is IDictionary or IReadOnlyDictionary<string, object?>
-            ? CountLabel(children.Count, "field")
-            : CountLabel(children.Count, "item");
-    }
-
-    private static string CountLabel(int count, string noun) => $"{count} {noun}{(count == 1 ? string.Empty : "s")}";
 
     private static string HumanizeKey(string key)
     {
@@ -816,21 +551,17 @@ public sealed class LogEntryViewModel(
         return builder.ToString();
     }
 
-    private static bool IsHiddenStructuredKey(string key) =>
+    /// <summary>
+    /// Keys hidden from the flat overview list: infrastructure keys, the operation tag,
+    /// and import details available in the raw representation.
+    /// </summary>
+    private static bool IsOverviewHiddenKey(string key) =>
         string.Equals(key, "MessageKey", StringComparison.Ordinal) ||
         string.Equals(key, "TechnicalDetail", StringComparison.Ordinal) ||
         string.Equals(key, "Operation", StringComparison.Ordinal) ||
         string.Equals(key, "operation", StringComparison.Ordinal) ||
         string.Equals(key, "Summary", StringComparison.Ordinal) ||
         string.Equals(key, "summary", StringComparison.Ordinal) ||
-        string.Equals(key, "message", StringComparison.Ordinal);
-
-    /// <summary>
-    /// Keys hidden from the flat overview list: infrastructure keys, the operation tag
-    /// (already shown as a badge) and the folded import details (available in the tree).
-    /// </summary>
-    private static bool IsOverviewHiddenKey(string key) =>
-        IsHiddenStructuredKey(key) ||
         string.Equals(key, "severity", StringComparison.Ordinal) ||
         string.Equals(key, "message", StringComparison.Ordinal) ||
         string.Equals(key, "importOverview", StringComparison.Ordinal) ||

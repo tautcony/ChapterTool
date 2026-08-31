@@ -116,11 +116,8 @@ public sealed class LogToolViewModelTests
         Assert.Equal("Log.Diagnostic", entry.Entry.MessageKey);
         Assert.Equal("Import failed", entry.Summary);
         Assert.Equal("Load", entry.Operation);
-        Assert.Contains("stderr=failed", entry.Details, StringComparison.Ordinal);
-        Assert.DoesNotContain("TechnicalDetail=stderr=failed", entry.Details, StringComparison.Ordinal);
         Assert.Contains(entry.StructuredProperties, property => property is { Name: "Code", Value: "Import.Partial" });
         Assert.True(entry.HasInspectorContent);
-        Assert.True(entry.HasDetails);
         Assert.Equal("Errors", entry.LevelText);
 
         viewModel.SelectedFilter = viewModel.FilterOptions.Single(option => option.Value == LogSeverityFilter.Information);
@@ -177,46 +174,6 @@ public sealed class LogToolViewModelTests
         Assert.Equal("Information", info.LevelText);
         Assert.Equal("Warnings", warning.LevelText);
         Assert.Equal("Errors", error.LevelText);
-    }
-
-    [Fact]
-    public void ViewModel_builds_a_tree_for_nested_structured_values()
-    {
-        var localizer = new AppLocalizationManager("en-US");
-        var service = new ApplicationLogPanelProvider();
-        var logger = service.CreateLogger("ChapterTool.Tests");
-        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
-        {
-            ["MessageKey"] = "Log.Diagnostic",
-            ["index"] = new Dictionary<string, object?>(StringComparer.Ordinal)
-            {
-                ["header"] = new Dictionary<string, object?>(StringComparer.Ordinal)
-                {
-                    ["version"] = "0200"
-                },
-                ["titles"] = new object?[]
-                {
-                    new Dictionary<string, object?>(StringComparer.Ordinal)
-                    {
-                        ["objectData"] = "00002"
-                    }
-                }
-            }
-        };
-        logger.Log(LogLevel.Information, new EventId(0, "Log.Diagnostic"), state, null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
-
-        using var viewModel = new LogToolViewModel(service, localizer);
-
-        var entry = Assert.Single(viewModel.FilteredEntries);
-        var index = Assert.Single(entry.StructuredTree);
-        Assert.True(index.IsInitiallyExpanded);
-        var header = Assert.Single(index.Children, node => node.Name == "Header");
-        Assert.Equal("0200", Assert.Single(header.Children).Value);
-        var titles = Assert.Single(index.Children, node => node.Name == "Titles");
-        Assert.Equal("00002", Assert.Single(Assert.Single(titles.Children).Children).Value);
-        Assert.Contains("  Header", entry.Details, StringComparison.Ordinal);
-        Assert.Contains("    Version = 0200", entry.Details, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -325,9 +282,6 @@ public sealed class LogToolViewModelTests
         Assert.Contains("2) VTS_05_0.IFO, VTS_05_1, 1:49:12", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Chapters, 7 chapters", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Format, DVD IFO", importProperty.Value, StringComparison.Ordinal);
-        Assert.Contains("Diagnostics:", entry.Details, StringComparison.Ordinal);
-        Assert.Contains("- Info: Loaded 12 CLPI files for 12 unique clips.", entry.Details, StringComparison.Ordinal);
-        Assert.DoesNotContain("Group Index", entry.Details, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -431,38 +385,20 @@ public sealed class LogToolViewModelTests
     }
 
     [Fact]
-    public async Task ViewModel_locale_refresh_preserves_inspector_selection_and_structured_expansion()
+    public async Task ViewModel_locale_refresh_preserves_inspector_selection()
     {
         var localizer = new AppLocalizationManager("en-US");
         var service = new ApplicationLogPanelProvider();
-        var state = new Dictionary<string, object?>(StringComparer.Ordinal)
-        {
-            ["MessageKey"] = "Log.Diagnostic",
-            ["details"] = new Dictionary<string, object?>(StringComparer.Ordinal)
-            {
-                ["code"] = "keep"
-            }
-        };
-        service.CreateLogger("ChapterTool.Tests").Log(
-            LogLevel.Information,
-            new EventId(1, "Log.Diagnostic"),
-            state,
-            null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
-
+        service.CreateLogger("ChapterTool.Tests").LogInformation("Keep selected");
         using var viewModel = new LogToolViewModel(service, localizer);
         var selected = Assert.Single(viewModel.FilteredEntries);
         viewModel.SelectedEntry = selected;
         await viewModel.OpenDetailsCommand.ExecuteAsync(selected);
-        var root = Assert.Single(selected.StructuredTree);
-        root.IsExpanded = false;
 
         localizer.SetCulture("zh-CN");
 
         Assert.Same(selected, viewModel.SelectedEntry);
         Assert.True(viewModel.IsDetailsOpen);
-        Assert.Same(root, Assert.Single(selected.StructuredTree));
-        Assert.False(root.IsExpanded);
         Assert.Equal("信息", selected.LevelText);
     }
 
@@ -612,35 +548,6 @@ public sealed class LogToolViewModelTests
 
         Assert.True(viewModel.MatchesSearch("pathToken"));
         Assert.True(viewModel.MatchesSearch("needle-value"));
-    }
-
-    [Fact]
-    public void Log_entry_keeps_outer_disclosure_state_per_entry()
-    {
-        var localizer = new AppLocalizationManager("en-US");
-        var first = new LogEntryViewModel(
-            new ApplicationLogEntry(
-                DateTimeOffset.UtcNow,
-                LogLevel.Information,
-                "First",
-                StructuredState: new Dictionary<string, object?>
-                {
-                    ["details"] = new Dictionary<string, object?> { ["value"] = 1 }
-                }),
-            localizer,
-            localizer);
-        var second = new LogEntryViewModel(
-            new ApplicationLogEntry(DateTimeOffset.UtcNow, LogLevel.Information, "Second"),
-            localizer,
-            localizer);
-
-        first.IsStructuredExpanded = true;
-        first.IsRawExpanded = true;
-
-        Assert.True(first.IsStructuredExpanded);
-        Assert.True(first.IsRawExpanded);
-        Assert.False(second.IsStructuredExpanded);
-        Assert.False(second.IsRawExpanded);
     }
 
     [Fact]
@@ -855,35 +762,6 @@ public sealed class LogToolViewModelTests
         Assert.False(viewModel.CanCopySelected);
         Assert.False(viewModel.CopySummaryCommand.CanExecute(null));
         Assert.False(viewModel.CopyDetailsCommand.CanExecute(null));
-    }
-
-    [Fact]
-    public void StructuredNodesHaveMutableExpansionAndFiniteDepth()
-    {
-        object value = "leaf";
-        for (var index = 0; index < 40; index++)
-        {
-            value = new Dictionary<string, object?> { [$"level{index}"] = value };
-        }
-
-        var entry = new ApplicationLogEntry(
-            DateTimeOffset.Now,
-            LogLevel.Information,
-            "deep",
-            StructuredState: new Dictionary<string, object?> { ["root"] = value });
-        var viewModel = new LogEntryViewModel(entry, new AppLocalizationManager("en-US"), new AppLocalizationManager("en-US"));
-        var root = Assert.Single(viewModel.StructuredTree);
-        Assert.True(root.IsExpanded);
-        root.IsExpanded = false;
-        Assert.False(root.IsExpanded);
-
-        var terminal = root;
-        while (terminal.Children.Count > 0)
-        {
-            terminal = terminal.Children[0];
-        }
-
-        Assert.Equal("[depth limit]", terminal.Value);
     }
 
     private sealed class FakeClipboardService : IClipboardService
