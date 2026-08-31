@@ -1,0 +1,26 @@
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  s_5e012a25d83d33::t_8745a339fd8877 554,557-558
+  s_5e012a25d83d33::t_f75d8864016010 239,555-556
+  s_5e012a25d83d33::t_7865059e33d30f 147,169
+  s_5e012a25d83d33::t_a8922f7cdd9f01 120
+tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs
+  s_5e012a25d83d33::t_953b8903ea8312 388,392
+docs/code-map/testing.md
+  s_5e012a25d83d33::t_f75d8864016010 146
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "dce2e829ed9c857cb006876b23bec360ee9a0ed9",
+  "prompts": {},
+  "sessions": {
+    "s_5e012a25d83d33": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05878-e9a0-7600-a24b-abae12c8279b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
