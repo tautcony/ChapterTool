@@ -32,6 +32,19 @@
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">警告</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">错误</x:String>
   <x:String x:Key="Tool.Log.Filter" xml:space="preserve">按级别筛选</x:String>
+  <x:String x:Key="Tool.Log.FilterLevelLabel" xml:space="preserve">级别</x:String>
+  <x:String x:Key="Tool.Log.ResetFilters" xml:space="preserve">重置筛选</x:String>
+  <x:String x:Key="Tool.Log.MoreActions" xml:space="preserve">更多操作</x:String>
+  <x:String x:Key="Tool.Log.ExportFormat" xml:space="preserve">导出格式</x:String>
+  <x:String x:Key="Tool.Log.OpenDetails" xml:space="preserve">打开详情</x:String>
+  <x:String x:Key="Tool.Log.SearchMatchAdditional" xml:space="preserve">详情中有匹配内容。</x:String>
+  <x:String x:Key="Tool.Log.EntryAccessibleName" xml:space="preserve">{level}：{summary}，{time}。{context}</x:String>
+  <x:String x:Key="Tool.Log.NoEntries" xml:space="preserve">暂时没有日志记录。</x:String>
+  <x:String x:Key="Tool.Log.NoMatches" xml:space="preserve">没有符合搜索或筛选条件的记录。</x:String>
+  <x:String x:Key="Tool.Log.Message" xml:space="preserve">消息</x:String>
+  <x:String x:Key="Tool.Log.Context" xml:space="preserve">上下文</x:String>
+  <x:String x:Key="Tool.Log.NoDetails" xml:space="preserve">该记录没有更多详情。</x:String>
+  <x:String x:Key="Tool.Log.BackToList" xml:space="preserve">返回日志列表</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">复制摘要</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">复制详情</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技术详情</x:String>
@@ -45,6 +58,12 @@
   <x:String x:Key="Tool.Log.Properties" xml:space="preserve">属性</x:String>
   <x:String x:Key="Tool.Log.Raw" xml:space="preserve">原始数据</x:String>
   <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">搜索日志…</x:String>
+  <x:String x:Key="Tool.Log.ExportJson" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="Tool.Log.ExportCsv" xml:space="preserve">CSV</x:String>
+  <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">已导出到 {value}</x:String>
+  <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">导出失败：{value}</x:String>
+  <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">关闭详情</x:String>
+  <x:String x:Key="Tool.Log.Export" xml:space="preserve">导出日志</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">该日志没有嵌套结构化数据。</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">该日志没有异常数据。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>

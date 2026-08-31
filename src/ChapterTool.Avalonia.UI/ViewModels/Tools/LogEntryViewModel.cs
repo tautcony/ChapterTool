@@ -9,12 +9,29 @@ namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
 
 public sealed record LogPropertyViewModel(string Name, string Value);
 
-public sealed record LogStructuredNodeViewModel(
-    string Name,
-    string Value,
-    IReadOnlyList<LogStructuredNodeViewModel> Children,
-    bool IsInitiallyExpanded)
+public sealed record LogHighlightRun(string Text, bool IsMatch);
+
+public sealed class LogStructuredNodeViewModel(
+    string name,
+    string value,
+    IReadOnlyList<LogStructuredNodeViewModel> children,
+    bool isInitiallyExpanded)
+    : ObservableViewModel
 {
+    public string Name { get; } = name;
+
+    public string Value { get; } = value;
+
+    public IReadOnlyList<LogStructuredNodeViewModel> Children { get; } = children;
+
+    public bool IsInitiallyExpanded { get; } = isInitiallyExpanded;
+
+    public bool IsExpanded
+    {
+        get;
+        set => SetProperty(ref field, value);
+    } = isInitiallyExpanded;
+
     public bool HasChildren => Children.Count > 0;
 }
 
@@ -24,14 +41,35 @@ public sealed class LogEntryViewModel(
     IAppLocalizer contentLocalizer)
     : ObservableViewModel
 {
+    private const int MaxSearchDepth = 32;
+    private const int MaxSearchValues = 4096;
+    private const int MaxStructuredDepth = 32;
+    private const int MaxStructuredNodes = 4096;
+    private const int MaxCompactSummaryLength = 180;
+
+    private static readonly Dictionary<string, string> SpecialMessageMap = new(StringComparer.Ordinal)
+    {
+        ["Log.SettingsLoaded"] = "Settings loaded",
+        ["Log.LoadingSource"] = "Loading source",
+        ["Log.SavingChapters"] = "Saving chapters",
+        ["Log.AppendingMpls"] = "Appending MPLS",
+        ["Log.Diagnostic"] = "Diagnostic",
+        ["Log.TemplateLoaded"] = "Template loaded",
+        ["Log.TemplateLoadFailed"] = "Template load failed",
+        ["Log.LanguageSet"] = "Language changed",
+        ["Log.UnexpectedError"] = "Unexpected error"
+    };
+
     private string? rawText;
     private string? searchableText;
+    private string? additionalSearchableText;
+    private string? compactSummary;
 
     public ApplicationLogEntry Entry => entry;
 
-    public string Timestamp => entry.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+    public string Timestamp => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
 
-    public string Time => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss");
+    public string Time => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
 
     public string LevelText => localizer.GetString(LevelKey(entry.Level));
 
@@ -51,6 +89,14 @@ public sealed class LogEntryViewModel(
         }
     }
 
+    public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
+
+    /// <summary>
+    /// Gets the short message used by the list. Technical arguments stay in the
+    /// inspector so a long path or import payload cannot take over the feed.
+    /// </summary>
+    public string CompactSummary => compactSummary ??= CreateCompactSummary();
+
     public string Category => entry.Category ?? string.Empty;
 
     public string EventName => entry.EventName ?? string.Empty;
@@ -63,11 +109,68 @@ public sealed class LogEntryViewModel(
 
     public bool HasOperation => !string.IsNullOrWhiteSpace(Operation);
 
-    public string Context => string.IsNullOrWhiteSpace(EventName)
-        ? Category
-        : string.IsNullOrWhiteSpace(Category)
-            ? EventDisplay
-            : $"{Category} / {EventDisplay}";
+    public bool HasContext => !string.IsNullOrWhiteSpace(Context);
+
+    /// <summary>Gets only identity that helps scan a row. The full category stays in the inspector.</summary>
+    public string RowContext
+    {
+        get
+        {
+            var parts = new List<string>(capacity: 2);
+            AddContextPart(parts, Operation);
+            AddContextPart(parts, EventDisplay);
+            return string.Join(" / ", parts);
+        }
+    }
+
+    public bool HasRowContext => !string.IsNullOrWhiteSpace(RowContext);
+
+    public string Context
+    {
+        get
+        {
+            var parts = new List<string>(capacity: 3);
+            AddContextPart(parts, Operation);
+            AddContextPart(parts, Category);
+            AddContextPart(parts, EventDisplay);
+            return string.Join(" / ", parts);
+        }
+    }
+
+    public string IdentityText => Context;
+
+    public string AccessibleName => localizer.Format(
+            "Tool.Log.EntryAccessibleName",
+            new Dictionary<string, object?>
+            {
+                ["level"] = LevelText,
+                ["summary"] = CompactSummary,
+                ["time"] = Timestamp,
+                ["context"] = Context
+            })
+        + (HasAdditionalSearchMatch ? $" {SearchMatchIndicatorText}" : string.Empty);
+
+    public string DetailsActionText => localizer.GetString("Tool.Log.OpenDetails");
+
+    public string SearchMatchIndicatorText => localizer.GetString("Tool.Log.SearchMatchAdditional");
+
+    public bool HasAdditionalSearchMatch
+    {
+        get;
+        private set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(AccessibleName));
+            }
+        }
+    }
+
+    public IReadOnlyList<LogHighlightRun> SummaryRuns
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = [];
 
     public string Details
     {
@@ -89,7 +192,9 @@ public sealed class LogEntryViewModel(
         }
     }
 
-    public bool HasDetails => !string.IsNullOrWhiteSpace(Details);
+    public bool HasDetails => HasInspectorContent;
+
+    public bool HasInspectorContent => HasTechnicalDetail || HasException || HasStructuredProperties || HasStructuredTree;
 
     public string TechnicalDetail => entry.TechnicalDetail?.Trim() ?? string.Empty;
 
@@ -105,14 +210,16 @@ public sealed class LogEntryViewModel(
     public string RawText => rawText ??= LogRawValueFormatter.Format(entry, Summary);
 
     public IReadOnlyList<LogPropertyViewModel> StructuredProperties =>
-        entry.StructuredState is not { Count: > 0 }
+        field ??= entry.StructuredState is not { Count: > 0 }
             ? []
             : CreateStructuredProperties();
 
     public bool HasStructuredProperties => StructuredProperties.Count > 0;
 
+    public bool HasNoStructuredProperties => !HasStructuredProperties;
+
     public IReadOnlyList<LogStructuredNodeViewModel> StructuredTree =>
-        entry.StructuredState is not { Count: > 0 }
+        field ??= entry.StructuredState is not { Count: > 0 }
             ? []
             : CreateNodes(
                 entry.StructuredState
@@ -121,6 +228,34 @@ public sealed class LogEntryViewModel(
                     .OrderBy(static pair => pair.Key, StringComparer.Ordinal));
 
     public bool HasStructuredTree => StructuredTree.Count > 0;
+
+    /// <summary>Gets or sets a value indicating whether stores the outer structured-data disclosure state for this entry.</summary>
+    public bool IsStructuredExpanded
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(ShowNoDetails));
+            }
+        }
+    }
+
+    /// <summary>Gets or sets a value indicating whether stores the raw-data disclosure state for this entry.</summary>
+    public bool IsRawExpanded
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(ShowNoDetails));
+            }
+        }
+    }
+
+    public bool ShowNoDetails => !HasInspectorContent && !IsRawExpanded;
 
     public bool IsInformation => entry.Level == LogLevel.Information;
 
@@ -147,12 +282,58 @@ public sealed class LogEntryViewModel(
         return Contains(SearchableText, query);
     }
 
+    public void ApplySearchHighlight(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            HasAdditionalSearchMatch = false;
+            SummaryRuns = [new LogHighlightRun(CompactSummary, false)];
+            return;
+        }
+
+        HasAdditionalSearchMatch = !Contains(CompactSummary, query)
+            && Contains(AdditionalSearchableText, query);
+
+        var runs = new List<LogHighlightRun>();
+        var offset = 0;
+        while (offset < CompactSummary.Length)
+        {
+            var match = CompactSummary.IndexOf(query, offset, StringComparison.OrdinalIgnoreCase);
+            if (match < 0)
+            {
+                runs.Add(new LogHighlightRun(CompactSummary[offset..], false));
+                break;
+            }
+
+            if (match > offset)
+            {
+                runs.Add(new LogHighlightRun(CompactSummary[offset..match], false));
+            }
+
+            runs.Add(new LogHighlightRun(CompactSummary.Substring(match, query.Length), true));
+            offset = match + query.Length;
+        }
+
+        SummaryRuns = runs;
+    }
+
     public void RefreshLocalizedProperties()
     {
-        OnPropertyChanged(nameof(LevelText));
         rawText = null;
         searchableText = null;
+        additionalSearchableText = null;
+        compactSummary = null;
+
+        // Clear derived text before raising notifications so bindings never read a stale
+        // accessible name or summary during a culture switch. Keep structured nodes intact
+        // because their expansion state belongs to the selected entry.
+        OnPropertyChanged(nameof(LevelText));
+        OnPropertyChanged(nameof(DetailsActionText));
+        OnPropertyChanged(nameof(SearchMatchIndicatorText));
         OnPropertyChanged(nameof(Summary));
+        OnPropertyChanged(nameof(HasSummary));
+        OnPropertyChanged(nameof(CompactSummary));
+        OnPropertyChanged(nameof(AccessibleName));
         OnPropertyChanged(nameof(Details));
         OnPropertyChanged(nameof(RawText));
         OnPropertyChanged(nameof(TechnicalDetail));
@@ -161,21 +342,243 @@ public sealed class LogEntryViewModel(
         OnPropertyChanged(nameof(StructuredTree));
         OnPropertyChanged(nameof(HasStructuredTree));
         OnPropertyChanged(nameof(Context));
+        OnPropertyChanged(nameof(RowContext));
+        OnPropertyChanged(nameof(IdentityText));
+        OnPropertyChanged(nameof(HasContext));
+        OnPropertyChanged(nameof(HasRowContext));
+        ApplySearchHighlight(string.Empty);
     }
 
-    private string SearchableText => searchableText ??= string.Join(
-        Environment.NewLine,
-        Summary,
-        Category,
-        Operation,
-        EventDisplay,
-        entry.MessageKey,
-        entry.TechnicalDetail,
-        entry.ExceptionText,
-        RawText);
+    private string SearchableText => searchableText ??= BuildSearchableText();
+
+    private string AdditionalSearchableText => additionalSearchableText ??= BuildAdditionalSearchableText();
+
+    private string BuildSearchableText()
+    {
+        var values = new List<string>
+        {
+            Summary,
+            CompactSummary,
+            AdditionalSearchableText
+        };
+
+        return string.Join(Environment.NewLine, values);
+    }
+
+    private string BuildAdditionalSearchableText()
+    {
+        var values = new List<string>
+        {
+            entry.Message,
+            Summary,
+            Category,
+            Operation,
+            EventDisplay,
+            entry.MessageKey ?? string.Empty,
+            entry.TechnicalDetail ?? string.Empty,
+            entry.ExceptionText ?? string.Empty
+        };
+
+        var budget = MaxSearchValues;
+        if (entry.StructuredState is not null)
+        {
+            AppendSearchablePairs(values, entry.StructuredState, ref budget);
+        }
+
+        // Some callers construct ApplicationLogEntry directly and provide arguments
+        // without mirroring them into StructuredState. Keep those fields searchable.
+        if (entry.Arguments is not null)
+        {
+            AppendSearchablePairs(values, entry.Arguments, ref budget);
+        }
+
+        return string.Join(Environment.NewLine, values);
+    }
+
+    private static void AppendSearchablePairs(
+        List<string> values,
+        IEnumerable<KeyValuePair<string, object?>> pairs,
+        ref int budget)
+    {
+        foreach (var pair in pairs)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            values.Add(pair.Key);
+            AppendSearchableValue(
+                values,
+                pair.Value,
+                depth: 0,
+                new HashSet<object>(ReferenceEqualityComparer.Instance),
+                ref budget);
+        }
+    }
+
+    private static void AppendSearchableValue(
+        List<string> values,
+        object? value,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        if (value is null || budget-- <= 0)
+        {
+            return;
+        }
+
+        if (value is string text)
+        {
+            values.Add(text);
+            return;
+        }
+
+        if (depth >= MaxSearchDepth)
+        {
+            values.Add("[depth limit]");
+            return;
+        }
+
+        var runtimeType = value.GetType();
+        var trackReference = !runtimeType.IsValueType;
+        if (trackReference && !path.Add(value))
+        {
+            values.Add("[cycle]");
+            return;
+        }
+
+        try
+        {
+            if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+            {
+                foreach (var pair in readOnlyDictionary)
+                {
+                    if (budget <= 0)
+                    {
+                        break;
+                    }
+
+                    values.Add(pair.Key);
+                    AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
+                }
+
+                return;
+            }
+
+            if (value is IDictionary dictionary)
+            {
+                foreach (DictionaryEntry pair in dictionary)
+                {
+                    if (budget <= 0)
+                    {
+                        break;
+                    }
+
+                    values.Add(pair.Key?.ToString() ?? string.Empty);
+                    AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
+                }
+
+                return;
+            }
+
+            if (value is IEnumerable enumerable)
+            {
+                foreach (var item in enumerable)
+                {
+                    if (budget <= 0)
+                    {
+                        break;
+                    }
+
+                    AppendSearchableValue(values, item, depth + 1, path, ref budget);
+                }
+
+                return;
+            }
+
+            values.Add(value.ToString() ?? string.Empty);
+        }
+        finally
+        {
+            if (trackReference)
+            {
+                path.Remove(value);
+            }
+        }
+    }
 
     private static bool Contains(string value, string query) =>
         value.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+    private string? GetSpecialMessageCompact(string? messageKey)
+    {
+        return messageKey switch
+        {
+            null => null,
+            "Log.ImportSummary" => CompactImportSummary(),
+            _ => SpecialMessageMap.GetValueOrDefault(messageKey)
+        };
+    }
+
+    private string CreateCompactSummary()
+    {
+        if (TryArgument("Summary", out var explicitSummary) || TryArgument("summary", out explicitSummary))
+        {
+            return TruncateSummary(explicitSummary);
+        }
+
+        if (TryArgument("message", out var message) && !string.IsNullOrWhiteSpace(message))
+        {
+            return TruncateSummary(message);
+        }
+
+        var special = GetSpecialMessageCompact(entry.MessageKey);
+        if (special is not null)
+        {
+            return TruncateSummary(special);
+        }
+
+        return TruncateSummary(CompactPrefix(Summary));
+    }
+
+    private string CompactImportSummary()
+    {
+        var result = TryArgument("result", out var value) && !string.IsNullOrWhiteSpace(value)
+            ? value
+            : "completed";
+        var operation = !string.IsNullOrWhiteSpace(Operation) ? Operation : "Import";
+        return $"{operation} {result}";
+    }
+
+    private bool TryArgument(string key, out string value)
+    {
+        if (entry.Arguments is not null
+            && entry.Arguments.TryGetValue(key, out var argument)
+            && !string.IsNullOrWhiteSpace(argument?.ToString()))
+        {
+            value = argument!.ToString()!;
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
+    }
+
+    private static string CompactPrefix(string value)
+    {
+        var separator = value.IndexOfAny([':', '\uFF1A', '\n', '\r']);
+        return separator > 0 ? value[..separator].Trim() : value.Trim();
+    }
+
+    private static string TruncateSummary(string value)
+    {
+        var normalized = value.Trim();
+        return normalized.Length <= MaxCompactSummaryLength
+            ? normalized
+            : normalized[..(MaxCompactSummaryLength - 1)].TrimEnd() + '\u2026';
+    }
 
     private IReadOnlyList<LogPropertyViewModel> CreateStructuredProperties()
     {
@@ -226,13 +629,24 @@ public sealed class LogEntryViewModel(
 
     private static IReadOnlyList<LogStructuredNodeViewModel> CreateNodes(
         IEnumerable<KeyValuePair<string, object?>> values,
-        int depth = 0)
+        int depth = 0,
+        StructuredNodeBudget? budget = null,
+        HashSet<object>? path = null)
     {
-        return
-        [
-            .. values
-                .Select(pair => CreateNode(pair.Key, pair.Value, depth))
-        ];
+        budget ??= new StructuredNodeBudget();
+        path ??= new HashSet<object>(ReferenceEqualityComparer.Instance);
+        var nodes = new List<LogStructuredNodeViewModel>();
+        foreach (var pair in values)
+        {
+            if (!budget.TryTake())
+            {
+                break;
+            }
+
+            nodes.Add(CreateNode(pair.Key, pair.Value, depth, budget, path));
+        }
+
+        return nodes;
     }
 
     private static string FormatNodes(IEnumerable<LogStructuredNodeViewModel> nodes, int depth = 0)
@@ -251,22 +665,48 @@ public sealed class LogEntryViewModel(
         return string.Join(Environment.NewLine, lines);
     }
 
-    private static LogStructuredNodeViewModel CreateNode(string name, object? value, int depth)
+    private static LogStructuredNodeViewModel CreateNode(
+        string name,
+        object? value,
+        int depth,
+        StructuredNodeBudget budget,
+        HashSet<object> path)
     {
-        if (depth >= 32)
+        if (depth >= MaxStructuredDepth)
         {
             return new LogStructuredNodeViewModel(HumanizeKey(name), "[depth limit]", [], false);
         }
 
-        var children = CreateChildren(value, depth + 1);
-        return new LogStructuredNodeViewModel(
-            HumanizeKey(name),
-            FormatContainer(value, children),
-            children,
-            depth == 0 && children.Count > 0);
+        var runtimeType = value?.GetType();
+        var trackReference = value is not null && runtimeType is { IsValueType: false };
+        if (trackReference && !path.Add(value!))
+        {
+            return new LogStructuredNodeViewModel(HumanizeKey(name), "[cycle]", [], false);
+        }
+
+        try
+        {
+            var children = CreateChildren(value, depth + 1, budget, path);
+            return new LogStructuredNodeViewModel(
+                HumanizeKey(name),
+                FormatContainer(value, children),
+                children,
+                depth == 0 && children.Count > 0);
+        }
+        finally
+        {
+            if (trackReference)
+            {
+                path.Remove(value!);
+            }
+        }
     }
 
-    private static IReadOnlyList<LogStructuredNodeViewModel> CreateChildren(object? value, int depth)
+    private static IReadOnlyList<LogStructuredNodeViewModel> CreateChildren(
+        object? value,
+        int depth,
+        StructuredNodeBudget budget,
+        HashSet<object> path)
     {
         switch (value)
         {
@@ -275,7 +715,9 @@ public sealed class LogEntryViewModel(
                     readOnlyDictionary
                         .Where(static pair => !IsHiddenStructuredKey(pair.Key))
                         .OrderBy(static pair => pair.Key, StringComparer.Ordinal),
-                    depth);
+                    depth,
+                    budget,
+                    path);
             case IDictionary dictionary:
             {
                 var pairs = new List<KeyValuePair<string, object?>>();
@@ -284,18 +726,48 @@ public sealed class LogEntryViewModel(
                     pairs.Add(new KeyValuePair<string, object?>(entry.Key?.ToString() ?? string.Empty, entry.Value));
                 }
 
-                return CreateNodes(pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal), depth);
+                return CreateNodes(
+                    pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal),
+                    depth,
+                    budget,
+                    path);
             }
         }
 
         if (value is IEnumerable enumerable and not string)
         {
             var index = 0;
+            var children = new List<LogStructuredNodeViewModel>();
+            foreach (var item in enumerable)
+            {
+                if (!budget.TryTake())
+                {
+                    break;
+                }
 
-            return [.. from object? item in enumerable select CreateNode($"#{++index}", item, depth)];
+                children.Add(CreateNode($"#{++index}", item, depth, budget, path));
+            }
+
+            return children;
         }
 
         return [];
+    }
+
+    private sealed class StructuredNodeBudget
+    {
+        private int remaining = MaxStructuredNodes;
+
+        public bool TryTake()
+        {
+            if (remaining <= 0)
+            {
+                return false;
+            }
+
+            remaining--;
+            return true;
+        }
     }
 
     private static string FormatContainer(object? value, IReadOnlyList<LogStructuredNodeViewModel> children)
@@ -348,7 +820,10 @@ public sealed class LogEntryViewModel(
         string.Equals(key, "MessageKey", StringComparison.Ordinal) ||
         string.Equals(key, "TechnicalDetail", StringComparison.Ordinal) ||
         string.Equals(key, "Operation", StringComparison.Ordinal) ||
-        string.Equals(key, "operation", StringComparison.Ordinal);
+        string.Equals(key, "operation", StringComparison.Ordinal) ||
+        string.Equals(key, "Summary", StringComparison.Ordinal) ||
+        string.Equals(key, "summary", StringComparison.Ordinal) ||
+        string.Equals(key, "message", StringComparison.Ordinal);
 
     /// <summary>
     /// Keys hidden from the flat overview list: infrastructure keys, the operation tag
@@ -370,4 +845,13 @@ public sealed class LogEntryViewModel(
         string text => text,
         _ => value.ToString() ?? string.Empty
     };
+
+    private static void AddContextPart(List<string> parts, string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)
+            && !parts.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            parts.Add(value.Trim());
+        }
+    }
 }

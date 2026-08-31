@@ -2,13 +2,14 @@ using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
+using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Avalonia.Services;
 
 /// <summary>Creates the standard desktop catalog as an ordinary injected value.</summary>
 public static class StandardToolCatalogFactory
 {
-    public static IToolCatalog Create()
+    public static IToolCatalog Create(IApplicationLogExporter? logExporter = null)
     {
         return new ToolCatalog(
         [
@@ -37,7 +38,9 @@ public static class StandardToolCatalogFactory
                     DataContext = new LogToolViewModel(
                         context.Session.LogService,
                         context.Localizer,
-                        context.Clipboard)
+                        context.Clipboard,
+                        logExporter,
+                        context.Capabilities)
                 }),
             new ToolDescriptor(
                 ToolIds.Settings,

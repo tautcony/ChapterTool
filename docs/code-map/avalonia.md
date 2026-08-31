@@ -112,6 +112,16 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia.UI/Views/Tools/ForwardShiftToolView.axaml`
 - `src/ChapterTool.Avalonia.UI/Views/Tools/TextToolView.axaml`
 
+### LogTool
+
+`LogToolViewModel` owns the bounded log projection, severity and text filters, selection, and inspector commands. Selection stays separate from inspection. The initial state has no selected row and a closed inspector. `LogEntryViewModel` owns compact row identity, localized search runs, and on-demand raw, technical, exception, and structured values.
+
+`LogToolView.axaml` renders a list-first surface. It shows compact one-line rows by default. It renders the inspector beside the list at wide widths and replaces the list at narrow widths. The inspector opens only after an explicit row action or keyboard command.
+
+`IApplicationLogService` is the shared log boundary. `ApplicationLogPanelProvider` keeps a bounded in-memory snapshot in append order and raises `EntryAdded` and `Cleared` notifications. It does not provide grouping, timestamp indexes, or history cursors. `IApplicationLogExporter` is an optional manual-export boundary. `ApplicationLogFileExporter` writes the selected entries as UTF-8 JSON or CSV below `settings/logs/`.
+
+Primary entry points are `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml`, `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`, `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`, and `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`.
+
 ### Imported theme resources
 
 `src/ChapterTool.Avalonia.UI/Resources/` owns the shared and imported user interface resources.
@@ -246,8 +256,9 @@ Start with:
 - `src/ChapterTool.Avalonia/Services/StandardToolCatalogFactory.cs`
 - `src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+- `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`
 
-The ViewModel owns the filtered projection, selection, localized display text, and copy commands. The provider owns bounded history and live entry notifications. The view uses the imported master-detail composition and resources.
+The ViewModel owns the filtered list projection, localized row text, selection, and inspector state. `LogEntryViewModel` keeps technical values out of the compact row and exposes them when the inspector is open. The provider owns bounded append-order retention and live entry notifications. The optional exporter receives the visible entries from the ViewModel. The view owns responsive list and inspector composition.
 
 ### Clip combine / multi-entry session
 

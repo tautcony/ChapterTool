@@ -95,9 +95,17 @@ All runtime consumers receive the same aggregate store. `SettingsToolViewModel` 
   - `src/ChapterTool.Infrastructure/Platform/NativeDependencyLocation.cs`
 - app log surface:
   - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+- manual log export:
+  - `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`
 - test/dummy platform services:
   - `src/ChapterTool.Infrastructure/Platform/MemoryClipboardService.cs`
   - `src/ChapterTool.Infrastructure/Platform/ScriptedDialogService.cs`
+
+`ApplicationLogPanelProvider` implements `IApplicationLogService` and `ILoggerProvider`. It captures entries at or above its configured minimum level. It keeps a bounded in-memory snapshot in append order. `Entries` returns a copy of the snapshot. `EntryAdded` fires after an entry is retained. `Cleared` fires after the snapshot is empty. The provider has no grouping, timestamp index, or older-page cursor.
+
+`ApplicationLogFileExporter` implements the optional `IApplicationLogExporter` contract. It creates `settings/logs/` below the host settings directory. It writes the requested entries as UTF-8 JSON or RFC 4180 CSV. It orders exported rows by timestamp and returns filesystem failures as `ApplicationLogExportResult` values.
+
+The desktop `LoggingModule` registers the provider and exporter as application singletons. It also keeps the Serilog rolling archive separate from the in-memory panel. The archive rolls daily, keeps up to 14 files, and rolls at 10 MB.
 
 ## Feature Lookup
 
@@ -158,3 +166,4 @@ Start with:
 
 - `src/ChapterTool.Infrastructure/Platform/ShellService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+- `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`

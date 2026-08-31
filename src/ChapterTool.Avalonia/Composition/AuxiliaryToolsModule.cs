@@ -1,6 +1,7 @@
 using Autofac;
 using ChapterTool.Avalonia.Services;
 using ChapterTool.Avalonia.UI.PlatformPorts;
+using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Avalonia.Composition;
 
@@ -8,7 +9,7 @@ internal sealed class AuxiliaryToolsModule(string settingsDirectory) : Module
 {
     protected override void Load(ContainerBuilder builder)
     {
-        builder.Register(_ => StandardToolCatalogFactory.Create()).As<IToolCatalog>().SingleInstance();
+        builder.Register(context => StandardToolCatalogFactory.Create(context.ResolveOptional<IApplicationLogExporter>())).As<IToolCatalog>().SingleInstance();
         builder.RegisterType<NoContentEmbeddedToolPresenter>().As<IEmbeddedToolPresenter>().SingleInstance();
         builder.RegisterType<AvaloniaWindowService>()
             .WithParameter("settingsDirectory", settingsDirectory)

@@ -32,6 +32,19 @@
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">警告</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">エラー</x:String>
   <x:String x:Key="Tool.Log.Filter" xml:space="preserve">レベルでフィルター</x:String>
+  <x:String x:Key="Tool.Log.FilterLevelLabel" xml:space="preserve">レベル</x:String>
+  <x:String x:Key="Tool.Log.ResetFilters" xml:space="preserve">フィルターをリセット</x:String>
+  <x:String x:Key="Tool.Log.MoreActions" xml:space="preserve">その他の操作</x:String>
+  <x:String x:Key="Tool.Log.ExportFormat" xml:space="preserve">エクスポート形式</x:String>
+  <x:String x:Key="Tool.Log.OpenDetails" xml:space="preserve">詳細を開く</x:String>
+  <x:String x:Key="Tool.Log.SearchMatchAdditional" xml:space="preserve">詳細に一致する内容があります。</x:String>
+  <x:String x:Key="Tool.Log.EntryAccessibleName" xml:space="preserve">{level}：{summary}、{time}。{context}</x:String>
+  <x:String x:Key="Tool.Log.NoEntries" xml:space="preserve">ログはまだありません。</x:String>
+  <x:String x:Key="Tool.Log.NoMatches" xml:space="preserve">検索またはフィルターに一致するログはありません。</x:String>
+  <x:String x:Key="Tool.Log.Message" xml:space="preserve">メッセージ</x:String>
+  <x:String x:Key="Tool.Log.Context" xml:space="preserve">コンテキスト</x:String>
+  <x:String x:Key="Tool.Log.NoDetails" xml:space="preserve">このログに追加の詳細はありません。</x:String>
+  <x:String x:Key="Tool.Log.BackToList" xml:space="preserve">ログ一覧に戻る</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">概要をコピー</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">詳細をコピー</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技術詳細</x:String>
@@ -45,6 +58,12 @@
   <x:String x:Key="Tool.Log.Properties" xml:space="preserve">プロパティ</x:String>
   <x:String x:Key="Tool.Log.Raw" xml:space="preserve">生データ</x:String>
   <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">ログを検索…</x:String>
+  <x:String x:Key="Tool.Log.ExportJson" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="Tool.Log.ExportCsv" xml:space="preserve">CSV</x:String>
+  <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">{value} にエクスポートしました</x:String>
+  <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">エクスポートに失敗しました: {value}</x:String>
+  <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">詳細を閉じる</x:String>
+  <x:String x:Key="Tool.Log.Export" xml:space="preserve">ログをエクスポート</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">このログにネストされた構造化データはありません。</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">このログに例外データはありません。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>

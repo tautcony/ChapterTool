@@ -116,6 +116,7 @@ BDMV compatibility tests:
 - platform services:
   - `tests/ChapterTool.Infrastructure.Tests/PlatformServiceTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs`
+  - `tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs`
 - settings persistence:
   - `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`
   - `tests/ChapterTool.Infrastructure.Tests/CorruptSettingsFileTests.cs`
@@ -141,6 +142,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolViewModelPortConstructionTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs`
+
+LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first projection, severity and text filters, compact summaries, explicit inspector selection, search highlights, structured expansion, live updates, eviction handling, localization, and secondary command state. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs` covers append-order snapshots, minimum-level filtering, bounded retention, clear notifications, and concurrent access. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs` covers UTF-8 JSON and CSV output, deterministic ordering, CSV quoting, output paths, and recoverable failures. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs` and `UiResourceResolutionHeadlessTests.cs` cover rendered list and inspector workflows, keyboard close behavior, responsive layouts, and locale resource resolution.
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterLoadServiceTests.cs`
@@ -191,7 +194,7 @@ Editing-preference coverage for delete-rows timing and frame display is in `Chap
 
 Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible `Optris.Icons.Avalonia.FontAwesome` icons.
 
-Log projection coverage is in `LogToolViewModelTests` against `LogEntryViewModel`; log orchestration remains in `LogToolViewModel`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify filtering, selection, copy, clear, live updates, summary, structured data, raw JSON, theme changes, and narrow layout.
+Log projection coverage is in `LogToolViewModelTests` against `LogEntryViewModel`; log orchestration remains in `LogToolViewModel`. Log user-interface behavior is in `AuxiliaryToolHeadlessTests`. These tests verify the list-first default, explicit details actions, selection retention, filtering and search, copy and clear actions, live append and bounded eviction, structured and raw disclosures, theme changes, localization, and narrow replacement layout.
 
 The settings Headless workflows verify the footer settings-folder action, including its left-side placement, accessible label, and routed shell target.
 

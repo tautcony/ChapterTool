@@ -14,6 +14,30 @@ public interface IApplicationLogService
     void Clear();
 }
 
+public enum LogExportFormat
+{
+    Json,
+    Csv
+}
+
+public sealed record ApplicationLogExportRequest(
+    LogExportFormat Format,
+    IReadOnlyList<ApplicationLogEntry> Entries);
+
+public sealed record ApplicationLogExportResult(bool Succeeded, string? Path, string? Error)
+{
+    public static ApplicationLogExportResult Success(string path) => new(true, path, null);
+
+    public static ApplicationLogExportResult Failure(string error) => new(false, null, error);
+}
+
+public interface IApplicationLogExporter
+{
+    ValueTask<ApplicationLogExportResult> ExportAsync(
+        ApplicationLogExportRequest request,
+        CancellationToken cancellationToken = default);
+}
+
 public sealed record ApplicationLogEntry(
     DateTimeOffset Timestamp,
     LogLevel Level,

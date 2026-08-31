@@ -256,6 +256,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         scope
             .GetVisualDescendants()
             .OfType<TextBlock>()
+            .Where(static block => block.IsVisible && block.Bounds.Width > 0 && block.Bounds.Height > 0)
             .Select(static block => block.Text)
             .Where(static text => !string.IsNullOrWhiteSpace(text))
             .ToArray()!;

@@ -176,5 +176,22 @@ public sealed class ApplicationLogPanelProviderTests
         Assert.Empty(service.Entries);
     }
 
+    [Fact]
+    public void ConcurrentReadsAndWritesKeepABoundedSnapshot()
+    {
+        var service = new ApplicationLogPanelProvider(capacity: 50);
+        var logger = service.CreateLogger("ChapterTool.Tests");
+
+        Parallel.For(0, 500, index =>
+        {
+            logger.LogInformation("Entry {Index}", index);
+            _ = service.Entries.Count;
+        });
+
+        var snapshot = service.Entries;
+        Assert.Equal(50, snapshot.Count);
+        Assert.All(snapshot, static entry => Assert.StartsWith("Entry ", entry.Message, StringComparison.Ordinal));
+    }
+
     private sealed record ApplicationLogEntrySnapshot(string Message, IReadOnlyList<string> CurrentHistory);
 }

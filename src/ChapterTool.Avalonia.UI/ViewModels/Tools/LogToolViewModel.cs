@@ -1,4 +1,6 @@
+using System.Text.Json;
 using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
@@ -13,49 +15,74 @@ public enum LogSeverityFilter
 
 public sealed record LogFilterOption(LogSeverityFilter Value, string DisplayName);
 
+public sealed record LogExportFormatOption(LogExportFormat Value, string DisplayName);
+
+/// <summary>
+/// Projects the bounded application log into a quiet feed and an on-demand
+/// inspector. Selection and inspection are deliberately separate states.
+/// </summary>
 public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 {
     private readonly IApplicationLogService logService;
     private readonly IAppLocalizer localizer;
     private readonly IAppLocalizer contentLocalizer = new AppLocalizationManager("en-US");
     private readonly IClipboardService? clipboardService;
+    private readonly IRuntimeCapabilities? capabilities;
+    private readonly IApplicationLogExporter? exporter;
     private readonly SynchronizationContext? synchronizationContext;
     private readonly List<LogEntryViewModel> entryViewModels = [];
     private IReadOnlyList<LogEntryViewModel> filteredEntries = [];
     private IReadOnlyList<LogFilterOption> filterOptions;
+    private IReadOnlyList<LogExportFormatOption> exportFormatOptions;
     private LogFilterOption selectedFilter;
+    private LogExportFormatOption selectedExportFormat;
+    private bool isDetailsOpen;
+    private bool isExporting;
+    private string statusText = string.Empty;
+    private string? statusResourceKey;
+    private string? statusArgument;
     private bool disposed;
 
     public LogToolViewModel(
         IApplicationLogService logService,
         IAppLocalizer localizer,
-        IClipboardService? clipboardService = null)
+        IClipboardService? clipboardService = null,
+        IApplicationLogExporter? exporter = null,
+        IRuntimeCapabilities? capabilities = null)
     {
         ArgumentNullException.ThrowIfNull(logService);
         ArgumentNullException.ThrowIfNull(localizer);
         this.logService = logService;
         this.localizer = localizer;
         this.clipboardService = clipboardService;
+        this.capabilities = capabilities;
+        this.exporter = exporter;
         synchronizationContext = SynchronizationContext.Current;
         filterOptions = CreateFilterOptions();
+        exportFormatOptions = CreateExportFormatOptions();
         selectedFilter = filterOptions[0];
-        ClearCommand = new UiCommand(
-            (_, _) =>
-            {
-                logService.Clear();
-                return ValueTask.CompletedTask;
-            },
-            _ => entryViewModels.Count > 0);
+        selectedExportFormat = exportFormatOptions[0];
+
+        ClearCommand = new UiCommand((_, _) => ClearAsync(), _ => entryViewModels.Count > 0);
         CopySummaryCommand = new UiCommand(
             async (_, cancellationToken) => await CopyAsync(SelectedEntry?.Summary, cancellationToken),
-            _ => clipboardService is not null && SelectedEntry is not null);
+            _ => CanCopySelected);
         CopyDetailsCommand = new UiCommand(
             async (_, cancellationToken) => await CopyAsync(SelectedEntry?.RawText, cancellationToken),
-            _ => clipboardService is not null && SelectedEntry is not null);
+            _ => CanCopySelected);
+        CloseDetailsCommand = new UiCommand((_, _) => CloseDetailsAsync(), _ => IsDetailsOpen);
+        OpenDetailsCommand = new UiCommand(
+            (parameter, _) => OpenDetailsAsync(parameter),
+            parameter => parameter is LogEntryViewModel entry && FilteredEntries.Contains(entry));
+        ResetFiltersCommand = new UiCommand((_, _) => ResetFiltersAsync(), _ => HasActiveFilters || HasSearchQuery);
+        ExportCommand = new UiCommand(
+            (_, cancellationToken) => ExportAsync(cancellationToken),
+            _ => CanExport);
+
         logService.EntryAdded += OnEntryAdded;
         logService.Cleared += OnCleared;
         localizer.CultureChanged += OnCultureChanged;
-        RebuildFromService();
+        RebuildFromSnapshot(logService.Entries);
     }
 
     public IReadOnlyList<LogFilterOption> FilterOptions
@@ -64,18 +91,28 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         private set => SetProperty(ref filterOptions, value);
     }
 
+    public IReadOnlyList<LogExportFormatOption> ExportFormatOptions
+    {
+        get => exportFormatOptions;
+        private set => SetProperty(ref exportFormatOptions, value);
+    }
+
     public LogFilterOption SelectedFilter
     {
         get => selectedFilter;
         set
         {
-            if (value is null || !SetProperty(ref selectedFilter, value))
+            if (value is not null && SetProperty(ref selectedFilter, value))
             {
-                return;
+                RefreshProjection();
             }
-
-            RefreshFilteredEntries();
         }
+    }
+
+    public LogExportFormatOption SelectedExportFormat
+    {
+        get => selectedExportFormat;
+        set => SetProperty(ref selectedExportFormat, value);
     }
 
     public string SearchText
@@ -83,12 +120,11 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         get;
         set
         {
-            if (!SetProperty(ref field, value))
+            var normalized = value ?? string.Empty;
+            if (SetProperty(ref field, normalized))
             {
-                return;
+                RefreshProjection();
             }
-
-            RefreshFilteredEntries();
         }
     } = string.Empty;
 
@@ -98,6 +134,7 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         private set => SetProperty(ref filteredEntries, value);
     }
 
+    /// <summary>Gets or sets currently highlighted row. It does not open the inspector.</summary>
     public LogEntryViewModel? SelectedEntry
     {
         get;
@@ -109,12 +146,78 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
             }
 
             OnPropertyChanged(nameof(HasSelectedEntry));
-            CopySummaryCommand.RaiseCanExecuteChanged();
-            CopyDetailsCommand.RaiseCanExecuteChanged();
+            OnPropertyChanged(nameof(ShowDetails));
+            OnPropertyChanged(nameof(CanCopySelected));
+            OnPropertyChanged(nameof(HasSecondaryActions));
+            RaiseCommandStates();
+        }
+    }
+
+    /// <summary>Gets a value indicating whether true only while the user is inspecting the selected row.</summary>
+    public bool IsDetailsOpen
+    {
+        get => isDetailsOpen;
+        private set
+        {
+            if (SetProperty(ref isDetailsOpen, value))
+            {
+                OnPropertyChanged(nameof(ShowDetails));
+                CloseDetailsCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsExporting
+    {
+        get => isExporting;
+        private set
+        {
+            if (SetProperty(ref isExporting, value))
+            {
+                OnPropertyChanged(nameof(CanExport));
+                OnPropertyChanged(nameof(HasSecondaryActions));
+                ExportCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string StatusText
+    {
+        get => statusText;
+        private set
+        {
+            if (SetProperty(ref statusText, value))
+            {
+                OnPropertyChanged(nameof(HasStatus));
+            }
         }
     }
 
     public bool HasSelectedEntry => SelectedEntry is not null;
+
+    public bool ShowDetails => IsDetailsOpen && HasSelectedEntry;
+
+    public bool HasRetainedEntries => entryViewModels.Count > 0;
+
+    public bool HasNoResults => HasRetainedEntries && IsEmpty;
+
+    public bool HasSearchQuery => !string.IsNullOrWhiteSpace(SearchText);
+
+    public bool HasStatus => !string.IsNullOrWhiteSpace(StatusText);
+
+    public bool HasClipboard => clipboardService is not null && (capabilities?.CanWriteClipboard ?? true);
+
+    public bool HasExporter => exporter is not null;
+
+    public bool CanCopySelected => HasClipboard && SelectedEntry is not null;
+
+    public bool CanExport => HasExporter && FilteredEntries.Count > 0 && !IsExporting;
+
+    public bool HasSecondaryActions => HasRetainedEntries || CanCopySelected || CanExport;
+
+    public int ActiveFilterCount => SelectedFilter.Value == LogSeverityFilter.All ? 0 : 1;
+
+    public bool HasActiveFilters => SelectedFilter.Value != LogSeverityFilter.All;
 
     public bool IsEmpty => FilteredEntries.Count == 0;
 
@@ -125,6 +228,14 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     public UiCommand CopySummaryCommand { get; }
 
     public UiCommand CopyDetailsCommand { get; }
+
+    public UiCommand CloseDetailsCommand { get; }
+
+    public UiCommand OpenDetailsCommand { get; }
+
+    public UiCommand ResetFiltersCommand { get; }
+
+    public UiCommand ExportCommand { get; }
 
     public void Dispose()
     {
@@ -139,39 +250,245 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         localizer.CultureChanged -= OnCultureChanged;
     }
 
-    private void OnEntryAdded(object? sender, ApplicationLogEntry entry)
+    private void OnEntryAdded(object? sender, ApplicationLogEntry entry) => Dispatch(() => AppendEntry(entry));
+
+    private void OnCleared(object? sender, EventArgs args) => Dispatch(RebuildAfterClear);
+
+    private void Dispatch(Action action)
     {
         if (synchronizationContext is null)
         {
-            AppendEntry(entry);
-            return;
+            action();
         }
-
-        synchronizationContext.Post(_ => AppendEntry(entry), null);
+        else
+        {
+            synchronizationContext.Post(_ => action(), null);
+        }
     }
 
-    private void OnCleared(object? sender, EventArgs args)
+    private void AppendEntry(ApplicationLogEntry entry)
     {
-        if (synchronizationContext is null)
+        if (disposed)
         {
-            RebuildAfterClear();
             return;
         }
 
-        synchronizationContext.Post(_ => RebuildAfterClear(), null);
+        var retained = logService.Entries.ToHashSet(ReferenceEqualityComparer.Instance);
+        var selectedBeforeUpdate = SelectedEntry?.Entry;
+        entryViewModels.RemoveAll(item => !retained.Contains(item.Entry));
+        if (retained.Contains(entry)
+            && entryViewModels.All(item => !ReferenceEquals(item.Entry, entry)))
+        {
+            entryViewModels.Add(CreateEntry(entry));
+        }
+
+        SortEntries();
+        if (selectedBeforeUpdate is not null
+            && !entryViewModels.Any(item => ReferenceEquals(item.Entry, selectedBeforeUpdate)))
+        {
+            SelectedEntry = null;
+            IsDetailsOpen = false;
+        }
+
+        RefreshProjection();
+    }
+
+    private async ValueTask ExportAsync(CancellationToken cancellationToken)
+    {
+        if (exporter is null || IsExporting)
+        {
+            return;
+        }
+
+        IsExporting = true;
+        try
+        {
+            var request = new ApplicationLogExportRequest(
+                SelectedExportFormat.Value,
+                [.. FilteredEntries.Select(static item => item.Entry)]);
+            var result = await exporter.ExportAsync(request, cancellationToken);
+            SetExportStatus(result.Succeeded, result.Succeeded ? result.Path : result.Error);
+        }
+        catch (IOException exception)
+        {
+            SetExportStatus(false, exception.Message);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            SetExportStatus(false, exception.Message);
+        }
+        catch (Exception exception) when (exception is ArgumentException or JsonException or NotSupportedException or InvalidOperationException or System.Security.SecurityException)
+        {
+            SetExportStatus(false, exception.Message);
+        }
+        finally
+        {
+            IsExporting = false;
+        }
+    }
+
+    private ValueTask ClearAsync()
+    {
+        logService.Clear();
+        return ValueTask.CompletedTask;
+    }
+
+    private ValueTask CloseDetailsAsync()
+    {
+        // Keep the row selected so the same event can be inspected again.
+        IsDetailsOpen = false;
+        return ValueTask.CompletedTask;
+    }
+
+    private ValueTask OpenDetailsAsync(object? parameter)
+    {
+        if (parameter is LogEntryViewModel entry && FilteredEntries.Contains(entry))
+        {
+            SelectedEntry = entry;
+            IsDetailsOpen = true;
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    private ValueTask ResetFiltersAsync()
+    {
+        SearchText = string.Empty;
+        SelectedFilter = FilterOptions[0];
+        return ValueTask.CompletedTask;
+    }
+
+    private void RebuildAfterClear()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        entryViewModels.Clear();
+        SelectedEntry = null;
+        IsDetailsOpen = false;
+        RefreshProjection();
+    }
+
+    private void RebuildFromSnapshot(IReadOnlyList<ApplicationLogEntry> entries)
+    {
+        var existing = new Dictionary<ApplicationLogEntry, LogEntryViewModel>(ReferenceEqualityComparer.Instance);
+        foreach (var item in entryViewModels)
+        {
+            existing[item.Entry] = item;
+        }
+        entryViewModels.Clear();
+        foreach (var entry in entries)
+        {
+            entryViewModels.Add(existing.TryGetValue(entry, out var viewModel)
+                ? viewModel
+                : CreateEntry(entry));
+        }
+
+        SortEntries();
+        RefreshProjection();
     }
 
     private void OnCultureChanged(object? sender, EventArgs args)
     {
+        var severity = SelectedFilter.Value;
+        var format = SelectedExportFormat.Value;
         FilterOptions = CreateFilterOptions();
-        SelectedFilter = FilterOptions.First(option => option.Value == selectedFilter.Value);
+        ExportFormatOptions = CreateExportFormatOptions();
+        selectedFilter = FilterOptions.Single(option => option.Value == severity);
+        selectedExportFormat = ExportFormatOptions.Single(option => option.Value == format);
+        OnPropertyChanged(nameof(SelectedFilter));
+        OnPropertyChanged(nameof(SelectedExportFormat));
+        if (statusResourceKey is not null)
+        {
+            StatusText = localizer.FormatPositional(statusResourceKey, statusArgument ?? string.Empty);
+        }
         foreach (var entry in entryViewModels)
         {
             entry.RefreshLocalizedProperties();
         }
 
-        RefreshFilteredEntries();
+        RefreshProjection();
     }
+
+    private void RefreshProjection()
+    {
+        var previousEntry = SelectedEntry?.Entry;
+        foreach (var entry in entryViewModels)
+        {
+            entry.ApplySearchHighlight(SearchText);
+        }
+
+        FilteredEntries =
+        [
+            .. entryViewModels
+                .Where(entry => entry.Matches(SelectedFilter.Value))
+                .Where(entry => entry.MatchesSearch(SearchText))
+                .OrderByDescending(static entry => entry.Entry.Timestamp)
+        ];
+
+        var stillVisible = FilteredEntries.FirstOrDefault(entry => ReferenceEquals(entry.Entry, previousEntry));
+        if (previousEntry is not null && stillVisible is null)
+        {
+            SelectedEntry = null;
+            IsDetailsOpen = false;
+        }
+
+        // Filtering and live updates must not select a replacement entry. Keep
+        // an explicit selection only while that same entry remains visible.
+        else if (previousEntry is not null && !ReferenceEquals(SelectedEntry, stillVisible))
+        {
+            SelectedEntry = stillVisible;
+        }
+
+        OnPropertyChanged(nameof(HasActiveFilters));
+        OnPropertyChanged(nameof(ActiveFilterCount));
+        OnPropertyChanged(nameof(HasSearchQuery));
+        RaiseListStateChanged();
+    }
+
+    private void RaiseListStateChanged()
+    {
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(HasRetainedEntries));
+        OnPropertyChanged(nameof(HasNoResults));
+        OnPropertyChanged(nameof(EntryCountText));
+        OnPropertyChanged(nameof(HasSecondaryActions));
+        OnPropertyChanged(nameof(CanCopySelected));
+        OnPropertyChanged(nameof(CanExport));
+        RaiseCommandStates();
+    }
+
+    private void RaiseCommandStates()
+    {
+        ClearCommand.RaiseCanExecuteChanged();
+        CopySummaryCommand.RaiseCanExecuteChanged();
+        CopyDetailsCommand.RaiseCanExecuteChanged();
+        CloseDetailsCommand.RaiseCanExecuteChanged();
+        OpenDetailsCommand.RaiseCanExecuteChanged();
+        ResetFiltersCommand.RaiseCanExecuteChanged();
+        ExportCommand.RaiseCanExecuteChanged();
+    }
+
+    private async ValueTask CopyAsync(string? text, CancellationToken cancellationToken)
+    {
+        if (clipboardService is not null && !string.IsNullOrWhiteSpace(text))
+        {
+            await clipboardService.SetTextAsync(text, cancellationToken);
+        }
+    }
+
+    private LogEntryViewModel CreateEntry(ApplicationLogEntry entry) => new(entry, localizer, contentLocalizer);
+
+    private void SetExportStatus(bool succeeded, string? value)
+    {
+        statusResourceKey = succeeded ? "Tool.Log.ExportSucceeded" : "Tool.Log.ExportFailed";
+        statusArgument = value ?? string.Empty;
+        StatusText = localizer.FormatPositional(statusResourceKey, statusArgument);
+    }
+
+    private void SortEntries() => entryViewModels.Sort(static (left, right) => right.Entry.Timestamp.CompareTo(left.Entry.Timestamp));
 
     private IReadOnlyList<LogFilterOption> CreateFilterOptions() =>
     [
@@ -181,124 +498,9 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         new(LogSeverityFilter.Error, localizer.GetString("Tool.Log.FilterError"))
     ];
 
-    private void AppendEntry(ApplicationLogEntry entry)
-    {
-        if (disposed)
-        {
-            return;
-        }
-
-        var snapshot = logService.Entries;
-        var appendsEntry = snapshot.Count == entryViewModels.Count + 1
-            && PrefixMatches(snapshot, entryViewModels, entryViewModels.Count)
-            && ReferenceEquals(snapshot[^1], entry);
-        var evictsThenAppends = snapshot.Count == entryViewModels.Count
-            && snapshot.Count > 0
-            && PrefixMatches(snapshot, entryViewModels, snapshot.Count - 1, existingOffset: 1)
-            && ReferenceEquals(snapshot[^1], entry);
-
-        if (!appendsEntry && !evictsThenAppends)
-        {
-            RebuildFromSnapshot(snapshot);
-            return;
-        }
-
-        var viewModel = new LogEntryViewModel(entry, localizer, contentLocalizer);
-        if (evictsThenAppends)
-        {
-            entryViewModels.RemoveAt(0);
-        }
-
-        entryViewModels.Add(viewModel);
-        if (evictsThenAppends)
-        {
-            RefreshFilteredEntries();
-            return;
-        }
-
-        if (viewModel.Matches(SelectedFilter.Value) && viewModel.MatchesSearch(SearchText))
-        {
-            FilteredEntries = [.. filteredEntries, viewModel];
-            SelectedEntry ??= viewModel;
-            RaiseListStateChanged();
-        }
-    }
-
-    private void RebuildAfterClear()
-    {
-        if (!disposed)
-        {
-            RebuildFromService();
-        }
-    }
-
-    private void RebuildFromService() => RebuildFromSnapshot(logService.Entries);
-
-    private void RebuildFromSnapshot(IReadOnlyList<ApplicationLogEntry> entries)
-    {
-        var existing = new Dictionary<ApplicationLogEntry, LogEntryViewModel>(ReferenceEqualityComparer.Instance);
-        foreach (var item in entryViewModels)
-        {
-            existing[item.Entry] = item;
-        }
-
-        entryViewModels.Clear();
-        foreach (var entry in entries)
-        {
-            entryViewModels.Add(existing.TryGetValue(entry, out var viewModel)
-                ? viewModel
-                : new LogEntryViewModel(entry, localizer, contentLocalizer));
-        }
-
-        RefreshFilteredEntries();
-    }
-
-    private static bool PrefixMatches(
-        IReadOnlyList<ApplicationLogEntry> snapshot,
-        IReadOnlyList<LogEntryViewModel> existing,
-        int count,
-        int existingOffset = 0)
-    {
-        for (var index = 0; index < count; index++)
-        {
-            if (!ReferenceEquals(snapshot[index], existing[index + existingOffset].Entry))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private void RefreshFilteredEntries()
-    {
-        var previousEntry = SelectedEntry?.Entry;
-        FilteredEntries =
-        [
-            .. entryViewModels
-                .Where(entry => entry.Matches(SelectedFilter.Value) && entry.MatchesSearch(SearchText))
-        ];
-        SelectedEntry = FilteredEntries.FirstOrDefault(entry => ReferenceEquals(entry.Entry, previousEntry))
-            ?? FilteredEntries.LastOrDefault();
-        RaiseListStateChanged();
-    }
-
-    private void RaiseListStateChanged()
-    {
-        OnPropertyChanged(nameof(IsEmpty));
-        OnPropertyChanged(nameof(EntryCountText));
-        ClearCommand.RaiseCanExecuteChanged();
-        CopySummaryCommand.RaiseCanExecuteChanged();
-        CopyDetailsCommand.RaiseCanExecuteChanged();
-    }
-
-    private async ValueTask CopyAsync(string? text, CancellationToken cancellationToken)
-    {
-        if (clipboardService is null || string.IsNullOrWhiteSpace(text))
-        {
-            return;
-        }
-
-        await clipboardService.SetTextAsync(text, cancellationToken);
-    }
+    private IReadOnlyList<LogExportFormatOption> CreateExportFormatOptions() =>
+    [
+        new(LogExportFormat.Json, localizer.GetString("Tool.Log.ExportJson")),
+        new(LogExportFormat.Csv, localizer.GetString("Tool.Log.ExportCsv"))
+    ];
 }

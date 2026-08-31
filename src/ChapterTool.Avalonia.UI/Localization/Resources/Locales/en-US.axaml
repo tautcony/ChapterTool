@@ -32,6 +32,19 @@
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">Warnings</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">Errors</x:String>
   <x:String x:Key="Tool.Log.Filter" xml:space="preserve">Filter by level</x:String>
+  <x:String x:Key="Tool.Log.FilterLevelLabel" xml:space="preserve">Level</x:String>
+  <x:String x:Key="Tool.Log.ResetFilters" xml:space="preserve">Reset filters</x:String>
+  <x:String x:Key="Tool.Log.MoreActions" xml:space="preserve">More actions</x:String>
+  <x:String x:Key="Tool.Log.ExportFormat" xml:space="preserve">Export format</x:String>
+  <x:String x:Key="Tool.Log.OpenDetails" xml:space="preserve">Open details</x:String>
+  <x:String x:Key="Tool.Log.SearchMatchAdditional" xml:space="preserve">Match found in details.</x:String>
+  <x:String x:Key="Tool.Log.EntryAccessibleName" xml:space="preserve">{level}: {summary}, {time}. {context}</x:String>
+  <x:String x:Key="Tool.Log.NoEntries" xml:space="preserve">No log entries yet.</x:String>
+  <x:String x:Key="Tool.Log.NoMatches" xml:space="preserve">No entries match the current search or filter.</x:String>
+  <x:String x:Key="Tool.Log.Message" xml:space="preserve">Message</x:String>
+  <x:String x:Key="Tool.Log.Context" xml:space="preserve">Context</x:String>
+  <x:String x:Key="Tool.Log.NoDetails" xml:space="preserve">No additional details for this entry.</x:String>
+  <x:String x:Key="Tool.Log.BackToList" xml:space="preserve">Back to log list</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">Copy summary</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">Copy details</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">Technical details</x:String>
@@ -45,6 +58,12 @@
   <x:String x:Key="Tool.Log.Properties" xml:space="preserve">Properties</x:String>
   <x:String x:Key="Tool.Log.Raw" xml:space="preserve">Raw data</x:String>
   <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">Search log entries…</x:String>
+  <x:String x:Key="Tool.Log.ExportJson" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="Tool.Log.ExportCsv" xml:space="preserve">CSV</x:String>
+  <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">Exported to {value}</x:String>
+  <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">Export failed: {value}</x:String>
+  <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">Close details</x:String>
+  <x:String x:Key="Tool.Log.Export" xml:space="preserve">Export logs</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">This entry has no nested structured data.</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">This entry has no exception data.</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">Save</x:String>
