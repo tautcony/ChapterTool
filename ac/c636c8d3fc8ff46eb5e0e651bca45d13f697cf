@@ -1,0 +1,26 @@
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs
+  h_3705811fa4502c 513
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs
+  h_3705811fa4502c 259
+tests/ChapterTool.Infrastructure.Tests/Importing/BdmvImporterTests.cs
+  h_3705811fa4502c 307
+src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvProfileVariantFactory.cs
+  h_3705811fa4502c 62
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml.cs
+  h_3705811fa4502c 120,193
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs
+  h_3705811fa4502c 109,184,281
+tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs
+  h_3705811fa4502c 27,100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "acc636c8d3fc8ff46eb5e0e651bca45d13f697cf",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
