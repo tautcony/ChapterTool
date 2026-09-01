@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "codegraph": {
+      "type": "stdio",
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp",
+        "--path",
+        "/Users/tautcony/Documents/repos/ChapterTool"
+      ]
+    }
+  }
+}
