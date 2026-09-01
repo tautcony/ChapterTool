@@ -1,0 +1,25 @@
+src/ChapterTool.Core/Importing/Disc/Index/IndexTitleEntry.cs
+  s_c7e45077b1a2a1::t_b1ae9da5e69abb 9-15,18,20,22-24,26-28
+tests/ChapterTool.Core.Tests/Importing/IndexImporterTests.cs
+  s_c7e45077b1a2a1::t_b1ae9da5e69abb 8-14,98-99,125-127,145,162,174-184,465,468
+tests/ChapterTool.Infrastructure.Tests/Importing/BdmvBdjoNavigationTests.cs
+  s_c7e45077b1a2a1::t_b1ae9da5e69abb 11-18,192-193,197-198,201,208,211
+  s_c7e45077b1a2a1::t_149c71b4437cce 89
+  s_c7e45077b1a2a1::t_1326e8b123458c 97-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "84aab0e8d7ce495a455142df4afea098eab6bb98",
+  "prompts": {},
+  "sessions": {
+    "s_c7e45077b1a2a1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05b1d-4a32-7940-b74d-0ac195e5986f",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}

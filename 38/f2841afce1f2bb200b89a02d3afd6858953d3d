@@ -1,0 +1,68 @@
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml.cs
+  s_26892242c1c2c0::t_3dc5195532972e 22
+  h_3705811fa4502c 193
+  h_3705811fa4502c 39-40,45-49
+src/ChapterTool.Avalonia.UI/Views/Controls/ExpressionEditor.axaml.cs
+  h_3705811fa4502c 247,709
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  h_3705811fa4502c 468
+tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs
+  h_3705811fa4502c 743,767,926
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  h_3705811fa4502c 207
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs
+  h_3705811fa4502c 276
+src/ChapterTool.Avalonia.UI/Workflows/StatusDiagnosticsPresenter.cs
+  h_3705811fa4502c 246
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs
+  h_3705811fa4502c 129-131,155,158,168,171,182,185,190
+src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvNavigation.cs
+  h_3705811fa4502c 180,182,184,186-187,189-191,216,218,220-221,266,268,270-273
+  h_3705811fa4502c 183,185,188,219,222-223,269
+tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs
+  h_3705811fa4502c 763-764
+  h_3705811fa4502c 281
+src/ChapterTool.Core/Importing/Cue/CueSheetParser.cs
+  h_3705811fa4502c 11
+src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs
+  h_3705811fa4502c 14
+src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs
+  h_3705811fa4502c 47-48,58,60,69
+src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs
+  h_3705811fa4502c 260,290-295
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogRawValueFormatter.cs
+  h_3705811fa4502c 78,80-91
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Convert.cs
+  h_3705811fa4502c 232
+tests/ChapterTool.Infrastructure.Tests/Importing/BdmvBdjoNavigationTests.cs
+  s_c7e45077b1a2a1::t_216dc99d5f7b26 147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "38f2841afce1f2bb200b89a02d3afd6858953d3d",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_26892242c1c2c0": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1788218573962",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_c7e45077b1a2a1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05b1d-4a32-7940-b74d-0ac195e5986f",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
