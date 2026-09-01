@@ -26,6 +26,22 @@ describe("ChapterTool package entry point", () => {
     expect(exported.content).toMatch(/<Chapters>/);
   });
 
+  it("preserves the applyExpression export option across the JSON boundary", async () => {
+    const tool = new ChapterTool();
+    const imported = await tool.import(chapterText, { fileName: "expression.txt" });
+    const chapterSet = imported.groups[0].entries[0].chapterSet;
+    chapterSet.framesPerSecond = 24;
+
+    const exported = await tool.export(chapterSet, {
+      format: "timecodes",
+      applyExpression: true,
+      expression: "t + 1",
+    });
+
+    expect(exported.success).toBe(true);
+    expect(exported.content).toBe("00:00:01.000\n00:01:01.000");
+  });
+
   it("imports Buffer and Uint8Array content", async () => {
     const tool = new ChapterTool();
     const bufferResult = await tool.import(Buffer.from(chapterText), { fileName: "buffer.txt" });

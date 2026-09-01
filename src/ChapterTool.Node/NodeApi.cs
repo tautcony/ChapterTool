@@ -188,7 +188,7 @@ public static partial class NodeApi
             options.UseTemplateNames,
             options.ChapterNameTemplateText,
             options.OrderShift,
-            options.ApplyExpression,
+            options.ShouldApplyExpression,
             options.Expression,
             options.ExpressionPresetId,
             options.ExpressionSourceName,
@@ -295,7 +295,8 @@ public static partial class NodeApi
         bool UseTemplateNames = false,
         string ChapterNameTemplateText = "",
         int OrderShift = 0,
-        bool ApplyExpression = false,
+        [property: JsonPropertyName("applyExpression")]
+        bool ShouldApplyExpression = false,
         string Expression = "t",
         string ExpressionPresetId = "",
         string ExpressionSourceName = "",
