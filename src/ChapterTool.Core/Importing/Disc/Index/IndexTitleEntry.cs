@@ -6,15 +6,26 @@ internal sealed record IndexTitleEntry(
     ushort PlaybackType,
     IndexObjectReference ObjectReference)
 {
+    private const byte HdmvObjectType = 1;
+    private const byte BdJObjectType = 2;
+    private const ushort HdmvMoviePlaybackType = 0;
+    private const ushort HdmvInteractivePlaybackType = 1;
+    private const ushort BdJMoviePlaybackType = 2;
+    private const ushort BdJInteractivePlaybackType = 3;
+
     internal const int SerializedLength = 12;
 
-    public bool IsMovieObject => ObjectType == 1;
+    public bool IsMovieObject => ObjectType == HdmvObjectType;
 
-    public bool IsBDJObject => ObjectType == 2;
+    public bool IsBDJObject => ObjectType == BdJObjectType;
 
-    public bool IsMoviePlayback => PlaybackType is 0 or 2;
+    public bool IsMoviePlayback =>
+        (IsMovieObject && PlaybackType == HdmvMoviePlaybackType)
+        || (IsBDJObject && PlaybackType == BdJMoviePlaybackType);
 
-    public bool IsInteractivePlayback => PlaybackType is 1 or 3;
+    public bool IsInteractivePlayback =>
+        (IsMovieObject && PlaybackType == HdmvInteractivePlaybackType)
+        || (IsBDJObject && PlaybackType == BdJInteractivePlaybackType);
 
     public bool IsAccessProhibited => (AccessType & 0x01) != 0;
 

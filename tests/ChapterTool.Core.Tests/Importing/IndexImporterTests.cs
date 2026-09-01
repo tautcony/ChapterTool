@@ -5,6 +5,13 @@ namespace ChapterTool.Core.Tests.Importing;
 
 public sealed class IndexImporterTests
 {
+    private const byte HdmvObjectType = 1;
+    private const byte BdJObjectType = 2;
+    private const byte AccessPermitted = 0;
+    private const byte HdmvMoviePlaybackType = 0;
+    private const byte HdmvInteractivePlaybackType = 1;
+    private const byte BdJMoviePlaybackType = 2;
+
     private const int HeaderSize = 40;
     private const int AppInfoSize = 40;
     private const int TitleEntrySize = 12;
@@ -88,8 +95,8 @@ public sealed class IndexImporterTests
     {
         var movieTitles = new (byte ObjectType, byte PlaybackType, string Data)[]
         {
-            (1, 0, "00000"),
-            (1, 2, "00001"),
+            (HdmvObjectType, HdmvMoviePlaybackType, "00000"),
+            (HdmvObjectType, HdmvMoviePlaybackType, "00001"),
         };
         var bytes = BuildIndexWithTitles(movieTitles);
         using var stream = new MemoryStream(bytes);
@@ -115,9 +122,9 @@ public sealed class IndexImporterTests
     {
         var titles = new (byte ObjectType, byte PlaybackType, string Data)[]
         {
-            (1, 0, "00001"),
-            (2, 0, "BDJ__"),
-            (1, 1, "00002"),
+            (HdmvObjectType, HdmvMoviePlaybackType, "00001"),
+            (BdJObjectType, BdJMoviePlaybackType, "BDJ__"),
+            (HdmvObjectType, HdmvInteractivePlaybackType, "00002"),
         };
         var bytes = BuildIndexWithTitles(titles);
         using var stream = new MemoryStream(bytes);
@@ -135,7 +142,7 @@ public sealed class IndexImporterTests
     {
         var titles = new (byte ObjectType, byte PlaybackType, string Data)[]
         {
-            (2, 0, "BDJ__"),
+            (BdJObjectType, BdJMoviePlaybackType, "BDJ__"),
         };
         var bytes = BuildIndexWithTitles(titles);
         using var stream = new MemoryStream(bytes);
@@ -152,7 +159,7 @@ public sealed class IndexImporterTests
     {
         var titles = new (byte ObjectType, byte PlaybackType, string Data)[]
         {
-            (1, 1, "00001"),
+            (HdmvObjectType, HdmvInteractivePlaybackType, "00001"),
         };
         var bytes = BuildIndexWithTitles(titles);
         using var stream = new MemoryStream(bytes);
@@ -162,6 +169,17 @@ public sealed class IndexImporterTests
         Assert.True(title.IsMovieObject);
         Assert.True(title.IsInteractivePlayback);
         Assert.False(title.IsMoviePlayback);
+    }
+
+    [Theory]
+    [InlineData(HdmvObjectType, BdJMoviePlaybackType)]
+    [InlineData(BdJObjectType, HdmvMoviePlaybackType)]
+    public void IndexTitleRejectsPlaybackTypeForDifferentObjectType(byte objectType, ushort playbackType)
+    {
+        var title = new IndexTitleEntry(objectType, AccessPermitted, playbackType, new IndexHdmvObjectReference(1));
+
+        Assert.False(title.IsMoviePlayback);
+        Assert.False(title.IsInteractivePlayback);
     }
 
     [Fact]
@@ -444,10 +462,10 @@ public sealed class IndexImporterTests
 
     private static void WriteTitleEntry(IndexBinaryBuilder builder, byte objectType, byte playbackType, string data)
     {
-        var firstByte = (byte)((objectType << 6) | ((0 & 0x03) << 4));
+        var firstByte = (byte)(((objectType & 0x03) << 6) | ((AccessPermitted & 0x03) << 4));
         builder.Byte(firstByte);
         builder.Reserved(3);
-        var playbackByte = (byte)((playbackType << 6) & 0xC0);
+        var playbackByte = (byte)((playbackType & 0x03) << 6);
         builder.Byte(playbackByte);
         builder.Byte(0);
 

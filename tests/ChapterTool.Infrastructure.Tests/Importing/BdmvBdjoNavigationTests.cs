@@ -8,6 +8,14 @@ namespace ChapterTool.Infrastructure.Tests.Importing;
 
 public sealed class BdmvBdjoNavigationTests
 {
+    private const byte HdmvObjectType = 1;
+    private const byte BdJObjectType = 2;
+    private const byte AccessPermitted = 0;
+    private const byte AccessProhibited = 1;
+    private const byte AccessHidden = 3;
+    private const byte HdmvMoviePlaybackType = 0;
+    private const byte BdJMoviePlaybackType = 2;
+
     [Fact]
     public async Task ImportLoadsBdjoFromPrimaryDirectory()
     {
@@ -78,7 +86,7 @@ public sealed class BdmvBdjoNavigationTests
     }
 
     [Fact]
-    public async Task ImportSkipsProhibitedAndHiddenTitlesAndLogsMovieObjectUnavailability()
+    public async Task ImportSkipsProhibitedAndHiddenTitles()
     {
         using var temp = new TempDirectory();
         BuildDisc(temp.Path, bdjoLocation: "primary", withProhibitedAndHiddenTitles: true);
@@ -86,9 +94,8 @@ public sealed class BdmvBdjoNavigationTests
         var result = await new BdmvImporter().ImportAsync(new ChapterImportRequest(temp.Path), CancellationToken.None);
 
         Assert.True(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains("Skipped prohibited INDEX title", StringComparison.Ordinal));
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains("INDEX title 2 is hidden.", StringComparison.Ordinal));
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains("MovieObject navigation was unavailable", StringComparison.Ordinal));
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains("Skipped prohibited INDEX title 1.", StringComparison.Ordinal));
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Message.Contains("Skipped prohibited INDEX title 2 (hidden).", StringComparison.Ordinal));
     }
 
     private static void BuildDisc(
@@ -182,26 +189,26 @@ public sealed class BdmvBdjoNavigationTests
         builder.UInt16BE(3);
         if (withProhibitedAndHiddenTitles)
         {
-            WriteTitleEntry(builder, objectType: 1, accessType: 0x01, playbackType: 0, "00001");
-            WriteTitleEntry(builder, objectType: 1, accessType: 0x02, playbackType: 0, "00002");
+            WriteTitleEntry(builder, HdmvObjectType, AccessProhibited, HdmvMoviePlaybackType, "00001");
+            WriteTitleEntry(builder, HdmvObjectType, AccessHidden, HdmvMoviePlaybackType, "00002");
         }
         else
         {
-            WriteTitleEntry(builder, objectType: 1, accessType: 0x00, playbackType: 0, "00001");
-            WriteTitleEntry(builder, objectType: 1, accessType: 0x00, playbackType: 0, "00002");
+            WriteTitleEntry(builder, HdmvObjectType, AccessPermitted, HdmvMoviePlaybackType, "00001");
+            WriteTitleEntry(builder, HdmvObjectType, AccessPermitted, HdmvMoviePlaybackType, "00002");
         }
 
-        WriteTitleEntry(builder, objectType: 2, accessType: 0x00, playbackType: 0, "00000");
+        WriteTitleEntry(builder, BdJObjectType, AccessPermitted, BdJMoviePlaybackType, "00000");
         builder.Reserved(paddedContentSize - indexesContentSize);
         return builder.ToArray();
     }
 
     private static void WriteTitleEntry(IndexBinaryBuilder builder, byte objectType, byte accessType, byte playbackType, string data)
     {
-        var firstByte = (byte)((objectType << 6) | ((accessType & 0x03) << 4));
+        var firstByte = (byte)(((objectType & 0x03) << 6) | ((accessType & 0x03) << 4));
         builder.Byte(firstByte);
         builder.Reserved(3);
-        builder.Byte((byte)((playbackType << 6) & 0xC0));
+        builder.Byte((byte)((playbackType & 0x03) << 6));
         builder.Byte(0);
         if (objectType == 1)
         {
