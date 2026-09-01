@@ -1,0 +1,29 @@
+docs/code-map/testing.md
+  s_ed4209fe3c68c3::t_7ea090448f3ed4 62
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Commands.cs
+  s_62558092337e82::t_446aa0c954b2a6 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.24",
+  "base_commit_sha": "82e1d8a4cce82ddcbb27d08fea8a54c8daaf54b7",
+  "prompts": {},
+  "sessions": {
+    "s_62558092337e82": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "d88935a2-b228-4834-b3bb-534b9e20aa3b",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_ed4209fe3c68c3": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05ac8-2ba6-7a91-868f-aaa0c55c056c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
