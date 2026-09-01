@@ -273,7 +273,7 @@ public sealed partial class MainWindowViewModel
     private void SyncClipDisplayOptions(NotifyCollectionChangedEventArgs args)
         => displayOptionCoordinator.SyncClipDisplayOptions(args, ClipOptions, ClipDisplayOptions);
 
-    private int ComboIndexFor(FrameRateOption entry)
+    private static int ComboIndexFor(FrameRateOption entry)
         => DisplayOptionCoordinator.ComboIndexFor(entry);
 
     private FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)

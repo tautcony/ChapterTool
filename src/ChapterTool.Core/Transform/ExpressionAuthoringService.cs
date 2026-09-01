@@ -257,7 +257,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
             return true;
         }
 
-        comment = default;
+        comment = null;
         return false;
     }
 
@@ -287,9 +287,12 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         {
             return new ExpressionTokenSpan(index - 1, 1, text, ExpressionTokenKind.Operator);
         }
-        var kind = c is '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']' ? ExpressionTokenKind.Punctuation
-            : c is '\'' or '"' ? ExpressionTokenKind.String
-            : ExpressionTokenKind.Unknown;
+        var kind = c switch
+        {
+            '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']' => ExpressionTokenKind.Punctuation,
+            '\'' or '"' => ExpressionTokenKind.String,
+            _ => ExpressionTokenKind.Unknown
+        };
         if (kind == ExpressionTokenKind.String)
         {
             index--;

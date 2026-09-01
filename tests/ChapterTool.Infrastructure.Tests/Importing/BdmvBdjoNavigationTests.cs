@@ -144,7 +144,7 @@ public sealed class BdmvBdjoNavigationTests
             flags |= 0x00080000;
         }
 
-        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(28), (uint)(4 + 6));
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(28), 4 + 6);
         BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(32), flags);
         Encoding.ASCII.GetBytes(name).CopyTo(bytes, 36);
         BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(42), 2);

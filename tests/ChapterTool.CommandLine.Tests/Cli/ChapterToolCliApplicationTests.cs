@@ -740,7 +740,7 @@ public sealed class ChapterToolCliApplicationTests
         var console = new RecordingCliConsole();
         var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => app.ConvertAsync(
@@ -764,7 +764,7 @@ public sealed class ChapterToolCliApplicationTests
         var console = new RecordingCliConsole();
         var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => app.InspectAsync(new CliInspectRequest(XmlFixture()), cts.Token));
@@ -923,7 +923,7 @@ public sealed class ChapterToolCliApplicationTests
         var originalOut = Console.Out;
         try
         {
-            using var writer = new StringWriter();
+            await using var writer = new StringWriter();
             Console.SetOut(writer);
             var command = new InspectCliCommand { Input = input };
 

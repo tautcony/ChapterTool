@@ -244,11 +244,7 @@ public sealed partial class ExpressionEditor : UserControl
             diagnosticRenderTimer.Stop();
             AnalyzeAndRender(renderDiagnosticsImmediately: true);
         }
-        else if (change.Property == EditorHeightProperty)
-        {
-            UpdateMultilineState();
-        }
-        else if (change.Property == IsMultilineExpandableProperty)
+        else if (change.Property == EditorHeightProperty || change.Property == IsMultilineExpandableProperty)
         {
             UpdateMultilineState();
         }
@@ -710,7 +706,7 @@ public sealed partial class ExpressionEditor : UserControl
     private bool IsOpenLeftClick(PointerPressedEventArgs args) =>
         CompletionPopup.IsOpen && args.GetCurrentPoint(CompletionList).Properties.IsLeftButtonPressed;
 
-    private bool TryGetCompletionSource(PointerPressedEventArgs args, out ExpressionCompletion completion)
+    private static bool TryGetCompletionSource(PointerPressedEventArgs args, out ExpressionCompletion completion)
     {
         var item = (args.Source as Visual)?.FindAncestorOfType<ListBoxItem>();
         if (item?.DataContext is ExpressionCompletion found)

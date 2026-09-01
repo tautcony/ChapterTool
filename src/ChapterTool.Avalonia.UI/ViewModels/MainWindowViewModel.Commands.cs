@@ -1,9 +1,8 @@
-using ChapterTool.Contracts.Configuration;
-using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
+/// <summary>Contains command wiring for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     private void InitializeCommands()

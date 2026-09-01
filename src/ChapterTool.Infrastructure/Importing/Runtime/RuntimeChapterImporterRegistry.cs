@@ -21,8 +21,6 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
         ".asf", ".wmv", ".wma", ".mp3", ".aac", ".ogg", ".oga", ".ogv",
         ".opus", ".wav", ".nut", ".aa", ".aax", ".ffmetadata", ".ffmeta");
 
-    private readonly IChapterTimeFormatter formatter;
-    private readonly IExternalToolLocator toolLocator;
     private readonly BdmvImporter bdmvImporter = new();
     private readonly TextChapterImporter textImporter;
     private readonly PremiereMarkerListImporter premiereMarkerListImporter;
@@ -46,8 +44,8 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
         IMediaChapterReader mediaChapterReader,
         IMediaChapterReader mp4FallbackChapterReader)
     {
-        this.formatter = formatter;
-        this.toolLocator = toolLocator;
+        this.Formatter = formatter;
+        this.ToolLocator = toolLocator;
         textImporter = new TextChapterImporter(formatter);
         premiereMarkerListImporter = new PremiereMarkerListImporter(formatter);
         xmlImporter = new XmlChapterImporter(formatter);
@@ -57,9 +55,9 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
         importers = CreateImporterMap();
     }
 
-    internal IChapterTimeFormatter Formatter => formatter;
+    internal IChapterTimeFormatter Formatter { get; }
 
-    internal IExternalToolLocator ToolLocator => toolLocator;
+    internal IExternalToolLocator ToolLocator { get; }
 
     public IChapterImporter? Resolve(string path)
     {
@@ -68,7 +66,7 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
             return bdmvImporter;
         }
 
-        return importers.TryGetValue(Path.GetExtension(path), out var importer) ? importer : null;
+        return importers.GetValueOrDefault(Path.GetExtension(path));
     }
 
     private IReadOnlyDictionary<string, IChapterImporter> CreateImporterMap()

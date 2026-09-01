@@ -19,9 +19,9 @@ public sealed partial class LogToolView : UserControl
 {
     private const double NarrowLayoutThreshold = 820;
     private const double InspectorWidth = 420;
+    private readonly TextEditor? rawEditor;
     private LogToolViewModel? subscribedViewModel;
     private bool previousDetailsOpen;
-    private TextEditor? rawEditor;
 
     public LogToolView()
     {
@@ -36,10 +36,15 @@ public sealed partial class LogToolView : UserControl
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Background = Brushes.Transparent,
             Padding = new Thickness(6, 4),
-            Document = new TextDocument()
+            Document = new TextDocument(),
+            SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("Json")
         };
-        rawEditor.SyntaxHighlighting = HighlightingManager.Instance.GetDefinition("Json");
         LogRawEditorHost.Content = rawEditor;
+    }
+
+    public LogToolView(TextEditor? rawEditor)
+    {
+        this.rawEditor = rawEditor;
     }
 
     private void OnDataContextChanged(object? sender, EventArgs args)
@@ -117,7 +122,7 @@ public sealed partial class LogToolView : UserControl
         }
 
         var narrow = width <= NarrowLayoutThreshold;
-        var detailsOpen = DataContext is LogToolViewModel viewModel && viewModel.ShowDetails;
+        var detailsOpen = DataContext is LogToolViewModel { ShowDetails: true };
 
         LogLayout.ColumnDefinitions[0].Width = detailsOpen && narrow
             ? new GridLength(0)
@@ -185,12 +190,12 @@ public sealed partial class LogToolView : UserControl
     {
         return source is not null
             && (ReferenceEquals(source, LogList)
-                || ((source.FindAncestorOfType<ListBox>() is { } list) && ReferenceEquals(list, LogList)));
+                || (source.FindAncestorOfType<ListBox>() is { } list && ReferenceEquals(list, LogList)));
     }
 
     private void FocusEntry(LogEntryViewModel? entry)
     {
-        if (entry is not null && LogList.ContainerFromItem(entry) is Control container)
+        if (entry is not null && LogList.ContainerFromItem(entry) is { } container)
         {
             var detailsAction = container.GetVisualDescendants()
                 .OfType<Button>()

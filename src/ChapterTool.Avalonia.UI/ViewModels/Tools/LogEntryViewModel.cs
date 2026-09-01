@@ -465,7 +465,7 @@ public sealed class LogEntryViewModel(
             && entry.Arguments.TryGetValue(key, out var argument)
             && !string.IsNullOrWhiteSpace(argument?.ToString()))
         {
-            value = argument!.ToString()!;
+            value = argument.ToString()!;
             return true;
         }
 

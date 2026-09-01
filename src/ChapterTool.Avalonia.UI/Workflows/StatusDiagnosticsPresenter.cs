@@ -243,7 +243,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
 
     /// <summary>Maps well-known message keys to the operation that produced them.</summary>
     private static string? OperationForKey(string key) =>
-        OperationByMessageKey.TryGetValue(key, out var operation) ? operation : null;
+        OperationByMessageKey.GetValueOrDefault(key);
 
     public void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
     {

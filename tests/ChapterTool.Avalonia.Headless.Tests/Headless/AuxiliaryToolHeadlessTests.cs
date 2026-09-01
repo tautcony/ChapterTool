@@ -106,7 +106,7 @@ public sealed class AuxiliaryToolHeadlessTests
             Assert.True(viewModel.IsDetailsOpen);
             Assert.True(viewModel.ShowDetails);
             var detailsTabs = window.GetVisualDescendants().OfType<TabControl>()
-                .Single(control => control.IsVisible && control.Name == "LogDetailsTabs");
+                .Single(control => control is { IsVisible: true, Name: "LogDetailsTabs" });
             Assert.Equal(3, detailsTabs.Items.Count);
 
             var rawExpander = window.GetVisualDescendants().OfType<Expander>()
@@ -181,7 +181,7 @@ public sealed class AuxiliaryToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             CaptureIfRequested(window, "log-narrow.png");
             var actionButtons = window.GetVisualDescendants().OfType<Button>()
-                .Where(button => button.IsEffectivelyVisible && button.Command is not null)
+                .Where(button => button is { IsEffectivelyVisible: true, Command: not null })
                 .ToArray();
             Assert.NotEmpty(actionButtons);
             var contentSurface = window.GetVisualDescendants().OfType<Grid>()
@@ -278,7 +278,7 @@ public sealed class AuxiliaryToolHeadlessTests
             Assert.Contains(localizer.GetString("Tool.Log.NoDetails"), rendered);
             Assert.Contains(
                 window.GetVisualDescendants().OfType<TabControl>(),
-                static control => control.IsVisible && control.Name == "LogDetailsTabs");
+                static control => control is { IsVisible: true, Name: "LogDetailsTabs" });
         }
         finally
         {

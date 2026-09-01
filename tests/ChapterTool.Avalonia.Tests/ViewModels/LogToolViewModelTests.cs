@@ -278,7 +278,7 @@ public sealed class LogToolViewModelTests
         Assert.Contains("1) 00015.mpls, 00007.m2ts, 0:23:41", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Chapters, 3 chapters", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - h264/AVC, 1080p24/1.001 (16:9)", importProperty.Value, StringComparison.Ordinal);
-        Assert.Equal(2, importProperty.Value.Split("RAW/PCM, [jpn], stereo, 48kHz", StringSplitOptions.None).Length - 1);
+        Assert.Equal(2, importProperty.Value.Split("RAW/PCM, [jpn], stereo, 48kHz").Length - 1);
         Assert.Contains("2) VTS_05_0.IFO, VTS_05_1, 1:49:12", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Chapters, 7 chapters", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Format, DVD IFO", importProperty.Value, StringComparison.Ordinal);
@@ -760,8 +760,8 @@ public sealed class LogToolViewModelTests
 
         Assert.False(viewModel.HasClipboard);
         Assert.False(viewModel.CanCopySelected);
-        Assert.False(viewModel.CopySummaryCommand.CanExecute(null));
-        Assert.False(viewModel.CopyDetailsCommand.CanExecute(null));
+        Assert.False(viewModel.CopySummaryCommand.CanExecute());
+        Assert.False(viewModel.CopyDetailsCommand.CanExecute());
     }
 
     private sealed class FakeClipboardService : IClipboardService

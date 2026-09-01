@@ -510,8 +510,7 @@ public sealed class SettingsToolHeadlessTests
     {
         var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
         var tab = tabControl.ItemsView.OfType<TabItem>().Single(item =>
-            item.Header is TextBlock header
-            && header.Text is "外观" or "Appearance" or "外観");
+            item.Header is TextBlock { Text: "外观" or "Appearance" or "外観" });
         tabControl.SelectedItem = tab;
     }
 

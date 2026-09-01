@@ -204,7 +204,7 @@ public sealed class WasmWorkspace : IDisposable
             : Math.Clamp(value, 0.01m, 0.30m);
     }
 
-    public ChapterEditingOptions EditingOptions { get; set; } = ChapterEditingOptions.Default;
+    public ChapterEditingOptions EditingOptions { get; set; }
 
     public string OutputTextEncodingId => OutputTextEncodings.Id(TextEncoding);
 

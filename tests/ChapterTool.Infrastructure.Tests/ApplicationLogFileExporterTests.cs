@@ -24,7 +24,7 @@ public sealed class ApplicationLogFileExporterTests : IDisposable
 
         Assert.True(result.Succeeded, result.Error);
         Assert.Contains("chaptertool-export-", Path.GetFileName(result.Path), StringComparison.Ordinal);
-        Assert.DoesNotMatch("chaptertool-\\d{8}\\.log", Path.GetFileName(result.Path!));
+        Assert.DoesNotMatch(@"chaptertool-\d{8}\.log", Path.GetFileName(result.Path!));
         var bytes = await File.ReadAllBytesAsync(result.Path!);
         Assert.False(bytes.AsSpan().StartsWith(new byte[] { 0xEF, 0xBB, 0xBF }));
         using var document = JsonDocument.Parse(bytes);
@@ -97,7 +97,7 @@ public sealed class ApplicationLogFileExporterTests : IDisposable
     {
         var exporter = new ApplicationLogFileExporter(directory);
         using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
+        await cancellation.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await exporter.ExportAsync(

@@ -59,7 +59,7 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs` (delete-rows timing and frame display options coverage)
   - `tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Editing/SampleChapterNameTemplateTests.cs`
-  - `tests/ChapterTool.Core.Tests/Editing/ChapterContentServiceTests.cs`
+  - `tests/ChapterTool.Core.Tests/Importing/ChapterContentServiceTests.cs`
 - transform
   - `tests/ChapterTool.Core.Tests/Transform/FrameRateServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterFpsTransformServiceTests.cs`

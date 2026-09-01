@@ -229,7 +229,7 @@ public sealed partial class ChapterToolCliApplication
         return false;
     }
 
-    private async Task WriteFileAsync(string targetPath, ChapterExportResult export, CliConvertRequest request, CancellationToken cancellationToken)
+    private static async Task WriteFileAsync(string targetPath, ChapterExportResult export, CliConvertRequest request, CancellationToken cancellationToken)
     {
         var directory = Path.GetDirectoryName(targetPath);
         if (!string.IsNullOrWhiteSpace(directory))

@@ -1,5 +1,4 @@
 using ChapterTool.Core.Importing.Disc;
-using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Tests.Importing;
 

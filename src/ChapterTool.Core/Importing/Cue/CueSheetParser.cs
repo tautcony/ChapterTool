@@ -8,7 +8,7 @@ namespace ChapterTool.Core.Importing.Cue;
 /// <summary>
 /// Parses CUE sheet text into ChapterTool chapter data.
 /// </summary>
-public sealed partial class CueSheetParser
+public static partial class CueSheetParser
 {
     /// <summary>
     /// Executes the Parse operation.

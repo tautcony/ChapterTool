@@ -11,7 +11,7 @@ internal sealed record BdmvPlaylistCandidate(
     MplsAggregateProjection Projection,
     IReadOnlyList<string> Evidence);
 
-internal sealed class BdmvPlaylistScanner
+internal static class BdmvPlaylistScanner
 {
     internal const int MaximumPlaylists = 4096;
     internal const int MaximumRepeatedSegments = 2;

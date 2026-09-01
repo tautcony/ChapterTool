@@ -177,17 +177,18 @@ internal sealed class HdmvNavigationResolver
         var src = insn.OperandCount > 1 ? state.ReadOperand(command.SourceOperand, insn.Operand2Immediate) : 0;
         var next = pc + 1;
 
-        if (insn.Group == 0)
+        switch (insn.Group)
         {
-            if (ExecuteBranchGroup(state, command, dst, src, pc, ref next)) return;
-        }
-        else if (insn.Group == 1)
-        {
-            if (!Compare(insn.CompareOption, dst, src)) next++;
-        }
-        else if (insn.Group == 2)
-        {
-            ExecuteSetGroup(state, insn, command, dst, src);
+            case 0 when ExecuteBranchGroup(state, command, dst, src, pc, ref next):
+                return;
+            case 1:
+            {
+                if (!Compare(insn.CompareOption, dst, src)) next++;
+                break;
+            }
+            case 2:
+                ExecuteSetGroup(state, insn, command, dst, src);
+                break;
         }
 
         state.ProgramCounter = next;
@@ -212,14 +213,14 @@ internal sealed class HdmvNavigationResolver
 
     private static bool ExecuteJump(ExecutionState state, byte option, uint dst, ref int next)
     {
-        if (option == 1)
+        switch (option)
         {
-            next = dst > int.MaxValue ? int.MaxValue : (int)dst;
-        }
-        else if (option == 2)
-        {
-            state.ProgramCounter = int.MaxValue;
-            return true;
+            case 1:
+                next = dst > int.MaxValue ? int.MaxValue : (int)dst;
+                break;
+            case 2:
+                state.ProgramCounter = int.MaxValue;
+                return true;
         }
 
         return false;
@@ -262,13 +263,14 @@ internal sealed class HdmvNavigationResolver
 
     private static void ExecuteSetGroup(ExecutionState state, MovieObjectInstruction instruction, MovieObjectCommand command, uint dst, uint src)
     {
-        if (instruction.Subgroup == 0)
+        switch (instruction.Subgroup)
         {
-            ExecuteSet(state, instruction.SetOption, command, dst, src);
-        }
-        else if (instruction.Subgroup == 1)
-        {
-            ExecuteSetSystem(state, instruction.SetOption, dst, src);
+            case 0:
+                ExecuteSet(state, instruction.SetOption, command, dst, src);
+                break;
+            case 1:
+                ExecuteSetSystem(state, instruction.SetOption, dst, src);
+                break;
         }
     }
 

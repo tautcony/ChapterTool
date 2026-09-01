@@ -31,14 +31,10 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     private readonly IApplicationLogExporter? exporter;
     private readonly SynchronizationContext? synchronizationContext;
     private readonly List<LogEntryViewModel> entryViewModels = [];
-    private IReadOnlyList<LogEntryViewModel> filteredEntries = [];
     private IReadOnlyList<LogFilterOption> filterOptions;
     private IReadOnlyList<LogExportFormatOption> exportFormatOptions;
     private LogFilterOption selectedFilter;
     private LogExportFormatOption selectedExportFormat;
-    private bool isDetailsOpen;
-    private bool isExporting;
-    private string statusText = string.Empty;
     private string? statusResourceKey;
     private string? statusArgument;
     private bool disposed;
@@ -130,9 +126,9 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public IReadOnlyList<LogEntryViewModel> FilteredEntries
     {
-        get => filteredEntries;
-        private set => SetProperty(ref filteredEntries, value);
-    }
+        get;
+        private set => SetProperty(ref field, value);
+    } = [];
 
     /// <summary>Gets or sets currently highlighted row. It does not open the inspector.</summary>
     public LogEntryViewModel? SelectedEntry
@@ -156,10 +152,10 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     /// <summary>Gets a value indicating whether true only while the user is inspecting the selected row.</summary>
     public bool IsDetailsOpen
     {
-        get => isDetailsOpen;
+        get;
         private set
         {
-            if (SetProperty(ref isDetailsOpen, value))
+            if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(ShowDetails));
                 CloseDetailsCommand.RaiseCanExecuteChanged();
@@ -169,10 +165,10 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public bool IsExporting
     {
-        get => isExporting;
+        get;
         private set
         {
-            if (SetProperty(ref isExporting, value))
+            if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(CanExport));
                 OnPropertyChanged(nameof(HasSecondaryActions));
@@ -183,15 +179,15 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public string StatusText
     {
-        get => statusText;
+        get;
         private set
         {
-            if (SetProperty(ref statusText, value))
+            if (SetProperty(ref field, value))
             {
                 OnPropertyChanged(nameof(HasStatus));
             }
         }
-    }
+    } = string.Empty;
 
     public bool HasSelectedEntry => SelectedEntry is not null;
 

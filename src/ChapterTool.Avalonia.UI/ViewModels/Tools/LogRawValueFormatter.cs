@@ -75,26 +75,21 @@ internal static class LogRawValueFormatter
             return true;
         }
 
-        if (value is DateTime dateTime)
+        switch (value)
         {
-            normalized = dateTime.ToString("O", CultureInfo.InvariantCulture);
-            return true;
+            case DateTime dateTime:
+                normalized = dateTime.ToString("O", CultureInfo.InvariantCulture);
+                return true;
+            case DateTimeOffset dateTimeOffset:
+                normalized = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
+                return true;
+            case char or Enum or Guid or Uri or TimeSpan:
+                normalized = value.ToString();
+                return true;
+            default:
+                normalized = null;
+                return false;
         }
-
-        if (value is DateTimeOffset dateTimeOffset)
-        {
-            normalized = dateTimeOffset.ToString("O", CultureInfo.InvariantCulture);
-            return true;
-        }
-
-        if (value is char or Enum or Guid or Uri or TimeSpan)
-        {
-            normalized = value.ToString();
-            return true;
-        }
-
-        normalized = null;
-        return false;
     }
 
     private static bool IsNumeric(object value) => value switch
