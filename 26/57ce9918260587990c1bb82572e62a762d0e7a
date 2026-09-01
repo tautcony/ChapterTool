@@ -1,0 +1,36 @@
+.codex/skills/.openspec-target
+  h_3705811fa4502c 1
+.codex/skills/openspec-apply-change/SKILL.md
+  h_3705811fa4502c 10,15,17,26,28,50-51,54,58-72,80-82,103,143,174-175,177-181
+.codex/skills/openspec-archive-change/SKILL.md
+  h_3705811fa4502c 10,15-17,23,25-28,30,33-60,69,71,73,84,91-94,97,105-128,137,144,158,163-164,166,170,175-176,178-182
+.codex/skills/openspec-bulk-archive-change/SKILL.md
+  h_3705811fa4502c 10,17-19,33,40-64,80-84,87,89-91,94,112-114,121,126,131,133,137,144,154-170,173-177,180-203,207,210,212,214,220,233-234,238,246-247,261-262,278,282-283,292,296,307,321,324,326-339
+.codex/skills/openspec-continue-change/SKILL.md
+  h_3705811fa4502c 10,15,21,23-26,28,36,44-45,52,55,72-73,75-77,105,107,111
+.codex/skills/openspec-explore/SKILL.md
+  h_3705811fa4502c 10,15,19,58-71,74-76,100-105,113-121,137-146,177,180-187,199-219,226,251-253,256-258,261-263,303,307-308
+.codex/skills/openspec-ff-change/SKILL.md
+  h_3705811fa4502c 10,15,23,42,45,47,61,64-66,70,72-78,81,93-95,99-100,109-110
+.codex/skills/openspec-new-change/SKILL.md
+  h_3705811fa4502c 10,15,23
+.codex/skills/openspec-onboard/SKILL.md
+  h_3705811fa4502c 10,15,31,158,214-218,235,239,377-378,380,382,440,442,447,480-483,485,489-492,498,513-514,532-535,537,541-544,546
+.codex/skills/openspec-propose/SKILL.md
+  h_3705811fa4502c 10,15-17,19,23-25,29,35,37,44-60,64-68,71,77,80,82,96,99-101,105,107-113,116,119,128-130,134-135,144-147
+.codex/skills/openspec-sync-specs/SKILL.md
+  h_3705811fa4502c 10,17-19,25,27-30,32,34,43-44,47-65,77-93,97,108,115-136,141-144,146-148,150-152,154-157,162-165,170-173,186-191,206-225,228-230,235,254,258-262
+.codex/skills/openspec-verify-change/SKILL.md
+  h_3705811fa4502c 10,15,21,23-26,28,32,120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "2657ce9918260587990c1bb82572e62a762d0e7a",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
