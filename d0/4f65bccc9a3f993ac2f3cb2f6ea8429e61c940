@@ -1,0 +1,63 @@
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs
+  s_891ccb121c1fae::t_2c35cc16f49c54 329
+  s_891ccb121c1fae::t_ed4612b029d39f 110
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml.cs
+  s_891ccb121c1fae::t_2e3effd02e905d 89-100
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_891ccb121c1fae::t_eaf77b2602a19d 59
+src/ChapterTool.Avalonia.UI/Resources/Styles.axaml
+  s_891ccb121c1fae::t_650b7aad23ee20 234-237
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml
+  s_891ccb121c1fae::t_74f63633e162b6 447-449
+  s_891ccb121c1fae::t_29a634ac678818 393
+  s_891ccb121c1fae::t_39e6ee8ca03fc6 480-481
+  s_891ccb121c1fae::t_08dfd931fda496 323-324
+  s_891ccb121c1fae::t_c510f832dd5890 193
+  s_891ccb121c1fae::t_a3b658b3063168 29-36,161-162,165
+  s_891ccb121c1fae::t_3153d4b2cea2b4 66
+  s_891ccb121c1fae::t_3b5d208fcce84a 117-118,121
+  s_891ccb121c1fae::t_3ac5ed47d1023e 404,410,416
+  s_891ccb121c1fae::t_e50be508d15b9d 37,39,41-42,116,160
+  s_891ccb121c1fae::t_50f7160d8ba131 38,40
+  s_891ccb121c1fae::t_0a643397a2716b 191-192,194-200
+  s_891ccb121c1fae::t_328880ad7d8187 402-403,405-409,411-415,417-419
+  s_891ccb121c1fae::t_a4569b30d55bc3 400,420-433,435,440-444
+  s_891ccb121c1fae::t_4bfaef7a89cc3f 399,446
+  s_891ccb121c1fae::t_bda3de4f3688d4 392,396-397
+  s_891ccb121c1fae::t_67bbe44b86bb0f 394-395
+  s_891ccb121c1fae::t_3b711749292bf6 459
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_891ccb121c1fae::t_eaf77b2602a19d 59
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs
+  s_891ccb121c1fae::t_58ed59417892a4 58-60
+  s_891ccb121c1fae::t_ad1461d367ad2e 46-48,57,61,244
+  s_891ccb121c1fae::t_7fe80ab657f588 218-219
+  s_891ccb121c1fae::t_af3841ce072a7c 245
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_891ccb121c1fae::t_eaf77b2602a19d 59
+AGENTS.md
+  s_891ccb121c1fae::t_048062a64aff1a 28
+src/ChapterTool.Avalonia/Services/StandardToolCatalogFactory.cs
+  s_891ccb121c1fae::t_a78e826ddbb6fa 43-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "d04f65bccc9a3f993ac2f3cb2f6ea8429e61c940",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_891ccb121c1fae": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05d12-8cbb-7ae3-91c1-0213c32731c8",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
