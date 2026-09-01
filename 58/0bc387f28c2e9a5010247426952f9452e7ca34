@@ -1,0 +1,116 @@
+docs/code-map/README.md
+  s_f705e231d63cbc::t_30c4b51d88a383 27-28
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.StatusLog.cs
+  s_f705e231d63cbc::t_2bf104fa201c42 24-25,27,30
+  s_f705e231d63cbc::t_a316afb60a66cd 28
+  s_f705e231d63cbc::t_4c554a99097f96 96-100
+  s_f705e231d63cbc::t_6a30fae144e384 31
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs
+  s_f705e231d63cbc::t_692dec5790c0e4 135,140-141
+  s_f705e231d63cbc::t_4b2b5dec87cf48 55,63,67-82
+  s_f705e231d63cbc::t_ab9fc1fb34919c 184-190
+  s_f705e231d63cbc::t_7b4c906660c01b 33-40
+  s_f705e231d63cbc::t_cdabd9ab07e82e 127
+  s_f705e231d63cbc::t_b6fc8e93f76b27 228-230
+  s_f705e231d63cbc::t_63504d6b38dfee 103,110,113-115,119-121,128-130
+  s_f705e231d63cbc::t_fa32680c78b6b3 83-84
+  s_f705e231d63cbc::t_ad94dfff43016b 131-132
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs
+  s_f705e231d63cbc::t_55fe5f6f9f8cca 137-141,147-150
+  s_f705e231d63cbc::t_cebc096807202b 70-71,76-78,92-93
+  s_f705e231d63cbc::t_cbb5569da1d575 36-37,45-46,57-58
+  s_f705e231d63cbc::t_9c317f266027e8 189,194-199,207
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  s_f705e231d63cbc::t_cb742266857c27 16
+  s_f705e231d63cbc::t_71bc0ca227a9ee 34
+  s_f705e231d63cbc::t_3abe63022af238 400-402,405,407-408
+tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs
+  s_f705e231d63cbc::t_62e1af3994814f 32,43,47,51
+  s_f705e231d63cbc::t_e95e9f700529a3 137,155
+tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs
+  s_f705e231d63cbc::t_abefb6cc542b39 244-247
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs
+  s_f705e231d63cbc::t_de4d30f6f65447 303,306
+src/ChapterTool.Avalonia.UI/Workflows/StatusDiagnosticsPresenter.cs
+  s_f705e231d63cbc::t_300925e0d6fb01 114-120
+  s_f705e231d63cbc::t_6ad003b48f8138 245-252
+  s_f705e231d63cbc::t_d7fdd55d422c55 68-78,80,96,107-113
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  s_f705e231d63cbc::t_a47f812ed8b49b 688-691
+  s_f705e231d63cbc::t_52b30b16d267c5 644-647
+  s_f705e231d63cbc::t_16c998e0297f5c 1244-1245
+  s_f705e231d63cbc::t_f2957718988a6c 1495-1498
+  s_f705e231d63cbc::t_9f39cf6fe5903a 565-566
+  s_f705e231d63cbc::t_df3ad75f885ba0 927-928
+  s_f705e231d63cbc::t_2775ceefdaaa95 591-592
+  s_f705e231d63cbc::t_7cb182b371c2ab 1474-1475
+  s_f705e231d63cbc::t_e94ccdfe78c405 1516-1519
+docs/code-map/ui-logging.md
+  s_f705e231d63cbc::t_6067e26710bcb3 9,23-27,33,35-69,77,79,81,83,85,87-101
+  s_f705e231d63cbc::t_2b51b63138e084 1-8,10-22,28-32,34
+  s_f705e231d63cbc::t_40c3f0591203ed 70-76,78,80,82,84,86
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_f705e231d63cbc::t_44630903c7b8e6 24
+  s_f705e231d63cbc::t_8b8516bb7769bf 109
+  s_f705e231d63cbc::t_1fc635abc9488e 811-815
+  s_f705e231d63cbc::t_cf395b67a5fcbb 887-890,901-903,913-914
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Commands.cs
+  s_f705e231d63cbc::t_885ee76b6721c4 128
+  s_f705e231d63cbc::t_39231864ba8772 118
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Settings.cs
+  s_f705e231d63cbc::t_ab1dfef6d6a245 17-21,23-27
+  s_f705e231d63cbc::t_d62788465aba43 1-2
+src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs
+  s_0f0714f7a9bf6c::t_081123ede5c1b2 242
+  s_f705e231d63cbc::t_9051d0de05d26d 158-159
+  s_f705e231d63cbc::t_5d541243bd8e81 8
+  s_f705e231d63cbc::t_613d743a13d4c7 72-73
+src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs
+  s_f705e231d63cbc::t_c09b1c5138b205 65
+  s_f705e231d63cbc::t_3765684f439727 113
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs
+  s_f705e231d63cbc::t_4026278ebf71bb 477
+tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs
+  s_f705e231d63cbc::t_06164753563cd9 269-270
+  s_f705e231d63cbc::t_da40feeba13352 450-451,459
+  s_f705e231d63cbc::t_6f21e286d6fdc9 135
+  s_f705e231d63cbc::t_63c788ebe0a0af 428-429
+  s_f705e231d63cbc::t_4968081ae4ca02 484,487
+  s_f705e231d63cbc::t_d77fddada00c4a 328-329
+  s_f705e231d63cbc::t_36a1a1e0a19287 110-111,116
+  s_f705e231d63cbc::t_8e388ba9122d87 149-150
+  s_f705e231d63cbc::t_9a7f698d45710e 350
+  s_f705e231d63cbc::t_3441224cab7936 510
+  s_f705e231d63cbc::t_467bad5f7f68a9 662-663,676
+  s_f705e231d63cbc::t_7b77d130c550a7 691-692
+  s_f705e231d63cbc::t_6d97d44a4001b6 147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "580bc387f28c2e9a5010247426952f9452e7ca34",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_0f0714f7a9bf6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05d01-fb8c-7613-a70f-680d09d4c814",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_f705e231d63cbc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "da6e5756-b24a-412d-b499-d6b8c1c02cb6",
+        "model": "deepseek-v4-flash"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
