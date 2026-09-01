@@ -21,6 +21,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 {
     private readonly IChapterEditingService editingService;
     private readonly IFrameRateService frameRateService;
+    private readonly IChapterTimeFormatter timeFormatter;
     private readonly ChapterExportService exportService;
     private readonly IShellService? shellService;
     private readonly LoadSaveWorkflow loadSaveWorkflow;
@@ -105,6 +106,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         this.editingService = editingService;
         this.AuxiliaryToolHost = auxiliaryToolHost;
         this.frameRateService = frameRateService;
+        this.timeFormatter = formatter;
         this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
         this.Capabilities = capabilities ?? new RuntimeCapabilities(
@@ -806,7 +808,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             : SelectedRowIndexes;
         var result = editingService.CreateZones(CurrentInfo, indexes, (decimal)CurrentInfo.FramesPerSecond);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", CurrentInfo.Chapters.Count));
+        var zoneCount = string.IsNullOrEmpty(result.Zones) ? 0 : result.Zones.Split('/').Length - 1;
+        Log(LogLevel.Information,
+            $"Create zones: selectedRows={indexes.Count}, chapters={CurrentInfo.Chapters.Count}, zones={zoneCount}",
+            "Zones",
+            ("selectedRows", indexes.Count), ("chapters", CurrentInfo.Chapters.Count), ("zones", zoneCount));
         LogDiagnostics("Create zones", result.Diagnostics);
         NotifyStateChanged();
         return result.Zones;
@@ -878,7 +884,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         if (shellService is null || !Capabilities.CanOpenLocalPaths)
         {
             SetStatus("Status.ShellUnavailable");
-            LogStatus(LogLevel.Warning);
+            Log(LogLevel.Warning,
+                "Open related media skipped: shell unavailable",
+                "Open",
+                ("reference", (parameter as ReferencedMediaFile)?.RelativePath ?? string.Empty));
             NotifyStateChanged();
             return;
         }
@@ -889,7 +898,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         if (string.IsNullOrWhiteSpace(target) || !File.Exists(target))
         {
             SetStatus("Status.RelatedMediaNotFound");
-            Log(LogLevel.Warning, "Log.RelatedMediaNotFound",
+            Log(LogLevel.Warning,
+                $"Related media not found: reference='{reference?.RelativePath ?? string.Empty}', resolved='{target ?? string.Empty}'",
+                "Open",
                 ("status", StatusText),
                 ("reference", reference?.RelativePath ?? string.Empty),
                 ("resolved", target ?? string.Empty));
@@ -899,7 +910,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
         await shellService.OpenAsync(target, cancellationToken);
         SetStatus("Status.OpenedFile", ("fileName", Path.GetFileName(target)));
-        Log("Log.OpenedPath", ("status", StatusText), ("path", target));
+        Log(LogLevel.Information, $"Opened related media: path='{target}'", "Open",
+            ("status", StatusText), ("path", target));
         NotifyStateChanged();
     }
 

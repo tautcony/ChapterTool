@@ -241,7 +241,10 @@ public sealed class ToolWindowViewModelTests
         Assert.True(owner.ApplyExpression);
         Assert.Contains("Lua expression syntax error", owner.StatusText, StringComparison.Ordinal);
         Assert.Contains("Lua expression syntax error", expression.StatusText, StringComparison.Ordinal);
-        Assert.Contains(owner.LogService.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+        Assert.Contains(owner.LogService.Entries, static entry =>
+            entry.Operation == "Lua expression script"
+            && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
+            && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
     }
 
     private static MainWindowViewModel CreateOwner(IAppLocalizer? localizer = null)

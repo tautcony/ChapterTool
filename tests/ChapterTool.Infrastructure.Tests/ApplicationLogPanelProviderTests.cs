@@ -29,28 +29,26 @@ public sealed class ApplicationLogPanelProviderTests
     }
 
     [Fact]
-    public void PreservesMessageKeysArgumentsAndTechnicalDetails()
+    public void PreservesMessageArgumentsAndTechnicalDetails()
     {
         var service = new ApplicationLogPanelProvider();
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Diagnostic",
             ["operation"] = "Load",
             ["code"] = ChapterDiagnosticCode.FfprobeProcessFailed,
             ["TechnicalDetail"] = "exitCode=1 stderr=failed"
         };
 
-        logger.Log(LogLevel.Error, new EventId(0, "Log.Diagnostic"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Error, new EventId(0, "Diagnostic"), state, null, static (_, _) => "Load diagnostic: code=Process.FfprobeFailed");
 
         var entry = Assert.Single(service.Entries);
         Assert.Equal(LogLevel.Error, entry.Level);
-        Assert.Equal("Log.Diagnostic", entry.MessageKey);
-        Assert.Equal("Log.Diagnostic", entry.Message);
+        Assert.Equal("Load diagnostic: code=Process.FfprobeFailed", entry.Message);
         Assert.Equal("Load", entry.Arguments?["operation"]);
         Assert.Equal(ChapterDiagnosticCode.FfprobeProcessFailed, entry.Arguments?["code"]);
         Assert.Equal("exitCode=1 stderr=failed", entry.TechnicalDetail);
-        Assert.DoesNotContain(entry.Arguments!, pair => pair.Key is "MessageKey" or "TechnicalDetail");
+        Assert.DoesNotContain(entry.Arguments!, pair => pair.Key == "TechnicalDetail");
     }
 
     [Fact]
@@ -132,12 +130,11 @@ public sealed class ApplicationLogPanelProviderTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.ImportSummary",
             ["operation"] = "Load",
             ["success"] = true
         };
 
-        logger.Log(LogLevel.Information, new EventId(0, "Log.ImportSummary"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null, static (_, _) => "Load completed");
 
         var entry = Assert.Single(service.Entries);
         Assert.Equal("Load", entry.Operation);
@@ -151,12 +148,11 @@ public sealed class ApplicationLogPanelProviderTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.SavingChapters",
             ["operation"] = "ignored",
             ["Operation"] = "Save"
         };
 
-        logger.Log(LogLevel.Information, new EventId(0, "Log.SavingChapters"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null, static (_, _) => "Saving chapters");
 
         Assert.Equal("Save", Assert.Single(service.Entries).Operation);
     }

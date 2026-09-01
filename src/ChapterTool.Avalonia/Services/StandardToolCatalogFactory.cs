@@ -40,7 +40,9 @@ public static class StandardToolCatalogFactory
                         context.Localizer,
                         context.Clipboard,
                         logExporter,
-                        context.Capabilities)
+                        context.Capabilities,
+                        context.ShellService,
+                        Path.Combine(context.SettingsDirectory, "logs"))
                 }),
             new ToolDescriptor(
                 ToolIds.Settings,

@@ -14,8 +14,9 @@
         DragDrop.Drop="OnDrop"
         x:CompileBindings="True">
   <DockPanel x:Name="RootPanel" LastChildFill="True">
-    <Border DockPanel.Dock="Bottom"
-            Background="{DynamicResource Brush.ToolBar}"
+    <Border x:Name="StatusBar"
+            DockPanel.Dock="Bottom"
+            Background="{DynamicResource Brush.StatusBar}"
             BorderBrush="{DynamicResource Brush.Border1}"
             BorderThickness="0,1,0,0">
       <Grid ColumnDefinitions="*,Auto,Auto" Height="28">

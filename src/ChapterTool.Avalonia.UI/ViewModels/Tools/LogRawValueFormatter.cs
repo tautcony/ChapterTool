@@ -27,7 +27,6 @@ internal static class LogRawValueFormatter
             ["category"] = NullIfEmpty(entry.Category),
             ["eventId"] = entry.EventId,
             ["eventName"] = NullIfEmpty(entry.EventName),
-            ["messageKey"] = NullIfEmpty(entry.MessageKey),
             ["message"] = summary,
             ["technicalDetail"] = NullIfEmpty(entry.TechnicalDetail),
             ["exception"] = NullIfEmpty(entry.ExceptionText),

@@ -25,7 +25,7 @@
 - Use `reusable-learnings.md` for general rules and `references/execution-corrections.md` for correction patterns.
 - Store user-facing Chinese strings as valid UTF-8.
 - Validate localization through behavior, rendered UI, or resource-level checks. Do not hard-code incidental mojibake examples.
-- Treat `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/*.axaml` as the shared translation source. After changing a locale, run `python3 scripts/axaml-to-json.py`, then `python3 scripts/axaml-to-json.py --check`. Do not edit generated Wasm JSON files by hand. CLI JSON resources are separate.
+- Treat `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/*.axaml` as the shared translation source. After changing a locale, run `uv run --project scripts scripts/axaml-to-json.py`, then `uv run --project scripts scripts/axaml-to-json.py --check`. Run `uv sync --project scripts` once when the scripts environment is not installed. Do not edit generated Wasm JSON files by hand. CLI JSON resources are separate.
 - Define, parse, and bind command-line interface (CLI) arguments through `DotMake.CommandLine`.
 - Do not write code in `Program.cs` or CLI support files that recognizes or dispatches raw `args`.
 - Keep this file focused on durable repository guidance. Do not add one-off implementation notes, completed change records, or transient archive paths here.

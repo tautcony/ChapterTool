@@ -24,6 +24,8 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
   - shared UI, desktop shell, and runtime service wiring
 - `program-form-capability-map.md`
   - all program forms, shared layers, capability comparison, known boundaries, and change tracking
+- `ui-logging.md`
+  - UI logging scenarios, triggers, recorded content, and log sinks
 - `testing.md`
   - which test project and test files verify each code area
 

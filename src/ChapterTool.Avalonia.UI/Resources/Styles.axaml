@@ -204,8 +204,8 @@
         <Grid Margin="8" Effect="drop-shadow(0 0 8 #60000000)">
           <Border Padding="8,6"
                   CornerRadius="4"
-                  Background="{DynamicResource Brush.Popup}"
-                  BorderBrush="{DynamicResource Brush.PopupBorder}"
+                  Background="{DynamicResource Brush.Contents}"
+                  BorderBrush="{DynamicResource Brush.Border2}"
                   BorderThickness="1"
                   MaxWidth="{TemplateBinding MaxWidth}"
                   MinHeight="{TemplateBinding MinHeight}"
@@ -231,10 +231,10 @@
       <ControlTemplate>
         <Grid Margin="4" Effect="drop-shadow(0 0 4 #80000000)">
           <Border Name="LayoutRoot"
-                  Padding="12"
-                  Background="{DynamicResource Brush.Popup}"
-                  BorderThickness="1"
-                  BorderBrush="{DynamicResource Brush.PopupBorder}"
+                  Padding="{TemplateBinding Padding}"
+                  Background="{TemplateBinding Background}"
+                  BorderThickness="{TemplateBinding BorderThickness}"
+                  BorderBrush="{TemplateBinding BorderBrush}"
                   CornerRadius="{TemplateBinding CornerRadius}">
             <ScrollViewer HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
                           VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
@@ -790,8 +790,8 @@
       <ControlTemplate>
         <Grid Margin="4" Effect="drop-shadow(0 0 4 #80000000)">
           <Border Name="LayoutRoot"
-                  Background="{DynamicResource Brush.Popup}"
-                  BorderBrush="{DynamicResource Brush.PopupBorder}"
+                  Background="{DynamicResource Brush.Contents}"
+                  BorderBrush="{DynamicResource Brush.Border2}"
                   BorderThickness="1"
                   Padding="4,2"
                   CornerRadius="{TemplateBinding CornerRadius}">

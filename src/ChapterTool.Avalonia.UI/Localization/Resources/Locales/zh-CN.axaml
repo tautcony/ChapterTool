@@ -6,12 +6,7 @@
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">追加 MPLS…</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">浏览模板…</x:String>
   <x:String x:Key="Action.Close" xml:space="preserve">关闭</x:String>
-  <x:String x:Key="Action.CombineSegments" xml:space="preserve">合并段落：选项数={entries}，源类型={sourceType}</x:String>
-  <x:String x:Key="Action.DeleteRows" xml:space="preserve">删除行：索引={indexes}</x:String>
   <x:String x:Key="Action.Download" xml:space="preserve">下载</x:String>
-  <x:String x:Key="Action.EditCell" xml:space="preserve">编辑{kind}：行={row}，值='{value}'</x:String>
-  <x:String x:Key="Action.EditChapters" xml:space="preserve">编辑章节</x:String>
-  <x:String x:Key="Action.InsertRow" xml:space="preserve">插入行：索引={index}</x:String>
   <x:String x:Key="Action.Load" xml:space="preserve">加载</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">加载 OGM 示例</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">日志</x:String>
@@ -20,8 +15,6 @@
   <x:String x:Key="Action.Reload" xml:space="preserve">重新加载</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">恢复默认</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">设置</x:String>
-  <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">帧数前移：帧数={frames}</x:String>
-  <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">拆分已合并段落：选项数={entries}，源类型={sourceType}</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
   <x:String x:Key="Common.Apply" xml:space="preserve">应用</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">取消</x:String>
@@ -63,6 +56,7 @@
   <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">已导出到 {value}</x:String>
   <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">导出失败：{value}</x:String>
   <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">关闭详情</x:String>
+  <x:String x:Key="Tool.Log.OpenFolder" xml:space="preserve">打开日志文件夹</x:String>
   <x:String x:Key="Tool.Log.Export" xml:space="preserve">导出日志</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">该日志没有嵌套结构化数据。</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">该日志没有异常数据。</x:String>
@@ -176,8 +170,6 @@
   <x:String x:Key="Diagnostic.XmlRoot.Invalid" xml:space="preserve">应为 Chapters 根节点，实际为 {name}。</x:String>
   <x:String x:Key="Diagnostic.XplChapters.None" xml:space="preserve">未解析到 HD-DVD 章节。</x:String>
   <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">无法解析 XPL 播放列表：{message}</x:String>
-  <x:String x:Key="EditKind.Frame" xml:space="preserve">帧</x:String>
-  <x:String x:Key="EditKind.Name" xml:space="preserve">名称</x:String>
   <x:String x:Key="Empty.Hint" xml:space="preserve">加载文件、拖放到此处，或加载示例以计算帧与表达式。</x:String>
   <x:String x:Key="Empty.Title" xml:space="preserve">尚未加载章节</x:String>
   <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">在应用此记号前补充缺失的操作数。</x:String>
@@ -212,26 +204,6 @@
   <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">简体中文</x:String>
   <x:String x:Key="Language.English" xml:space="preserve">英语</x:String>
   <x:String x:Key="Language.Japanese" xml:space="preserve">日语</x:String>
-  <x:String x:Key="Log.AppendingMpls" xml:space="preserve">正在追加 MPLS：path='{path}'</x:String>
-  <x:String x:Key="Log.AutoFrameRateDetection" xml:space="preserve">自动帧率检测：option={option}，confidence={confidence}，accurate={accurate}/{evaluated}，deviation={deviation}</x:String>
-  <x:String x:Key="Log.ChangeFps" xml:space="preserve">转换至当前帧率：源配置={sourceFps}，目标配置={targetFps}，章节数 {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.CreateZones" xml:space="preserve">生成 Zones：选中行={selectedRows}，章节数={chapters}</x:String>
-  <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} 诊断：severity={severity}，code={code}{location} message='{message}'{details}</x:String>
-  <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}：章节数 {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">帧信息已更新：option={option}，fps={fps}，round={round}，chapters={chapters}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
-  <x:String x:Key="Log.LanguageSet" xml:space="preserve">语言已设置为 {language}</x:String>
-  <x:String x:Key="Log.LoadingSource" xml:space="preserve">正在载入源：path='{path}'</x:String>
-  <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}：path='{path}'</x:String>
-  <x:String x:Key="Log.RelatedMediaNotFound" xml:space="preserve">{status}：reference='{reference}'，resolved='{resolved}'</x:String>
-  <x:String x:Key="Log.SavingChapters" xml:space="preserve">正在保存章节：格式={format}，目录='{directory}'，来源='{source}'，章节数={chapters}，应用表达式={applyExpression}，表达式='{expression}'</x:String>
-  <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">已选择源选项：index={index}，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，fps={fps}</x:String>
-  <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">已载入设置：保存目录='{savingPath}'，语言='{language}'</x:String>
-  <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
-  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">用户界面操作意外失败</x:String>
-  <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status}，来源：{path}</x:String>
-  <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">无法从 '{path}' 加载章节名称模板</x:String>
-  <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">已从 '{path}' 加载章节名称模板 '{name}'</x:String>
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">追加合并 MPLS</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自动</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 个章节</x:String>

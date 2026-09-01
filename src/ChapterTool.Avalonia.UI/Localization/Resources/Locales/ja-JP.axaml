@@ -6,12 +6,7 @@
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">MPLS を追加…</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">テンプレートを参照…</x:String>
   <x:String x:Key="Action.Close" xml:space="preserve">閉じる</x:String>
-  <x:String x:Key="Action.CombineSegments" xml:space="preserve">セグメントを結合: オプション数={entries}, ソース種別={sourceType}</x:String>
-  <x:String x:Key="Action.DeleteRows" xml:space="preserve">行を削除: インデックス={indexes}</x:String>
   <x:String x:Key="Action.Download" xml:space="preserve">ダウンロード</x:String>
-  <x:String x:Key="Action.EditCell" xml:space="preserve">{kind}を編集: 行={row}, 値='{value}'</x:String>
-  <x:String x:Key="Action.EditChapters" xml:space="preserve">チャプターを編集</x:String>
-  <x:String x:Key="Action.InsertRow" xml:space="preserve">行を挿入: インデックス={index}</x:String>
   <x:String x:Key="Action.Load" xml:space="preserve">読み込み</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">OGM サンプルを読み込む</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">ログ</x:String>
@@ -20,8 +15,6 @@
   <x:String x:Key="Action.Reload" xml:space="preserve">再読み込み</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">既定に戻す</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">設定</x:String>
-  <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">チャプターを前へ移動: フレーム数={frames}</x:String>
-  <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">結合済みセグメントを分割: オプション数={entries}, ソース種別={sourceType}</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
   <x:String x:Key="Common.Apply" xml:space="preserve">適用</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">キャンセル</x:String>
@@ -63,6 +56,7 @@
   <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">{value} にエクスポートしました</x:String>
   <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">エクスポートに失敗しました: {value}</x:String>
   <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">詳細を閉じる</x:String>
+  <x:String x:Key="Tool.Log.OpenFolder" xml:space="preserve">ログフォルダーを開く</x:String>
   <x:String x:Key="Tool.Log.Export" xml:space="preserve">ログをエクスポート</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">このログにネストされた構造化データはありません。</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">このログに例外データはありません。</x:String>
@@ -176,8 +170,6 @@
   <x:String x:Key="Diagnostic.XmlRoot.Invalid" xml:space="preserve">ルート要素は Chapters である必要がありますが、実際は {name} です。</x:String>
   <x:String x:Key="Diagnostic.XplChapters.None" xml:space="preserve">HD-DVD のチャプターは 1 件も解析されませんでした。</x:String>
   <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">XPL プレイリストの解析に失敗しました: {message}</x:String>
-  <x:String x:Key="EditKind.Frame" xml:space="preserve">フレーム</x:String>
-  <x:String x:Key="EditKind.Name" xml:space="preserve">名前</x:String>
   <x:String x:Key="Empty.Hint" xml:space="preserve">ファイルを読み込むか、ここにドロップするか、サンプルを読み込むと、フレーム数と式の結果が計算されます。</x:String>
   <x:String x:Key="Empty.Title" xml:space="preserve">チャプターはまだ読み込まれていません</x:String>
   <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">このトークンを使用する前に、不足しているオペランドを追加してください。</x:String>
@@ -212,26 +204,6 @@
   <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">簡体字中国語</x:String>
   <x:String x:Key="Language.English" xml:space="preserve">英語</x:String>
   <x:String x:Key="Language.Japanese" xml:space="preserve">日本語</x:String>
-  <x:String x:Key="Log.AppendingMpls" xml:space="preserve">MPLS を追加中: path='{path}'</x:String>
-  <x:String x:Key="Log.AutoFrameRateDetection" xml:space="preserve">自動フレームレート検出: オプション={option}, 信頼度={confidence}, 正確={accurate}/{evaluated}, 偏差={deviation}</x:String>
-  <x:String x:Key="Log.ChangeFps" xml:space="preserve">現在の FPS に変換: 変換元={sourceFps}, 変換先={targetFps}, チャプター数 {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.CreateZones" xml:space="preserve">Zones を生成: 選択行={selectedRows}, チャプター数={chapters}</x:String>
-  <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} diagnostic: severity={severity}, code={code}{location} message='{message}'{details}</x:String>
-  <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}: チャプター数 {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">フレーム情報を更新: オプション={option}, fps={fps}, 丸め={round}, チャプター数={chapters}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
-  <x:String x:Key="Log.LanguageSet" xml:space="preserve">言語を {language} に設定しました</x:String>
-  <x:String x:Key="Log.LoadingSource" xml:space="preserve">ソースを読み込み中: path='{path}'</x:String>
-  <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}: path='{path}'</x:String>
-  <x:String x:Key="Log.RelatedMediaNotFound" xml:space="preserve">{status}: reference='{reference}', resolved='{resolved}'</x:String>
-  <x:String x:Key="Log.SavingChapters" xml:space="preserve">チャプターを保存中: 形式={format}, ディレクトリ='{directory}', ソース='{source}', チャプター数={chapters}, 式を適用={applyExpression}, 式='{expression}'</x:String>
-  <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">ソースオプションを選択: インデックス={index}, ラベル='{label}', ソース='{source}', ソース種別={sourceType}, チャプター数={chapters}, fps={fps}</x:String>
-  <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">設定を読み込みました: savingPath='{savingPath}', language='{language}'</x:String>
-  <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
-  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">ユーザーインターフェイスの操作中に予期しないエラーが発生しました</x:String>
-  <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status}、ソース: {path}</x:String>
-  <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">'{path}' からチャプター名テンプレートを読み込めませんでした</x:String>
-  <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">チャプター名テンプレート '{name}' を '{path}' から読み込みました</x:String>
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">MPLS を追加して結合</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自動</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 個のチャプター</x:String>

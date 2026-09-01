@@ -86,7 +86,18 @@ public sealed partial class LogToolView : UserControl
             if (changed)
             {
                 HideFlyouts();
-                Dispatcher.UIThread.Post(detailsOpen ? FocusInspector : () => FocusEntry(subscribedViewModel?.SelectedEntry));
+                Dispatcher.UIThread.Post(() =>
+                {
+                    ApplyResponsiveLayout();
+                    if (detailsOpen)
+                    {
+                        FocusInspector();
+                    }
+                    else
+                    {
+                        FocusEntry(subscribedViewModel?.SelectedEntry);
+                    }
+                });
             }
         }
     }

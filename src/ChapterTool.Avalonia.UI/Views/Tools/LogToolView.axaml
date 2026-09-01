@@ -25,6 +25,25 @@
       <Setter Property="Padding" Value="0" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Grid.toolToolbar">
+      <Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+    </Style>
+    <Style Selector=".logMenu Button.flat">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector=".logMenu ComboBox">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="FlyoutPresenter.logFlyout">
+      <Setter Property="Padding" Value="12" />
+      <Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="8" />
     </Style>
     <Style Selector="Border.logHighlightMatch">
       <Setter Property="Background" Value="{DynamicResource Brush.AccentHovered}" />
@@ -49,7 +68,7 @@
   <Grid RowDefinitions="Auto,*,Auto"
         RowSpacing="8"
         Margin="8"
-        Background="{DynamicResource Brush.Window}"
+        Background="{DynamicResource Brush.Contents}"
         MinWidth="0"
         MinHeight="0"
         ClipToBounds="True">
@@ -82,8 +101,8 @@
                 Height="32"
                 AutomationProperties.Name="{DynamicResource Tool.Log.Filter}"
                 ToolTip.Tip="{DynamicResource Tool.Log.Filter}">
-          <Grid Width="16" Height="16">
-            <i:Icon Width="15" Height="15" Value="fa-solid fa-filter" />
+          <Grid Width="20" Height="20">
+            <i:Icon Width="18" Height="18" Value="fa-solid fa-filter" />
             <Border HorizontalAlignment="Right"
                     VerticalAlignment="Top"
                     MinWidth="11"
@@ -99,12 +118,12 @@
             </Border>
           </Grid>
           <Button.Flyout>
-            <Flyout Placement="BottomEdgeAlignedRight">
-              <Border Padding="12"
+            <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="logFlyout">
+              <Border Classes="logMenu"
+                      Padding="12"
                       MinWidth="240"
                       Background="{DynamicResource Brush.Contents}"
-                      BorderBrush="{DynamicResource Brush.Border2}"
-                      BorderThickness="1">
+                      BorderThickness="0">
                 <StackPanel Spacing="8">
                   <TextBlock Classes="bold" Text="{DynamicResource Tool.Log.Filter}" />
                   <TextBlock Classes="logMuted" Text="{DynamicResource Tool.Log.FilterLevelLabel}" />
@@ -141,14 +160,14 @@
                 IsVisible="{Binding HasSecondaryActions}"
                 AutomationProperties.Name="{DynamicResource Tool.Log.MoreActions}"
                 ToolTip.Tip="{DynamicResource Tool.Log.MoreActions}">
-          <i:Icon Width="15" Height="15" Value="fa-solid fa-ellipsis" />
+          <i:Icon Width="18" Height="18" Value="fa-solid fa-ellipsis" />
           <Button.Flyout>
-            <Flyout Placement="BottomEdgeAlignedRight">
-              <Border Padding="12"
+            <Flyout Placement="BottomEdgeAlignedRight" FlyoutPresenterClasses="logFlyout">
+              <Border Classes="logMenu"
+                      Padding="12"
                       MinWidth="220"
                       Background="{DynamicResource Brush.Contents}"
-                      BorderBrush="{DynamicResource Brush.Border2}"
-                      BorderThickness="1">
+                      BorderThickness="0">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="bold" Text="{DynamicResource Tool.Log.MoreActions}" />
                   <ComboBox x:Name="LogExportFormat"
@@ -174,6 +193,16 @@
                     </StackPanel>
                   </Button>
                   <Separator />
+                  <Button Classes="flat"
+                          HorizontalAlignment="Left"
+                          IsVisible="{Binding CanOpenLogFolder}"
+                          Command="{Binding #RootView.((vm:LogToolViewModel)DataContext).OpenLogFolderCommand}"
+                          AutomationProperties.Name="{DynamicResource Tool.Log.OpenFolder}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <i:Icon Width="13" Height="13" Value="fa-solid fa-folder-open" />
+                      <TextBlock Text="{DynamicResource Tool.Log.OpenFolder}" />
+                    </StackPanel>
+                  </Button>
                   <Button Classes="flat"
                           HorizontalAlignment="Left"
                           IsVisible="{Binding CanCopySelected}"
@@ -296,8 +325,8 @@
                     </Grid>
                     <TextBlock Grid.Row="1"
                                Classes="logMuted"
-                               IsVisible="{Binding HasRowContext}"
-                               Text="{Binding RowContext}"
+                               IsVisible="{Binding HasContext}"
+                               Text="{Binding Context}"
                                ToolTip.Tip="{Binding Context}" />
                   </Grid>
 
@@ -324,7 +353,7 @@
                       Spacing="8"
                       Margin="24"
                       IsVisible="{Binding !HasRetainedEntries}">
-            <i:Icon Width="36" Height="36"
+            <i:Icon Width="48" Height="48" FontSize="40"
                     Value="fa-solid fa-inbox"
                     Foreground="{DynamicResource Brush.FG2}" />
             <TextBlock Foreground="{DynamicResource Brush.FG2}"
@@ -338,7 +367,7 @@
                       Spacing="8"
                       Margin="24"
                       IsVisible="{Binding HasNoResults}">
-            <i:Icon Width="36" Height="36"
+            <i:Icon Width="48" Height="48" FontSize="40"
                     Value="fa-solid fa-filter-circle-xmark"
                     Foreground="{DynamicResource Brush.FG2}" />
             <TextBlock Foreground="{DynamicResource Brush.FG2}"
@@ -346,6 +375,7 @@
                        TextWrapping="Wrap"
                        TextAlignment="Center" />
             <Button Classes="flat"
+                    HorizontalAlignment="Center"
                     Command="{Binding ResetFiltersCommand}"
                     AutomationProperties.Name="{DynamicResource Tool.Log.ResetFilters}">
               <TextBlock Text="{DynamicResource Tool.Log.ResetFilters}" />
@@ -361,47 +391,69 @@
                   MaxWidth="480"
                   MinWidth="0"
                   Background="{DynamicResource Brush.Contents}"
-                  BorderBrush="{DynamicResource Brush.Border2}"
-                  BorderThickness="1,0,0,0"
                   IsVisible="{Binding ShowDetails}"
                   ClipToBounds="True">
             <Grid RowDefinitions="Auto,*" MinWidth="0" MinHeight="0">
-              <Border Grid.Row="0"
-                      Padding="12,10"
-                      BorderBrush="{DynamicResource Brush.Border2}"
-                      BorderThickness="0,0,0,1"
+              <Border x:Name="LogDetailsHeader"
+                      Grid.Row="0"
+                      Padding="6,5"
+                      Margin="4,5,4,1"
+                      Height="42"
+                      MinHeight="42"
+                      Background="{DynamicResource Brush.Contents}"
+                      CornerRadius="0"
                       MinWidth="0">
-                <Grid ColumnDefinitions="*,Auto,Auto"
-                      ColumnSpacing="4"
+                <Grid ColumnDefinitions="4,Auto,*,Auto,28"
+                      ColumnSpacing="8"
                       MinWidth="0">
-                  <StackPanel Grid.Column="0" Spacing="2" MinWidth="0">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                      <TextBlock FontWeight="SemiBold"
-                                 Text="{Binding SelectedEntry.LevelText}" />
-                      <TextBlock Classes="logMuted"
-                                 Text="{Binding SelectedEntry.Time}" />
-                    </StackPanel>
+                  <Border Grid.Column="0"
+                          Width="4"
+                          CornerRadius="2"
+                          HorizontalAlignment="Left"
+                          Background="{DynamicResource ChapterTool.LogInformationBrush}"
+                          IsVisible="{Binding SelectedEntry.IsInformation}" />
+                  <Border Grid.Column="0"
+                          Width="4"
+                          CornerRadius="2"
+                          HorizontalAlignment="Left"
+                          Background="{DynamicResource ChapterTool.LogWarningBrush}"
+                          IsVisible="{Binding SelectedEntry.IsWarning}" />
+                  <Border Grid.Column="0"
+                          Width="4"
+                          CornerRadius="2"
+                          HorizontalAlignment="Left"
+                          Background="{DynamicResource ChapterTool.LogErrorBrush}"
+                          IsVisible="{Binding SelectedEntry.IsError}" />
+                  <TextBlock Grid.Column="1"
+                             Classes="logMuted"
+                             VerticalAlignment="Center"
+                             Text="{Binding SelectedEntry.LevelText}" />
+                  <Grid Grid.Column="2"
+                        RowDefinitions="Auto,Auto"
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        ClipToBounds="True">
+                    <TextBlock Text="{Binding SelectedEntry.CompactSummary}"
+                               FontSize="14"
+                               TextTrimming="CharacterEllipsis"
+                               VerticalAlignment="Center"
+                               ClipToBounds="True" />
                     <TextBlock Classes="logMuted"
+                               Grid.Row="1"
                                Text="{Binding SelectedEntry.Context}"
                                IsVisible="{Binding SelectedEntry.HasContext}"
                                TextTrimming="CharacterEllipsis"
                                ToolTip.Tip="{Binding SelectedEntry.Context}" />
-                  </StackPanel>
-                  <Button Grid.Column="1"
-                          Classes="icon_button"
-                          Width="30"
-                          Height="30"
-                          IsVisible="{Binding CanCopySelected}"
-                          Command="{Binding CopyDetailsCommand}"
-                          AutomationProperties.Name="{DynamicResource Tool.Log.CopyDetails}"
-                          ToolTip.Tip="{DynamicResource Tool.Log.CopyDetails}">
-                    <i:Icon Width="13" Height="13" Value="fa-solid fa-copy" />
-                  </Button>
+                  </Grid>
+                  <TextBlock Grid.Column="3"
+                             Classes="logMuted"
+                             VerticalAlignment="Center"
+                             Text="{Binding SelectedEntry.Time}" />
                   <Button x:Name="LogDetailsCloseButton"
-                          Grid.Column="2"
-                          Classes="icon_button"
-                          Width="30"
-                          Height="30"
+                          Grid.Column="4"
+                          Classes="logDetailsAction"
+                          Width="28"
+                          Height="28"
                           Command="{Binding CloseDetailsCommand}"
                           AutomationProperties.Name="{DynamicResource Tool.Log.CloseDetails}"
                           ToolTip.Tip="{DynamicResource Tool.Log.CloseDetails}">
@@ -411,13 +463,9 @@
               </Border>
 
               <TabControl x:Name="LogDetailsTabs" Grid.Row="1" Margin="12,8" TabStripPlacement="Top">
-                <TabItem Header="{DynamicResource Tool.Log.Overview}">
+                <TabItem Header="{DynamicResource Tool.Log.Properties}">
                   <ScrollViewer Padding="0,8" VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="12">
-                      <StackPanel Spacing="4" IsVisible="{Binding SelectedEntry.HasSummary}">
-                        <TextBlock Classes="logSectionTitle" Text="{DynamicResource Tool.Log.Message}" />
-                        <SelectableTextBlock Text="{Binding SelectedEntry.Summary}" TextWrapping="Wrap" />
-                      </StackPanel>
                       <StackPanel Spacing="4" IsVisible="{Binding SelectedEntry.HasTechnicalDetail}">
                         <TextBlock Classes="logSectionTitle" Text="{DynamicResource Tool.Log.TechnicalDetail}" />
                         <SelectableTextBlock Classes="logMono" Text="{Binding SelectedEntry.TechnicalDetail}" TextWrapping="Wrap" />
@@ -426,13 +474,6 @@
                         <TextBlock Classes="logSectionTitle" Text="{DynamicResource Tool.Log.Exception}" />
                         <SelectableTextBlock Classes="logMono" Text="{Binding SelectedEntry.ExceptionText}" TextWrapping="Wrap" />
                       </StackPanel>
-                      <TextBlock Foreground="{DynamicResource Brush.FG2}" Text="{DynamicResource Tool.Log.NoDetails}" TextWrapping="Wrap" IsVisible="{Binding SelectedEntry.ShowNoDetails}" />
-                    </StackPanel>
-                  </ScrollViewer>
-                </TabItem>
-                <TabItem Header="{DynamicResource Tool.Log.Properties}">
-                  <ScrollViewer Padding="0,8" VerticalScrollBarVisibility="Auto">
-                    <Grid>
                       <ItemsControl ItemsSource="{Binding SelectedEntry.StructuredProperties}" IsVisible="{Binding SelectedEntry.HasStructuredProperties}">
                         <ItemsControl.ItemTemplate>
                           <DataTemplate x:DataType="vm:LogPropertyViewModel">
@@ -443,12 +484,12 @@
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
-                      <TextBlock Foreground="{DynamicResource Brush.FG2}" Text="{DynamicResource Tool.Log.NoStructuredData}" TextWrapping="Wrap" IsVisible="{Binding SelectedEntry.HasNoStructuredProperties}" />
-                    </Grid>
+                      <TextBlock Foreground="{DynamicResource Brush.FG2}" Text="{DynamicResource Tool.Log.NoDetails}" TextWrapping="Wrap" IsVisible="{Binding SelectedEntry.ShowNoDetails}" />
+                    </StackPanel>
                   </ScrollViewer>
                 </TabItem>
                 <TabItem Header="{DynamicResource Tool.Log.Raw}" IsVisible="{Binding HasSelectedEntry}">
-                  <Border Margin="0,8" Background="{DynamicResource Brush.Contents}" BorderBrush="{DynamicResource Brush.Border2}" BorderThickness="1">
+                  <Border Margin="0,8" Background="{DynamicResource Brush.Contents}" BorderThickness="0">
                     <ContentControl x:Name="LogRawEditorHost" />
                   </Border>
                 </TabItem>
@@ -459,9 +500,10 @@
       </Border>
     </Grid>
 
-    <Border Grid.Row="2"
+    <Border x:Name="LogStatusBar"
+            Grid.Row="2"
             Padding="8,6"
-            Background="{DynamicResource Brush.ToolBar}"
+            Background="{DynamicResource Brush.StatusBar}"
             BorderBrush="{DynamicResource Brush.Border2}"
             BorderThickness="0,1,0,0"
             IsVisible="{Binding HasStatus}">

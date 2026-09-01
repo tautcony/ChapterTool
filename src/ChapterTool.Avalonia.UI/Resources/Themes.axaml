@@ -48,6 +48,7 @@
   <SolidColorBrush x:Key="Brush.Window" Color="{DynamicResource Color.Window}"/>
   <SolidColorBrush x:Key="Brush.WindowBorder" Color="{DynamicResource Color.WindowBorder}"/>
   <SolidColorBrush x:Key="Brush.ToolBar" Color="{DynamicResource Color.ToolBar}"/>
+  <SolidColorBrush x:Key="Brush.StatusBar" Color="{DynamicResource Color.Contents}"/>
   <SolidColorBrush x:Key="Brush.Popup" Color="{DynamicResource Color.Popup}"/>
   <SolidColorBrush x:Key="Brush.PopupBorder" Color="{DynamicResource Color.PopupBorder}"/>
   <SolidColorBrush x:Key="Brush.Contents" Color="{DynamicResource Color.Contents}"/>

@@ -25,7 +25,6 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 {
     private readonly IApplicationLogService logService;
     private readonly IAppLocalizer localizer;
-    private readonly IAppLocalizer contentLocalizer = new AppLocalizationManager("en-US");
     private readonly IClipboardService? clipboardService;
     private readonly IRuntimeCapabilities? capabilities;
     private readonly IApplicationLogExporter? exporter;
@@ -44,7 +43,9 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         IAppLocalizer localizer,
         IClipboardService? clipboardService = null,
         IApplicationLogExporter? exporter = null,
-        IRuntimeCapabilities? capabilities = null)
+        IRuntimeCapabilities? capabilities = null,
+        IShellService? shellService = null,
+        string? logDirectory = null)
     {
         ArgumentNullException.ThrowIfNull(logService);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -53,6 +54,11 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         this.clipboardService = clipboardService;
         this.capabilities = capabilities;
         this.exporter = exporter;
+        OpenLogFolderCommand = new UiCommand(
+            (_, token) => shellService is null || string.IsNullOrWhiteSpace(logDirectory)
+                ? ValueTask.CompletedTask
+                : shellService.OpenAsync(logDirectory, token),
+            _ => shellService is not null && !string.IsNullOrWhiteSpace(logDirectory));
         synchronizationContext = SynchronizationContext.Current;
         filterOptions = CreateFilterOptions();
         exportFormatOptions = CreateExportFormatOptions();
@@ -209,6 +215,8 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public bool CanExport => HasExporter && FilteredEntries.Count > 0 && !IsExporting;
 
+    public bool CanOpenLogFolder => OpenLogFolderCommand.CanExecute(null);
+
     public bool HasSecondaryActions => HasRetainedEntries || CanCopySelected || CanExport;
 
     public int ActiveFilterCount => SelectedFilter.Value == LogSeverityFilter.All ? 0 : 1;
@@ -232,6 +240,8 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
     public UiCommand ResetFiltersCommand { get; }
 
     public UiCommand ExportCommand { get; }
+
+    public UiCommand OpenLogFolderCommand { get; }
 
     public void Dispose()
     {
@@ -475,7 +485,7 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
         }
     }
 
-    private LogEntryViewModel CreateEntry(ApplicationLogEntry entry) => new(entry, localizer, contentLocalizer);
+    private LogEntryViewModel CreateEntry(ApplicationLogEntry entry) => new(entry, localizer);
 
     private void SetExportStatus(bool succeeded, string? value)
     {

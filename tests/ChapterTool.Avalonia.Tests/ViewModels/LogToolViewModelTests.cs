@@ -102,19 +102,18 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Diagnostic",
             ["operation"] = "Load",
             ["code"] = "Import.Partial",
             ["message"] = "Import failed",
             ["TechnicalDetail"] = "stderr=failed"
         };
-        logger.Log(LogLevel.Error, new EventId(7, "Log.Diagnostic"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Error, new EventId(7, "Diagnostic"), state, null,
+            static (_, _) => "Load diagnostic: severity=Error, code=Import.Partial, message='Import failed'");
 
         using var viewModel = new LogToolViewModel(service, localizer);
 
         var entry = Assert.Single(viewModel.FilteredEntries);
-        Assert.Equal("Log.Diagnostic", entry.Entry.MessageKey);
-        Assert.Equal("Import failed", entry.Summary);
+        Assert.Equal("Load diagnostic: severity=Error, code=Import.Partial, message='Import failed'", entry.Summary);
         Assert.Equal("Load", entry.Operation);
         Assert.Contains(entry.StructuredProperties, property => property is { Name: "Code", Value: "Import.Partial" });
         Assert.True(entry.HasInspectorContent);
@@ -133,8 +132,7 @@ public sealed class LogToolViewModelTests
         var entry = new ApplicationLogEntry(
             DateTimeOffset.UtcNow,
             LogLevel.Error,
-            "Log.Diagnostic",
-            MessageKey: "Log.Diagnostic",
+            "Load diagnostic: severity=Error, message='Import failed'",
             Arguments: new Dictionary<string, object?>
             {
                 ["message"] = "Import failed",
@@ -146,9 +144,10 @@ public sealed class LogToolViewModelTests
                 ["sourcePath"] = "/disc/BDMV/PLAYLIST/00042.mpls"
             });
         var localizer = new AppLocalizationManager("en-US");
-        var viewModel = new LogEntryViewModel(entry, localizer, localizer);
+        var viewModel = new LogEntryViewModel(entry, localizer);
 
-        Assert.Equal("Import failed", viewModel.CompactSummary);
+        Assert.Equal("Load diagnostic: severity=Error", viewModel.CompactSummary);
+        Assert.DoesNotContain("Import failed", viewModel.CompactSummary, StringComparison.Ordinal);
         Assert.DoesNotContain("00042.mpls", viewModel.CompactSummary, StringComparison.Ordinal);
         Assert.DoesNotContain("decoder rejected", viewModel.CompactSummary, StringComparison.Ordinal);
         Assert.True(viewModel.HasTechnicalDetail);
@@ -184,7 +183,6 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.ImportSummary",
             ["operation"] = "Load",
             ["result"] = "completed",
             ["entries"] = 2,
@@ -268,8 +266,8 @@ public sealed class LogToolViewModelTests
                 }
             }
         };
-        logger.Log(LogLevel.Information, new EventId(0, "Log.ImportSummary"), state, null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null,
+            static (_, _) => "Load completed: groups=2, entries=2, chapters=10, diagnostics=1");
 
         using var viewModel = new LogToolViewModel(service, localizer);
 
@@ -292,7 +290,6 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.ImportSummary",
             ["operation"] = "Load",
             ["result"] = "completed",
             ["importOverview"] = "1) 00001.mpls (1:38:41) 00002.m2ts",
@@ -328,8 +325,8 @@ public sealed class LogToolViewModelTests
                 ["diagnostics"] = Array.Empty<object?>()
             }
         };
-        logger.Log(LogLevel.Information, new EventId(0, "Log.ImportSummary"), state, null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null,
+            static (_, _) => "Load completed: groups=1, entries=1, chapters=12, diagnostics=0");
 
         using var viewModel = new LogToolViewModel(service, localizer);
 
@@ -347,11 +344,10 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Status",
             ["status"] = "Ready",
             ["TechnicalDetail"] = "path=/tmp/source"
         };
-        logger.Log(LogLevel.Information, new EventId(0, "Log.Status"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null, static (_, _) => "Status: Ready");
         var clipboard = new FakeClipboardService();
         using var viewModel = new LogToolViewModel(service, localizer, clipboard);
         viewModel.SelectedEntry = Assert.Single(viewModel.FilteredEntries);
@@ -426,12 +422,11 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.SavingChapters",
             ["format"] = "ogm",
             ["Operation"] = "Save"
         };
-        logger.Log(LogLevel.Information, new EventId(0, "Log.SavingChapters"), state, null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null,
+            static (_, _) => "Saving chapters");
 
         using var viewModel = new LogToolViewModel(service, localizer);
 
@@ -449,11 +444,11 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Diagnostic",
             ["operation"] = "Load",
             ["message"] = "Import failed"
         };
-        logger.Log(LogLevel.Error, new EventId(0, "Log.Diagnostic"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Error, new EventId(0), state, null,
+            static (_, _) => "Load diagnostic: severity=Error, message='Import failed'");
         logger.LogInformation("Saved 10 chapters");
         using var viewModel = new LogToolViewModel(service, localizer);
         Assert.Equal(2, viewModel.FilteredEntries.Count);
@@ -461,7 +456,7 @@ public sealed class LogToolViewModelTests
         viewModel.SearchText = "import";
 
         var entry = Assert.Single(viewModel.FilteredEntries);
-        Assert.Equal("Import failed", entry.Summary);
+        Assert.Contains("Import failed", entry.Summary, StringComparison.Ordinal);
 
         viewModel.SearchText = "missing-keyword";
         Assert.Empty(viewModel.FilteredEntries);
@@ -478,7 +473,6 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Diagnostic",
             ["message"] = "Import failed",
             ["details"] = new Dictionary<string, object?>(StringComparer.Ordinal)
             {
@@ -487,10 +481,10 @@ public sealed class LogToolViewModelTests
         };
         logger.Log(
             LogLevel.Error,
-            new EventId(9, "Log.Diagnostic"),
+            new EventId(9, "Diagnostic"),
             state,
             new InvalidOperationException("decoder rejected packet 17"),
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+            static (_, _) => "Load diagnostic: severity=Error, message='Import failed'");
         using var viewModel = new LogToolViewModel(service, localizer);
 
         viewModel.SearchText = "00042.mpls";
@@ -513,7 +507,7 @@ public sealed class LogToolViewModelTests
             {
                 ["diagnosticCode"] = "D-42"
             });
-        var viewModel = new LogEntryViewModel(entry, localizer, localizer);
+        var viewModel = new LogEntryViewModel(entry, localizer);
 
         viewModel.ApplySearchHighlight("diagnostic");
 
@@ -543,7 +537,6 @@ public sealed class LogToolViewModelTests
                         ["pathToken"] = "needle-value"
                     }
                 }),
-            localizer,
             localizer);
 
         Assert.True(viewModel.MatchesSearch("pathToken"));
@@ -661,13 +654,13 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Diagnostic",
             ["operation"] = "Load",
             ["message"] = "正在加载源：index.bdmv",
             ["code"] = "Import.Partial",
             ["TechnicalDetail"] = "stderr=failed"
         };
-        logger.Log(LogLevel.Error, new EventId(7, "Log.Diagnostic"), state, null, static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Error, new EventId(7, "Diagnostic"), state, null,
+            static (_, _) => "Load diagnostic: severity=Error, code=Import.Partial, message='正在加载源：index.bdmv'");
 
         using var viewModel = new LogToolViewModel(service, localizer);
         var raw = Assert.Single(viewModel.FilteredEntries).RawText;
@@ -680,8 +673,7 @@ public sealed class LogToolViewModelTests
         Assert.Equal("Load", root.GetProperty("operation").GetString());
         Assert.Equal("ChapterTool.Tests", root.GetProperty("category").GetString());
         Assert.Equal(7, root.GetProperty("eventId").GetInt32());
-        Assert.Equal("Log.Diagnostic", root.GetProperty("messageKey").GetString());
-        Assert.Equal("正在加载源：index.bdmv", root.GetProperty("message").GetString());
+        Assert.Equal("Load diagnostic: severity=Error, code=Import.Partial, message='正在加载源：index.bdmv'", root.GetProperty("message").GetString());
         Assert.Equal("Import.Partial", root.GetProperty("structuredState").GetProperty("code").GetString());
     }
 
@@ -693,12 +685,11 @@ public sealed class LogToolViewModelTests
         var logger = service.CreateLogger("ChapterTool.Tests");
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.LoadingSource",
             ["path"] = "index.bdmv",
             ["Operation"] = "Load"
         };
-        logger.Log(LogLevel.Information, new EventId(0, "Log.LoadingSource"), state, null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+        logger.Log(LogLevel.Information, new EventId(0), state, null,
+            static (_, _) => "Loading source: path='index.bdmv'");
 
         using var viewModel = new LogToolViewModel(service, localizer);
 

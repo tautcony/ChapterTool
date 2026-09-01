@@ -42,6 +42,7 @@ public sealed class UiResourceResolutionHeadlessTests
             await host.LayoutAsync(width: 800, height: 600);
 
             AssertResolvedBrush(host.MainView.Background, "MainView.Background");
+            AssertResolvedBrush(host.RequiredControl<Border>("StatusBar").Background, "StatusBar.Background");
             AssertResolvedBrush(host.RequiredControl<SplitButton>("LoadButton").Foreground, "LoadButton.Foreground");
             AssertResolvedBrush(host.RequiredControl<Button>("SaveButton").Background, "SaveButton.Background");
             AssertResolvedBrush(host.RequiredControl<DataGrid>("ChapterGrid").HorizontalGridLinesBrush, "ChapterGrid.HorizontalGridLinesBrush");

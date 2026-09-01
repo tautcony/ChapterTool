@@ -42,7 +42,6 @@ public sealed record ApplicationLogEntry(
     DateTimeOffset Timestamp,
     LogLevel Level,
     string Message,
-    string? MessageKey = null,
     IReadOnlyDictionary<string, object?>? Arguments = null,
     string? TechnicalDetail = null,
     string? Category = null,

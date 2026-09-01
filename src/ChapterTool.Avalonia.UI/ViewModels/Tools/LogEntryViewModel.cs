@@ -13,26 +13,12 @@ public sealed record LogHighlightRun(string Text, bool IsMatch);
 
 public sealed class LogEntryViewModel(
     ApplicationLogEntry entry,
-    IAppLocalizer localizer,
-    IAppLocalizer contentLocalizer)
+    IAppLocalizer localizer)
     : ObservableViewModel
 {
     private const int MaxSearchDepth = 32;
     private const int MaxSearchValues = 4096;
     private const int MaxCompactSummaryLength = 180;
-
-    private static readonly Dictionary<string, string> SpecialMessageMap = new(StringComparer.Ordinal)
-    {
-        ["Log.SettingsLoaded"] = "Settings loaded",
-        ["Log.LoadingSource"] = "Loading source",
-        ["Log.SavingChapters"] = "Saving chapters",
-        ["Log.AppendingMpls"] = "Appending MPLS",
-        ["Log.Diagnostic"] = "Diagnostic",
-        ["Log.TemplateLoaded"] = "Template loaded",
-        ["Log.TemplateLoadFailed"] = "Template load failed",
-        ["Log.LanguageSet"] = "Language changed",
-        ["Log.UnexpectedError"] = "Unexpected error"
-    };
 
     private string? rawText;
     private string? searchableText;
@@ -45,21 +31,7 @@ public sealed class LogEntryViewModel(
 
     public string LevelText => localizer.GetString(LevelKey(entry.Level));
 
-    public string Summary
-    {
-        get
-        {
-            if (entry.Arguments is { } arguments && arguments.TryGetValue("message", out var message)
-                && !string.IsNullOrWhiteSpace(message?.ToString()))
-            {
-                return message.ToString()!;
-            }
-
-            return entry.MessageKey is null
-                ? entry.Message
-                : contentLocalizer.Format(entry.MessageKey, entry.Arguments);
-        }
-    }
+    public string Summary => entry.Message;
 
     public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
 
@@ -281,7 +253,6 @@ public sealed class LogEntryViewModel(
             Category,
             Operation,
             EventDisplay,
-            entry.MessageKey ?? string.Empty,
             entry.TechnicalDetail ?? string.Empty,
             entry.ExceptionText ?? string.Empty
         };
@@ -419,16 +390,6 @@ public sealed class LogEntryViewModel(
     private static bool Contains(string value, string query) =>
         value.Contains(query, StringComparison.OrdinalIgnoreCase);
 
-    private string? GetSpecialMessageCompact(string? messageKey)
-    {
-        return messageKey switch
-        {
-            null => null,
-            "Log.ImportSummary" => CompactImportSummary(),
-            _ => SpecialMessageMap.GetValueOrDefault(messageKey)
-        };
-    }
-
     private string CreateCompactSummary()
     {
         if (TryArgument("Summary", out var explicitSummary) || TryArgument("summary", out explicitSummary))
@@ -436,27 +397,15 @@ public sealed class LogEntryViewModel(
             return TruncateSummary(explicitSummary);
         }
 
-        if (TryArgument("message", out var message) && !string.IsNullOrWhiteSpace(message))
-        {
-            return TruncateSummary(message);
-        }
-
-        var special = GetSpecialMessageCompact(entry.MessageKey);
-        if (special is not null)
-        {
-            return TruncateSummary(special);
-        }
-
-        return TruncateSummary(CompactPrefix(Summary));
+        // 摘要 = 完整消息去掉尾部的载荷（message='...'）。诊断等长消息保留
+        // operation/severity/code 等前置上下文，原文只进检查器，不会占据整行。
+        return TruncateSummary(TrimMessagePayload(Summary));
     }
 
-    private string CompactImportSummary()
+    private static string TrimMessagePayload(string value)
     {
-        var result = TryArgument("result", out var value) && !string.IsNullOrWhiteSpace(value)
-            ? value
-            : "completed";
-        var operation = !string.IsNullOrWhiteSpace(Operation) ? Operation : "Import";
-        return $"{operation} {result}";
+        var index = value.IndexOf(", message='", StringComparison.Ordinal);
+        return index > 0 ? value[..index].TrimEnd() : value;
     }
 
     private bool TryArgument(string key, out string value)
@@ -471,12 +420,6 @@ public sealed class LogEntryViewModel(
 
         value = string.Empty;
         return false;
-    }
-
-    private static string CompactPrefix(string value)
-    {
-        var separator = value.IndexOfAny([':', '\uFF1A', '\n', '\r']);
-        return separator > 0 ? value[..separator].Trim() : value.Trim();
     }
 
     private static string TruncateSummary(string value)
@@ -556,7 +499,6 @@ public sealed class LogEntryViewModel(
     /// and import details available in the raw representation.
     /// </summary>
     private static bool IsOverviewHiddenKey(string key) =>
-        string.Equals(key, "MessageKey", StringComparison.Ordinal) ||
         string.Equals(key, "TechnicalDetail", StringComparison.Ordinal) ||
         string.Equals(key, "Operation", StringComparison.Ordinal) ||
         string.Equals(key, "operation", StringComparison.Ordinal) ||

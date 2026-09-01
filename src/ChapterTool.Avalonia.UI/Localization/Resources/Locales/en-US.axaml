@@ -6,12 +6,7 @@
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">Append MPLS…</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">Browse template…</x:String>
   <x:String x:Key="Action.Close" xml:space="preserve">Close</x:String>
-  <x:String x:Key="Action.CombineSegments" xml:space="preserve">Combine segments: entries={entries}, sourceType={sourceType}</x:String>
-  <x:String x:Key="Action.DeleteRows" xml:space="preserve">Delete rows: indexes={indexes}</x:String>
   <x:String x:Key="Action.Download" xml:space="preserve">Download</x:String>
-  <x:String x:Key="Action.EditCell" xml:space="preserve">Edit {kind}: row={row}, value='{value}'</x:String>
-  <x:String x:Key="Action.EditChapters" xml:space="preserve">Edit chapters</x:String>
-  <x:String x:Key="Action.InsertRow" xml:space="preserve">Insert row: index={index}</x:String>
   <x:String x:Key="Action.Load" xml:space="preserve">Load</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">Load OGM sample</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">Log</x:String>
@@ -20,8 +15,6 @@
   <x:String x:Key="Action.Reload" xml:space="preserve">Reload</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">Restore defaults</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">Settings</x:String>
-  <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">Shift frames forward: frames={frames}</x:String>
-  <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">Split combined segments: entries={entries}, sourceType={sourceType}</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
   <x:String x:Key="Common.Apply" xml:space="preserve">Apply</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">Cancel</x:String>
@@ -63,6 +56,7 @@
   <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">Exported to {value}</x:String>
   <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">Export failed: {value}</x:String>
   <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">Close details</x:String>
+  <x:String x:Key="Tool.Log.OpenFolder" xml:space="preserve">Open log folder</x:String>
   <x:String x:Key="Tool.Log.Export" xml:space="preserve">Export logs</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">This entry has no nested structured data.</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">This entry has no exception data.</x:String>
@@ -176,8 +170,6 @@
   <x:String x:Key="Diagnostic.XmlRoot.Invalid" xml:space="preserve">Expected Chapters root, got {name}.</x:String>
   <x:String x:Key="Diagnostic.XplChapters.None" xml:space="preserve">No HD-DVD chapters were parsed.</x:String>
   <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">The XPL playlist could not be parsed: {message}</x:String>
-  <x:String x:Key="EditKind.Frame" xml:space="preserve">frame</x:String>
-  <x:String x:Key="EditKind.Name" xml:space="preserve">name</x:String>
   <x:String x:Key="Empty.Hint" xml:space="preserve">Load a file, drop one here, or load the sample to compute frames and expressions.</x:String>
   <x:String x:Key="Empty.Title" xml:space="preserve">No chapters loaded</x:String>
   <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">Add the missing operand before applying this token.</x:String>
@@ -212,26 +204,6 @@
   <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">Simplified Chinese</x:String>
   <x:String x:Key="Language.English" xml:space="preserve">English</x:String>
   <x:String x:Key="Language.Japanese" xml:space="preserve">Japanese</x:String>
-  <x:String x:Key="Log.AppendingMpls" xml:space="preserve">Appending MPLS: path='{path}'</x:String>
-  <x:String x:Key="Log.AutoFrameRateDetection" xml:space="preserve">Auto frame-rate detection: option={option}, confidence={confidence}, accurate={accurate}/{evaluated}, deviation={deviation}</x:String>
-  <x:String x:Key="Log.ChangeFps" xml:space="preserve">Convert to current FPS: source={sourceFps}, target={targetFps}, chapters {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.CreateZones" xml:space="preserve">Create zones: selectedRows={selectedRows}, chapters={chapters}</x:String>
-  <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} diagnostic: severity={severity}, code={code}{location} message='{message}'{details}</x:String>
-  <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}: chapters {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">Frame info updated: option={option}, fps={fps}, round={round}, chapters={chapters}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
-  <x:String x:Key="Log.LanguageSet" xml:space="preserve">Language set to {language}</x:String>
-  <x:String x:Key="Log.LoadingSource" xml:space="preserve">Loading source: path='{path}'</x:String>
-  <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}: path='{path}'</x:String>
-  <x:String x:Key="Log.RelatedMediaNotFound" xml:space="preserve">{status}: reference='{reference}', resolved='{resolved}'</x:String>
-  <x:String x:Key="Log.SavingChapters" xml:space="preserve">Saving chapters: format={format}, directory='{directory}', source='{source}', chapters={chapters}, applyExpression={applyExpression}, expression='{expression}'</x:String>
-  <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">Selected source option: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={chapters}, fps={fps}</x:String>
-  <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">Settings loaded: savingPath='{savingPath}', language='{language}'</x:String>
-  <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
-  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">Unexpected UI operation failure</x:String>
-  <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status} from {path}</x:String>
-  <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">Failed to load chapter name template from '{path}'</x:String>
-  <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">Loaded chapter name template '{name}' from '{path}'</x:String>
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">Append MPLS</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">Auto</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} chapters</x:String>

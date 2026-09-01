@@ -5,6 +5,7 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform.Expressions;
+using Microsoft.Extensions.Logging;
 using DeleteRowsTimingMode = ChapterTool.Contracts.Configuration.DeleteRowsTimingMode;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -68,7 +69,8 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         if (diagnostic is null)
         {
             owner.SetStatus("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName));
-            owner.LogStatus();
+            owner.Log(LogLevel.Information, $"Lua expression script loaded: path='{ExpressionSourceName}'", "Edit",
+                ("path", ExpressionSourceName));
         }
 
         return diagnostic;
@@ -153,7 +155,8 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
         await owner.SettingsStore.UpdateAsync(
             current => current with { Application = current.Application with { Language = owner.UiLanguage } },
             cancellationToken);
-        owner.Log("Log.LanguageSet", ("language", owner.UiLanguage));
+        owner.Log(LogLevel.Information, $"Language set to {owner.UiLanguage}", "Settings",
+            ("language", owner.UiLanguage));
         owner.NotifyStateChanged();
     }
 
@@ -236,7 +239,7 @@ public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapter
 
         owner.ApplyEditFromPort(
             owner.ClipEditingCoordinator.ShiftFramesForward(owner.CurrentChapterSet, frames),
-            owner.Localizer.Format(LocalizedMessage.Create("Action.ShiftFramesForward", ("frames", frames))));
+            $"Shift frames forward: frames={frames}");
     }
 }
 

@@ -115,7 +115,7 @@ public sealed partial class MainWindowViewModel
         {
             if (CurrentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes, EditingOptions), EnglishLogText("Action.DeleteRows", ("indexes", string.Join(",", indexes.Order()))));
+                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes, EditingOptions), $"Delete rows: indexes={string.Join(",", indexes.Order())}");
             }
 
             return ValueTask.CompletedTask;
@@ -125,7 +125,7 @@ public sealed partial class MainWindowViewModel
             if (CurrentInfo is not null)
             {
                 var index = parameter is int value ? value : Rows.Count;
-                ApplyEdit(ClipEditingCoordinator.InsertBefore(CurrentInfo, index), EnglishLogText("Action.InsertRow", ("index", index)));
+                ApplyEdit(ClipEditingCoordinator.InsertBefore(CurrentInfo, index), $"Insert row: index={index}");
             }
 
             return ValueTask.CompletedTask;

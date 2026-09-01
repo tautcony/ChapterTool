@@ -562,7 +562,8 @@ public sealed class MainWindowViewModelTests
             Assert.Equal(2, vm.ChapterNameModeIndex);
             Assert.True(vm.UseTemplateNames);
             Assert.Contains("Loaded template", vm.StatusText, StringComparison.Ordinal);
-            Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoaded");
+            Assert.Contains(log.Entries, static entry =>
+                entry.Operation == "Template" && entry.Message.StartsWith("Loaded chapter name template", StringComparison.Ordinal));
         }
         finally
         {
@@ -587,7 +588,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("keep.txt", vm.ChapterNameTemplateStatus);
         Assert.Equal(2, vm.ChapterNameModeIndex);
         Assert.Contains("Failed to load chapter name template", vm.StatusText, StringComparison.Ordinal);
-        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoadFailed");
+        Assert.Contains(log.Entries, static entry =>
+            entry.Operation == "Template" && entry.Message.StartsWith("Failed to load chapter name template", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -639,8 +641,10 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
 
-        var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
-        Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey is "Log.ImportGroup" or "Log.ImportEntry");
+        var summary = Assert.Single(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load completed", StringComparison.Ordinal));
+        Assert.DoesNotContain(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load diagnostic", StringComparison.Ordinal));
         Assert.Equal("Load", summary.Operation);
         Assert.Contains(
             "1) movie.mpls, 00001.m2ts, 0:00:00",
@@ -681,8 +685,10 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("index.bdmv");
 
-        Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic");
-        var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
+        Assert.DoesNotContain(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load diagnostic", StringComparison.Ordinal));
+        var summary = Assert.Single(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load completed", StringComparison.Ordinal));
         var details = Assert.IsType<Dictionary<string, object?>>(summary.StructuredState?["details"]);
         var diagnostics = Assert.IsType<List<object?>>(details["diagnostics"]);
         var folded = Assert.IsType<Dictionary<string, object?>>(Assert.Single(diagnostics));
@@ -918,7 +924,8 @@ public sealed class MainWindowViewModelTests
 
         Assert.Equal("00:00:04.800", vm.Rows[0].TimeText);
         Assert.Contains(log.Entries, entry =>
-            entry is { MessageKey: "Log.ChangeFps", Arguments: not null }
+            entry is { Operation: "Edit", Arguments: not null }
+            && entry.Message.StartsWith("Convert to current FPS:", StringComparison.Ordinal)
             && entry.Arguments.TryGetValue("sourceFps", out var sourceFps)
             && entry.Arguments.TryGetValue("targetFps", out var targetFps)
             && string.Equals(sourceFps?.ToString(), "24", StringComparison.Ordinal)
@@ -1234,7 +1241,8 @@ public sealed class MainWindowViewModelTests
 
         Assert.Contains("CHAPTER01=", vm.BuildPreview(), StringComparison.Ordinal);
         Assert.Contains(log.Entries, entry =>
-            entry is { Level: LogLevel.Information, MessageKey: "Log.LoadingSource" } &&
+            entry is { Level: LogLevel.Information } &&
+            entry.Message.StartsWith("Loading source: path='", StringComparison.Ordinal) &&
             string.Equals(entry.Category, typeof(MainWindowViewModel).FullName, StringComparison.Ordinal));
     }
 
@@ -1463,7 +1471,8 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        var entry = Assert.Single(log.Entries, static item => item.MessageKey == "Log.Diagnostic");
+        var entry = Assert.Single(log.Entries, static item =>
+            item.Operation == "Load" && item.Message.StartsWith("Load diagnostic:", StringComparison.Ordinal));
         Assert.Equal(LogLevel.Warning, entry.Level);
         Assert.Equal("Parse.Partial", entry.Arguments?["code"]);
         Assert.Equal("tail", entry.TechnicalDetail);
@@ -1483,7 +1492,10 @@ public sealed class MainWindowViewModelTests
             Assert.NotNull(diagnostic);
             Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
             Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
-            Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+            Assert.Contains(log.Entries, static entry =>
+                entry.Operation == "Lua expression script"
+                && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
+                && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
         }
         finally
         {
@@ -1501,7 +1513,10 @@ public sealed class MainWindowViewModelTests
         vm.ToolSession.Expression.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
 
         Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
-        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+        Assert.Contains(log.Entries, static entry =>
+            entry.Operation == "Lua expression script"
+            && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
+            && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
     }
 
     private static MainWindowViewModel CreateViewModel(

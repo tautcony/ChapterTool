@@ -105,9 +105,15 @@ public sealed class AuxiliaryToolHeadlessTests
 
             Assert.True(viewModel.IsDetailsOpen);
             Assert.True(viewModel.ShowDetails);
+            var detailsHeader = window.GetVisualDescendants().OfType<Border>()
+                .Single(control => control.Name == "LogDetailsHeader");
+            Assert.Equal(42, detailsHeader.Bounds.Height);
+            Assert.Equal(new Thickness(0), detailsHeader.BorderThickness);
+            Assert.Equal(1, detailsHeader.GetVisualDescendants().OfType<Button>()
+                .Count(static button => button.IsEffectivelyVisible));
             var detailsTabs = window.GetVisualDescendants().OfType<TabControl>()
                 .Single(control => control is { IsVisible: true, Name: "LogDetailsTabs" });
-            Assert.Equal(3, detailsTabs.Items.Count);
+            Assert.Equal(2, detailsTabs.Items.Count);
 
             var rawExpander = window.GetVisualDescendants().OfType<Expander>()
                 .FirstOrDefault(expander => string.Equals(expander.Header?.ToString(), localizer.GetString("Tool.Log.Raw"), StringComparison.Ordinal));
@@ -294,17 +300,16 @@ public sealed class AuxiliaryToolHeadlessTests
         var logService = new ApplicationLogPanelProvider();
         var state = new Dictionary<string, object?>(StringComparer.Ordinal)
         {
-            ["MessageKey"] = "Log.Diagnostic",
             ["message"] = "Import finished",
             ["code"] = "Import.Partial",
             ["TechnicalDetail"] = "hidden-token"
         };
         logService.CreateLogger("ChapterTool.Headless").Log(
             LogLevel.Warning,
-            new EventId(4, "Log.Diagnostic"),
+            new EventId(4, "Diagnostic"),
             state,
             null,
-            static (values, _) => values["MessageKey"]?.ToString() ?? string.Empty);
+            static (_, _) => "Import diagnostic: severity=Warning, code=Import.Partial");
         using var viewModel = new LogToolViewModel(logService, localizer);
         var view = new LogToolView { DataContext = viewModel };
         var window = new Window { Content = view, Width = 760, Height = 460 };
@@ -327,7 +332,7 @@ public sealed class AuxiliaryToolHeadlessTests
             await viewModel.OpenDetailsCommand.ExecuteAsync(entry);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             var detailsTabs = window.GetVisualDescendants().OfType<TabControl>().Single(static control => control.Name == "LogDetailsTabs");
-            detailsTabs.SelectedIndex = 1;
+            detailsTabs.SelectedIndex = 0;
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             var rendered = MainWindowHeadlessTestHost.RenderedTexts(window);
             Assert.Contains(localizer.GetString("Tool.Log.Properties"), rendered);
@@ -449,9 +454,6 @@ public sealed class AuxiliaryToolHeadlessTests
     }
 
     private static Color BrushColor(IBrush? brush) => Assert.IsType<SolidColorBrush>(brush).Color;
-
-    private static Color ResourceColor(string key) =>
-        BrushColor(Application.Current!.Resources[key] as IBrush);
 
     private static Color ImportedThemeBrushColor(string key)
     {

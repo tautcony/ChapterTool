@@ -17,27 +17,6 @@ internal sealed partial class StatusDiagnosticsPresenter(
     IChapterTimeFormatter timeFormatter,
     Action<string> setStatusText)
 {
-    private static readonly IReadOnlyDictionary<string, string> OperationByMessageKey =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["Log.LoadingSource"] = "Load",
-            ["Log.StatusFromPath"] = "Load",
-            ["Log.SavingChapters"] = "Save",
-            ["Log.AppendingMpls"] = "Append",
-            ["Log.TemplateLoaded"] = "Template",
-            ["Log.TemplateLoadFailed"] = "Template",
-            ["Log.EditChapters"] = "Edit",
-            ["Log.ChangeFps"] = "Edit",
-            ["Log.FrameInfoUpdated"] = "Edit",
-            ["Log.AutoFrameRateDetection"] = "Edit",
-            ["Log.SelectedSourceOption"] = "Edit",
-            ["Log.CreateZones"] = "Zones",
-            ["Log.OpenedPath"] = "Open",
-            ["Log.RelatedMediaNotFound"] = "Open",
-            ["Log.LanguageSet"] = "Settings",
-            ["Log.SettingsLoaded"] = "Settings"
-        };
-
     private LocalizedMessage? statusMessage;
     private LocalizedMessage? progressMessage;
 
@@ -86,28 +65,27 @@ internal sealed partial class StatusDiagnosticsPresenter(
         return LocalizerRegex().Replace(localizer.Format(key, arguments), "[?]");
     }
 
-    public void Log(LogLevel level, string key, string? technicalDetail = null, params (string Name, object? Value)[] arguments)
+    /// <summary>
+    /// Logs a fully rendered English message with structured arguments. The message is
+    /// written verbatim to the file sink, so every entry is self-describing.
+    /// </summary>
+    public void Log(
+        LogLevel level,
+        string message,
+        string? operation = null,
+        string? technicalDetail = null,
+        Exception? exception = null,
+        params (string Name, object? Value)[] arguments)
     {
-        if (string.IsNullOrWhiteSpace(key))
+        if (string.IsNullOrWhiteSpace(message))
         {
             return;
         }
 
-        var trimmedKey = key.Trim();
         var state = arguments.ToDictionary(static item => item.Name, static item => item.Value, StringComparer.Ordinal);
-        state["MessageKey"] = trimmedKey;
         if (!string.IsNullOrWhiteSpace(technicalDetail))
         {
             state["TechnicalDetail"] = technicalDetail;
-        }
-
-        // Tag the entry with its operation so the log panel can group and label entries.
-        // The explicit "operation" argument (used by import/diagnostic entries) wins over
-        // the key-derived fallback so localized operation names are preserved.
-        var operation = arguments.FirstOrDefault(static item => item.Name is "operation" or "Operation").Value?.ToString();
-        if (string.IsNullOrWhiteSpace(operation))
-        {
-            operation = OperationForKey(trimmedKey);
         }
 
         if (!string.IsNullOrWhiteSpace(operation))
@@ -115,8 +93,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
             state["Operation"] = operation;
         }
 
-        logger.Log(level, new EventId(0, trimmedKey), state, null,
-            static (values, _) => values.TryGetValue("MessageKey", out var value) ? value?.ToString() ?? string.Empty : string.Empty);
+        logger.Log(level, new EventId(0), state, exception, (_, _) => message);
     }
 
     /// <summary>
@@ -127,15 +104,20 @@ internal sealed partial class StatusDiagnosticsPresenter(
     {
         var entryCount = result.Groups.Sum(static group => group.Entries.Count);
         var chapterCount = result.Groups.SelectMany(static group => group.Entries).Sum(static entry => entry.ChapterSet.Chapters.Count);
-        Log(result.Success ? LogLevel.Information : LogLevel.Error, "Log.ImportSummary", null,
-            ("operation", operation),
-            ("result", result.Success
-                ? result.IsPartial ? "completed with partial results" : "completed"
-                : "failed"),
-            ("success", result.Success), ("partial", result.IsPartial), ("groups", result.Groups.Count),
-            ("entries", entryCount), ("chapters", chapterCount), ("diagnostics", result.Diagnostics.Count),
-            ("details", ImportDetails(result)),
-            ("importOverview", ImportOverview(result)));
+        var resultText = result.Success
+            ? result.IsPartial ? "completed with partial results" : "completed"
+            : "failed";
+        Log(result.Success ? LogLevel.Information : LogLevel.Error,
+            $"{operation} {resultText}: groups={result.Groups.Count}, entries={entryCount}, chapters={chapterCount}, diagnostics={result.Diagnostics.Count}",
+            operation,
+            arguments:
+            [
+                ("result", resultText),
+                ("success", result.Success), ("partial", result.IsPartial), ("groups", result.Groups.Count),
+                ("entries", entryCount), ("chapters", chapterCount), ("diagnostics", result.Diagnostics.Count),
+                ("details", ImportDetails(result)),
+                ("importOverview", ImportOverview(result))
+            ]);
     }
 
     private static string ImportOverview(ChapterImportResult result)
@@ -241,17 +223,12 @@ internal sealed partial class StatusDiagnosticsPresenter(
         };
     }
 
-    /// <summary>Maps well-known message keys to the operation that produced them.</summary>
-    private static string? OperationForKey(string key) =>
-        OperationByMessageKey.GetValueOrDefault(key);
-
     public void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
     {
         foreach (var diagnostic in diagnostics)
         {
             var arguments = new List<(string Name, object? Value)>
             {
-                ("operation", operation),
                 ("severity", diagnostic.Severity),
                 ("code", diagnostic.DisplayCode),
                 ("location", diagnostic.Location ?? string.Empty),
@@ -265,7 +242,14 @@ internal sealed partial class StatusDiagnosticsPresenter(
                     .Select(static pair => (pair.Key, pair.Value)));
             }
 
-            Log(LogLevelFor(diagnostic.Severity), "Log.Diagnostic", diagnostic.Details, [.. arguments]);
+            var location = string.IsNullOrWhiteSpace(diagnostic.Location)
+                ? string.Empty
+                : $", location='{diagnostic.Location}'";
+            Log(LogLevelFor(diagnostic.Severity),
+                $"{operation} diagnostic: severity={diagnostic.Severity}, code={diagnostic.DisplayCode}{location}, message='{diagnostic.Message}'",
+                operation,
+                diagnostic.Details,
+                arguments: [.. arguments]);
         }
     }
 

@@ -1,4 +1,3 @@
-using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
@@ -9,8 +8,6 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Contains status and application-log behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
-    private readonly IAppLocalizer logContentLocalizer = new AppLocalizationManager("en-US");
-
     internal void SetStatus(string? key, params (string Name, object? Value)[] arguments)
         => statusDiagnosticsPresenter.SetStatus(key, arguments);
 
@@ -24,16 +21,14 @@ public sealed partial class MainWindowViewModel
 
     internal string LocalizeDiagnostic(ChapterDiagnostic diagnostic) => statusDiagnosticsPresenter.LocalizeDiagnostic(diagnostic);
 
-    internal void LogStatus(LogLevel level = LogLevel.Information) => Log(level, "Log.Status", ("status", StatusText));
+    internal void Log(string message, string? operation, params (string Name, object? Value)[] arguments)
+        => Log(LogLevel.Information, message, operation, arguments);
 
-    internal void Log(string key, params (string Name, object? Value)[] arguments) =>
-        statusDiagnosticsPresenter.Log(LogLevel.Information, key, technicalDetail: null, arguments);
+    internal void Log(LogLevel level, string message, string? operation, params (string Name, object? Value)[] arguments)
+        => statusDiagnosticsPresenter.Log(level, message, operation, technicalDetail: null, arguments: arguments);
 
-    private void Log(LogLevel level, string key, params (string Name, object? Value)[] arguments)
-        => statusDiagnosticsPresenter.Log(level, key, technicalDetail: null, arguments);
-
-    private void Log(LogLevel level, string key, string? technicalDetail, params (string Name, object? Value)[] arguments)
-        => statusDiagnosticsPresenter.Log(level, key, technicalDetail, arguments);
+    internal void Log(LogLevel level, string message, string? operation, string technicalDetail, params (string Name, object? Value)[] arguments)
+        => statusDiagnosticsPresenter.Log(level, message, operation, technicalDetail, arguments: arguments);
 
     private void RefreshLocalizedState()
     {
@@ -90,9 +85,6 @@ public sealed partial class MainWindowViewModel
     internal void LogDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
         => statusDiagnosticsPresenter.LogDiagnostics(operation, diagnostics);
 
-    internal string EnglishLogText(string key, params (string Name, object? Value)[] arguments)
-        => logContentLocalizer.Format(LocalizedMessage.Create(key, arguments));
-
     private void LogImportDiagnostics(string operation, IReadOnlyList<ChapterDiagnostic> diagnostics)
         => statusDiagnosticsPresenter.LogDiagnostics(
             operation,
@@ -101,7 +93,11 @@ public sealed partial class MainWindowViewModel
     public ValueTask ReportUnexpectedUiException(Exception exception)
     {
         SetStatus("Status.UnexpectedError");
-        Log(LogLevel.Error, "Log.UnexpectedError", exception.ToString());
+        statusDiagnosticsPresenter.Log(
+            LogLevel.Error,
+            $"Unexpected UI operation failure: {exception.Message}",
+            technicalDetail: exception.ToString(),
+            exception: exception);
         return ValueTask.CompletedTask;
     }
 
