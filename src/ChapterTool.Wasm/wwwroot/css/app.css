@@ -66,6 +66,7 @@ html, body {
   gap: 0.7rem;
   padding: 0.9rem;
   min-height: 0;
+  min-width: 0;
 }
 
 /* —— Top load/save zone —— */
@@ -220,6 +221,7 @@ button.secondary {
   flex-direction: column;
   gap: 0.35rem;
   min-height: 0;
+  min-width: 0;
 }
 
 .path-line {
@@ -241,6 +243,7 @@ button.secondary {
 
 .chapter-grid {
   width: 100%;
+  min-width: 34rem;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 0.9rem;
@@ -886,9 +889,36 @@ input:disabled {
 }
 
 @media (max-width: 760px) {
+  .main {
+    gap: 0.55rem;
+    padding: 0.6rem;
+  }
+
   .top-bar {
     grid-template-columns: 1fr;
     align-items: stretch;
+    gap: 0.55rem;
+  }
+
+  .top-actions {
+    width: 100%;
+    gap: 0.45rem;
+  }
+
+  .top-actions > button,
+  .top-actions .load-group,
+  .top-actions .load-group > button {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .top-actions .load-group > button {
+    width: 100%;
+  }
+
+  .clip-box {
+    min-width: 0;
+    max-width: none;
   }
 
   .status-bar {
@@ -909,45 +939,47 @@ input:disabled {
 
   .top-tools {
     align-items: stretch;
+    min-width: 0;
+    width: 100%;
   }
 
   .top-tool-actions {
     justify-content: flex-start;
+    gap: 0.45rem;
   }
 
-  /* Avalonia narrow AdvancedOptions: 2 cols, Expression full width on row 3 */
+  .fps-box {
+    width: 100%;
+  }
+
+  .grid-wrap {
+    min-height: 10rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Stack export controls so translated labels cannot force horizontal overflow. */
   .options-zone {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    gap: 0.5rem;
   }
 
-  .option-format {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .option-name-mode {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .option-xml-lang {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .option-order-shift {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
+  .option-format,
+  .option-name-mode,
+  .option-xml-lang,
+  .option-order-shift,
   .option-expression {
-    grid-column: 1 / -1;
-    grid-row: 3;
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .option-cell {
+    grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
   }
 
   .expression-controls {
     grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
   }
 }
 
@@ -967,7 +999,7 @@ input:disabled {
   }
 
   .option-cell {
-    grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr);
+    grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
   }
 
   .option-expression {
