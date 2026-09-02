@@ -1,0 +1,94 @@
+src/ChapterTool.Core/Importing/Disc/MplsUOMaskTable.cs
+  h_3705811fa4502c 6,10,14,18,22,26,30,34,38,42,46,50,54,58,62,66,70,74,78,82,86,90,94,98,102,106,110,114,118,122
+src/ChapterTool.Core/Session/ChapterWorkspace.cs
+  h_3705811fa4502c 15,18,21,24,27,30,33,36,39
+src/ChapterTool.Core/Exporting/ChapterExportFormats.cs
+  h_3705811fa4502c 22
+src/ChapterTool.Core/Session/ChapterSourceDocument.cs
+  h_3705811fa4502c 12,20
+tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs
+  h_3705811fa4502c 1036,1070
+  h_3705811fa4502c 1031,1038,1052,1054
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  h_3705811fa4502c 129
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  h_3705811fa4502c 235,896,945,1218
+src/ChapterTool.Core/Session/ExportPreferences.cs
+  h_3705811fa4502c 23
+src/ChapterTool.Core/Importing/Disc/MplsPlayItem.cs
+  h_3705811fa4502c 18,28
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_4ef64e4be9a3ad::t_60ad8dfd16c23a 162
+  s_4ef64e4be9a3ad::t_223483ad7be334 305
+  s_4ef64e4be9a3ad::t_63d327509a64ee 165
+  h_3705811fa4502c 193,278
+  h_3705811fa4502c 159
+src/ChapterTool.Core/Importing/Disc/MplsSubPath.cs
+  h_3705811fa4502c 11
+src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs
+  h_3705811fa4502c 10
+src/ChapterTool.Core/Importing/ChapterContentService.cs
+  s_4ef64e4be9a3ad::t_b24579b144c106 166
+  h_3705811fa4502c 152
+  s_4ef64e4be9a3ad::t_bdb77e6d6e3127 159
+src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs
+  h_3705811fa4502c 14
+src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs
+  h_3705811fa4502c 23
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs
+  h_3705811fa4502c 170
+  h_3705811fa4502c 163
+src/ChapterTool.Core/Importing/Disc/MplsSubPlayItem.cs
+  h_3705811fa4502c 21
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs
+  s_4ef64e4be9a3ad::t_1300d7a1b4ca46 93
+  h_3705811fa4502c 71
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs
+  h_3705811fa4502c 118
+  h_3705811fa4502c 332
+src/ChapterTool.Core/Importing/Disc/MplsMultiAngle.cs
+  h_3705811fa4502c 9,14
+src/ChapterTool.Core/Session/ClipSession.cs
+  s_4ef64e4be9a3ad::t_3ea7377b5bec22 53
+  s_4ef64e4be9a3ad::t_420b286dd03169 43
+  s_4ef64e4be9a3ad::t_1e1952b2bed5c8 47
+  s_4ef64e4be9a3ad::t_79eb7514ef6ca5 33
+  h_3705811fa4502c 15,20,23,26,29
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml
+  h_3705811fa4502c 184
+src/ChapterTool.Core/Models/Chapter.cs
+  h_3705811fa4502c 23
+src/ChapterTool.Core/Localization/UiLanguageCode.cs
+  h_3705811fa4502c 15
+src/ChapterTool.Core/Importing/Disc/MplsAppInfoPlayList.cs
+  h_3705811fa4502c 11,16,21,26,31
+tests/ChapterTool.TestSupport/TestRepository.cs
+  h_3705811fa4502c 9
+tests/ChapterTool.Core.Tests/Importing/IndexImporterTests.cs
+  h_3705811fa4502c 465
+src/ChapterTool.Avalonia/Composition/AppCompositionOptions.cs
+  h_3705811fa4502c 9
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs
+  h_3705811fa4502c 218
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "5cb7d3d78bc02014090feef1ab6bc9920a451632",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_4ef64e4be9a3ad": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1788267425579",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
