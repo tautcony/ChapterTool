@@ -16,6 +16,7 @@ jobs:
         (
           github.event.workflow_run.event == 'push' &&
           github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
           startsWith(github.event.workflow_run.head_branch, 'v')
         )
       }}
@@ -87,7 +88,7 @@ jobs:
 
       - name: NuGet login (OIDC)
         id: login
-        uses: NuGet/login@v1.2.0
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ vars.NUGET_USER }}
 
