@@ -1,0 +1,32 @@
+src/ChapterTool.Core/Importing/Disc/Limits/DiscBinaryReadLimits.cs
+  s_be70db79854ed6::t_de412011e92361 1-7
+scripts/normalize-changed-text-files.py
+  s_be70db79854ed6::t_2c15c601d6b19d 14,16,22-24,38,40-54
+src/ChapterTool.Core/Importing/Disc/BinaryReadExtensions.cs
+  s_be70db79854ed6::t_de412011e92361 2
+src/ChapterTool.Infrastructure/Platform/ShellService.cs
+  s_be70db79854ed6::t_ad2c20650103e5 151-153
+scripts/publish.sh
+  s_be70db79854ed6::t_83bab90717d6d9 96-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "cb2418409ddd95c8400d8bd8c15486b337c0a61d",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_be70db79854ed6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0609d-9031-7851-959e-e838bd3bc12b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
