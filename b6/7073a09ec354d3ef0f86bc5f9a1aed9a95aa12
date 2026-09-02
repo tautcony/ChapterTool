@@ -1,0 +1,20 @@
+src/ChapterTool.Wasm/wwwroot/css/app.css
+  s_034e6c21cab30f::t_1effee6134248e 69,224,246,892-896,900-914,919-921,942-943,948,951-952,955-957,960-964,967-971,973,976-977,982,1002
+  s_034e6c21cab30f::t_d4632d757cf4d5 915-918
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "b67073a09ec354d3ef0f86bc5f9a1aed9a95aa12",
+  "prompts": {},
+  "sessions": {
+    "s_034e6c21cab30f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06084-704b-7673-8cbd-af7405b22625",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
