@@ -181,7 +181,7 @@
                 <TextBlock Grid.Row="1" Grid.Column="1" Classes="status" Text="{Binding MkvToolnixStatus}" />
               </Grid>
 
-              <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="3" ColumnSpacing="12">
+              <Grid Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" ColumnDefinitions="1*,4*" RowDefinitions="Auto,Auto" RowSpacing="3" ColumnSpacing="12">
                 <TextBlock x:Name="FfprobeLabel" Grid.Row="0" Grid.Column="0" Classes="label" Text="{DynamicResource Settings.FfprobePath}" />
                 <TextBox x:Name="FfprobeTextBox" Grid.Row="0" Grid.Column="1" Text="{Binding FfprobePath, Mode=TwoWay}">
                   <TextBox.InnerRightContent>

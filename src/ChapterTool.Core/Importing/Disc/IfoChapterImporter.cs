@@ -7,7 +7,7 @@ namespace ChapterTool.Core.Importing.Disc;
 /// <summary>
 /// Imports DVD chapter data from IFO files.
 /// </summary>
-public sealed partial class IfoChapterImporter : IChapterImporter
+public sealed class IfoChapterImporter : IChapterImporter
 {
     /// <summary>
     /// Gets the stable importer identifier.

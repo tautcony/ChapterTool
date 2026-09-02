@@ -232,7 +232,7 @@ public sealed class WasmWorkspace : IDisposable
             : "—";
 
     public bool IsXmlLanguageEnabled =>
-        wasmChapterService.FormatAt(SaveFormatIndex) == ChapterExportFormat.Xml;
+        ChapterContentService.FormatAt(SaveFormatIndex) == ChapterExportFormat.Xml;
 
     public IReadOnlyList<WasmLogEntry> Logs => logs;
 
@@ -893,7 +893,7 @@ public sealed class WasmWorkspace : IDisposable
             SetBaseChapterSet(framed.Info);
             FramesPerSecond = BaseChapterSet.FramesPerSecond;
 
-            var format = wasmChapterService.FormatAt(SaveFormatIndex);
+            var format = ChapterContentService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
             diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
@@ -942,7 +942,7 @@ public sealed class WasmWorkspace : IDisposable
             SetBaseChapterSet(framed.Info);
             FramesPerSecond = BaseChapterSet.FramesPerSecond;
 
-            var format = wasmChapterService.FormatAt(SaveFormatIndex);
+            var format = ChapterContentService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
             diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
@@ -1215,7 +1215,7 @@ public sealed class WasmWorkspace : IDisposable
 
     private ChapterExportOptions CreateExportOptions() =>
         new(
-            Format: wasmChapterService.FormatAt(SaveFormatIndex),
+            Format: ChapterContentService.FormatAt(SaveFormatIndex),
             XmlLanguage: XmlLanguage,
             SourceFileName: SourcePath,
             AutoGenerateNames: ChapterNameModeIndex == 1,

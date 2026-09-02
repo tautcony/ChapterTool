@@ -11,7 +11,7 @@ public static class PortableInputPolicy
     /// <param name="Exceeded">true when the input is larger than <see cref="MaxBytes"/>.</param>
     public readonly record struct BoundedStreamCopy(MemoryStream? Stream, bool Exceeded)
     {
-        /// <summary>A copy result that reports an over-budget input.</summary>
+        /// <summary>Gets a copy result that reports an over-budget input.</summary>
         public static BoundedStreamCopy TooLarge { get; } = new(null, true);
     }
 

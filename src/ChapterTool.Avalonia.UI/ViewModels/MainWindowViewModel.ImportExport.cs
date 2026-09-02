@@ -68,7 +68,7 @@ public sealed partial class MainWindowViewModel
         {
             SetStatus("Status.NoSourceSelected");
             Log(LogLevel.Information, "Load source skipped: no source selected", "Load",
-                ("displayName", source.DisplayName ?? string.Empty));
+                ("displayName", source.DisplayName));
             NotifyStateChanged();
             return;
         }
@@ -90,7 +90,7 @@ public sealed partial class MainWindowViewModel
             case LoadWorkflowState.EmptyPath:
                 SetStatus("Status.NoSourceSelected");
                 Log(LogLevel.Information, "Load source skipped: no source selected", "Load",
-                    ("displayName", source.DisplayName ?? string.Empty));
+                    ("displayName", source.DisplayName));
                 NotifyStateChanged();
                 return;
             case LoadWorkflowState.Failed:

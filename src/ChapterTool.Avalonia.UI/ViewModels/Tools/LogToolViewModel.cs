@@ -215,7 +215,7 @@ public sealed class LogToolViewModel : ObservableViewModel, IDisposable
 
     public bool CanExport => HasExporter && FilteredEntries.Count > 0 && !IsExporting;
 
-    public bool CanOpenLogFolder => OpenLogFolderCommand.CanExecute(null);
+    public bool CanOpenLogFolder => OpenLogFolderCommand.CanExecute();
 
     public bool HasSecondaryActions => HasRetainedEntries || CanCopySelected || CanExport;
 

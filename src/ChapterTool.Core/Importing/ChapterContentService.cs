@@ -149,21 +149,21 @@ public class ChapterContentService
     /// </summary>
     /// <param name="index">The format index.</param>
     /// <returns>The export format.</returns>
-    public ChapterExportFormat FormatAt(int index) => ChapterExportFormats.AtIndex(index);
+    public static ChapterExportFormat FormatAt(int index) => ChapterExportFormats.AtIndex(index);
 
     /// <summary>
     /// Gets the extension for an export format.
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The file extension.</returns>
-    public string FormatExtension(ChapterExportFormat format) => ChapterExportFormats.Extension(format);
+    public static string FormatExtension(ChapterExportFormat format) => ChapterExportFormats.Extension(format);
 
     /// <summary>
     /// Gets the display name for an export format.
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The display name.</returns>
-    public string FormatDisplayName(ChapterExportFormat format) => ChapterExportFormats.DisplayName(format);
+    public static string FormatDisplayName(ChapterExportFormat format) => ChapterExportFormats.DisplayName(format);
 
     private IChapterImporter ResolveImporter(string extension) =>
         extension.ToLowerInvariant() switch

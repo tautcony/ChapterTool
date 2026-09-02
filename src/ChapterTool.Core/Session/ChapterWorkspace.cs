@@ -12,31 +12,31 @@ public sealed class ChapterWorkspace
 {
     private int currentRevision;
 
-    /// <summary>Typed source identity (null when no session).</summary>
+    /// <summary>Gets typed source identity (null when no session).</summary>
     public ChapterSourceDocument? CurrentSource { get; private set; }
 
-    /// <summary>Loaded source path (empty when the source has no local path).</summary>
+    /// <summary>Gets loaded source path (empty when the source has no local path).</summary>
     public string CurrentPath { get; private set; } = string.Empty;
 
-    /// <summary>Display-friendly path (typically file name).</summary>
+    /// <summary>Gets display-friendly path (typically file name).</summary>
     public string DisplayPath { get; private set; } = string.Empty;
 
-    /// <summary>Typed multi-clip session, or null when no source is loaded.</summary>
+    /// <summary>Gets typed multi-clip session, or null when no source is loaded.</summary>
     public ClipSession? ClipSession { get; private set; }
 
-    /// <summary>Working edit buffer for the active chapter set.</summary>
+    /// <summary>Gets working edit buffer for the active chapter set.</summary>
     public ChapterSet? CurrentChapterSet { get; private set; }
 
-    /// <summary>Monotonic operation revision used for anti-stale load/append commits.</summary>
+    /// <summary>Gets monotonic operation revision used for anti-stale load/append commits.</summary>
     public int CurrentRevision => Volatile.Read(ref currentRevision);
 
-    /// <summary>Projection state (naming, order, expression, last-good cache).</summary>
+    /// <summary>Gets projection state (naming, order, expression, last-good cache).</summary>
     public ProjectionState Projection { get; } = new();
 
-    /// <summary>Export preference snapshot (format, language, encoding, BOM, save dir).</summary>
+    /// <summary>Gets export preference snapshot (format, language, encoding, BOM, save dir).</summary>
     public ExportPreferences ExportPreferences { get; } = new();
 
-    /// <summary>Last successful expression projection retained for mid-edit invalid expressions.</summary>
+    /// <summary>Gets or sets last successful expression projection retained for mid-edit invalid expressions.</summary>
     public ChapterOutputProjectionResult? LastSuccessfulExpressionProjection
     {
         get => Projection.LastSuccessfulExpressionProjection;

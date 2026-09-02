@@ -156,13 +156,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         Rows.CollectionChanged -= OnRowsChanged;
     }
 
-    /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
+    /// <summary>Gets explicit workspace owning clip session, edit buffer, path, and revision.</summary>
     internal ChapterWorkspace Workspace { get; } = new();
 
-    /// <summary>Session facade that owns the narrow ports used by auxiliary tools.</summary>
+    /// <summary>Gets session facade that owns the narrow ports used by auxiliary tools.</summary>
     public IWorkspaceToolSession ToolSession { get; }
 
-    /// <summary>Host effects projected into shared command and visibility state.</summary>
+    /// <summary>Gets host effects projected into shared command and visibility state.</summary>
     public IRuntimeCapabilities Capabilities { get; }
 
     public IAuxiliaryToolHost AuxiliaryToolHost { get; }
@@ -190,7 +190,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public string DisplayPath => Workspace.DisplayPath;
 
     /// <summary>
-    /// Authoritative path text for the source path box and reload/load adapters.
+    /// Gets or sets authoritative path text for the source path box and reload/load adapters.
     /// Updated by browse/drop and synchronized from successful loads.
     /// </summary>
     public string SourcePath
@@ -275,7 +275,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public ChapterEditingOptions EditingOptions { get; private set; } = ChapterEditingOptions.Default;
 
-    internal void ApplyEditingOptions(ChapterEditingOptions options) => EditingOptions = options ?? ChapterEditingOptions.Default;
+    internal void ApplyEditingOptions(ChapterEditingOptions? options) => EditingOptions = options ?? ChapterEditingOptions.Default;
 
     public int SelectedFrameRateIndex
     {
@@ -302,7 +302,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 0 || IsClipCombineChecked;
 
-    /// <summary>Derived from typed clip session mode (combined vs split).</summary>
+    /// <summary>Gets a value indicating whether the clip session mode is combined.</summary>
     public bool IsClipCombineChecked => Workspace.ClipSession?.IsCombined == true;
 
     public bool IsAdvancedPanelExpanded

@@ -160,14 +160,14 @@ public sealed class AuxiliaryToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
             Assert.False(viewModel.IsDetailsOpen);
             Assert.Same(warning, viewModel.SelectedEntry);
-            var focused = TopLevel.GetTopLevel(view)?.FocusManager?.GetFocusedElement();
+            var focused = TopLevel.GetTopLevel(view)?.FocusManager.GetFocusedElement();
             Assert.True(
                 focused is Control focusedControl
                 && (ReferenceEquals(focusedControl, list)
                     || ReferenceEquals(focusedControl, detailsButton)
                     || (focusedControl.FindAncestorOfType<ListBoxItem>()?.DataContext is LogEntryViewModel focusedEntry
                         && ReferenceEquals(focusedEntry, warning))),
-                $"Expected focus to return to the selected log row, got {focused?.GetType().Name ?? "none"}.");
+                $"Expected focus to return to the selected log row, got {focused.GetType().Name ?? "none"}.");
 
             await viewModel.ClearCommand.ExecuteAsync();
             Dispatcher.UIThread.RunJobs();

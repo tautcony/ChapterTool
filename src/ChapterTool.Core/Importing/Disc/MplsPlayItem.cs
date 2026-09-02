@@ -15,7 +15,7 @@ internal sealed record MplsPlayItem(
     MplsSTNTable STNTable)
 {
     /// <summary>
-    /// Gets the IsMultiAngle value.
+    /// Gets a value indicating whether gets the IsMultiAngle value.
     /// </summary>
     public bool IsMultiAngle => ((FlagField >> 4) & 1) == 1;
 
@@ -25,7 +25,7 @@ internal sealed record MplsPlayItem(
     public byte ConnectionCondition => (byte)(FlagField & 0x0f);
 
     /// <summary>
-    /// Gets the PlayItemRandomAccessFlag value.
+    /// Gets a value indicating whether gets the PlayItemRandomAccessFlag value.
     /// </summary>
     public bool PlayItemRandomAccessFlag => PlayItemFlagField >> 7 == 1;
 

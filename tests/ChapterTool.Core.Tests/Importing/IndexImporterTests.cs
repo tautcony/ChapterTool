@@ -462,6 +462,7 @@ public sealed class IndexImporterTests
 
     private static void WriteTitleEntry(IndexBinaryBuilder builder, byte objectType, byte playbackType, string data)
     {
+        // ReSharper disable once ShiftExpressionZeroLeftOperand
         var firstByte = (byte)(((objectType & 0x03) << 6) | ((AccessPermitted & 0x03) << 4));
         builder.Byte(firstByte);
         builder.Reserved(3);

@@ -1028,18 +1028,14 @@ public sealed class ChapterToolCliApplicationTests
     {
         private readonly IChapterImporter importer = new ThrowingCancellationImporter();
 
-        public IChapterImporter? Resolve(string path) => importer;
+        public IChapterImporter Resolve(string path) => importer;
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
     }
 
-    private sealed class FailingThenFallbackRegistry : IChapterImporterRegistry
+    private sealed class FailingThenFallbackRegistry(IChapterImporterRegistry inner) : IChapterImporterRegistry
     {
-        private readonly IChapterImporterRegistry inner;
-
-        public FailingThenFallbackRegistry(IChapterImporterRegistry inner) => this.inner = inner;
-
-        public IChapterImporter? Resolve(string path) => new FailingImporter();
+        public IChapterImporter Resolve(string path) => new FailingImporter();
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => inner.Resolve(path);
     }
@@ -1053,9 +1049,9 @@ public sealed class ChapterToolCliApplicationTests
 
     private sealed class FailingFallbackRegistry : IChapterImporterRegistry
     {
-        public IChapterImporter? Resolve(string path) => new FailingImporter();
+        public IChapterImporter Resolve(string path) => new FailingImporter();
 
-        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => new FailingImporter();
+        public IChapterImporter ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => new FailingImporter();
     }
 
     private sealed class FailingImporter : IChapterImporter
@@ -1071,7 +1067,7 @@ public sealed class ChapterToolCliApplicationTests
 
     private sealed class FixedImportRegistry(ChapterImportResult result) : IChapterImporterRegistry
     {
-        public IChapterImporter? Resolve(string path) => new FixedImporter(result);
+        public IChapterImporter Resolve(string path) => new FixedImporter(result);
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
     }

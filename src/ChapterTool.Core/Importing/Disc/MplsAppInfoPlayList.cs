@@ -8,27 +8,27 @@ internal sealed record MplsAppInfoPlayList(
     ushort FlagField)
 {
     /// <summary>
-    /// Gets the RandomAccessFlag value.
+    /// Gets a value indicating whether gets the RandomAccessFlag value.
     /// </summary>
     public bool RandomAccessFlag => ((FlagField >> 15) & 1) == 1;
 
     /// <summary>
-    /// Gets the AudioMixFlag value.
+    /// Gets a value indicating whether gets the AudioMixFlag value.
     /// </summary>
     public bool AudioMixFlag => ((FlagField >> 14) & 1) == 1;
 
     /// <summary>
-    /// Gets the LosslessBypassFlag value.
+    /// Gets a value indicating whether gets the LosslessBypassFlag value.
     /// </summary>
     public bool LosslessBypassFlag => ((FlagField >> 13) & 1) == 1;
 
     /// <summary>
-    /// Gets the MVCBaseViewRFlag value.
+    /// Gets a value indicating whether gets the MVCBaseViewRFlag value.
     /// </summary>
     public bool MVCBaseViewRFlag => ((FlagField >> 12) & 1) == 1;
 
     /// <summary>
-    /// Gets the SDRConversionNotificationFlag value.
+    /// Gets a value indicating whether gets the SDRConversionNotificationFlag value.
     /// </summary>
     public bool SDRConversionNotificationFlag => ((FlagField >> 11) & 1) == 1;
 

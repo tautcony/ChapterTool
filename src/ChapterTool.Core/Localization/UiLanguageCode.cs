@@ -12,7 +12,7 @@ public static class UiLanguageCode
     /// <summary>Japanese culture name.</summary>
     public const string Japanese = "ja-JP";
 
-    /// <summary>Supported culture names.</summary>
+    /// <summary>Gets supported culture names.</summary>
     public static IReadOnlyList<string> Supported { get; } = [English, Chinese, Japanese];
 
     /// <summary>

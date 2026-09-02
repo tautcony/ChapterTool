@@ -8,7 +8,7 @@ internal sealed record MplsSubPath(
     IReadOnlyList<MplsSubPlayItem> SubPlayItems)
 {
     /// <summary>
-    /// Gets the IsRepeatSubPath value.
+    /// Gets a value indicating whether gets the IsRepeatSubPath value.
     /// </summary>
     public bool IsRepeatSubPath => (FlagField & 1) == 1;
 

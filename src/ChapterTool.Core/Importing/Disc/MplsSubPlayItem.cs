@@ -18,7 +18,7 @@ internal sealed record MplsSubPlayItem(
     public byte ConnectionCondition => (byte)((FlagField >> 1) & 0x0f);
 
     /// <summary>
-    /// Gets the IsMultiClipEntries value.
+    /// Gets a value indicating whether gets the IsMultiClipEntries value.
     /// </summary>
     public bool IsMultiClipEntries => (FlagField & 1) == 1;
 

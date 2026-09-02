@@ -12,25 +12,25 @@ namespace ChapterTool.Core.Session;
 public abstract record ClipSession
 {
     /// <summary>
-    /// Stable identity for anti-stale append checks. Changes on load/combine/restore/append
+    /// Gets stable identity for anti-stale append checks. Changes on load/combine/restore/append
     /// structural transitions; preserved across select and write-back.
     /// </summary>
     public Guid SessionId { get; init; } = Guid.NewGuid();
 
-    /// <summary>Original multi-entry group retained across combine/restore.</summary>
+    /// <summary>Gets original multi-entry group retained across combine/restore.</summary>
     public abstract ChapterImportSource OriginalGroup { get; }
 
-    /// <summary>Entries shown in the clip selector.</summary>
+    /// <summary>Gets entries shown in the clip selector.</summary>
     public abstract IReadOnlyList<ChapterImportEntry> ClipOptions { get; }
 
-    /// <summary>Selected index within <see cref="ClipOptions"/>.</summary>
+    /// <summary>Gets selected index within <see cref="ClipOptions"/>.</summary>
     public abstract int SelectedIndex { get; }
 
-    /// <summary>Whether the session is in combined mode.</summary>
+    /// <summary>Gets a value indicating whether whether the session is in combined mode.</summary>
     public abstract bool IsCombined { get; }
 
     /// <summary>
-    /// Whether combine (or restore-from-combine) is available.
+    /// Gets a value indicating whether combine (or restore-from-combine) is available.
     /// Derived from mode and entry formats — not a sticky boolean.
     /// </summary>
     public bool CanCombine =>
@@ -40,17 +40,17 @@ public abstract record ClipSession
             && OriginalGroup.Entries.All(entry =>
                 entry.ChapterSet.ImportFormat == OriginalGroup.Entries[0].ChapterSet.ImportFormat));
 
-    /// <summary>Whether append-MPLS is available for the original group.</summary>
+    /// <summary>Gets a value indicating whether append-MPLS is available for the original group.</summary>
     public bool CanAppendMpls =>
         OriginalGroup.Entries.Any(static entry => entry.ChapterSet.ImportFormat == ChapterImportFormat.Mpls);
 
-    /// <summary>Chapter set of the currently selected clip option, if any.</summary>
+    /// <summary>Gets the chapter set of the currently selected clip option, if any.</summary>
     public ChapterSet? CurrentChapterSet =>
         SelectedIndex >= 0 && SelectedIndex < ClipOptions.Count
             ? ClipOptions[SelectedIndex].ChapterSet
             : null;
 
-    /// <summary>Media references for the selected clip option.</summary>
+    /// <summary>Gets the media references for the selected clip option.</summary>
     public IReadOnlyList<ReferencedMediaFile> RelatedMedia =>
         SelectedIndex >= 0 && SelectedIndex < ClipOptions.Count
             ? ClipOptions[SelectedIndex].ReferencedMediaFiles ?? []

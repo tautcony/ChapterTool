@@ -20,7 +20,7 @@ public sealed class UiCommand(
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>Optional host boundary for unexpected command failures.</summary>
+    /// <summary>Gets or sets optional host boundary for unexpected command failures.</summary>
     public Func<Exception, ValueTask>? ErrorHandler { get; set; }
 
     public bool IsExecuting

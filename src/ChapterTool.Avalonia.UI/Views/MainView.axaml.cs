@@ -115,7 +115,7 @@ public sealed partial class MainView : UserControl
         }
 
         var nextHeight = Math.Max(window.MinHeight, window.Height + args.HeightDelta);
-        var screen = window.Screens?.ScreenFromWindow(window) ?? window.Screens?.Primary;
+        var screen = window.Screens.ScreenFromWindow(window) ?? window.Screens.Primary;
         if (screen is not null)
         {
             var scaling = window.RenderScaling <= 0 ? 1 : window.RenderScaling;
@@ -329,7 +329,7 @@ public sealed partial class MainView : UserControl
             return true;
         }
 
-        return TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual focused
+        return TopLevel.GetTopLevel(this)?.FocusManager.GetFocusedElement() is Visual focused
             && IsTextInputVisual(focused);
     }
 

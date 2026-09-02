@@ -126,7 +126,7 @@ public sealed class LogEntryViewModel(
 
     public bool HasException => !string.IsNullOrWhiteSpace(ExceptionText);
 
-    /// <summary>Complete, deterministic JSON for diagnostics and clipboard export.</summary>
+    /// <summary>Gets complete, deterministic JSON for diagnostics and clipboard export.</summary>
     public string RawText => rawText ??= LogRawValueFormatter.Format(entry, Summary);
 
     public IReadOnlyList<LogPropertyViewModel> StructuredProperties =>

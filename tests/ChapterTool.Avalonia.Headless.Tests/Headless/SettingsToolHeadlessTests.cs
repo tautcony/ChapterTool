@@ -284,7 +284,6 @@ public sealed class SettingsToolHeadlessTests
         {
             settingsWindow.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
-            var tabControl = settingsWindow.GetVisualDescendants().OfType<TabControl>().Single();
             SelectAppearanceTab(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             var combo = settingsWindow.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "ThemePresetCombo");
@@ -355,7 +354,6 @@ public sealed class SettingsToolHeadlessTests
             textWindow.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(textWindow);
-            var tabControl = settingsWindow.GetVisualDescendants().OfType<TabControl>().Single();
             SelectAppearanceTab(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
 
@@ -481,9 +479,6 @@ public sealed class SettingsToolHeadlessTests
             await MainWindowHeadlessTestHost.CloseWindowAsync(window);
         }
     }
-
-    private static Color ResourceColor(string key) =>
-        BrushColor(Assert.IsType<IBrush>(Application.Current!.Resources[key], exactMatch: false));
 
     private static Color ColorResource(string key) =>
         Assert.IsType<Color>(Application.Current!.Resources[key]);

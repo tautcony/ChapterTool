@@ -1558,8 +1558,6 @@ public sealed class MainWindowViewModelTests
         return new ChapterImportResult(true, [new ChapterImportSource(path, entries)], []);
     }
 
-    private static string RepositoryRoot() => TestRepository.Root;
-
     private sealed class FakeLoadService(params ChapterImportResult[] results) : IChapterLoadService
     {
         private readonly Queue<ChapterImportResult> results = new(results);

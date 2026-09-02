@@ -20,7 +20,7 @@ public sealed class ExportPreferences
     /// <summary>Gets a value indicating whether a UTF BOM is emitted for text exports.</summary>
     public bool EmitBom { get; private set; }
 
-    /// <summary>Configured save directory from settings (null means unresolved / source-relative).</summary>
+    /// <summary>Gets configured save directory from settings (null means unresolved / source-relative).</summary>
     public string? SaveDirectory { get; private set; }
 
     /// <summary>Sets the export format. Returns whether the value changed.</summary>
