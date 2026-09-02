@@ -156,14 +156,14 @@ public class ChapterContentService
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The file extension.</returns>
-    public static string FormatExtension(ChapterExportFormat format) => ChapterExportFormats.Extension(format);
+    public string FormatExtension(ChapterExportFormat format) => ChapterExportFormats.Extension(format);
 
     /// <summary>
     /// Gets the display name for an export format.
     /// </summary>
     /// <param name="format">The export format.</param>
     /// <returns>The display name.</returns>
-    public static string FormatDisplayName(ChapterExportFormat format) => ChapterExportFormats.DisplayName(format);
+    public string FormatDisplayName(ChapterExportFormat format) => ChapterExportFormats.DisplayName(format);
 
     private IChapterImporter ResolveImporter(string extension) =>
         extension.ToLowerInvariant() switch
