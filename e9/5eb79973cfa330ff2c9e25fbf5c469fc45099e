@@ -1,0 +1,15 @@
+src/ChapterTool.Core/Importing/ChapterContentService.cs
+  h_3705811fa4502c 166
+  h_3705811fa4502c 159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "e95eb79973cfa330ff2c9e25fbf5c469fc45099e",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
