@@ -55,6 +55,7 @@
   "Tool.Log.ExportSucceeded": "已导出到 {value}",
   "Tool.Log.ExportFailed": "导出失败：{value}",
   "Tool.Log.CloseDetails": "关闭详情",
+  "Tool.Log.OpenFolder": "打开日志文件夹",
   "Tool.Log.Export": "导出日志",
   "Tool.Log.NoStructuredData": "该日志没有嵌套结构化数据。",
   "Tool.Log.NoExceptionData": "该日志没有异常数据。",

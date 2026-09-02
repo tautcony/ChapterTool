@@ -55,6 +55,7 @@
   "Tool.Log.ExportSucceeded": "Exported to {value}",
   "Tool.Log.ExportFailed": "Export failed: {value}",
   "Tool.Log.CloseDetails": "Close details",
+  "Tool.Log.OpenFolder": "Open log folder",
   "Tool.Log.Export": "Export logs",
   "Tool.Log.NoStructuredData": "This entry has no nested structured data.",
   "Tool.Log.NoExceptionData": "This entry has no exception data.",

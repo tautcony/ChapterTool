@@ -55,6 +55,7 @@
   "Tool.Log.ExportSucceeded": "{value} にエクスポートしました",
   "Tool.Log.ExportFailed": "エクスポートに失敗しました: {value}",
   "Tool.Log.CloseDetails": "詳細を閉じる",
+  "Tool.Log.OpenFolder": "ログフォルダーを開く",
   "Tool.Log.Export": "ログをエクスポート",
   "Tool.Log.NoStructuredData": "このログにネストされた構造化データはありません。",
   "Tool.Log.NoExceptionData": "このログに例外データはありません。",
