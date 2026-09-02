@@ -1,0 +1,33 @@
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_a7fb4cc6e029ff::t_4de43d0c241136 17-18
+  s_a7fb4cc6e029ff::t_161ee4a51568c2 19
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiResourceResolutionHeadlessTests.cs
+  s_a7fb4cc6e029ff::t_3a31b88ca56011 45
+src/ChapterTool.Avalonia.UI/Resources/Styles.axaml
+  s_a7fb4cc6e029ff::t_5e328afa087ffd 793-794
+  s_a7fb4cc6e029ff::t_050e3aedd94a20 207-208
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs
+  s_a7fb4cc6e029ff::t_3a31b88ca56011 108-113
+src/ChapterTool.Avalonia.UI/Resources/Themes.axaml
+  s_a7fb4cc6e029ff::t_569b023b14b079 51
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml
+  s_a7fb4cc6e029ff::t_c043fc28940f46 356,370
+  s_a7fb4cc6e029ff::t_aa955dab95b9ea 28-32,104-105,163,378
+  s_a7fb4cc6e029ff::t_161ee4a51568c2 167,397-398,400,403-404,406,436,492,503-504,506
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "efebf28c048e09cb498c64481267ad9a5705c7a0",
+  "prompts": {},
+  "sessions": {
+    "s_a7fb4cc6e029ff": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a05f8f-3a63-7140-9d90-fbc98628ef7e",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
