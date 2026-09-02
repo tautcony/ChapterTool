@@ -1,0 +1,57 @@
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs
+  s_be70db79854ed6::t_2cb51e32fd269f 73-74
+  s_be70db79854ed6::t_2d6b43d88842cb 469,478
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs
+  s_be70db79854ed6::t_2cb51e32fd269f 218
+.github/workflows/npm-publish.yml
+  s_be70db79854ed6::t_68dcb76a2c7437 57
+src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs
+  s_be70db79854ed6::t_a6415c490018f2 57-60
+src/ChapterTool.CommandLine/Program.cs
+  s_be70db79854ed6::t_a6415c490018f2 9
+src/ChapterTool.Node/Program.cs
+  s_be70db79854ed6::t_a859df795833ab 7
+src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs
+  s_be70db79854ed6::t_a6415c490018f2 63
+scripts/report-analyzers.py
+  s_be70db79854ed6::t_38fe318d77aa59 223
+scripts/audit-ui-resources.py
+  s_be70db79854ed6::t_a859df795833ab 20,70,76
+.github/workflows/dotnet-ci.yml
+  s_be70db79854ed6::t_68dcb76a2c7437 76
+src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs
+  s_be70db79854ed6::t_a6415c490018f2 65-68
+src/ChapterTool.Core/Importing/Disc/MplsChapterImporter.cs
+  s_be70db79854ed6::t_a6415c490018f2 51-54
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_be70db79854ed6::t_1d486fe1c15be9 1093,1138
+  s_be70db79854ed6::t_a6415c490018f2 1094-1097,1139-1142
+src/ChapterTool.Core/Exporting/ChapterExportService.cs
+  s_be70db79854ed6::t_1d486fe1c15be9 240-245
+  s_be70db79854ed6::t_a6415c490018f2 83
+src/ChapterTool.Core/Importing/Disc/BinaryReadExtensions.cs
+  s_be70db79854ed6::t_edbc6d2f3f85ca 76,86
+  s_be70db79854ed6::t_2815aae3487eeb 7,21,30,48,62,67
+src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs
+  s_be70db79854ed6::t_2baecd27ab9753 57
+  s_be70db79854ed6::t_65667797562db9 59
+  s_be70db79854ed6::t_68b907a665b9d3 58
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiScreenshotCaptureHeadlessTests.cs
+  s_be70db79854ed6::t_2baecd27ab9753 25,47,88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "be237dab7e0c6140fcfb18e3a8e23814a869994b",
+  "prompts": {},
+  "sessions": {
+    "s_be70db79854ed6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0609d-9031-7851-959e-e838bd3bc12b",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
