@@ -1,0 +1,19 @@
+docs/tasks/ui-visual-consistency.md
+  s_af6c7dc2c825af::t_e5ccb54c31b945 1-141
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a0cd42fa24fa1959c211072a034e120d3436b5b2",
+  "prompts": {},
+  "sessions": {
+    "s_af6c7dc2c825af": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a06003-778b-7652-a574-c53418dec270",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
