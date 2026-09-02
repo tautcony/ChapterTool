@@ -1,0 +1,18 @@
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  h_3705811fa4502c 58
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  h_3705811fa4502c 58
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  h_3705811fa4502c 58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "127ca269705af59c97519c520e78dc42b55b7827",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
