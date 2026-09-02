@@ -70,8 +70,8 @@ public sealed partial class MainView : UserControl
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
         LoadChapterNameTemplateCommand = new UiCommand(async (_, _) => await LoadChapterNameTemplateAsync());
         LoadLuaExpressionScriptCommand = new UiCommand(async (_, _) => await LoadLuaExpressionScriptAsync());
-        InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute());
-        DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute());
+        InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute(null));
+        DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute(null));
         OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
         OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
 
@@ -466,7 +466,7 @@ public sealed partial class MainView : UserControl
         viewModel.Rows.CollectionChanged -= ScheduleWindowCommandRefresh;
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs args)
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         if (commandStateSubscribed)
         {
@@ -475,7 +475,7 @@ public sealed partial class MainView : UserControl
             commandStateSubscribed = false;
         }
 
-        base.OnDetachedFromVisualTree(args);
+        base.OnDetachedFromVisualTree(e);
     }
 
     private void OnSecondarySurfaceChanged(object? sender, EventArgs args) => UpdateSecondarySurface();

@@ -73,7 +73,7 @@ jobs:
 
       - name: Install npm dependencies
         working-directory: packages/chaptertool
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Restore
         run: dotnet restore ChapterTool.slnx

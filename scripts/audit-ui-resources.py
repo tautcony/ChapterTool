@@ -17,6 +17,7 @@ REF = re.compile(r"\{(?:DynamicResource|StaticResource)\s+([^}\s,]+)")
 IMPORTED = re.compile(r"ImportedThemeColorKeys\s*\{\s*get;\s*\}\s*=\s*\[(.*?)\];", re.S)
 QUOTED = re.compile(r'"([^"]+)"')
 CONST = re.compile(r'public const string \w+ = "([^"]+)";')
+NONE_LABEL = "  (none)"
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -66,13 +67,13 @@ def main():
     if implicit:
         print("\n".join(f"  {key} ({definition_sources.get(key, '<unknown source>')})" for key in implicit))
     else:
-        print("  (none)")
+        print(NONE_LABEL)
     print("These unqualified keys may be resolved by Avalonia Fluent templates or other framework resources. Confirm against the active theme before removal.")
     print(f"\nApplication definitions without a detected consumer ({len(explicit_candidates)}):")
     if explicit_candidates:
         print("\n".join(f"  {key} ({definition_sources.get(key, '<unknown source>')})" for key in explicit_candidates))
     else:
-        print("  (none)")
+        print(NONE_LABEL)
     print("Review these candidates before removal. Static analysis cannot prove that a resource is unreachable at runtime.")
 
 if __name__ == "__main__":

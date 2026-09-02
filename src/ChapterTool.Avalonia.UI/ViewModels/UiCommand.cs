@@ -54,7 +54,9 @@ public sealed class UiCommand(
         }
     }
 
-    public bool CanExecute(object? parameter = null) => !IsExecuting && canExecute(parameter);
+    public bool CanExecute(object? parameter) => !IsExecuting && canExecute(parameter);
+
+    public bool CanExecute() => CanExecute(null);
 
     public async ValueTask ExecuteAsync(object? parameter = null, CancellationToken cancellationToken = default)
     {

@@ -80,8 +80,7 @@ public sealed partial class ChapterExportService
     private ChapterExportResult Xml(ChapterSet info, ChapterExportOptions options)
     {
         var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
-        var uidSeed = StableHashCode(info.Title, info.SourceName, ChapterImportFormats.DisplayName(info.ImportFormat), info.Chapters.Count.ToString(CultureInfo.InvariantCulture));
-        var random = new Random(uidSeed);
+        using var random = RandomNumberGenerator.Create();
         var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
             new XElement(
                 "ChapterAtom",
@@ -238,7 +237,12 @@ public sealed partial class ChapterExportService
 
     private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.StartTime);
 
-    private static int NextUid(Random random) => random.Next(1, int.MaxValue);
+    private static int NextUid(RandomNumberGenerator random)
+    {
+        Span<byte> bytes = stackalloc byte[4];
+        random.GetBytes(bytes);
+        return BitConverter.ToInt32(bytes) & int.MaxValue;
+    }
 
     private static int StableHashCode(params string?[] values)
     {

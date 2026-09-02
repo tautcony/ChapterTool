@@ -220,7 +220,7 @@ def print_report(diagnostics, report, prefix, last_code):
     for item in diagnostics:
         target = item['type'] or "<unknown>"
         print(f"  {item['ruleId']} [{item['level']}] {item['file']}:{item['line']}:{item['column']} {target} :: {item['message']}")
-    return last_code
+    return last_code if last_code else 1
 
 
 def main():

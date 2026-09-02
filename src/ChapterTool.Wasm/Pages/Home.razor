@@ -1090,6 +1090,11 @@
     {
         try
         {
+            if (file.Size is < 0 or > WasmWorkspace.MaxLoadBytes)
+            {
+                throw new IOException();
+            }
+
             await using var stream = file.OpenReadStream(maxAllowedSize: WasmWorkspace.MaxLoadBytes);
             var bytes = new byte[file.Size];
             var read = 0;
@@ -1130,6 +1135,11 @@
     {
         try
         {
+            if (file.Size is < 0 or > WasmWorkspace.MaxLoadBytes)
+            {
+                throw new IOException();
+            }
+
             await using var stream = file.OpenReadStream(maxAllowedSize: WasmWorkspace.MaxLoadBytes);
             using var memory = new MemoryStream();
             await stream.CopyToAsync(memory);

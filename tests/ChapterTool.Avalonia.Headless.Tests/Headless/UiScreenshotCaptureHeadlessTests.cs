@@ -22,6 +22,7 @@ public sealed class UiScreenshotCaptureHeadlessTests
             return;
         }
 
+        var capturedFrames = 0;
         var sizes = new (string Name, double Width, double Height)[]
         {
             ("default", 800, 600),
@@ -43,6 +44,7 @@ public sealed class UiScreenshotCaptureHeadlessTests
                 MainWindowHeadlessTestHost.CaptureRenderedFrame(
                     host.Window,
                     Path.Combine("artifacts", "unify-sourcegit-design-system", set, $"main-{name}.png"));
+                capturedFrames++;
             }
 
             await CaptureToolAsync(
@@ -83,6 +85,7 @@ public sealed class UiScreenshotCaptureHeadlessTests
                 autoLoad: false);
             await settingsViewModel.LoadAsync(TestContext.Current.CancellationToken);
             await CaptureToolAsync(set, "settings", new SettingsToolView { DataContext = settingsViewModel }, sizes);
+            Assert.True(capturedFrames >= sizes.Length, "Expected a screenshot for every main-window size.");
         }
         finally
         {

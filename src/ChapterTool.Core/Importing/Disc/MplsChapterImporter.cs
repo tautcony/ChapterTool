@@ -48,7 +48,10 @@ public sealed class MplsChapterImporter : IChapterImporter
         }
         finally
         {
-            ownedStream?.Dispose();
+            if (ownedStream is not null)
+            {
+                await ownedStream.DisposeAsync();
+            }
         }
     }
 

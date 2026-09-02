@@ -60,7 +60,7 @@ public static class PortableInputPolicy
                 return BoundedStreamCopy.TooLarge;
             }
 
-            memory.Write(buffer, 0, read);
+            await memory.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
         }
 
         memory.Position = 0;

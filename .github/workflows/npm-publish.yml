@@ -54,7 +54,7 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - name: Install npm Trusted Publishing client
-        run: npm install --global npm@11.5.1
+        run: npm install --global --ignore-scripts npm@11.5.1
 
       - name: Resolve successful CI run
         id: ci-run
