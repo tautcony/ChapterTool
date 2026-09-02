@@ -93,6 +93,9 @@ case "$Runtime" in
       dotnet_output="$output/.publish-raw"
     fi
     ;;
+  *)
+    :
+    ;;
 esac
 
 # ---- publish ----

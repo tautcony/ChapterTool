@@ -1,4 +1,5 @@
 using System.Text;
+using ChapterTool.Core.Importing.Disc.Limits;
 
 namespace ChapterTool.Core.Importing.Disc;
 
@@ -87,10 +88,4 @@ internal static class BinaryReadExtensions
             return (ushort)(b[1] + (b[0] << 8));
         }
     }
-}
-
-/// <summary>Shared defensive limits for untrusted disc binary reads.</summary>
-internal static class DiscBinaryReadLimits
-{
-    internal const int MaximumExactReadBytes = 64 * 1024 * 1024;
 }
