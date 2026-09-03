@@ -11,7 +11,7 @@
 dotnet add package ChapterTool.Core
 ```
 
-## Capabilities
+## What You Can Build
 
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers
 - **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes
@@ -129,7 +129,7 @@ var expressionResult = expressionEngine.Evaluate("t + 1.0", context);
 
 ### Media Reader Adapters
 
-`ChapterTool.Core` keeps media container parsing behind `IMediaChapterReader`. This keeps the core package free of native tools, shell process execution, and container-specific libraries.
+Use `MediaChapterImporter` when your application already has chapter metadata from a media container. Supply an `IMediaChapterReader` from your integration layer.
 
 Use `MediaChapterImporter` when your integration layer reads raw media-container chapter entries, including MP4 chapter metadata or data shaped like `ffprobe -show_chapters` JSON. Construct it with an `IMediaChapterReader`; optionally pass the extensions that adapter supports:
 
@@ -152,13 +152,7 @@ static ValueTask<ChapterImportResult> ImportMediaChaptersAsync(
 }
 ```
 
-The reader returns:
-
-```csharp
-ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cancellationToken);
-```
-
-`MediaChapterEntry` accepts either decimal-second timestamps (`StartTime` / `EndTime`) or integer timestamps (`Start` / `End`) with a rational `TimeBase`, for example `"1/1000"`. Chapter names are read from `Tags["title"]` when present; otherwise the importer generates fallback chapter names. If the reader cannot load metadata, return `MediaChapterReadResult.Failed(code, message, details)`; the importer converts it to a `ChapterDiagnostic`.
+The adapter can provide decimal-second or time-base timestamps. Read failures are returned as chapter diagnostics.
 
 ### Export
 

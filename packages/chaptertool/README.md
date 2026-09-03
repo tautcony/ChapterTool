@@ -1,8 +1,36 @@
 # ChapterTool Node.js
 
-This package exposes the portable ChapterTool Core API to Node.js through .NET WebAssembly. It does not use Blazor or a browser user interface.
+Use `@chaptertool/node` to read, edit, transform, and export chapter markers from a Node.js application. It is useful for media pipelines, batch conversion, and services that need chapter support without a desktop UI.
 
-## Build
+The package runs the portable ChapterTool Core API through .NET WebAssembly. It does not use Blazor or require the .NET SDK on the consuming machine.
+
+## Install And Use
+
+```bash
+npm install @chaptertool/node
+```
+
+```js
+import { ChapterTool } from "@chaptertool/node";
+import { readFile } from "node:fs/promises";
+
+const tool = new ChapterTool();
+const imported = await tool.import(await readFile("chapters.txt"), {
+  fileName: "chapters.txt"
+});
+const chapterSet = imported.groups[0].entries[0].chapterSet;
+const exported = await tool.export(chapterSet, { format: "xml" });
+
+if (!exported.success) {
+  throw new Error(exported.diagnostics.map((item) => item.message).join("\n"));
+}
+
+console.log(exported.content);
+```
+
+The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input and supports the portable import and export formats listed below.
+
+## Build From Source
 
 Run the following command from this directory:
 
@@ -18,44 +46,15 @@ The build uses `wasm-tools` when it is installed. The build prints a warning and
 dotnet workload install wasm-tools
 ```
 
-The build publishes the pure WebAssembly host, transpiles and bundles the TypeScript API for the `es2022` target, and writes all package files to `dist/`. Files in `src/`, `scripts/`, and `test/` are not included in the npm tarball.
-
-The package uses `tsdown` to bundle the ESM entry point and generate the TypeScript declaration file. The .NET WebAssembly runtime stays as a package-local external asset.
+The build writes the distributable package to `dist/`.
 
 Run `npm pack` to create an installable tarball. The `prepack` script builds the runtime before npm creates the tarball. Package consumers need Node.js only. They do not need the .NET SDK.
 
-## Use
-
-```js
-import { ChapterTool } from "@chaptertool/node";
-import { readFile } from "node:fs/promises";
-
-const tool = new ChapterTool();
-const imported = await tool.import(await readFile("chapters.txt"), {
-  fileName: "chapters.txt"
-});
-
-const chapterSet = imported.groups[0].entries[0].chapterSet;
-const exported = await tool.export(chapterSet, { format: "xml" });
-
-if (!exported.success) {
-  throw new Error(exported.diagnostics.map((item) => item.message).join("\n"));
-}
-
-console.log(exported.content);
-```
-
-## Runtime Contract
-
-The package validates public JavaScript inputs before it calls the .NET runtime. Invalid option objects, strings, booleans, numbers, and chapter indexes produce a JavaScript error.
-
-The package transfers complex values across the .NET WebAssembly boundary as JSON strings. This conversion is internal to the package. Callers use JavaScript objects and arrays through the typed API.
-
-The WebAssembly runtime is initialized once per Node.js process. Concurrent `ChapterTool` instances share the initialized runtime. A failed startup can be retried by a later API operation.
+## Runtime And Format Boundaries
 
 The package requires Node.js 20.x, 22.x, or 24 and later. It accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It supports the byte-based import formats provided by `ChapterTool.Core`. It does not run desktop tools such as `ffprobe`, `ffmpeg`, or `mkvtoolnix`.
 
-Portable imports have a 64 MiB byte limit. The package reads the live limit from `NodeApi.GetMaxInputBytes` after the runtime starts. The package checks the UTF-8 or binary byte count before it creates a conversion copy. An input above the limit throws a `RangeError` with `code` set to `INPUT_TOO_LARGE`.
+Portable imports have a 64 MiB byte limit. Inputs above the limit return an error with code `INPUT_TOO_LARGE`.
 
 Supported export codes are `txt`, `xml`, `qpf`, `timecodes`, `tsmuxer`, `cue`, `json`, `vtt`, and `celltimes`.
 

@@ -54,17 +54,7 @@ Default URL: `http://localhost:5261`
 
 Empty grid offers **Load OGM sample** for a quick smoke path.
 
-## Main Components
-
-| Piece | Role |
-|-------|------|
-| `Services/WasmWorkspace` | Browser presentation state for load/reload/append, clip selection, multi-select editing, projection, diagnostics, logs, and save/preview. `ChapterWorkspace` owns the shared clip session and edit buffer. |
-| `Services/WasmChapterService` | Byte-based Core importers + `ChapterExportService` |
-| `Services/WasmLocalizer` | `en-US` / `zh-CN` / `ja-JP` UI and workspace status strings |
-| `Pages/Home.razor` | Main shell UI zones |
-| `wwwroot/js/download.js` | File picker trigger, encoded export download, appearance application, and localStorage persistence |
-
-Pass chapter bytes through `ChapterImportRequest.Content`. The browser app does not use local file paths for import.
+The browser app imports file bytes. It does not use local file paths for import.
 
 Portable browser imports use the shared 64 MiB byte limit in `ChapterTool.Core.Boundaries.PortableInputPolicy`. The limit applies to load, reload, and MPLS append.
 
@@ -111,17 +101,4 @@ Published URL (project pages):
 2. Ensure Actions can run workflows (default GITHUB_TOKEN is enough for `pages: write`)
 3. First deploy: Actions → **Deploy WASM (GitHub Pages)** → **Run workflow**, or merge to `master`
 
-The workflow:
-
-1. `dotnet publish` the Blazor WASM app (Release)
-2. Writes `.nojekyll` so `_framework` is not ignored by Jekyll
-3. Copies `index.html` → `404.html` for SPA deep-link fallback
-4. Rewrites `<base href>` to `/ChapterTool/` for project-page hosting
-5. Uploads and deploys via `actions/deploy-pages`
-
-Local smoke of the same publish layout:
-
-```bash
-dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj -c Release
-# serve src/.../bin/Release/net10.0/publish/wwwroot with any static host
-```
+The workflow publishes the browser app and deploys its static files through GitHub Pages.

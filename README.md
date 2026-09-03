@@ -134,8 +134,6 @@ console.log(exported.content);
 
 The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It provides Core import, export, editing, frame rate, expression, projection, time, conversion, and metadata operations. It does not provide UI workspace state, browser actions, desktop tools, settings, localization, or file pickers.
 
-Portable imports have a 64 MiB byte limit. The package checks the input byte count before it creates a conversion copy.
-
 The package build requires the .NET 10 SDK. The build generates and includes the .NET WebAssembly runtime in the npm package. Run `npm run doctor` to inspect the local SDK and optional WebAssembly build tools.
 
 ## Build And Test
@@ -150,7 +148,7 @@ dotnet test ChapterTool.slnx --no-restore
 
 Run coverage with `uv run --project scripts scripts/test-coverage.py`. The script writes reports to `artifacts/coverage`. The `scripts/` project pins its Python dependencies through `uv`; run `uv sync --project scripts` once before the first invocation.
 
-Inspect compiler and analyzer diagnostics with `python3 scripts/report-analyzers.py`. The script builds the solution, writes the raw SARIF report to `artifacts/analyzers/analyzers.sarif`, and prints diagnostics grouped by rule, severity, and file. Use `-Prefix SA` to keep only StyleCop diagnostics.
+Inspect compiler and analyzer diagnostics with `python3 scripts/report-analyzers.py`. Use `-Prefix SA` to keep only StyleCop diagnostics.
 
 Publish a local desktop artifact:
 
