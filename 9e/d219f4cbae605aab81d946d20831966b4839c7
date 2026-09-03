@@ -1,0 +1,41 @@
+src/ChapterTool.Core/README.md
+  s_e68f501da1c2e4::t_ca968047426d02 14
+  s_e68f501da1c2e4::t_6fd6bd9271840b 132,155
+packages/chaptertool/README.md
+  s_e68f501da1c2e4::t_ca968047426d02 3,5,7,10,31,33,53
+  s_e68f501da1c2e4::t_833ef112a657dc 57
+  s_e68f501da1c2e4::t_700dfafe49ed7c 49
+  s_e68f501da1c2e4::t_db0868b8037916 46-48
+  s_e68f501da1c2e4::t_4c9a452bb714b7 50-51
+  s_e68f501da1c2e4::t_483e6af88d53ba 35-45
+README.md
+  h_3705811fa4502c 151
+scripts/README.md
+  s_e68f501da1c2e4::t_91fcea8129b1ee 12
+  s_e68f501da1c2e4::t_ca968047426d02 3,27
+  s_e68f501da1c2e4::t_833ef112a657dc 5,42
+  s_e68f501da1c2e4::t_19fe9115c36b64 4
+src/ChapterTool.Wasm/README.md
+  s_e68f501da1c2e4::t_6fd6bd9271840b 57,104
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "9ed219f4cbae605aab81d946d20831966b4839c7",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_e68f501da1c2e4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a064ed-aaf2-7792-ad8b-d46348855255",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
