@@ -1,0 +1,30 @@
+scripts/check-avalonia-headless-xunit.py
+  s_627686709c3e21::t_354cc94fe7430c 1-95
+scripts/README.md
+  s_627686709c3e21::t_354cc94fe7430c 46-56
+  s_627686709c3e21::t_ce6f265ab2089f 45
+tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+  h_3705811fa4502c 22
+  s_627686709c3e21::t_6539997ec14ce1 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "3e26dd5d66bb38c3086582175e875d34d5af1693",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_627686709c3e21": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07a4d-f742-74e2-a421-d21ec51ced7d",
+        "model": "gpt-5.6-terra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
