@@ -1,0 +1,20 @@
+tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+  h_3705811fa4502c 19
+src/ChapterTool.Avalonia.UI/ChapterTool.Avalonia.UI.csproj
+  h_3705811fa4502c 17,19
+src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj
+  h_3705811fa4502c 6
+src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj
+  h_3705811fa4502c 11,13-14,19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "c56c3c820371d5c3891b6f437b47a4b16ce577a8",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
