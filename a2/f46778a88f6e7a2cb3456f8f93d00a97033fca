@@ -1,0 +1,24 @@
+AGENTS.md
+  s_7e2fa50fc000c8::t_cb15ea210639e3 7-9,19-22,44,53-61,80,82-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "a2f46778a88f6e7a2cb3456f8f93d00a97033fca",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_7e2fa50fc000c8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07c57-e65d-78b3-862b-72a62f875b0d",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
