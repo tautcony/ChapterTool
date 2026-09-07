@@ -42,3 +42,15 @@ Run Python scripts with Python 3. Run Bash scripts with Bash. Run PowerShell scr
 Use `-SkipHtml` with `test-coverage.py` when you only need XML coverage output.
 
 `ruff` is a dev dependency of the same environment. Run `uv run --project scripts ruff check scripts/` to lint the Python scripts. Rule `C901` keeps function cyclomatic complexity under 16. This matches the `CA1502: 16` threshold in `CodeMetricsConfig.txt`. Rules `E701` through `E703` require one statement per line. CI runs the same check.
+
+### Check Avalonia Headless xUnit compatibility
+
+Run this command to inspect the latest stable `Avalonia.Headless.XUnit` package
+and its declared xUnit extensibility dependency:
+
+```bash
+python3 scripts/check-avalonia-headless-xunit.py \
+  --project tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+```
+
+Use `--version <version>` to inspect a specific NuGet version.
