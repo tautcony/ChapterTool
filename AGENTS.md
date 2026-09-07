@@ -4,25 +4,9 @@
 
 - This repository contains the current .NET 10 ChapterTool codebase.
 - Use `ChapterTool.slnx` as the main solution.
-- Main projects:
-  - `src/ChapterTool.Core` (pure managed and browser WebAssembly-capable through stream and text import APIs)
-  - `src/ChapterTool.Wasm` (Blazor WebAssembly browser application for Core)
-  - `src/ChapterTool.Node` (Node.js WebAssembly host)
-  - `src/ChapterTool.CommandLine` (DotMake.CommandLine host and NuGet tool)
-  - `src/ChapterTool.Infrastructure`
-  - `src/ChapterTool.Avalonia.UI` (shared Avalonia views and ViewModels)
-  - `src/ChapterTool.Avalonia` (desktop Avalonia host)
-  - `tests/ChapterTool.Core.Tests`
-  - `tests/ChapterTool.Infrastructure.Tests`
-  - `tests/ChapterTool.Avalonia.Tests` (ViewModel/CLI/service unit tests)
-  - `tests/ChapterTool.Avalonia.Headless.Tests` (Avalonia Headless UI tests in a separate process)
-  - `tests/ChapterTool.TestSupport` (shared repository root, fixture paths, and test logger)
-- Prefer `rg` for searching files and text.
-- Use `docs/code-map/` as the primary navigation index for the current codebase.
-- Read current documentation first: `docs/README.md`, `docs/code-map/`, and applicable testing guidance. Treat `docs/archive/` as historical reference unless the task requires it.
-- Update the applicable code-map files when feature work changes module ownership, entry points, runtime wiring, or primary tests.
-- For WinForms-to-Avalonia work, start with `.agents/skills/README-winforms-to-avalonia.md` and the `winforms-to-avalonia` orchestrator skill. The method has phases A through G.
-- Use `reusable-learnings.md` for general rules and `references/execution-corrections.md` for correction patterns.
+- Use `docs/code-map/` when you need to locate ownership, entry points, or tests. Read only pages relevant to the task. Small edits do not require a full documentation review.
+- `docs/README.md` indexes current documentation. Treat `docs/archive/` as historical reference.
+- For an explicit WinForms-to-Avalonia migration, use `.agents/skills/README-winforms-to-avalonia.md` and the `winforms-to-avalonia` orchestrator skill.
 - Store user-facing Chinese strings as valid UTF-8.
 - Validate localization through behavior, rendered UI, or resource-level checks. Do not hard-code incidental mojibake examples.
 - Treat `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/*.axaml` as the shared translation source. After changing a locale, run `uv run --project scripts scripts/axaml-to-json.py`, then `uv run --project scripts scripts/axaml-to-json.py --check`. Run `uv sync --project scripts` once when the scripts environment is not installed. Do not edit generated Wasm JSON files by hand. CLI JSON resources are separate.
@@ -32,12 +16,10 @@
 
 ## AGENTS.md Maintenance
 
-- This file contains project rules. Keep personal preferences in the user's global `AGENTS.md` or `CLAUDE.md`.
-- Keep this file below 2,400 tokens. Measure actual tokens after each update.
-- Use transcripts and repository evidence. Require two independent sessions for a new non-safety rule; one confirmed safety, data-loss, or compatibility incident is sufficient.
-- Make at most five edits per pass. Each edit needs a verbatim quote or repository path.
-- Prefer rewriting or deleting rules. Extract narrow triggered guidance into a skill. Delete narrow guidance without a reliable trigger.
-- Review for duplication, stale history, contradictions, and budget impact. Check the budget and run the smallest relevant verification after writing.
+- Keep durable project constraints here. Keep personal preferences in global instructions. Omit completed work records and generic agent advice.
+- Ground rules in repository evidence or confirmed incidents. Prefer removing or merging rules over adding procedures.
+- Put specialized workflows in skills or task-specific documentation with clear triggers. Keep skill descriptions short and precise. Use a small router for skills with multiple workflows.
+- Review for stale references, duplication, conflicting boundaries, and unnecessary reading or testing. Keep guidance useful across models.
 
 ## Documentation Language (ASD-STE100)
 
@@ -59,7 +41,7 @@
 ## OpenSpec Workflow
 
 - OpenSpec specs are under `openspec/specs/`; archived changes are under `openspec/changes/archive/`.
-- Discover active changes. Before implementation, inspect and validate the selected change:
+- Apply this workflow when the task uses an OpenSpec change. Routine edits do not require a new change. Before implementing a selected change, discover, inspect, and validate it:
   - `openspec list --json`
   - `openspec status --change "<change-name>" --json`
   - `openspec validate "<change-name>" --strict`
@@ -68,30 +50,15 @@
 
 ## Testing And Build
 
-- Run focused Avalonia unit tests after ViewModel/CLI/service changes:
-  - `dotnet test tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj --no-restore`
-- Run focused Avalonia Headless tests after XAML or UI shell changes:
-  - `dotnet test tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj --no-restore`
-- Run the full solution tests before finalizing broader changes:
-  - `dotnet test ChapterTool.slnx --no-restore`
-- Build the Avalonia app when changing app project files:
-  - `dotnet build src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --no-restore`
-- If dependencies, target frameworks, or generated project assets change, run restore or build once.
-- Then run commands that use `--no-restore`.
-- The CI workflow is in `.github/workflows/dotnet-ci.yml`.
-- If `ChapterTool.Avalonia.exe` is locked, close it or run `Get-Process ChapterTool.Avalonia -ErrorAction SilentlyContinue | Stop-Process`.
-- Run solution test projects sequentially. Shared `obj/` outputs can cause file locks when test processes run in parallel.
-- Keep Avalonia Headless UI tests in `tests/ChapterTool.Avalonia.Headless.Tests`. Run this project in a separate process from non-UI Avalonia tests.
-- Keep `[AvaloniaFact]` and `[AvaloniaTheory]` in the Headless project. Put their classes in `AvaloniaHeadlessTestCollection`.
-- Do not add assembly-wide `CollectionBehavior(DisableParallelization = true)` to the non-Headless project.
-- Avalonia Headless uses a process-wide UI session. Do not merge Headless and non-Headless tests or use a collection as a substitute for process isolation.
-- Run the Avalonia unit project alone, then the Headless project alone, then the full solution. If a mixed run hangs, investigate testhost and UI-session isolation instead of deleting tests.
-- After a hung or terminated run, stop leftover `ChapterTool.Avalonia.Headless.Tests` and `ChapterTool.Avalonia.Tests` testhosts before retrying.
-- In Headless tests, rely on the runner's UI thread, use `RunJobs` and deterministic state, and avoid fixed delays or static-control-only assertions.
-- Drive user actions and verify workflow outcomes. Use `autoLoad: false` before explicit `SettingsToolViewModel.LoadAsync`.
-- Do not test source or configuration by reading files as text. Use compiled coverage, behavior tests, runtime checks, public APIs, or integration checks.
-- Update tests for changed behavior, especially layout, UTF-8, import/export, and platform boundaries.
-- Use `docs/code-map/testing.md` for test ownership, Headless lifecycle rules, and distribution verification details.
+- Select checks from the changed behavior and its consumers. Use `docs/code-map/testing.md` for test ownership, Headless lifecycle rules, and distribution checks. Documentation-only edits normally need no .NET build or test run.
+- Run affected tests with `dotnet test <test-project.csproj> --no-restore`. CLI tests are in `tests/ChapterTool.CommandLine.Tests`. Avalonia ViewModel and service tests are in `tests/ChapterTool.Avalonia.Tests`. XAML and UI workflow tests are in `tests/ChapterTool.Avalonia.Headless.Tests`.
+- Use `dotnet test ChapterTool.slnx --no-restore` for changes with broad impact across projects. Repeat successful checks only when a new change, failure, or unresolved concern warrants it.
+- Restore once when dependencies, target frameworks, or generated project assets change. Then use `--no-restore`. Build `src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj` when its project files change. CI is in `.github/workflows/dotnet-ci.yml`.
+- Run test projects sequentially to avoid shared `obj/` file locks. Avalonia Headless uses a process-wide UI session. Keep Headless and non-Headless tests in separate projects and processes. A test collection does not replace process isolation.
+- Keep `[AvaloniaFact]` and `[AvaloniaTheory]` in the Headless project, with classes in `AvaloniaHeadlessTestCollection`. Do not disable parallelization assembly-wide in the non-Headless project.
+- After a hung run, stop its leftover Avalonia testhosts before retrying. Investigate UI-session isolation rather than deleting tests.
+- In Headless tests, use the runner's UI thread, `RunJobs`, and deterministic state. Verify user workflow outcomes. Avoid fixed delays and static-control-only assertions. Use `autoLoad: false` before explicit `SettingsToolViewModel.LoadAsync`.
+- Verify behavior through compiled tests, public APIs, runtime checks, or integration checks. Do not test source or configuration by reading files as text.
 
 ## Avalonia UI Guidelines
 
@@ -110,13 +77,13 @@
 - When verifying visual layout changes manually, capture screenshots at default, wide, and narrow sizes and store them under `artifacts/`. Do not treat screenshot generation by itself as an automated test assertion.
 - Preserve accessible names, keyboard navigation, focus behavior, and localization boundaries when changing controls.
 
-## Change And PR Expectations
+## Completion And Scope
 
-- Keep changes scoped to the current feature or fix.
-- Mention the primary test commands run in the PR or final summary.
-- For UI changes, include screenshot artifact paths when available.
-- When a feature change affects code ownership or lookup paths, update the relevant files under `docs/code-map/` in the same change.
-- Do not revert unrelated user or generated changes in a dirty worktree.
+- Complete the requested change, run relevant checks, and fix failures caused by the change before handing back the result. Continue routine local edits and verification without asking for approval at each step.
+- Stop when the requested outcome is verified or a concrete blocker needs user input. Report blockers and incomplete checks. Respect an explicit request to stop for review.
+- Keep work within the requested scope. Preserve unrelated user and generated changes.
+- Update relevant `docs/code-map/` pages when module ownership, entry points, runtime wiring, or primary tests change.
+- Report the resulting behavior and primary verification commands. Include screenshot paths for UI changes when available.
 
 <!-- CODEGRAPH_START -->
 ## CodeGraph
