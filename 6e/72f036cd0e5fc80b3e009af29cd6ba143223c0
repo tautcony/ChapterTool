@@ -1,0 +1,50 @@
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.StatusLog.cs
+  s_c9ac50c9ca212d::t_16a5b787804fdc 35-36
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_c9ac50c9ca212d::t_16a5b787804fdc 210-213,811,841,861-862
+  s_8c504440eb7386::t_dfb48d56dd6cac 810,840,860,863-864
+  s_8c504440eb7386::t_3250d7d1a36067 206,208,214,216,443,464
+  s_8c504440eb7386::t_7642a650d847e4 207,209,215
+  s_8c504440eb7386::t_aa832055b432bc 217
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_c9ac50c9ca212d::t_62b43ef7f0cd38 335
+  s_3173c6d5c000d2::t_a2d4da56770867 228-233,239-253
+  s_8c504440eb7386::t_d96d79997b8478 333,343-344
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "6e72f036cd0e5fc80b3e009af29cd6ba143223c0",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_3173c6d5c000d2": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07ecb-33e8-7f33-aca9-8985d2bf31f7",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_8c504440eb7386": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07c86-2f9b-79b2-8dcf-4cf69b6a2898",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_c9ac50c9ca212d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07c97-2693-7a60-880e-fd4f4dc6dcab",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
