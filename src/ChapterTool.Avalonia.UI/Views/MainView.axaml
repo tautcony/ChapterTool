@@ -225,18 +225,32 @@
           <DataGrid.ContextMenu>
             <ContextMenu x:DataType="vm:MainWindowViewModel"
                          DataContext="{Binding #RootView.DataContext}">
-              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" InputGesture="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}" />
-              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" InputGesture="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}" />
+              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" InputGesture="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-plus" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" InputGesture="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-trash-can" /></MenuItem.Icon>
+              </MenuItem>
               <MenuItem x:Name="GridCombineMenuItem"
                         Header="{DynamicResource Main.Combine}"
                         ToggleType="CheckBox"
                         IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                         IsEnabled="{Binding CanCombine}"
-                        Command="{Binding CombineCommand}" />
-              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding OpenRelatedMediaCommand}" />
-              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootView.OpenZonesCommand}" />
-              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}" />
-              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="F11" Command="{Binding PreviewCommand}" />
+                        Command="{Binding CombineCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-code-merge" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding OpenRelatedMediaCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-link" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootView.OpenZonesCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-wand-magic-sparkles" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-arrow-up" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="F11" Command="{Binding PreviewCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-circle-play" /></MenuItem.Icon>
+              </MenuItem>
             </ContextMenu>
           </DataGrid.ContextMenu>
           <DataGrid.Columns>
@@ -316,15 +330,18 @@
             </DataGridTemplateColumn>
           </DataGrid.Columns>
         </DataGrid>
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsChapterGridEmpty}" Spacing="8">
         <svg:Svg x:Name="ChapterGridEmptyImage"
+                 IsVisible="{Binding IsChapterGridEmpty}"
                  Width="160"
                  Height="96"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Center"
                  IsHitTestVisible="False"
-                 IsVisible="{Binding IsChapterGridEmpty}"
                  Path="/Assets/Images/chapter-empty.svg"
                  AutomationProperties.AutomationId="ChapterGridEmptyImage" />
+        <TextBlock Text="{DynamicResource Main.EmptyGuidance}" HorizontalAlignment="Center" />
+        </StackPanel>
       </Grid>
 
       <Grid x:Name="AdvancedOptionsGrid"

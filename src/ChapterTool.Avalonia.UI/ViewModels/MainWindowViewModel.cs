@@ -203,6 +203,18 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool IsChapterGridEmpty => Rows.Count == 0;
 
+    public int ChapterCount => Rows.Count;
+
+    public int SelectedRowCount => SelectedRowIndexes.Count;
+
+    public string ChapterCountDisplay => Localizer.Format("Main.ChapterCount", new Dictionary<string, object?> { ["count"] = ChapterCount });
+
+    public string SelectedRowCountDisplay => Localizer.Format("Status.SelectedRows", new Dictionary<string, object?> { ["0"] = SelectedRowCount });
+
+    public string SourceDisplayText => string.IsNullOrWhiteSpace(SourcePath) ? string.Empty : Path.GetFileName(SourcePath);
+
+    public bool IsTemplateFileApplicable => UseTemplateNames;
+
     public ObservableCollection<ChapterImportEntry> ClipOptions { get; } = [];
 
     public ObservableCollection<SelectorDisplayOption> ClipDisplayOptions { get; } = [];
@@ -428,6 +440,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
                 }
 
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
+                OnPropertyChanged(nameof(IsTemplateFileApplicable));
                 RefreshRows();
             }
         }
@@ -448,6 +461,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
                 }
 
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
+                OnPropertyChanged(nameof(IsTemplateFileApplicable));
                 RefreshRows();
             }
         }
@@ -793,6 +807,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
         SelectedRowIndexes = [.. indexes.Where(index => index >= 0)];
+        OnPropertyChanged(nameof(SelectedRowCount));
+        OnPropertyChanged(nameof(SelectedRowCountDisplay));
         NotifyCommandStates();
     }
 
@@ -821,6 +837,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
         OnPropertyChanged(nameof(IsChapterGridEmpty));
+        OnPropertyChanged(nameof(ChapterCount));
+        OnPropertyChanged(nameof(ChapterCountDisplay));
         NotifyCommandStates();
     }
 
@@ -839,6 +857,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(CanUseExternalTools));
         OnPropertyChanged(nameof(CanRunExternalActions));
         OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
+        OnPropertyChanged(nameof(SourceDisplayText));
+        OnPropertyChanged(nameof(ChapterCountDisplay));
+        OnPropertyChanged(nameof(SelectedRowCountDisplay));
+        OnPropertyChanged(nameof(ChapterCount));
+        OnPropertyChanged(nameof(SelectedRowCount));
         OnPropertyChanged(nameof(SaveButtonTooltip));
         NotifyCommandStates();
     }
