@@ -407,4 +407,21 @@
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">標準テンプレート名を使用</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">未確定</x:String>
+  <x:String x:Key="Settings.Shortcuts" xml:space="preserve">ショートカット</x:String>
+  <x:String x:Key="Settings.Shortcuts.Description" xml:space="preserve">主な操作のキーボードジェスチャーを設定します。</x:String>
+  <x:String x:Key="Settings.Shortcuts.Reset" xml:space="preserve">ショートカットをリセット</x:String>
+  <x:String x:Key="Settings.Shortcuts.CaptureHint" xml:space="preserve">キーの組み合わせを押してショートカットを設定します。</x:String>
+  <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">このショートカットはアプリケーションで固定されています。</x:String>
+  <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">再読み込み</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">更新</x:String>
+  <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">ログ</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">プレビュー</x:String>
+  <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">クリップを選択</x:String>
+  <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">行を挿入</x:String>
+  <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">行を削除</x:String>
+  <x:String x:Key="Shortcuts.Action.Load" xml:space="preserve">読み込み</x:String>
+  <x:String x:Key="Shortcuts.Action.PreviousClip" xml:space="preserve">前のクリップ</x:String>
+  <x:String x:Key="Shortcuts.Action.NextClip" xml:space="preserve">次のクリップ</x:String>
+  <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">保存形式を選択</x:String>
 </ResourceDictionary>

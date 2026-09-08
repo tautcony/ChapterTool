@@ -407,4 +407,21 @@
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">Use standard template names</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">Undetermined</x:String>
+  <x:String x:Key="Settings.Shortcuts" xml:space="preserve">Shortcuts</x:String>
+  <x:String x:Key="Settings.Shortcuts.Description" xml:space="preserve">Customize keyboard gestures for primary actions.</x:String>
+  <x:String x:Key="Settings.Shortcuts.Reset" xml:space="preserve">Reset shortcut</x:String>
+  <x:String x:Key="Settings.Shortcuts.CaptureHint" xml:space="preserve">Press a key combination to assign this shortcut.</x:String>
+  <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">This shortcut is fixed by the application.</x:String>
+  <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">Save</x:String>
+  <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">Reload</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">Refresh</x:String>
+  <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">Log</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">Preview</x:String>
+  <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">Select clip</x:String>
+  <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">Insert row</x:String>
+  <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">Delete row</x:String>
+  <x:String x:Key="Shortcuts.Action.Load" xml:space="preserve">Load</x:String>
+  <x:String x:Key="Shortcuts.Action.PreviousClip" xml:space="preserve">Previous clip</x:String>
+  <x:String x:Key="Shortcuts.Action.NextClip" xml:space="preserve">Next clip</x:String>
+  <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">Select save format</x:String>
 </ResourceDictionary>

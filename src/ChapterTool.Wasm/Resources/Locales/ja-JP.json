@@ -405,5 +405,22 @@
   "Tool.TemplateNames.Title": "テンプレート名",
   "Tool.TemplateNames.UseStandard": "標準テンプレート名を使用",
   "Tool.Zones.Title": "Zones",
-  "XmlLanguage.Undetermined": "未確定"
+  "XmlLanguage.Undetermined": "未確定",
+  "Settings.Shortcuts": "ショートカット",
+  "Settings.Shortcuts.Description": "主な操作のキーボードジェスチャーを設定します。",
+  "Settings.Shortcuts.Reset": "ショートカットをリセット",
+  "Settings.Shortcuts.CaptureHint": "キーの組み合わせを押してショートカットを設定します。",
+  "Settings.Shortcuts.FixedHint": "このショートカットはアプリケーションで固定されています。",
+  "Shortcuts.Action.Save": "保存",
+  "Shortcuts.Action.Reload": "再読み込み",
+  "Shortcuts.Action.Refresh": "更新",
+  "Shortcuts.Action.Log": "ログ",
+  "Shortcuts.Action.Preview": "プレビュー",
+  "Shortcuts.Action.ClipSelection": "クリップを選択",
+  "Shortcuts.Action.Insert": "行を挿入",
+  "Shortcuts.Action.Delete": "行を削除",
+  "Shortcuts.Action.Load": "読み込み",
+  "Shortcuts.Action.PreviousClip": "前のクリップ",
+  "Shortcuts.Action.NextClip": "次のクリップ",
+  "Shortcuts.Action.SaveFormat": "保存形式を選択"
 }

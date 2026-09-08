@@ -405,5 +405,22 @@
   "Tool.TemplateNames.Title": "模板名称",
   "Tool.TemplateNames.UseStandard": "使用标准模板名称",
   "Tool.Zones.Title": "Zones",
-  "XmlLanguage.Undetermined": "未确定"
+  "XmlLanguage.Undetermined": "未确定",
+  "Settings.Shortcuts": "快捷键",
+  "Settings.Shortcuts.Description": "自定义主要操作的键盘手势。",
+  "Settings.Shortcuts.Reset": "恢复快捷键",
+  "Settings.Shortcuts.CaptureHint": "按下组合键即可设置快捷键。",
+  "Settings.Shortcuts.FixedHint": "此快捷键由应用程序固定。",
+  "Shortcuts.Action.Save": "保存",
+  "Shortcuts.Action.Reload": "重新加载",
+  "Shortcuts.Action.Refresh": "刷新",
+  "Shortcuts.Action.Log": "日志",
+  "Shortcuts.Action.Preview": "预览",
+  "Shortcuts.Action.ClipSelection": "选择片段",
+  "Shortcuts.Action.Insert": "插入行",
+  "Shortcuts.Action.Delete": "删除行",
+  "Shortcuts.Action.Load": "加载",
+  "Shortcuts.Action.PreviousClip": "上一个片段",
+  "Shortcuts.Action.NextClip": "下一个片段",
+  "Shortcuts.Action.SaveFormat": "选择保存格式"
 }

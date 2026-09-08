@@ -1,15 +1,4 @@
-## ADDED Requirements
-
-### Requirement: Main window ViewModel state
-The Avalonia main window SHALL be driven by a ViewModel rather than by direct control state.
-
-#### Scenario: Start without source
-- **WHEN** the application starts without a source argument
-- **THEN** `CurrentPath` SHALL be empty, chapter rows SHALL be empty, clip selection SHALL be hidden, advanced panel SHALL be collapsed, and save type SHALL default to TXT
-
-#### Scenario: Source load result updates state
-- **WHEN** a load service returns a successful chapter result
-- **THEN** the ViewModel SHALL update current path, display path, clip options, current chapter rows, status text, and progress from the result
+## MODIFIED Requirements
 
 ### Requirement: Legacy-inspired cross-platform UX
 The Avalonia main window SHALL preserve the original ChapterTool workflow density while using cross-platform Avalonia controls and services.
@@ -34,6 +23,19 @@ The Avalonia main window SHALL preserve the original ChapterTool workflow densit
 - **WHEN** optional actions such as preview, refresh, color, language, template, zones, forward shift, related media, or append MPLS are available
 - **THEN** they SHALL be reachable from compact buttons or context menus on the relevant workflow area rather than from an always-visible marketing-style navigation strip
 
+#### Scenario: Load variants are reachable from a visible control
+- **WHEN** the load action offers the Reload and Append MPLS variants
+- **THEN** the variants SHALL be reachable from a visible split-style control on the Load action
+- **AND** the variants SHALL NOT be reachable only through a right-click context menu on a button
+
+#### Scenario: Frame-rate change action has a visible entry point
+- **WHEN** the Change FPS action is available for the frame-rate selector
+- **THEN** it SHALL be reachable from a visible control next to the selector
+
+#### Scenario: Keyboard shortcuts are displayed
+- **WHEN** a menu item or primary action has a keyboard shortcut
+- **THEN** the menu item SHALL display the active shortcut from the shared shortcut catalog as an input gesture, or the control tooltip SHALL include that shortcut text
+
 #### Scenario: Platform-specific integration is gated
 - **WHEN** a workflow needs file picking, directory picking, clipboard, shell-open, settings, or file association
 - **THEN** the UI SHALL use platform service abstractions and SHALL NOT require direct Windows registry access for normal cross-platform operation
@@ -42,46 +44,22 @@ The Avalonia main window SHALL preserve the original ChapterTool workflow densit
 - **WHEN** the normal cross-platform main window is rendered
 - **THEN** registry-dependent integrations such as `.mpls` file association SHALL NOT be exposed as always-visible primary controls
 
-### Requirement: Command surface
-The UI shell SHALL expose documented main-window actions through commands.
-
-#### Scenario: Commands exist
-- **WHEN** the main window ViewModel is constructed
-- **THEN** it SHALL expose commands for load, reload, append MPLS, dropped path load, save, save directory, refresh, clip selection, combine, chapter editing, delete, zones, forward shift, insert, preview, log, color settings, language, expression, template names, and file association
-
-#### Scenario: Save delegates to service
-- **WHEN** save is invoked
-- **THEN** the ViewModel SHALL synchronize current rows and call the save service with selected save type, language, naming, template, order shift, expression, and directory options
-
 ### Requirement: Keyboard and menu routing
-The Avalonia shell SHALL preserve documented shortcuts and context menu actions.
+The Avalonia shell SHALL route the active, user-configurable shortcut mapping and preserve context menu actions.
 
 #### Scenario: Global shortcuts route to commands
-- **WHEN** the main window has focus
+- **WHEN** the main window has focus and an active mapped gesture is pressed
+- **THEN** the command associated with that gesture SHALL execute
+
+#### Scenario: Default mapping preserves legacy behavior
+- **WHEN** no shortcut overrides exist
 - **THEN** `Ctrl+O`, `Ctrl+S`, `Alt+S`, `Ctrl+R`, `F5`, `Ctrl+L`, and `F11` SHALL invoke the corresponding ViewModel commands
 
 #### Scenario: Context menus use capability flags
 - **WHEN** load, clip, or chapter-row context menus open
 - **THEN** entries such as append MPLS, merge chapters, related media, zones, forward translation, and insert SHALL be enabled only when the ViewModel capability flags allow them
 
-### Requirement: Chapter grid interaction
-The chapter table SHALL use observable row models and commands instead of UI row tags.
-
-#### Scenario: Edit chapter cell
-- **WHEN** a time, name, or frame cell is edited
-- **THEN** the ViewModel SHALL delegate validation and conversion to Core services and refresh row display from returned model state
-
-#### Scenario: Localized grid headers still route edits
-- **WHEN** the chapter grid uses Chinese headers for time, name, and frame columns
-- **THEN** committed edits SHALL still route to the correct time, name, and frame commands
-
-#### Scenario: Delete selected rows
-- **WHEN** selected rows are deleted
-- **THEN** the ViewModel SHALL update the underlying chapter list through Core operations and refresh numbering, time, and frame values
-
-### Requirement: No WinForms coupling
-The Avalonia project and ViewModels MUST NOT require WinForms for main-window behavior.
-
-#### Scenario: UI project dependency check
-- **WHEN** the Avalonia project is built
-- **THEN** main-window code SHALL NOT reference `DataGridView`, `ToolStrip`, `MessageBox`, `Application.DoEvents`, or WinForms forms
+#### Scenario: MPLS clip merge is a checked toggle
+- **WHEN** an MPLS source exposes multiple clip options and the user invokes merge chapters from the clip or chapter-row context menu
+- **THEN** the menu item SHALL show a checked state and the current chapter rows SHALL represent all clips combined into one chapter set
+- **AND** invoking the same checked menu item again SHALL clear the checked state and restore the individual clip options and selected clip rows

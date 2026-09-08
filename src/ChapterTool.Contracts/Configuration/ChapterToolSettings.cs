@@ -1,3 +1,4 @@
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Contracts.Configuration;
@@ -14,6 +15,8 @@ public sealed record ChapterToolSettings
 
     public FontSettings Font { get; init; } = FontSettings.Default;
 
+    public ShortcutSettings Shortcuts { get; init; } = ShortcutSettings.Default;
+
     public static ChapterToolSettings Default { get; } = new();
 
     public static ChapterToolSettings Normalize(ChapterToolSettings? settings) =>
@@ -23,6 +26,7 @@ public sealed record ChapterToolSettings
             Application = NormalizeApplication(settings?.Application),
             Theme = ThemePresetCatalog.Normalize(settings?.Theme),
             Font = FontSettings.Normalize(settings?.Font),
+            Shortcuts = ShortcutSettings.Normalize(settings?.Shortcuts),
         };
 
     private static AppSettings NormalizeApplication(AppSettings? settings)

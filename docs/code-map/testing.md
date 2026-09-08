@@ -143,6 +143,8 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolViewModelPortConstructionTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs`
 
+Shortcut catalog and routing tests belong in `tests/ChapterTool.Avalonia.Tests`. Settings persistence remains in `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`. Headless shortcut workflow coverage belongs in `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`.
+
 LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first projection, severity and text filters, compact summaries, explicit inspector selection, search highlights, flat structured properties, raw values, live updates, eviction handling, localization, and secondary command state. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs` covers append-order snapshots, minimum-level filtering, bounded retention, clear notifications, and concurrent access. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs` covers UTF-8 JSON and CSV output, deterministic ordering, CSV quoting, output paths, and recoverable failures. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs` and `UiResourceResolutionHeadlessTests.cs` cover rendered list and inspector workflows, keyboard close behavior, responsive layouts, and locale resource resolution.
 - commands and services
   - `tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs`

@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Infrastructure.Importing.Media;
 
 namespace ChapterTool.Infrastructure.Configuration;
@@ -11,6 +12,7 @@ namespace ChapterTool.Infrastructure.Configuration;
 [JsonSerializable(typeof(AppSettings))]
 [JsonSerializable(typeof(FontSettings))]
 [JsonSerializable(typeof(ThemeSettings))]
+[JsonSerializable(typeof(ShortcutSettings))]
 [JsonSerializable(typeof(ChapterToolSettings))]
 [JsonSerializable(typeof(FfprobeChapterOutput))]
 internal sealed partial class AppJsonSerializerContext : JsonSerializerContext;

@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using Avalonia.Input;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
@@ -174,6 +176,35 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     internal ClipEditingCoordinator ClipEditingCoordinator { get; }
 
     internal ISettingsStore<ChapterToolSettings>? SettingsStore { get; }
+
+    public ShortcutMapping ActiveShortcutMapping { get; private set; } = ShortcutMapping.Default;
+
+    public string SaveShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.SaveId) ?? string.Empty;
+
+    public string ReloadShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.ReloadId) ?? string.Empty;
+
+    public string LogShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.LogId) ?? string.Empty;
+
+    public string PreviewShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.PreviewId) ?? string.Empty;
+
+    public KeyGesture? ReloadShortcutKeyGesture => ParseGesture(ReloadShortcutGesture);
+
+    public KeyGesture? PreviewShortcutKeyGesture => ParseGesture(PreviewShortcutGesture);
+
+    public void SetShortcutSettings(ShortcutSettings settings)
+    {
+        ActiveShortcutMapping = ShortcutMapping.Resolve(settings);
+        OnPropertyChanged(nameof(ActiveShortcutMapping));
+        OnPropertyChanged(nameof(SaveShortcutGesture));
+        OnPropertyChanged(nameof(ReloadShortcutGesture));
+        OnPropertyChanged(nameof(LogShortcutGesture));
+        OnPropertyChanged(nameof(PreviewShortcutGesture));
+        OnPropertyChanged(nameof(ReloadShortcutKeyGesture));
+        OnPropertyChanged(nameof(PreviewShortcutKeyGesture));
+    }
+
+    private static KeyGesture? ParseGesture(string gesture) =>
+        string.IsNullOrWhiteSpace(gesture) ? null : KeyGesture.Parse(gesture);
 
     internal void NotifyPropertyChanged(string propertyName) => OnPropertyChanged(propertyName);
 

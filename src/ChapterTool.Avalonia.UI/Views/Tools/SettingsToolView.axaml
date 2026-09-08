@@ -102,6 +102,18 @@
       <Setter Property="MinWidth" Value="100" />
       <Setter Property="Padding" Value="16,0" />
     </Style>
+    <Style Selector="TextBox.shortcutConflict">
+      <Setter Property="BorderBrush" Value="#C62828" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="TextBox.shortcutGesture">
+      <Setter Property="FontFamily" Value="{DynamicResource ChapterTool.ShortcutFontFamily}" />
+    </Style>
+    <Style Selector="TextBox.shortcutFixedSymbol">
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="8,0" />
+    </Style>
   </UserControl.Styles>
 
   <Grid RowDefinitions="*,Auto">
@@ -403,6 +415,47 @@
                 </Border>
               </StackPanel>
             </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <TabItem>
+        <TabItem.Header>
+          <TextBlock Classes="tabHeader" Text="{DynamicResource Settings.Shortcuts}" />
+        </TabItem.Header>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="8" Margin="16,12">
+            <TextBlock Classes="status" Text="{DynamicResource Settings.Shortcuts.Description}" />
+            <ItemsControl ItemsSource="{Binding ShortcutRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ShortcutRowViewModel">
+                  <Grid ColumnDefinitions="2*,*,Auto"
+                        ColumnSpacing="12"
+                        Margin="0,2"
+                        ToolTip.Tip="{DynamicResource Settings.Shortcuts.FixedHint}">
+                    <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{Binding DisplayName}" />
+                    <TextBox Grid.Column="1"
+                             Text="{Binding DisplayGesture}"
+                             Classes="shortcutGesture"
+                             Classes.shortcutFixedSymbol="{Binding IsFixedSymbol}"
+                             IsReadOnly="True"
+                             IsEnabled="{Binding IsEditable}"
+                             Classes.shortcutConflict="{Binding HasConflict}"
+                             KeyDown="OnShortcutKeyDown"
+                             AutomationProperties.Name="{Binding DisplayName}"
+                             ToolTip.Tip="{DynamicResource Settings.Shortcuts.CaptureHint}" />
+                    <Button Grid.Column="2"
+                            Classes="icon_button compact"
+                            IsEnabled="{Binding IsEditable}"
+                            Command="{Binding ResetCommand}"
+                            AutomationProperties.Name="{DynamicResource Settings.Shortcuts.Reset}"
+                            ToolTip.Tip="{DynamicResource Settings.Shortcuts.Reset}">
+                      <i:Icon Width="14" Height="14" Value="fa-solid fa-rotate-left" />
+                    </Button>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

@@ -405,5 +405,22 @@
   "Tool.TemplateNames.Title": "Template Names",
   "Tool.TemplateNames.UseStandard": "Use standard template names",
   "Tool.Zones.Title": "Zones",
-  "XmlLanguage.Undetermined": "Undetermined"
+  "XmlLanguage.Undetermined": "Undetermined",
+  "Settings.Shortcuts": "Shortcuts",
+  "Settings.Shortcuts.Description": "Customize keyboard gestures for primary actions.",
+  "Settings.Shortcuts.Reset": "Reset shortcut",
+  "Settings.Shortcuts.CaptureHint": "Press a key combination to assign this shortcut.",
+  "Settings.Shortcuts.FixedHint": "This shortcut is fixed by the application.",
+  "Shortcuts.Action.Save": "Save",
+  "Shortcuts.Action.Reload": "Reload",
+  "Shortcuts.Action.Refresh": "Refresh",
+  "Shortcuts.Action.Log": "Log",
+  "Shortcuts.Action.Preview": "Preview",
+  "Shortcuts.Action.ClipSelection": "Select clip",
+  "Shortcuts.Action.Insert": "Insert row",
+  "Shortcuts.Action.Delete": "Delete row",
+  "Shortcuts.Action.Load": "Load",
+  "Shortcuts.Action.PreviousClip": "Previous clip",
+  "Shortcuts.Action.NextClip": "Next clip",
+  "Shortcuts.Action.SaveFormat": "Select save format"
 }

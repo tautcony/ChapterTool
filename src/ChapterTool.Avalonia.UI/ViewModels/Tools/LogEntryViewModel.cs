@@ -329,54 +329,56 @@ public sealed class LogEntryViewModel(
 
         try
         {
-            if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+            switch (value)
             {
-                foreach (var pair in readOnlyDictionary)
+                case IReadOnlyDictionary<string, object?> readOnlyDictionary:
                 {
-                    if (budget <= 0)
+                    foreach (var pair in readOnlyDictionary)
                     {
-                        break;
+                        if (budget <= 0)
+                        {
+                            break;
+                        }
+
+                        values.Add(pair.Key);
+                        AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
                     }
 
-                    values.Add(pair.Key);
-                    AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
+                    return;
                 }
-
-                return;
-            }
-
-            if (value is IDictionary dictionary)
-            {
-                foreach (DictionaryEntry pair in dictionary)
+                case IDictionary dictionary:
                 {
-                    if (budget <= 0)
+                    foreach (DictionaryEntry pair in dictionary)
                     {
-                        break;
+                        if (budget <= 0)
+                        {
+                            break;
+                        }
+
+                        values.Add(pair.Key?.ToString() ?? string.Empty);
+                        AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
                     }
 
-                    values.Add(pair.Key?.ToString() ?? string.Empty);
-                    AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
+                    return;
                 }
-
-                return;
-            }
-
-            if (value is IEnumerable enumerable)
-            {
-                foreach (var item in enumerable)
+                case IEnumerable enumerable:
                 {
-                    if (budget <= 0)
+                    foreach (var item in enumerable)
                     {
-                        break;
+                        if (budget <= 0)
+                        {
+                            break;
+                        }
+
+                        AppendSearchableValue(values, item, depth + 1, path, ref budget);
                     }
 
-                    AppendSearchableValue(values, item, depth + 1, path, ref budget);
+                    return;
                 }
-
-                return;
+                default:
+                    values.Add(value.ToString() ?? string.Empty);
+                    break;
             }
-
-            values.Add(value.ToString() ?? string.Empty);
         }
         finally
         {

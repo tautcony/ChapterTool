@@ -1,19 +1,31 @@
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
-public sealed class ShortcutRouter(MainWindowViewModel viewModel)
+using ChapterTool.Contracts.Shortcuts;
+
+public sealed class ShortcutRouter(
+    MainWindowViewModel viewModel,
+    ShortcutMapping? mapping = null,
+    Func<ValueTask>? load = null,
+    Func<string, ValueTask>? navigateClip = null)
 {
+    private ShortcutMapping mapping = mapping ?? ShortcutMapping.Default;
+
+    public void UpdateMapping(ShortcutMapping next) => mapping = next ?? throw new ArgumentNullException(nameof(next));
+
     public ValueTask RouteAsync(string gesture, CancellationToken cancellationToken = default)
     {
-        return gesture switch
+        var action = mapping.ActionForGesture(gesture);
+        return action switch
         {
-            "Ctrl+S" => viewModel.SaveCommand.ExecuteAsync(cancellationToken: cancellationToken),
-            "Ctrl+R" or "F5" => viewModel.ReloadCommand.ExecuteAsync(cancellationToken: cancellationToken),
-            "Ctrl+L" => viewModel.LogCommand.ExecuteAsync(cancellationToken: cancellationToken),
-            "F11" => viewModel.PreviewCommand.ExecuteAsync(cancellationToken: cancellationToken),
-            "Ctrl+0" => viewModel.SelectClipCommand.ExecuteAsync(9, cancellationToken),
-            _ when gesture.StartsWith("Ctrl+", StringComparison.Ordinal) && int.TryParse(gesture["Ctrl+".Length..], out var index) =>
-                viewModel.SelectClipCommand.ExecuteAsync(index - 1, cancellationToken),
+            ShortcutCatalog.SaveId => viewModel.SaveCommand.ExecuteAsync(cancellationToken: cancellationToken),
+            ShortcutCatalog.ReloadId => viewModel.ReloadCommand.ExecuteAsync(cancellationToken: cancellationToken),
+            ShortcutCatalog.LogId => viewModel.LogCommand.ExecuteAsync(cancellationToken: cancellationToken),
+            ShortcutCatalog.PreviewId => viewModel.PreviewCommand.ExecuteAsync(cancellationToken: cancellationToken),
+            ShortcutCatalog.LoadId when load is not null => load(),
+            ShortcutCatalog.PreviousClipId when navigateClip is not null => navigateClip("PageUp"),
+            ShortcutCatalog.NextClipId when navigateClip is not null => navigateClip("PageDown"),
             _ => ValueTask.CompletedTask
         };
     }
+
 }

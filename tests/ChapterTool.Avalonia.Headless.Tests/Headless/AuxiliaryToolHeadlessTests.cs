@@ -167,7 +167,7 @@ public sealed class AuxiliaryToolHeadlessTests
                     || ReferenceEquals(focusedControl, detailsButton)
                     || (focusedControl.FindAncestorOfType<ListBoxItem>()?.DataContext is LogEntryViewModel focusedEntry
                         && ReferenceEquals(focusedEntry, warning))),
-                $"Expected focus to return to the selected log row, got {focused.GetType().Name ?? "none"}.");
+                $"Expected focus to return to the selected log row, got {focused.GetType().Name}.");
 
             await viewModel.ClearCommand.ExecuteAsync();
             Dispatcher.UIThread.RunJobs();

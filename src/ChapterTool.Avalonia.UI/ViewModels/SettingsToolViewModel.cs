@@ -8,6 +8,7 @@ using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
@@ -15,6 +16,8 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Provides settings state and commands for the settings tool.</summary>
 public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
+    public static event Action<ShortcutSettings>? ShortcutsSaved;
+
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
 
     private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;
@@ -22,6 +25,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private readonly IPreferenceSink preferenceSink;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
+    private readonly ObservableCollection<ShortcutRowViewModel> shortcutRows = [];
     private readonly ISettingsPickerService? picker;
     private readonly IShellService? shellService;
     private readonly Func<Exception, ValueTask>? unexpectedErrorHandler;
@@ -92,12 +96,13 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
+        LoadShortcutRows(ChapterToolSettings.Default.Shortcuts);
         UpdateDraftSnapshot();
         snapshotCoordinator.Commit(snapshotCoordinator.Draft);
 
         SaveCommand = new UiCommand(
             async (_, token) => await SaveAsync(token),
-            _ => settingsStore is not null);
+            _ => settingsStore is not null && IsShortcutConfigurationValid);
         ResetCommand = new UiCommand((_, _) =>
         {
             ApplyDefaults();
@@ -120,6 +125,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             Appearance.RefreshLocalizedOptions();
             RefreshXmlLanguageDisplayOptions(notify: true);
             OnPropertyChanged(nameof(DeleteRowsTimingOptions));
+            foreach (var row in shortcutRows)
+            {
+                row.RefreshLocalizedName();
+            }
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
             {
@@ -454,6 +463,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
                     Appearance.ApplyThemeSettings(snapshotCoordinator.Saved.Theme);
                     Appearance.ApplyFontSettings(snapshotCoordinator.Saved.Font);
                     Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
+                    LoadShortcutRows(snapshotCoordinator.Saved.Shortcuts);
 
                     // Capture the post-apply UI snapshot so resolved fonts/paths are not marked dirty.
                     UpdateDraftSnapshot();
@@ -528,6 +538,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             var settings = CurrentSettings();
             await SettingsStoreForTesting.SaveAsync(settings, cancellationToken);
             snapshotCoordinator.Commit(settings);
+            ShortcutsSaved?.Invoke(settings.Shortcuts);
             Appearance.ApplyThemeSettings(settings.Theme);
             Appearance.ApplyFontSettings(settings.Font);
             Appearance.ApplyToServices(settings.Theme, settings.Font);
@@ -566,6 +577,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ApplyCurrentAppSettingsToOwner();
         Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
         snapshotCoordinator.DiscardDraft();
+        LoadShortcutRows(snapshotCoordinator.Saved.Shortcuts);
         RefreshToolStatuses();
         NotifyUnsavedChanges();
     }
@@ -577,6 +589,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ApplyAppSettingsToFields(defaults.Application);
         Appearance.ApplyThemeSettings(defaults.Theme);
         Appearance.ApplyFontSettings(defaults.Font);
+        LoadShortcutRows(defaults.Shortcuts);
         Appearance.ApplyToServices(defaults.Theme, defaults.Font);
         ApplyLiveSettings();
         RefreshToolStatuses();
@@ -773,6 +786,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             Application = CurrentAppSettings(),
             Theme = Appearance.CurrentThemeSettings(),
             Font = Appearance.CurrentFontSettings(),
+            Shortcuts = BuildShortcutSettings(),
         });
 
         snapshotCoordinator.UpdateDraft(settings);
@@ -810,6 +824,50 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         FrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces);
     }
 
+    public IReadOnlyList<ShortcutRowViewModel> ShortcutRows => shortcutRows;
+
+    public bool IsShortcutConfigurationValid
+    {
+        get
+        {
+            if (shortcutRows.Any(static row => !row.IsValid))
+            {
+                return false;
+            }
+
+            var rows = BuildShortcutSettings();
+            return ShortcutConflictValidator.FindConflicts(rows).Count == 0;
+        }
+    }
+
+    private ShortcutSettings BuildShortcutSettings() =>
+        new(shortcutRows.ToDictionary(row => row.ActionId, row => row.Gesture, StringComparer.OrdinalIgnoreCase));
+
+    private void RefreshShortcutValidation()
+    {
+        var conflicts = ShortcutConflictValidator.FindConflicts(BuildShortcutSettings());
+        foreach (var row in shortcutRows)
+        {
+            row.SetConflict(conflicts.Contains(row.ActionId));
+        }
+    }
+
+    private void LoadShortcutRows(ShortcutSettings settings)
+    {
+        shortcutRows.Clear();
+        foreach (var action in ShortcutCatalog.All)
+        {
+            var gesture = action.IsEditable && settings.TryGetValue(action.Id, out var value)
+                ? value
+                : action.DefaultGesture;
+            shortcutRows.Add(new ShortcutRowViewModel(action, gesture, NotifyUnsavedChanges, localizer.GetString));
+        }
+        OnPropertyChanged(nameof(ShortcutRows));
+        RefreshShortcutValidation();
+        OnPropertyChanged(nameof(IsShortcutConfigurationValid));
+        SaveCommand?.RaiseCanExecuteChanged();
+    }
+
     private void ApplyLiveSettings()
     {
         if (!snapshotCoordinator.LiveApplyEnabled || snapshotCoordinator.IsApplyingSnapshot)
@@ -826,7 +884,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private void NotifyUnsavedChanges()
     {
         UpdateDraftSnapshot();
+        RefreshShortcutValidation();
         OnPropertyChanged(nameof(HasUnsavedChanges));
+        OnPropertyChanged(nameof(IsShortcutConfigurationValid));
+        SaveCommand.RaiseCanExecuteChanged();
     }
 
     private void UpdateDraftSnapshot() => _ = CurrentSettings();

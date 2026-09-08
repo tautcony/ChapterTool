@@ -407,4 +407,21 @@
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">使用标准模板名称</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">未确定</x:String>
+  <x:String x:Key="Settings.Shortcuts" xml:space="preserve">快捷键</x:String>
+  <x:String x:Key="Settings.Shortcuts.Description" xml:space="preserve">自定义主要操作的键盘手势。</x:String>
+  <x:String x:Key="Settings.Shortcuts.Reset" xml:space="preserve">恢复快捷键</x:String>
+  <x:String x:Key="Settings.Shortcuts.CaptureHint" xml:space="preserve">按下组合键即可设置快捷键。</x:String>
+  <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">此快捷键由应用程序固定。</x:String>
+  <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">重新加载</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">刷新</x:String>
+  <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">日志</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">选择片段</x:String>
+  <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">插入行</x:String>
+  <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">删除行</x:String>
+  <x:String x:Key="Shortcuts.Action.Load" xml:space="preserve">加载</x:String>
+  <x:String x:Key="Shortcuts.Action.PreviousClip" xml:space="preserve">上一个片段</x:String>
+  <x:String x:Key="Shortcuts.Action.NextClip" xml:space="preserve">下一个片段</x:String>
+  <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">选择保存格式</x:String>
 </ResourceDictionary>

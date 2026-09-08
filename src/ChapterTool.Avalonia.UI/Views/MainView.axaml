@@ -81,7 +81,7 @@
               <MenuFlyout>
                 <MenuItem x:Name="ReloadMenuItem"
                           Header="{DynamicResource Main.Reload}"
-                          InputGesture="Ctrl+R"
+                          InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadShortcutKeyGesture}"
                           Command="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadCommand}" />
                 <MenuItem x:Name="AppendLoadMenuItem"
                           Header="{DynamicResource Main.AppendMpls}"
@@ -212,6 +212,10 @@
       </Grid>
 
       <Grid Grid.Row="1" MinHeight="208">
+        <Grid.RowDefinitions>
+          <RowDefinition />
+          <RowDefinition />
+        </Grid.RowDefinitions>
         <DataGrid x:Name="ChapterGrid"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="False"
@@ -225,10 +229,10 @@
           <DataGrid.ContextMenu>
             <ContextMenu x:DataType="vm:MainWindowViewModel"
                          DataContext="{Binding #RootView.DataContext}">
-              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" InputGesture="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}">
+              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" Tag="⎀" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}">
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-plus" /></MenuItem.Icon>
               </MenuItem>
-              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" InputGesture="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}">
+              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" Tag="⌦" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}">
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-trash-can" /></MenuItem.Icon>
               </MenuItem>
               <MenuItem x:Name="GridCombineMenuItem"
@@ -248,7 +252,7 @@
               <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}">
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-arrow-up" /></MenuItem.Icon>
               </MenuItem>
-              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="F11" Command="{Binding PreviewCommand}">
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).PreviewShortcutKeyGesture}" Command="{Binding PreviewCommand}">
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-circle-play" /></MenuItem.Icon>
               </MenuItem>
             </ContextMenu>

@@ -23,8 +23,27 @@ The CI workflow calls `axaml-to-json.py --check` and `publish.sh` directly. Rele
 | `audit-ui-resources.py` | Python 3; cross-platform | Python standard library | Audit Avalonia resource definitions and references. |
 | `normalize-changed-text-files.py` | Python 3; cross-platform | Python standard library, Git | Normalize line endings and UTF-8 BOMs in changed text files. Use `--what-if` for a read-only check. |
 | `generate-app-icons-macos.sh` | Bash; macOS only | ImageMagick, `iconutil` | Generate ICNS and ICO files from the SVG icon source. |
+| `subset-shortcut-font.py` | Python 3; cross-platform | FontTools (`pyftsubset`) | Keep only the ASCII gesture text and platform-neutral shortcut symbols in the bundled Avalonia font. |
 
 Maintenance scripts are manual entry points. They do not run as hidden build steps.
+
+### Subset the Avalonia shortcut font
+
+Run this command from the repository root after changing shortcut display text:
+
+```bash
+uv run --project scripts subset-shortcut-font
+```
+
+The script invokes `pyftsubset` with a UTF-8 character file, preserves the
+`vert`, `vrtr`, `vrt2`, and `vkna` layout features, and writes the result to
+`src/ChapterTool.Avalonia.UI/Assets/Fonts/Iosevka-Regular.ttf` from the
+original font at `src/ChapterTool.Avalonia.UI/Assets/Fonts/source/`. Use
+`--check` to verify that the checked-in font is current. Use `--extra-text`
+when a new shortcut symbol is added.
+
+The equivalent verification commands are `uv run --project scripts
+check-shortcut-font` and `uv run --project scripts lint-scripts`.
 
 
 ## Configuration

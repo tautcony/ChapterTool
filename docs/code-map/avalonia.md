@@ -137,6 +137,8 @@ Primary entry points are `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.ax
 
 The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. Change FPS is a visible `icon_button` next to the frame-rate selector.
 
+Shortcut ownership is shared. `src/ChapterTool.Contracts/Shortcuts/` defines stable action IDs, gesture normalization, conflict checks, and active mappings. `ShortcutRouter` consumes the mapping. `SettingsToolViewModel` owns draft rows and saves them through `ISettingsStore<ChapterToolSettings>`. `SettingsToolView.axaml` exposes the Shortcuts tab.
+
 ### ViewModels
 
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel*.cs`
@@ -149,6 +151,7 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 - `src/ChapterTool.Avalonia.UI/ViewModels/ChapterRowViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRowViewModel.cs` (shortcut settings rows and reset commands)
 - `src/ChapterTool.Avalonia.UI/ViewModels/XmlLanguageDisplay.cs` (localized XML chapter language selector options)
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs` (pure log projection and structured-data formatting)

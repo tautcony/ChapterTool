@@ -66,6 +66,59 @@ public sealed class SettingsToolHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Shortcut_tab_round_trips_custom_gesture_and_marks_conflicts()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        using var viewModel = new SettingsToolViewModel(
+            host.ViewModel.ToolSession.Preferences,
+            host.SettingsStore,
+            host.Localizer,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 760,
+            Height = 520
+        };
+
+        try
+        {
+            window.Show();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+            Assert.True(tabControl.Items.Count >= 5);
+
+            viewModel.ShortcutRows[0].Gesture = "Ctrl+Shift+S";
+            viewModel.ShortcutRows[1].Gesture = "Ctrl+Shift+S";
+            Assert.False(viewModel.IsShortcutConfigurationValid);
+            Assert.All(viewModel.ShortcutRows.Take(2), row => Assert.True(row.HasConflict));
+
+            viewModel.ShortcutRows[1].Reset();
+            Assert.True(viewModel.IsShortcutConfigurationValid);
+            await viewModel.SaveCommand.ExecuteAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            viewModel.ShortcutRows[0].Gesture = "S";
+            Assert.False(viewModel.IsShortcutConfigurationValid);
+            viewModel.DiscardUnsavedChanges();
+            Assert.Equal("Ctrl+Shift+S", viewModel.ShortcutRows[0].Gesture);
+
+            var reloaded = new SettingsToolViewModel(
+                host.ViewModel.ToolSession.Preferences,
+                host.SettingsStore,
+                host.Localizer,
+                autoLoad: false);
+            await reloaded.LoadAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("Ctrl+Shift+S", reloaded.ShortcutRows[0].Gesture);
+            reloaded.Dispose();
+        }
+        finally
+        {
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task Icon_only_settings_buttons_have_accessible_names()
     {
         using var host = new MainWindowHeadlessTestHost();

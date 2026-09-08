@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\Images\chapter-empty.svg" />
+    <AvaloniaResource Include="Assets\Fonts\Iosevka-Regular.ttf" />
     <AvaloniaResource Include="Resources\**\*.axaml" />
     <EmbeddedResource Include="Localization\Resources\Locales\*.axaml" />
   </ItemGroup>

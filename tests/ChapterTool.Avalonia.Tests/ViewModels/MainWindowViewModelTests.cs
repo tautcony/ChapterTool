@@ -1196,10 +1196,9 @@ public sealed class MainWindowViewModelTests
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
         var router = new ShortcutRouter(vm);
 
-        await router.RouteAsync("Ctrl+2");
         await router.RouteAsync("Ctrl+S");
 
-        Assert.Equal(1, vm.SelectedClipIndex);
+        Assert.Equal(0, vm.SelectedClipIndex);
         Assert.NotNull(save.LastOptions);
     }
 

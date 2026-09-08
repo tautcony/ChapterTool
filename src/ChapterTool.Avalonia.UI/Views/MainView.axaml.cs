@@ -7,7 +7,6 @@ using AvaloniaEdit;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views.Controls;
-using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.UI.Views;
@@ -25,8 +24,6 @@ public sealed partial class MainView : UserControl
         [Key.F5] = "F5", [Key.F11] = "F11", [Key.PageUp] = "PageUp", [Key.PageDown] = "PageDown"
     };
 
-    private static readonly IReadOnlyDictionary<Key, string> AltNumberGestures = CreateNumberGestures("Alt+");
-    private static readonly IReadOnlyDictionary<Key, string> ControlNumberGestures = CreateNumberGestures("Ctrl+");
 
     private readonly MainWindowViewModel viewModel;
     private readonly ShortcutRouter shortcutRouter;
@@ -61,7 +58,10 @@ public sealed partial class MainView : UserControl
         this.viewModel = viewModel;
         this.filePickerServiceFactory = filePickerServiceFactory;
         this.embeddedToolPresenter = embeddedToolPresenter;
-        shortcutRouter = new ShortcutRouter(viewModel);
+        shortcutRouter = new ShortcutRouter(
+            viewModel,
+            load: () => new ValueTask(BrowseAndLoadAsync()),
+            navigateClip: NavigateClipAsync);
         uiOperationBoundary = new UiOperationBoundary(viewModel.ReportUnexpectedUiException);
 
         // UI-only adapter commands: pickers and DataGrid selection. All other
@@ -83,9 +83,36 @@ public sealed partial class MainView : UserControl
 
         InitializeComponent();
         DataContext = viewModel;
+        SettingsToolViewModel.ShortcutsSaved += OnShortcutsSaved;
+        _ = LoadShortcutMappingAsync();
         UpdateSecondarySurface();
         ApplyAdvancedOptionsLayout();
         RaiseCommandStates();
+    }
+
+    private void OnShortcutsSaved(ChapterTool.Contracts.Shortcuts.ShortcutSettings settings)
+    {
+        viewModel.SetShortcutSettings(settings);
+        shortcutRouter.UpdateMapping(viewModel.ActiveShortcutMapping);
+    }
+
+    private async Task LoadShortcutMappingAsync()
+    {
+        if (viewModel.SettingsStore is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var settings = await viewModel.SettingsStore.LoadAsync(CancellationToken.None);
+            viewModel.SetShortcutSettings(settings.Shortcuts);
+            shortcutRouter.UpdateMapping(viewModel.ActiveShortcutMapping);
+        }
+        catch (Exception exception)
+        {
+            await viewModel.ReportUnexpectedUiException(exception);
+        }
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -256,7 +283,7 @@ public sealed partial class MainView : UserControl
         }
 
         args.Handled = true;
-        if (await TryHandleKnownGestureAsync(gesture) || TryHandleSaveFormatGesture(gesture))
+        if (await TryHandleKnownGestureAsync(gesture))
         {
             return;
         }
@@ -283,43 +310,19 @@ public sealed partial class MainView : UserControl
 
     private async Task<bool> TryHandleKnownGestureAsync(string gesture)
     {
-        switch (gesture)
+        return gesture switch
         {
-            case "Ctrl+S":
-                await viewModel.SaveCommand.ExecuteAsync();
-                return true;
-            case "Ctrl+O":
-                await BrowseAndLoadAsync();
-                return true;
-            case "PageUp" or "PageDown":
-            {
-                var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
-                if (viewModel.SelectClipCommand.CanExecute(next))
-                {
-                    await viewModel.SelectClipCommand.ExecuteAsync(next);
-                }
-
-                return true;
-            }
-            default:
-                return false;
-        }
+            _ => false
+        };
     }
 
-    private bool TryHandleSaveFormatGesture(string gesture)
+    private async ValueTask NavigateClipAsync(string gesture)
     {
-        if (!gesture.StartsWith("Alt+", StringComparison.Ordinal) || !int.TryParse(gesture["Alt+".Length..], out var saveIndex))
+        var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
+        if (viewModel.SelectClipCommand.CanExecute(next))
         {
-            return false;
+            await viewModel.SelectClipCommand.ExecuteAsync(next);
         }
-
-        var mapped = saveIndex == 0 ? ChapterExportFormats.All.Count - 1 : saveIndex - 1;
-        if (mapped >= 0 && mapped < ChapterExportFormats.All.Count)
-        {
-            viewModel.SaveFormatIndex = mapped;
-        }
-
-        return true;
     }
 
     private bool IsTextInputKeyScope(Visual? source)
@@ -345,6 +348,7 @@ public sealed partial class MainView : UserControl
     private static string? Gesture(KeyEventArgs args)
     {
         var control = args.KeyModifiers.HasFlag(KeyModifiers.Control);
+        var meta = args.KeyModifiers.HasFlag(KeyModifiers.Meta);
         var alt = args.KeyModifiers.HasFlag(KeyModifiers.Alt);
 
         if (control && ControlGestures.TryGetValue(args.Key, out var controlGesture))
@@ -352,31 +356,12 @@ public sealed partial class MainView : UserControl
             return controlGesture;
         }
 
-        if (FunctionGestures.TryGetValue(args.Key, out var functionGesture))
+        if (meta && ControlGestures.TryGetValue(args.Key, out var metaGesture))
         {
-            return functionGesture;
+            return metaGesture.Replace("Ctrl+", "Meta+", StringComparison.Ordinal);
         }
 
-        if (alt && AltNumberGestures.TryGetValue(args.Key, out var altGesture))
-        {
-            return altGesture;
-        }
-
-        return control && ControlNumberGestures.TryGetValue(args.Key, out var numberGesture)
-            ? numberGesture
-            : null;
-    }
-
-    private static IReadOnlyDictionary<Key, string> CreateNumberGestures(string prefix)
-    {
-        var gestures = new Dictionary<Key, string>();
-        for (var number = 0; number <= 9; number++)
-        {
-            gestures[(Key)((int)Key.D0 + number)] = $"{prefix}{number}";
-            gestures[(Key)((int)Key.NumPad0 + number)] = $"{prefix}{number}";
-        }
-
-        return gestures;
+        return FunctionGestures.GetValueOrDefault(args.Key);
     }
 
     private async ValueTask CommitCellEditAsync(DataGridCellEditEndedEventArgs args)
@@ -468,6 +453,7 @@ public sealed partial class MainView : UserControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        SettingsToolViewModel.ShortcutsSaved -= OnShortcutsSaved;
         if (commandStateSubscribed)
         {
             UnsubscribeViewModelCommandState();

@@ -91,15 +91,15 @@ The UI shell SHALL expose documented main-window actions through commands.
 - **AND** the shell SHALL keep the application usable rather than allowing the file-system exception to escape the command
 
 ### Requirement: Keyboard and menu routing
-The Avalonia shell SHALL preserve documented shortcuts and context menu actions.
+The Avalonia shell SHALL route the active, user-configurable shortcut mapping and preserve context menu actions.
 
 #### Scenario: Global shortcuts route to commands
-- **WHEN** the main window has focus
-- **THEN** `Ctrl+O`, `Ctrl+S`, `Alt+S`, `Ctrl+R`, `F5`, `Ctrl+L`, and `F11` SHALL invoke the corresponding ViewModel commands
+- **WHEN** the main window has focus and an active mapped gesture is pressed
+- **THEN** the command associated with that gesture SHALL execute
 
-#### Scenario: Clip shortcuts preserve legacy mapping
-- **WHEN** `Ctrl+1` through `Ctrl+9` or `Ctrl+0` are pressed
-- **THEN** they SHALL select clips 1 through 9 and clip 10 respectively when in range
+#### Scenario: Default mapping preserves legacy behavior
+- **WHEN** no shortcut overrides exist
+- **THEN** `Ctrl+O`, `Ctrl+S`, `Alt+S`, `Ctrl+R`, `F5`, `Ctrl+L`, and `F11` SHALL invoke the corresponding ViewModel commands
 
 #### Scenario: Context menus use capability flags
 - **WHEN** load, clip, or chapter-row context menus open
