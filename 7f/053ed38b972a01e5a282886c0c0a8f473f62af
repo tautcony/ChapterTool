@@ -1,0 +1,308 @@
+src/ChapterTool.Avalonia.UI/Assets/Fonts/VERSIONS.md
+  s_e516c5c361392f::t_e52fd5939d6858 1
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_3b6addaa7381f9::t_8fb108f03af776 412-413
+  s_3b6addaa7381f9::t_c663786e59b680 421-422,425
+  s_3b6addaa7381f9::t_4c9e91d6c92bd3 423-424
+  s_3b6addaa7381f9::t_829e53a5971b47 408-411,414-418
+  s_3b6addaa7381f9::t_6fd6042e803890 419-420
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_3b6addaa7381f9::t_4c9e91d6c92bd3 423-424
+  s_3b6addaa7381f9::t_8fb108f03af776 412-413
+  s_3b6addaa7381f9::t_c663786e59b680 421-422,425
+  s_3b6addaa7381f9::t_829e53a5971b47 408-411,414-418
+  s_3b6addaa7381f9::t_6fd6042e803890 419-420
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_3b6addaa7381f9::t_1cd50858ac8746 410-412,415-416,418-420
+  s_3b6addaa7381f9::t_32149ee4235e18 424-425
+  s_3b6addaa7381f9::t_b1392dbf3a7058 413
+  s_3b6addaa7381f9::t_13528a0ba9a640 417
+  s_3b6addaa7381f9::t_92895f205c43f7 421-422
+  s_3b6addaa7381f9::t_b0df458e6c7571 423,426
+  s_3b6addaa7381f9::t_6c4339ec611bdf 414
+src/ChapterTool.Avalonia.UI/Resources/SharedResources.axaml
+  s_3b6addaa7381f9::t_7bfdac1df2fbc3 8
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/specs/avalonia-ui-shell/spec.md
+  h_3705811fa4502c 1-65
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_3b6addaa7381f9::t_6c4339ec611bdf 414
+  s_3b6addaa7381f9::t_32149ee4235e18 424-425
+  s_3b6addaa7381f9::t_1cd50858ac8746 410-412,415-416,418-420
+  s_3b6addaa7381f9::t_92895f205c43f7 421-422
+  s_3b6addaa7381f9::t_13528a0ba9a640 417
+  s_3b6addaa7381f9::t_b0df458e6c7571 423,426
+  s_3b6addaa7381f9::t_b1392dbf3a7058 413
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_3b6addaa7381f9::t_4c9e91d6c92bd3 423-424
+  s_3b6addaa7381f9::t_c663786e59b680 421-422,425
+  s_3b6addaa7381f9::t_6fd6042e803890 419-420
+  s_3b6addaa7381f9::t_829e53a5971b47 408-411,414-418
+  s_3b6addaa7381f9::t_8fb108f03af776 412-413
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs
+  s_3b6addaa7381f9::t_23d6750a3ebc09 463
+  s_3b6addaa7381f9::t_301926baaf00db 64
+  s_3b6addaa7381f9::t_6ab81290a9e289 87,94-97
+  s_3b6addaa7381f9::t_2d143c6dc7f4cc 88,98-117
+  s_3b6addaa7381f9::t_0ecb78444c9d73 353,361,363
+  s_3b6addaa7381f9::t_6cbdc60e560abe 62-63,65,287,321,323-324,326,371
+  s_3b6addaa7381f9::t_6e3312d54c596c 118
+  s_3b6addaa7381f9::t_239e58cb495603 366,368
+openspec/specs/versioned-settings-document/spec.md
+  s_1c6efa0f986af4::t_6838ce066f8f79 4,9,14,17,35
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs
+  s_3b6addaa7381f9::t_ca15aab72ec9f6 580
+  s_3b6addaa7381f9::t_ad21f898fd9b9b 99,105,829-842,867-868
+  s_3b6addaa7381f9::t_92895f205c43f7 858,860-861
+  s_3b6addaa7381f9::t_6ab81290a9e289 19,541
+  s_3b6addaa7381f9::t_0952ba2b27cc65 28
+  s_3b6addaa7381f9::t_2296d64839c2bf 863
+  s_3b6addaa7381f9::t_2dc20048f92602 889-890
+  s_3b6addaa7381f9::t_9203da810b1368 11,466,592,789,827-828,843-845,855-857,859,864-865
+  s_3b6addaa7381f9::t_0418d720f06655 862
+  h_3705811fa4502c 20
+  s_3b6addaa7381f9::t_9a85f0c72f6c3a 846-854,866,869,887
+  s_3b6addaa7381f9::t_fdf3837ac8b093 128-131
+  s_3b6addaa7381f9::t_bc78341b34c2ef 870
+src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRowViewModel.cs
+  s_3b6addaa7381f9::t_bde9bbf097bb81 18-22,54
+  s_3b6addaa7381f9::t_2f43abd2a543e6 39-40
+  s_3b6addaa7381f9::t_70d2a4c10f64b9 74-75
+  s_3b6addaa7381f9::t_2296d64839c2bf 8,12,17,30-33
+  s_3b6addaa7381f9::t_13b4788df1bdc7 64,71
+  s_3b6addaa7381f9::t_9203da810b1368 1-7,9,11,13-16,23-25,27,29,35,55-63,65-70,73,79-85,88-90
+  s_3b6addaa7381f9::t_9a85f0c72f6c3a 10,41-53,76-78,86-87
+  s_3b6addaa7381f9::t_0952ba2b27cc65 26,28,34,36
+  s_3b6addaa7381f9::t_92895f205c43f7 37-38
+  s_3b6addaa7381f9::t_e36ecc2a105df4 72
+docs/code-map/avalonia.md
+  s_3b6addaa7381f9::t_c3ca655b34d610 154
+  s_3b6addaa7381f9::t_d3e0aba229009d 140-141
+src/ChapterTool.Contracts/Shortcuts/ShortcutCatalog.cs
+  s_3b6addaa7381f9::t_b0df458e6c7571 12,46-47
+  s_3b6addaa7381f9::t_92895f205c43f7 10-11,26
+  s_3b6addaa7381f9::t_13528a0ba9a640 19-25,27-39
+  s_3b6addaa7381f9::t_32149ee4235e18 13-14
+  s_3b6addaa7381f9::t_3be321e55e860f 7-9
+  s_3b6addaa7381f9::t_29822290db5174 15-18
+  s_3b6addaa7381f9::t_45eb09c2d74561 40-45
+  s_3b6addaa7381f9::t_104c878746f67b 48
+  s_3b6addaa7381f9::t_ea7e080d70f746 1-6
+src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs
+  s_3b6addaa7381f9::t_32149ee4235e18 36-37
+  s_3b6addaa7381f9::t_9203da810b1368 3-5,7,10-11,17-19,22-25,28-29,31-34,41
+  s_3b6addaa7381f9::t_0418d720f06655 8-9,12-16,20-21,35
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml
+  s_3b6addaa7381f9::t_6c4339ec611bdf 432-435
+  s_3b6addaa7381f9::t_2296d64839c2bf 436
+  s_3b6addaa7381f9::t_206f34df2f5561 424-431,453-458
+  s_3b6addaa7381f9::t_948ada90797fba 449
+  s_3b6addaa7381f9::t_2f43abd2a543e6 112-116,440
+  s_3b6addaa7381f9::t_b64e4f0877ddde 105-108,443
+  s_3b6addaa7381f9::t_b1392dbf3a7058 437,441-442,444-448,450-452
+  s_3b6addaa7381f9::t_13b4788df1bdc7 438
+  s_3b6addaa7381f9::t_7bfdac1df2fbc3 109-111,439
+  s_3b6addaa7381f9::t_570cbb70ddd579 459-462
+  s_3b6addaa7381f9::t_cd36511f91bd92 422-423
+src/ChapterTool.Avalonia.UI/Views/Tools/SettingsToolView.axaml.cs
+  s_3b6addaa7381f9::t_b1392dbf3a7058 2-3,14-28,40
+  s_3b6addaa7381f9::t_99860add3099ab 29-35
+  s_3b6addaa7381f9::t_13b4788df1bdc7 37-39
+  s_3b6addaa7381f9::t_0ecb78444c9d73 36
+  s_3b6addaa7381f9::t_64945594e730c0 41
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/specs/keyboard-shortcut-customization/spec.md
+  s_1c6efa0f986af4::t_cb13ef37200177 1-67
+src/ChapterTool.Avalonia.UI/Resources/Styles.axaml
+  s_3b6addaa7381f9::t_6a9c937ccf0f66 884-885
+  s_3b6addaa7381f9::t_364137a03f3cbb 21
+  s_3b6addaa7381f9::t_7bfdac1df2fbc3 873
+  s_3b6addaa7381f9::t_ca9f6c16fabf49 12-14
+  s_3b6addaa7381f9::t_42752bf53e3f48 881-882
+  s_3b6addaa7381f9::t_35f9f3b7f932a3 869
+openspec/specs/keyboard-shortcut-customization/spec.md
+  s_1c6efa0f986af4::t_cb13ef37200177 3,8,11,19,22-23,26-27,30,33-34,37-38,41,44-45,48-49,52,55-56,59-60,63,66-67
+  s_1c6efa0f986af4::t_6838ce066f8f79 1-2,4-7,9-10,12-18,20-21,24-25,28-29,31-32,35-36,39-40,42-43,46-47,50-51,53-54,57-58,61-62,64-65
+src/ChapterTool.Avalonia.UI/ChapterTool.Avalonia.UI.csproj
+  s_3b6addaa7381f9::t_7bfdac1df2fbc3 30
+docs/code-map/testing.md
+  s_3b6addaa7381f9::t_c3ca655b34d610 146
+  s_3b6addaa7381f9::t_971ca049a2c2c6 147
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  s_3b6addaa7381f9::t_11ce8e0631c54c 1201
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_3b6addaa7381f9::t_fe6689e5d3f998 10,180-182,184,186,188-189,194-201,204
+  s_3b6addaa7381f9::t_f19b33a356c0e4 3,190-193,202-203,205-207
+  s_3b6addaa7381f9::t_e8f04326bcf250 183,185,187
+  s_3b6addaa7381f9::t_9894f5ff078652 208
+openspec/specs/avalonia-ui-shell/spec.md
+  s_1c6efa0f986af4::t_6838ce066f8f79 94,97-98,100-101
+  s_1c6efa0f986af4::t_2a2529ee4f4f25 102
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_3b6addaa7381f9::t_92895f205c43f7 421-422
+  s_3b6addaa7381f9::t_1cd50858ac8746 410-412,415-416,418-420
+  s_3b6addaa7381f9::t_b0df458e6c7571 423,426
+  s_3b6addaa7381f9::t_13528a0ba9a640 417
+  s_3b6addaa7381f9::t_6c4339ec611bdf 414
+  s_3b6addaa7381f9::t_32149ee4235e18 424-425
+  s_3b6addaa7381f9::t_b1392dbf3a7058 413
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs
+  s_3b6addaa7381f9::t_5e26156d99d74a 69-89,91-100,106-111,113-120
+  s_3b6addaa7381f9::t_8a531afb79f9ca 90
+  s_3b6addaa7381f9::t_16cf7eb86950b3 112
+  s_3b6addaa7381f9::t_547f8d5bb3840e 101-105
+  s_3b6addaa7381f9::t_edebaf1fdb350d 68
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_3b6addaa7381f9::t_f19b33a356c0e4 84,251
+  s_3b6addaa7381f9::t_e222664af6bad6 228
+  s_3b6addaa7381f9::t_651ae2a6169f31 231
+tests/ChapterTool.Avalonia.Tests/ViewModels/ShortcutMappingTests.cs
+  s_3b6addaa7381f9::t_6c425989776d3d 62-75
+  s_3b6addaa7381f9::t_3351c5c566ea7d 10
+  s_3b6addaa7381f9::t_6361bada0f6627 33
+  s_3b6addaa7381f9::t_c4005dbac97006 25-28,35-38
+  s_3b6addaa7381f9::t_5d79052492327d 1-9,11-15,17-24,39-61,76
+  s_3b6addaa7381f9::t_7d7d77e682086d 30
+  s_3b6addaa7381f9::t_380dc0e29dbbbc 16
+  s_3b6addaa7381f9::t_635a43f5ce4fab 29,31-32
+  s_3b6addaa7381f9::t_a8b9ff2e1746da 34
+src/ChapterTool.Avalonia.UI/ViewModels/ShortcutGestureDisplayConverter.cs
+  s_3b6addaa7381f9::t_364137a03f3cbb 1-14
+src/ChapterTool.Contracts/Shortcuts/ShortcutGestureText.cs
+  s_3b6addaa7381f9::t_e36ecc2a105df4 35,61,80,86,116,120-121,123,127-128,130,132-137,150-164,182-184,186,199,205,241,244,279,282,303,306,310
+  s_3b6addaa7381f9::t_bcc892b992e5a3 138-149
+  s_3b6addaa7381f9::t_adbc4155bed30c 31
+  s_3b6addaa7381f9::t_11ce8e0631c54c 102,104,223,225,296-299
+  s_3b6addaa7381f9::t_635a43f5ce4fab 63,65,69,71,75,88,90,94,96,100,107,110,112,189,191,194,196,212,214,219,226,229,231,234,236,245-259,261,263,266,268,274,276,285,287,290,292,295,300
+  s_3b6addaa7381f9::t_ab72578cd552f9 220-222
+  s_3b6addaa7381f9::t_a8b9ff2e1746da 177
+  s_3b6addaa7381f9::t_d1374379cba434 79,165-176,178-181
+  s_3b6addaa7381f9::t_7755fd9d2442ec 28-30
+  s_3b6addaa7381f9::t_a6eec42e98e491 32-34
+  s_3b6addaa7381f9::t_a4218d6d85b02d 36-38,58-60
+  s_3b6addaa7381f9::t_09dfbc1f2629c1 62
+  s_3b6addaa7381f9::t_ef547d2aad1d23 64
+  s_3b6addaa7381f9::t_6b4c0b7b567863 66-68
+  s_3b6addaa7381f9::t_74866fab550228 70
+  s_3b6addaa7381f9::t_e5247893342ff5 72-74
+  s_3b6addaa7381f9::t_e4bbe77ce4c415 76-78
+  s_3b6addaa7381f9::t_02ebd23ce2d8c4 81-85
+  s_3b6addaa7381f9::t_64401555732fd1 87
+  s_3b6addaa7381f9::t_648e42bf2c2aa8 89
+  s_3b6addaa7381f9::t_0d303f07ff2d73 91-93
+  s_3b6addaa7381f9::t_7b5083f0f38e3a 95
+  s_3b6addaa7381f9::t_20792b0bd1f140 97-99
+  s_3b6addaa7381f9::t_044ec625e657b0 101
+  s_3b6addaa7381f9::t_b0009081360189 103
+  s_3b6addaa7381f9::t_7535627deb9617 105-106
+  s_3b6addaa7381f9::t_b8c3683c8666e4 108-109
+  s_3b6addaa7381f9::t_55fba68fae0784 111
+  s_3b6addaa7381f9::t_0d396a67eda017 113-115
+  s_3b6addaa7381f9::t_c6dc949bb1914e 117-119
+  s_3b6addaa7381f9::t_9023ee53713713 122
+  s_3b6addaa7381f9::t_0a2b2e6b050187 124-126
+  s_3b6addaa7381f9::t_a8cc23f65166e0 129
+  s_3b6addaa7381f9::t_cd87e7c8bba450 131
+  s_3b6addaa7381f9::t_648da7b986d3f5 185
+  s_3b6addaa7381f9::t_72fe90c904e3d2 187-188
+  s_3b6addaa7381f9::t_42a79147481816 190
+  s_3b6addaa7381f9::t_faf014d4573dcc 192-193
+  s_3b6addaa7381f9::t_226bf5784cd817 195
+  s_3b6addaa7381f9::t_39ae7812157380 197-198
+  s_3b6addaa7381f9::t_92fee81a52d576 200-204
+  s_3b6addaa7381f9::t_eeb80e8b0d620e 206-211
+  s_3b6addaa7381f9::t_017460a2fb169b 213
+  s_3b6addaa7381f9::t_85b4d07bbe998b 215-218
+  s_3b6addaa7381f9::t_04d2ac40a19035 224
+  s_3b6addaa7381f9::t_929b2b69ed7b40 227-228
+  s_3b6addaa7381f9::t_6098466ab13e3f 230
+  s_3b6addaa7381f9::t_5633174277df7b 232-233
+  s_3b6addaa7381f9::t_38dac580aa3456 235
+  s_3b6addaa7381f9::t_cad97b61937452 237-240
+  s_3b6addaa7381f9::t_3d2c5fe15c2d9d 242-243
+  s_3b6addaa7381f9::t_83646ee4f15235 260
+  s_3b6addaa7381f9::t_4572dd60471411 262
+  s_3b6addaa7381f9::t_9cb36194c3048d 264-265
+  s_3b6addaa7381f9::t_15ab208d57bfe5 267
+  s_3b6addaa7381f9::t_fe71ceb57dbf77 269-273
+  s_3b6addaa7381f9::t_f45886f7efd064 275
+  s_3b6addaa7381f9::t_9809c998b59bcd 277-278
+  s_3b6addaa7381f9::t_d5202c356fe34b 280-281
+  s_3b6addaa7381f9::t_60dc7dfcef5f8f 283-284
+  s_3b6addaa7381f9::t_94f4f34ee81fa0 286
+  s_3b6addaa7381f9::t_728057cc3c1078 288-289
+  s_3b6addaa7381f9::t_9b08231350b43b 291
+  s_3b6addaa7381f9::t_8292ccd7faa497 293-294
+  s_3b6addaa7381f9::t_5ae0c7024622dc 301-302
+  s_3b6addaa7381f9::t_af514a025586de 304-305
+  s_3b6addaa7381f9::t_ffdd69e3fb18ed 307-309
+  s_3b6addaa7381f9::t_09b3b40218c49e 311
+  s_3b6addaa7381f9::t_d17503e4c35250 1-27,39-57
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/tasks.md
+  h_3705811fa4502c 1-33
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/.openspec.yaml
+  s_f97c2e67d9587f::t_302010226f1440 1-2
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/design.md
+  s_f97c2e67d9587f::t_2d2f90e11fa859 1-60
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/proposal.md
+  s_f97c2e67d9587f::t_2bfdcbe8efd520 1-27
+openspec/changes/archive/2026-09-08-customize-keyboard-shortcuts/specs/versioned-settings-document/spec.md
+  s_f97c2e67d9587f::t_267dcf4e9118f6 1-30
+src/ChapterTool.Contracts/Shortcuts/ShortcutAction.cs
+  s_3b6addaa7381f9::t_f32e360cab40c6 1-11
+src/ChapterTool.Avalonia.UI/Assets/Fonts/Iosevka-LICENSE.md
+  h_3705811fa4502c 1-110
+src/ChapterTool.Contracts/Configuration/ChapterToolSettings.cs
+  h_3705811fa4502c 1,18-19,29
+src/ChapterTool.Contracts/Shortcuts/ShortcutConflictValidator.cs
+  h_3705811fa4502c 1-82
+src/ChapterTool.Contracts/Shortcuts/ShortcutMapping.cs
+  h_3705811fa4502c 1-77
+src/ChapterTool.Contracts/Shortcuts/ShortcutSettings.cs
+  h_3705811fa4502c 1-114
+src/ChapterTool.Infrastructure/Configuration/AppJsonSerializerContext.cs
+  h_3705811fa4502c 3,15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.0",
+  "base_commit_sha": "7f053ed38b972a01e5a282886c0c0a8f473f62af",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_1c6efa0f986af4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0810d-4d2a-77a0-8d6a-3c071ba73b61",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_3b6addaa7381f9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08027-47c5-7760-9958-0511920d51d6",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_e516c5c361392f": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1788844346135",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_f97c2e67d9587f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07f72-2fd4-7292-baa3-1a1814587eb2",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
