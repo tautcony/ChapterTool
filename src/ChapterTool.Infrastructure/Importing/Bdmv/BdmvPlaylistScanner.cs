@@ -1,8 +1,6 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing.Disc;
 
-#pragma warning disable SA1503
-
 namespace ChapterTool.Infrastructure.Importing.Bdmv;
 
 internal sealed record BdmvPlaylistCandidate(
@@ -23,7 +21,10 @@ internal static class BdmvPlaylistScanner
         var directory = Directory.Exists(layout.PrimaryPlaylistDirectory)
             ? layout.PrimaryPlaylistDirectory
             : layout.BackupPlaylistDirectory;
-        if (!Directory.Exists(directory)) return [];
+        if (!Directory.Exists(directory))
+        {
+            return [];
+        }
 
         var candidates = new List<BdmvPlaylistCandidate>();
         var skipped = new List<object?>();

@@ -1,7 +1,5 @@
 using ChapterTool.Core.Diagnostics;
 
-#pragma warning disable SA1107, SA1501, SA1503, SA1516, SA1520
-
 namespace ChapterTool.Core.Importing.Disc.MovieObject;
 
 internal sealed record HdmvNavigationLimits(
@@ -38,6 +36,7 @@ internal sealed record HdmvPlayerProfile
     }
 
     internal string Name { get; }
+
     internal uint[] Psr { get; }
 
     internal static HdmvPlayerProfile Default => new();
@@ -117,7 +116,11 @@ internal sealed class HdmvNavigationResolver
             var obj = file.Objects[state.ObjectId];
             if (state.ProgramCounter < 0 || state.ProgramCounter >= obj.Commands.Count)
             {
-                if (!state.Return()) break;
+                if (!state.Return())
+                {
+                    break;
+                }
+
                 continue;
             }
 
@@ -160,7 +163,10 @@ internal sealed class HdmvNavigationResolver
             foreach (var item in result.Events)
             {
                 var key = string.Join(':', item.PlaylistId, item.PlayItemId, item.MarkId, item.SourceTitle, item.SourceObject, item.ProgramCounter, item.InstructionType);
-                if (seenEvents.Add(key)) events.Add(item);
+                if (seenEvents.Add(key))
+                {
+                    events.Add(item);
+                }
             }
         }
 
@@ -183,7 +189,11 @@ internal sealed class HdmvNavigationResolver
                 return;
             case 1:
             {
-                if (!Compare(insn.CompareOption, dst, src)) next++;
+                if (!Compare(insn.CompareOption, dst, src))
+                {
+                    next++;
+                }
+
                 break;
             }
             case 2:
@@ -235,7 +245,11 @@ internal sealed class HdmvNavigationResolver
             case 2: state.Call((int)dst, next, limits); return true;
             case 3 when state.TitleObjects.TryGetValue(dst, out var calledObject): state.Call(calledObject, next, limits); return true;
             case 4:
-                if (state.Return()) return true;
+                if (state.Return())
+                {
+                    return true;
+                }
+
                 state.ProgramCounter = int.MaxValue;
                 return true;
         }
@@ -253,12 +267,19 @@ internal sealed class HdmvNavigationResolver
             return;
         }
 
-        if (state.ControlEvents.Count >= limits.MaximumEvents || option is < 3 or > 5) return;
+        if (state.ControlEvents.Count >= limits.MaximumEvents || option is < 3 or > 5)
+        {
+            return;
+        }
+
         state.ControlEvents.Add(new HdmvNavigationControlEvent(
             option switch { 3 => "PlayStop", 4 => "LinkPI", _ => "LinkMK" },
             option == 4 ? dst : null, option == 5 ? dst : null,
             state.ObjectId, pc, state.Profile.Name));
-        if (option == 3) next = int.MaxValue;
+        if (option == 3)
+        {
+            next = int.MaxValue;
+        }
     }
 
     private static void ExecuteSetGroup(ExecutionState state, MovieObjectInstruction instruction, MovieObjectCommand command, uint dst, uint src)
@@ -288,7 +309,10 @@ internal sealed class HdmvNavigationResolver
 
     private static void ExecuteSet(ExecutionState state, byte option, MovieObjectCommand command, uint dst, uint src)
     {
-        if (!TryApplySetOperation(state, option, dst, src, out var newDst, out var newSrc)) return;
+        if (!TryApplySetOperation(state, option, dst, src, out var newDst, out var newSrc))
+        {
+            return;
+        }
 
         if (!state.WriteOperand(command.DestinationOperand, command.Instruction.Operand1Immediate, newDst))
         {
@@ -364,24 +388,55 @@ internal sealed class HdmvNavigationResolver
 
     private static void ApplySetSystemOption1(ExecutionState state, uint dst, uint src)
     {
-        if ((dst & 0x80000000) != 0) state.Psr[1] = dst >> 16 & 0x0fff;
-        if ((src & 0x80000000) != 0) state.Psr[0] = src >> 16 & 0xff;
-        if ((src & 0x00008000) != 0) state.Psr[3] = src & 0xff;
-        if ((dst & 0x00008000) != 0) state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
+        if ((dst & 0x80000000) != 0)
+        {
+            state.Psr[1] = dst >> 16 & 0x0fff;
+        }
+
+        if ((src & 0x80000000) != 0)
+        {
+            state.Psr[0] = src >> 16 & 0xff;
+        }
+
+        if ((src & 0x00008000) != 0)
+        {
+            state.Psr[3] = src & 0xff;
+        }
+
+        if ((dst & 0x00008000) != 0)
+        {
+            state.Psr[2] = state.Psr[2] & 0xfffff000 | dst & 0x0fff;
+        }
+
         state.Psr[2] = state.Psr[2] & 0x7fffffff | (dst & 0x4000) << 17;
     }
 
     private static void ApplySetSystemOption3(ExecutionState state, uint dst, uint src)
     {
-        if ((dst & 0x80000000) != 0) state.Psr[10] = dst & 0xffff;
-        if ((src & 0x80000000) != 0) state.Psr[11] = src & 0xff;
+        if ((dst & 0x80000000) != 0)
+        {
+            state.Psr[10] = dst & 0xffff;
+        }
+
+        if ((src & 0x80000000) != 0)
+        {
+            state.Psr[11] = src & 0xff;
+        }
+
         AddControlDiagnostic(state, "SetButtonPage");
     }
 
     private static void ApplySetSystemOption6(ExecutionState state, uint dst, uint src)
     {
-        if ((dst & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
-        if ((src & 0x80000000) != 0) state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
+        if ((dst & 0x80000000) != 0)
+        {
+            state.Psr[14] = state.Psr[14] & 0xffff00ff | (dst & 0xff) << 8;
+        }
+
+        if ((src & 0x80000000) != 0)
+        {
+            state.Psr[14] = state.Psr[14] & 0xffffff00 | src >> 16 & 0xff;
+        }
     }
 
     private static Action<ExecutionState, uint, uint> Control(string instruction) =>
@@ -406,20 +461,35 @@ internal sealed class HdmvNavigationResolver
         }
 
         internal int ObjectId { get; private set; } = -1;
+
         internal int ProgramCounter { get; set; }
+
         internal int TitleNumber { get; set; }
+
         internal int Instructions { get; set; }
+
         internal int Transitions { get; set; }
+
         internal bool LimitReached { get; set; }
+
         internal uint[] Psr { get; }
+
         internal HdmvPlayerProfile Profile { get; }
+
         internal uint[] Gpr { get; }
+
         internal Dictionary<uint, int> TitleObjects { get; }
+
         internal List<MovieObjectReturn> CallStack { get; } = [];
+
         internal HashSet<string> Visited { get; } = new(StringComparer.Ordinal);
+
         internal List<HdmvNavigationEvent> Events { get; } = [];
+
         internal List<HdmvNavigationControlEvent> ControlEvents { get; } = [];
+
         internal List<ChapterDiagnostic> Diagnostics { get; } = [];
+
         private ulong random = 1;
 
         internal string Key => string.Join(":", ObjectId, ProgramCounter, string.Join(',', Gpr.Take(32)), string.Join(',', Psr.Take(32)), string.Join(',', CallStack.Select(static c => c.ObjectId + "/" + c.ProgramCounter)));
@@ -456,7 +526,11 @@ internal sealed class HdmvNavigationResolver
 
         internal bool Return()
         {
-            if (CallStack.Count == 0) return false;
+            if (CallStack.Count == 0)
+            {
+                return false;
+            }
+
             var item = CallStack[^1];
             CallStack.RemoveAt(CallStack.Count - 1);
             ObjectId = item.ObjectId;
@@ -468,7 +542,11 @@ internal sealed class HdmvNavigationResolver
 
         internal uint ReadOperand(uint value, bool immediate)
         {
-            if (immediate) return value;
+            if (immediate)
+            {
+                return value;
+            }
+
             if ((value & PsrFlag) != 0)
             {
                 var index = (int)(value & 0x7f);
@@ -480,7 +558,11 @@ internal sealed class HdmvNavigationResolver
 
         internal bool WriteOperand(uint value, bool immediate, uint result)
         {
-            if (immediate || (value & PsrFlag) != 0 || value >= Gpr.Length) return false;
+            if (immediate || (value & PsrFlag) != 0 || value >= Gpr.Length)
+            {
+                return false;
+            }
+
             Gpr[(int)value] = result;
             return true;
         }

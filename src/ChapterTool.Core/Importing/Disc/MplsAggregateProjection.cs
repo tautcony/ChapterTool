@@ -1,7 +1,5 @@
 using ChapterTool.Core.Models;
 
-#pragma warning disable SA1503
-
 namespace ChapterTool.Core.Importing.Disc;
 
 internal sealed record MplsAggregateProjection(

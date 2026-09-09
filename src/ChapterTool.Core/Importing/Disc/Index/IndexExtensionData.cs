@@ -1,7 +1,5 @@
 namespace ChapterTool.Core.Importing.Disc.Index;
 
-#pragma warning disable SA1503
-
 internal sealed record IndexExtensionData(
     uint Length,
     uint DataBlockStartAddress,
@@ -13,13 +11,19 @@ internal sealed record IndexExtensionData(
     {
         var sectionStart = stream.Position;
         var length = stream.ReadUInt32BigEndian();
-        if (length == 0) return new IndexExtensionData(0, 0, [], new Dictionary<string, byte[]>(), null);
+        if (length == 0)
+        {
+            return new IndexExtensionData(0, 0, [], new Dictionary<string, byte[]>(), null);
+        }
+
         using var container = MplsBoundedStream.Create(stream, length, 8, IndexParseLimits.MaximumExtensionLength, "INDEX extension data");
         var dataBlockStart = container.ReadUInt32BigEndian();
         container.SkipBytes(3);
         var count = container.ReadByteChecked();
         if (8L + count * 12L > length)
+        {
             throw new InvalidDataException("INDEX extension entry count exceeds the supported bounds.");
+        }
 
         var entries = new List<IndexExtensionEntry>(count);
         for (var i = 0; i < count; i++)
@@ -30,7 +34,10 @@ internal sealed record IndexExtensionData(
                 container.ReadUInt32BigEndian(),
                 container.ReadUInt32BigEndian());
             if ((ulong)entry.StartAddress + entry.Length > length + 4UL)
+            {
                 throw new InvalidDataException("INDEX extension entry exceeds the extension section.");
+            }
+
             entries.Add(entry);
         }
 
@@ -40,11 +47,17 @@ internal sealed record IndexExtensionData(
         {
             var entryPosition = sectionStart + entry.StartAddress;
             if (entryPosition < sectionStart || entryPosition + entry.Length > sectionStart + length + 4)
+            {
                 throw new InvalidDataException("INDEX extension entry address is outside the section.");
+            }
+
             container.Position = entry.StartAddress - 4;
             var bytes = container.ReadExactBytes(checked((int)entry.Length));
             raw[$"{entry.Type}.{entry.Version}"] = bytes;
-            if (entry is { Type: 3, Version: 1 }) uhd = IndexUhdMetadata.Read(bytes);
+            if (entry is { Type: 3, Version: 1 })
+            {
+                uhd = IndexUhdMetadata.Read(bytes);
+            }
         }
 
         container.Complete("INDEX extension data");
@@ -63,7 +76,11 @@ internal sealed record IndexUhdMetadata(
 {
     internal static IndexUhdMetadata Read(byte[] data)
     {
-        if (data.Length < 12) throw new InvalidDataException("INDEX UHD extension is truncated.");
+        if (data.Length < 12)
+        {
+            throw new InvalidDataException("INDEX UHD extension is truncated.");
+        }
+
         var discType = (byte)(data[4] >> 4);
         var exists4K = (data[4] & 0x01) != 0;
         var hdr10Plus = (data[6] & 0x10) != 0;

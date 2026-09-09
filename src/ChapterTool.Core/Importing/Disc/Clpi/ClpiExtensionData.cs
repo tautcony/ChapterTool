@@ -1,7 +1,5 @@
 namespace ChapterTool.Core.Importing.Disc.Clpi;
 
-#pragma warning disable SA1503
-
 internal sealed record ClpiExtensionData(
     uint Length,
     uint DataBlockStartAddress,
@@ -95,13 +93,23 @@ internal sealed record ClpiExtentStartPoints(IReadOnlyList<uint> Points)
     {
         var length = stream.ReadUInt32BigEndian();
         if (length > ClpiParseLimits.MaximumExtensionDataLength || length > stream.Length - stream.Position)
+        {
             throw new InvalidDataException("CLPI extent start points exceed the extension entry.");
+        }
+
         var count = stream.ReadUInt32BigEndian();
         if (count > ClpiParseLimits.MaximumExtentStartPoints)
+        {
             throw new InvalidDataException("CLPI extent start point count exceeds the supported bounds.");
+        }
+
         ClpiParseLimits.ValidateCountByBudget(count, sizeof(uint), stream.Length - stream.Position, "extent start point");
         var points = new List<uint>(checked((int)count));
-        for (var i = 0U; i < count; i++) points.Add(stream.ReadUInt32BigEndian());
+        for (var i = 0U; i < count; i++)
+        {
+            points.Add(stream.ReadUInt32BigEndian());
+        }
+
         return new ClpiExtentStartPoints(points);
     }
 }

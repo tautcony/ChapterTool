@@ -2,8 +2,6 @@ using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Importing.Disc;
 
-#pragma warning disable SA1503
-
 /// <summary>
 /// Provides one semantic projection of an MPLS playlist for all import hosts.
 /// </summary>
