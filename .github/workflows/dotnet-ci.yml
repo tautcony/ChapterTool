@@ -43,13 +43,13 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Sync locked Python tools
-        run: uv sync --locked --project scripts
+        run: uv sync --locked --no-build --project scripts
 
       - name: Verify localization resources
-        run: uv run --locked --project scripts scripts/axaml-to-json.py --check
+        run: uv run --locked --no-build --project scripts scripts/axaml-to-json.py --check
 
       - name: Lint Python scripts
-        run: uv run --locked --project scripts ruff check scripts/
+        run: uv run --locked --no-build --project scripts ruff check scripts/
 
       - name: Install .NET 10
         uses: actions/setup-dotnet@v6
