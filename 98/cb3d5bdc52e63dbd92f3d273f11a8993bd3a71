@@ -1,0 +1,37 @@
+src/ChapterTool.Core/Importing/Disc/MovieObject/HdmvNavigation.cs
+  h_3705811fa4502c 39,120,122-123,167,169,193,195-196,249,251-252,270-271,280,282,313,315,392,394-395,397,399-400,402,404-405,407,409-410,417,419-420,422,424-425,432,434-435,437,439,464,466,468,470,472,474,476,478,480,482,484,486,488,490,492,530,532-533,546,548-549,562,564-565
+  h_3705811fa4502c 119,121,166,168,192,194,248,250,272-274,279,281,312,314,391,393,396,398,401,403,406,408,416,418,421,423,431,433,436,438,529,531,545,547,561,563
+src/ChapterTool.Core/Importing/Disc/Index/IndexExtensionData.cs
+  h_3705811fa4502c 15,17-18,24,26,37,39-40,50,52-53,58,60,80,82-83
+  h_3705811fa4502c 14,16,57,59,79,81
+Directory.Build.props
+  h_3705811fa4502c 8
+src/ChapterTool.Core/Importing/Disc/Clpi/ClpiFile.cs
+  h_3705811fa4502c 119,121-122,139,141-142,149,151-152
+  h_3705811fa4502c 118,120,138,140,148,150
+ChapterTool.ruleset
+  h_3705811fa4502c 1-6
+src/ChapterTool.Core/Importing/Disc/Clpi/ClpiExtensionData.cs
+  h_3705811fa4502c 96,98-99,102,104-105,109,111-112
+  h_3705811fa4502c 108,110
+src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvImporter.cs
+  h_3705811fa4502c 80,82,339,341
+  h_3705811fa4502c 79,81,338,340
+src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs
+  h_3705811fa4502c 25,27
+  h_3705811fa4502c 24,26
+src/ChapterTool.Core/Importing/Disc/Bdjo/BdjoModels.cs
+  h_3705811fa4502c 18,20,26,28,96,98-99,114,116-117,131,133-134,165,167-168,172,174-175,179-181,196,198-199,202,204-205,209-211,221,223-224,227,229-230,262,264,270,272,277,279,281,283,285,287,304,306,308
+  h_3705811fa4502c 95,97,113,115,130,132,164,166,171,173,182-183,195,197,201,203,212-213,226,228,269,271
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "98cb3d5bdc52e63dbd92f3d273f11a8993bd3a71",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
