@@ -1,0 +1,19 @@
+.github/workflows/release.yml
+  s_428a7694ee8d92::t_2f6a50324972af 166-167
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "044949e1f7d4c0368971c383bd4f15fa82fe408d",
+  "prompts": {},
+  "sessions": {
+    "s_428a7694ee8d92": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a084e2-6a4c-7653-94aa-3d0733ede55b",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
