@@ -1,0 +1,21 @@
+scripts/pyproject.toml
+  s_2227c35534606a::t_fef7e4a4518e68 5
+scripts/uv.lock
+  s_2227c35534606a::t_1c054acddcb800 3,6,15,47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "f01748d0e8a855aac6eb8ab33d2b98026aac4ccf",
+  "prompts": {},
+  "sessions": {
+    "s_2227c35534606a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a084de-f22a-72b1-8efe-67a8e3dfc255",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
