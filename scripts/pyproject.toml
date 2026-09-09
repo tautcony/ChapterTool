@@ -2,7 +2,7 @@
 name = "chaptertool-scripts"
 version = "0.1.0"
 description = "Repository utility scripts for ChapterTool"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "defusedxml>=0.7",
     "fonttools>=4.44",
