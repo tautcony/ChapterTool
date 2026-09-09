@@ -154,16 +154,32 @@ jobs:
           TAG: ${{ env.TAG }}
         run: |
           version="${TAG#v}"
-          awk -v version="$version" '
+          extract_changelog() {
+            local changelog="$1"
+            awk -v version="$version" '
             $0 ~ "^## \\[" version "\\]" { found=1; next }
             found && /^## / { exit }
             found { print }
-          ' ChangeLog.md | sed '/^[[:space:]]*$/N;/^\n$/D' > release-notes.md
+          ' "$changelog" | sed '/^[[:space:]]*$/N;/^\n$/D'
+          }
 
-          if [[ ! -s release-notes.md ]]; then
-            echo "No changelog section found for $version" >&2
+          chinese_notes="$(extract_changelog CHANGELOG.zh-CN.md)"
+          english_notes="$(extract_changelog CHANGELOG.md)"
+
+          if [[ -z "$chinese_notes" ]]; then
+            echo "No Chinese changelog section found for $version" >&2
             exit 1
           fi
+
+          if [[ -z "$english_notes" ]]; then
+            echo "No English changelog section found for $version" >&2
+            exit 1
+          fi
+
+          {
+            printf '## 中文\n\n%s\n\n' "$chinese_notes"
+            printf '## English\n\n%s\n' "$english_notes"
+          } > release-notes.md
 
           previous_tag="$(
             gh api --paginate \
