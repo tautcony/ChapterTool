@@ -18,7 +18,7 @@ Use this document to compare the supported functions of every program form.
 
 Keep code identifiers, paths, commands, and user interface strings exact.
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-10-02
 
 ## 1. Program Forms
 
@@ -174,6 +174,7 @@ They do not describe product priority.
 | Capability | Core | Standalone CLI | Avalonia desktop | WASM browser | Owner and entry point |
 | --- | --- | --- | --- | --- | --- |
 | Settings model | Provides no host settings store | Reads shared `ChapterToolSettings` for CLI output defaults | Reads and writes shared `ChapterToolSettings` | Uses a browser settings model | `ChapterToolSettings` and `WasmSettings` `[Host variant]` |
+| Keyboard shortcuts | Provides no input layer | Uses terminal key handling | Provides editable shortcut mappings and conflict validation | Blocks browser shortcut keys during text editing | `src/ChapterTool.Contracts/Shortcuts/ShortcutCatalog.cs`, `ShortcutSettings.cs`, `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`, and `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` `[Host variant]` |
 | Settings persistence | Provides no persistence boundary | Uses `settings.json` under the shared ChapterTool settings directory | Uses the same `settings.json` directory | Uses `localStorage` | `ChapterToolRuntimeComposition`, `ChapterToolSettingsStore`, and `Home.razor` `[Host variant]` |
 | Settings close confirmation | Provides no UI boundary | Not applicable | Asks whether to keep the settings tool open when unapplied changes exist through `AvaloniaSettingsCloseConfirmationService` | Not applicable | `src/ChapterTool.Avalonia/Services/AvaloniaSettingsCloseConfirmationService.cs` `[Desktop only]` |
 | Save directory | Provides no directory policy | Uses `--output`, settings, or the source directory | Uses a picker, settings, or the source directory | Uses the browser download directory | `ChapterToolCliApplication`, `ChapterSaveDirectory`, and `download.js` `[Host variant]` |
@@ -185,7 +186,7 @@ They do not describe product priority.
 | Shell operations | Provides no shell boundary | Does not open paths | Opens paths through `IShellService` | Uses browser links or browser APIs | `src/ChapterTool.Infrastructure/Platform/ShellService.cs` `[Desktop only]` |
 | Clipboard | Provides no clipboard boundary | Uses standard streams | Uses the desktop clipboard adapter | Uses browser clipboard APIs | `IClipboardService` and browser JavaScript `[Host variant]` |
 | Application telemetry | Provides no telemetry startup | Does not initialize Sentry | Initializes Sentry for GUI startup when configured | Does not use the desktop Sentry startup | `src/ChapterTool.Avalonia/Program.cs` `[Desktop only]` |
-| Logs and diagnostics | Provides structured diagnostics | Writes diagnostics to terminal streams | Uses the application log panel and localized UI messages | Uses in-memory logs and localized UI messages | `ChapterDiagnostic`, `ApplicationLogPanelProvider`, and `WasmWorkspace` `[Host variant]` |
+| Logs and diagnostics | Provides structured diagnostics | Writes diagnostics to terminal streams | Uses the application log panel with JSON and CSV export | Uses in-memory activity logs and localized UI messages | `ChapterDiagnostic`, `ApplicationLogPanelProvider`, `ApplicationLogFileExporter`, and `WasmWorkspace` `[Host variant]` |
 | Progress | Provides import progress contracts | Does not render interactive progress | Renders import progress in the desktop workflow | Reports browser load and import progress | `ChapterImportProgress` and host workflows `[Host variant]` |
 | Input size limit | Defines the portable 64 MiB byte budget | Uses local file boundaries | Uses local file boundaries | Enforces the shared budget for load, reload, and append | `src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs`, `WasmWorkspace.cs`, `NodeApi.cs`, and `packages/chaptertool/src/utils/input.ts` `[Shared portable boundary]` |
 

@@ -6,6 +6,9 @@ This directory contains documentation for the current ChapterTool codebase.
 
 - `code-map/` is the primary maintainer navigation index. Start here when you need to locate code, ownership, entry points, or primary tests.
 - `testing/` contains current testing guidance and performance notes.
+- `code-map/ui-logging.md` maps shared Avalonia UI logging scenarios and log outputs.
+- `tasks/ui-visual-consistency.md` provides the current workflow for investigating Avalonia visual inconsistencies.
+- `testing/headless-performance.md` records the Headless UI lifecycle diagnosis and triage steps.
 
 ## Historical Documentation
 

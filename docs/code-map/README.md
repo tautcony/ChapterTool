@@ -29,6 +29,32 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 - `testing.md`
   - which test project and test files verify each code area
 
+## Structure
+
+Use the module maps to find ownership, entry points, runtime wiring, and primary tests.
+Use `program-form-capability-map.md` to compare user-facing capabilities across hosts.
+
+## Contracts
+
+Repository-wide agent constraints live in the root `AGENTS.md`.
+Host-neutral API boundaries live in `contracts.md`.
+Behavioral requirements live in `openspec/specs/` and in the relevant code and tests.
+Use the module maps to find the contract that applies to a code area.
+
+Do not copy these rules into a second checklist. Update the source that owns each rule.
+
+## State
+
+OpenSpec owns feature proposal, implementation, and completion state.
+Use `openspec list --json` to discover changes.
+Use `openspec status --change "<change-name>" --json` to inspect artifact state.
+Use `openspec validate "<change-name>" --strict` before treating a change as ready for implementation.
+Git owns the current branch and working-tree state.
+
+Do not record a dated snapshot of active tasks in this map. Read OpenSpec and Git when you need current state.
+
+If OpenSpec lists a change without valid artifacts, report it as an incomplete planning record. Do not infer implementation work from its name.
+
 ## WebAssembly Hosts
 
 - `src/ChapterTool.Wasm`
@@ -58,6 +84,7 @@ Use ASD-STE100 principles in every code-map document. Write short, direct senten
 2. Open the document for the module that owns the behavior.
 3. Follow the listed entry points before you search the full repository.
 4. Use `testing.md` to select the verification path.
+5. Read the owning contract and current OpenSpec state before changing behavior.
 
 ## Maintenance Rule
 
@@ -68,3 +95,5 @@ Update these documents in the same change when feature work changes:
 - runtime wiring between modules
 - the primary files a maintainer should inspect first
 - the primary tests used to verify that area
+
+Keep this index as a router. Keep implementation detail in the module maps, durable rules in `AGENTS.md` or their owning contracts, and changing task state in OpenSpec and Git.
