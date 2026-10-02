@@ -48,6 +48,7 @@ public sealed class ChapterToolRuntimeCompositionTests
 
             Assert.Equal("dvd-ifo", registry.Resolve(discRoot)?.Id);
             Assert.Equal("dvd-ifo", registry.Resolve(videoTs)?.Id);
+            Assert.Equal("dvd-ifo", registry.Resolve(Path.Combine(videoTs, "VIDEO_TS.BUP"))?.Id);
         }
         finally
         {

@@ -67,7 +67,7 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
             return bdmvImporter;
         }
 
-        if (DvdSourceLayout.TryResolve(path) is not null)
+        if (DvdDiscDirectoryDetector.IsDiscDirectory(path))
         {
             return ifoImporter;
         }
