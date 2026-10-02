@@ -87,6 +87,9 @@ public readonly record struct ChapterDiagnosticCode(ChapterDiagnosticSource Sour
     public static readonly ChapterDiagnosticCode InvalidFrameRate = new(ChapterDiagnosticSource.FrameRate, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidFrameText = new(ChapterDiagnosticSource.FrameText, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidIfo = new(ChapterDiagnosticSource.Ifo, ChapterDiagnosticReason.Invalid);
+    public static readonly ChapterDiagnosticCode IfoDiscLoaded = new(ChapterDiagnosticSource.Ifo, ChapterDiagnosticReason.Available);
+    public static readonly ChapterDiagnosticCode IfoTimingEstimated = new(ChapterDiagnosticSource.Ifo, ChapterDiagnosticReason.Fallback);
+    public static readonly ChapterDiagnosticCode IfoTimingFromNav = new(ChapterDiagnosticSource.Ifo, ChapterDiagnosticReason.Captured);
     public static readonly ChapterDiagnosticCode InvalidMpls = new(ChapterDiagnosticSource.Mpls, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidPath = new(ChapterDiagnosticSource.Path, ChapterDiagnosticReason.Invalid);
     public static readonly ChapterDiagnosticCode InvalidStructure = new(ChapterDiagnosticSource.Structure, ChapterDiagnosticReason.Invalid);

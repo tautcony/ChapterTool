@@ -210,8 +210,8 @@ public sealed class DiscImporterTests
         Assert.Equal(ChapterImportFormat.DvdIfo, info.ImportFormat);
         Assert.Equal("VTS_05_1", info.SourceName);
         Assert.Equal(7, info.Chapters.Count);
-        Assert.Equal("Chapter 07", info.Chapters[6].Name);
-        Assert.Equal("01:49:12.679", new ChapterTimeFormatter().Format(info.Chapters[6].StartTime));
+        Assert.Equal("Chapter 01", info.Chapters[0].Name);
+        Assert.Equal("00:00:00.000", new ChapterTimeFormatter().Format(info.Chapters[0].StartTime));
         Assert.Contains(entry.ReferencedMediaFiles ?? [], reference => reference.RelativePath == "VTS_05_1.VOB");
     }
 
@@ -225,6 +225,40 @@ public sealed class DiscImporterTests
         Assert.False(isPalNtsc);
         Assert.True(ntsc > TimeSpan.FromSeconds(1.5));
         Assert.Equal(TimeSpan.FromSeconds(1.4), pal);
+    }
+
+    [Fact]
+    public void IfoNtscTimecodePreservesLegacyNominalFrameCount()
+    {
+        var time = IfoChapterImporter.ConvertDvdPlaybackTime(0, 0x04, 0x12, 0xC0, out var isNtsc);
+
+        Assert.True(isNtsc);
+        Assert.Equal(TimeSpan.FromTicks(2_522_520_000), time);
+        var frames = (decimal)time.TotalSeconds * (30000m / 1001m);
+        Assert.InRange(Math.Abs(frames - 7560), 0, 0.00001m);
+    }
+
+    [Theory]
+    [InlineData(0x00, 0x00, 0x00, 0xC1)]
+    [InlineData(0x00, 0x01, 0x00, 0xC1)]
+    [InlineData(0x01, 0x00, 0x00, 0xC1)]
+    [InlineData(0x99, 0x59, 0x59, 0xE9)]
+    [InlineData(0x99, 0x59, 0x59, 0x64)]
+    public void IfoTimeConversionHasNoMoreNumericErrorThanLegacy(byte hour, byte minute, byte second, byte frameByte)
+    {
+        var ntsc = frameByte >> 6 == 3;
+        var nominal = ntsc ? 30 : 25;
+        var frames = ((hour >> 4) * 10 + (hour & 15)) * 3600 * nominal
+            + ((minute >> 4) * 10 + (minute & 15)) * 60 * nominal
+            + ((second >> 4) * 10 + (second & 15)) * nominal
+            + ((frameByte & 0x30) >> 4) * 10 + (frameByte & 15);
+        var legacy = TimeSpan.FromSeconds(frames / (ntsc ? 30000d / 1001d : 25d));
+        var exactTicks = ntsc ? frames * (decimal)TimeSpan.TicksPerSecond * 1001 / 30000 : frames * (decimal)TimeSpan.TicksPerSecond / 25;
+        var current = IfoChapterImporter.ConvertDvdPlaybackTime(hour, minute, second, frameByte, out _);
+
+        Assert.InRange(Math.Abs(current.Ticks - legacy.Ticks), 0, 1);
+        Assert.True(Math.Abs(current.Ticks - exactTicks) <= Math.Abs(legacy.Ticks - exactTicks));
+        Assert.InRange(Math.Abs(current.Ticks - exactTicks), 0, 0.5m);
     }
 
     [Fact]
@@ -242,7 +276,7 @@ public sealed class DiscImporterTests
     }
 
     [Fact]
-    public void IfoPlaybackTimePreservesLegacyCumulativeNtscFrames()
+    public void IfoPlaybackTimePreservesLegacyFrameCountsAcrossCellSequence()
     {
         var cells = new[]
         {

@@ -12,4 +12,17 @@ public sealed record ChapterImportDisplay(string MainText, int ChapterCount)
     /// <returns>The display values for the entry.</returns>
     public static ChapterImportDisplay From(ChapterImportEntry entry) =>
         new(entry.DisplayName, entry.ChapterSet.Chapters.Count);
+
+    /// <summary>Formats a DVD option with a host-supplied title label.</summary>
+    /// <param name="name">The title label.</param>
+    /// <param name="info">The chapter set.</param>
+    /// <param name="mediaFiles">The referenced media files.</param>
+    /// <returns>The complete option label.</returns>
+    public static string FormatDvdOption(string name, ChapterSet info, IReadOnlyList<ReferencedMediaFile>? mediaFiles)
+    {
+        var titleSets = mediaFiles is { Count: > 0 }
+            ? string.Join("+", mediaFiles.Select(static file => Path.GetFileNameWithoutExtension(file.DisplayName)).Distinct(StringComparer.OrdinalIgnoreCase))
+            : info.SourceName;
+        return $"{name} ({info.Duration.ToString(@"h\:mm\:ss", System.Globalization.CultureInfo.InvariantCulture)}) [{titleSets}]";
+    }
 }
