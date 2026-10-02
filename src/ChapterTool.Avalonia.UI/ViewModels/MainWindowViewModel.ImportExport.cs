@@ -117,7 +117,7 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(CurrentPath));
         OnPropertyChanged(nameof(DisplayPath));
         ApplyClipSessionUi(session, selectIndex: session.SelectedIndex);
-        SetStatus("Status.LoadedChapters", ("count", Rows.Count));
+        SetStatus(Rows.Count == 1 ? "Status.LoadedChapter" : "Status.LoadedChapters", ("count", Rows.Count));
         ClearProgressStatus();
         Progress = 1;
         LogImportDiagnostics("Load", result.Diagnostics);

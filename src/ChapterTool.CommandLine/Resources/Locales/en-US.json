@@ -85,6 +85,8 @@
   "Diagnostic.FrameRate.Invalid": "Frame rate must be greater than zero.",
   "Diagnostic.FrameText.Invalid": "Frame text did not contain a frame number or the frame rate was invalid.",
   "Diagnostic.Ifo.Invalid": "The IFO file is invalid: {message}",
+  "Diagnostic.Ifo.Captured": "DVD chapter times for {source} were read from VOB navigation timestamps.",
+  "Diagnostic.Ifo.Fallback": "VOB navigation timestamps for {source} could not be verified. DVD chapters retain the original IFO time estimates without frame alignment.",
   "Diagnostic.ImporterFallback.Used": "The primary importer was unavailable; a fallback importer was used.",
   "Diagnostic.LuaExpression.Cancelled": "Lua expression execution was cancelled.",
   "Diagnostic.LuaExpression.CompileFailed": "Lua expression syntax error: {message}",

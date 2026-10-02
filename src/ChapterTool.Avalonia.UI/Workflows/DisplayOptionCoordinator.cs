@@ -127,9 +127,14 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
     {
         var display = ChapterImportDisplay.From(entry);
         var remarkText = display.ChapterCount > 0
-            ? localizer.Format("Main.ChapterCount", new Dictionary<string, object?> { ["count"] = display.ChapterCount })
+            ? localizer.Format(display.ChapterCount == 1 ? "Main.ChapterCountSingular" : "Main.ChapterCount", new Dictionary<string, object?> { ["count"] = display.ChapterCount })
             : string.Empty;
-        var mainText = display.MainText;
+        var mainText = entry.DiscTitleNumber is int titleNumber
+            ? ChapterImportDisplay.FormatDvdOption(
+                localizer.Format("Label.DvdTitle", new Dictionary<string, object?> { ["number"] = titleNumber }),
+                entry.ChapterSet,
+                entry.ReferencedMediaFiles)
+            : display.MainText;
         var displayText = string.IsNullOrWhiteSpace(remarkText) ? mainText : $"{mainText}（{remarkText}）";
         return new SelectorDisplayOption(mainText, remarkText, displayText);
     }

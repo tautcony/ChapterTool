@@ -85,6 +85,8 @@
   "Diagnostic.FrameRate.Invalid": "帧率必须大于零。",
   "Diagnostic.FrameText.Invalid": "帧文本未包含帧编号，或帧率无效。",
   "Diagnostic.Ifo.Invalid": "IFO 文件无效：{message}",
+  "Diagnostic.Ifo.Captured": "已从 {source} 对应的 VOB 导航数据读取 DVD 章节时间。",
+  "Diagnostic.Ifo.Fallback": "无法验证 {source} 对应的 VOB 导航时间戳。DVD 章节保留原始 IFO 估算时间，未作对齐调整。",
   "Diagnostic.ImporterFallback.Used": "主导入器不可用，已使用备用导入器。",
   "Diagnostic.LuaExpression.Cancelled": "Lua 表达式已取消。",
   "Diagnostic.LuaExpression.CompileFailed": "Lua 表达式语法错误：{message}",

@@ -123,7 +123,10 @@
   <x:String x:Key="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">Vorbis cuesheet コメントが見つかりませんでした。</x:String>
   <x:String x:Key="Diagnostic.FrameRate.Invalid" xml:space="preserve">フレームレートは 0 より大きくなければなりません。</x:String>
   <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">フレームテキストにフレーム番号が含まれていないか、フレームレートが無効です。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Available" xml:space="preserve">DVD を読み込みました：{titleCount} 個のタイトル、{chapterCount} 個のチャプター、{titleSetCount} 個のタイトルセット。</x:String>
   <x:String x:Key="Diagnostic.Ifo.Invalid" xml:space="preserve">IFO ファイルが無効です: {message}</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Captured" xml:space="preserve">{source} に対応する VOB のナビゲーションデータから DVD チャプター時刻を読み込みました。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Fallback" xml:space="preserve">{source} に対応する VOB のナビゲーション時刻を検証できませんでした。DVD チャプターは元の IFO 推定時刻を保持し、フレーム位置への調整は行っていません。</x:String>
   <x:String x:Key="Diagnostic.ImporterFallback.Used" xml:space="preserve">プライマリ インポーターが利用できないため、フォールバック インポーターを使用しました。</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua 式の実行がキャンセルされました。</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">Lua 式の構文エラー: {message}</x:String>
@@ -193,6 +196,7 @@
   <x:String x:Key="Label.ChapterName" xml:space="preserve">チャプター名</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">クリップ / プレイリスト項目</x:String>
   <x:String x:Key="Label.ClipOption" xml:space="preserve">{0}（{1} 個のチャプター）</x:String>
+  <x:String x:Key="Label.DvdTitle" xml:space="preserve">タイトル {number}</x:String>
   <x:String x:Key="Label.Expression" xml:space="preserve">カスタム式</x:String>
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">プリセット</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">フレーム列で使用するフレームレート</x:String>
@@ -207,6 +211,7 @@
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">MPLS を追加して結合</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自動</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 個のチャプター</x:String>
+  <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 個のチャプター</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">現在の FPS に変換</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">結合</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Zones を生成</x:String>
@@ -351,6 +356,7 @@
   <x:String x:Key="Status.LoadFailed" xml:space="preserve">読み込みに失敗しました</x:String>
   <x:String x:Key="Status.Loaded" xml:space="preserve">{1} から {0} 個のチャプターを読み込みました。</x:String>
   <x:String x:Key="Status.LoadedChapters" xml:space="preserve">{count} 個のチャプターを読み込みました</x:String>
+  <x:String x:Key="Status.LoadedChapter" xml:space="preserve">{count} 個のチャプターを読み込みました</x:String>
   <x:String x:Key="Status.Loading" xml:space="preserve">読み込み中…</x:String>
   <x:String x:Key="Status.LoadingSource" xml:space="preserve">読み込み中…</x:String>
   <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">タイトルを検出中…</x:String>

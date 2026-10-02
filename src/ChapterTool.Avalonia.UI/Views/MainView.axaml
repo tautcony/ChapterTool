@@ -110,6 +110,7 @@
                   ItemsSource="{Binding ClipDisplayOptions}"
                   SelectedItem="{Binding SelectedClipDisplayOption, Mode=TwoWay}"
                   IsVisible="{Binding IsClipSelectionVisible}"
+                  ToolTip.Tip="{Binding SelectedClipDisplayOption.DisplayText}"
                   AutomationProperties.AutomationId="ClipSelector">
           <ComboBox.ItemTemplate>
             <DataTemplate x:DataType="vm:SelectorDisplayOption">

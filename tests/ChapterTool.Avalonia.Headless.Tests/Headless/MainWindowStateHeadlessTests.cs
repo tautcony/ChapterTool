@@ -79,7 +79,7 @@ public sealed class MainWindowStateHeadlessTests
         var clipBox = host.RequiredControl<ComboBox>("ClipBox");
         Assert.True(clipBox.IsVisible);
         Assert.Equal(0, clipBox.SelectedIndex);
-        Assert.Equal("00001.m2ts（1 chapters）", clipBox.SelectionBoxItem?.ToString());
+        Assert.Equal("00001.m2ts（1 chapter）", clipBox.SelectionBoxItem?.ToString());
     }
 
     [AvaloniaFact]

@@ -85,6 +85,8 @@
   "Diagnostic.FrameRate.Invalid": "フレームレートは 0 より大きくなければなりません。",
   "Diagnostic.FrameText.Invalid": "フレームテキストにフレーム番号が含まれていないか、フレームレートが無効です。",
   "Diagnostic.Ifo.Invalid": "IFO ファイルが無効です: {message}",
+  "Diagnostic.Ifo.Captured": "{source} に対応する VOB のナビゲーションデータから DVD チャプター時刻を読み込みました。",
+  "Diagnostic.Ifo.Fallback": "{source} に対応する VOB のナビゲーション時刻を検証できませんでした。DVD チャプターは元の IFO 推定時刻を保持し、フレーム位置への調整は行っていません。",
   "Diagnostic.ImporterFallback.Used": "プライマリ インポーターが利用できないため、フォールバック インポーターを使用しました。",
   "Diagnostic.LuaExpression.Cancelled": "Lua 式の実行がキャンセルされました。",
   "Diagnostic.LuaExpression.CompileFailed": "Lua 式の構文エラー: {message}",

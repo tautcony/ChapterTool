@@ -78,7 +78,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("0", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
         Assert.Equal(2, vm.SelectedFrameRateIndex);
-        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal("Loaded 1 chapter", vm.StatusText);
         Assert.Equal(1, vm.Progress);
     }
 
@@ -190,7 +190,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(0, vm.SelectedClipIndex);
         Assert.Single(vm.Rows);
         Assert.Equal("A", vm.Rows[0].Name);
-        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal("Loaded 1 chapter", vm.StatusText);
         Assert.Equal(1, vm.Progress);
         Assert.Contains("Parsing chapter text...", statusNotifications);
         Assert.Contains(progressNotifications, value => value is > 0 and < 1);
@@ -1431,7 +1431,7 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal("Loaded 1 chapter", vm.StatusText);
         localizer.SetCulture("ja-JP");
 
         Assert.Equal("1 個のチャプターを読み込みました", vm.StatusText);

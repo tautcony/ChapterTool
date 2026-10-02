@@ -185,12 +185,12 @@ public sealed class MainWindowHeadlessTests
         Assert.True(result.Success);
         using var host = new MainWindowHeadlessTestHost(result);
 
-        await AssertDefaultSelectionDisplaysLabelAsync(host, "real.xml", "Edition 01（1 chapters）");
-        await AssertSelectorDisplaysLabelAsync(host, "real.xml", selectedIndex: 1, "Edition 02（1 chapters）");
+        await AssertDefaultSelectionDisplaysLabelAsync(host, "real.xml", "Edition 01（1 chapter）");
+        await AssertSelectorDisplaysLabelAsync(host, "real.xml", selectedIndex: 1, "Edition 02（1 chapter）");
     }
 
     [AvaloniaFact]
-    public async Task Ifo_importer_option_labels_render_in_clip_selector()
+    public async Task Ifo_importer_labels_follow_ptt_title_and_chapter_data()
     {
         var importer = new IfoChapterImporter();
         var path = Path.Combine(MainWindowHeadlessTestHost.RepositoryRoot(), "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Ifo", "VTS_33_0.IFO");
@@ -199,8 +199,7 @@ public sealed class MainWindowHeadlessTests
         Assert.True(result.Success);
         using var host = new MainWindowHeadlessTestHost(result);
 
-        await AssertDefaultSelectionDisplaysLabelAsync(host, path, "VTS_33_1（47 chapters）");
-        await AssertSelectorDisplaysLabelAsync(host, path, selectedIndex: 1, "VTS_33_2（47 chapters）");
+        await AssertDefaultSelectionDisplaysLabelAsync(host, path, "VTS_33_1 (0:23:31) [VTS_33_1]（47 chapters）");
     }
 
     [AvaloniaFact]

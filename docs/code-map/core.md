@@ -56,6 +56,12 @@ Important format entry points:
 - CUE sheet parsing: `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs`
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
 - DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, `MplsPlaylistProjection.cs`, split `Mpls*.cs` playlist types, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
+- `IfoChapterImporter` reads DVD VTS PTT references and resolves them through PGC program maps. It validates bounded PGC and PTT tables. It maps VMG `VIDEO_TS.IFO` titles to sibling VTS IFO files. It can recover chapters from PGC program starts when the VMG chapter count matches the PGC and the first PTT program is 1 or is missing. When PTT references are invalid, ordinal PGC recovery requires the PTT title count to equal the PGC count and the selected PGC program count to match the VMG chapter count. The importer accepts a `VIDEO_TS` directory or a disc root that contains `VIDEO_TS`. It adds VTS video, audio, and subtitle attributes to each title entry and reports whole-disc metadata. VMG imports need filesystem access to sibling VTS IFO files.
+- `DvdIfoMetadataReader` parses VTS video, audio, and subtitle attributes. It adds track summaries to import entries and structured disc metadata to import diagnostics.
+- `DvdNavTimingReader` reads 90 kHz presentation times from VOB navigation packs. It follows the DSI VOBU links within each IFO cell sector range. It validates PCI and DSI headers, sector addresses, and cell identity. It supports contiguous numbered VOB files and 32-bit timestamp wrap. It handles clock resets between cells. It caches cell durations and limits navigation reads to 200,000 packs per reader. Cancellation stops the traversal.
+- `IfoChapterImporter` uses NAV timing only when all referenced PGCs in a title have complete navigation data. Missing files, invalid packs, interleaved angles, or discontinuities within a cell retain the complete IFO timeline. Stream imports use the same IFO calculation. IFO timecodes preserve the legacy interpretation of 30 nominal frames for NTSC and 25 for PAL. NTSC playback uses the exact rate `30000/1001`. Cell, program, and title calculations accumulate integer frame counts or integer NAV ticks. Each final time converts once to the nearest `TimeSpan` tick. This conversion has at most 50 ns of numeric error. This bound excludes errors in the source metadata. The importer reports the timing source through `Ifo.Captured` or `Ifo.Fallback`. It never applies a frame-alignment adjustment. NAV times between frame boundaries remain unchanged.
+- `ChapterImportEntry.DiscTitleNumber` identifies a DVD disc title for localized host labels. The host uses `ChapterImportDisplay.FormatDvdOption` to format the label. A language change preserves chapter names and stored title data.
+- Each VTS PTT record contains a PGC number and a program number. Each record uses four bytes. The importer derives the chapter count from the bounded title region. VMG recovery uses the same title boundaries.
 - `MplsPlaylistProjection` supplies shared chapter, clip-name, frame-rate, duration, and media-reference values to direct MPLS and BDMV import.
 - BDMV navigation uses typed INDEX references under `Disc/Index/`, bounded MovieObject parsing and HDMV resolution under `Disc/MovieObject/`, and BDJO accessible-playlist parsing under `Disc/Bdjo/`.
 - `HdmvNavigationResolver.ResolveProfileVariants` creates bounded player profiles only for Player Status Registers (PSRs) that MovieObject commands read. It merges playlist events in stable profile order.
@@ -72,7 +78,7 @@ Important format entry points:
 
 ### libbluray compatibility map
 
-`libbluray/` is a vendored C reference snapshot at commit `ea3e318b` (the `hdmv: fix INSN_BC instruction` change). ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
+`libbluray/` is a vendored C reference snapshot at libbluray 1.5.1 commit `a24f4fad`. ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
 
 | libbluray reference | ChapterTool implementation | Boundary or difference |
 | --- | --- | --- |

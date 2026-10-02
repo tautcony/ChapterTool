@@ -27,6 +27,10 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 - Avalonia Headless UI shell/interaction (separate process):
   - `tests/ChapterTool.Avalonia.Headless.Tests`
 
+DVD presentation coverage uses `tests/ChapterTool.Avalonia.Headless.Tests/Headless/DvdPresentationHeadlessTests.cs`. It verifies title selection, localized labels, diagnostic counts, and single-chapter text in three languages. It verifies the workflow at default, wide, and narrow window sizes. It writes review images under `artifacts/dvd-presentation/`. The images support visual review and do not replace workflow assertions.
+
+DVD timing coverage uses `tests/ChapterTool.Core.Tests/Importing/DvdNavTimingTests.cs`. Synthetic IFO and NAV packs verify VTS imports, VMG imports, and PTT recovery. Tests cover split VOB files, timestamp wrap, cell clock resets, missing or corrupt navigation data, cancellation, and complete-title fallback. Fractional NAV times must remain unchanged. Long IFO cell sequences compare numeric error against the legacy calculation. `DiscImporterTests` covers legacy timecode compatibility through 99 hours. `IfoImporterTests` checks known chapter frame counts in real IFO fixtures. The Headless DVD test verifies nominal-frame results and the unverified-timing diagnostic. These fixtures do not replace verification against a complete authored DVD.
+
 Desktop composition coverage:
 
 - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AutofacCompositionHeadlessTests.cs` validates missing registrations, test overrides, and repeated disposal.

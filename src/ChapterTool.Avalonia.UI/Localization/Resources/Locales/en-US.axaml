@@ -123,7 +123,10 @@
   <x:String x:Key="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">No Vorbis cuesheet comment was found.</x:String>
   <x:String x:Key="Diagnostic.FrameRate.Invalid" xml:space="preserve">Frame rate must be greater than zero.</x:String>
   <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">Frame text did not contain a frame number or the frame rate was invalid.</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Available" xml:space="preserve">DVD loaded: titles={titleCount}, chapters={chapterCount}, title sets={titleSetCount}.</x:String>
   <x:String x:Key="Diagnostic.Ifo.Invalid" xml:space="preserve">The IFO file is invalid: {message}</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Captured" xml:space="preserve">DVD chapter times for {source} were read from VOB navigation timestamps.</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Fallback" xml:space="preserve">VOB navigation timestamps for {source} could not be verified. DVD chapters retain the original IFO time estimates without frame alignment.</x:String>
   <x:String x:Key="Diagnostic.ImporterFallback.Used" xml:space="preserve">The primary importer was unavailable; a fallback importer was used.</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua expression execution was cancelled.</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">Lua expression syntax error: {message}</x:String>
@@ -193,6 +196,7 @@
   <x:String x:Key="Label.ChapterName" xml:space="preserve">Chapter name</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">Clip / playlist entry</x:String>
   <x:String x:Key="Label.ClipOption" xml:space="preserve">{0} ({1} chapters)</x:String>
+  <x:String x:Key="Label.DvdTitle" xml:space="preserve">Title {number}</x:String>
   <x:String x:Key="Label.Expression" xml:space="preserve">Custom expression</x:String>
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">Frame rate used for Frames column</x:String>
@@ -207,6 +211,7 @@
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">Append MPLS</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">Auto</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} chapters</x:String>
+  <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} chapter</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">Convert to current FPS</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">Combine</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Create Zones</x:String>
@@ -351,6 +356,7 @@
   <x:String x:Key="Status.LoadFailed" xml:space="preserve">Load failed</x:String>
   <x:String x:Key="Status.Loaded" xml:space="preserve">Loaded {0} chapter(s) from {1}.</x:String>
   <x:String x:Key="Status.LoadedChapters" xml:space="preserve">Loaded {count} chapters</x:String>
+  <x:String x:Key="Status.LoadedChapter" xml:space="preserve">Loaded {count} chapter</x:String>
   <x:String x:Key="Status.Loading" xml:space="preserve">Loading…</x:String>
   <x:String x:Key="Status.LoadingSource" xml:space="preserve">Loading source...</x:String>
   <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">Discovering titles...</x:String>

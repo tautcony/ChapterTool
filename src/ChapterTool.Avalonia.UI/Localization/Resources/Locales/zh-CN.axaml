@@ -123,7 +123,10 @@
   <x:String x:Key="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">未找到 Vorbis cuesheet 注释。</x:String>
   <x:String x:Key="Diagnostic.FrameRate.Invalid" xml:space="preserve">帧率必须大于零。</x:String>
   <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">帧文本未包含帧编号，或帧率无效。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Available" xml:space="preserve">已读取 DVD 光盘：{titleCount} 个标题，{chapterCount} 个章节，{titleSetCount} 个标题集。</x:String>
   <x:String x:Key="Diagnostic.Ifo.Invalid" xml:space="preserve">IFO 文件无效：{message}</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Captured" xml:space="preserve">已从 {source} 对应的 VOB 导航数据读取 DVD 章节时间。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Fallback" xml:space="preserve">无法验证 {source} 对应的 VOB 导航时间戳。DVD 章节保留原始 IFO 估算时间，未作对齐调整。</x:String>
   <x:String x:Key="Diagnostic.ImporterFallback.Used" xml:space="preserve">主导入器不可用，已使用备用导入器。</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua 表达式已取消。</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">Lua 表达式语法错误：{message}</x:String>
@@ -193,6 +196,7 @@
   <x:String x:Key="Label.ChapterName" xml:space="preserve">章节名</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">片段 / 播放列表项</x:String>
   <x:String x:Key="Label.ClipOption" xml:space="preserve">{0}（{1} 个章节）</x:String>
+  <x:String x:Key="Label.DvdTitle" xml:space="preserve">标题 {number}</x:String>
   <x:String x:Key="Label.Expression" xml:space="preserve">表达式</x:String>
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">用于帧列的帧率</x:String>
@@ -207,6 +211,7 @@
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">追加合并 MPLS</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自动</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 个章节</x:String>
+  <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 个章节</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">转换至当前帧率</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">合并</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">生成 Zones</x:String>
@@ -351,6 +356,7 @@
   <x:String x:Key="Status.LoadFailed" xml:space="preserve">载入失败</x:String>
   <x:String x:Key="Status.Loaded" xml:space="preserve">已从 {1} 加载 {0} 个章节。</x:String>
   <x:String x:Key="Status.LoadedChapters" xml:space="preserve">已载入 {count} 个章节</x:String>
+  <x:String x:Key="Status.LoadedChapter" xml:space="preserve">已载入 {count} 个章节</x:String>
   <x:String x:Key="Status.Loading" xml:space="preserve">加载中…</x:String>
   <x:String x:Key="Status.LoadingSource" xml:space="preserve">正在加载...</x:String>
   <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">正在发现标题...</x:String>

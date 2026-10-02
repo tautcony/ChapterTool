@@ -8,6 +8,7 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
+using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
@@ -122,6 +123,34 @@ public sealed partial class LocalizationTests
             CultureInfo.CurrentCulture = originalCulture;
             CultureInfo.CurrentUICulture = originalUiCulture;
         }
+    }
+
+    [Theory]
+    [InlineData("zh-CN", "已读取 DVD 光盘：1 个标题，3 个章节，1 个标题集。")]
+    [InlineData("en-US", "DVD loaded: titles=1, chapters=3, title sets=1.")]
+    [InlineData("ja-JP", "DVD を読み込みました：1 個のタイトル、3 個のチャプター、1 個のタイトルセット。")]
+    public async Task DvdDiscDiagnosticFormatsRealImportCountsAcrossCultures(string culture, string expected)
+    {
+        var path = Path.Combine(TestRepository.Root, "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Ifo", "VmgRecovery", "Srcl8925", "VIDEO_TS.IFO");
+        var result = await new IfoChapterImporter().ImportAsync(new ChapterImportRequest(path), TestContext.Current.CancellationToken);
+        Assert.True(result.Success);
+        var diagnostic = Assert.Single(result.Diagnostics, static item => item.Code == ChapterDiagnosticCode.IfoDiscLoaded);
+        using var owner = CreateViewModel(new AppLocalizationManager(culture));
+
+        Assert.Equal(expected, owner.LocalizeDiagnostic(diagnostic));
+        Assert.Contains(result.Diagnostics, item => item.Code == ChapterDiagnosticCode.IfoTimingEstimated && item.Severity == DiagnosticSeverity.Warning);
+    }
+
+    [Theory]
+    [InlineData("zh-CN", "已从 VTS_05_0.IFO 对应的 VOB 导航数据读取 DVD 章节时间。", "无法验证 VTS_05_0.IFO 对应的 VOB 导航时间戳。DVD 章节保留原始 IFO 估算时间，未作对齐调整。")]
+    [InlineData("en-US", "DVD chapter times for VTS_05_0.IFO were read from VOB navigation timestamps.", "VOB navigation timestamps for VTS_05_0.IFO could not be verified. DVD chapters retain the original IFO time estimates without frame alignment.")]
+    [InlineData("ja-JP", "VTS_05_0.IFO に対応する VOB のナビゲーションデータから DVD チャプター時刻を読み込みました。", "VTS_05_0.IFO に対応する VOB のナビゲーション時刻を検証できませんでした。DVD チャプターは元の IFO 推定時刻を保持し、フレーム位置への調整は行っていません。")]
+    public void DvdTimingMessagesDistinguishNavTimesFromUnchangedEstimates(string culture, string captured, string estimated)
+    {
+        using var owner = CreateViewModel(new AppLocalizationManager(culture));
+        var arguments = new Dictionary<string, object?> { ["source"] = "VTS_05_0.IFO" };
+        Assert.Equal(captured, owner.LocalizeDiagnostic(new ChapterDiagnostic(DiagnosticSeverity.Info, ChapterDiagnosticCode.IfoTimingFromNav, string.Empty, Arguments: arguments)));
+        Assert.Equal(estimated, owner.LocalizeDiagnostic(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.IfoTimingEstimated, string.Empty, Arguments: arguments)));
     }
 
     [Fact]

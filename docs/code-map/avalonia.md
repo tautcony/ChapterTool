@@ -33,6 +33,7 @@ Main-window workflow owners under `src/ChapterTool.Avalonia.UI/Workflows/` use t
 - `ClipEditingCoordinator.cs` — clip selection/combine transitions plus cell and frame edits written through the workspace
 - `ProjectionFacade.cs` — workspace-backed projection, preview/save options, and chapter-row materialization
 - `StatusDiagnosticsPresenter.cs` — localized status/progress rendering and structured diagnostic logging
+- `DisplayOptionCoordinator.cs` renders DVD title numbers with localized labels. The chapter data and English log summaries remain stable when the culture changes. The clip selector exposes its complete label in a tooltip when the visible text is trimmed.
 
 Role split:
 

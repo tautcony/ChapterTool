@@ -194,7 +194,7 @@ public sealed class LogToolViewModelTests
                 "   - RAW/PCM, [jpn], stereo, 48kHz",
                 "   - RAW/PCM, [jpn], stereo, 48kHz",
                 string.Empty,
-                "2) VTS_05_0.IFO, VTS_05_1, 1:49:12",
+                "2) VTS_05_0.IFO, VTS_05_1, 1:49:13",
                 "   - Chapters, 7 chapters",
                 "   - Format, DVD IFO",
                 string.Empty,
@@ -249,7 +249,7 @@ public sealed class LogToolViewModelTests
                                 ["source"] = "VTS_05_1",
                                 ["sourceType"] = "DVD IFO",
                                 ["chapters"] = 7,
-                                ["duration"] = "1:49:12",
+                                ["duration"] = "1:49:13",
                                 ["fps"] = "29.97"
                             }
                         }
@@ -277,7 +277,7 @@ public sealed class LogToolViewModelTests
         Assert.Contains("   - Chapters, 3 chapters", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - h264/AVC, 1080p24/1.001 (16:9)", importProperty.Value, StringComparison.Ordinal);
         Assert.Equal(2, importProperty.Value.Split("RAW/PCM, [jpn], stereo, 48kHz").Length - 1);
-        Assert.Contains("2) VTS_05_0.IFO, VTS_05_1, 1:49:12", importProperty.Value, StringComparison.Ordinal);
+        Assert.Contains("2) VTS_05_0.IFO, VTS_05_1, 1:49:13", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Chapters, 7 chapters", importProperty.Value, StringComparison.Ordinal);
         Assert.Contains("   - Format, DVD IFO", importProperty.Value, StringComparison.Ordinal);
     }

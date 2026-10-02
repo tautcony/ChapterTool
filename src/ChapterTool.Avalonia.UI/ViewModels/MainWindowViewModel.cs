@@ -238,7 +238,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public int SelectedRowCount => SelectedRowIndexes.Count;
 
-    public string ChapterCountDisplay => Localizer.Format("Main.ChapterCount", new Dictionary<string, object?> { ["count"] = ChapterCount });
+    public string ChapterCountDisplay => Localizer.Format(ChapterCount == 1 ? "Main.ChapterCountSingular" : "Main.ChapterCount", new Dictionary<string, object?> { ["count"] = ChapterCount });
 
     public string SelectedRowCountDisplay => Localizer.Format("Status.SelectedRows", new Dictionary<string, object?> { ["0"] = SelectedRowCount });
 
