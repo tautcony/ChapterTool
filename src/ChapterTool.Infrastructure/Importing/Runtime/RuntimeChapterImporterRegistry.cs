@@ -7,6 +7,7 @@ using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Importing.Text;
 using ChapterTool.Core.Transform;
 using ChapterTool.Infrastructure.Importing.Bdmv;
+using ChapterTool.Infrastructure.Importing.Dvd;
 using ChapterTool.Infrastructure.Importing.Matroska;
 using ChapterTool.Infrastructure.Services;
 
@@ -66,6 +67,11 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
             return bdmvImporter;
         }
 
+        if (DvdSourceLayout.TryResolve(path) is not null)
+        {
+            return ifoImporter;
+        }
+
         return importers.GetValueOrDefault(Path.GetExtension(path));
     }
 
@@ -82,6 +88,7 @@ public sealed class RuntimeChapterImporterRegistry : IChapterImporterRegistry
             [".tak"] = takCueImporter,
             [".mpls"] = mplsImporter,
             [".ifo"] = ifoImporter,
+            [".bup"] = ifoImporter,
             [".xpl"] = xplImporter,
             [".bdmv"] = bdmvImporter
         };

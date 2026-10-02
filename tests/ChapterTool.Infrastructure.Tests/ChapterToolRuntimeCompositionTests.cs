@@ -28,4 +28,30 @@ public sealed class ChapterToolRuntimeCompositionTests
     {
         Assert.NotNull(ChapterToolRuntimeComposition.CreateMp4ChapterReader());
     }
+
+    [Fact]
+    public void RuntimeImporterRegistry_resolves_a_dvd_disc_root_directory()
+    {
+        var discRoot = Path.Combine(Path.GetTempPath(), "ChapterTool_DvdRegistry_" + Guid.NewGuid().ToString("N"));
+        var videoTs = Path.Combine(discRoot, "VIDEO_TS");
+        Directory.CreateDirectory(videoTs);
+        File.WriteAllBytes(Path.Combine(videoTs, "VIDEO_TS.BUP"), [0]);
+
+        try
+        {
+            var registry = new RuntimeChapterImporterRegistry(
+                new ChapterTool.Core.Transform.ChapterTimeFormatter(),
+                null!,
+                null!,
+                null!,
+                null!);
+
+            Assert.Equal("dvd-ifo", registry.Resolve(discRoot)?.Id);
+            Assert.Equal("dvd-ifo", registry.Resolve(videoTs)?.Id);
+        }
+        finally
+        {
+            Directory.Delete(discRoot, recursive: true);
+        }
+    }
 }

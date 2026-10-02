@@ -19,8 +19,15 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvMetadataReader.cs`: optional disc title reader
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvSourceLayout.cs`: accepted input shapes and primary/backup paths
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs`: bounded playlist discovery and parity filtering
+- DVD path:
+  - `src/ChapterTool.Infrastructure/Importing/Dvd/DvdSourceLayout.cs`: DVD disc root and `VIDEO_TS` directory detection
+  - `src/ChapterTool.Core/Importing/Disc/DvdIfoMetadataReader.cs`: VTS video, audio, subtitle, and disc metadata
 
 `BdmvImporter` preserves global INDEX title numbers, skips prohibited titles, reports hidden titles, and consumes bounded HDMV navigation evidence.
+
+`RuntimeChapterImporterRegistry` routes DVD disc directories to `IfoChapterImporter`. The importer reads every VMG title and exposes VTS stream attributes in the import summary.
+
+DVD timing uses the managed `DvdNavTimingReader` in Core. It needs sibling title VOB files to read navigation timestamps. It does not need an external executable. Missing or unsupported VOB navigation data produces a warning and preserves IFO estimates.
 
 ### Runtime importer composition
 
