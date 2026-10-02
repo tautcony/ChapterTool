@@ -148,9 +148,7 @@ public sealed class ShellService : IShellService
     {
         var startInfo = new ProcessStartInfo
         {
-            FileName = OperatingSystem.IsWindows()
-                ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe")
-                : "cmd.exe",
+            FileName = "cmd.exe",
             WorkingDirectory = directoryPath,
             UseShellExecute = false,
             CreateNoWindow = false
