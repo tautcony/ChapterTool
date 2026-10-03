@@ -177,7 +177,7 @@ jobs:
 
       - name: Prepare Pages-shaped site
         working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm run prepare:site -- --publish ../../artifacts/wasm-e2e/publish/wwwroot
+        run: node scripts/prepare-site.mjs --publish artifacts/wasm-e2e/publish/wwwroot
 
       - name: Type check
         working-directory: tests/ChapterTool.Wasm.E2E
