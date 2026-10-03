@@ -189,6 +189,7 @@
   "FilePicker.SourceFiles": "章节和媒体文件",
   "FilePicker.TextFiles": "文本文件",
   "Grid.Frames": "帧",
+  "Grid.TableLabel": "章节",
   "Grid.Name": "名称",
   "Grid.Number": "#",
   "Grid.Time": "时间",

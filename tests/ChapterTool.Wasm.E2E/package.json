@@ -1,0 +1,23 @@
+{
+  "name": "chaptertool-wasm-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "prepare:site": "node scripts/prepare-site.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test --config=playwright.config.ts",
+    "test:e2e:dev": "playwright test --config=playwright.dev.config.ts",
+    "test:e2e:headed": "playwright test --config=playwright.config.ts --headed",
+    "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
+    "test:visual": "playwright test --config=playwright.visual.config.ts",
+    "report": "playwright show-report ../../artifacts/wasm-e2e/report",
+    "serve:published": "node scripts/serve-published.mjs"
+  },
+  "type": "module",
+  "engines": { "node": ">=22 <23" },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.6.4",
+    "typescript": "7.0.2"
+  }
+}

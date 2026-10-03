@@ -6,6 +6,8 @@ on:
       - ".github/workflows/dotnet-ci.yml"
       - "Directory.Build.props"
       - "Directory.Build.targets"
+      - "Directory.Packages.props"
+      - "NuGet.config"
       - "global.json"
       - "ChapterTool.slnx"
       - "src/**"
@@ -13,11 +15,14 @@ on:
       - "tools/**"
       - "scripts/**"
       - "packages/chaptertool/**"
+      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
   pull_request:
     paths:
       - ".github/workflows/dotnet-ci.yml"
       - "Directory.Build.props"
       - "Directory.Build.targets"
+      - "Directory.Packages.props"
+      - "NuGet.config"
       - "global.json"
       - "ChapterTool.slnx"
       - "src/**"
@@ -25,6 +30,7 @@ on:
       - "tools/**"
       - "scripts/**"
       - "packages/chaptertool/**"
+      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
 
 concurrency:
   group: dotnet-ci-${{ github.ref }}
@@ -139,6 +145,60 @@ jobs:
             artifacts/cli-nuget/*.nupkg
             artifacts/cli-nuget/*.snupkg
           if-no-files-found: error
+
+  wasm-browser-e2e:
+    name: WASM browser E2E (Chromium)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
+
+      - name: Restore and publish WASM
+        run: |
+          dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+          dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj \
+            --configuration Release --no-restore --output artifacts/wasm-e2e/publish
+
+      - name: Install E2E dependencies
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm ci
+
+      - name: Prepare Pages-shaped site
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run prepare:site -- --publish ../../artifacts/wasm-e2e/publish/wwwroot
+
+      - name: Type check
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run typecheck
+
+      - name: Install Chromium
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Run Chromium E2E suite
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run test:e2e -- --project=chromium
+
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-browser-e2e-chromium
+          path: artifacts/wasm-e2e/
+          if-no-files-found: warn
+          retention-days: 14
 
   pack-dotnet:
     needs: build-test

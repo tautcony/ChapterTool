@@ -15,6 +15,8 @@
 
 <div id="chaptertool-shell"
      class="shell @(isDragOver ? "drag-over" : null)"
+     data-app-ready="@(appReady ? "true" : "false")"
+     aria-busy="@(appReady ? "false" : "true")"
      tabindex="0"
      @onkeydown="OnKeyDownAsync"
      @onclick="OnShellClick">
@@ -113,6 +115,7 @@
                     </button>
                     <button type="button"
                             class="icon-button"
+                            data-testid="settings-open"
                             @onclick="OpenSettings"
                             title="@L.T("Action.Settings")"
                             aria-label="@L.T("Action.Settings")">
@@ -171,7 +174,7 @@
                 }
                 else
                 {
-                    <table class="chapter-grid">
+                    <table class="chapter-grid" aria-label="@L.T("Grid.TableLabel")">
                         <thead>
                         <tr>
                             <th class="col-num">@L.T("Grid.Number")</th>
@@ -198,6 +201,7 @@
                                     else
                                     {
                                         <input class="cell-edit"
+                                               aria-label="@($"{L.T("Grid.Time")} {index + 1}")"
                                                value="@row.TimeText"
                                                disabled="@Workspace.IsBusy"
                                                @onchange="e => OnTimeChanged(index, e)"
@@ -206,6 +210,7 @@
                                 </td>
                                 <td class="col-name">
                                     <input class="cell-edit"
+                                           aria-label="@($"{L.T("Grid.Name")} {index + 1}")"
                                            value="@row.Name"
                                            disabled="@Workspace.IsBusy"
                                            @onchange="e => OnNameChanged(index, e)"
@@ -320,7 +325,6 @@
                         <input type="checkbox"
                                checked="@applyExpression"
                                disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
-                               aria-labelledby="expressionLabel"
                                aria-label="@L.T("Label.UseExpression")"
                                @onchange="OnApplyExpressionChanged" />
                     </label>
@@ -353,7 +357,7 @@
 
     <!-- Status / progress strip -->
     <footer class="status-bar">
-        <span class="status-text" title="@Workspace.StatusText">@Workspace.StatusText</span>
+        <span class="status-text" role="status" aria-live="polite" title="@Workspace.StatusText">@Workspace.StatusText</span>
         <button type="button" class="secondary log-toggle" @onclick="OpenLogs" title="@L.T("Modal.LogTitle")">@L.T("Action.Log")</button>
         <progress class="status-progress"
                   max="1"
@@ -449,7 +453,7 @@
                 <button type="button" class="modal-close" @onclick="ClosePreview" title="@L.T("Action.Close")">×</button>
             </header>
             <div class="modal-body">
-                <pre class="preview-text">@previewText</pre>
+                <pre class="preview-text" data-testid="preview-content">@previewText</pre>
             </div>
             <footer class="modal-footer">
                 <button type="button" class="secondary" @onclick="CopyPreviewAsync" disabled="@(previewText.Length == 0)">@L.T("Text.Copy")</button>
@@ -608,7 +612,7 @@
                             }
                         </select>
                         <label>@L.T("Settings.EmitBom")</label>
-                        <label class="settings-check"><input type="checkbox" @bind="draftEmitBom" /> @L.T("Settings.EmitBomLabel")</label>
+                        <label class="settings-check"><input type="checkbox" data-testid="settings-emit-bom" @bind="draftEmitBom" /> @L.T("Settings.EmitBomLabel")</label>
                     </div>
                 }
                 else if (settingsTab == 3)
@@ -687,8 +691,8 @@
             <footer class="modal-footer">
                 <button type="button" class="secondary" @onclick="ResetSettings">@L.T("Action.RestoreDefaults")</button>
                 <span class="modal-spacer"></span>
-                <button type="button" class="secondary" @onclick="CancelSettings">@L.T("Common.Cancel")</button>
-                <button type="button" class="secondary" @onclick="ApplySettingsAsync">@L.T("Common.Save")</button>
+                <button type="button" class="secondary" data-testid="settings-cancel" @onclick="CancelSettings">@L.T("Common.Cancel")</button>
+                <button type="button" class="secondary" data-testid="settings-apply" @onclick="ApplySettingsAsync">@L.T("Common.Save")</button>
             </footer>
         </section>
     </div>
@@ -755,6 +759,7 @@
     private bool showLogModal;
     private bool showSettingsModal;
     private bool showPreviewModal;
+    private bool appReady;
     private bool showHistory;
     private bool showForwardModal;
     private bool showRelatedModal;
@@ -858,6 +863,11 @@
         catch (JSException)
         {
             // Privacy mode or a missing JavaScript host must not block first render.
+        }
+        finally
+        {
+            appReady = true;
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -1041,10 +1051,6 @@
         expression = args.Value?.ToString() ?? "t";
         Workspace.Expression = expression;
         expressionPresetId = Workspace.ExpressionPresetId;
-        if (applyExpression)
-        {
-            Workspace.ApplyOptionsAndRefresh();
-        }
     }
 
     private async Task OnExpressionCommit(ChangeEventArgs args)

@@ -662,8 +662,8 @@ input:disabled {
 .modal-dialog {
   display: flex;
   flex-direction: column;
-  width: min(46rem, 100%);
-  max-height: min(38rem, 100%);
+  width: min(46rem, calc(100vw - 2rem));
+  max-height: min(38rem, calc(100vh - 2rem));
   border: 1px solid var(--border);
   background: var(--window-bg);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
@@ -674,8 +674,8 @@ input:disabled {
 }
 
 .settings-modal {
-  width: min(38rem, 100%);
-  height: min(40rem, 100%);
+  width: min(38rem, calc(100vw - 2rem));
+  height: min(40rem, calc(100vh - 2rem));
 }
 
 .modal-header,

@@ -13,8 +13,12 @@ on:
     paths:
       - "src/ChapterTool.Wasm/**"
       - "src/ChapterTool.Core/**"
+      - "src/ChapterTool.Contracts/**"
+      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
+      - "tests/ChapterTool.Wasm.E2E/**"
       - "Directory.Build.props"
       - "Directory.Build.targets"
+      - "Directory.Packages.props"
       - ".github/workflows/github-pages.yml"
   workflow_dispatch:
 
@@ -30,6 +34,7 @@ concurrency:
 env:
   PROJECT: src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
   PUBLISH_DIR: src/ChapterTool.Wasm/bin/Release/net10.0/publish/wwwroot
+  E2E_SITE_DIR: artifacts/wasm-e2e/site/ChapterTool
 
 jobs:
   deploy:
@@ -48,6 +53,13 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
+
       - name: Publish Blazor WASM app
         run: |
           set -euo pipefail
@@ -55,44 +67,26 @@ jobs:
             --configuration Release \
             --nologo
 
-      - name: Prepare GitHub Pages assets
-        run: |
-          set -euo pipefail
-          publish_dir="${{ env.PUBLISH_DIR }}"
-          test -f "${publish_dir}/index.html"
-          test -d "${publish_dir}/_framework"
+      - name: Install E2E dependencies
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm ci
 
-          # Prevent Jekyll from ignoring underscore folders such as _framework.
-          touch "${publish_dir}/.nojekyll"
+      - name: Prepare GitHub Pages site
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run prepare:site -- --publish ../../${{ env.PUBLISH_DIR }}
 
-          # GitHub Pages serves 404.html for unknown paths (SPA deep links).
-          cp "${publish_dir}/index.html" "${publish_dir}/404.html"
+      - name: Install Chromium
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm exec -- playwright install --with-deps chromium
 
-          # Record deploy metadata for troubleshooting.
-          {
-            echo "repository=${{ github.repository }}"
-            echo "sha=${{ github.sha }}"
-            echo "ref=${{ github.ref }}"
-            echo "base_href=/${{ github.event.repository.name }}/"
-            date -u +'built_at=%Y-%m-%dT%H:%M:%SZ'
-          } > "${publish_dir}/deploy-info.txt"
-
-      - name: Rewrite base href (index.html)
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@5b54862a8831e012d4f1a8b2660894415fdde8ec # v1.1.0
-        with:
-          html_path: ${{ env.PUBLISH_DIR }}/index.html
-          base_href: /${{ github.event.repository.name }}/
-
-      - name: Rewrite base href (404.html)
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@5b54862a8831e012d4f1a8b2660894415fdde8ec # v1.1.0
-        with:
-          html_path: ${{ env.PUBLISH_DIR }}/404.html
-          base_href: /${{ github.event.repository.name }}/
+      - name: Test deployment smoke workflows
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run test:e2e -- --project=chromium --grep @smoke
 
       - name: Verify published site layout
         run: |
           set -euo pipefail
-          publish_dir="${{ env.PUBLISH_DIR }}"
+          publish_dir="${{ env.E2E_SITE_DIR }}"
           repo_name="${{ github.event.repository.name }}"
 
           # Project Pages base href must be present on both entry documents.
@@ -124,7 +118,16 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: ${{ env.PUBLISH_DIR }}
+          path: ${{ env.E2E_SITE_DIR }}
+
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-pages-browser-e2e
+          path: artifacts/wasm-e2e/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Deploy to GitHub Pages
         id: deployment

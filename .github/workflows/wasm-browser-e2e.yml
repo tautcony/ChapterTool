@@ -1,0 +1,112 @@
+name: WASM browser acceptance
+
+on:
+  push:
+    paths:
+      - ".github/workflows/wasm-browser-e2e.yml"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "Directory.Packages.props"
+      - "src/ChapterTool.Wasm/**"
+      - "src/ChapterTool.Core/**"
+      - "src/ChapterTool.Contracts/**"
+      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
+      - "tests/ChapterTool.Wasm.E2E/**"
+      - "tests/ChapterTool.Core.Tests/Fixtures/Importing/Disc/**"
+  pull_request:
+    paths:
+      - ".github/workflows/wasm-browser-e2e.yml"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "Directory.Packages.props"
+      - "src/ChapterTool.Wasm/**"
+      - "src/ChapterTool.Core/**"
+      - "src/ChapterTool.Contracts/**"
+      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
+      - "tests/ChapterTool.Wasm.E2E/**"
+      - "tests/ChapterTool.Core.Tests/Fixtures/Importing/Disc/**"
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: wasm-browser-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-acceptance:
+    name: WASM browser acceptance
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
+
+      - name: Restore and publish WASM
+        run: |
+          dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+          dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj \
+            --configuration Release --no-restore --output artifacts/wasm-e2e/publish
+
+      - name: Install E2E dependencies
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm ci
+
+      - name: Prepare Pages-shaped site
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run prepare:site -- --publish ../../artifacts/wasm-e2e/publish/wwwroot
+
+      - name: Type check
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run typecheck
+
+      - name: Install Chromium for pull request and push checks
+        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Install all browser engines for acceptance runs
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm exec -- playwright install --with-deps
+
+      - name: Run Chromium checks
+        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        working-directory: tests/ChapterTool.Wasm.E2E
+        run: npm run test:e2e -- --project=chromium
+
+      - name: Run three-engine acceptance suite
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        working-directory: tests/ChapterTool.Wasm.E2E
+        env:
+          E2E_NO_RETRY: "1"
+        run: npm run test:e2e
+
+      - name: Run fixed-Linux visual acceptance
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          docker run --rm \
+            --volume "${GITHUB_WORKSPACE}:/work" \
+            --workdir /work/tests/ChapterTool.Wasm.E2E \
+            node:22-slim@sha256:7af03b14a13c8cdd38e45058fd957bf00a72bbe17feac43b1c15a689c029c732 \
+            bash -lc 'npm ci && npx playwright install --with-deps chromium && npm run test:visual'
+
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-browser-acceptance
+          path: artifacts/wasm-e2e/
+          if-no-files-found: warn
+          retention-days: 14

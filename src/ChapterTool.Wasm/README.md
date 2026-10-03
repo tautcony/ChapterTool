@@ -58,6 +58,37 @@ The browser app imports file bytes. It does not use local file paths for import.
 
 Portable browser imports use the shared 64 MiB byte limit in `ChapterTool.Core.Boundaries.PortableInputPolicy`. The limit applies to load, reload, and MPLS append.
 
+## Browser end-to-end tests
+
+`tests/ChapterTool.Wasm.E2E` owns real-browser coverage for the Blazor page and
+its JavaScript boundary. The suite uses Playwright Test and TypeScript. It does
+not replace the workspace or Core test projects.
+
+Run these commands from the repository root in a clean checkout:
+
+```bash
+dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --configuration Release --no-restore --output artifacts/wasm-e2e/publish
+npm --prefix tests/ChapterTool.Wasm.E2E ci
+npm --prefix tests/ChapterTool.Wasm.E2E exec -- playwright install chromium
+npm --prefix tests/ChapterTool.Wasm.E2E run prepare:site
+npm --prefix tests/ChapterTool.Wasm.E2E run typecheck
+npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e -- --project=chromium
+```
+
+The default configuration tests the prepared Release output at
+`http://127.0.0.1:5261/ChapterTool/`. Run `npm --prefix
+tests/ChapterTool.Wasm.E2E run test:e2e:dev` to use the local development
+server at `/`. Use `test:e2e:headed` or `test:e2e:ui` for interactive diagnosis.
+Run all installed engines with `test:e2e` and compare layout snapshots with
+`test:visual` in the fixed Linux CI environment.
+
+Playwright writes reports, traces, screenshots, and downloaded files under
+`artifacts/wasm-e2e/`. Open the HTML report with
+`npm --prefix tests/ChapterTool.Wasm.E2E run report`.
+The first multi-browser and visual acceptance results are in
+`docs/testing/wasm-browser-e2e-acceptance.md`.
+
 ## Feature boundaries
 
 The browser app imports text, XML, CUE, WebVTT, MPLS, IFO, HD-DVD XPL, and embedded FLAC/TAK CUE data from bytes. It supports chapter editing, managed Lua expressions with Core presets, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.

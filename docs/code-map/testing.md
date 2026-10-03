@@ -14,6 +14,8 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `tests/ChapterTool.Core.Tests`
 - Browser WebAssembly workspace behavior:
   - `tests/ChapterTool.Wasm.Tests`
+- Browser WebAssembly user workflows:
+  - `tests/ChapterTool.Wasm.E2E`
 - Node.js package behavior (Vitest, one worker for the WASM runtime):
   - `packages/chaptertool/test/chaptertool.test.ts`
   - `packages/chaptertool/test/core-api.test.ts`
@@ -44,6 +46,8 @@ Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transfor
 Use `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs` and `ChapterClipCandidateBuilderTests.cs` for one-shot content candidates and clip operations. Use `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs` and `ChapterWorkspaceTests.cs` for selector metadata, selected-track commits, load/append ownership, ended-session collection, and per-track export baselines. `SessionStateTests.cs` covers mutations and history navigation after session end.
 
 Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`. It covers browser history navigation, independent tab sessions, failed and canceled replacement, and export baselines. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the browser shortcut guard.
+
+Use `tests/ChapterTool.Wasm.E2E` when a change affects rendered Blazor workflows, JavaScript interop, browser file input or downloads, localization in the browser, or the Pages deployment path. The default Playwright configuration tests the prepared Release site at `/ChapterTool/`; the development configuration is for local diagnosis. Run `npm ci`, `npm run typecheck`, and `npm run test:e2e -- --project=chromium` from that directory after publishing the WASM app and running `npm run prepare:site`. CI runs Chromium for relevant changes, runs `@smoke` before Pages deployment, and runs all three browser engines on the scheduled or manual acceptance workflow. Reports and failure diagnostics are uploaded from `artifacts/wasm-e2e/`.
 
 Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 

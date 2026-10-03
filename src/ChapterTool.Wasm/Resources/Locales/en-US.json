@@ -189,6 +189,7 @@
   "FilePicker.SourceFiles": "Chapter and media files",
   "FilePicker.TextFiles": "Text files",
   "Grid.Frames": "Frames",
+  "Grid.TableLabel": "Chapters",
   "Grid.Name": "Name",
   "Grid.Number": "#",
   "Grid.Time": "Time",
