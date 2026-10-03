@@ -138,25 +138,24 @@ public sealed partial class MainWindowViewModel
         }
 
         var directory = ResolveSaveDirectory(directoryOverride);
-        var projection = CurrentOutputProjection();
-        var entries = CurrentExportOptionsForProjectedInfo();
+        var chapterSet = workspaceContentRows.GetCurrentChapterSet();
+        var entries = Workspace.CreateExportOptions();
         Log(LogLevel.Information,
             $"Saving chapters: format={entries.Format}, directory='{directory ?? string.Empty}', source='{CurrentInfo.SourceName ?? string.Empty}', " +
-            $"chapters={projection.Info.Chapters.Count}, applyExpression={ApplyExpression}, expression='{Expression}', " +
+            $"chapters={chapterSet.Chapters.Count}, applyExpression={ApplyExpression}, expression='{Expression}', " +
             $"xmlLanguage='{entries.XmlLanguage ?? string.Empty}', encoding={entries.TextEncoding}, bom={entries.EmitBom}",
             "Save",
             ("format", entries.Format),
             ("directory", directory ?? string.Empty),
             ("source", CurrentInfo.SourceName ?? string.Empty),
-            ("chapters", projection.Info.Chapters.Count),
+            ("chapters", chapterSet.Chapters.Count),
             ("applyExpression", ApplyExpression),
             ("expression", Expression),
             ("xmlLanguage", entries.XmlLanguage ?? string.Empty),
             ("encoding", entries.TextEncoding),
             ("bom", entries.EmitBom));
-        LogDiagnostics("Output projection", projection.Diagnostics);
-        var exportSnapshot = Workspace.CaptureExportSnapshot(projection.Info, entries, Workspace.CurrentTrackIndex);
-        var result = await loadSaveWorkflow.SaveAsync(projection.Info, entries, directory, cancellationToken);
+        var exportSnapshot = Workspace.CaptureExportSnapshot(chapterSet, entries, Workspace.CurrentTrackIndex);
+        var result = await loadSaveWorkflow.SaveAsync(chapterSet, entries, directory, cancellationToken);
         if (result.Success && exportSnapshot is not null)
         {
             Workspace.RecordSuccessfulExport(exportSnapshot);

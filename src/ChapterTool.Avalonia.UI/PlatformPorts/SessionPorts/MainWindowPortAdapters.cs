@@ -48,13 +48,13 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
 
     public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => owner.ExpressionEngine.Presets;
 
-    public string Expression => owner.Workspace.Projection.Expression;
+    public string Expression => owner.Workspace.OperationDrafts.Expression;
 
-    public bool ApplyExpression => owner.Workspace.Projection.ApplyExpression;
+    public bool ApplyExpression => owner.Workspace.OperationDrafts.ApplyExpression;
 
-    public string ExpressionPresetId => owner.Workspace.Projection.ExpressionPresetId;
+    public string ExpressionPresetId => owner.Workspace.OperationDrafts.ExpressionPresetId;
 
-    public string ExpressionSourceName => owner.Workspace.Projection.ExpressionSourceName;
+    public string ExpressionSourceName => owner.Workspace.OperationDrafts.ExpressionSourceName;
 
     public async ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken)
     {
@@ -86,7 +86,7 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         string expressionPresetId,
         string expressionSourceName)
     {
-        owner.Workspace.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
+        owner.Workspace.SetExpressionOperationDrafts(expression, applyExpression, expressionPresetId, expressionSourceName);
         notifications.RefreshExpressionFields();
         notifications.RefreshRows();
 
@@ -212,7 +212,7 @@ public sealed class ExportPreferencePortAdapter(MainWindowViewModel owner) : IEx
 }
 
 /// <summary>
-/// Naming mode port backed by workspace projection state through ViewModel setters.
+/// Naming mode port backed by explicit workspace operation drafts through ViewModel setters.
 /// </summary>
 public sealed class NamingPreferencePortAdapter(MainWindowViewModel owner) : INamingPreferencePort
 {

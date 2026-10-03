@@ -8,7 +8,7 @@ namespace ChapterTool.Core.Session;
 
 /// <summary>
 /// Explicit chapter workspace/session owner for the Avalonia shell.
-/// Owns source metadata, typed clip session, edit buffer, projection state,
+/// Owns source metadata, typed clip session, committed content session, operation drafts,
 /// export preferences, and async revision / session-token commit rules.
 /// </summary>
 public sealed class ChapterWorkspace
@@ -30,13 +30,13 @@ public sealed class ChapterWorkspace
     /// <summary>Gets typed multi-clip session, or null when no source is loaded.</summary>
     public ClipSession? ClipSession { get; private set; }
 
-    /// <summary>Gets working edit buffer for the active chapter set.</summary>
+    /// <summary>Gets a transient compatibility view of the selected track.</summary>
     public ChapterSet? CurrentChapterSet { get; private set; }
 
     /// <summary>Gets the undoable content session for the selected chapter set.</summary>
     public SessionState? ContentSession { get; private set; }
 
-    /// <summary>Gets the track index projected into the active legacy ChapterSet view.</summary>
+    /// <summary>Gets the track index represented by the active ChapterSet compatibility view.</summary>
     public int CurrentTrackIndex => ClipSession?.IsCombined == true ? 0 : ClipSession?.SelectedIndex ?? 0;
 
     /// <summary>Gets monotonic operation revision used for anti-stale load/append commits.</summary>
@@ -56,7 +56,7 @@ public sealed class ChapterWorkspace
             return document.Tracks.Select((track, index) =>
             {
                 var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document, index);
-                var options = CreateExportOptionsForProjectedInfo() with { SourceFileName = chapterSet.SourceName };
+                var options = CreateExportOptions() with { SourceFileName = chapterSet.SourceName };
                 return !exportBaselines.TryGetValue(track.Id, out var baseline)
                     || baseline.Digest != ChapterExportFingerprint.Digest(chapterSet, options)
                     || baseline.FormatFingerprint != ChapterExportFingerprint.FormatFingerprint(options);
@@ -122,18 +122,11 @@ public sealed class ChapterWorkspace
         && baseline.Digest == snapshot.Digest
         && baseline.FormatFingerprint == snapshot.FormatFingerprint;
 
-    /// <summary>Gets projection state (naming, order, expression, last-good cache).</summary>
-    public ProjectionState Projection { get; } = new();
+    /// <summary>Gets operation parameters kept as workspace-local drafts.</summary>
+    public ContentOperationDraftState OperationDrafts { get; } = new();
 
     /// <summary>Gets export preference snapshot (format, language, encoding, BOM, save dir).</summary>
     public ExportPreferences ExportPreferences { get; } = new();
-
-    /// <summary>Gets or sets last successful expression projection retained for mid-edit invalid expressions.</summary>
-    public ChapterOutputProjectionResult? LastSuccessfulExpressionProjection
-    {
-        get => Projection.LastSuccessfulExpressionProjection;
-        set => Projection.LastSuccessfulExpressionProjection = value;
-    }
 
     /// <summary>Increments revision for a new load operation; returns the operation id to bind progress/result.</summary>
     public int BeginLoadOperation()
@@ -364,7 +357,6 @@ public sealed class ChapterWorkspace
         ClipSession = null;
         CurrentChapterSet = null;
         ContentSession = null;
-        Projection.ClearProjectionCache();
     }
 
     private void EndContentSession()
@@ -373,33 +365,86 @@ public sealed class ChapterWorkspace
         ContentSession = null;
     }
 
-    /// <summary>Updates the working edit buffer without changing clip ownership.</summary>
-    public void SetCurrentChapterSet(ChapterSet? chapterSet)
+    /// <summary>Converts one legacy service result to an immutable candidate and commits it atomically.</summary>
+    public TransactionOutcome CommitNonStructuralChapterSetResult(ChapterSet result, string operation = "Update chapter content")
     {
-        if (chapterSet is not null && ContentSession is not null)
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        var content = ContentSession;
+        if (content is null)
         {
-            WriteBackCurrentChapterSet(chapterSet);
-            return;
+            throw new InvalidOperationException("No chapter content session is active.");
         }
 
-        if (chapterSet is null)
+        var snapshot = content.Snapshot;
+        var trackIndex = CurrentTrackIndex;
+        var candidate = EditableChapterDocumentAdapter.ApplyNonStructuralChapterSetResult(
+            FocusTrack(snapshot.Document, trackIndex), result);
+        candidate = ReplaceFocusedTrack(snapshot.Document, trackIndex, candidate);
+        var validation = EditableChapterDocumentValidator.Validate(candidate);
+        if (!validation.IsValid)
         {
-            CurrentChapterSet = null;
-            ContentSession = null;
-            return;
+            return new TransactionOutcome(Guid.NewGuid(), TransactionOutcomeKind.Invalid, snapshot, validation.Errors);
         }
 
-        CurrentChapterSet = chapterSet;
-        ContentSession = new SessionState(EditableChapterDocumentAdapter.FromChapterSet(chapterSet));
+        var outcome = content.ExecuteAsync(
+            snapshot.BaseToken,
+            Guid.NewGuid(),
+            $"{operation}:{snapshot.MutationRevision}",
+            (_, _) => ValueTask.FromResult(candidate),
+            operationDescription: operation).AsTask().GetAwaiter().GetResult();
+        if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+        {
+            PublishContentDocument(outcome.Snapshot.Document);
+        }
+
+        return outcome;
     }
 
-    /// <summary>
-    /// Writes the edit buffer back into the typed clip session by mode
-    /// and refreshes the buffer from the written entry.
-    /// </summary>
-    public void WriteBackCurrentChapterSet(ChapterSet info)
+    /// <summary>Builds and commits one candidate against the selected track in the current document.</summary>
+    public TransactionOutcome ExecuteTrackCandidate(
+        string operation,
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> buildCandidate,
+        CancellationToken cancellationToken = default)
     {
-        CommitLegacyResultToContentSession(info);
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        ArgumentNullException.ThrowIfNull(buildCandidate);
+        var content = ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
+        var snapshot = content.Snapshot;
+        var trackIndex = CurrentTrackIndex;
+        var focused = FocusTrack(snapshot.Document, trackIndex);
+        ChapterCandidateBuildResult built;
+        try
+        {
+            built = buildCandidate(focused);
+        }
+        catch (Exception exception) when (exception is not StackOverflowException)
+        {
+            built = new ChapterCandidateBuildResult(false, focused, [], [exception.Message]);
+        }
+
+        if (!built.IsValid || built.Candidate.Tracks.Length != 1)
+        {
+            return new TransactionOutcome(Guid.NewGuid(), TransactionOutcomeKind.Invalid, snapshot, built.Errors);
+        }
+
+        var candidate = ReplaceFocusedTrack(snapshot.Document, trackIndex, built.Candidate);
+        var validation = EditableChapterDocumentValidator.Validate(candidate);
+        if (!validation.IsValid)
+        {
+            return new TransactionOutcome(Guid.NewGuid(), TransactionOutcomeKind.Invalid, snapshot, validation.Errors);
+        }
+
+        var preview = new ChapterContentPreview(Guid.NewGuid(), snapshot.BaseToken, operation,
+            snapshot.Document, candidate, built.TargetIds, [], []);
+        var outcome = ChapterContentOperationSession.ApplyAsync(content, preview, cancellationToken)
+            .AsTask().GetAwaiter().GetResult();
+        if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+        {
+            PublishContentDocument(outcome.Snapshot.Document);
+        }
+
+        return outcome;
     }
 
     /// <summary>Selects a clip index; preserves session identity for append anti-stale checks.</summary>
@@ -414,22 +459,18 @@ public sealed class ChapterWorkspace
         SyncCurrentChapterSet();
     }
 
-    /// <summary>Clears expression projection cache (e.g. when chapter set becomes null).</summary>
-    public void ClearProjectionCache() => Projection.ClearProjectionCache();
-
     /// <summary>
-    /// Atomically applies expression session fields on the workspace projection state.
-    /// Callers should refresh rows once after this method returns.
+    /// Atomically applies expression values to the operation drafts.
     /// </summary>
-    public void ApplyExpressionFields(
+    public void SetExpressionOperationDrafts(
         string expression,
         bool applyExpression,
         string expressionPresetId,
         string expressionSourceName) =>
-        Projection.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
+        OperationDrafts.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
 
     /// <summary>
-    /// Builds export options for save/preview from workspace projection + export preferences.
+    /// Builds export options for committed content and current export preferences.
     /// </summary>
     public ChapterExportOptions CreateExportOptions() =>
         new(
@@ -441,26 +482,12 @@ public sealed class ChapterWorkspace
             ChapterNameTemplateText: string.Empty,
             OrderShift: 0,
             ApplyExpression: false,
-            Expression: Projection.Expression,
-            ExpressionPresetId: Projection.ExpressionPresetId,
-            ExpressionSourceName: Projection.ExpressionSourceName,
+            Expression: OperationDrafts.Expression,
+            ExpressionPresetId: OperationDrafts.ExpressionPresetId,
+            ExpressionSourceName: OperationDrafts.ExpressionSourceName,
             TextEncoding: ExportPreferences.TextEncoding,
             EmitBom: ExportPreferences.EmitBom,
             ProjectOutput: false);
-
-    /// <summary>
-    /// Export options for already-projected chapter sets (expression/naming/order already applied).
-    /// </summary>
-    public ChapterExportOptions CreateExportOptionsForProjectedInfo() =>
-        CreateExportOptions() with
-        {
-            ApplyExpression = false,
-            AutoGenerateNames = false,
-            UseTemplateNames = false,
-            ChapterNameTemplateText = string.Empty,
-            OrderShift = 0,
-            ProjectOutput = false
-        };
 
     /// <summary>Publishes a document already committed to <see cref="ContentSession"/> into the active clip.</summary>
     public void PublishContentDocument(EditableChapterDocument document)
@@ -491,33 +518,28 @@ public sealed class ChapterWorkspace
             : null;
     }
 
-    private void CommitLegacyResultToContentSession(ChapterSet info)
+    private static EditableChapterDocument FocusTrack(EditableChapterDocument source, int trackIndex)
     {
-        if (ContentSession is null)
+        if (trackIndex < 0 || trackIndex >= source.Tracks.Length)
         {
-            ContentSession = new SessionState(EditableChapterDocumentAdapter.FromChapterSet(info));
-            SyncCurrentChapterSet();
-            return;
+            throw new ArgumentOutOfRangeException(nameof(trackIndex));
         }
 
-        var snapshot = ContentSession.Snapshot;
-        var trackIndex = ClipSession?.IsCombined == true ? 0 : ClipSession?.SelectedIndex ?? 0;
-        var candidate = EditableChapterDocumentAdapter.ApplyTrackChapterSetResult(snapshot.Document, trackIndex, info);
-        var outcome = ContentSession.ExecuteAsync(
-            snapshot.BaseToken,
-            Guid.NewGuid(),
-            $"legacy-writeback:{snapshot.MutationRevision}:{info.Chapters.Count}",
-            (_, _) => ValueTask.FromResult(candidate),
-            operationDescription: "Update chapter content")
-            .AsTask()
-            .GetAwaiter()
-            .GetResult();
-        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
-        {
-            throw new InvalidOperationException(string.Join("; ", outcome.Errors));
-        }
+        var track = source.Tracks[trackIndex];
+        var segment = track.Segments.FirstOrDefault();
+        return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
+            segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
+            segment?.Duration ?? source.Duration, segment?.FrameRate ?? source.FrameRate, [track]);
+    }
 
-        PublishContentDocument(outcome.Snapshot.Document);
+    private static EditableChapterDocument ReplaceFocusedTrack(
+        EditableChapterDocument source,
+        int trackIndex,
+        EditableChapterDocument focused)
+    {
+        var tracks = source.Tracks.SetItem(trackIndex, focused.Tracks[0]);
+        return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
+            source.Duration, source.FrameRate, tracks);
     }
 }
 

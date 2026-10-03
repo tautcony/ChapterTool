@@ -165,7 +165,7 @@ They do not describe product priority.
 | Export formats | Provides all Core export formats | Lists and writes all CLI formats | Provides all desktop save formats | Provides all browser save formats | `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs` `[Shared]` |
 | XML language | Provides the language catalog | Supports `--xml-language` | Provides a localized language selector | Provides a language selector | `XmlChapterLanguageCatalog` `[Host variant]` |
 | Text encoding | Provides encoding options | Writes UTF-8 output without a BOM | Uses selected encoding and BOM options | Uses selected encoding and browser download bytes | `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs` `[Host variant]` |
-| Preview | Provides export projection and serialization | Does not provide a separate preview command | Provides preview before save | Provides preview before download | `ProjectionFacade` and `WasmWorkspace.Preview` `[Host variant]` |
+| Preview | Provides pure serialization of supplied content | Does not provide a separate preview command | Serializes committed content before save | Serializes committed content before download | `MainWindowViewModel.BuildPreview` and `WasmWorkspace.Preview` `[Host variant]` |
 | Save to a file | Provides export content | Writes a local output path or standard output | Writes a selected or configured local path | Starts a browser download | `ChapterToolCliApplication`, `RuntimeChapterSaveService`, and `download.js` `[Host variant]` |
 | Standard output | Does not own streams | Writes exported content to stdout and diagnostics to stderr | Does not own terminal output | Not applicable | `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs` `[CLI only]` |
 

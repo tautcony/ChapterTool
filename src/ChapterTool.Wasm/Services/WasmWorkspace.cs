@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
@@ -24,8 +25,8 @@ public sealed class WasmWorkspace : IDisposable
     private readonly WasmChapterService wasmChapterService;
     private readonly FrameRateService frameRateService = new();
     private readonly IChapterExpressionEngine expressionEngine;
-    private readonly ChapterOutputProjectionService projectionService;
     private readonly ChapterEditingService editingService;
+    private readonly ChapterContentCandidateBuilder candidateBuilder;
     private readonly ChapterWorkspace session = new();
     private readonly WasmLocalizer localizer;
     private readonly long maxLoadBytes;
@@ -47,7 +48,6 @@ public sealed class WasmWorkspace : IDisposable
     private ChapterSet? BaseChapterSet
     {
         get => session.CurrentChapterSet;
-        set => session.SetCurrentChapterSet(value);
     }
 
     private ClipSession? ClipSessionState
@@ -73,8 +73,8 @@ public sealed class WasmWorkspace : IDisposable
         this.localizer.CultureChanged += OnCultureChanged;
         this.maxLoadBytes = maxLoadBytes is > 0 and var limit ? limit : MaxLoadBytes;
         expressionEngine = new LuaExpressionScriptService();
-        projectionService = new ChapterOutputProjectionService(expressionEngine);
         editingService = new ChapterEditingService(wasmChapterService.TimeFormatter);
+        candidateBuilder = new ChapterContentCandidateBuilder(editingService);
         SaveFormatIndex = 0;
         ChapterNameModeIndex = 0;
         XmlLanguage = wasmChapterService.XmlLanguages.Contains("und", StringComparer.OrdinalIgnoreCase)
@@ -479,9 +479,12 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var result = editingService.InsertBefore(BaseChapterSet, Math.Clamp(index, 0, BaseChapterSet.Chapters.Count));
+        var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
+        var insertIndex = Math.Clamp(index, 0, track.Chapters.Length);
+        var beforeId = insertIndex < track.Chapters.Length ? track.Chapters[insertIndex].Id : (ChapterId?)null;
+        var outcome = session.ExecuteTrackCandidate("Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId));
+        CompleteCandidate(outcome, "Status.Inserted");
         SelectRow(Math.Clamp(index, 0, Math.Max(0, rows.Count)));
-        ApplyEditResult(result, "Status.Inserted");
     }
 
     public void DuplicateRow(int index)
@@ -491,11 +494,43 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var source = BaseChapterSet.Chapters[index];
-        var result = editingService.InsertBefore(BaseChapterSet, index + 1);
-        var chapters = result.ChapterSet.Chapters.ToList();
-        chapters[index + 1] = source with { DisplayNumber = 0 };
-        SetBaseChapterSet(result.ChapterSet with { Chapters = chapters });
+        var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
+        var source = track.Chapters[index];
+        var beforeId = index + 1 < track.Chapters.Length ? track.Chapters[index + 1].Id : (ChapterId?)null;
+        var sourceId = source.Id;
+        var outcome = session.ExecuteTrackCandidate("Duplicate chapter", document =>
+        {
+            var inserted = candidateBuilder.InsertBefore(document, beforeId);
+            if (!inserted.IsValid)
+            {
+                return inserted;
+            }
+
+            var chapters = inserted.Candidate.Tracks[0].Chapters;
+            var newIndex = Array.FindIndex(chapters.ToArray(), chapter => chapter.Id != sourceId && !document.Tracks[0].Chapters.Any(original => original.Id == chapter.Id));
+            if (newIndex < 0)
+            {
+                return new ChapterCandidateBuildResult(false, document, [], ["The duplicate candidate was not created."]);
+            }
+
+            var duplicate = chapters[newIndex] with
+            {
+                DisplayNumber = chapters[newIndex].DisplayNumber,
+                StartTicks = source.StartTicks,
+                Name = source.Name,
+                FramesInfo = source.FramesInfo,
+                EndTicks = source.EndTicks,
+                FrameAccuracy = source.FrameAccuracy,
+                Kind = source.Kind
+            };
+            var updated = chapters.SetItem(newIndex, duplicate);
+            var updatedTrack = new EditableChapterTrack(inserted.Candidate.Tracks[0].Id,
+                inserted.Candidate.Tracks[0].Name, updated, inserted.Candidate.Tracks[0].Segments);
+            return inserted with { Candidate = new EditableChapterDocument(inserted.Candidate.Id,
+                inserted.Candidate.Title, inserted.Candidate.SourceName, inserted.Candidate.ImportFormat,
+                inserted.Candidate.Duration, inserted.Candidate.FrameRate, [updatedTrack]) };
+        });
+        CompleteCandidate(outcome, "Status.Duplicated", index + 1);
         SelectRow(index + 1);
         AddLog("Info", localizer.Format("Status.Duplicated", index + 1));
         RefreshDisplay(updateStatus: true, statusKey: "Status.Duplicated", statusArgs: [index + 1]);
@@ -516,12 +551,14 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var result = editingService.Delete(BaseChapterSet, indexes, EditingOptions);
+        var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
+        var targetIds = indexes.Where(index => index >= 0 && index < track.Chapters.Length)
+            .Select(index => track.Chapters[index].Id).ToHashSet();
         selectedRowIndexes.Clear();
         SelectedRowIndex = -1;
         selectionAnchor = -1;
-        AddLog("Info", localizer.Format("Status.Deleted", indexes.Count));
-        ApplyEditResult(result, "Status.Deleted", indexes.Count);
+        var outcome = session.ExecuteTrackCandidate("Delete chapters", document => candidateBuilder.Delete(document, targetIds, EditingOptions));
+        CompleteCandidate(outcome, "Status.Deleted", indexes.Count);
     }
 
     public void DeleteRow(int index)
@@ -606,18 +643,13 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var fps = FramesPerSecond > 0 ? (decimal)FramesPerSecond : (decimal)BaseChapterSet.FramesPerSecond;
-        var result = editingService.ShiftFramesForward(BaseChapterSet, frames, fps);
-        if (result.Diagnostics.Count > 0 && result.ChapterSet.Chapters.Count == BaseChapterSet.Chapters.Count
-            && result.Diagnostics.Any(static d => d.Severity == DiagnosticSeverity.Error))
-        {
-            RecordDiagnostics(result.Diagnostics);
-            StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.CannotShift");
-            Notify();
-            return;
-        }
-
-        ApplyEditResult(result, "Status.Shifted", frames);
+        var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
+        var fps = BaseChapterSet.FramesPerSecond > 0
+            ? (decimal)BaseChapterSet.FramesPerSecond
+            : ResolveSelectedFrameRateOption().Value;
+        var targets = track.Chapters.Select(static chapter => chapter.Id).ToHashSet();
+        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps));
+        CompleteCandidate(outcome, "Status.Shifted", frames);
     }
 
     public async Task LoadAsync(string fileName, byte[] content, CancellationToken cancellationToken = default)
@@ -900,16 +932,15 @@ public sealed class WasmWorkspace : IDisposable
 
         var sourceFps = (decimal)BaseChapterSet.FramesPerSecond;
         var target = ResolveSelectedFrameRateOption();
-        var result = ChapterFpsTransformService.ChangeFps(BaseChapterSet, sourceFps, target.Value);
-        if (!result.Success)
+        var outcome = session.ExecuteTrackCandidate("Change chapter frame rate",
+            document => candidateBuilder.ChangeFrameRate(document, sourceFps, target.Value));
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
-            RecordDiagnostics(result.Diagnostics);
-            StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.ChangeFpsFailed");
+            StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("Status.ChangeFpsFailed");
             Notify();
             return;
         }
 
-        SetBaseChapterSet(result.Info);
         PreferredFrameRateIndex = selectedFrameRateIndex;
         AddLog("Info", localizer.Format("Status.ChangedFps", sourceFps, target.Value));
         RefreshDisplay(updateStatus: true, statusKey: "Status.ChangedFpsTo", statusArgs: [target.DisplayName]);
@@ -932,7 +963,33 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        RefreshDisplay(updateStatus: false, statusKey: null);
+        var document = session.ContentSession!.Snapshot.Document;
+        var outcome = session.ExecuteTrackCandidate("Apply chapter options", candidate =>
+        {
+            if (ApplyExpression && candidate.FrameRate is null)
+            {
+                var detected = ApplyFrames(BaseChapterSet!).FramesPerSecond;
+                if (detected > 0)
+                {
+                    var rate = new ChapterFrameRate(checked((long)Math.Round(detected * 1_000_000m, MidpointRounding.AwayFromZero)), 1_000_000);
+                    var track = candidate.Tracks[0];
+                    var segments = track.Segments.Select(segment => segment with { FrameRate = rate }).ToImmutableArray();
+                    var ratedTrack = new EditableChapterTrack(track.Id, track.Name, track.Chapters, segments);
+                    candidate = new EditableChapterDocument(candidate.Id, candidate.Title, candidate.SourceName,
+                        candidate.ImportFormat, candidate.Duration, rate, [ratedTrack]);
+                }
+            }
+
+            return candidateBuilder.ApplyOutputOptions(candidate,
+                ChapterNameModeIndex == 1,
+                ChapterNameModeIndex == 2,
+                ChapterNameTemplateText ?? string.Empty,
+                OrderShift,
+                ApplyExpression,
+                string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim());
+        });
+        CompleteCandidate(outcome, "Status.FramesUpdated", FramesPerSecondDisplay,
+            document.Tracks[session.CurrentTrackIndex].Chapters.Length);
     }
 
     /// <summary>
@@ -969,7 +1026,7 @@ public sealed class WasmWorkspace : IDisposable
             return true;
         }
 
-        RefreshDisplay(updateStatus: true, statusKey: "Status.ExpressionPresetApplied", statusArgs: [preset.DisplayName]);
+        ApplyOptionsAndRefresh();
         return true;
     }
 
@@ -1003,7 +1060,7 @@ public sealed class WasmWorkspace : IDisposable
         ChapterNameTemplateStatus = Path.GetFileName(fileName);
         ChapterNameModeIndex = 2;
         AddLog("Info", localizer.Format("Status.TemplateLoaded", ChapterNameTemplateStatus));
-        RefreshDisplay(updateStatus: true, statusKey: "Status.TemplateLoaded", statusArgs: [ChapterNameTemplateStatus]);
+        ApplyOptionsAndRefresh();
         return true;
     }
 
@@ -1029,10 +1086,6 @@ public sealed class WasmWorkspace : IDisposable
 
         try
         {
-            var framed = ApplyFrames(BaseChapterSet);
-            SetBaseChapterSet(framed.Info);
-            FramesPerSecond = BaseChapterSet.FramesPerSecond;
-
             var format = ChapterContentService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var export = wasmChapterService.Export(BaseChapterSet, options);
@@ -1078,10 +1131,6 @@ public sealed class WasmWorkspace : IDisposable
         try
         {
             // Ensure frames/FPS on the base set are current before export projection.
-            var framed = ApplyFrames(BaseChapterSet);
-            SetBaseChapterSet(framed.Info);
-            FramesPerSecond = BaseChapterSet.FramesPerSecond;
-
             var format = ChapterContentService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
             var exportSnapshot = session.CaptureExportSnapshot(BaseChapterSet, options, session.CurrentTrackIndex);
@@ -1129,33 +1178,30 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var chapters = BaseChapterSet.Chapters.ToList();
-        var chapter = chapters[index];
-        if (chapter.IsSeparator)
+        var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
+        var chapterId = track.Chapters[index].Id;
+        var outcome = session.ExecuteTrackCandidate("Update chapter content", document =>
         {
+            var candidate = new ChapterCandidateBuildResult(true, document, [chapterId], []);
             if (name is not null)
             {
-                chapters[index] = chapter with { Name = name };
-                SetBaseChapterSet(BaseChapterSet with { Chapters = chapters });
-                RefreshDisplay(updateStatus: false, statusKey: null);
+                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, (decimal)FramesPerSecond);
             }
 
+            if (candidate.IsValid && timeText is not null && track.Chapters[index].Kind != ChapterKind.Separator)
+            {
+                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, (decimal)FramesPerSecond);
+            }
+
+            return candidate;
+        });
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+        {
+            StatusText = outcome.Errors.FirstOrDefault() ?? "The chapter edit was rejected.";
+            Notify();
             return;
         }
 
-        if (timeText is not null)
-        {
-            var start = wasmChapterService.TimeFormatter.ParseOrZero(timeText);
-            chapter = chapter with { StartTime = start };
-        }
-
-        if (name is not null)
-        {
-            chapter = chapter with { Name = name };
-        }
-
-        chapters[index] = chapter;
-        SetBaseChapterSet(BaseChapterSet with { Chapters = chapters });
         AddLog("Info", $"Edited row {index + 1}.");
         RefreshDisplay(updateStatus: false, statusKey: null);
     }
@@ -1213,7 +1259,6 @@ public sealed class WasmWorkspace : IDisposable
         {
             ClipOptions = [];
             SelectedClipId = null;
-            BaseChapterSet = null;
             return;
         }
 
@@ -1237,7 +1282,6 @@ public sealed class WasmWorkspace : IDisposable
                 ?? ClipOptions.FirstOrDefault()?.Id;
         }
 
-        BaseChapterSet = session.CurrentChapterSet;
         if (BaseChapterSet is not null)
         {
             FramesPerSecond = BaseChapterSet.FramesPerSecond;
@@ -1260,14 +1304,12 @@ public sealed class WasmWorkspace : IDisposable
         }
 
         var framed = ApplyFrames(BaseChapterSet);
-        SetBaseChapterSet(framed.Info);
-        FramesPerSecond = BaseChapterSet.FramesPerSecond;
+        FramesPerSecond = (double)framed.FramesPerSecond;
         RebuildFrameRateChoices(BaseChapterSet);
-
-        var projection = projectionService.Project(BaseChapterSet, CreateExportOptions());
+        var displayContent = framed.Info;
         rows =
         [
-            .. projection.Info.Chapters
+            .. displayContent.Chapters
                 .Select(chapter => WasmWorkspaceProjection.ToRow(chapter, wasmChapterService.TimeFormatter))
         ];
 
@@ -1278,29 +1320,10 @@ public sealed class WasmWorkspace : IDisposable
             SelectedRowIndex = selectedRowIndexes.Count > 0 ? selectedRowIndexes.Max() : -1;
         }
 
-        var projectionDiagnostics = WasmWorkspaceProjection.ToDiagnostics(projection.Diagnostics);
-        diagnostics = projectionDiagnostics;
-        if (projectionDiagnostics.Count > 0)
-        {
-            AddLog(
-                "Warning",
-                $"{projectionDiagnostics.Count} diagnostic(s) reported.",
-                string.Join(Environment.NewLine, projectionDiagnostics.Select(d => $"{d.Code}: {d.Message}")));
-        }
-
-        // Expression failures always surface Core diagnostics to status/log even when a success key was requested.
-        if (ApplyExpression && projectionDiagnostics.Count > 0)
-        {
-            var first = projectionDiagnostics[0];
-            SetRawStatus($"{first.Severity}: {first.Message}");
-        }
-        else if (updateStatus && statusKey is not null)
+        diagnostics = [];
+        if (updateStatus && statusKey is not null)
         {
             SetLocalizedStatus(statusKey, statusArgs);
-        }
-        else if (ApplyExpression)
-        {
-            SetLocalizedStatus("Status.ExpressionApplied", FramesPerSecondDisplay, rows.Count);
         }
         else if (updateStatus)
         {
@@ -1368,11 +1391,11 @@ public sealed class WasmWorkspace : IDisposable
             Format: ChapterContentService.FormatAt(SaveFormatIndex),
             XmlLanguage: XmlLanguage,
             SourceFileName: SourcePath,
-            AutoGenerateNames: ChapterNameModeIndex == 1,
-            UseTemplateNames: ChapterNameModeIndex == 2,
-            ChapterNameTemplateText: ChapterNameModeIndex == 2 ? ChapterNameTemplateText : string.Empty,
-            OrderShift: OrderShift,
-            ApplyExpression: ApplyExpression,
+            AutoGenerateNames: false,
+            UseTemplateNames: false,
+            ChapterNameTemplateText: string.Empty,
+            OrderShift: 0,
+            ApplyExpression: false,
             Expression: string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim(),
             ExpressionPresetId: ExpressionPresetId,
             ExpressionSourceName: !string.IsNullOrWhiteSpace(ExpressionPresetId)
@@ -1382,12 +1405,11 @@ public sealed class WasmWorkspace : IDisposable
                 : string.Empty,
             TextEncoding: TextEncoding,
             EmitBom: EmitBom,
-            ProjectOutput: true);
+            ProjectOutput: false);
 
     private void ClearSession(bool keepPath = false, bool keepReload = false)
     {
         importResult = null;
-        BaseChapterSet = null;
         ClipSessionState = null;
         activeGroupIndex = 0;
         rows = [];
@@ -1451,10 +1473,15 @@ public sealed class WasmWorkspace : IDisposable
 
     private void Notify() => Changed?.Invoke();
 
-    private void ApplyEditResult(ChapterEditResult result, string statusKey, params object[] statusArgs)
+    private void CompleteCandidate(TransactionOutcome outcome, string statusKey, params object[] statusArgs)
     {
-        SetBaseChapterSet(result.ChapterSet);
-        RecordDiagnostics(result.Diagnostics);
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+        {
+            StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("Status.CannotShift");
+            Notify();
+            return;
+        }
+
         var status = localizer.Format(statusKey, statusArgs);
         AddLog("Info", status);
         RefreshDisplay(updateStatus: true, statusKey: statusKey, statusArgs: statusArgs);
@@ -1509,17 +1536,6 @@ public sealed class WasmWorkspace : IDisposable
         }
     }
 
-    private void SetBaseChapterSet(ChapterSet value)
-    {
-        if (ClipSessionState is not null)
-        {
-            session.WriteBackCurrentChapterSet(value);
-        }
-        else
-        {
-            session.SetCurrentChapterSet(value);
-        }
-    }
 }
 
 public sealed record FrameRateChoice(int Index, string DisplayName, FrameRateOption Option);

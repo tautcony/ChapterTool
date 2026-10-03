@@ -24,8 +24,9 @@ Canonical data contracts shared across the pipeline:
 
 `EditableChapterTrack.Segments` stores current boundaries and media placement. `ClipSession` stores selector metadata and does not keep editable chapter backups.
 
-`ChapterSet` is the main unit passed between import, edit, transform, and export flows.
-`EditableChapterDocument` is the immutable snapshot contract for document-based editing flows.
+`ChapterSet` is a stateless compatibility contract for importers, legacy services, and conversion APIs.
+Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState`.
+`ChapterWorkspace.CurrentChapterSet` is a transient selected-track view. It is not editable workspace storage.
 
 ### Diagnostics
 
@@ -117,12 +118,12 @@ In-memory chapter mutations:
 Host-agnostic interactive session state shared by Avalonia and WASM:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, selected-track projections, staged replacement checks, and export baselines
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, transient selected-track views, staged replacement checks, and export baselines
 - `src/ChapterTool.Core/Session/ChapterExportBaseline.cs` — snapshot-only export state and canonical content and format fingerprints
 - `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, session-end cancellation, request idempotency, and history navigation
 - `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
 - `src/ChapterTool.Core/Session/ChapterContentOperationSession.cs` — typed preview diffs and stale-safe apply for content candidates
-- `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
+- `src/ChapterTool.Core/Session/ContentOperationDraftState.cs` — naming, numbering, and expression parameters for explicit operations
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
 - `src/ChapterTool.Core/Session/ChapterSourceDocument.cs` — host-neutral chapter source identity (`LocalPathChapterSource`, `BufferedChapterSource`)
 
@@ -159,17 +160,17 @@ Frame/time and expression logic:
 
 ### Exporting
 
-Output projection and format serialization:
+Compatibility transforms and pure format serialization:
 
 - `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
-- `ChapterExportService.ExportCompatibility` applies legacy transform options once.
-- `ChapterExportService.Serialize` writes a prepared document without transforms.
+- `ChapterExportService.ExportCompatibility` adapts legacy transform options to one stateless conversion.
+- `ChapterExportService.Serialize` writes prepared content without transforms. Interactive hosts call it with committed document content.
 - `src/ChapterTool.Core/Exporting/SaveFormatOption.cs`: host-facing export format metadata
 - `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs`
 - `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
-- `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
+- `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` — compatibility conversion only; interactive tables and exports do not use it
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`
 - `src/ChapterTool.Core/Exporting/ChapterSavePath.cs` — deterministic output file names and non-colliding path allocation
@@ -188,9 +189,9 @@ Browser host:
 
 - `src/ChapterTool.Wasm` is the Blazor WebAssembly browser app. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
 - `src/ChapterTool.Wasm/Pages/Home.razor` is the browser workspace page.
-- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, projection, export orchestration, history commands, diagnostics, activity logs, and localized status strings. It navigates the shared Core `ChapterWorkspace.ContentSession`.
+- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, candidate commits, export orchestration, history commands, diagnostics, activity logs, and localized status strings. It navigates the shared Core `ChapterWorkspace.ContentSession`.
 - `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` blocks browser shortcut keys during text editing.
-- `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, projection, and export services.
+- `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, and export services. `WasmWorkspaceProjection` maps content and diagnostics to browser view models.
 - Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
 - The JSON resources are generated from the Avalonia AXAML locales by `scripts/axaml-to-json.py`. Use its `--check` mode to detect drift.
 - Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. `WasmApplicationSettings` mirrors the Contracts `AppSettings` fields, including the delete-rows timing and frame display preferences. The host stores settings in browser storage through the workspace path.
@@ -239,7 +240,7 @@ Start with:
 
 Start with:
 
-- projection before serialization: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
+- legacy option adaptation: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - format-specific serialization: `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
 - snapshot serialization options: `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
 - immutable snapshot entry point: `ChapterExportService.Serialize(EditableChapterDocument, ChapterSerializationOptions)`

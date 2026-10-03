@@ -1274,7 +1274,7 @@ public sealed class MainWindowViewModelTests
         await vm.PreviewContentOptionsCommand.ExecuteAsync();
         await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
-        Assert.Equal([3, 4], vm.Rows.Select(static row => row.Number).ToArray());
+        Assert.Equal([3, 0, 4], vm.Rows.Select(static row => row.Number).ToArray());
         var preview = vm.BuildPreview();
         Assert.Contains("CHAPTER03=00:00:00.000", preview, StringComparison.Ordinal);
         Assert.Contains("CHAPTER04=00:00:07.000", preview, StringComparison.Ordinal);

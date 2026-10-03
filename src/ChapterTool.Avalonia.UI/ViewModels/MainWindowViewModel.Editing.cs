@@ -99,9 +99,7 @@ public sealed partial class MainWindowViewModel
         var transition = ClipEditingCoordinator.ToggleCombine();
         if (!transition.Succeeded || transition.Session is null)
         {
-            ApplyEdit(
-                transition.EditResult,
-                CombineActionText("Combine segments", originalGroup));
+            SetStatus(null, transition.EditResult.Diagnostics.FirstOrDefault());
             return;
         }
 
@@ -130,21 +128,6 @@ public sealed partial class MainWindowViewModel
         var sourceType = ChapterImportFormats.DisplayName(group.Entries[0].ChapterSet.ImportFormat);
         return $"{verb}: entries={group.Entries.Count}, sourceType={sourceType}";
     }
-
-    private void ApplyEdit(ChapterEditResult result, string? action = null)
-    {
-        var effectiveAction = action ?? "Edit chapters";
-        var before = CurrentInfo?.Chapters.Count ?? 0;
-        CurrentInfo = result.ChapterSet;
-        ApplyFrameInfo(logResult: false);
-        SetStatus(result.Diagnostics.Count == 0 ? "Status.Updated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log($"{effectiveAction}: chapters {before} -> {CurrentInfo.Chapters.Count}", "Edit",
-            ("action", effectiveAction), ("before", before), ("after", CurrentInfo.Chapters.Count));
-        LogDiagnostics("Edit", result.Diagnostics);
-        NotifyStateChanged();
-    }
-
-    internal void ApplyEditFromPort(ChapterEditResult result, string? action = null) => ApplyEdit(result, action);
 
     internal void ApplyContentOutcome(TransactionOutcome outcome, string action)
     {
@@ -179,7 +162,7 @@ public sealed partial class MainWindowViewModel
                 document,
                 autoGenerateNames,
                 useTemplateNames,
-                Workspace.Projection.ChapterNameTemplateText,
+                Workspace.OperationDrafts.ChapterNameTemplateText,
                 orderShift: 0,
                 applyExpression: false,
                 expression: "t"));
@@ -188,12 +171,12 @@ public sealed partial class MainWindowViewModel
         ClipEditingCoordinator.PrepareCandidate("Apply chapter options", document =>
             ClipEditingCoordinator.CandidateBuilder.ApplyOutputOptions(
                 document,
-                Workspace.Projection.AutoGenerateNames,
-                Workspace.Projection.UseTemplateNames,
-                Workspace.Projection.ChapterNameTemplateText,
-                Workspace.Projection.OrderShift,
-                Workspace.Projection.ApplyExpression,
-                Workspace.Projection.Expression));
+                Workspace.OperationDrafts.AutoGenerateNames,
+                Workspace.OperationDrafts.UseTemplateNames,
+                Workspace.OperationDrafts.ChapterNameTemplateText,
+                Workspace.OperationDrafts.OrderShift,
+                Workspace.OperationDrafts.ApplyExpression,
+                Workspace.OperationDrafts.Expression));
 
     internal ChapterContentPreview PrepareFrameRateOperation(decimal sourceFps, decimal targetFps) =>
         ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
@@ -208,14 +191,14 @@ public sealed partial class MainWindowViewModel
         if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
             && preview.Operation is "Apply chapter options" or "Apply expression" or "Apply template names")
         {
-            Workspace.ApplyExpressionFields(
-                Workspace.Projection.Expression,
+            Workspace.SetExpressionOperationDrafts(
+                Workspace.OperationDrafts.Expression,
                 applyExpression: false,
-                Workspace.Projection.ExpressionPresetId,
-                Workspace.Projection.ExpressionSourceName);
-            Workspace.Projection.SetAutoGenerateNames(false);
-            Workspace.Projection.SetUseTemplateNames(false);
-            Workspace.Projection.SetOrderShift(0);
+                Workspace.OperationDrafts.ExpressionPresetId,
+                Workspace.OperationDrafts.ExpressionSourceName);
+            Workspace.OperationDrafts.SetAutoGenerateNames(false);
+            Workspace.OperationDrafts.SetUseTemplateNames(false);
+            Workspace.OperationDrafts.SetOrderShift(0);
             OnPropertyChanged(nameof(AutoGenerateNames));
             OnPropertyChanged(nameof(UseTemplateNames));
             OnPropertyChanged(nameof(OrderShift));
@@ -274,8 +257,6 @@ public sealed partial class MainWindowViewModel
         var result = outcome.FrameResult;
         var detection = outcome.Detection;
         var appliedOption = outcome.AppliedOption;
-        CurrentInfo = outcome.CurrentChapterSet;
-
         if (detection is not null)
         {
             selectedFrameRateOption = frameRateService.Options[0];
@@ -345,8 +326,7 @@ public sealed partial class MainWindowViewModel
 
         if (ClipOptions.Count == 0)
         {
-            Workspace.SetCurrentChapterSet(null);
-            Workspace.ClearProjectionCache();
+            Workspace.ClearSession();
             return;
         }
 

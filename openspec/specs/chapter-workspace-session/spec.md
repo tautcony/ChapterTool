@@ -1,7 +1,7 @@
 # chapter-workspace-session Specification
 
 ## Purpose
-Define the explicit chapter workspace/session boundary that owns GUI chapter state, async revisions, projection state, and export preferences.
+Define the explicit chapter workspace/session boundary that owns GUI chapter state, async revisions, content operation drafts, and export preferences.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ The Avalonia shell SHALL own loaded chapter session state through an explicit wo
 
 #### Scenario: Workspace exists after construction
 - **WHEN** the main window ViewModel is constructed for normal GUI use
-- **THEN** it SHALL hold or be composed with a single chapter workspace/session object that owns source path metadata, clip session state, the current editable chapter set, projection options, and export preferences used by commands
+- **THEN** it SHALL hold or be composed with a single chapter workspace/session object that owns source path metadata, clip session metadata, one authoritative content session, operation drafts, and export preferences used by commands
 
 #### Scenario: Load replaces workspace session atomically
 - **WHEN** a source load succeeds
@@ -84,21 +84,24 @@ The workspace SHALL represent multi-clip selection and combined-clip mode as an 
 - **THEN** the workspace SHALL write the resulting chapter set back into the active clip session according to mode (selected split entry vs combined entry)
 - **AND** callers SHALL NOT need a separate `belongsToSelectedClip` boolean to decide ownership
 
-### Requirement: Projection state is owned by the workspace
-Naming mode, order shift, expression application, expression text/preset/source metadata, and last-successful expression projection cache SHALL be owned by a projection state surface on the workspace.
+### Requirement: Operation drafts do not project committed content
+Naming, numbering, and expression parameters SHALL remain drafts until the user applies a content operation. Draft values SHALL NOT change the current document, table rows, format preview, or export.
 
-#### Scenario: Projection options feed rows and export identically
-- **WHEN** projection options change or the current chapter set changes
-- **THEN** chapter rows and preview/save projection inputs SHALL be derived from the same workspace projection state
+#### Scenario: Draft options change
+- **WHEN** the user edits template, numbering, or expression parameters
+- **THEN** the workspace SHALL keep those values as operation drafts
+- **AND** the current document, rows, preview, and export SHALL continue to use committed content
 
-#### Scenario: Invalid mid-edit expression keeps last successful projection
-- **WHEN** expression application is enabled and the current expression is temporarily invalid while a previous successful projection exists
-- **THEN** displayed rows MAY continue showing the last successful projected output until a valid projection replaces it
-- **AND** the diagnostic path SHALL still surface the current expression failure
+#### Scenario: Operation candidate is applied
+- **WHEN** the user applies a valid operation candidate
+- **THEN** the workspace SHALL commit the candidate through `ContentSession`
+- **AND** table rows, format preview, and export SHALL read that committed document
+- **AND** undo SHALL restore the preceding committed content
 
-#### Scenario: Expression state mutation does not thrash intermediate refreshes
-- **WHEN** several expression-related fields are updated as one apply operation
-- **THEN** the workspace/ViewModel SHALL avoid intermediate row refreshes that use partially updated expression fields
+#### Scenario: Expression candidate is invalid
+- **WHEN** any chapter expression result is invalid or violates document invariants
+- **THEN** the operation SHALL fail without partially changing the document or history
+- **AND** the current diagnostic SHALL be reported without retaining a prior projected row set
 
 ### Requirement: Export preferences are a workspace snapshot
 Save format, XML language, text encoding, BOM emission, and effective save-directory resolution inputs SHALL be readable as an export-preference snapshot from the workspace for save and preview.

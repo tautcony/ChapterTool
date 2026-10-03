@@ -27,7 +27,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private readonly ChapterExportService exportService;
     private readonly IShellService? shellService;
     private readonly LoadSaveWorkflow loadSaveWorkflow;
-    private readonly ProjectionFacade projectionFacade;
+    private readonly WorkspaceContentRows workspaceContentRows;
     private readonly StatusDiagnosticsPresenter statusDiagnosticsPresenter;
     private readonly DisplayOptionCoordinator displayOptionCoordinator;
     private readonly EventHandler cultureChangedHandler;
@@ -47,7 +47,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private ChapterSet? CurrentInfo
     {
         get => Workspace.CurrentChapterSet;
-        set => Workspace.SetCurrentChapterSet(value);
     }
 
     public MainWindowViewModel(AvaloniaHostComposition composition)
@@ -135,7 +134,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         ExpressionAuthoringService = expressionAuthoringService ?? new ExpressionAuthoringService(this.ExpressionEngine);
         loadSaveWorkflow = new LoadSaveWorkflow(Workspace, loadService, saveService);
         ClipEditingCoordinator = new ClipEditingCoordinator(Workspace, this.editingService, this.frameRateService);
-        projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, formatter);
+        workspaceContentRows = new WorkspaceContentRows(Workspace, formatter);
         statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, logger, formatter, value => StatusText = value);
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
         var toolSession = new MainWindowToolSession(this);
@@ -466,14 +465,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool AutoGenerateNames
     {
-        get => Workspace.Projection.AutoGenerateNames;
+        get => Workspace.OperationDrafts.AutoGenerateNames;
         set
         {
-            var previousTemplate = Workspace.Projection.UseTemplateNames;
-            if (Workspace.Projection.SetAutoGenerateNames(value))
+            var previousTemplate = Workspace.OperationDrafts.UseTemplateNames;
+            if (Workspace.OperationDrafts.SetAutoGenerateNames(value))
             {
                 OnPropertyChanged();
-                if (previousTemplate != Workspace.Projection.UseTemplateNames)
+                if (previousTemplate != Workspace.OperationDrafts.UseTemplateNames)
                 {
                     OnPropertyChanged(nameof(UseTemplateNames));
                 }
@@ -487,14 +486,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool UseTemplateNames
     {
-        get => Workspace.Projection.UseTemplateNames;
+        get => Workspace.OperationDrafts.UseTemplateNames;
         set
         {
-            var previousAuto = Workspace.Projection.AutoGenerateNames;
-            if (Workspace.Projection.SetUseTemplateNames(value))
+            var previousAuto = Workspace.OperationDrafts.AutoGenerateNames;
+            if (Workspace.OperationDrafts.SetUseTemplateNames(value))
             {
                 OnPropertyChanged();
-                if (previousAuto != Workspace.Projection.AutoGenerateNames)
+                if (previousAuto != Workspace.OperationDrafts.AutoGenerateNames)
                 {
                     OnPropertyChanged(nameof(AutoGenerateNames));
                 }
@@ -508,10 +507,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ChapterNameTemplateText
     {
-        get => Workspace.Projection.ChapterNameTemplateText;
+        get => Workspace.OperationDrafts.ChapterNameTemplateText;
         set
         {
-            if (Workspace.Projection.SetChapterNameTemplateText(value))
+            if (Workspace.OperationDrafts.SetChapterNameTemplateText(value))
             {
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
@@ -564,10 +563,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public int OrderShift
     {
-        get => Workspace.Projection.OrderShift;
+        get => Workspace.OperationDrafts.OrderShift;
         set
         {
-            if (Workspace.Projection.SetOrderShift(value))
+            if (Workspace.OperationDrafts.SetOrderShift(value))
             {
                 OnPropertyChanged();
                 RefreshRows();
@@ -577,10 +576,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool ApplyExpression
     {
-        get => Workspace.Projection.ApplyExpression;
+        get => Workspace.OperationDrafts.ApplyExpression;
         set
         {
-            if (Workspace.Projection.SetApplyExpression(value))
+            if (Workspace.OperationDrafts.SetApplyExpression(value))
             {
                 OnPropertyChanged();
                 RefreshRows();
@@ -590,10 +589,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string Expression
     {
-        get => Workspace.Projection.Expression;
+        get => Workspace.OperationDrafts.Expression;
         set
         {
-            if (Workspace.Projection.SetExpression(value))
+            if (Workspace.OperationDrafts.SetExpression(value))
             {
                 OnPropertyChanged();
                 RefreshRows();
@@ -603,10 +602,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ExpressionPresetId
     {
-        get => Workspace.Projection.ExpressionPresetId;
+        get => Workspace.OperationDrafts.ExpressionPresetId;
         set
         {
-            if (Workspace.Projection.SetExpressionPresetId(value))
+            if (Workspace.OperationDrafts.SetExpressionPresetId(value))
             {
                 OnPropertyChanged();
             }
@@ -615,10 +614,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ExpressionSourceName
     {
-        get => Workspace.Projection.ExpressionSourceName;
+        get => Workspace.OperationDrafts.ExpressionSourceName;
         set
         {
-            if (Workspace.Projection.SetExpressionSourceName(value))
+            if (Workspace.OperationDrafts.SetExpressionSourceName(value))
             {
                 OnPropertyChanged();
             }
@@ -686,10 +685,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
                 return false;
             }
 
-            var projection = CurrentOutputProjection();
             var capture = Workspace.CaptureExportSnapshot(
-                projection.Info,
-                CurrentExportOptionsForProjectedInfo(),
+                workspaceContentRows.GetCurrentChapterSet(),
+                Workspace.CreateExportOptions(),
                 Workspace.CurrentTrackIndex);
             return !Workspace.IsExported(capture);
         }
@@ -960,11 +958,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             return string.Empty;
         }
 
-        var projection = CurrentOutputProjection();
-        var entries = CurrentExportOptionsForProjectedInfo();
+        var chapterSet = workspaceContentRows.GetCurrentChapterSet();
+        var entries = Workspace.CreateExportOptions();
 
         // Use composition-injected export service (same path family as save), not ad-hoc construction.
-        var result = exportService.Export(projection.Info, entries);
+        var result = exportService.Export(chapterSet, entries);
         if (!result.Success)
         {
             return string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message));

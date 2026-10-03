@@ -120,6 +120,77 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task History_scale_measurements_report_document_size_and_retained_branches()
+    {
+        const int editsPerBranch = 32;
+        foreach (var chapterCount in new[] { 1, 100, 1000 })
+        {
+            foreach (var branchCount in new[] { 1, 4, 8 })
+            {
+                var chapters = Enumerable.Range(0, chapterCount)
+                    .Select(index => CreateChapter(index + 1, $"Chapter {index}"))
+                    .ToArray();
+                var session = new SessionState(CreateDocument(chapters));
+                var rootId = session.GetHistorySnapshot().RootId;
+                var branchLeaves = new List<Guid>(branchCount);
+                var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
+                var stopwatch = Stopwatch.StartNew();
+
+                for (var branchIndex = 0; branchIndex < branchCount; branchIndex++)
+                {
+                    if (branchIndex > 0)
+                    {
+                        var root = await session.NavigateToAsync(rootId);
+                        Assert.Equal(HistoryNavigationOutcomeKind.Committed, root.Kind);
+                    }
+
+                    for (var editIndex = 0; editIndex < editsPerBranch; editIndex++)
+                    {
+                        await CommitAsync(session,
+                            document => ChangeChapter(document, 0, name: $"branch-{branchIndex}-edit-{editIndex}"),
+                            $"Branch {branchIndex} edit {editIndex}");
+                    }
+
+                    branchLeaves.Add(session.GetHistorySnapshot().CursorId);
+                }
+
+                var buildMilliseconds = stopwatch.ElapsedMilliseconds;
+                var allocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore;
+                var retainedBytes = GC.GetTotalMemory(forceFullCollection: true);
+                stopwatch.Restart();
+                for (var editIndex = 0; editIndex < editsPerBranch; editIndex++)
+                {
+                    var undo = await session.UndoAsync();
+                    Assert.Equal(HistoryNavigationOutcomeKind.Committed, undo.Kind);
+                }
+
+                var undoTicks = stopwatch.ElapsedTicks;
+                stopwatch.Restart();
+                for (var editIndex = 0; editIndex < editsPerBranch; editIndex++)
+                {
+                    var redo = await session.RedoAsync();
+                    Assert.Equal(HistoryNavigationOutcomeKind.Committed, redo.Kind);
+                }
+
+                var redoTicks = stopwatch.ElapsedTicks;
+                if (branchCount == 1)
+                {
+                    _ = await session.NavigateToAsync(rootId);
+                }
+
+                stopwatch.Restart();
+                var distantBranch = await session.NavigateToAsync(branchLeaves[0]);
+                var distantBranchTicks = stopwatch.ElapsedTicks;
+                Assert.Equal(HistoryNavigationOutcomeKind.Committed, distantBranch.Kind);
+                Assert.Equal(editsPerBranch * branchCount + 1, session.GetHistorySnapshot().Nodes.Length);
+
+                output.WriteLine(
+                    $"History scale: chapters={chapterCount}; branches={branchCount}; editsPerBranch={editsPerBranch}; retainedNodes={session.GetHistorySnapshot().Nodes.Length}; allocatedBytes={allocatedBytes}; retainedHeapBytesAfterFullGC={retainedBytes}; buildAndBranchMs={buildMilliseconds}; undo32Ticks={undoTicks}; redo32Ticks={redoTicks}; distantBranchTicks={distantBranchTicks}; stopwatchFrequency={Stopwatch.Frequency}.");
+            }
+        }
+    }
+
+    [Fact]
     public async Task Failure_during_change_set_or_node_creation_preserves_published_state_and_history()
     {
         foreach (var failurePoint in new[] { SessionHistoryFailurePoint.ChangeSetConstruction, SessionHistoryFailurePoint.NodePublication })

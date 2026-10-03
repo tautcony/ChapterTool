@@ -236,25 +236,20 @@ The Core expression subsystem SHALL analyze Lua expression script text for edito
 - **WHEN** expression completions are returned
 - **THEN** each completion SHALL include a token kind/category suitable for the UI to visually distinguish variables, functions, keywords, and presets
 
-### Requirement: Shared preview and save projection pipeline
-The system SHALL use one Core output projection pipeline for preview and save so Lua expression transforms, diagnostics, numbering, and naming are consistent.
+### Requirement: Interactive serialization does not transform content
+The serializer SHALL format the chapter content it receives. Interactive naming, numbering, and expression changes SHALL be committed to the document before preview or export.
 
-#### Scenario: Projection does not mutate source chapters
-- **WHEN** preview or save requests projected output from a source chapter set
-- **THEN** Core SHALL return projected chapter data without mutating the original `ChapterInfo` input
+#### Scenario: Preview and save serialize the same committed content
+- **WHEN** preview and save use the same document snapshot and format options
+- **THEN** both SHALL serialize the same chapter values
+- **AND** serialization SHALL NOT apply expression, name, or numbering transforms
 
-#### Scenario: Projection order is deterministic
-- **WHEN** expression application, order shift, and name generation are all enabled
-- **THEN** Core SHALL first apply Lua expression transforms to non-separator chapter times
-- **AND** it SHALL normalize transformed times and refresh frame display state
-- **AND** it SHALL then apply output numbering/order shift and output name generation
+#### Scenario: Compatibility conversion applies an explicit transform once
+- **WHEN** a stateless compatibility API receives legacy transform options
+- **THEN** it MAY adapt those options to one content transformation
+- **AND** it SHALL serialize the transformed result without applying the transformation again
 
-#### Scenario: Preview and save share diagnostics
-- **WHEN** Lua expression projection emits diagnostics during preview or save
-- **THEN** the projection result SHALL include those diagnostics in the same structured form for both callers
-- **AND** chapters whose Lua expression failed SHALL retain their original times while the rest of the output projection continues
-
-#### Scenario: Separators are structural during projection
-- **WHEN** projected output contains separator rows
+#### Scenario: Separators are structural during serialization
+- **WHEN** serialized output contains separator rows
 - **THEN** Core SHALL NOT execute Lua expressions for separator rows
-- **AND** exported `OutputChapters` SHALL include only non-separator chapters after projection
+- **AND** formats that omit separators SHALL report output only for supported chapter rows

@@ -316,37 +316,38 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task ExpressionModeProjectsTimesThroughPreview()
+    public async Task ExpressionModeCommitsTimesOnceBeforePreview()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
         workspace.ApplyExpression = true;
-        workspace.Expression = "t + 1";
+        workspace.Expression = "t / 2";
         workspace.ApplyOptionsAndRefresh();
+        Assert.Contains("00:00:41.728", workspace.Rows[1].TimeText, StringComparison.Ordinal);
 
         var preview = workspace.Preview();
         Assert.True(preview.Success);
-        Assert.Contains("00:00:01", preview.Content, StringComparison.Ordinal);
+        Assert.Contains("00:00:41.728", preview.Content, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task ExpressionPresetAppliesCoreEngineScriptAndProjectsRows()
+    public async Task ExpressionPresetBeyondKnownDurationIsRejectedWithoutPartialCommit()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
 
         Assert.NotEmpty(workspace.ExpressionPresets);
         var offset = Assert.Single(workspace.ExpressionPresets, preset => preset.Id == "offset-seconds");
+        var priorRows = workspace.Rows.ToArray();
+        var priorHistory = workspace.HistoryEntries.Count;
         Assert.True(workspace.ApplyExpressionPreset(offset.Id));
         Assert.True(workspace.ApplyExpression);
         Assert.Equal(offset.Id, workspace.ExpressionPresetId);
         Assert.Equal(offset.ScriptText, workspace.Expression);
 
-        var preview = workspace.Preview();
-        Assert.True(preview.Success);
-
-        // offset-seconds default adds 1 second to t=0
-        Assert.Contains("00:00:01", preview.Content, StringComparison.Ordinal);
+        Assert.Equal(priorRows, workspace.Rows);
+        Assert.Equal(priorHistory, workspace.HistoryEntries.Count);
+        Assert.Contains("duration", workspace.StatusText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -358,9 +359,8 @@ public sealed class WasmWorkspaceTests
         workspace.Expression = "return bad()";
         workspace.ApplyOptionsAndRefresh();
 
-        Assert.False(string.IsNullOrWhiteSpace(workspace.StatusText));
-        Assert.Contains(workspace.Logs, entry =>
-            entry.Details?.Contains("Lua", StringComparison.OrdinalIgnoreCase) == true);
+        Assert.Contains("Lua", workspace.StatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.Single(workspace.HistoryEntries);
     }
 
     [Fact]

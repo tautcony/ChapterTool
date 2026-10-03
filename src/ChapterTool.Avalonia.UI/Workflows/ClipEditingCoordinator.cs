@@ -175,7 +175,11 @@ internal sealed class ClipEditingCoordinator(
         var storedInfo = configuredFrameRate is null
             ? frameResult.Info
             : frameResult.Info with { FramesPerSecond = (double)configuredFrameRate.Value };
-        workspace.WriteBackCurrentChapterSet(storedInfo);
+        var outcome = workspace.CommitNonStructuralChapterSetResult(storedInfo, "Update frame information");
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+        {
+            throw new InvalidOperationException(string.Join("; ", outcome.Errors));
+        }
         return new FrameUpdateOutcome(frameResult, detection, appliedOption, workspace.CurrentChapterSet ?? storedInfo);
     }
 

@@ -1,12 +1,7 @@
-using ChapterTool.Core.Exporting;
-
 namespace ChapterTool.Core.Session;
 
-/// <summary>
-/// Workspace-owned projection surface: naming mode, order shift, expression session fields,
-/// and last-successful expression projection cache.
-/// </summary>
-public sealed class ProjectionState
+/// <summary>Workspace-owned draft parameters for explicit content operations.</summary>
+public sealed class ContentOperationDraftState
 {
     /// <summary>Gets a value indicating whether chapter names are auto-generated.</summary>
     public bool AutoGenerateNames { get; private set; }
@@ -31,9 +26,6 @@ public sealed class ProjectionState
 
     /// <summary>Gets the display name of the expression source (preset, file, or manual).</summary>
     public string ExpressionSourceName { get; private set; } = string.Empty;
-
-    /// <summary>Gets or sets the last successful expression projection retained for mid-edit invalid expressions.</summary>
-    public ChapterOutputProjectionResult? LastSuccessfulExpressionProjection { get; set; }
 
     /// <summary>
     /// Sets auto-generate naming mode. Mutually exclusive with template names.
@@ -186,6 +178,4 @@ public sealed class ProjectionState
         ExpressionSourceName = expressionSourceName ?? string.Empty;
     }
 
-    /// <summary>Clears the last successful expression projection cache.</summary>
-    public void ClearProjectionCache() => LastSuccessfulExpressionProjection = null;
 }

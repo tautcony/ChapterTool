@@ -1,4 +1,4 @@
-﻿using ChapterTool.Core.Editing;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
@@ -127,7 +127,7 @@ public sealed class ChapterWorkspaceTests
         var revision = workspace.BeginLoadOperation();
         var group = MultiMplsGroup();
         Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
-        var options = workspace.CreateExportOptionsForProjectedInfo();
+        var options = workspace.CreateExportOptions();
         var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, options, trackIndex: 0)!;
 
         Assert.True(workspace.RecordSuccessfulExport(captured));
@@ -135,7 +135,7 @@ public sealed class ChapterWorkspaceTests
         Assert.True(workspace.HasUnexportedChanges); // The second track has no baseline.
 
         workspace.SelectClip(0);
-        workspace.WriteBackCurrentChapterSet(workspace.CurrentChapterSet! with
+        workspace.CommitNonStructuralChapterSetResult(workspace.CurrentChapterSet! with
         {
             Chapters = [workspace.CurrentChapterSet!.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
         });
@@ -144,14 +144,14 @@ public sealed class ChapterWorkspaceTests
         var editedCapture = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, options, trackIndex: 0)!;
         Assert.True(workspace.RecordSuccessfulExport(editedCapture));
         workspace.SelectClip(1);
-        var otherTrackOptions = workspace.CreateExportOptionsForProjectedInfo();
+        var otherTrackOptions = workspace.CreateExportOptions();
         var otherTrackCapture = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, otherTrackOptions, trackIndex: 1)!;
         Assert.True(workspace.RecordSuccessfulExport(otherTrackCapture));
         Assert.Equal(workspace.GetExportBaseline(editedCapture.TrackId)!.Digest,
             workspace.CaptureExportSnapshot(EditableChapterDocumentAdapter.ToChapterSet(workspace.ContentSession!.Snapshot.Document, 0),
-                workspace.CreateExportOptionsForProjectedInfo() with { SourceFileName = "00001" }, 0)!.Digest);
+                workspace.CreateExportOptions() with { SourceFileName = "00001" }, 0)!.Digest);
         Assert.Equal(workspace.GetExportBaseline(otherTrackCapture.TrackId)!.Digest,
-            workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptionsForProjectedInfo(), 1)!.Digest);
+            workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptions(), 1)!.Digest);
         Assert.False(workspace.HasUnexportedChanges);
         Assert.Equal(editedCapture.Content.StateIdentity, workspace.GetExportBaseline(editedCapture.TrackId)!.StateIdentity);
         Assert.Equal(2, workspace.ContentSession!.GetHistorySnapshot().Nodes.Length);
@@ -164,7 +164,7 @@ public sealed class ChapterWorkspaceTests
         var revision = workspace.BeginLoadOperation();
         var group = SingleGroup("old.txt", "Old");
         Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("old.txt"), group, ClipSessionTransitions.FromLoad(group)));
-        var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptionsForProjectedInfo(), 0)!;
+        var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptions(), 0)!;
 
         var replacementRevision = workspace.BeginLoadOperation();
         var replacement = SingleGroup("new.txt", "New");
@@ -233,7 +233,7 @@ public sealed class ChapterWorkspaceTests
     }
 
     [Fact]
-    public void WriteBack_UpdatesSelectedSplitEntry()
+    public void CommitCandidate_UpdatesSelectedSplitEntry()
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
@@ -243,9 +243,10 @@ public sealed class ChapterWorkspaceTests
 
         var updated = workspace.CurrentChapterSet! with
         {
-            Chapters = [new Chapter(1, TimeSpan.Zero, "Edited")]
+            Chapters = [workspace.CurrentChapterSet!.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
         };
-        workspace.WriteBackCurrentChapterSet(updated);
+        var outcome = workspace.CommitNonStructuralChapterSetResult(updated);
+        Assert.Equal(TransactionOutcomeKind.Committed, outcome.Kind);
 
         var split = Assert.IsType<SplitClipSession>(workspace.ClipSession);
         Assert.Empty(split.Group.Entries[0].ChapterSet.Chapters);
@@ -267,7 +268,7 @@ public sealed class ChapterWorkspaceTests
         {
             Chapters = [workspace.CurrentChapterSet.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
         };
-        workspace.WriteBackCurrentChapterSet(edited);
+        workspace.CommitNonStructuralChapterSetResult(edited);
 
         Assert.Equal("Edited", workspace.CurrentChapterSet?.Chapters[0].Name);
         Assert.Equal("Edited", workspace.ContentSession!.Snapshot.Document.Tracks[1].Chapters[0].Name);
@@ -303,7 +304,7 @@ public sealed class ChapterWorkspaceTests
         {
             Chapters = [.. workspace.CurrentChapterSet.Chapters.Select(chapter => chapter.Name == "C" ? chapter with { Name = "Edited C" } : chapter)]
         };
-        workspace.WriteBackCurrentChapterSet(edited);
+        workspace.CommitNonStructuralChapterSetResult(edited);
         var editedId = contentSession.Snapshot.Document.Tracks[0].Chapters.Single(static chapter => chapter.Name == "Edited C").Id;
         Assert.Equal(originalCId, editedId);
 
@@ -337,7 +338,7 @@ public sealed class ChapterWorkspaceTests
         Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
         var captured = workspace.ContentSession!.Snapshot;
         var expectedSessionId = workspace.ClipSession!.SessionId;
-        workspace.WriteBackCurrentChapterSet(workspace.CurrentChapterSet! with
+        workspace.CommitNonStructuralChapterSetResult(workspace.CurrentChapterSet! with
         {
             Chapters = [workspace.CurrentChapterSet.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
         });
@@ -361,9 +362,9 @@ public sealed class ChapterWorkspaceTests
         workspace.ExportPreferences.SetXmlLanguage("eng");
         workspace.ExportPreferences.SetTextEncoding(OutputTextEncoding.Utf8);
         workspace.ExportPreferences.SetEmitBom(false);
-        workspace.Projection.SetAutoGenerateNames(true);
-        workspace.Projection.SetOrderShift(2);
-        workspace.ApplyExpressionFields("t+1", applyExpression: true, "preset", "script.lua");
+        workspace.OperationDrafts.SetAutoGenerateNames(true);
+        workspace.OperationDrafts.SetOrderShift(2);
+        workspace.SetExpressionOperationDrafts("t+1", applyExpression: true, "preset", "script.lua");
 
         var options = workspace.CreateExportOptions();
 
@@ -378,27 +379,25 @@ public sealed class ChapterWorkspaceTests
         Assert.Equal(0, options.OrderShift);
         Assert.False(options.EmitBom);
 
-        var projected = workspace.CreateExportOptionsForProjectedInfo();
-
-        Assert.False(projected.ApplyExpression);
-        Assert.False(projected.AutoGenerateNames);
-        Assert.False(projected.UseTemplateNames);
-        Assert.Equal(0, projected.OrderShift);
-        Assert.False(projected.ProjectOutput);
-        Assert.Equal(ChapterExportFormat.Xml, projected.Format);
-        Assert.Equal("eng", projected.XmlLanguage);
+        Assert.False(options.ApplyExpression);
+        Assert.False(options.AutoGenerateNames);
+        Assert.False(options.UseTemplateNames);
+        Assert.Equal(0, options.OrderShift);
+        Assert.False(options.ProjectOutput);
+        Assert.Equal(ChapterExportFormat.Xml, options.Format);
+        Assert.Equal("eng", options.XmlLanguage);
     }
 
     [Fact]
-    public void ApplyExpressionFields_UpdatesProjectionAtomically()
+    public void SetExpressionOperationDrafts_UpdatesDraftsAtomically()
     {
         var workspace = new ChapterWorkspace();
-        workspace.ApplyExpressionFields("t*2", applyExpression: true, "id-1", "batch.lua");
+        workspace.SetExpressionOperationDrafts("t*2", applyExpression: true, "id-1", "batch.lua");
 
-        Assert.Equal("t*2", workspace.Projection.Expression);
-        Assert.True(workspace.Projection.ApplyExpression);
-        Assert.Equal("id-1", workspace.Projection.ExpressionPresetId);
-        Assert.Equal("batch.lua", workspace.Projection.ExpressionSourceName);
+        Assert.Equal("t*2", workspace.OperationDrafts.Expression);
+        Assert.True(workspace.OperationDrafts.ApplyExpression);
+        Assert.Equal("id-1", workspace.OperationDrafts.ExpressionPresetId);
+        Assert.Equal("batch.lua", workspace.OperationDrafts.ExpressionSourceName);
 
         var options = workspace.CreateExportOptions();
         Assert.Equal("t*2", options.Expression);
@@ -406,32 +405,16 @@ public sealed class ChapterWorkspaceTests
     }
 
     [Fact]
-    public void NamingModes_AreMutuallyExclusiveOnProjectionState()
+    public void NamingModes_AreMutuallyExclusiveOnContentOperationDraftState()
     {
         var workspace = new ChapterWorkspace();
-        Assert.True(workspace.Projection.SetAutoGenerateNames(true));
-        Assert.True(workspace.Projection.AutoGenerateNames);
-        Assert.False(workspace.Projection.UseTemplateNames);
+        Assert.True(workspace.OperationDrafts.SetAutoGenerateNames(true));
+        Assert.True(workspace.OperationDrafts.AutoGenerateNames);
+        Assert.False(workspace.OperationDrafts.UseTemplateNames);
 
-        Assert.True(workspace.Projection.SetUseTemplateNames(true));
-        Assert.True(workspace.Projection.UseTemplateNames);
-        Assert.False(workspace.Projection.AutoGenerateNames);
-    }
-
-    [Fact]
-    public void LastSuccessfulExpressionProjection_RetainedUntilCleared()
-    {
-        var workspace = new ChapterWorkspace();
-        var projection = new ChapterOutputProjectionResult(
-            new ChapterSet("t", "s", ChapterImportFormat.Ogm, 25, TimeSpan.FromSeconds(1), [new Chapter(1, TimeSpan.Zero, "X")]),
-            []);
-        workspace.LastSuccessfulExpressionProjection = projection;
-        Assert.Same(projection, workspace.LastSuccessfulExpressionProjection);
-        Assert.Same(projection, workspace.Projection.LastSuccessfulExpressionProjection);
-
-        workspace.ClearProjectionCache();
-        Assert.Null(workspace.LastSuccessfulExpressionProjection);
-        Assert.Null(workspace.Projection.LastSuccessfulExpressionProjection);
+        Assert.True(workspace.OperationDrafts.SetUseTemplateNames(true));
+        Assert.True(workspace.OperationDrafts.UseTemplateNames);
+        Assert.False(workspace.OperationDrafts.AutoGenerateNames);
     }
 
     private static ChapterImportSource MultiMplsGroup() =>

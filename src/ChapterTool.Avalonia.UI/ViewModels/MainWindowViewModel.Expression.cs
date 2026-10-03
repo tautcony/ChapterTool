@@ -1,18 +1,13 @@
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
-/// <summary>Contains expression projection behavior for the main window.</summary>
+/// <summary>Contains expression diagnostics and chapter row behavior for the main window.</summary>
 public sealed partial class MainWindowViewModel
 {
     private void RefreshRows()
     {
-        var refresh = projectionFacade.RefreshRows(Rows, ApplyExpression);
-        if (refresh.Projection is not null)
-        {
-            ReportProjectionExpressionDiagnostics(refresh.Projection.Diagnostics);
-        }
+        workspaceContentRows.RefreshRows(Rows);
     }
 
     internal void RefreshRowsFromPort() => RefreshRows();
@@ -43,9 +38,4 @@ public sealed partial class MainWindowViewModel
         LogDiagnostics("Lua expression script", [diagnostic]);
     }
 
-    private ChapterOutputProjectionResult CurrentOutputProjection() =>
-        projectionFacade.ProjectCurrent();
-
-    private ChapterExportOptions CurrentExportOptionsForProjectedInfo() =>
-        projectionFacade.CreateExportOptionsForProjectedInfo();
 }
