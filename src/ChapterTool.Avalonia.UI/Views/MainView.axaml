@@ -461,7 +461,7 @@
               Classes="optionCell"
               Grid.Row="2"
               Grid.Column="0"
-              ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
+              ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto,Auto,Auto">
           <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="6">
             <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
             <CheckBox x:Name="ApplyExpressionBox"
@@ -491,6 +491,31 @@
                   Command="{Binding #RootView.LoadLuaExpressionScriptCommand}">
             <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
           </Button>
+          <Button x:Name="PreviewContentOptionsButton"
+                  Grid.Column="3"
+                  Classes="flat"
+                  MinWidth="76"
+                  Content="{DynamicResource Menu.Preview}"
+                  IsVisible="{Binding CanPreviewContentOptions}"
+                  Command="{Binding PreviewContentOptionsCommand}"
+                  AutomationProperties.AutomationId="PreviewContentOptions" />
+          <Button x:Name="ApplyContentPreviewButton"
+                  Grid.Column="3"
+                  Classes="flat primary"
+                  MinWidth="76"
+                  Content="{DynamicResource Common.Apply}"
+                  IsVisible="{Binding IsContentPreviewPending}"
+                  IsEnabled="{Binding CanApplyContentPreview}"
+                  Command="{Binding ApplyContentPreviewCommand}"
+                  AutomationProperties.AutomationId="ApplyContentPreview" />
+          <Button x:Name="CancelContentPreviewButton"
+                  Grid.Column="4"
+                  Classes="flat"
+                  MinWidth="76"
+                  Content="{DynamicResource Common.Cancel}"
+                  IsVisible="{Binding IsContentPreviewPending}"
+                  Command="{Binding CancelContentPreviewCommand}"
+                  AutomationProperties.AutomationId="CancelContentPreview" />
         </Grid>
       </Grid>
       <ContentControl x:Name="SecondarySurface"

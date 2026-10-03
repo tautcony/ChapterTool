@@ -3,6 +3,8 @@ using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -78,7 +80,25 @@ public interface INamingPreferencePort
 /// <summary>Chapter edit surface for tools such as forward-shift.</summary>
 public interface IChapterEditPort
 {
-    void ShiftFramesForward(int frames);
+    ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Builds one-shot content previews and applies them through the active history session.</summary>
+public interface IChapterContentOperationPort
+{
+    ChapterContentPreview PrepareExpression(string expression);
+
+    ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames);
+
+    ChapterContentPreview PrepareContentOptions();
+
+    ChapterContentPreview PrepareFrameShift(int frames);
+
+    ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps);
+
+    ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default);
+
+    void Cancel(ChapterContentPreview preview);
 }
 
 public interface IMainShellNotificationPort

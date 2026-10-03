@@ -105,6 +105,7 @@ In-memory chapter mutations:
 - `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs`
 - `src/ChapterTool.Core/Editing/ChapterSegmentService.cs`
 - `src/ChapterTool.Core/Editing/ChapterEditResult.cs`
+- `src/ChapterTool.Core/Editing/ChapterContentCandidateBuilder.cs` — identity-scoped content candidates for cell edits, structure, metadata, naming, offsets, frame operations, and expressions
 
 `ChapterEditingOptions` controls delete-rows timing (`Preserve` or `Normalize`) and frame display (`Round` or `DecimalPlaces` with one to six places). `IChapterEditingService.Delete` applies the delete-rows timing mode.
 
@@ -116,11 +117,12 @@ Host-agnostic interactive session state shared by Avalonia and WASM:
 - `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — host-neutral session state, edit buffer, revision and session-token commit rules for Avalonia and WASM
 - `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, base tokens, cancellation, request idempotency, and history navigation
 - `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
+- `src/ChapterTool.Core/Session/ChapterContentOperationSession.cs` — typed preview diffs and stale-safe apply for content candidates
 - `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
 - `src/ChapterTool.Core/Session/ChapterSourceDocument.cs` — host-neutral chapter source identity (`LocalPathChapterSource`, `BufferedChapterSource`)
 
-Primary tests: `tests/ChapterTool.Core.Tests/Session/`, including `SessionStateTests.cs` for atomic document transactions, `SessionEditHistoryTests.cs` for retained branches and navigation, and `ChapterWorkspaceTests.cs` for host-neutral workspace state.
+Primary tests: `tests/ChapterTool.Core.Tests/Session/` and `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs`. The editing tests verify candidate commit, undo, redo, stale-preview rejection, and all-or-nothing batch failure.
 
 ### Boundaries and localization
 

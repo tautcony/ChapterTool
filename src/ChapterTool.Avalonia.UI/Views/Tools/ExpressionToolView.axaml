@@ -52,14 +52,28 @@
 
     </Grid>
     <Border Grid.Row="1" Classes="toolFooter">
-      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
         <TextBlock Grid.Column="0" Classes="toolStatus" VerticalAlignment="Center" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
         <Button Grid.Column="1"
+                Classes="flat"
+                Content="{DynamicResource Menu.Preview}"
+                MinWidth="88"
+                Command="{Binding ApplyCommand}"
+                CommandParameter="{Binding}"
+                IsVisible="{Binding CanPreparePreview}" />
+        <Button Grid.Column="2"
                 Classes="flat primary"
                 Content="{DynamicResource Common.Apply}"
                 MinWidth="88"
-                Command="{Binding ApplyCommand}"
-                CommandParameter="{Binding}" />
+                Command="{Binding ConfirmApplyCommand}"
+                IsEnabled="{Binding CanApplyPreview}"
+                IsVisible="{Binding IsPreviewPending}" />
+        <Button Grid.Column="3"
+                Classes="flat"
+                Content="{DynamicResource Common.Cancel}"
+                MinWidth="88"
+                Command="{Binding CancelPreviewCommand}"
+                IsVisible="{Binding IsPreviewPending}" />
       </Grid>
     </Border>
   </Grid>

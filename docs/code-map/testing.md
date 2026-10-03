@@ -61,6 +61,7 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Importing/MediaChapterImporterTests.cs`
 - editing
   - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs` (delete-rows timing and frame display options coverage)
+  - `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs` (candidate commit, undo, redo, stale previews, and batch failure)
   - `tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Editing/SampleChapterNameTemplateTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/ChapterContentServiceTests.cs`
@@ -141,6 +142,7 @@ High-signal test files:
 
 - view models
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs`
+  - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs` (preview/apply tool workflows)
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsSnapshotCoordinatorTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs`
@@ -176,6 +178,7 @@ LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowInteractionHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowStateHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiScreenshotCaptureHeadlessTests.cs` (optional default, wide, and narrow screenshot capture)
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/ToolViewsHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs`

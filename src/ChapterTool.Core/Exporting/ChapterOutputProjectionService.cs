@@ -30,6 +30,11 @@ public sealed class ChapterOutputProjectionService
     /// <returns>The operation result.</returns>
     public ChapterOutputProjectionResult Project(ChapterSet info, ChapterExportOptions options)
     {
+        if (!options.ProjectOutput)
+        {
+            return new ChapterOutputProjectionResult(info, [.. info.Chapters.Where(static chapter => !chapter.IsSeparator)], []);
+        }
+
         var diagnostics = new List<ChapterDiagnostic>();
         var expressionResult = new ChapterExpressionService(expressionEngine).Apply(info, options.ApplyExpression, options.Expression);
         diagnostics.AddRange(expressionResult.Diagnostics);

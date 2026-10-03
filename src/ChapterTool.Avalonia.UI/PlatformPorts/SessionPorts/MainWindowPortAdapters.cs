@@ -4,6 +4,7 @@ using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform.Expressions;
 using Microsoft.Extensions.Logging;
 using DeleteRowsTimingMode = ChapterTool.Contracts.Configuration.DeleteRowsTimingMode;
@@ -21,6 +22,7 @@ public sealed class MainWindowPortAdapters
         ExportPreferences = new ExportPreferencePortAdapter(owner);
         NamingPreferences = new NamingPreferencePortAdapter(owner);
         ChapterEdit = new ChapterEditPortAdapter(owner);
+        ContentOperations = new ChapterContentOperationPortAdapter(owner);
     }
 
     public ExpressionSessionPortAdapter Expression { get; }
@@ -34,6 +36,8 @@ public sealed class MainWindowPortAdapters
     public NamingPreferencePortAdapter NamingPreferences { get; }
 
     public ChapterEditPortAdapter ChapterEdit { get; }
+
+    public ChapterContentOperationPortAdapter ContentOperations { get; }
 }
 
 public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMainShellNotificationPort? notifications = null) : IExpressionSessionPort
@@ -230,17 +234,39 @@ public sealed class NamingPreferencePortAdapter(MainWindowViewModel owner) : INa
 /// </summary>
 public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapterEditPort
 {
-    public void ShiftFramesForward(int frames)
+    public async ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default)
     {
         if (owner.CurrentChapterSet is null)
         {
             return;
         }
 
-        owner.ApplyEditFromPort(
-            owner.ClipEditingCoordinator.ShiftFramesForward(owner.CurrentChapterSet, frames),
-            $"Shift frames forward: frames={frames}");
+        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames);
+        var outcome = await owner.ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
+        owner.ApplyContentOutcome(outcome, $"Shift frames forward: frames={frames}");
     }
+}
+
+public sealed class ChapterContentOperationPortAdapter(MainWindowViewModel owner) : IChapterContentOperationPort
+{
+    public ChapterContentPreview PrepareExpression(string expression) => owner.PrepareExpressionOperation(expression);
+
+    public ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames) =>
+        owner.PrepareTemplateNamesOperation(autoGenerateNames, useTemplateNames);
+
+    public ChapterContentPreview PrepareContentOptions() => owner.PrepareContentOptionsOperation();
+
+    public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames);
+
+    public ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps) => owner.PrepareFrameRateOperation(sourceFps, targetFps);
+
+    public async ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default)
+    {
+        var outcome = await owner.ApplyContentPreviewAsync(preview, cancellationToken);
+        return outcome;
+    }
+
+    public void Cancel(ChapterContentPreview preview) => owner.CancelContentPreview(preview);
 }
 
 public sealed class MainShellNotificationPort(MainWindowViewModel owner) : IMainShellNotificationPort

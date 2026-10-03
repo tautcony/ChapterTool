@@ -15,6 +15,8 @@ public interface IWorkspaceToolSession
 
     IChapterEditPort ChapterEdit { get; }
 
+    IChapterContentOperationPort ContentOperations { get; }
+
     IApplicationLogService LogService { get; }
 
     IMainShellNotificationPort Notifications { get; }
@@ -43,6 +45,7 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
         ExportPreferences = portAdapters.ExportPreferences;
         NamingPreferences = portAdapters.NamingPreferences;
         ChapterEdit = portAdapters.ChapterEdit;
+        ContentOperations = portAdapters.ContentOperations;
         LogService = owner.LogService;
         buildPreview = owner.BuildPreview;
         createZonesText = owner.CreateZonesText;
@@ -58,6 +61,8 @@ public sealed class MainWindowToolSession : IWorkspaceToolSession
     public INamingPreferencePort NamingPreferences { get; }
 
     public IChapterEditPort ChapterEdit { get; }
+
+    public IChapterContentOperationPort ContentOperations { get; }
 
     public IApplicationLogService LogService { get; }
 

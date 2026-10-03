@@ -27,6 +27,9 @@ public sealed class ChapterWorkspace
     /// <summary>Gets working edit buffer for the active chapter set.</summary>
     public ChapterSet? CurrentChapterSet { get; private set; }
 
+    /// <summary>Gets the undoable content session for the selected chapter set.</summary>
+    public SessionState? ContentSession { get; private set; }
+
     /// <summary>Gets monotonic operation revision used for anti-stale load/append commits.</summary>
     public int CurrentRevision => Volatile.Read(ref currentRevision);
 
@@ -99,6 +102,7 @@ public sealed class ChapterWorkspace
     {
         ClipSession = session;
         CurrentChapterSet = session.CurrentChapterSet;
+        ResetContentSession();
     }
 
     /// <summary>Clears the loaded session and edit buffer.</summary>
@@ -109,10 +113,21 @@ public sealed class ChapterWorkspace
         DisplayPath = string.Empty;
         ClipSession = null;
         CurrentChapterSet = null;
+        ContentSession = null;
     }
 
     /// <summary>Updates the working edit buffer without changing clip ownership.</summary>
-    public void SetCurrentChapterSet(ChapterSet? chapterSet) => CurrentChapterSet = chapterSet;
+    public void SetCurrentChapterSet(ChapterSet? chapterSet)
+    {
+        if (chapterSet is not null && ContentSession is not null)
+        {
+            WriteBackCurrentChapterSet(chapterSet);
+            return;
+        }
+
+        CurrentChapterSet = chapterSet;
+        ResetContentSession();
+    }
 
     /// <summary>
     /// Writes the edit buffer back into the typed clip session by mode
@@ -120,14 +135,7 @@ public sealed class ChapterWorkspace
     /// </summary>
     public void WriteBackCurrentChapterSet(ChapterSet info)
     {
-        if (ClipSession is null)
-        {
-            CurrentChapterSet = info;
-            return;
-        }
-
-        ClipSession = ClipSessionTransitions.WriteBack(ClipSession, info);
-        CurrentChapterSet = ClipSession.CurrentChapterSet ?? info;
+        CommitLegacyResultToContentSession(info);
     }
 
     /// <summary>Selects a clip index; preserves session identity for append anti-stale checks.</summary>
@@ -140,6 +148,7 @@ public sealed class ChapterWorkspace
 
         ClipSession = ClipSessionTransitions.Select(ClipSession, index);
         CurrentChapterSet = ClipSession.CurrentChapterSet;
+        ResetContentSession();
     }
 
     /// <summary>Clears expression projection cache (e.g. when chapter set becomes null).</summary>
@@ -164,16 +173,17 @@ public sealed class ChapterWorkspace
             Format: ExportPreferences.Format,
             XmlLanguage: ExportPreferences.XmlLanguage,
             SourceFileName: CurrentChapterSet?.SourceName,
-            AutoGenerateNames: Projection.AutoGenerateNames,
-            UseTemplateNames: Projection.UseTemplateNames,
-            ChapterNameTemplateText: Projection.ChapterNameTemplateText,
-            OrderShift: Projection.OrderShift,
-            ApplyExpression: Projection.ApplyExpression,
+            AutoGenerateNames: false,
+            UseTemplateNames: false,
+            ChapterNameTemplateText: string.Empty,
+            OrderShift: 0,
+            ApplyExpression: false,
             Expression: Projection.Expression,
             ExpressionPresetId: Projection.ExpressionPresetId,
             ExpressionSourceName: Projection.ExpressionSourceName,
             TextEncoding: ExportPreferences.TextEncoding,
-            EmitBom: ExportPreferences.EmitBom);
+            EmitBom: ExportPreferences.EmitBom,
+            ProjectOutput: false);
 
     /// <summary>
     /// Export options for already-projected chapter sets (expression/naming/order already applied).
@@ -188,4 +198,56 @@ public sealed class ChapterWorkspace
             OrderShift = 0,
             ProjectOutput = false
         };
+
+    /// <summary>Publishes a document already committed to <see cref="ContentSession"/> into the active clip.</summary>
+    public void PublishContentDocument(EditableChapterDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        if (ContentSession is null || ContentSession.Snapshot.Document.Id != document.Id)
+        {
+            throw new InvalidOperationException("The content document does not belong to the active workspace session.");
+        }
+
+        var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document);
+        if (ClipSession is null)
+        {
+            CurrentChapterSet = chapterSet;
+            return;
+        }
+
+        ClipSession = ClipSessionTransitions.WriteBack(ClipSession, chapterSet);
+        CurrentChapterSet = ClipSession.CurrentChapterSet ?? chapterSet;
+    }
+
+    private void ResetContentSession() => ContentSession = CurrentChapterSet is null
+        ? null
+        : new SessionState(EditableChapterDocumentAdapter.FromChapterSet(CurrentChapterSet));
+
+    private void CommitLegacyResultToContentSession(ChapterSet info)
+    {
+        if (ContentSession is null)
+        {
+            CurrentChapterSet = info;
+            ContentSession = new SessionState(EditableChapterDocumentAdapter.FromChapterSet(info));
+            return;
+        }
+
+        var snapshot = ContentSession.Snapshot;
+        var candidate = EditableChapterDocumentAdapter.ApplyLegacyChapterSetResult(snapshot.Document, info);
+        var outcome = ContentSession.ExecuteAsync(
+            snapshot.BaseToken,
+            Guid.NewGuid(),
+            $"legacy-writeback:{snapshot.MutationRevision}:{info.Chapters.Count}",
+            (_, _) => ValueTask.FromResult(candidate),
+            operationDescription: "Update chapter content")
+            .AsTask()
+            .GetAwaiter()
+            .GetResult();
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+        {
+            throw new InvalidOperationException(string.Join("; ", outcome.Errors));
+        }
+
+        PublishContentDocument(outcome.Snapshot.Document);
+    }
 }

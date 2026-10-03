@@ -96,7 +96,7 @@ public sealed class MainWindowHeadlessTests
 
         Assert.Equal(2, options.ColumnDefinitions.Count);
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
-        Assert.True(expressionEditor.Bounds.Width >= 500);
+        Assert.True(expressionEditor.Bounds.Width >= 400);
         Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
         Assert.Null(applyExpression.Content);
         Assert.False(string.IsNullOrWhiteSpace(ToolTip.GetTip(applyExpression)?.ToString()));

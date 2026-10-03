@@ -30,8 +30,8 @@ Startup and main shell entry points:
 Main-window workflow owners under `src/ChapterTool.Avalonia.UI/Workflows/` use the same `ChapterWorkspace`:
 
 - `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
-- `ClipEditingCoordinator.cs` — clip selection/combine transitions plus cell and frame edits written through the workspace
-- `ProjectionFacade.cs` — workspace-backed projection, preview/save options, and chapter-row materialization
+- `ClipEditingCoordinator.cs` — clip selection/combine transitions plus candidate cell and frame edits written through the workspace
+- `ProjectionFacade.cs` — workspace-backed row materialization and preview/save options
 - `StatusDiagnosticsPresenter.cs` — localized status/progress rendering and structured diagnostic logging
 - `DisplayOptionCoordinator.cs` renders DVD title numbers with localized labels. The chapter data and English log summaries remain stable when the culture changes. The clip selector exposes its complete label in a tooltip when the visible text is trimmed.
 
@@ -64,6 +64,10 @@ Avalonia owns only host ports:
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs` — concrete main-window adapters
 
 `MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append commits use workspace revision rules.
+
+Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordinator` and `IChapterContentOperationPort`. Batch tools preview, apply, or cancel typed candidates. Cell edits commit from the existing editor flow. `CreateExportOptions` disables draft transforms. Tables and exports read the committed chapter values after apply.
+
+`tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/` verifies rendered preview/apply workflows and responsive layouts.
 
 ### Composition root
 

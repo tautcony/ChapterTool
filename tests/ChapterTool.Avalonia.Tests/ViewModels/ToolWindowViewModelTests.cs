@@ -104,16 +104,28 @@ public sealed class ToolWindowViewModelTests
         var owner = CreateOwner();
         await owner.LoadCommand.ExecuteAsync("movie.txt");
 
-        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression) { Expression = "t + 1", ApplyExpression = true };
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, contentOperations: owner.ToolSession.ContentOperations) { Expression = "t + 1", ApplyExpression = true };
         await expression.ApplyCommand.ExecuteAsync(expression);
-        var template = new TemplateNamesToolViewModel(owner.ToolSession.NamingPreferences) { UseTemplateNames = true };
+        Assert.True(expression.IsPreviewPending);
+        Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
+        await expression.ConfirmApplyCommand.ExecuteAsync();
+        var template = new TemplateNamesToolViewModel(owner.ToolSession.NamingPreferences, owner.ToolSession.ContentOperations) { UseTemplateNames = true };
         await template.ApplyCommand.ExecuteAsync(template);
-        var forward = new ForwardShiftToolViewModel(owner.ToolSession.ChapterEdit) { Frames = 24 };
+        Assert.True(template.IsPreviewPending);
+        await template.ConfirmApplyCommand.ExecuteAsync();
+        var forward = new ForwardShiftToolViewModel(owner.ToolSession.ChapterEdit, contentOperations: owner.ToolSession.ContentOperations) { Frames = 24 };
         await forward.ApplyCommand.ExecuteAsync(forward);
+        Assert.True(forward.IsPreviewPending);
+        var beforeShift = owner.Rows[0].TimeText;
+        await forward.CancelPreviewCommand.ExecuteAsync();
+        Assert.False(forward.IsPreviewPending);
+        Assert.Equal(beforeShift, owner.Rows[0].TimeText);
+        await forward.ApplyCommand.ExecuteAsync(forward);
+        await forward.ConfirmApplyCommand.ExecuteAsync();
 
         Assert.Equal("t + 1", owner.Expression);
-        Assert.True(owner.ApplyExpression);
-        Assert.True(owner.UseTemplateNames);
+        Assert.False(owner.ApplyExpression);
+        Assert.False(owner.UseTemplateNames);
         Assert.False(owner.AutoGenerateNames);
         Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
@@ -164,7 +176,7 @@ public sealed class ToolWindowViewModelTests
         try
         {
             var picker = new FakeFilePicker(scriptPath);
-            var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker) { ApplyExpression = true };
+            var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker, contentOperations: owner.ToolSession.ContentOperations) { ApplyExpression = true };
 
             expression.SelectedPresetIndex = expression.Presets.ToList().FindIndex(preset => preset.Id == "round-to-frame");
 
@@ -174,9 +186,12 @@ public sealed class ToolWindowViewModelTests
 
             await expression.BrowseScriptCommand.ExecuteAsync();
             await expression.ApplyCommand.ExecuteAsync(expression);
+            Assert.True(expression.IsPreviewPending);
+            Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
+            await expression.ConfirmApplyCommand.ExecuteAsync();
 
             Assert.Equal("t + 2", owner.Expression);
-            Assert.True(owner.ApplyExpression);
+            Assert.False(owner.ApplyExpression);
             Assert.Equal(string.Empty, owner.ExpressionPresetId);
             Assert.Equal(Path.GetFileName(scriptPath), owner.ExpressionSourceName);
             Assert.Equal("00:00:07.000", owner.Rows[0].TimeText);
@@ -313,8 +328,9 @@ public sealed class ToolWindowViewModelTests
 
     private sealed class FakeChapterEditPort : IChapterEditPort
     {
-        public void ShiftFramesForward(int frames)
+        public ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default)
         {
+            return ValueTask.CompletedTask;
         }
     }
 

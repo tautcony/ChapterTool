@@ -88,7 +88,8 @@ public static class StandardToolCatalogFactory
                         context.Session.Expression,
                         context.FilePicker,
                         context.ExpressionAuthoringService,
-                        context.Session.ReportUnexpectedUiException)
+                        context.Session.ReportUnexpectedUiException,
+                        contentOperations: context.Session.ContentOperations)
                 }),
             new ToolDescriptor(
                 ToolIds.TemplateNames,
@@ -97,7 +98,7 @@ public static class StandardToolCatalogFactory
                 ToolRefreshPolicy.Reuse,
                 context => new TemplateNamesToolView
                 {
-                    DataContext = new TemplateNamesToolViewModel(context.Session.NamingPreferences)
+                    DataContext = new TemplateNamesToolViewModel(context.Session.NamingPreferences, context.Session.ContentOperations)
                 }),
             new ToolDescriptor(
                 ToolIds.Zones,
@@ -119,7 +120,8 @@ public static class StandardToolCatalogFactory
                 {
                     DataContext = new ForwardShiftToolViewModel(
                         context.Session.ChapterEdit,
-                        context.Session.ReportUnexpectedUiException)
+                        context.Session.ReportUnexpectedUiException,
+                        context.Session.ContentOperations)
                 })
         ]);
     }

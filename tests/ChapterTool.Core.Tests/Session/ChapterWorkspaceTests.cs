@@ -1,6 +1,8 @@
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
+using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Session;
 
@@ -123,6 +125,34 @@ public sealed class ChapterWorkspaceTests
     }
 
     [Fact]
+    public async Task Publishing_content_candidate_keeps_history_attached_to_selected_clip()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        Assert.True(workspace.TryCommitLoad(revision, "movie.mpls", ClipSessionTransitions.FromLoad(MultiMplsGroup())));
+        workspace.SelectClip(1);
+        var rootId = workspace.ContentSession!.GetHistorySnapshot().RootId;
+        var builder = new ChapterContentCandidateBuilder(new ChapterEditingService(new ChapterTimeFormatter()));
+        var preview = ChapterContentOperationSession.Prepare(workspace.ContentSession, "rename chapter", document =>
+            builder.EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.Name, "Edited", 25));
+
+        var committed = await ChapterContentOperationSession.ApplyAsync(workspace.ContentSession, preview);
+        workspace.PublishContentDocument(committed.Snapshot.Document);
+
+        Assert.Equal("Edited", workspace.CurrentChapterSet?.Chapters[0].Name);
+        Assert.Equal("Edited", workspace.ClipSession!.CurrentChapterSet?.Chapters[0].Name);
+        Assert.Equal(rootId, workspace.ContentSession.GetHistorySnapshot().RootId);
+        Assert.Equal(committed.Snapshot.StateIdentity, workspace.ContentSession.Snapshot.StateIdentity);
+
+        var undone = await workspace.ContentSession.UndoAsync();
+        workspace.PublishContentDocument(undone.Snapshot.Document);
+
+        Assert.Equal("C", workspace.CurrentChapterSet?.Chapters[0].Name);
+        Assert.Equal("C", workspace.ClipSession.CurrentChapterSet?.Chapters[0].Name);
+        Assert.Equal(rootId, workspace.ContentSession.GetHistorySnapshot().CursorId);
+    }
+
+    [Fact]
     public void CreateExportOptions_ReadsOwnedProjectionAndExportPreferences()
     {
         var workspace = new ChapterWorkspace();
@@ -142,12 +172,12 @@ public sealed class ChapterWorkspaceTests
         Assert.Equal(ChapterExportFormat.Xml, options.Format);
         Assert.Equal("eng", options.XmlLanguage);
         Assert.Equal("00001", options.SourceFileName);
-        Assert.True(options.AutoGenerateNames);
-        Assert.True(options.ApplyExpression);
+        Assert.False(options.AutoGenerateNames);
+        Assert.False(options.ApplyExpression);
         Assert.Equal("t+1", options.Expression);
         Assert.Equal("preset", options.ExpressionPresetId);
         Assert.Equal("script.lua", options.ExpressionSourceName);
-        Assert.Equal(2, options.OrderShift);
+        Assert.Equal(0, options.OrderShift);
         Assert.False(options.EmitBom);
 
         var projected = workspace.CreateExportOptionsForProjectedInfo();
@@ -174,7 +204,7 @@ public sealed class ChapterWorkspaceTests
 
         var options = workspace.CreateExportOptions();
         Assert.Equal("t*2", options.Expression);
-        Assert.True(options.ApplyExpression);
+        Assert.False(options.ApplyExpression);
     }
 
     [Fact]

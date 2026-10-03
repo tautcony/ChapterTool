@@ -904,6 +904,10 @@ public sealed class MainWindowViewModelTests
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.ChangeFpsCommand.ExecuteAsync();
 
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         Assert.Equal("00:00:04.004", vm.Rows[0].TimeText);
         Assert.Equal("240", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
@@ -921,6 +925,9 @@ public sealed class MainWindowViewModelTests
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.RefreshCommand.ExecuteAsync();
         await vm.ChangeFpsCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         Assert.Equal("00:00:04.800", vm.Rows[0].TimeText);
         Assert.Contains(log.Entries, entry =>
@@ -948,6 +955,11 @@ public sealed class MainWindowViewModelTests
         vm.ApplyExpression = true;
         vm.Expression = "t + 2";
         vm.RoundFrames = true;
+
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.True(vm.IsContentPreviewPending);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         var preview = vm.BuildPreview();
         await vm.SaveCommand.ExecuteAsync("out");
@@ -1004,6 +1016,10 @@ public sealed class MainWindowViewModelTests
         vm.ApplyExpression = true;
         vm.Expression = "t + 1";
 
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastOptions);
@@ -1033,12 +1049,19 @@ public sealed class MainWindowViewModelTests
 
         vm.ApplyExpression = true;
         vm.Expression = "t + 1";
+        vm.AutoGenerateNames = true;
+        vm.OrderShift = 2;
+
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.Equal(1, vm.Rows[0].Number);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
         vm.ExpressionSourceName = "inline";
 
         Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
         Assert.Equal("24", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
-        Assert.Contains("CHAPTER01=00:00:01.000", vm.BuildPreview(), StringComparison.Ordinal);
+        Assert.Contains("CHAPTER03=00:00:01.000", vm.BuildPreview(), StringComparison.Ordinal);
 
         await vm.SaveCommand.ExecuteAsync("out");
 
@@ -1065,6 +1088,10 @@ public sealed class MainWindowViewModelTests
         vm.AutoGenerateNames = true;
         vm.OrderShift = 3;
 
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal(1, vm.Rows[0].Number);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         var preview = vm.BuildPreview();
         await vm.SaveCommand.ExecuteAsync("out");
 
@@ -1086,6 +1113,10 @@ public sealed class MainWindowViewModelTests
         vm.OrderShift = 2;
         vm.AutoGenerateNames = true;
 
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal(1, vm.Rows[0].Number);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         Assert.Equal(3, vm.Rows[0].Number);
         Assert.Equal("Chapter 01", vm.Rows[0].Name);
         Assert.Contains("CHAPTER03=00:00:00.000", vm.BuildPreview(), StringComparison.Ordinal);
@@ -1097,6 +1128,9 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("Chapter 01", vm.Rows[0].Name);
 
         vm.ChapterNameTemplateText = "Opening";
+
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         Assert.Equal("Opening", vm.Rows[0].Name);
         Assert.Contains("CHAPTER03NAME=Opening", vm.BuildPreview(), StringComparison.Ordinal);
@@ -1143,6 +1177,9 @@ public sealed class MainWindowViewModelTests
 
         vm.OrderShift = 2;
 
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         Assert.Equal([3, 4], vm.Rows.Select(static row => row.Number).ToArray());
         var preview = vm.BuildPreview();
         Assert.Contains("CHAPTER03=00:00:00.000", preview, StringComparison.Ordinal);
@@ -1165,7 +1202,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task NegativeExpressionResultNormalizesRowsAndSavedInfoToZero()
+    public async Task NegativeExpressionResultIsRejectedWithoutChangingRowsOrSavedInfo()
     {
         var save = new FakeSaveService();
         var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "Intro", "240"))));
@@ -1175,15 +1212,20 @@ public sealed class MainWindowViewModelTests
         vm.ApplyExpression = true;
         vm.Expression = "t - 10000";
 
-        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
-        Assert.Equal("0", vm.Rows[0].FramesInfo);
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.False(vm.CanApplyContentPreview);
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.CancelContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        Assert.Equal("240", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
 
         await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
-        Assert.Equal("0", save.LastInfo.Chapters[0].FramesInfo);
+        Assert.Equal(TimeSpan.FromSeconds(10), save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal("240", save.LastInfo.Chapters[0].FramesInfo);
         Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
     }
 
@@ -1298,7 +1340,7 @@ public sealed class MainWindowViewModelTests
         vm.UpdateSelectedRows(new HashSet<int> { 0 });
 
         var zones = vm.CreateZonesText();
-        vm.ToolSession.ChapterEdit.ShiftFramesForward(24);
+        await vm.ToolSession.ChapterEdit.ShiftFramesForwardAsync(24);
 
         Assert.StartsWith("--zones ", zones, StringComparison.Ordinal);
         Assert.Single(vm.Rows);

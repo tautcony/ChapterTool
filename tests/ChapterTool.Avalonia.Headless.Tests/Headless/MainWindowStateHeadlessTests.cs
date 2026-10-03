@@ -112,6 +112,11 @@ public sealed class MainWindowStateHeadlessTests
         Assert.True(expressionBox.Bounds.Height <= 34);
         frameRateBox.SelectedIndex = 3;
         roundFramesBox.IsChecked = false;
+        Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
+        await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         await host.ViewModel.SaveCommand.ExecuteAsync("out");
         await host.LayoutAsync();
 

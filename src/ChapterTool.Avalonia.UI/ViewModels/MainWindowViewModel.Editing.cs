@@ -4,6 +4,7 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
@@ -45,23 +46,23 @@ public sealed partial class MainWindowViewModel
         ApplyFrameInfo(logSelection);
     }
 
-    private ValueTask EditCell(object? parameter, EditKind kind)
+    private async ValueTask EditCell(object? parameter, EditKind kind)
     {
         if (CurrentInfo is null || parameter is not ChapterCellEdit edit)
         {
-            return ValueTask.CompletedTask;
+            return;
         }
 
         var previous = OldCellValue(edit, kind);
-        var result = ClipEditingCoordinator.Edit(CurrentInfo, edit, kind switch
+        var preview = ClipEditingCoordinator.Edit(edit, kind switch
         {
             EditKind.Time => ChapterEditKind.Time,
             EditKind.Name => ChapterEditKind.Name,
             EditKind.Frame => ChapterEditKind.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         });
-        ApplyEdit(result, $"Edit {kind.ToString().ToLowerInvariant()}: row={edit.Index}, value='{edit.Value}', previous='{previous}'");
-        return ValueTask.CompletedTask;
+        var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview);
+        ApplyContentOutcome(outcome, $"Edit {kind.ToString().ToLowerInvariant()}: row={edit.Index}, value='{edit.Value}', previous='{previous}'");
     }
 
     private string OldCellValue(ChapterCellEdit edit, EditKind kind)
@@ -145,6 +146,113 @@ public sealed partial class MainWindowViewModel
 
     internal void ApplyEditFromPort(ChapterEditResult result, string? action = null) => ApplyEdit(result, action);
 
+    internal void ApplyContentOutcome(TransactionOutcome outcome, string action)
+    {
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+        {
+            StatusText = outcome.Errors.FirstOrDefault() ?? outcome.Kind.ToString();
+            Log(LogLevel.Warning, $"{action} rejected: {StatusText}", "Edit", ("action", action), ("outcome", outcome.Kind.ToString()));
+            NotifyStateChanged();
+            return;
+        }
+
+        if (CurrentInfo is null)
+        {
+            return;
+        }
+
+        configuredFrameRate = CurrentInfo.FramesPerSecond > 0 ? (decimal)CurrentInfo.FramesPerSecond : null;
+        SetStatus("Status.Updated");
+        Log($"{action}: chapters={CurrentInfo.Chapters.Count}, outcome={outcome.Kind}", "Edit",
+            ("action", action), ("chapters", CurrentInfo.Chapters.Count), ("outcome", outcome.Kind));
+        RefreshRows();
+        NotifyStateChanged();
+    }
+
+    internal ChapterContentPreview PrepareExpressionOperation(string expression) =>
+        ClipEditingCoordinator.PrepareCandidate("Apply expression", document =>
+            ClipEditingCoordinator.CandidateBuilder.ApplyExpression(document, string.IsNullOrWhiteSpace(expression) ? "t" : expression));
+
+    internal ChapterContentPreview PrepareTemplateNamesOperation(bool autoGenerateNames, bool useTemplateNames) =>
+        ClipEditingCoordinator.PrepareCandidate("Apply template names", document =>
+            ClipEditingCoordinator.CandidateBuilder.ApplyOutputOptions(
+                document,
+                autoGenerateNames,
+                useTemplateNames,
+                Workspace.Projection.ChapterNameTemplateText,
+                orderShift: 0,
+                applyExpression: false,
+                expression: "t"));
+
+    internal ChapterContentPreview PrepareContentOptionsOperation() =>
+        ClipEditingCoordinator.PrepareCandidate("Apply chapter options", document =>
+            ClipEditingCoordinator.CandidateBuilder.ApplyOutputOptions(
+                document,
+                Workspace.Projection.AutoGenerateNames,
+                Workspace.Projection.UseTemplateNames,
+                Workspace.Projection.ChapterNameTemplateText,
+                Workspace.Projection.OrderShift,
+                Workspace.Projection.ApplyExpression,
+                Workspace.Projection.Expression));
+
+    internal ChapterContentPreview PrepareFrameRateOperation(decimal sourceFps, decimal targetFps) =>
+        ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
+            ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(document, sourceFps, targetFps));
+
+    internal async ValueTask<TransactionOutcome> ApplyContentPreviewAsync(
+        ChapterContentPreview preview,
+        CancellationToken cancellationToken = default)
+    {
+        var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
+        ApplyContentOutcome(outcome, preview.Operation);
+        if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+            && preview.Operation is "Apply chapter options" or "Apply expression" or "Apply template names")
+        {
+            Workspace.ApplyExpressionFields(
+                Workspace.Projection.Expression,
+                applyExpression: false,
+                Workspace.Projection.ExpressionPresetId,
+                Workspace.Projection.ExpressionSourceName);
+            Workspace.Projection.SetAutoGenerateNames(false);
+            Workspace.Projection.SetUseTemplateNames(false);
+            Workspace.Projection.SetOrderShift(0);
+            OnPropertyChanged(nameof(AutoGenerateNames));
+            OnPropertyChanged(nameof(UseTemplateNames));
+            OnPropertyChanged(nameof(OrderShift));
+            OnPropertyChanged(nameof(ApplyExpression));
+        }
+
+        if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+            && preview.Operation == "Change chapter frame rate"
+            && CurrentInfo is { } currentInfo)
+        {
+            configuredFrameRate = (decimal)currentInfo.FramesPerSecond;
+            selectedFrameRateOption = frameRateService.FindByValue(configuredFrameRate.Value);
+            SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+            var sourceFps = preview.Before.FrameRate is { } sourceRate
+                ? (decimal)sourceRate.Numerator / sourceRate.Denominator
+                : 0m;
+            var targetFps = preview.Candidate.FrameRate is { } targetRate
+                ? (decimal)targetRate.Numerator / targetRate.Denominator
+                : configuredFrameRate.Value;
+            var optionName = selectedFrameRateOption.DisplayName;
+            Log($"Convert to current FPS: option='{optionName}', source={sourceFps:0.###}, target={targetFps:0.###}, chapters {preview.Before.Tracks.Sum(static track => track.Chapters.Length)} -> {currentInfo.Chapters.Count}",
+                "Edit",
+                ("option", optionName),
+                ("sourceFps", $"{sourceFps:0.###}"),
+                ("targetFps", $"{targetFps:0.###}"),
+                ("before", preview.Before.Tracks.Sum(static track => track.Chapters.Length)),
+                ("after", currentInfo.Chapters.Count));
+        }
+
+        return outcome;
+    }
+
+    internal void CancelContentPreview(ChapterContentPreview preview)
+    {
+        ArgumentNullException.ThrowIfNull(preview);
+    }
+
     private void ApplyFrameInfo(bool logResult = true)
     {
         if (CurrentInfo is null)
@@ -201,7 +309,7 @@ public sealed partial class MainWindowViewModel
         NotifyStateChanged();
     }
 
-    private void ChangeFpsToSelectedOption()
+    private async ValueTask ChangeFpsToSelectedOption(CancellationToken cancellationToken = default)
     {
         if (CurrentInfo is null || !selectedFrameRateOption.IsValid)
         {
@@ -211,28 +319,16 @@ public sealed partial class MainWindowViewModel
         var sourceFps = configuredFrameRate ?? (decimal)CurrentInfo.FramesPerSecond;
         var targetOption = selectedFrameRateOption;
         var targetFps = targetOption.Value;
-        var result = ChapterFpsTransformService.ChangeFps(CurrentInfo, sourceFps, targetFps);
-        if (!result.Success)
-        {
-            SetStatus(null, diagnostic: result.Diagnostics.FirstOrDefault());
-            LogDiagnostics("Change FPS", result.Diagnostics);
-            NotifyStateChanged();
-            return;
-        }
-
-        var beforeCount = CurrentInfo.Chapters.Count;
-        CurrentInfo = result.Info;
-        configuredFrameRate = targetFps;
-        ApplyFrameInfo(logResult: false);
-        SetStatus("Status.Updated");
-        Log($"Convert to current FPS: option='{targetOption.DisplayName}', source={sourceFps:0.###}, target={targetFps:0.###}, chapters {beforeCount} -> {result.Info.Chapters.Count}",
-            "Edit",
-            ("option", targetOption.DisplayName),
-            ("sourceFps", $"{sourceFps:0.###}"),
-            ("targetFps", $"{targetFps:0.###}"),
-            ("before", beforeCount),
-            ("after", result.Info.Chapters.Count));
-        NotifyStateChanged();
+        pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        StatusText = !pendingContentPreview.IsValid
+            ? string.Join("; ", pendingContentPreview.Errors)
+            : string.Join("; ", pendingContentPreview.Differences.Take(4).Select(static difference =>
+                $"{difference.Field}: '{difference.Before}' → '{difference.After}'"));
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
     /// <summary>

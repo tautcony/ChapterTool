@@ -214,7 +214,7 @@ public sealed class MainWindowInteractionHeadlessTests
     }
 
     [AvaloniaFact]
-    public async Task Expression_edit_delays_invalid_result_but_applies_valid_result_immediately()
+    public async Task Expression_edit_requires_preview_and_apply_and_rejects_invalid_candidate()
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
@@ -222,17 +222,30 @@ public sealed class MainWindowInteractionHeadlessTests
         await host.LoadAsync("movie.txt");
         host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t + 1";
+        Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
 
+        host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t +";
-        host.ViewModel.Expression = "t + (";
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.False(host.ViewModel.CanApplyContentPreview);
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
 
+        host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t + 2";
-        Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
+        Assert.Equal("00:00:03.000", Assert.Single(host.ViewModel.Rows).TimeText);
 
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
-        Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("00:00:03.000", Assert.Single(host.ViewModel.Rows).TimeText);
     }
 
     [AvaloniaFact]

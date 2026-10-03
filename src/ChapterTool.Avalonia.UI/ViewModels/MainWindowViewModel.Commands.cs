@@ -37,6 +37,9 @@ public sealed partial class MainWindowViewModel
         yield return TemplateNamesCommand;
         yield return ZonesCommand;
         yield return ForwardShiftCommand;
+        yield return PreviewContentOptionsCommand;
+        yield return ApplyContentPreviewCommand;
+        yield return CancelContentPreviewCommand;
     }
 
     private void InitializeFileCommands()
@@ -93,11 +96,7 @@ public sealed partial class MainWindowViewModel
             ApplyFrameInfo();
             return ValueTask.CompletedTask;
         }, _ => CurrentInfo is not null);
-        ChangeFpsCommand = new UiCommand((_, _) =>
-        {
-            ChangeFpsToSelectedOption();
-            return ValueTask.CompletedTask;
-        }, _ => CurrentInfo is not null && selectedFrameRateOption.IsValid);
+        ChangeFpsCommand = new UiCommand((_, token) => ChangeFpsToSelectedOption(token), _ => CurrentInfo is not null && selectedFrameRateOption.IsValid);
         SelectClipCommand = new UiCommand((parameter, _) =>
         {
             SelectClip(Convert.ToInt32(parameter));
@@ -111,25 +110,74 @@ public sealed partial class MainWindowViewModel
         EditTimeCommand = new UiCommand(parameter => EditCell(parameter, EditKind.Time));
         EditNameCommand = new UiCommand(parameter => EditCell(parameter, EditKind.Name));
         EditFrameCommand = new UiCommand(parameter => EditCell(parameter, EditKind.Frame));
-        DeleteCommand = new UiCommand(parameter =>
+        DeleteCommand = new UiCommand(async (parameter, token) =>
         {
             if (CurrentInfo is not null && parameter is IReadOnlySet<int> indexes)
             {
-                ApplyEdit(ClipEditingCoordinator.Delete(CurrentInfo, indexes, EditingOptions), $"Delete rows: indexes={string.Join(",", indexes.Order())}");
+                var preview = ClipEditingCoordinator.Delete(indexes, EditingOptions);
+                var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, token);
+                ApplyContentOutcome(outcome, $"Delete rows: indexes={string.Join(",", indexes.Order())}");
             }
-
-            return ValueTask.CompletedTask;
         }, _ => CurrentInfo is not null);
-        InsertCommand = new UiCommand(parameter =>
+        InsertCommand = new UiCommand(async (parameter, token) =>
         {
             if (CurrentInfo is not null)
             {
                 var index = parameter is int value ? value : Rows.Count;
-                ApplyEdit(ClipEditingCoordinator.InsertBefore(CurrentInfo, index), $"Insert row: index={index}");
+                var preview = ClipEditingCoordinator.InsertBefore(index);
+                var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, token);
+                ApplyContentOutcome(outcome, $"Insert row: index={index}");
             }
-
+        }, _ => CurrentInfo is not null);
+        PreviewContentOptionsCommand = new UiCommand((_, _) =>
+        {
+            pendingContentPreview = PrepareContentOptionsOperation();
+            OnPropertyChanged(nameof(IsContentPreviewPending));
+            OnPropertyChanged(nameof(CanPreviewContentOptions));
+            OnPropertyChanged(nameof(CanApplyContentPreview));
+            var preview = pendingContentPreview;
+            StatusText = !preview.IsValid
+                ? string.Join("; ", preview.Errors)
+                : preview.Differences.IsEmpty
+                    ? "No chapter values will change."
+                    : string.Join("; ", preview.Differences.Take(4).Select(static difference =>
+                        $"{difference.Field}: '{difference.Before}' → '{difference.After}'"));
+            ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+            CancelContentPreviewCommand.RaiseCanExecuteChanged();
             return ValueTask.CompletedTask;
         }, _ => CurrentInfo is not null);
+        ApplyContentPreviewCommand = new UiCommand(async (_, token) =>
+        {
+            if (pendingContentPreview is null || !pendingContentPreview.IsValid)
+            {
+                return;
+            }
+
+            var preview = pendingContentPreview;
+            pendingContentPreview = null;
+            OnPropertyChanged(nameof(IsContentPreviewPending));
+            OnPropertyChanged(nameof(CanPreviewContentOptions));
+            OnPropertyChanged(nameof(CanApplyContentPreview));
+            _ = await ApplyContentPreviewAsync(preview, token);
+            ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+            CancelContentPreviewCommand.RaiseCanExecuteChanged();
+        }, _ => CanApplyContentPreview);
+        CancelContentPreviewCommand = new UiCommand((_, _) =>
+        {
+            if (pendingContentPreview is { } preview)
+            {
+                CancelContentPreview(preview);
+                pendingContentPreview = null;
+                OnPropertyChanged(nameof(IsContentPreviewPending));
+                OnPropertyChanged(nameof(CanPreviewContentOptions));
+                OnPropertyChanged(nameof(CanApplyContentPreview));
+                SetStatus("Status.Updated");
+            }
+
+            ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+            CancelContentPreviewCommand.RaiseCanExecuteChanged();
+            return ValueTask.CompletedTask;
+        }, _ => IsContentPreviewPending);
     }
 
     private void InitializeWindowCommands()

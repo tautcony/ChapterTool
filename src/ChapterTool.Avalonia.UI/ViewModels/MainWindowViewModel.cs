@@ -39,6 +39,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private string chapterNameTemplateStatus;
     private string statusText;
     private string? lastExpressionDiagnosticSignature;
+    private ChapterContentPreview? pendingContentPreview;
 
     private ChapterSet? CurrentInfo
     {
@@ -759,6 +760,18 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public UiCommand ForwardShiftCommand { get; private set; } = null!;
 
+    public UiCommand PreviewContentOptionsCommand { get; private set; } = null!;
+
+    public UiCommand ApplyContentPreviewCommand { get; private set; } = null!;
+
+    public UiCommand CancelContentPreviewCommand { get; private set; } = null!;
+
+    public bool IsContentPreviewPending => pendingContentPreview is not null;
+
+    public bool CanPreviewContentOptions => pendingContentPreview is null;
+
+    public bool CanApplyContentPreview => pendingContentPreview?.IsValid == true;
+
     public UiCommand OpenRelatedMediaCommand { get; private set; } = null!;
 
     public void SetFrameOptions(int frameRateIndex, bool roundFrames)
@@ -917,6 +930,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         TemplateNamesCommand.RaiseCanExecuteChanged();
         ZonesCommand.RaiseCanExecuteChanged();
         ForwardShiftCommand.RaiseCanExecuteChanged();
+        PreviewContentOptionsCommand.RaiseCanExecuteChanged();
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
 

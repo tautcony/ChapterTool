@@ -99,8 +99,9 @@ public sealed class ToolViewModelPortConstructionTests
 
     private sealed class FakeChapterEditPort : IChapterEditPort
     {
-        public void ShiftFramesForward(int frames)
+        public ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default)
         {
+            return ValueTask.CompletedTask;
         }
     }
 }

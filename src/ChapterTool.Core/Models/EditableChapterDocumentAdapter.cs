@@ -85,8 +85,25 @@ public static class EditableChapterDocumentAdapter
             throw new ArgumentException("A non-structural edit result must preserve the chapter row count.", nameof(result));
         }
 
+        return ApplyLegacyChapterSetResult(source, result);
+    }
+
+    /// <summary>Applies a legacy ChapterSet result while preserving positional identities when possible.</summary>
+    public static EditableChapterDocument ApplyLegacyChapterSetResult(
+        EditableChapterDocument source,
+        ChapterSet result)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(result);
+        if (source.Tracks.Length != 1)
+        {
+            throw new ArgumentException("A legacy ChapterSet edit requires a single-track source document.", nameof(source));
+        }
+
         var chapters = result.Chapters.Select((chapter, index) => new EditableChapter(
-            sourceTrack.Chapters[index].Id,
+            index < source.Tracks[0].Chapters.Length
+                ? source.Tracks[0].Chapters[index].Id
+                : ChapterId.New(),
             chapter.DisplayNumber,
             chapter.StartTime.Ticks,
             chapter.Name,
@@ -104,7 +121,7 @@ public static class EditableChapterDocumentAdapter
             result.ImportFormat,
             duration,
             FromLegacyFrameRate(result.FramesPerSecond),
-            [new EditableChapterTrack(sourceTrack.Id, result.Title, chapters)]);
+            [new EditableChapterTrack(source.Tracks[0].Id, result.Title, chapters)]);
     }
 
     private static ChapterFrameRate? FromLegacyFrameRate(double framesPerSecond)
