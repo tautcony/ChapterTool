@@ -63,6 +63,50 @@ public static class EditableChapterDocumentAdapter
         return new ChapterSet(document.Title, document.SourceName, document.ImportFormat, framesPerSecond, duration, chapters.ToImmutable());
     }
 
+    /// <summary>
+    /// Creates a document candidate from a non-structural legacy edit result.
+    /// The source document and result must have one track and the same row count.
+    /// Each row keeps the identity at its original position.
+    /// </summary>
+    public static EditableChapterDocument ApplyNonStructuralChapterSetResult(
+        EditableChapterDocument source,
+        ChapterSet result)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(result);
+        if (source.Tracks.Length != 1)
+        {
+            throw new ArgumentException("A legacy ChapterSet edit requires a single-track source document.", nameof(source));
+        }
+
+        var sourceTrack = source.Tracks[0];
+        if (sourceTrack.Chapters.Length != result.Chapters.Count)
+        {
+            throw new ArgumentException("A non-structural edit result must preserve the chapter row count.", nameof(result));
+        }
+
+        var chapters = result.Chapters.Select((chapter, index) => new EditableChapter(
+            sourceTrack.Chapters[index].Id,
+            chapter.DisplayNumber,
+            chapter.StartTime.Ticks,
+            chapter.Name,
+            chapter.FramesInfo,
+            chapter.EndTime?.Ticks,
+            chapter.FrameAccuracy,
+            chapter.Kind));
+        var duration = result.Duration.Ticks > 0
+            ? ChapterDuration.FromTicks(result.Duration.Ticks)
+            : ChapterDuration.Unknown;
+        return new EditableChapterDocument(
+            source.Id,
+            result.Title,
+            result.SourceName,
+            result.ImportFormat,
+            duration,
+            FromLegacyFrameRate(result.FramesPerSecond),
+            [new EditableChapterTrack(sourceTrack.Id, result.Title, chapters)]);
+    }
+
     private static ChapterFrameRate? FromLegacyFrameRate(double framesPerSecond)
     {
         if (!double.IsFinite(framesPerSecond) || framesPerSecond <= 0)
