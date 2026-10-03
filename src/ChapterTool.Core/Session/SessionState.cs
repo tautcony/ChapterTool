@@ -55,10 +55,16 @@ public sealed record TransactionOutcome(
 public sealed class SessionState
 {
     private readonly SemaphoreSlim commandQueue = new(1, 1);
+    private readonly Action<SessionHistoryFailurePoint>? historyFailureInjector;
     private SessionVersion current;
 
     /// <summary>Creates a session for a validated document.</summary>
     public SessionState(EditableChapterDocument document)
+        : this(document, null)
+    {
+    }
+
+    internal SessionState(EditableChapterDocument document, Action<SessionHistoryFailurePoint>? historyFailureInjector)
     {
         ArgumentNullException.ThrowIfNull(document);
         var validation = EditableChapterDocumentValidator.Validate(document);
@@ -67,11 +73,14 @@ public sealed class SessionState
             throw new ArgumentException("The initial document is invalid.", nameof(document));
         }
 
+        this.historyFailureInjector = historyFailureInjector;
+        var history = SessionHistoryTree.Create(document);
         current = new SessionVersion(
             document,
             Guid.NewGuid(),
             0,
-            ImmutableDictionary<Guid, CachedTransaction>.Empty);
+            ImmutableDictionary<Guid, CachedTransaction>.Empty,
+            history);
     }
 
     /// <summary>Gets a consistent snapshot of the current document.</summary>
@@ -84,6 +93,9 @@ public sealed class SessionState
         }
     }
 
+    /// <summary>Gets the root, cursor, and all retained history nodes.</summary>
+    public SessionHistorySnapshot GetHistorySnapshot() => Volatile.Read(ref current).History.Snapshot();
+
     /// <summary>
     /// Computes and atomically publishes a candidate. The request fingerprint must identify
     /// all transaction inputs that affect the candidate.
@@ -93,7 +105,8 @@ public sealed class SessionState
         Guid transactionId,
         string requestFingerprint,
         Func<EditableChapterDocument, CancellationToken, ValueTask<EditableChapterDocument>> createCandidate,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        string? operationDescription = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(requestFingerprint);
         ArgumentNullException.ThrowIfNull(createCandidate);
@@ -177,12 +190,16 @@ public sealed class SessionState
 
             try
             {
+                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.ChangeSetConstruction);
+                var changeSet = DomainChangeSet.Create(version.Document, candidate);
+                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.NodePublication);
                 var nextIdentity = Guid.NewGuid();
                 var nextRevision = version.MutationRevision + 1;
+                var history = version.History.Append(nextIdentity, changeSet, NormalizeDescription(operationDescription));
                 var nextSnapshot = new SessionSnapshot(candidate, nextIdentity, nextRevision);
                 var outcome = new TransactionOutcome(transactionId, TransactionOutcomeKind.Committed, nextSnapshot, []);
                 var transactions = version.Transactions.Add(transactionId, new CachedTransaction(requestFingerprint, outcome));
-                var nextVersion = new SessionVersion(candidate, nextIdentity, nextRevision, transactions);
+                var nextVersion = new SessionVersion(candidate, nextIdentity, nextRevision, transactions, history);
 
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -232,6 +249,173 @@ public sealed class SessionState
             }
         }
     }
+
+    /// <summary>Moves to the parent state. Returns <see cref="HistoryNavigationOutcomeKind.NoChange"/> at the root.</summary>
+    public ValueTask<HistoryNavigationOutcome> UndoAsync(CancellationToken cancellationToken = default)
+    {
+        return NavigateAsync(tree => tree.Nodes[tree.CursorId].ParentId, cancellationToken);
+    }
+
+    /// <summary>Moves to the preferred child state. Returns no change at a leaf.</summary>
+    public ValueTask<HistoryNavigationOutcome> RedoAsync(CancellationToken cancellationToken = default)
+    {
+        return NavigateAsync(tree =>
+        {
+            var node = tree.Nodes[tree.CursorId];
+            return node.PreferredChildId ?? (node.Children.IsEmpty ? null : node.Children[0]);
+        }, cancellationToken);
+    }
+
+    /// <summary>Moves to a retained direct child of the current node.</summary>
+    public ValueTask<HistoryNavigationOutcome> SelectRedoBranchAsync(Guid childId, CancellationToken cancellationToken = default)
+    {
+        return NavigateAsync(tree => tree.Nodes[tree.CursorId].Children.Contains(childId) ? childId : null, cancellationToken, childId, requireDirectChild: true);
+    }
+
+    /// <summary>Moves to any retained history node, reconstructing privately before publication.</summary>
+    public ValueTask<HistoryNavigationOutcome> NavigateToAsync(Guid nodeId, CancellationToken cancellationToken = default) =>
+        NavigateAsync(_ => nodeId, cancellationToken, nodeId);
+
+    private async ValueTask<HistoryNavigationOutcome> NavigateAsync(
+        Func<SessionHistoryTree, Guid?> selectTarget,
+        CancellationToken cancellationToken,
+        Guid? requestedId = null,
+        bool requireDirectChild = false)
+    {
+        await commandQueue.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var version = Volatile.Read(ref current);
+            var tree = version.History;
+            var targetId = selectTarget(tree);
+            if (targetId is null)
+            {
+                var kind = requestedId is null ? HistoryNavigationOutcomeKind.NoChange : HistoryNavigationOutcomeKind.NotFound;
+                return HistoryOutcome(kind, version, kind == HistoryNavigationOutcomeKind.NoChange ? [] : ["The requested history node is not a child of the current node."]);
+            }
+
+            if (!tree.Nodes.ContainsKey(targetId.Value))
+            {
+                return HistoryOutcome(HistoryNavigationOutcomeKind.NotFound, version, ["The requested history node does not exist."]);
+            }
+
+            if (targetId == tree.CursorId)
+            {
+                return HistoryOutcome(HistoryNavigationOutcomeKind.NoChange, version, []);
+            }
+
+            if ((requestedId is Guid requested && requested != targetId)
+                || (requireDirectChild && !tree.Nodes[tree.CursorId].Children.Contains(targetId.Value)))
+            {
+                return HistoryOutcome(HistoryNavigationOutcomeKind.NotFound, version, ["The requested history node is not a child of the current node."]);
+            }
+
+            if (version.MutationRevision == long.MaxValue)
+            {
+                return HistoryOutcome(HistoryNavigationOutcomeKind.ResourceFailure, version, ["The session mutation revision is exhausted."]);
+            }
+
+            try
+            {
+                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.Reconstruction);
+                var document = Reconstruct(tree, version.Document, tree.CursorId, targetId.Value);
+                var nextIdentity = Guid.NewGuid();
+                var nextRevision = version.MutationRevision + 1;
+                var nextTree = tree.MoveTo(targetId.Value);
+                var nextVersion = version with
+                {
+                    Document = document,
+                    StateIdentity = nextIdentity,
+                    MutationRevision = nextRevision,
+                    History = nextTree
+                };
+                var outcome = new HistoryNavigationOutcome(
+                    HistoryNavigationOutcomeKind.Committed,
+                    new SessionSnapshot(document, nextIdentity, nextRevision),
+                    targetId.Value,
+                    []);
+                Volatile.Write(ref current, nextVersion);
+                return outcome;
+            }
+            catch (OutOfMemoryException)
+            {
+                return HistoryOutcome(HistoryNavigationOutcomeKind.ResourceFailure, version, ["Resources were exhausted before history navigation could be published."]);
+            }
+        }
+        finally
+        {
+            commandQueue.Release();
+        }
+    }
+
+    private static EditableChapterDocument Reconstruct(SessionHistoryTree tree, EditableChapterDocument sourceDocument, Guid fromId, Guid targetId)
+    {
+        if (tree.Nodes[fromId].ParentId == targetId)
+        {
+            return tree.Nodes[fromId].ChangeSet!.Apply(sourceDocument, forward: false);
+        }
+
+        if (tree.Nodes[targetId].ParentId == fromId)
+        {
+            return tree.Nodes[targetId].ChangeSet!.Apply(sourceDocument, forward: true);
+        }
+
+        var targetAncestors = new HashSet<Guid>();
+        var currentId = targetId;
+        while (true)
+        {
+            targetAncestors.Add(currentId);
+            if (currentId == tree.RootId)
+            {
+                break;
+            }
+
+            currentId = tree.Nodes[currentId].ParentId!.Value;
+        }
+
+        var sourcePath = new List<Guid>();
+        currentId = fromId;
+        while (!targetAncestors.Contains(currentId))
+        {
+            sourcePath.Add(currentId);
+            currentId = tree.Nodes[currentId].ParentId!.Value;
+        }
+
+        var commonAncestor = currentId;
+        var document = sourceDocument;
+        foreach (var id in sourcePath)
+        {
+            document = tree.Nodes[id].ChangeSet!.Apply(document, false);
+        }
+
+        var targetPath = new List<Guid>();
+        currentId = targetId;
+        while (currentId != commonAncestor)
+        {
+            targetPath.Add(currentId);
+            currentId = tree.Nodes[currentId].ParentId!.Value;
+        }
+
+        targetPath.Reverse();
+        foreach (var id in targetPath)
+        {
+            document = tree.Nodes[id].ChangeSet!.Apply(document, true);
+        }
+
+        return document;
+    }
+
+    private static HistoryNavigationOutcome HistoryOutcome(
+        HistoryNavigationOutcomeKind kind,
+        SessionVersion version,
+        IEnumerable<string> errors) => new(
+            kind,
+            new SessionSnapshot(version.Document, version.StateIdentity, version.MutationRevision),
+            version.History.CursorId,
+            errors.ToImmutableArray());
+
+    private static string NormalizeDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? "Edit" : description.Trim();
 
     private TransactionOutcome CreateAndCache(
         SessionVersion version,
@@ -297,5 +481,6 @@ public sealed class SessionState
         EditableChapterDocument Document,
         Guid StateIdentity,
         long MutationRevision,
-        ImmutableDictionary<Guid, CachedTransaction> Transactions);
+        ImmutableDictionary<Guid, CachedTransaction> Transactions,
+        SessionHistoryTree History);
 }

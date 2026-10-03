@@ -114,12 +114,13 @@ Host-agnostic interactive session state shared by Avalonia and WASM:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
 - `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — host-neutral session state, edit buffer, revision and session-token commit rules for Avalonia and WASM
-- `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, base tokens, cancellation, and request idempotency
+- `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, base tokens, cancellation, request idempotency, and history navigation
+- `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
 - `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
 - `src/ChapterTool.Core/Session/ChapterSourceDocument.cs` — host-neutral chapter source identity (`LocalPathChapterSource`, `BufferedChapterSource`)
 
-Primary tests: `tests/ChapterTool.Core.Tests/Session/`, including `SessionStateTests.cs` for atomic document transactions and `ChapterWorkspaceTests.cs` for host-neutral workspace state.
+Primary tests: `tests/ChapterTool.Core.Tests/Session/`, including `SessionStateTests.cs` for atomic document transactions, `SessionEditHistoryTests.cs` for retained branches and navigation, and `ChapterWorkspaceTests.cs` for host-neutral workspace state.
 
 ### Boundaries and localization
 
