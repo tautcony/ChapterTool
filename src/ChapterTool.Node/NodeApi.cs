@@ -304,10 +304,17 @@ public static partial class NodeApi
         bool EmitBom = false,
         bool ProjectOutput = true);
 
+    private sealed record NodeSerializationOptions(
+        string Format,
+        string? XmlLanguage = null,
+        string? SourceFileName = null,
+        string TextEncoding = "Utf8");
+
     [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
     [JsonSerializable(typeof(NodeImportResponse))]
     [JsonSerializable(typeof(NodeChapterSet))]
     [JsonSerializable(typeof(NodeExportOptions))]
+    [JsonSerializable(typeof(NodeSerializationOptions))]
     [JsonSerializable(typeof(NodeExportResponse))]
     [JsonSerializable(typeof(NodeFormat[]))]
     [JsonSerializable(typeof(NodeImportFormat[]))]

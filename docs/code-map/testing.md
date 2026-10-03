@@ -47,6 +47,8 @@ Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace,
 
 Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 
+`ChapterExportServiceTests.cs` compares compatibility exports with explicit projection and pure serialization. It covers every export format. `core-api.test.ts` verifies Node.js serialization does not replay a transform. It also verifies repeated exports use unchanged input.
+
 The `.NET 10 CI` workflow builds `dist/` once for changes under `packages/chaptertool`. The build and test job runs `npm run typecheck` and `npm run test:built` against this output. The npm pack job downloads the same output. It runs `npm run pack:verify` without lifecycle scripts. The pack check installs the generated tarball into a temporary consumer and calls `ChapterTool.import`. The `Publish to npm` workflow uses npm Trusted Publishing after a successful version tag run. Configure the GitHub Actions trusted publisher for this workflow and the `npm` environment on npmjs.com.
 
 High-signal test files:

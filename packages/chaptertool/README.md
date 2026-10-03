@@ -28,6 +28,21 @@ if (!exported.success) {
 console.log(exported.content);
 ```
 
+## Transform And Serialize
+
+Use an explicit edit operation when the transformed chapter values must be reused or exported
+more than once. `serialize` writes the supplied snapshot as-is and never replays transforms.
+
+```js
+const transformed = await tool.applyExpression(chapterSet, "t + 1");
+const output = await tool.serialize(transformed.chapterSet, { format: "xml" });
+```
+
+`export` remains a one-shot compatibility wrapper. It accepts the legacy expression, naming,
+numbering, and projection options. It applies those options once, then serializes the resulting
+snapshot. This compatibility API remains supported through package major version 23. A separate
+versioned change is required before removal.
+
 The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input and supports the portable import and export formats listed below.
 
 ## Build From Source

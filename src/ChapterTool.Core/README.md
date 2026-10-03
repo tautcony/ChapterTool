@@ -51,22 +51,26 @@ if (result.Success)
 
 ```csharp
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 var formatter = new ChapterTimeFormatter();
 var exportService = new ChapterExportService(formatter);
 
-var entries = new ChapterExportOptions(
-    Format: ChapterExportFormat.Xml,
-    XmlLanguage: "eng"
-);
-
-var result = exportService.Export(chapterInfo, entries);
+var document = EditableChapterDocumentAdapter.FromChapterSet(chapterInfo);
+var result = exportService.Serialize(
+    document,
+    new ChapterSerializationOptions(ChapterExportFormat.Xml, XmlLanguage: "eng"));
 if (result.Success)
 {
     File.WriteAllText($"output{result.FileExtension}", result.Content);
 }
 ```
+
+`ChapterExportService.Serialize` writes the supplied snapshot as-is. It does not apply expressions,
+name templates, or numbering shifts. Apply a content operation before serialization when output
+values must change. `Export` and `ExportCompatibility` accept the legacy transform-bearing options.
+They remain supported through major version 23. Removal requires a separately versioned change.
 
 ### Edit Chapters
 

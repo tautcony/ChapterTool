@@ -310,6 +310,41 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
+    public void Compatibility_export_matches_explicit_projection_and_serialization_for_every_format()
+    {
+        var source = Sample();
+        var options = ChapterExportFormats.All.Select(format => new ChapterExportOptions(
+            format,
+            XmlLanguage: "eng",
+            SourceFileName: "source.wav",
+            AutoGenerateNames: true,
+            OrderShift: 2,
+            ApplyExpression: true,
+            Expression: "t + 1")).ToArray();
+
+        foreach (var exportOptions in options)
+        {
+            var projection = new ChapterOutputProjectionService().Project(source, exportOptions);
+            var serializedSet = exportOptions.Format == ChapterExportFormat.Json
+                ? projection.Info
+                : projection.Info with { Chapters = projection.OutputChapters };
+            var explicitResult = service.Serialize(
+                serializedSet,
+                new ChapterSerializationOptions(
+                    exportOptions.Format,
+                    exportOptions.XmlLanguage,
+                    exportOptions.SourceFileName,
+                    exportOptions.TextEncoding));
+            var compatibilityResult = service.ExportCompatibility(source, exportOptions);
+
+            Assert.True(explicitResult.Success, $"{exportOptions.Format}: {string.Join("; ", explicitResult.Diagnostics.Select(static diagnostic => diagnostic.Message))}");
+            Assert.True(compatibilityResult.Success, $"{exportOptions.Format}: {string.Join("; ", compatibilityResult.Diagnostics.Select(static diagnostic => diagnostic.Message))}");
+            Assert.Equal(explicitResult.FileExtension, compatibilityResult.FileExtension);
+            Assert.Equal(NormalizeUids(explicitResult.Content), NormalizeUids(compatibilityResult.Content));
+        }
+    }
+
+    [Fact]
     public void Snapshot_webvtt_export_requires_a_final_end_when_duration_is_unknown()
     {
         var document = EditableChapterDocumentAdapter.FromChapterSet(
@@ -357,6 +392,19 @@ public sealed class ChapterExportServiceTests
                 new Chapter(2, TimeSpan.FromSeconds(10), "Middle", "240", FrameAccuracy: FrameAccuracy.Inexact),
                 new Chapter(3, TimeSpan.FromSeconds(20), "End", "480")
             ]);
+
+    private static string NormalizeUids(string content)
+    {
+        if (!content.TrimStart().StartsWith("<?xml", StringComparison.Ordinal))
+        {
+            return content;
+        }
+
+        var document = XDocument.Parse(content);
+        document.Descendants("ChapterUID").Remove();
+        document.Descendants("EditionUID").Remove();
+        return document.ToString(SaveOptions.DisableFormatting);
+    }
 
     private sealed class CountingExpressionEngine : IChapterExpressionEngine
     {

@@ -17,6 +17,13 @@ namespace ChapterTool.Core.Exporting;
 /// <param name="TextEncoding">The encoding used when exported text is written to a file.</param>
 /// <param name="EmitBom">Whether exported text should include the selected encoding's byte order mark.</param>
 /// <param name="ProjectOutput">Whether export should apply output projection before formatting content.</param>
+/// <remarks>
+/// This type is a compatibility contract for one-shot conversion. New code should apply an
+/// explicit content operation and call
+/// <see cref="ChapterExportService.Serialize(ChapterTool.Core.Models.EditableChapterDocument, ChapterSerializationOptions)"/>.
+/// This contract remains supported through major version 23. Removal requires a separately
+/// versioned change.
+/// </remarks>
 public sealed record ChapterExportOptions(
     ChapterExportFormat Format,
     string? XmlLanguage = null,

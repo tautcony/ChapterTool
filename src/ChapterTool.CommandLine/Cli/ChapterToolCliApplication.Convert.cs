@@ -82,13 +82,22 @@ public sealed partial class ChapterToolCliApplication
         var options = new ChapterExportOptions(
             format.Format,
             XmlLanguage: request.XmlLanguage,
-            SourceFileName: request.SourceFileName,
             ApplyExpression: expression is not null,
             Expression: expression ?? "t",
             ExpressionPresetId: expressionPresetId,
             ExpressionSourceName: expressionSourceName,
             ProjectOutput: true);
-        return exporter.Export(projected, options);
+        var projection = new ChapterOutputProjectionService(expressionEngine).Project(projected, options);
+        var output = format.Format == ChapterExportFormat.Json
+            ? projection.Info
+            : projection.Info with { Chapters = projection.OutputChapters };
+        var textEncoding = OutputTextEncodings.TryParse(request.TextEncoding, out var parsedEncoding)
+            ? parsedEncoding
+            : OutputTextEncoding.Utf8;
+        var result = exporter.Serialize(
+            output,
+            new ChapterSerializationOptions(format.Format, request.XmlLanguage, request.SourceFileName, textEncoding));
+        return result with { Diagnostics = [.. result.Diagnostics, .. projection.Diagnostics] };
     }
 
     private bool TryValidateRequest(CliConvertRequest request, out CliOutputFormatDefinition format, out int errorCode)

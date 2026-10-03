@@ -32,20 +32,34 @@ public sealed partial class ChapterExportService
         this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
     }
 
-    /// <summary>
-    /// Executes the Export operation.
-    /// </summary>
+    /// <summary>Exports chapter data through the legacy transform-options compatibility adapter.</summary>
     /// <param name="info">The chapter data to process.</param>
     /// <param name="options">The export options.</param>
     /// <returns>The operation result.</returns>
-    public ChapterExportResult Export(ChapterSet info, ChapterExportOptions options)
+    public ChapterExportResult Export(ChapterSet info, ChapterExportOptions options) => ExportCompatibility(info, options);
+
+    /// <summary>
+    /// Applies the legacy output projection once, then serializes that snapshot.
+    /// Prefer an explicit content operation followed by
+    /// <see cref="Serialize(ChapterTool.Core.Models.EditableChapterDocument, ChapterSerializationOptions)"/>
+    /// when the transformed content must be retained or serialized more than once. This adapter
+    /// entry point remains supported throughout package major version 23; removal requires a
+    /// separately versioned change.
+    /// </summary>
+    /// <param name="info">The source chapter data.</param>
+    /// <param name="options">Legacy transform and serialization options.</param>
+    /// <returns>The serialized content and any diagnostics.</returns>
+    public ChapterExportResult ExportCompatibility(ChapterSet info, ChapterExportOptions options)
     {
+        ArgumentNullException.ThrowIfNull(info);
+        ArgumentNullException.ThrowIfNull(options);
         var projection = options.ProjectOutput
             ? new ChapterOutputProjectionService(expressionEngine).Project(info, options)
             : new ChapterOutputProjectionResult(info, []);
-        info = projection.Info;
-        var outputInfo = info with { Chapters = projection.OutputChapters };
-        var result = SerializeChapterSet(options.Format == ChapterExportFormat.Json ? info : outputInfo, new ChapterSerializationOptions(
+        var output = options.Format == ChapterExportFormat.Json
+            ? projection.Info
+            : projection.Info with { Chapters = projection.OutputChapters };
+        var result = Serialize(output, new ChapterSerializationOptions(
             options.Format, options.XmlLanguage, options.SourceFileName, options.TextEncoding));
 
         return result with
@@ -54,7 +68,7 @@ public sealed partial class ChapterExportService
         };
     }
 
-    /// <summary>Serializes the supplied immutable document snapshot without applying interactive transforms.</summary>
+    /// <summary>Serializes the supplied immutable document snapshot without applying transforms.</summary>
     public ChapterExportResult Serialize(EditableChapterDocument document, ChapterSerializationOptions options)
     {
         ArgumentNullException.ThrowIfNull(document);
@@ -73,6 +87,17 @@ public sealed partial class ChapterExportService
             return Failure(ChapterDiagnosticCode.InvalidStructure, "WebVTT serialization requires a final chapter end or a known document duration.");
         }
 
+        return Serialize(chapterSet, options);
+    }
+
+    /// <summary>Serializes the supplied legacy chapter snapshot without applying transforms.</summary>
+    /// <param name="chapterSet">The chapter values to serialize.</param>
+    /// <param name="options">Format-only serialization settings.</param>
+    /// <returns>The serialized content and any format diagnostics.</returns>
+    public ChapterExportResult Serialize(ChapterSet chapterSet, ChapterSerializationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(chapterSet);
+        ArgumentNullException.ThrowIfNull(options);
         return SerializeChapterSet(chapterSet, options);
     }
 

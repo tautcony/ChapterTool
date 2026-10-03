@@ -58,6 +58,10 @@ chaptertool --version
 
 Use `chaptertool <command> --help` to see the options for a command.
 
+`convert` accepts one optional expression input. Use `--expression` for Lua text or
+`--expression-preset` for a built-in preset. The command rejects both options before it imports
+the input. DotMake defines and binds all command-line options.
+
 ## License
 
 ChapterTool is distributed under the GPLv3+ license.

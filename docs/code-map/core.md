@@ -162,6 +162,8 @@ Frame/time and expression logic:
 Output projection and format serialization:
 
 - `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
+- `ChapterExportService.ExportCompatibility` applies legacy transform options once.
+- `ChapterExportService.Serialize` writes a prepared document without transforms.
 - `src/ChapterTool.Core/Exporting/SaveFormatOption.cs`: host-facing export format metadata
 - `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
@@ -241,5 +243,6 @@ Start with:
 - format-specific serialization: `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
 - snapshot serialization options: `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
 - immutable snapshot entry point: `ChapterExportService.Serialize(EditableChapterDocument, ChapterSerializationOptions)`
+- compatibility conversion entry point: `ChapterExportService.ExportCompatibility(ChapterSet, ChapterExportOptions)`
 - supported file encodings, display names, BOM-aware encoders, and XML encoding names: `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
 - text-to-QP/celltimes conversion: `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`

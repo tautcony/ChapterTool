@@ -142,6 +142,18 @@ export interface ChapterExportOptions {
   projectOutput?: boolean;
 }
 
+/** Format-only options for serializing a prepared chapter snapshot. */
+export interface ChapterSerializationOptions {
+  /** Export format code, e.g. {@code "xml"}, {@code "txt"}, or {@code "vtt"}. */
+  format: string;
+  /** XML language code for XML-based formats. */
+  xmlLanguage?: string;
+  /** Override the source file name embedded in the exported content. */
+  sourceFileName?: string;
+  /** Text encoding for output formats that support it. */
+  textEncoding?: "Utf8" | "Utf16LittleEndian" | "Utf16BigEndian" | "Utf32LittleEndian" | "Utf32BigEndian";
+}
+
 /** Descriptor for one supported export format. */
 export interface ChapterExportFormat {
   /** Stable sort index used by the .NET Core. */

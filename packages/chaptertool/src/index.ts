@@ -17,6 +17,7 @@ import type {
   ChapterExportFormat,
   ChapterExportOptions,
   ChapterExportResult,
+  ChapterSerializationOptions,
   ChapterImportFormat,
   ChapterImportGroup,
   ChapterImportResult,
@@ -146,13 +147,15 @@ export class ChapterTool {
   }
 
   /**
-   * Exports a chapter set using the specified format and options.
+   * Exports a chapter set using one-shot options, then serializes the resulting snapshot.
    *
    * @param chapterSet - The chapter set to export (as returned by {@link import}
    *   or any edit operation).
    * @param options - Export configuration; {@code options.format} must be a
    *   non-empty format code such as {@code "xml"} or {@code "qpf"}.
    * @returns The serialised content, its file extension, and diagnostics.
+   * @deprecated Transform options are compatibility inputs. Use an explicit editing
+   *   operation or {@link project}, then call {@link serialize} to avoid replaying it.
    * @throws {TypeError} When {@code options.format} is missing or empty.
    */
   async export(chapterSet: ChapterSet, options: ChapterExportOptions): Promise<ChapterExportResult> {
@@ -163,8 +166,37 @@ export class ChapterTool {
       throw new TypeError("options.format must be an export format code, such as 'xml'.");
     }
 
+    const projectionOptions = normalizedOptions as unknown as ChapterExportOptions;
+    const projected = await this.project(chapterSet, projectionOptions);
+    const outputChapterSet = projectionOptions.format.toLowerCase() === "json"
+      ? projected.chapterSet
+      : { ...projected.chapterSet, chapters: projected.outputChapters };
+    const serialized = await this.serialize(outputChapterSet, {
+      format: projectionOptions.format,
+      xmlLanguage: projectionOptions.xmlLanguage,
+      sourceFileName: projectionOptions.sourceFileName,
+      textEncoding: projectionOptions.textEncoding,
+    });
+    return { ...serialized, diagnostics: [...serialized.diagnostics, ...projected.diagnostics] };
+  }
+
+  /**
+   * Serializes a chapter snapshot without applying expressions, naming, or numbering transforms.
+   * Use this when the input already contains the desired chapter values.
+   *
+   * @param chapterSet - The already prepared chapter snapshot.
+   * @param options - Format-only serialization settings.
+   * @returns The serialized content, its file extension, and diagnostics.
+   */
+  async serialize(chapterSet: ChapterSet, options: ChapterSerializationOptions): Promise<ChapterExportResult> {
+    requireObject(chapterSet, "chapterSet");
+    const normalizedOptions = requireObject(options, "options");
+    if (typeof normalizedOptions.format !== "string" || normalizedOptions.format.length === 0) {
+      throw new TypeError("options.format must be an export format code, such as 'xml'.");
+    }
+
     return this.#invokeJson<ChapterExportResult>(
-      "Export",
+      "Serialize",
       encodeJson(chapterSet, "chapterSet"),
       encodeJson(normalizedOptions, "options"));
   }

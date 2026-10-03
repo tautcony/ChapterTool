@@ -80,6 +80,7 @@ describe("ChapterTool Core API mapping", () => {
       "parseTimeOrZero",
       "project",
       "rename",
+      "serialize",
       "shiftFramesForward",
       "toCelltimes",
       "updateFrames",
@@ -138,6 +139,31 @@ describe("ChapterTool Core API mapping", () => {
 
     const projected = await tool.project(chapterSet, { format: "txt", autoGenerateNames: true });
     expect(projected.outputChapters[0].name).toBe("Chapter 01");
+  });
+
+  it("serializes transformed snapshots without applying the transform again", async () => {
+    const tool = new ChapterTool();
+    const chapterSet = await sample(tool);
+    chapterSet.framesPerSecond = 24;
+    const originalTime = chapterSet.chapters[0].startTimeSeconds;
+    const explicit = await tool.applyExpression(chapterSet, "t + 1");
+    const serialized = await tool.serialize(explicit.chapterSet, { format: "timecodes" });
+    const compatible = await tool.export(chapterSet, {
+      format: "timecodes",
+      applyExpression: true,
+      expression: "t + 1",
+    });
+    const repeated = await tool.export(chapterSet, {
+      format: "timecodes",
+      applyExpression: true,
+      expression: "t + 1",
+    });
+
+    expect(serialized.success).toBe(true);
+    expect(serialized.content).toBe(compatible.content);
+    expect(repeated.content).toBe(compatible.content);
+    expect(chapterSet.chapters[0].startTimeSeconds).toBe(originalTime);
+    expect(explicit.chapterSet.chapters[0].startTimeSeconds).toBe(originalTime + 1);
   });
 
   it("exposes Core time, conversion, and metadata operations", async () => {

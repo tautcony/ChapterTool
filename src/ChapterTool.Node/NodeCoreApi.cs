@@ -158,6 +158,22 @@ public static partial class NodeApi
     }
 
     [JSExport]
+    public static string Serialize(string chapterSetJson, string optionsJson)
+    {
+        var chapterSet = DeserializeChapterSet(chapterSetJson);
+        var options = JsonSerializer.Deserialize(optionsJson, NodeJsonContext.Default.NodeSerializationOptions)
+            ?? throw new ArgumentException("Serialization options JSON is invalid.", nameof(optionsJson));
+        var result = ChapterService.Serialize(
+            chapterSet,
+            new ChapterSerializationOptions(
+                ParseExportFormat(options.Format),
+                options.XmlLanguage,
+                options.SourceFileName,
+                ParseTextEncoding(options.TextEncoding)));
+        return JsonSerializer.Serialize(ToExportResponse(result), NodeJsonContext.Default.NodeExportResponse);
+    }
+
+    [JSExport]
     public static string AnalyzeExpression(
         string expression,
         int caretIndex,
