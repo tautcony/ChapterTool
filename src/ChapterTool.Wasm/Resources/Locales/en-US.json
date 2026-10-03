@@ -191,6 +191,7 @@
   "Grid.Frames": "Frames",
   "Grid.Name": "Name",
   "Grid.Number": "#",
+  "Grid.TableLabel": "Chapters",
   "Grid.Time": "Time",
   "Label.ChapterName": "Chapter name",
   "Label.Clip": "Clip / playlist entry",

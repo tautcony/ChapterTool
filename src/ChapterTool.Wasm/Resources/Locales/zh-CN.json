@@ -191,6 +191,7 @@
   "Grid.Frames": "帧",
   "Grid.Name": "名称",
   "Grid.Number": "#",
+  "Grid.TableLabel": "章节",
   "Grid.Time": "时间",
   "Label.ChapterName": "章节名",
   "Label.Clip": "片段 / 播放列表项",

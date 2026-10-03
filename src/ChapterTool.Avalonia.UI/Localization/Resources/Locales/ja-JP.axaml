@@ -192,6 +192,7 @@
   <x:String x:Key="Grid.Frames" xml:space="preserve">フレーム</x:String>
   <x:String x:Key="Grid.Name" xml:space="preserve">名前</x:String>
   <x:String x:Key="Grid.Number" xml:space="preserve">#</x:String>
+  <x:String x:Key="Grid.TableLabel" xml:space="preserve">チャプター</x:String>
   <x:String x:Key="Grid.Time" xml:space="preserve">時刻</x:String>
   <x:String x:Key="Label.ChapterName" xml:space="preserve">チャプター名</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">クリップ / プレイリスト項目</x:String>

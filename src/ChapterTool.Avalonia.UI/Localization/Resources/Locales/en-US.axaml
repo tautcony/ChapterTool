@@ -192,6 +192,7 @@
   <x:String x:Key="Grid.Frames" xml:space="preserve">Frames</x:String>
   <x:String x:Key="Grid.Name" xml:space="preserve">Name</x:String>
   <x:String x:Key="Grid.Number" xml:space="preserve">#</x:String>
+  <x:String x:Key="Grid.TableLabel" xml:space="preserve">Chapters</x:String>
   <x:String x:Key="Grid.Time" xml:space="preserve">Time</x:String>
   <x:String x:Key="Label.ChapterName" xml:space="preserve">Chapter name</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">Clip / playlist entry</x:String>
