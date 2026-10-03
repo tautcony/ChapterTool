@@ -185,13 +185,13 @@ Browser host:
 
 - `src/ChapterTool.Wasm` is the Blazor WebAssembly browser app. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
 - `src/ChapterTool.Wasm/Pages/Home.razor` is the browser workspace page.
-- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, projection, export orchestration, diagnostics, activity logs, and localized status strings.
+- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, projection, export orchestration, history commands, diagnostics, activity logs, and localized status strings. It navigates the shared Core `ChapterWorkspace.ContentSession`.
 - `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` blocks browser shortcut keys during text editing.
 - `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, projection, and export services.
 - Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
 - The JSON resources are generated from the Avalonia AXAML locales by `scripts/axaml-to-json.py`. Use its `--check` mode to detect drift.
 - Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. `WasmApplicationSettings` mirrors the Contracts `AppSettings` fields, including the delete-rows timing and frame display preferences. The host stores settings in browser storage through the workspace path.
-- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, and export behavior. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.
+- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, export, independent tab sessions, and history navigation. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.
 - GitHub Pages deploys the app through `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 
 ## Feature Lookup

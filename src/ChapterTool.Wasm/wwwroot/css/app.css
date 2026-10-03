@@ -88,6 +88,49 @@ html, body {
   display: inline-flex;
 }
 
+.history-panel {
+  max-height: 15rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--control-bg);
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.history-heading span {
+  flex: 1;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.history-list {
+  max-height: 11rem;
+  overflow: auto;
+}
+
+.history-entry {
+  display: block;
+  width: 100%;
+  min-height: 30px;
+  overflow: hidden;
+  padding: 0.2rem 0.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--control-fg);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: pre;
+}
+
+.history-entry.current {
+  background: var(--hover);
+}
+
 .top-clip {
   min-width: 0;
   display: flex;

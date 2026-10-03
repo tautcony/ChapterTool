@@ -144,6 +144,16 @@
             <CheckBox x:Name="RoundFramesBox"
                       Content="{DynamicResource Label.RoundFrames}"
                       IsChecked="{Binding RoundFrames}" />
+            <ToggleButton x:Name="HistoryToggleButton"
+                          Classes="icon_button"
+                          Width="32"
+                          Height="32"
+                          IsChecked="{Binding IsHistoryPanelExpanded, Mode=TwoWay}"
+                          AutomationProperties.AutomationId="HistoryToggle"
+                          AutomationProperties.Name="{DynamicResource History.Title}"
+                          ToolTip.Tip="{DynamicResource History.Title}">
+              <i:Icon Value="fa-solid fa-clock-rotate-left" FontSize="14" />
+            </ToggleButton>
             <Button x:Name="PreviewButton"
                     Classes="icon_button"
                     Width="32"
@@ -212,12 +222,13 @@
         </Grid>
       </Grid>
 
-      <Grid Grid.Row="1" MinHeight="208">
+      <Grid Grid.Row="1" MinHeight="208" ColumnDefinitions="*,Auto">
         <Grid.RowDefinitions>
           <RowDefinition />
           <RowDefinition />
         </Grid.RowDefinitions>
         <DataGrid x:Name="ChapterGrid"
+                  Grid.Column="0"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="False"
                   CanUserResizeColumns="True"
@@ -335,7 +346,7 @@
             </DataGridTemplateColumn>
           </DataGrid.Columns>
         </DataGrid>
-        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsChapterGridEmpty}" Spacing="8">
+        <StackPanel Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsChapterGridEmpty}" Spacing="8">
         <svg:Svg x:Name="ChapterGridEmptyImage"
                  IsVisible="{Binding IsChapterGridEmpty}"
                  Width="160"
@@ -347,6 +358,45 @@
                  AutomationProperties.AutomationId="ChapterGridEmptyImage" />
         <TextBlock Text="{DynamicResource Main.EmptyGuidance}" HorizontalAlignment="Center" />
         </StackPanel>
+        <Border Grid.Column="1"
+                Margin="12,0,0,0"
+                Padding="8"
+                Width="220"
+                BorderBrush="{DynamicResource Brush.Border1}"
+                BorderThickness="1"
+                Background="{DynamicResource Brush.Window}"
+                IsVisible="{Binding ShowHistoryPanel}"
+                AutomationProperties.AutomationId="SessionHistoryPanel">
+          <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+              <TextBlock FontWeight="SemiBold" Text="{DynamicResource History.Title}" />
+              <TextBlock FontSize="11" TextWrapping="Wrap" Text="{Binding HistoryLifetimeText}" />
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button Classes="flat" Content="{DynamicResource History.Undo}" Command="{Binding UndoCommand}"
+                        IsEnabled="{Binding CanUndo}" ToolTip.Tip="{Binding UndoDescription}" />
+                <Button Classes="flat" Content="{DynamicResource History.Redo}" Command="{Binding RedoCommand}"
+                        IsEnabled="{Binding CanRedo}" ToolTip.Tip="{Binding RedoDescription}" />
+              </StackPanel>
+            </StackPanel>
+            <ListBox x:Name="SessionHistoryEntries" ItemsSource="{Binding HistoryEntries}"
+                     AutomationProperties.AutomationId="SessionHistoryEntries">
+              <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <VirtualizingStackPanel />
+                </ItemsPanelTemplate>
+              </ListBox.ItemsPanel>
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:HistoryEntryViewModel">
+                  <Button Classes="flat"
+                          HorizontalContentAlignment="Left"
+                          Content="{Binding DisplayDescription}"
+                          Click="OnHistoryEntryClick"
+                          ToolTip.Tip="{Binding Description}" />
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </Border>
       </Grid>
 
       <Grid x:Name="AdvancedOptionsGrid"

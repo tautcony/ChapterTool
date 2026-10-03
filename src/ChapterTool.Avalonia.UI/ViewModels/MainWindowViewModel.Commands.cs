@@ -40,6 +40,9 @@ public sealed partial class MainWindowViewModel
         yield return PreviewContentOptionsCommand;
         yield return ApplyContentPreviewCommand;
         yield return CancelContentPreviewCommand;
+        yield return UndoCommand;
+        yield return RedoCommand;
+        yield return NavigateHistoryCommand;
     }
 
     private void InitializeFileCommands()
@@ -91,6 +94,15 @@ public sealed partial class MainWindowViewModel
 
     private void InitializeEditCommands()
     {
+        UndoCommand = new UiCommand(async (_, token) => await NavigateHistoryAsync("undo", null, token), _ => CanUndo);
+        RedoCommand = new UiCommand(async (_, token) => await NavigateHistoryAsync("redo", null, token), _ => CanRedo);
+        NavigateHistoryCommand = new UiCommand(async (parameter, token) =>
+        {
+            if (parameter is Guid nodeId)
+            {
+                await NavigateHistoryAsync("navigate", nodeId, token);
+            }
+        }, parameter => parameter is Guid nodeId && HistoryEntries.Any(entry => entry.Id == nodeId));
         RefreshCommand = new UiCommand((_, _) =>
         {
             ApplyFrameInfo();
@@ -178,6 +190,43 @@ public sealed partial class MainWindowViewModel
             CancelContentPreviewCommand.RaiseCanExecuteChanged();
             return ValueTask.CompletedTask;
         }, _ => IsContentPreviewPending);
+    }
+
+    private async ValueTask NavigateHistoryAsync(string action, Guid? nodeId, CancellationToken cancellationToken)
+    {
+        if (pendingContentPreview is { } preview)
+        {
+            CancelContentPreview(preview);
+            pendingContentPreview = null;
+            OnPropertyChanged(nameof(IsContentPreviewPending));
+            OnPropertyChanged(nameof(CanPreviewContentOptions));
+            OnPropertyChanged(nameof(CanApplyContentPreview));
+        }
+
+        var session = Workspace.ContentSession;
+        if (session is null)
+        {
+            return;
+        }
+
+        var outcome = action switch
+        {
+            "undo" => await session.UndoAsync(cancellationToken),
+            "redo" => await session.RedoAsync(cancellationToken),
+            _ => await session.NavigateToAsync(nodeId!.Value, cancellationToken)
+        };
+        if (outcome.Kind == HistoryNavigationOutcomeKind.Committed)
+        {
+            Workspace.PublishContentDocument(outcome.Snapshot.Document);
+            RefreshRows();
+            StatusText = Localizer.GetString(action == "undo" ? "History.UndoApplied" : "History.RedoApplied");
+        }
+        else if (outcome.Kind is not HistoryNavigationOutcomeKind.NoChange)
+        {
+            StatusText = outcome.Errors.FirstOrDefault() ?? Localizer.GetString("History.NavigationFailed");
+        }
+
+        NotifyStateChanged();
     }
 
     private void InitializeWindowCommands()

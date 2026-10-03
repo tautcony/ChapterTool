@@ -7,7 +7,7 @@ public sealed class ShortcutMappingTests
     [Fact]
     public void CatalogHasDeterministicPrimaryActionsAndClipGestures()
     {
-        Assert.Equal(["load", "save", "reload", "previous-clip", "next-clip", "preview", "log", "insert", "delete"], ShortcutCatalog.All.Select(static action => action.Id));
+        Assert.Equal(["load", "save", "reload", "previous-clip", "next-clip", "preview", "log", "insert", "delete", "undo", "redo"], ShortcutCatalog.All.Select(static action => action.Id));
     }
 
     [Theory]
@@ -58,6 +58,18 @@ public sealed class ShortcutMappingTests
 
         Assert.Equal(ShortcutCatalog.SaveId, mapping.ActionForGesture("Ctrl+Shift+S"));
         Assert.Null(mapping.ActionForGesture("Ctrl+S"));
+    }
+
+    [Fact]
+    public void DefaultHistoryGesturesCoverWindowsLinuxAndMacOS()
+    {
+        var mapping = ShortcutMapping.Default;
+
+        Assert.Equal(ShortcutCatalog.UndoId, mapping.ActionForGesture("Ctrl+Z"));
+        Assert.Equal(ShortcutCatalog.RedoId, mapping.ActionForGesture("Ctrl+Y"));
+        Assert.Equal(ShortcutCatalog.RedoId, mapping.ActionForGesture("Ctrl+Shift+Z"));
+        Assert.Equal(ShortcutCatalog.UndoId, mapping.ActionForGesture("Meta+Z"));
+        Assert.Equal(ShortcutCatalog.RedoId, mapping.ActionForGesture("Meta+Shift+Z"));
     }
 
     [Fact]

@@ -393,6 +393,14 @@
   "Status.TemplateLoaded": "テンプレート {name} を読み込みました",
   "Status.TemplateNotSelected": "未選択",
   "Status.Updated": "更新しました",
+  "History.Title": "編集履歴",
+  "History.SessionLifetime": "履歴は現在のドキュメントセッション中のみ保持されます。",
+  "History.SessionLifetimeShort": "現在のセッションのみ",
+  "History.Undo": "元に戻す",
+  "History.Redo": "やり直す",
+  "History.UndoApplied": "編集を元に戻しました",
+  "History.RedoApplied": "編集をやり直しました",
+  "History.NavigationFailed": "履歴を移動できませんでした。",
   "Status.UnexpectedError": "操作中に予期しないエラーが発生しました。詳細はログを確認してください。",
   "Status.ZonesEmpty": "zones は生成されませんでした。",
   "Status.ZonesGenerated": "Zones を生成しました",
@@ -430,5 +438,7 @@
   "Shortcuts.Action.Load": "読み込み",
   "Shortcuts.Action.PreviousClip": "前のクリップ",
   "Shortcuts.Action.NextClip": "次のクリップ",
+  "Shortcuts.Action.Undo": "編集を元に戻す",
+  "Shortcuts.Action.Redo": "編集をやり直す",
   "Shortcuts.Action.SaveFormat": "保存形式を選択"
 }

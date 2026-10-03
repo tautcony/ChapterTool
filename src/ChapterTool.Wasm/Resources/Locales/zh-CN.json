@@ -393,6 +393,14 @@
   "Status.TemplateLoaded": "已加载模板 {name}",
   "Status.TemplateNotSelected": "未选择",
   "Status.Updated": "已更新",
+  "History.Title": "编辑历史",
+  "History.SessionLifetime": "历史记录仅在当前文档会话期间保留。",
+  "History.SessionLifetimeShort": "仅当前会话",
+  "History.Undo": "撤销",
+  "History.Redo": "重做",
+  "History.UndoApplied": "已撤销编辑",
+  "History.RedoApplied": "已重做编辑",
+  "History.NavigationFailed": "无法切换历史记录。",
   "Status.UnexpectedError": "操作意外失败。请查看日志了解详细信息。",
   "Status.ZonesEmpty": "未生成 zones。",
   "Status.ZonesGenerated": "Zones 已生成",
@@ -430,5 +438,7 @@
   "Shortcuts.Action.Load": "加载",
   "Shortcuts.Action.PreviousClip": "上一个片段",
   "Shortcuts.Action.NextClip": "下一个片段",
+  "Shortcuts.Action.Undo": "撤销编辑",
+  "Shortcuts.Action.Redo": "重做编辑",
   "Shortcuts.Action.SaveFormat": "选择保存格式"
 }

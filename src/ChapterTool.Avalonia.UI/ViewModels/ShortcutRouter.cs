@@ -24,6 +24,8 @@ public sealed class ShortcutRouter(
             ShortcutCatalog.LoadId when load is not null => load(),
             ShortcutCatalog.PreviousClipId when navigateClip is not null => navigateClip("PageUp"),
             ShortcutCatalog.NextClipId when navigateClip is not null => navigateClip("PageDown"),
+            ShortcutCatalog.UndoId => viewModel.UndoCommand.ExecuteAsync(cancellationToken: cancellationToken),
+            ShortcutCatalog.RedoId => viewModel.RedoCommand.ExecuteAsync(cancellationToken: cancellationToken),
             _ => ValueTask.CompletedTask
         };
     }

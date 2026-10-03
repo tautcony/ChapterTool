@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
@@ -16,7 +17,7 @@ public sealed partial class MainView : UserControl
 {
     private static readonly IReadOnlyDictionary<Key, string> ControlGestures = new Dictionary<Key, string>
     {
-        [Key.S] = "Ctrl+S", [Key.O] = "Ctrl+O", [Key.R] = "Ctrl+R", [Key.L] = "Ctrl+L"
+        [Key.S] = "Ctrl+S", [Key.O] = "Ctrl+O", [Key.R] = "Ctrl+R", [Key.L] = "Ctrl+L", [Key.Z] = "Ctrl+Z", [Key.Y] = "Ctrl+Y"
     };
 
     private static readonly IReadOnlyDictionary<Key, string> FunctionGestures = new Dictionary<Key, string>
@@ -130,7 +131,10 @@ public sealed partial class MainView : UserControl
         UpdateSecondarySurface();
     }
 
-    private void OnSizeChanged(object? sender, SizeChangedEventArgs e) => ApplyAdvancedOptionsLayout();
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        ApplyAdvancedOptionsLayout();
+    }
 
     private void OnExpressionEditorMultilineExpansionChanged(
         object? sender,
@@ -351,6 +355,17 @@ public sealed partial class MainView : UserControl
         var meta = args.KeyModifiers.HasFlag(KeyModifiers.Meta);
         var alt = args.KeyModifiers.HasFlag(KeyModifiers.Alt);
 
+        if ((control || meta) && args.Key == Key.Z)
+        {
+            var modifier = meta ? "Meta" : "Ctrl";
+            return args.KeyModifiers.HasFlag(KeyModifiers.Shift) ? $"{modifier}+Shift+Z" : $"{modifier}+Z";
+        }
+
+        if (control && args.Key == Key.Y)
+        {
+            return "Ctrl+Y";
+        }
+
         if (control && ControlGestures.TryGetValue(args.Key, out var controlGesture))
         {
             return controlGesture;
@@ -412,6 +427,14 @@ public sealed partial class MainView : UserControl
     private async ValueTask DeleteSelectedAsync()
     {
         await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
+    }
+
+    private async void OnHistoryEntryClick(object? sender, RoutedEventArgs args)
+    {
+        if (sender is Control { DataContext: HistoryEntryViewModel entry })
+        {
+            await uiOperationBoundary.RunAsync(async () => await viewModel.NavigateHistoryCommand.ExecuteAsync(entry.Id));
+        }
     }
 
     private int SelectedRowIndex() =>

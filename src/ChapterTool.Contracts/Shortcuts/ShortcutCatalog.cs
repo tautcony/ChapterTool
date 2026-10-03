@@ -12,6 +12,8 @@ public static class ShortcutCatalog
     public const string LoadId = "load";
     public const string PreviousClipId = "previous-clip";
     public const string NextClipId = "next-clip";
+    public const string UndoId = "undo";
+    public const string RedoId = "redo";
 
     /// <summary>Gets all catalog actions in deterministic display and routing order.</summary>
     public static IReadOnlyList<ShortcutAction> All { get; } =
@@ -24,7 +26,9 @@ public static class ShortcutCatalog
         new(PreviewId, "Shortcuts.Action.Preview", IsEditable: true, DefaultGesture: "F11", FixedGestures: []),
         new(LogId, "Shortcuts.Action.Log", IsEditable: true, DefaultGesture: "Ctrl+L", FixedGestures: []),
         new(InsertId, "Shortcuts.Action.Insert", IsEditable: false, DefaultGesture: "Insert", FixedGestures: ["Insert"]),
-        new(DeleteId, "Shortcuts.Action.Delete", IsEditable: false, DefaultGesture: "Delete", FixedGestures: ["Delete"])
+        new(DeleteId, "Shortcuts.Action.Delete", IsEditable: false, DefaultGesture: "Delete", FixedGestures: ["Delete"]),
+        new(UndoId, "Shortcuts.Action.Undo", IsEditable: true, DefaultGesture: "Ctrl+Z", FixedGestures: ["Meta+Z"]),
+        new(RedoId, "Shortcuts.Action.Redo", IsEditable: true, DefaultGesture: "Ctrl+Y", FixedGestures: ["Ctrl+Shift+Z", "Meta+Shift+Z"])
     ];
 
     public static IReadOnlyList<ShortcutAction> EditableActions { get; } =

@@ -394,6 +394,14 @@
   <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">已加载模板 {name}</x:String>
   <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">未选择</x:String>
   <x:String x:Key="Status.Updated" xml:space="preserve">已更新</x:String>
+  <x:String x:Key="History.Title" xml:space="preserve">编辑历史</x:String>
+  <x:String x:Key="History.SessionLifetime" xml:space="preserve">历史记录仅在当前文档会话期间保留。</x:String>
+  <x:String x:Key="History.SessionLifetimeShort" xml:space="preserve">仅当前会话</x:String>
+  <x:String x:Key="History.Undo" xml:space="preserve">撤销</x:String>
+  <x:String x:Key="History.Redo" xml:space="preserve">重做</x:String>
+  <x:String x:Key="History.UndoApplied" xml:space="preserve">已撤销编辑</x:String>
+  <x:String x:Key="History.RedoApplied" xml:space="preserve">已重做编辑</x:String>
+  <x:String x:Key="History.NavigationFailed" xml:space="preserve">无法切换历史记录。</x:String>
   <x:String x:Key="Status.UnexpectedError" xml:space="preserve">操作意外失败。请查看日志了解详细信息。</x:String>
   <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">未生成 zones。</x:String>
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones 已生成</x:String>
@@ -431,5 +439,7 @@
   <x:String x:Key="Shortcuts.Action.Load" xml:space="preserve">加载</x:String>
   <x:String x:Key="Shortcuts.Action.PreviousClip" xml:space="preserve">上一个片段</x:String>
   <x:String x:Key="Shortcuts.Action.NextClip" xml:space="preserve">下一个片段</x:String>
+  <x:String x:Key="Shortcuts.Action.Undo" xml:space="preserve">撤销编辑</x:String>
+  <x:String x:Key="Shortcuts.Action.Redo" xml:space="preserve">重做编辑</x:String>
   <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">选择保存格式</x:String>
 </ResourceDictionary>

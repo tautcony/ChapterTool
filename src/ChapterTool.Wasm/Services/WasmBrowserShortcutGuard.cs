@@ -21,7 +21,7 @@ public static class WasmBrowserShortcutGuard
         || (ctrlOrMeta && string.Equals(key, "r", StringComparison.OrdinalIgnoreCase));
 
     public static bool IsAppShortcut(string key, bool ctrlOrMeta) =>
-        (ctrlOrMeta && key.ToLowerInvariant() is "s" or "o" or "l")
+        (ctrlOrMeta && key.ToLowerInvariant() is "s" or "o" or "l" or "z" or "y")
         || string.Equals(key, "F11", StringComparison.OrdinalIgnoreCase)
         || string.Equals(key, "F9", StringComparison.OrdinalIgnoreCase);
 }

@@ -394,6 +394,14 @@
   <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">テンプレート {name} を読み込みました</x:String>
   <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">未選択</x:String>
   <x:String x:Key="Status.Updated" xml:space="preserve">更新しました</x:String>
+  <x:String x:Key="History.Title" xml:space="preserve">編集履歴</x:String>
+  <x:String x:Key="History.SessionLifetime" xml:space="preserve">履歴は現在のドキュメントセッション中のみ保持されます。</x:String>
+  <x:String x:Key="History.SessionLifetimeShort" xml:space="preserve">現在のセッションのみ</x:String>
+  <x:String x:Key="History.Undo" xml:space="preserve">元に戻す</x:String>
+  <x:String x:Key="History.Redo" xml:space="preserve">やり直す</x:String>
+  <x:String x:Key="History.UndoApplied" xml:space="preserve">編集を元に戻しました</x:String>
+  <x:String x:Key="History.RedoApplied" xml:space="preserve">編集をやり直しました</x:String>
+  <x:String x:Key="History.NavigationFailed" xml:space="preserve">履歴を移動できませんでした。</x:String>
   <x:String x:Key="Status.UnexpectedError" xml:space="preserve">操作中に予期しないエラーが発生しました。詳細はログを確認してください。</x:String>
   <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">zones は生成されませんでした。</x:String>
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones を生成しました</x:String>
@@ -431,5 +439,7 @@
   <x:String x:Key="Shortcuts.Action.Load" xml:space="preserve">読み込み</x:String>
   <x:String x:Key="Shortcuts.Action.PreviousClip" xml:space="preserve">前のクリップ</x:String>
   <x:String x:Key="Shortcuts.Action.NextClip" xml:space="preserve">次のクリップ</x:String>
+  <x:String x:Key="Shortcuts.Action.Undo" xml:space="preserve">編集を元に戻す</x:String>
+  <x:String x:Key="Shortcuts.Action.Redo" xml:space="preserve">編集をやり直す</x:String>
   <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">保存形式を選択</x:String>
 </ResourceDictionary>

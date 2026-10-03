@@ -65,6 +65,8 @@ Avalonia owns only host ports:
 
 `MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append commits use workspace revision rules.
 
+`MainWindowViewModel` projects the Core history tree into `HistoryEntryViewModel` rows. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `MainView.axaml` renders these rows in a virtualized list.
+
 Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordinator` and `IChapterContentOperationPort`. Clip boundaries and media placement live in track segments. `ClipSession` contains selector metadata only. Batch tools preview, apply, or cancel typed candidates. Cell edits commit to the selected track. `CreateExportOptions` disables draft transforms. Tables and exports read committed chapter values after apply.
 
 `tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/` verifies rendered preview/apply workflows and responsive layouts.
@@ -142,7 +144,7 @@ Primary entry points are `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.ax
 
 The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. Change FPS is a visible `icon_button` next to the frame-rate selector.
 
-Shortcut ownership is shared. `src/ChapterTool.Contracts/Shortcuts/` defines stable action IDs, gesture normalization, conflict checks, and active mappings. `ShortcutRouter` consumes the mapping. `SettingsToolViewModel` owns draft rows and saves them through `ISettingsStore<ChapterToolSettings>`. `SettingsToolView.axaml` exposes the Shortcuts tab.
+Shortcut ownership is shared. `src/ChapterTool.Contracts/Shortcuts/` defines stable action IDs, gesture normalization, conflict checks, and active mappings. `ShortcutRouter` routes undo and redo through the session commands. Windows and Linux use Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z. macOS uses Cmd+Z and Cmd+Shift+Z. Text controls keep their draft undo scope. `SettingsToolViewModel` owns draft rows and saves them through `ISettingsStore<ChapterToolSettings>`. `SettingsToolView.axaml` exposes the Shortcuts tab.
 
 ### ViewModels
 

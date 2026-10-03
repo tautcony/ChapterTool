@@ -83,6 +83,27 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task HistoryUndoRedoAndArbitraryNavigationRefreshTheCommittedRows()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Changed"));
+        var changedNode = Assert.Single(vm.HistoryEntries, entry => entry.IsCurrent);
+        Assert.Equal("Changed", vm.Rows[0].Name);
+        Assert.True(vm.CanUndo);
+        Assert.Contains("Edit name", vm.UndoDescription, StringComparison.OrdinalIgnoreCase);
+
+        await vm.UndoCommand.ExecuteAsync();
+        Assert.Equal("Intro", vm.Rows[0].Name);
+        Assert.True(vm.CanRedo);
+
+        await vm.NavigateHistoryCommand.ExecuteAsync(changedNode.Id);
+        Assert.Equal("Changed", vm.Rows[0].Name);
+        Assert.Contains(vm.HistoryEntries, entry => entry.IsCurrent && entry.Id == changedNode.Id);
+    }
+
+    [Fact]
     public async Task SingleMplsOptionStillShowsClipSelection()
     {
         var load = new FakeLoadService(ImportResult(

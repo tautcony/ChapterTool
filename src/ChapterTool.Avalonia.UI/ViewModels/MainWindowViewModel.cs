@@ -36,10 +36,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private FrameRateOption selectedFrameRateOption;
     private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
+    private bool isHistoryPanelExpanded = true;
     private string chapterNameTemplateStatus;
     private string statusText;
     private string? lastExpressionDiagnosticSignature;
     private ChapterContentPreview? pendingContentPreview;
+    private IReadOnlyList<HistoryEntryViewModel> historyEntries = [];
+    private SessionHistorySnapshot? historySnapshot;
 
     private ChapterSet? CurrentInfo
     {
@@ -150,6 +153,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         Rows.CollectionChanged += OnRowsChanged;
 
         InitializeCommands();
+        RefreshHistoryEntries();
     }
 
     public void Dispose()
@@ -649,6 +653,62 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         private set => SetProperty(ref statusText, value);
     }
 
+    public IReadOnlyList<HistoryEntryViewModel> HistoryEntries
+    {
+        get => historyEntries;
+        private set => SetProperty(ref historyEntries, value);
+    }
+
+    public bool HasHistory => HistoryEntries.Count > 0;
+
+    public bool ShowHistoryPanel => HasHistory && IsHistoryPanelExpanded;
+
+    public string HistoryLifetimeText => Localizer.GetString("History.SessionLifetimeShort");
+
+    public bool IsHistoryPanelExpanded
+    {
+        get => isHistoryPanelExpanded;
+        set
+        {
+            if (SetProperty(ref isHistoryPanelExpanded, value))
+            {
+                OnPropertyChanged(nameof(ShowHistoryPanel));
+            }
+        }
+    }
+
+    public string UndoDescription => CurrentHistoryNode?.Description ?? string.Empty;
+
+    public string RedoDescription => PreferredRedoNode?.Description ?? string.Empty;
+
+    public bool CanUndo => historySnapshot is { } snapshot && snapshot.CursorId != snapshot.RootId;
+
+    public bool CanRedo => PreferredRedoNode is not null;
+
+    private SessionHistoryNodeSnapshot? CurrentHistoryNode
+    {
+        get
+        {
+            var snapshot = historySnapshot;
+            return snapshot?.Nodes.FirstOrDefault(node => node.Id == snapshot.CursorId);
+        }
+    }
+
+    private SessionHistoryNodeSnapshot? PreferredRedoNode
+    {
+        get
+        {
+            var snapshot = historySnapshot;
+            var cursor = snapshot?.Nodes.FirstOrDefault(node => node.Id == snapshot.CursorId);
+            var childId = cursor is null
+                ? (Guid?)null
+                : cursor.PreferredChildId ?? (cursor.ChildIds.IsEmpty ? null : cursor.ChildIds[0]);
+            return childId is null
+                ? null
+                : snapshot?.Nodes.FirstOrDefault(node => node.Id == childId.Value);
+        }
+    }
+
     public double Progress
     {
         get;
@@ -767,6 +827,12 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public UiCommand ApplyContentPreviewCommand { get; private set; } = null!;
 
     public UiCommand CancelContentPreviewCommand { get; private set; } = null!;
+
+    public UiCommand UndoCommand { get; private set; } = null!;
+
+    public UiCommand RedoCommand { get; private set; } = null!;
+
+    public UiCommand NavigateHistoryCommand { get; private set; } = null!;
 
     public bool IsContentPreviewPending => pendingContentPreview is not null;
 
@@ -890,6 +956,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     internal void NotifyStateChanged()
     {
+        RefreshHistoryEntries();
         OnPropertyChanged(nameof(IsClipSelectionVisible));
         OnPropertyChanged(nameof(IsClipCombineChecked));
         OnPropertyChanged(nameof(ClipStructureActionText));
@@ -910,7 +977,27 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(ChapterCount));
         OnPropertyChanged(nameof(SelectedRowCount));
         OnPropertyChanged(nameof(SaveButtonTooltip));
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+        OnPropertyChanged(nameof(HistoryLifetimeText));
         NotifyCommandStates();
+    }
+
+    private void RefreshHistoryEntries()
+    {
+        historySnapshot = Workspace.ContentSession?.GetHistorySnapshot();
+        HistoryEntries = HistoryEntryViewModel.Create(historySnapshot);
+        OnPropertyChanged(nameof(HasHistory));
+        OnPropertyChanged(nameof(ShowHistoryPanel));
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+        UndoCommand?.RaiseCanExecuteChanged();
+        RedoCommand?.RaiseCanExecuteChanged();
+        NavigateHistoryCommand?.RaiseCanExecuteChanged();
     }
 
     private void NotifyCommandStates()
@@ -936,6 +1023,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         PreviewContentOptionsCommand.RaiseCanExecuteChanged();
         ApplyContentPreviewCommand.RaiseCanExecuteChanged();
         CancelContentPreviewCommand.RaiseCanExecuteChanged();
+        UndoCommand.RaiseCanExecuteChanged();
+        RedoCommand.RaiseCanExecuteChanged();
+        NavigateHistoryCommand.RaiseCanExecuteChanged();
     }
 
 

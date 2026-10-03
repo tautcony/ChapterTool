@@ -169,7 +169,7 @@ function shouldPreventBrowserShortcut(event) {
   if (isEditableShortcutTarget(event.target)) {
     return false;
   }
-  if (ctrl && (key.toLowerCase() === 's' || key.toLowerCase() === 'o' || key.toLowerCase() === 'l')) {
+  if (ctrl && ['s', 'o', 'l', 'z', 'y'].includes(key.toLowerCase())) {
     return true;
   }
   return key === 'F11' || key === 'F9';

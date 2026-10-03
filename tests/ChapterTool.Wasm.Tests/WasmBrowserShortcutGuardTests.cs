@@ -20,6 +20,8 @@ public sealed class WasmBrowserShortcutGuardTests
     [InlineData("s", true)]
     [InlineData("o", true)]
     [InlineData("l", true)]
+    [InlineData("z", true)]
+    [InlineData("y", true)]
     [InlineData("F11", false)]
     [InlineData("F9", false)]
     public void AppShortcutsPreventBrowserDefaultOutsideInputs(string key, bool ctrlOrMeta)

@@ -30,6 +30,34 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task BrowserWorkspaceHistoryUndoRedoAndTabSessionsAreIndependent()
+    {
+        using var firstTab = CreateWorkspace();
+        using var secondTab = CreateWorkspace();
+        await firstTab.LoadSampleAsync();
+        await secondTab.LoadSampleAsync();
+        var original = firstTab.Rows[0].Name;
+
+        firstTab.UpdateRow(0, null, "Browser edit");
+        var firstBranch = Assert.Single(firstTab.HistoryEntries, entry => entry.IsCurrent);
+        Assert.Equal("Browser edit", firstTab.Rows[0].Name);
+        Assert.Equal(original, secondTab.Rows[0].Name);
+        Assert.True(firstTab.CanUndo);
+        Assert.Single(firstTab.HistoryEntries, entry => entry.IsCurrent);
+
+        await firstTab.UndoAsync();
+        Assert.Equal(original, firstTab.Rows[0].Name);
+        Assert.True(firstTab.CanRedo);
+
+        firstTab.UpdateRow(0, null, "Alternate browser edit");
+        Assert.Equal("Alternate browser edit", firstTab.Rows[0].Name);
+        await firstTab.NavigateHistoryAsync(firstBranch.Id);
+        Assert.Equal("Browser edit", firstTab.Rows[0].Name);
+        Assert.Contains(firstTab.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstBranch.Id);
+        Assert.Contains(firstTab.HistoryEntries, entry => entry.Description.Contains("Update chapter content", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task SelectAndCombineMplsClipsUsesSharedSessionTransitions()
     {
         var workspace = CreateWorkspace();

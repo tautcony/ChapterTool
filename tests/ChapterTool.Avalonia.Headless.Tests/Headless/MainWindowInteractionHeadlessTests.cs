@@ -141,6 +141,47 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.Contains("preview", host.WindowService.Opened);
     }
 
+    [AvaloniaFact]
+    public async Task History_panel_exposes_branches_and_shortcuts_respect_editor_focus()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+        Assert.True(host.ViewModel.HasHistory);
+        Assert.True(host.ViewModel.ShowHistoryPanel);
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "First"));
+        var firstNode = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent);
+        await host.ViewModel.UndoCommand.ExecuteAsync();
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Alternate"));
+        var alternateNode = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent);
+        Assert.NotEqual(firstNode.Id, alternateNode.Id);
+
+        await host.ViewModel.NavigateHistoryCommand.ExecuteAsync(firstNode.Id);
+        Assert.Equal("First", host.ViewModel.Rows[0].Name);
+        Assert.Contains(host.ViewModel.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
+        Assert.True(host.RequiredControl<ListBox>("SessionHistoryEntries").IsVisible);
+
+        await host.FocusAndPressAsync(Key.Z, KeyModifiers.Control);
+        Assert.Equal("Intro", host.ViewModel.Rows[0].Name);
+        var cursor = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent).Id;
+
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Focus();
+        host.Window.KeyPress(Key.Z, RawInputModifiers.Control, PhysicalKey.Z, "z");
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        Assert.Equal(cursor, Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent).Id);
+
+        for (var index = 0; index < 50; index++)
+        {
+            await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, $"Edit {index}"));
+        }
+
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        var historyList = host.RequiredControl<ListBox>("SessionHistoryEntries");
+        var realizedRows = historyList.GetVisualDescendants().OfType<ListBoxItem>().Count();
+        Assert.True(realizedRows < host.ViewModel.HistoryEntries.Count,
+            $"Expected the history panel to realize only visible rows; realized {realizedRows} of {host.ViewModel.HistoryEntries.Count}.");
+    }
+
     [AvaloniaTheory]
     [InlineData(Key.Delete, PhysicalKey.Delete, "tme")]
     [InlineData(Key.Back, PhysicalKey.Backspace, "ime")]

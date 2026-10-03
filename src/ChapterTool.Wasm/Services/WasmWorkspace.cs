@@ -104,6 +104,64 @@ public sealed class WasmWorkspace : IDisposable
 
     public bool CanPreview => CanSave;
 
+    public bool CanUndo
+    {
+        get
+        {
+            var history = session.ContentSession?.GetHistorySnapshot();
+            return history is not null && history.CursorId != history.RootId && !IsBusy;
+        }
+    }
+
+    public bool HasHistory => session.ContentSession is not null;
+
+    public bool CanRedo => PreferredRedoNode is not null && !IsBusy;
+
+    public ICollection<WasmHistoryEntry> HistoryEntries
+    {
+        get
+        {
+            var history = session.ContentSession?.GetHistorySnapshot();
+            if (history is null)
+            {
+                return [];
+            }
+
+            var nodes = history.Nodes.ToDictionary(static node => node.Id);
+            var rows = new List<WasmHistoryEntry>(nodes.Count);
+            var pending = new Stack<(Guid Id, int Depth)>();
+            pending.Push((history.RootId, 0));
+            while (pending.TryPop(out var item))
+            {
+                if (!nodes.TryGetValue(item.Id, out var node))
+                {
+                    continue;
+                }
+
+                rows.Add(new WasmHistoryEntry(node.Id, node.Description, item.Depth, node.Id == history.CursorId));
+                for (var index = node.ChildIds.Length - 1; index >= 0; index--)
+                {
+                    pending.Push((node.ChildIds[index], item.Depth + 1));
+                }
+            }
+
+            return rows;
+        }
+    }
+
+    private SessionHistoryNodeSnapshot? PreferredRedoNode
+    {
+        get
+        {
+            var history = session.ContentSession?.GetHistorySnapshot();
+            var cursor = history?.Nodes.FirstOrDefault(node => node.Id == history.CursorId);
+            var childId = cursor is null
+                ? (Guid?)null
+                : cursor.PreferredChildId ?? (cursor.ChildIds.IsEmpty ? null : cursor.ChildIds[0]);
+            return childId is null ? null : history?.Nodes.FirstOrDefault(node => node.Id == childId.Value);
+        }
+    }
+
     public bool CanRefreshRows => BaseChapterSet is not null && !IsBusy;
 
     public bool CanReload => lastLoadedSource is not null && !IsBusy;
@@ -284,6 +342,40 @@ public sealed class WasmWorkspace : IDisposable
         statusLocalizationArgs = [];
         StatusText = message;
         Notify();
+    }
+
+    public async ValueTask UndoAsync(CancellationToken cancellationToken = default) =>
+        await NavigateHistoryAsync("undo", null, cancellationToken);
+
+    public async ValueTask RedoAsync(CancellationToken cancellationToken = default) =>
+        await NavigateHistoryAsync("redo", null, cancellationToken);
+
+    public async ValueTask NavigateHistoryAsync(Guid nodeId, CancellationToken cancellationToken = default) =>
+        await NavigateHistoryAsync("navigate", nodeId, cancellationToken);
+
+    private async ValueTask NavigateHistoryAsync(string action, Guid? nodeId, CancellationToken cancellationToken)
+    {
+        var content = session.ContentSession;
+        if (content is null || IsBusy)
+        {
+            return;
+        }
+
+        var outcome = action switch
+        {
+            "undo" => await content.UndoAsync(cancellationToken),
+            "redo" => await content.RedoAsync(cancellationToken),
+            _ => await content.NavigateToAsync(nodeId!.Value, cancellationToken)
+        };
+        if (outcome.Kind == HistoryNavigationOutcomeKind.Committed)
+        {
+            session.PublishContentDocument(outcome.Snapshot.Document);
+            RefreshDisplay(updateStatus: true, statusKey: action == "undo" ? "History.UndoApplied" : "History.RedoApplied");
+        }
+        else if (outcome.Kind is not HistoryNavigationOutcomeKind.NoChange)
+        {
+            SetRawStatus(outcome.Errors.FirstOrDefault() ?? localizer.T("History.NavigationFailed"));
+        }
     }
 
     public void Dispose()

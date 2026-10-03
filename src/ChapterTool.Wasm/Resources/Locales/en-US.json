@@ -393,6 +393,14 @@
   "Status.TemplateLoaded": "Loaded template {name}",
   "Status.TemplateNotSelected": "Not selected",
   "Status.Updated": "Updated",
+  "History.Title": "Edit history",
+  "History.SessionLifetime": "History is available until this document session closes.",
+  "History.SessionLifetimeShort": "Current session only",
+  "History.Undo": "Undo",
+  "History.Redo": "Redo",
+  "History.UndoApplied": "Edit undone",
+  "History.RedoApplied": "Edit redone",
+  "History.NavigationFailed": "History navigation failed.",
   "Status.UnexpectedError": "The operation failed unexpectedly. Check the log for details.",
   "Status.ZonesEmpty": "No zones generated.",
   "Status.ZonesGenerated": "Zones generated",
@@ -430,5 +438,7 @@
   "Shortcuts.Action.Load": "Load",
   "Shortcuts.Action.PreviousClip": "Previous clip",
   "Shortcuts.Action.NextClip": "Next clip",
+  "Shortcuts.Action.Undo": "Undo edit",
+  "Shortcuts.Action.Redo": "Redo edit",
   "Shortcuts.Action.SaveFormat": "Select save format"
 }
