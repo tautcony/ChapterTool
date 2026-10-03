@@ -1,10 +1,11 @@
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '../support/fixtures';
-import { chapterName, chapters, downloadText, loadFixture } from '../support/chapter-workspace';
+import { chapterName, chapters, commit, downloadText, loadFixture } from '../support/chapter-workspace';
 
 test('B06 canceling replacement keeps the open document; confirming replaces it', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const grid = chapters(page);
+  await commit(await chapterName(page, 1), 'Kept edit');
   const dialogPromise = page.waitForEvent('dialog');
   const chooserPromise = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: 'Load', exact: true }).click();
@@ -13,14 +14,20 @@ test('B06 canceling replacement keeps the open document; confirming replaces it'
   const confirmation = await dialogPromise;
   expect(confirmation.type()).toBe('confirm');
   await confirmation.dismiss();
-  await expect(await chapterName(page, 1)).toHaveValue('Opening');
+  const retainedName = await chapterName(page, 1);
+  await expect(retainedName).toHaveValue('Kept edit');
   await expect(grid.locator('tbody tr')).toHaveCount(2);
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(retainedName).toHaveValue('Opening');
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(retainedName).toHaveValue('Kept edit');
 
   page.once('dialog', dialog => dialog.accept());
   const secondChooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: 'Load', exact: true }).click();
   await (await secondChooser).setFiles(fileURLToPath(new URL('../fixtures/unicode-ogm.txt', import.meta.url)));
   await expect(await chapterName(page, 1)).toHaveValue('開幕');
+  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
 });
 
 test('B07 malformed XML reports an error and retains the current document', async ({ readyPage: page }) => {
