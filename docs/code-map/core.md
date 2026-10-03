@@ -12,6 +12,8 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 
 Canonical data contracts shared across the pipeline:
 
+- `src/ChapterTool.Core/Models/EditableChapterDocument.cs`: immutable document, track, chapter, identity, duration, and frame-rate values
+- `src/ChapterTool.Core/Models/EditableChapterDocumentAdapter.cs`: `ChapterSet` adapters and document validation
 - `src/ChapterTool.Core/Models/Chapter.cs`
 - `src/ChapterTool.Core/Models/ChapterSet.cs`
 - `src/ChapterTool.Core/Models/ChapterImportFormat.cs`
@@ -21,6 +23,7 @@ Canonical data contracts shared across the pipeline:
 - `src/ChapterTool.Core/Models/ReferencedMediaFile.cs`
 
 `ChapterSet` is the main unit passed between import, edit, transform, and export flows.
+`EditableChapterDocument` is the immutable snapshot contract for document-based editing flows.
 
 ### Diagnostics
 
@@ -219,6 +222,7 @@ Start with:
 - expression-driven rewrites: `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
 - expression engine contract: `src/ChapterTool.Core/Transform/Expressions/ChapterExpressionEngine.cs`
 - Lua expression engine: `src/ChapterTool.Core/Transform/Expressions/Lua/LuaExpressionScriptService.cs`
+- deterministic document frame conversion: `src/ChapterTool.Core/Transform/ChapterFrameTimeConverter.cs`
 - time parse/format bugs: `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 
 ### Export behavior
@@ -227,5 +231,7 @@ Start with:
 
 - projection before serialization: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - format-specific serialization: `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
+- snapshot serialization options: `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
+- immutable snapshot entry point: `ChapterExportService.Serialize(EditableChapterDocument, ChapterSerializationOptions)`
 - supported file encodings, display names, BOM-aware encoders, and XML encoding names: `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
 - text-to-QP/celltimes conversion: `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`

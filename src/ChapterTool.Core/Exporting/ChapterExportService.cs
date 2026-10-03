@@ -45,19 +45,8 @@ public sealed partial class ChapterExportService
             : new ChapterOutputProjectionResult(info, []);
         info = projection.Info;
         var outputInfo = info with { Chapters = projection.OutputChapters };
-        var result = options.Format switch
-        {
-            ChapterExportFormat.Txt => Text(outputInfo, options),
-            ChapterExportFormat.Xml => Xml(outputInfo, options),
-            ChapterExportFormat.Qpfile => Qpfile(outputInfo),
-            ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", outputInfo.Chapters.Select(FormatTime)),
-            ChapterExportFormat.TsMuxerMeta => TsMuxer(outputInfo, options),
-            ChapterExportFormat.Cue => Cue(outputInfo, options),
-            ChapterExportFormat.Json => Json(info, options),
-            ChapterExportFormat.WebVtt => WebVtt(outputInfo, options),
-            ChapterExportFormat.Celltimes => Celltimes(outputInfo),
-            _ => Failure(ChapterDiagnosticCode.UnsupportedExportFormat, "Unsupported export format.")
-        };
+        var result = SerializeChapterSet(options.Format == ChapterExportFormat.Json ? info : outputInfo, new ChapterSerializationOptions(
+            options.Format, options.XmlLanguage, options.SourceFileName, options.TextEncoding));
 
         return result with
         {
@@ -65,7 +54,43 @@ public sealed partial class ChapterExportService
         };
     }
 
-    private ChapterExportResult Text(ChapterSet info, ChapterExportOptions options)
+    /// <summary>Serializes the supplied immutable document snapshot without applying interactive transforms.</summary>
+    public ChapterExportResult Serialize(EditableChapterDocument document, ChapterSerializationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(options);
+        var validation = EditableChapterDocumentValidator.Validate(document);
+        if (!validation.IsValid)
+        {
+            return Failure(ChapterDiagnosticCode.InvalidStructure, string.Join(" ", validation.Errors));
+        }
+
+        var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document);
+        if (options.Format == ChapterExportFormat.WebVtt
+            && document.Tracks.SelectMany(static track => track.Chapters).LastOrDefault(static chapter => chapter.Kind == ChapterKind.Marker) is { EndTicks: null }
+            && !document.Duration.IsKnown)
+        {
+            return Failure(ChapterDiagnosticCode.InvalidStructure, "WebVTT serialization requires a final chapter end or a known document duration.");
+        }
+
+        return SerializeChapterSet(chapterSet, options);
+    }
+
+    private ChapterExportResult SerializeChapterSet(ChapterSet info, ChapterSerializationOptions options) => options.Format switch
+    {
+        ChapterExportFormat.Txt => Text(info),
+        ChapterExportFormat.Xml => Xml(info, options),
+        ChapterExportFormat.Qpfile => Qpfile(info),
+        ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", info.Chapters.Select(FormatTime)),
+        ChapterExportFormat.TsMuxerMeta => TsMuxer(info),
+        ChapterExportFormat.Cue => Cue(info, options),
+        ChapterExportFormat.Json => Json(info),
+        ChapterExportFormat.WebVtt => WebVtt(info),
+        ChapterExportFormat.Celltimes => Celltimes(info),
+        _ => Failure(ChapterDiagnosticCode.UnsupportedExportFormat, "Unsupported export format.")
+    };
+
+    private ChapterExportResult Text(ChapterSet info)
     {
         var builder = new StringBuilder();
         foreach (var chapter in info.Chapters.Where(NotSeparator))
@@ -77,7 +102,7 @@ public sealed partial class ChapterExportService
         return Success(builder.ToString(), ".txt");
     }
 
-    private ChapterExportResult Xml(ChapterSet info, ChapterExportOptions options)
+    private ChapterExportResult Xml(ChapterSet info, ChapterSerializationOptions options)
     {
         var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
         using var random = RandomNumberGenerator.Create();
@@ -103,7 +128,7 @@ public sealed partial class ChapterExportService
         return Success(document.Declaration + Environment.NewLine + document.ToString(SaveOptions.None), ".xml");
     }
 
-    private ChapterExportResult TsMuxer(ChapterSet info, ChapterExportOptions options)
+    private ChapterExportResult TsMuxer(ChapterSet info)
     {
         var chapters = info.Chapters.Where(NotSeparator).Select(FormatTime).ToList();
         if (chapters.Count == 0)
@@ -141,7 +166,7 @@ public sealed partial class ChapterExportService
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
-    private ChapterExportResult Cue(ChapterSet info, ChapterExportOptions options)
+    private ChapterExportResult Cue(ChapterSet info, ChapterSerializationOptions options)
     {
         var builder = new StringBuilder();
         builder.AppendLine("REM Generate By ChapterTool");
@@ -158,7 +183,7 @@ public sealed partial class ChapterExportService
         return Success(builder.ToString(), ".cue");
     }
 
-    private static ChapterExportResult WebVtt(ChapterSet info, ChapterExportOptions options)
+    private static ChapterExportResult WebVtt(ChapterSet info)
     {
         var builder = new StringBuilder();
         builder.AppendLine("WEBVTT");
@@ -202,7 +227,7 @@ public sealed partial class ChapterExportService
         && !value.Contains('\n')
         && !value.Contains("-->", StringComparison.Ordinal);
 
-    private static ChapterExportResult Json(ChapterSet info, ChapterExportOptions options)
+    private static ChapterExportResult Json(ChapterSet info)
     {
         var entries = new List<JsonChapter>();
         var baseTime = TimeSpan.Zero;

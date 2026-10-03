@@ -41,7 +41,8 @@ public enum ChapterDiagnosticReason
     Unmatched,
     Unrecognized,
     Unsupported,
-    Used
+    Used,
+    Overflow
 }
 
 #pragma warning restore CS1591

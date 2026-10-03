@@ -4,6 +4,7 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Core.Tests.Exporting;
 
@@ -291,6 +292,35 @@ public sealed class ChapterExportServiceTests
         Assert.StartsWith("24 I", result.Content, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Snapshot_serialization_writes_captured_value_once_without_replaying_transforms()
+    {
+        var engine = new CountingExpressionEngine();
+        var service = new ChapterExportService(new ChapterTimeFormatter(), engine);
+        var document = EditableChapterDocumentAdapter.FromChapterSet(Sample() with
+        {
+            Chapters = [new Chapter(1, TimeSpan.FromSeconds(3), "Edited")]
+        });
+
+        var result = service.Serialize(document, new ChapterSerializationOptions(ChapterExportFormat.Txt));
+
+        Assert.True(result.Success);
+        Assert.Equal("CHAPTER01=00:00:03.000" + Environment.NewLine + "CHAPTER01NAME=Edited" + Environment.NewLine, result.Content);
+        Assert.Equal(0, engine.EvaluationCount);
+    }
+
+    [Fact]
+    public void Snapshot_webvtt_export_requires_a_final_end_when_duration_is_unknown()
+    {
+        var document = EditableChapterDocumentAdapter.FromChapterSet(
+            new ChapterSet("Title", null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
+
+        var result = service.Serialize(document, new ChapterSerializationOptions(ChapterExportFormat.WebVtt));
+
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidStructure);
+    }
+
     [Theory]
     [InlineData(ChapterExportFormat.Qpfile)]
     [InlineData(ChapterExportFormat.Celltimes)]
@@ -327,4 +357,19 @@ public sealed class ChapterExportServiceTests
                 new Chapter(2, TimeSpan.FromSeconds(10), "Middle", "240", FrameAccuracy: FrameAccuracy.Inexact),
                 new Chapter(3, TimeSpan.FromSeconds(20), "End", "480")
             ]);
+
+    private sealed class CountingExpressionEngine : IChapterExpressionEngine
+    {
+        public int EvaluationCount { get; private set; }
+
+        public string EngineId => "counting";
+
+        public IReadOnlyList<ChapterExpressionPreset> Presets => [];
+
+        public ChapterExpressionEvaluationResult Evaluate(string sourceText, ChapterExpressionContext context)
+        {
+            EvaluationCount++;
+            return new ChapterExpressionEvaluationResult(true, context.TimeSeconds, []);
+        }
+    }
 }

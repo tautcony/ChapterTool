@@ -94,7 +94,8 @@ public enum ChapterDiagnosticSource
     XmlChapters,
     XmlRoot,
     XplChapters,
-    XplParse
+    XplParse,
+    FrameConversion
 }
 
 #pragma warning restore CS1591
