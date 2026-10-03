@@ -73,7 +73,9 @@ jobs:
 
       - name: Prepare GitHub Pages site
         working-directory: tests/ChapterTool.Wasm.E2E
-        run: node scripts/prepare-site.mjs --publish ${{ env.PUBLISH_DIR }}
+        env:
+          CHAPTERTOOL_E2E_PUBLISH: ${{ env.PUBLISH_DIR }}
+        run: npm run prepare:site
 
       - name: Install Chromium
         working-directory: tests/ChapterTool.Wasm.E2E

@@ -10,7 +10,9 @@ function option(name, fallback) {
   return index < 0 ? fallback : process.argv[index + 1];
 }
 
-const publishDir = resolve(repoRoot, option('--publish', 'artifacts/wasm-e2e/publish/wwwroot'));
+const publishPath = process.env.CHAPTERTOOL_E2E_PUBLISH
+  ?? option('--publish', 'artifacts/wasm-e2e/publish/wwwroot');
+const publishDir = resolve(repoRoot, publishPath);
 const siteRoot = resolve(repoRoot, option('--site', 'artifacts/wasm-e2e/site'));
 const siteApp = resolve(siteRoot, 'ChapterTool');
 const baseHref = '/ChapterTool/';
