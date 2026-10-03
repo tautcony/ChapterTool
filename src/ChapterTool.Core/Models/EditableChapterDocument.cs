@@ -94,11 +94,16 @@ public sealed record EditableChapter(
 /// <summary>An immutable ordered track of chapters.</summary>
 public sealed class EditableChapterTrack
 {
-    public EditableChapterTrack(ChapterTrackId id, string name, IEnumerable<EditableChapter> chapters)
+    public EditableChapterTrack(
+        ChapterTrackId id,
+        string name,
+        IEnumerable<EditableChapter> chapters,
+        IEnumerable<EditableChapterSegment>? segments = null)
     {
         Id = id;
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Chapters = chapters?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(chapters));
+        Segments = segments?.ToImmutableArray() ?? [];
     }
 
     public ChapterTrackId Id { get; }
@@ -106,6 +111,50 @@ public sealed class EditableChapterTrack
     public string Name { get; }
 
     public ImmutableArray<EditableChapter> Chapters { get; }
+
+    /// <summary>Gets source and placement metadata for the track's media segments.</summary>
+    public ImmutableArray<EditableChapterSegment> Segments { get; }
+}
+
+/// <summary>Describes one source segment placed on an editable track timeline.</summary>
+public sealed record EditableChapterSegment(
+    Guid Id,
+    ChapterTrackId SourceTrackId,
+    string SourceEntryId,
+    string Name,
+    long StartTicks,
+    ChapterDuration Duration,
+    ChapterFrameRate? FrameRate,
+    ChapterImportFormat ImportFormat,
+    string? SourceName,
+    ImmutableArray<ReferencedMediaFile> ReferencedMediaFiles,
+    ImmutableArray<ChapterImportMediaTrack> MediaTracks,
+    int ChapterCount = 0,
+    string? ImportDisplayName = null,
+    int? DiscTitleNumber = null,
+    ChapterFrameRate? SourceFrameRate = null,
+    int? SourceChapterCount = null)
+{
+    /// <summary>Creates a segment with fresh structural identity and immutable media metadata.</summary>
+    public static EditableChapterSegment Create(
+        ChapterTrackId sourceTrackId,
+        string sourceEntryId,
+        string name,
+        long startTicks,
+        ChapterDuration duration,
+        ChapterFrameRate? frameRate,
+        ChapterImportFormat importFormat,
+        string? sourceName,
+        IEnumerable<ReferencedMediaFile>? referencedMediaFiles = null,
+        IEnumerable<ChapterImportMediaTrack>? mediaTracks = null,
+        int chapterCount = 0,
+        string? importDisplayName = null,
+        int? discTitleNumber = null,
+        ChapterFrameRate? sourceFrameRate = null,
+        int? sourceChapterCount = null) =>
+        new(Guid.NewGuid(), sourceTrackId, sourceEntryId, name, startTicks, duration, frameRate, importFormat, sourceName,
+            referencedMediaFiles?.ToImmutableArray() ?? [], mediaTracks?.ToImmutableArray() ?? [], chapterCount, importDisplayName,
+            discTitleNumber, sourceFrameRate ?? frameRate, sourceChapterCount ?? chapterCount);
 }
 
 /// <summary>An immutable snapshot of editable chapter content and its metadata.</summary>

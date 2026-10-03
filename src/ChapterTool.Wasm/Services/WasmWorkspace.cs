@@ -592,6 +592,14 @@ public sealed class WasmWorkspace : IDisposable
         BeginBusy("Status.Appending");
         var operationRevision = session.CaptureRevision();
         var expectedSessionId = ClipSessionState.SessionId;
+        var contentSession = session.ContentSession;
+        if (contentSession is null)
+        {
+            SetLocalizedStatus("Status.CannotAppend");
+            Notify();
+            return;
+        }
+        var capturedContent = contentSession.Snapshot;
         try
         {
             Progress = 0.2;
@@ -624,18 +632,17 @@ public sealed class WasmWorkspace : IDisposable
             }
 
             var appendedGroup = result.Groups[0];
-            var transition = ClipSessionTransitions.Append(ClipSessionState, appendedGroup);
-            if (!transition.Succeeded || transition.Session is null)
+            var append = session.AppendClipSource(operationRevision, expectedSessionId, capturedContent, appendedGroup, cancellationToken);
+            if (append.IsStale)
             {
-                // Keep current session on append failure.
-                RecordDiagnostics(transition.EditResult.Diagnostics);
-                StatusText = WasmWorkspaceProjection.FirstError(transition.EditResult.Diagnostics) ?? localizer.T("Status.AppendFailed");
-                AddLog("Error", StatusText);
                 return;
             }
 
-            if (!session.TryCommitAppend(operationRevision, expectedSessionId, transition.Session))
+            if (!append.Succeeded || append.Session is null || append.Document is null)
             {
+                var message = string.Join("; ", append.Errors);
+                StatusText = message.Length == 0 ? localizer.T("Status.AppendFailed") : message;
+                AddLog("Error", StatusText);
                 return;
             }
 
@@ -694,7 +701,10 @@ public sealed class WasmWorkspace : IDisposable
             }
 
             activeGroupIndex = option.GroupIndex;
-            ClipSessionState = ClipSessionTransitions.FromLoad(importResult.Groups[activeGroupIndex]);
+            var sourceGroup = importResult.Groups[activeGroupIndex];
+            var newSession = ClipSessionTransitions.FromLoad(sourceGroup);
+            session.ReplaceSession(newSession, EditableChapterDocumentAdapter.FromChapterImportSource(sourceGroup));
+            ClipSessionState = newSession;
             if (option.EntryIndex >= 0)
             {
                 ClipSessionState = ClipSessionTransitions.Select(ClipSessionState, option.EntryIndex);
@@ -720,7 +730,7 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
-        var transition = ClipSessionTransitions.ToggleCombine(ClipSessionState);
+        var transition = session.ToggleClipStructure();
         if (!transition.Succeeded || transition.Session is null)
         {
             RecordDiagnostics(transition.EditResult.Diagnostics);
@@ -1033,16 +1043,21 @@ public sealed class WasmWorkspace : IDisposable
         ChapterImportResult result,
         int operationRevision)
     {
-        var newSession = result.Groups.Count > 0
-            ? ClipSessionTransitions.FromLoad(result.Groups[0])
+        var sourceGroup = result.Groups.Count > 0 ? result.Groups[0] : null;
+        var newSession = sourceGroup is not null
+            ? ClipSessionTransitions.FromLoad(sourceGroup)
             : null;
-        if (newSession is null || !session.TryCommitLoad(operationRevision, fileName, newSession))
+        var document = sourceGroup is null ? null : EditableChapterDocumentAdapter.FromChapterImportSource(sourceGroup);
+        if (newSession is null || document is null
+            || !session.TryCommitLoad(operationRevision, new LocalPathChapterSource(fileName), newSession, document))
         {
             return false;
         }
 
         lastLoadedSource = new LoadedSourceSnapshot(fileName, content);
-        importResult = result;
+        var groups = result.Groups.ToList();
+        groups[0] = newSession.OriginalGroup;
+        importResult = result with { Groups = groups };
         activeGroupIndex = 0;
         SourcePath = fileName;
         selectedFrameRateIndex = Math.Max(0, PreferredFrameRateIndex);
@@ -1087,7 +1102,7 @@ public sealed class WasmWorkspace : IDisposable
                 ?? ClipOptions.FirstOrDefault()?.Id;
         }
 
-        BaseChapterSet = ClipSessionState.CurrentChapterSet;
+        BaseChapterSet = session.CurrentChapterSet;
         if (BaseChapterSet is not null)
         {
             FramesPerSecond = BaseChapterSet.FramesPerSecond;

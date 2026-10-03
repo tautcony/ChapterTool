@@ -1,4 +1,4 @@
-using ChapterTool.Core.Editing;
+﻿using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
@@ -15,7 +15,7 @@ public sealed class ChapterWorkspaceTests
         var revision = workspace.BeginLoadOperation();
         var session = ClipSessionTransitions.FromLoad(MultiMplsGroup());
 
-        Assert.True(workspace.TryCommitLoad(revision, "/media/movie.mpls", session));
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("/media/movie.mpls"), MultiMplsGroup(), session));
         Assert.Equal("/media/movie.mpls", workspace.CurrentPath);
         Assert.Equal("movie.mpls", workspace.DisplayPath);
         Assert.Same(session, workspace.ClipSession);
@@ -29,7 +29,8 @@ public sealed class ChapterWorkspaceTests
         var revision = workspace.BeginLoadOperation();
         var source = new BufferedChapterSource("chapters.txt", [.. "data"u8]);
 
-        Assert.True(workspace.TryCommitLoad(revision, source, ClipSessionTransitions.FromLoad(SingleGroup("chapters.txt", "Loaded"))));
+        var group = SingleGroup("chapters.txt", "Loaded");
+        Assert.True(CommitLoad(workspace, revision, source, group, ClipSessionTransitions.FromLoad(group)));
         Assert.Same(source, workspace.CurrentSource);
         Assert.Equal("chapters.txt", workspace.DisplayPath);
         Assert.Empty(workspace.CurrentPath);
@@ -43,12 +44,12 @@ public sealed class ChapterWorkspaceTests
         var oldRevision = workspace.BeginLoadOperation();
         var currentRevision = workspace.BeginLoadOperation();
         var currentSource = new BufferedChapterSource("current.txt", [2]);
-        Assert.True(workspace.TryCommitLoad(currentRevision, currentSource, ClipSessionTransitions.FromLoad(SingleGroup("current.txt", "Current"))));
+        var currentGroup = SingleGroup("current.txt", "Current");
+        Assert.True(CommitLoad(workspace, currentRevision, currentSource, currentGroup, ClipSessionTransitions.FromLoad(currentGroup)));
 
-        Assert.False(workspace.TryCommitLoad(
-            oldRevision,
-            new BufferedChapterSource("old.txt", [1]),
-            ClipSessionTransitions.FromLoad(SingleGroup("old.txt", "Old"))));
+        var oldGroup = SingleGroup("old.txt", "Old");
+        Assert.False(CommitLoad(workspace, oldRevision,
+            new BufferedChapterSource("old.txt", [1]), oldGroup, ClipSessionTransitions.FromLoad(oldGroup)));
         Assert.Same(currentSource, workspace.CurrentSource);
         Assert.Equal("Current", workspace.CurrentChapterSet?.Chapters[0].Name);
     }
@@ -60,10 +61,12 @@ public sealed class ChapterWorkspaceTests
         var oldRevision = workspace.BeginLoadOperation();
         var newerRevision = workspace.BeginLoadOperation();
         var newerSession = ClipSessionTransitions.FromLoad(SingleGroup("fast.txt", "Fast"));
-        Assert.True(workspace.TryCommitLoad(newerRevision, "fast.txt", newerSession));
+        var newerGroup = SingleGroup("fast.txt", "Fast");
+        Assert.True(CommitLoad(workspace, newerRevision, new LocalPathChapterSource("fast.txt"), newerGroup, newerSession));
 
         var staleSession = ClipSessionTransitions.FromLoad(SingleGroup("slow.txt", "Slow"));
-        Assert.False(workspace.TryCommitLoad(oldRevision, "slow.txt", staleSession));
+        var slowGroup = SingleGroup("slow.txt", "Slow");
+        Assert.False(CommitLoad(workspace, oldRevision, new LocalPathChapterSource("slow.txt"), slowGroup, staleSession));
 
         Assert.Equal("fast.txt", workspace.CurrentPath);
         Assert.Equal("Fast", workspace.CurrentChapterSet?.Chapters[0].Name);
@@ -75,12 +78,14 @@ public sealed class ChapterWorkspaceTests
         var workspace = new ChapterWorkspace();
         var loadRevision = workspace.BeginLoadOperation();
         var baseSession = ClipSessionTransitions.FromLoad(MultiMplsGroup());
-        Assert.True(workspace.TryCommitLoad(loadRevision, "base.mpls", baseSession));
+        var baseGroup = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, loadRevision, new LocalPathChapterSource("base.mpls"), baseGroup, baseSession));
 
         var appendRevision = workspace.CaptureRevision();
         var expectedId = workspace.ClipSession!.SessionId;
-        var appended = ClipSessionTransitions.Append(workspace.ClipSession, SingleGroup("append.mpls", "Append")).Session!;
-        Assert.True(workspace.TryCommitAppend(appendRevision, expectedId, appended));
+        var snapshot = workspace.ContentSession!.Snapshot;
+        var append = workspace.AppendClipSource(appendRevision, expectedId, snapshot, SingleGroup("append.mpls", "Append"));
+        Assert.True(append.Succeeded);
         Assert.True(workspace.ClipSession.IsCombined);
         Assert.Equal(3, workspace.ClipSession.OriginalGroup.Entries.Count);
     }
@@ -91,14 +96,17 @@ public sealed class ChapterWorkspaceTests
         var workspace = new ChapterWorkspace();
         var loadRevision = workspace.BeginLoadOperation();
         var baseSession = ClipSessionTransitions.FromLoad(MultiMplsGroup());
-        Assert.True(workspace.TryCommitLoad(loadRevision, "base.mpls", baseSession));
+        var baseGroup = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, loadRevision, new LocalPathChapterSource("base.mpls"), baseGroup, baseSession));
 
         var appendRevision = workspace.CaptureRevision();
         var expectedId = workspace.ClipSession!.SessionId;
-        var appendSession = ClipSessionTransitions.Append(workspace.ClipSession, SingleGroup("append.mpls", "Append")).Session!;
+        var snapshot = workspace.ContentSession!.Snapshot;
+        var appendSession = ClipSessionTransitions.FromDocument(workspace.ClipSession!, snapshot.Document, combined: true);
 
         var newerRevision = workspace.BeginLoadOperation();
-        Assert.True(workspace.TryCommitLoad(newerRevision, "new.txt", ClipSessionTransitions.FromLoad(SingleGroup("new.txt", "New"))));
+        var newGroup = SingleGroup("new.txt", "New");
+        Assert.True(CommitLoad(workspace, newerRevision, new LocalPathChapterSource("new.txt"), newGroup, ClipSessionTransitions.FromLoad(newGroup)));
 
         Assert.False(workspace.TryCommitAppend(appendRevision, expectedId, appendSession));
         Assert.Equal("new.txt", workspace.CurrentPath);
@@ -110,7 +118,8 @@ public sealed class ChapterWorkspaceTests
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
-        Assert.True(workspace.TryCommitLoad(revision, "movie.mpls", ClipSessionTransitions.FromLoad(MultiMplsGroup())));
+        var group = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
         workspace.SelectClip(1);
 
         var updated = workspace.CurrentChapterSet! with
@@ -120,8 +129,10 @@ public sealed class ChapterWorkspaceTests
         workspace.WriteBackCurrentChapterSet(updated);
 
         var split = Assert.IsType<SplitClipSession>(workspace.ClipSession);
-        Assert.Equal("Edited", split.Group.Entries[1].ChapterSet.Chapters[0].Name);
-        Assert.Equal("A", split.Group.Entries[0].ChapterSet.Chapters[0].Name);
+        Assert.Empty(split.Group.Entries[0].ChapterSet.Chapters);
+        Assert.Empty(split.Group.Entries[1].ChapterSet.Chapters);
+        Assert.Equal("Edited", workspace.ContentSession!.Snapshot.Document.Tracks[1].Chapters[0].Name);
+        Assert.Equal("A", workspace.ContentSession.Snapshot.Document.Tracks[0].Chapters[0].Name);
     }
 
     [Fact]
@@ -129,27 +140,94 @@ public sealed class ChapterWorkspaceTests
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
-        Assert.True(workspace.TryCommitLoad(revision, "movie.mpls", ClipSessionTransitions.FromLoad(MultiMplsGroup())));
+        var group = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
         workspace.SelectClip(1);
         var rootId = workspace.ContentSession!.GetHistorySnapshot().RootId;
-        var builder = new ChapterContentCandidateBuilder(new ChapterEditingService(new ChapterTimeFormatter()));
-        var preview = ChapterContentOperationSession.Prepare(workspace.ContentSession, "rename chapter", document =>
-            builder.EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.Name, "Edited", 25));
-
-        var committed = await ChapterContentOperationSession.ApplyAsync(workspace.ContentSession, preview);
-        workspace.PublishContentDocument(committed.Snapshot.Document);
+        var edited = workspace.CurrentChapterSet! with
+        {
+            Chapters = [workspace.CurrentChapterSet.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
+        };
+        workspace.WriteBackCurrentChapterSet(edited);
 
         Assert.Equal("Edited", workspace.CurrentChapterSet?.Chapters[0].Name);
-        Assert.Equal("Edited", workspace.ClipSession!.CurrentChapterSet?.Chapters[0].Name);
+        Assert.Equal("Edited", workspace.ContentSession!.Snapshot.Document.Tracks[1].Chapters[0].Name);
         Assert.Equal(rootId, workspace.ContentSession.GetHistorySnapshot().RootId);
-        Assert.Equal(committed.Snapshot.StateIdentity, workspace.ContentSession.Snapshot.StateIdentity);
+        Assert.Equal(1, workspace.ContentSession.Snapshot.MutationRevision);
 
         var undone = await workspace.ContentSession.UndoAsync();
         workspace.PublishContentDocument(undone.Snapshot.Document);
 
         Assert.Equal("C", workspace.CurrentChapterSet?.Chapters[0].Name);
-        Assert.Equal("C", workspace.ClipSession.CurrentChapterSet?.Chapters[0].Name);
+        Assert.Equal("C", workspace.ContentSession.Snapshot.Document.Tracks[1].Chapters[0].Name);
         Assert.Equal(rootId, workspace.ContentSession.GetHistorySnapshot().CursorId);
+    }
+
+    [Fact]
+    public async Task Merge_then_edit_then_split_uses_current_content_and_keeps_merge_undo_separate()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var group = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
+        var contentSession = workspace.ContentSession!;
+        var originalCId = contentSession.Snapshot.Document.Tracks[1].Chapters[0].Id;
+
+        var merge = workspace.ToggleClipStructure();
+        Assert.True(merge.Succeeded, string.Join("; ", merge.EditResult.Diagnostics.Select(static diagnostic => diagnostic.Message)));
+        Assert.Same(contentSession, workspace.ContentSession);
+        Assert.True(workspace.ClipSession!.IsCombined);
+        Assert.Single(contentSession.Snapshot.Document.Tracks);
+        Assert.All(workspace.ClipSession.OriginalGroup.Entries, static entry => Assert.Empty(entry.ChapterSet.Chapters));
+
+        var edited = workspace.CurrentChapterSet! with
+        {
+            Chapters = [.. workspace.CurrentChapterSet.Chapters.Select(chapter => chapter.Name == "C" ? chapter with { Name = "Edited C" } : chapter)]
+        };
+        workspace.WriteBackCurrentChapterSet(edited);
+        var editedId = contentSession.Snapshot.Document.Tracks[0].Chapters.Single(static chapter => chapter.Name == "Edited C").Id;
+        Assert.Equal(originalCId, editedId);
+
+        var split = workspace.ToggleClipStructure();
+        Assert.True(split.Succeeded, string.Join("; ", split.EditResult.Diagnostics.Select(static diagnostic => diagnostic.Message)));
+        Assert.False(workspace.ClipSession!.IsCombined);
+        Assert.Equal("Edited C", contentSession.Snapshot.Document.Tracks[1].Chapters[0].Name);
+        Assert.Equal(originalCId, contentSession.Snapshot.Document.Tracks[1].Chapters[0].Id);
+
+        var undoSplit = await contentSession.UndoAsync();
+        workspace.PublishContentDocument(undoSplit.Snapshot.Document);
+        Assert.True(workspace.ClipSession!.IsCombined);
+        Assert.Equal("Edited C", contentSession.Snapshot.Document.Tracks[0].Chapters.Single(static chapter => chapter.Name == "Edited C").Name);
+
+        var undoEdit = await contentSession.UndoAsync();
+        workspace.PublishContentDocument(undoEdit.Snapshot.Document);
+        Assert.Equal("C", contentSession.Snapshot.Document.Tracks[0].Chapters.Single(chapter => chapter.Id == originalCId).Name);
+
+        var undoMerge = await contentSession.UndoAsync();
+        workspace.PublishContentDocument(undoMerge.Snapshot.Document);
+        Assert.False(workspace.ClipSession!.IsCombined);
+        Assert.Equal("C", contentSession.Snapshot.Document.Tracks[1].Chapters[0].Name);
+    }
+
+    [Fact]
+    public void Append_rejects_captured_document_after_selected_track_edit()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var group = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
+        var captured = workspace.ContentSession!.Snapshot;
+        var expectedSessionId = workspace.ClipSession!.SessionId;
+        workspace.WriteBackCurrentChapterSet(workspace.CurrentChapterSet! with
+        {
+            Chapters = [workspace.CurrentChapterSet.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
+        });
+
+        var result = workspace.AppendClipSource(revision, expectedSessionId, captured, SingleGroup("append.mpls", "Append"));
+
+        Assert.True(result.IsStale);
+        Assert.Equal(2, workspace.ContentSession.Snapshot.Document.Tracks.Length);
+        Assert.Equal("Edited", workspace.ContentSession.Snapshot.Document.Tracks[0].Chapters[0].Name);
     }
 
     [Fact]
@@ -157,7 +235,8 @@ public sealed class ChapterWorkspaceTests
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
-        Assert.True(workspace.TryCommitLoad(revision, "movie.mpls", ClipSessionTransitions.FromLoad(MultiMplsGroup())));
+        var group = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
 
         workspace.ExportPreferences.SetFormat(ChapterExportFormat.Xml);
         workspace.ExportPreferences.SetXmlLanguage("eng");
@@ -272,4 +351,12 @@ public sealed class ChapterWorkspaceTests
             24000d / 1001d,
             chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].StartTime + TimeSpan.FromSeconds(1),
             chapters);
+
+    private static bool CommitLoad(
+        ChapterWorkspace workspace,
+        int revision,
+        ChapterSourceDocument source,
+        ChapterImportSource group,
+        ClipSession session) =>
+        workspace.TryCommitLoad(revision, source, session, EditableChapterDocumentAdapter.FromChapterImportSource(group));
 }

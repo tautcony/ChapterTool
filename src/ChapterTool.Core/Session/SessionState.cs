@@ -458,6 +458,7 @@ public sealed class SessionState
             var rightTrack = right.Tracks[trackIndex];
             if (!leftTrack.Id.Equals(rightTrack.Id)
                 || !string.Equals(leftTrack.Name, rightTrack.Name, StringComparison.Ordinal)
+                || !leftTrack.Segments.SequenceEqual(rightTrack.Segments)
                 || leftTrack.Chapters.Length != rightTrack.Chapters.Length)
             {
                 return false;

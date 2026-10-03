@@ -214,6 +214,8 @@
   <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} chapter</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">Convert to current FPS</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">Combine</x:String>
+  <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">Split by boundaries</x:String>
+  <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">Split by boundaries</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Create Zones</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">Forward Translation</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">Insert</x:String>
@@ -379,7 +381,7 @@
   <x:String x:Key="Status.Ready" xml:space="preserve">Ready</x:String>
   <x:String x:Key="Status.RelatedMediaNotFound" xml:space="preserve">Related media file was not found</x:String>
   <x:String x:Key="Status.RelatedMediaNote" xml:space="preserve">Browser cannot open local media paths; references are shown for download/open when available.</x:String>
-  <x:String x:Key="Status.RestoredClips" xml:space="preserve">Restored separate clips.</x:String>
+  <x:String x:Key="Status.RestoredClips" xml:space="preserve">Split by source boundaries.</x:String>
   <x:String x:Key="Status.RowsRefreshed" xml:space="preserve">Rows refreshed · {0} fps · {1} row(s)</x:String>
   <x:String x:Key="Status.SaveFailed" xml:space="preserve">Save failed</x:String>
   <x:String x:Key="Status.Saved" xml:space="preserve">Saved</x:String>

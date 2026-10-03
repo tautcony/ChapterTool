@@ -143,7 +143,7 @@ internal sealed record DomainChangeSet(
             afterTracks.TryGetValue(trackId, out var newTrack);
             if (oldTrack is null || newTrack is null)
             {
-                changes.Add(new TrackChange(trackId, oldTrack, newTrack, null, null, [], null, null));
+                changes.Add(new TrackChange(trackId, oldTrack, newTrack, null, null, [], null, null, null, null));
                 continue;
             }
 
@@ -164,6 +164,7 @@ internal sealed record DomainChangeSet(
             var newOrder = newTrack.Chapters.Select(chapter => chapter.Id).ToImmutableArray();
             var orderChanged = !oldOrder.AsSpan().SequenceEqual(newOrder.AsSpan());
             if (!string.Equals(oldTrack.Name, newTrack.Name, StringComparison.Ordinal)
+                || !oldTrack.Segments.SequenceEqual(newTrack.Segments)
                 || valueChanges.Count != 0
                 || orderChanged)
             {
@@ -175,7 +176,9 @@ internal sealed record DomainChangeSet(
                     newTrack.Name,
                     valueChanges.ToImmutable(),
                     orderChanged ? oldOrder : null,
-                    orderChanged ? newOrder : null));
+                    orderChanged ? newOrder : null,
+                    oldTrack.Segments,
+                    newTrack.Segments));
             }
         }
 
@@ -229,7 +232,9 @@ internal sealed record DomainChangeSet(
                 }
             }
 
-            if (!string.Equals(oldTrack.Name, newTrack.Name, StringComparison.Ordinal) || chapterChanges.Count != 0)
+            if (!string.Equals(oldTrack.Name, newTrack.Name, StringComparison.Ordinal)
+                || !oldTrack.Segments.SequenceEqual(newTrack.Segments)
+                || chapterChanges.Count != 0)
             {
                 result.Add(new TrackChange(
                     oldTrack.Id,
@@ -239,7 +244,9 @@ internal sealed record DomainChangeSet(
                     newTrack.Name,
                     chapterChanges.ToImmutable(),
                     null,
-                    null));
+                    null,
+                    oldTrack.Segments,
+                    newTrack.Segments));
             }
         }
 
@@ -303,7 +310,9 @@ internal sealed record TrackChange(
     string? AfterName,
     ImmutableArray<ChapterChange> ChapterChanges,
     ImmutableArray<ChapterId>? BeforeChapterOrder,
-    ImmutableArray<ChapterId>? AfterChapterOrder)
+    ImmutableArray<ChapterId>? AfterChapterOrder,
+    ImmutableArray<EditableChapterSegment>? BeforeSegments,
+    ImmutableArray<EditableChapterSegment>? AfterSegments)
 {
     public EditableChapterTrack Apply(EditableChapterTrack track, bool forward)
     {
@@ -330,7 +339,11 @@ internal sealed record TrackChange(
             }
         }
 
-        return new EditableChapterTrack(Id, forward ? AfterName ?? track.Name : BeforeName ?? track.Name, output.MoveToImmutable());
+        return new EditableChapterTrack(
+            Id,
+            forward ? AfterName ?? track.Name : BeforeName ?? track.Name,
+            output.MoveToImmutable(),
+            (forward ? AfterSegments : BeforeSegments) ?? track.Segments);
     }
 }
 

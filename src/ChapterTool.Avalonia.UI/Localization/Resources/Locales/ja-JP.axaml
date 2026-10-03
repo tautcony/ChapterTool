@@ -214,6 +214,8 @@
   <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 個のチャプター</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">現在の FPS に変換</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">結合</x:String>
+  <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">境界で分割</x:String>
+  <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">境界で分割</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">Zones を生成</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">フレームを前へ移動</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">挿入</x:String>
@@ -379,7 +381,7 @@
   <x:String x:Key="Status.Ready" xml:space="preserve">準備完了</x:String>
   <x:String x:Key="Status.RelatedMediaNotFound" xml:space="preserve">関連メディアファイルが見つかりません</x:String>
   <x:String x:Key="Status.RelatedMediaNote" xml:space="preserve">ブラウザーではローカルメディアのパスを開けません。参照先を利用できる場合は、ダウンロードまたはリンクとしてのみ表示します。</x:String>
-  <x:String x:Key="Status.RestoredClips" xml:space="preserve">結合前の個別クリップに戻しました。</x:String>
+  <x:String x:Key="Status.RestoredClips" xml:space="preserve">ソース境界で分割しました。</x:String>
   <x:String x:Key="Status.RowsRefreshed" xml:space="preserve">行を更新しました · {0} fps · {1} 行</x:String>
   <x:String x:Key="Status.SaveFailed" xml:space="preserve">保存に失敗しました</x:String>
   <x:String x:Key="Status.Saved" xml:space="preserve">保存しました</x:String>

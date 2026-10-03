@@ -27,7 +27,7 @@ internal sealed class ClipEditingCoordinator(
             throw new InvalidOperationException("No chapter content session is active.");
         }
 
-        return ChapterContentOperationSession.Prepare(workspace.ContentSession, operation, build);
+        return ChapterContentOperationSession.Prepare(workspace.ContentSession, operation, document => BuildForSelectedTrack(document, build));
     }
 
     public async ValueTask<TransactionOutcome> ApplyCandidateAsync(
@@ -102,25 +102,17 @@ internal sealed class ClipEditingCoordinator(
 
     public ClipCombineTransitionResult ToggleCombine()
     {
-        if (workspace.ClipSession is null)
-        {
-            return new ClipCombineTransitionResult(null, new ChapterEditResult(EmptyChapterSet(), []), false, false);
-        }
-
-        var transition = ClipSessionTransitions.ToggleCombine(workspace.ClipSession);
-        if (transition is { Succeeded: true, Session: not null })
-        {
-            workspace.ReplaceSession(transition.Session);
-        }
-
-        return transition;
+        return workspace.ToggleClipStructure();
     }
 
     public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var snapshot = session.Snapshot;
-        var chapter = snapshot.Document.Tracks.SelectMany(static track => track.Chapters).ElementAtOrDefault(edit.Index);
+        var trackIndex = workspace.CurrentTrackIndex;
+        var chapter = trackIndex >= 0 && trackIndex < snapshot.Document.Tracks.Length
+            ? snapshot.Document.Tracks[trackIndex].Chapters.ElementAtOrDefault(edit.Index)
+            : null;
         if (chapter is null)
         {
             return ChapterContentOperationSession.Prepare(session, "Edit chapter", document =>
@@ -134,7 +126,7 @@ internal sealed class ClipEditingCoordinator(
             ChapterEditKind.Frame => ChapterCellField.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
-        return ChapterContentOperationSession.Prepare(session, $"Edit {field}", document =>
+        return PrepareCandidate($"Edit {field}", document =>
             candidateBuilder.EditCell(document, chapter.Id, field, edit.Value, (decimal)(workspace.CurrentChapterSet?.FramesPerSecond ?? 0d)));
     }
 
@@ -142,26 +134,26 @@ internal sealed class ClipEditingCoordinator(
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var snapshot = session.Snapshot;
-        var chapters = snapshot.Document.Tracks.Single().Chapters;
+        var chapters = snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters;
         var targets = indexes.Where(index => index >= 0 && index < chapters.Length).Select(index => chapters[index].Id).ToHashSet();
-        return ChapterContentOperationSession.Prepare(session, "Delete chapters", document => candidateBuilder.Delete(document, targets, options));
+        return PrepareCandidate("Delete chapters", document => candidateBuilder.Delete(document, targets, options));
     }
 
     public ChapterContentPreview InsertBefore(int index)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var snapshot = session.Snapshot;
-        var chapters = snapshot.Document.Tracks.Single().Chapters;
+        var chapters = snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters;
         var beforeId = index >= 0 && index < chapters.Length ? chapters[index].Id : (ChapterId?)null;
-        return ChapterContentOperationSession.Prepare(session, "Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId));
+        return PrepareCandidate("Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId));
     }
 
     public ChapterContentPreview ShiftFramesForward(int frames)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
-        var targets = session.Snapshot.Document.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id).ToHashSet();
+        var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Select(static chapter => chapter.Id).ToHashSet();
         var fps = (decimal)(workspace.CurrentChapterSet?.FramesPerSecond ?? 0d);
-        return ChapterContentOperationSession.Prepare(session, "Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps));
+        return PrepareCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps));
     }
 
     public FrameUpdateOutcome UpdateFrames(
@@ -189,6 +181,41 @@ internal sealed class ClipEditingCoordinator(
 
     private static ChapterSet EmptyChapterSet() =>
         new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+
+    private ChapterCandidateBuildResult BuildForSelectedTrack(
+        EditableChapterDocument source,
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> build)
+    {
+        var trackIndex = workspace.CurrentTrackIndex;
+        if (trackIndex < 0 || trackIndex >= source.Tracks.Length)
+        {
+            return new ChapterCandidateBuildResult(false, source, [], ["The selected chapter track is unavailable."]);
+        }
+
+        var track = source.Tracks[trackIndex];
+        var focused = new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
+            track.Segments.FirstOrDefault()?.Duration ?? source.Duration,
+            track.Segments.FirstOrDefault()?.FrameRate ?? source.FrameRate,
+            [track]);
+        var result = build(focused);
+        if (!result.IsValid || result.Candidate.Tracks.Length != 1)
+        {
+            return result with { Candidate = source };
+        }
+
+        var tracks = source.Tracks.SetItem(trackIndex, result.Candidate.Tracks[0]);
+        var effectiveRates = tracks
+            .SelectMany(static candidateTrack => candidateTrack.Segments.Select(static segment => segment.FrameRate))
+            .Where(static rate => rate.HasValue)
+            .Select(static rate => rate!.Value)
+            .Distinct()
+            .ToArray();
+        var candidate = new EditableChapterDocument(source.Id, result.Candidate.Title, result.Candidate.SourceName,
+            result.Candidate.ImportFormat, source.Duration,
+            effectiveRates.Length == 1 ? effectiveRates[0] : effectiveRates.Length == 0 ? source.FrameRate : null,
+            tracks);
+        return result with { Candidate = candidate };
+    }
 }
 
 internal enum ChapterEditKind

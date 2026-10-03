@@ -11,6 +11,8 @@ namespace ChapterTool.Core.Models;
 /// <param name="MediaTracks">The media track summaries associated with this chapter entry, when known.</param>
 /// <param name="ImportDisplayName">The complete name used when presenting this entry in an import summary.</param>
 /// <param name="DiscTitleNumber">The DVD disc title number used for a localized selection label, when known.</param>
+/// <param name="ChapterCount">The current chapter count for metadata-only selector entries, when known.</param>
+/// <param name="SourceChapterCount">The chapter count reported by the imported source, when known.</param>
 public sealed record ChapterImportEntry(
     string Id,
     string DisplayName,
@@ -19,7 +21,9 @@ public sealed record ChapterImportEntry(
     IReadOnlyList<ReferencedMediaFile>? ReferencedMediaFiles = null,
     IReadOnlyList<ChapterImportMediaTrack>? MediaTracks = null,
     string? ImportDisplayName = null,
-    int? DiscTitleNumber = null)
+    int? DiscTitleNumber = null,
+    int? ChapterCount = null,
+    int? SourceChapterCount = null)
 {
     /// <inheritdoc />
     public override string ToString() => DisplayName;

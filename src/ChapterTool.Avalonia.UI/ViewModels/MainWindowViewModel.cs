@@ -241,6 +241,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ChapterCountDisplay => Localizer.Format(ChapterCount == 1 ? "Main.ChapterCountSingular" : "Main.ChapterCount", new Dictionary<string, object?> { ["count"] = ChapterCount });
 
+    public string ClipStructureActionText => Localizer.GetString(IsClipCombineChecked ? "Main.SplitByBoundaries" : "Main.Combine");
+
     public string SelectedRowCountDisplay => Localizer.Format("Status.SelectedRows", new Dictionary<string, object?> { ["0"] = SelectedRowCount });
 
     public string SourceDisplayText => string.IsNullOrWhiteSpace(SourcePath) ? string.Empty : Path.GetFileName(SourcePath);
@@ -890,6 +892,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     {
         OnPropertyChanged(nameof(IsClipSelectionVisible));
         OnPropertyChanged(nameof(IsClipCombineChecked));
+        OnPropertyChanged(nameof(ClipStructureActionText));
         OnPropertyChanged(nameof(RelatedMediaReferences));
         OnPropertyChanged(nameof(CanAppendMpls));
         OnPropertyChanged(nameof(CanCombine));

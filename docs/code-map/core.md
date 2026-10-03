@@ -22,6 +22,8 @@ Canonical data contracts shared across the pipeline:
 - `src/ChapterTool.Core/Models/ChapterImportEntry.cs`
 - `src/ChapterTool.Core/Models/ReferencedMediaFile.cs`
 
+`EditableChapterTrack.Segments` stores current boundaries and media placement. `ClipSession` stores selector metadata and does not keep editable chapter backups.
+
 `ChapterSet` is the main unit passed between import, edit, transform, and export flows.
 `EditableChapterDocument` is the immutable snapshot contract for document-based editing flows.
 
@@ -106,6 +108,7 @@ In-memory chapter mutations:
 - `src/ChapterTool.Core/Editing/ChapterSegmentService.cs`
 - `src/ChapterTool.Core/Editing/ChapterEditResult.cs`
 - `src/ChapterTool.Core/Editing/ChapterContentCandidateBuilder.cs` — identity-scoped content candidates for cell edits, structure, metadata, naming, offsets, frame operations, and expressions
+- `src/ChapterTool.Core/Editing/ChapterClipCandidateBuilder.cs` — merge, boundary split, and append candidates over current document tracks
 
 `ChapterEditingOptions` controls delete-rows timing (`Preserve` or `Normalize`) and frame display (`Round` or `DecimalPlaces` with one to six places). `IChapterEditingService.Delete` applies the delete-rows timing mode.
 
@@ -114,7 +117,7 @@ In-memory chapter mutations:
 Host-agnostic interactive session state shared by Avalonia and WASM:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — host-neutral session state, edit buffer, revision and session-token commit rules for Avalonia and WASM
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, selected-track projections, revision and session-token commit rules for Avalonia and WASM
 - `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, base tokens, cancellation, request idempotency, and history navigation
 - `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
 - `src/ChapterTool.Core/Session/ChapterContentOperationSession.cs` — typed preview diffs and stale-safe apply for content candidates

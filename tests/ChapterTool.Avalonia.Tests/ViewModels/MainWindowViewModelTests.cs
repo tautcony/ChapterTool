@@ -357,7 +357,7 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.CanCombine);
         Assert.Single(vm.ClipOptions);
         Assert.Equal(4, vm.Rows.Count);
-        Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], vm.Rows.Select(static row => row.Name).ToArray());
+        Assert.Equal(["A", "B", "C", "D"], vm.Rows.Select(static row => row.Name).ToArray());
 
         await vm.CombineCommand.ExecuteAsync();
 
@@ -365,7 +365,9 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.IsClipSelectionVisible);
         Assert.Equal(2, vm.ClipOptions.Count);
         Assert.Equal(0, vm.SelectedClipIndex);
-        Assert.Equal(["A", "B"], vm.Rows.Select(static row => row.Name).ToArray());
+        Assert.Equal(["A"], vm.Rows.Select(static row => row.Name).ToArray());
+        await vm.SelectClipCommand.ExecuteAsync(1);
+        Assert.Equal(["B", "C", "D"], vm.Rows.Select(static row => row.Name).ToArray());
     }
 
     [Fact]
@@ -726,8 +728,8 @@ public sealed class MainWindowViewModelTests
     public async Task AppendMplsAfterSuccessfulLoadReportsAppendedStatus()
     {
         var load = new FakeLoadService(
-            ImportResult("base.mpls", Info(ChapterImportFormat.Mpls, "base", new Chapter(1, TimeSpan.Zero, "Base"))),
-            ImportResult("append.mpls", Info(ChapterImportFormat.Mpls, "append", new Chapter(1, TimeSpan.Zero, "Append"))));
+            ImportResult("base.mpls", InfoWithDuration(ChapterImportFormat.Mpls, "base", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "Base"))),
+            ImportResult("append.mpls", InfoWithDuration(ChapterImportFormat.Mpls, "append", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "Append"))));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("base.mpls");
@@ -907,7 +909,6 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.IsContentPreviewPending);
         Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
         await vm.ApplyContentPreviewCommand.ExecuteAsync();
-
         Assert.Equal("00:00:04.004", vm.Rows[0].TimeText);
         Assert.Equal("240", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
@@ -1592,6 +1593,9 @@ public sealed class MainWindowViewModelTests
 
     private static ChapterSet Info(ChapterImportFormat sourceType, string sourceName, params Chapter[] chapters) =>
         new(sourceName, sourceName, sourceType, 24, chapters.Last().StartTime, chapters);
+
+    private static ChapterSet InfoWithDuration(ChapterImportFormat sourceType, string sourceName, TimeSpan duration, params Chapter[] chapters) =>
+        new(sourceName, sourceName, sourceType, 24, duration, chapters);
 
     private static ChapterImportResult ImportResult(string path, params ChapterSet[] infos)
     {

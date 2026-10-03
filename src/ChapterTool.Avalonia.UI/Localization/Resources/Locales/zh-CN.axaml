@@ -214,6 +214,8 @@
   <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 个章节</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">转换至当前帧率</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">合并</x:String>
+  <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">按边界拆分</x:String>
+  <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">按边界拆分</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">生成 Zones</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">前移帧</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">插入</x:String>
@@ -379,7 +381,7 @@
   <x:String x:Key="Status.Ready" xml:space="preserve">就绪</x:String>
   <x:String x:Key="Status.RelatedMediaNotFound" xml:space="preserve">未找到相关媒体文件</x:String>
   <x:String x:Key="Status.RelatedMediaNote" xml:space="preserve">浏览器无法打开本地媒体路径；可用时仅以下载/链接方式展示引用。</x:String>
-  <x:String x:Key="Status.RestoredClips" xml:space="preserve">已恢复分开的剪辑。</x:String>
+  <x:String x:Key="Status.RestoredClips" xml:space="preserve">已按源边界拆分。</x:String>
   <x:String x:Key="Status.RowsRefreshed" xml:space="preserve">已刷新行 · {0} fps · {1} 行</x:String>
   <x:String x:Key="Status.SaveFailed" xml:space="preserve">保存失败</x:String>
   <x:String x:Key="Status.Saved" xml:space="preserve">已保存</x:String>

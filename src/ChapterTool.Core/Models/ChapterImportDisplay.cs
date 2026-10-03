@@ -11,7 +11,7 @@ public sealed record ChapterImportDisplay(string MainText, int ChapterCount)
     /// <param name="entry">The imported entry.</param>
     /// <returns>The display values for the entry.</returns>
     public static ChapterImportDisplay From(ChapterImportEntry entry) =>
-        new(entry.DisplayName, entry.ChapterSet.Chapters.Count);
+        new(entry.DisplayName, entry.ChapterCount ?? entry.ChapterSet.Chapters.Count);
 
     /// <summary>Formats a DVD option with a host-supplied title label.</summary>
     /// <param name="name">The title label.</param>

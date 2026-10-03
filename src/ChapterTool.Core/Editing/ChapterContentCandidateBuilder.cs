@@ -110,7 +110,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             }).ToImmutableArray();
         }
 
-        return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters)), chapterIds);
+        return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), chapterIds);
     }
 
     /// <summary>Builds a candidate whose chapter order exactly matches the captured ID sequence.</summary>
@@ -132,7 +132,7 @@ public sealed partial class ChapterContentCandidateBuilder(
 
         var byId = track.Chapters.ToDictionary(static chapter => chapter.Id);
         var chapters = Renumber(orderedIds.Select(id => byId[id]).ToImmutableArray());
-        return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters)), orderedIds);
+        return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), orderedIds);
     }
 
     /// <summary>Applies display numbering to every chapter as a one-shot content edit.</summary>
@@ -226,7 +226,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             var chapters = track.Chapters.Select(chapter => targets.Contains(chapter.Id)
                 ? chapter with { Name = regex.Replace(chapter.Name, replacement) }
                 : chapter).ToImmutableArray();
-            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters)), targets);
+            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), targets);
         }
         catch (ArgumentException exception)
         {
@@ -266,7 +266,7 @@ public sealed partial class ChapterContentCandidateBuilder(
                     StartTicks = checked(chapter.StartTicks + offset.Ticks),
                     EndTicks = chapter.EndTicks is long end ? checked(end + offset.Ticks) : null
                 }).ToImmutableArray();
-            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters)), targetIds);
+            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), targetIds);
         }
         catch (OverflowException)
         {
@@ -313,7 +313,7 @@ public sealed partial class ChapterContentCandidateBuilder(
                     })
                 .ToImmutableArray();
             chapters = Renumber(chapters);
-            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters)), targetIds);
+            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), targetIds);
         }
         catch (Exception exception) when (exception is OverflowException or ArgumentOutOfRangeException)
         {
@@ -338,7 +338,7 @@ public sealed partial class ChapterContentCandidateBuilder(
                 return Failure(source, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
             }
 
-            var updated = EditableChapterDocumentAdapter.ApplyNonStructuralChapterSetResult(source, result.Info);
+            var updated = EditableChapterDocumentAdapter.ApplyFrameRateChangeResult(source, result.Info, sourceFps, targetFps);
             return ValidateAndSucceed(updated, source.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id));
         }
         catch (Exception exception) when (exception is OverflowException or ArgumentOutOfRangeException)
@@ -432,7 +432,8 @@ public sealed partial class ChapterContentCandidateBuilder(
         var tracks = source.Tracks.SetItem(0, new EditableChapterTrack(
             first.Id,
             updateTrackName ? trackName ?? string.Empty : first.Name,
-            first.Chapters));
+            first.Chapters,
+            first.Segments));
         var candidate = new EditableChapterDocument(
             source.Id,
             updateTitle ? title ?? string.Empty : source.Title,
@@ -531,7 +532,7 @@ public sealed partial class ChapterContentCandidateBuilder(
         .ToArray();
 
     private static EditableChapterTrack WithChapters(EditableChapterTrack track, ImmutableArray<EditableChapter> chapters) =>
-        new(track.Id, track.Name, chapters);
+        new(track.Id, track.Name, chapters, track.Segments);
 }
 
 /// <summary>Identifies a cell value that can be edited by a chapter candidate.</summary>

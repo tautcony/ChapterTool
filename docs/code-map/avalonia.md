@@ -30,7 +30,7 @@ Startup and main shell entry points:
 Main-window workflow owners under `src/ChapterTool.Avalonia.UI/Workflows/` use the same `ChapterWorkspace`:
 
 - `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
-- `ClipEditingCoordinator.cs` — clip selection/combine transitions plus candidate cell and frame edits written through the workspace
+- `ClipEditingCoordinator.cs` — clip selection, merge/split-by-boundaries, and selected-track edits written through the workspace
 - `ProjectionFacade.cs` — workspace-backed row materialization and preview/save options
 - `StatusDiagnosticsPresenter.cs` — localized status/progress rendering and structured diagnostic logging
 - `DisplayOptionCoordinator.cs` renders DVD title numbers with localized labels. The chapter data and English log summaries remain stable when the culture changes. The clip selector exposes its complete label in a tooltip when the visible text is trimmed.
@@ -54,7 +54,7 @@ Role split:
 Shared session kernel lives in Core:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — `SplitClipSession` / `CombinedClipSession` and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — path, clip session, edit buffer, projection, export preferences, revision commit rules
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, selected-track projection/writeback, projection, export preferences, and revision commit rules
 - `src/ChapterTool.Core/Session/ProjectionState.cs`
 - `src/ChapterTool.Core/Session/ExportPreferences.cs`
 
@@ -65,7 +65,7 @@ Avalonia owns only host ports:
 
 `MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append commits use workspace revision rules.
 
-Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordinator` and `IChapterContentOperationPort`. Batch tools preview, apply, or cancel typed candidates. Cell edits commit from the existing editor flow. `CreateExportOptions` disables draft transforms. Tables and exports read the committed chapter values after apply.
+Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordinator` and `IChapterContentOperationPort`. Clip boundaries and media placement live in track segments. `ClipSession` contains selector metadata only. Batch tools preview, apply, or cancel typed candidates. Cell edits commit to the selected track. `CreateExportOptions` disables draft transforms. Tables and exports read committed chapter values after apply.
 
 `tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/` verifies rendered preview/apply workflows and responsive layouts.
 
@@ -276,7 +276,7 @@ Start with:
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs`
 
-Pure transition coverage: `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs`. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
+Candidate and session coverage: `tests/ChapterTool.Core.Tests/Editing/ChapterClipCandidateBuilderTests.cs` and `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs`. The ViewModel tests cover merge/split labels and selected-track rows. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
 
 ### Load/save/import behavior exposed in UI
 

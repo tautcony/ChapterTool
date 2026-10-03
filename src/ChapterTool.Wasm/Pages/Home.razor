@@ -368,7 +368,7 @@
         <button type="button"
                 @onclick="ToggleClipCombineContext"
                 disabled="@(!Workspace.CanToggleClipCombine)">
-            @(Workspace.IsClipCombined ? L.T("Menu.Split") : L.T("Menu.Combine"))
+            @(Workspace.IsClipCombined ? L.T("Menu.SplitByBoundaries") : L.T("Menu.Combine"))
         </button>
     </div>
 }

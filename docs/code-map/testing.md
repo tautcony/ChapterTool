@@ -41,6 +41,8 @@ Desktop composition coverage:
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
+Use `tests/ChapterTool.Core.Tests/Editing/ChapterClipCandidateBuilderTests.cs` for current-document clip merge, boundary split, frame-rate policy, append, cancellation, and stale-candidate behavior. Use `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs` and `ChapterWorkspaceTests.cs` for selector metadata, source-count preservation, selected-track commits, and load/append ownership.
+
 Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the browser shortcut guard.
 
 Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
@@ -62,6 +64,7 @@ High-signal test files:
 - editing
   - `tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs` (delete-rows timing and frame display options coverage)
   - `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs` (candidate commit, undo, redo, stale previews, and batch failure)
+  - `tests/ChapterTool.Core.Tests/Editing/ChapterClipCandidateBuilderTests.cs` (merge, boundary split, append, IDs, ends, frame rates, cancellation, and stale snapshots)
   - `tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Editing/SampleChapterNameTemplateTests.cs`
   - `tests/ChapterTool.Core.Tests/Importing/ChapterContentServiceTests.cs`

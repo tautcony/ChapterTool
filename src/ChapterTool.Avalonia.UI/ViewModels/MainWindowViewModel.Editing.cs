@@ -111,7 +111,7 @@ public sealed partial class MainWindowViewModel
         var afterCount = CurrentInfo?.Chapters.Count ?? 0;
         if (transition.Restored)
         {
-            var action = CombineActionText("Split combined segments", Workspace.ClipSession.OriginalGroup);
+            var action = CombineActionText("Split by boundaries", Workspace.ClipSession.OriginalGroup);
             Log($"{action}: chapters {beforeCount} -> {afterCount}", "Edit",
                 ("action", action), ("before", beforeCount), ("after", afterCount));
         }

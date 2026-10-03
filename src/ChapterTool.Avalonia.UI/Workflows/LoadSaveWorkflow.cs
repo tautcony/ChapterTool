@@ -1,5 +1,6 @@
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
@@ -57,7 +58,8 @@ internal sealed class LoadSaveWorkflow(
         }
 
         var session = ClipSessionTransitions.FromLoad(result.Groups[0]);
-        return workspace.TryCommitLoad(operationRevision, source, session)
+        var document = EditableChapterDocumentAdapter.FromChapterImportSource(result.Groups[0]);
+        return workspace.TryCommitLoad(operationRevision, source, session, document)
             ? new LoadWorkflowResult(LoadWorkflowState.Succeeded, result, session)
             : LoadWorkflowResult.Stale;
     }
@@ -69,12 +71,14 @@ internal sealed class LoadSaveWorkflow(
     {
         var operationRevision = workspace.CaptureRevision();
         var expectedSession = workspace.ClipSession;
-        if (expectedSession is null)
+        var contentSession = workspace.ContentSession;
+        if (expectedSession is null || contentSession is null)
         {
             return AppendWorkflowResult.NoSession;
         }
 
         var expectedSessionId = expectedSession.SessionId;
+        var capturedContent = contentSession.Snapshot;
         var result = await LoadSourceAsync(source, progress: null, cancellationToken);
         if (!workspace.IsCurrentRevision(operationRevision)
             || workspace.ClipSession?.SessionId != expectedSessionId)
@@ -87,15 +91,29 @@ internal sealed class LoadSaveWorkflow(
             return new AppendWorkflowResult(AppendWorkflowState.FailedLoad, result, null, null);
         }
 
-        var transition = ClipSessionTransitions.Append(workspace.ClipSession ?? expectedSession, result.Groups[0]);
+        var append = workspace.AppendClipSource(operationRevision, expectedSessionId, capturedContent, result.Groups[0], cancellationToken);
+        if (append.IsStale)
+        {
+            return AppendWorkflowResult.Stale;
+        }
+
+        if (!append.Succeeded || append.Session is null || append.Document is null)
+        {
+            var error = new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidStructure, string.Join("; ", append.Errors));
+            var failed = new ClipAppendTransitionResult(null,
+                new ChapterEditResult(EditableChapterDocumentAdapter.ToChapterSet(capturedContent.Document), [error]), false);
+            return new AppendWorkflowResult(AppendWorkflowState.FailedTransition, result, failed, null);
+        }
+
+        var transition = new ClipAppendTransitionResult(
+            append.Session,
+            new ChapterEditResult(EditableChapterDocumentAdapter.ToChapterSet(append.Document), []), true);
         if (!transition.Succeeded || transition.Session is null)
         {
             return new AppendWorkflowResult(AppendWorkflowState.FailedTransition, result, transition, null);
         }
 
-        return workspace.TryCommitAppend(operationRevision, expectedSessionId, transition.Session)
-            ? new AppendWorkflowResult(AppendWorkflowState.Succeeded, result, transition, transition.Session)
-            : AppendWorkflowResult.Stale;
+        return new AppendWorkflowResult(AppendWorkflowState.Succeeded, result, transition, transition.Session);
     }
 
     public ValueTask<ChapterExportResult> SaveAsync(

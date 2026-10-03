@@ -126,7 +126,7 @@
             <ContextMenu x:DataType="vm:MainWindowViewModel"
                          DataContext="{Binding #RootView.DataContext}">
               <MenuItem x:Name="ClipCombineMenuItem"
-                        Header="{DynamicResource Main.Combine}"
+                        Header="{Binding ClipStructureActionText}"
                         ToggleType="CheckBox"
                         IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                         IsEnabled="{Binding CanCombine}"
@@ -237,7 +237,7 @@
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-trash-can" /></MenuItem.Icon>
               </MenuItem>
               <MenuItem x:Name="GridCombineMenuItem"
-                        Header="{DynamicResource Main.Combine}"
+                        Header="{Binding ClipStructureActionText}"
                         ToggleType="CheckBox"
                         IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                         IsEnabled="{Binding CanCombine}"

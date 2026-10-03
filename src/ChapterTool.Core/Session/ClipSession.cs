@@ -121,6 +121,7 @@ public static class ClipSessionTransitions
     /// <summary>Creates a split session from a successful load group.</summary>
     public static SplitClipSession FromLoad(ChapterImportSource group)
     {
+        group = MetadataOnly(group);
         if (group.Entries.Count == 0)
         {
             return new SplitClipSession(group, -1) { SessionId = Guid.NewGuid() };
@@ -128,6 +129,27 @@ public static class ClipSessionTransitions
 
         var index = Math.Clamp(group.DefaultEntryIndex, 0, group.Entries.Count - 1);
         return new SplitClipSession(group, index) { SessionId = Guid.NewGuid() };
+    }
+
+    /// <summary>Builds selector metadata from the current structural document.</summary>
+    public static ClipSession FromDocument(ClipSession basis, EditableChapterDocument document, bool combined, bool preserveSessionId = false)
+    {
+        ArgumentNullException.ThrowIfNull(basis);
+        ArgumentNullException.ThrowIfNull(document);
+        var entries = document.Tracks.SelectMany(track => track.Segments.Select(segment =>
+            ToMetadataEntry(segment, track, CountChapters(track, segment, document.Duration)))).ToArray();
+        var group = new ChapterImportSource(basis.OriginalGroup.SourcePath, entries, basis.SelectedIndex);
+        if (combined)
+        {
+            var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document);
+            return new CombinedClipSession(group, CreateCombinedClipOption(group, chapterSet))
+            {
+                SessionId = preserveSessionId ? basis.SessionId : Guid.NewGuid()
+            };
+        }
+
+        var selectedIndex = entries.Length == 0 ? -1 : Math.Clamp(basis.SelectedIndex, 0, entries.Length - 1);
+        return new SplitClipSession(group, selectedIndex) { SessionId = preserveSessionId ? basis.SessionId : Guid.NewGuid() };
     }
 
     /// <summary>Selects a clip index within a split session (no-op if out of range or already selected).</summary>
@@ -176,13 +198,8 @@ public static class ClipSessionTransitions
                 Succeeded: false);
         }
 
-        var result = ChapterSegmentService.Combine(split.Group);
-        if (result.Diagnostics.Count > 0)
-        {
-            return new ClipCombineTransitionResult(null, result, Restored: false, Succeeded: false);
-        }
-
-        var combinedEntry = CreateCombinedClipOption(split.Group, result.ChapterSet);
+        var result = new ChapterEditResult(EmptyChapterSet(), []);
+        var combinedEntry = CreateCombinedClipOption(split.Group, EmptyChapterSet());
         return new ClipCombineTransitionResult(
             new CombinedClipSession(split.Group, combinedEntry) { SessionId = Guid.NewGuid() },
             result,
@@ -208,16 +225,11 @@ public static class ClipSessionTransitions
     public static ClipAppendTransitionResult Append(ClipSession session, ChapterImportSource appended)
     {
         var baseGroup = session.OriginalGroup;
-        var edit = ChapterSegmentService.Append(baseGroup, appended);
-        if (edit.Diagnostics.Count > 0)
-        {
-            return new ClipAppendTransitionResult(null, edit, Succeeded: false);
-        }
-
+        var edit = new ChapterEditResult(EmptyChapterSet(), []);
         var entries = baseGroup.Entries.ToList();
-        entries.AddRange(appended.Entries);
+        entries.AddRange(MetadataOnly(appended).Entries);
         var appendedGroup = baseGroup with { Entries = entries };
-        var combinedOption = CreateCombinedClipOption(appendedGroup, edit.ChapterSet);
+        var combinedOption = CreateCombinedClipOption(appendedGroup, EmptyChapterSet());
         return new ClipAppendTransitionResult(
             new CombinedClipSession(appendedGroup, combinedOption) { SessionId = Guid.NewGuid() },
             edit,
@@ -228,33 +240,7 @@ public static class ClipSessionTransitions
     /// Writes an edited chapter set back into the active clip ownership
     /// (selected split entry vs combined entry). Preserves <see cref="ClipSession.SessionId"/>.
     /// </summary>
-    public static ClipSession WriteBack(ClipSession session, ChapterSet info) =>
-        session switch
-        {
-            SplitClipSession split => WriteBackSplit(split, info),
-            CombinedClipSession combined => combined with
-            {
-                CombinedEntry = combined.CombinedEntry with { ChapterSet = info }
-
-                // SessionId preserved via record `with`
-            },
-            _ => session
-        };
-
-    private static SplitClipSession WriteBackSplit(SplitClipSession split, ChapterSet info)
-    {
-        var index = split.SelectedClipIndex;
-        if (index < 0 || index >= split.Group.Entries.Count)
-        {
-            return split;
-        }
-
-        var entries = split.Group.Entries.ToList();
-        entries[index] = entries[index] with { ChapterSet = info };
-
-        // SessionId preserved via record `with`
-        return split with { Group = split.Group with { Entries = entries } };
-    }
+    public static ClipSession WriteBack(ClipSession session, ChapterSet info) => session;
 
     /// <summary>Creates the synthetic combined clip entry used by the selector.</summary>
     public static ChapterImportEntry CreateCombinedClipOption(ChapterImportSource sourceGroup, ChapterSet combinedInfo)
@@ -277,12 +263,67 @@ public static class ClipSessionTransitions
         return new ChapterImportEntry(
             "combined",
             displayName,
-            combinedInfo,
+            EmptyChapterSet() with
+            {
+                Title = combinedInfo.Title,
+                SourceName = combinedInfo.SourceName,
+                ImportFormat = combinedInfo.ImportFormat,
+                FramesPerSecond = combinedInfo.FramesPerSecond,
+                Duration = combinedInfo.Duration
+            },
             CanCombine: true,
             ReferencedMediaFiles: mediaReferences,
-            MediaTracks: mediaTracks);
+            MediaTracks: mediaTracks,
+            ChapterCount: combinedInfo.Chapters.Count);
+    }
+
+    private static ChapterImportEntry ToMetadataEntry(EditableChapterSegment segment, EditableChapterTrack track, int chapterCount) => new(
+        segment.SourceEntryId,
+        segment.Name.Length == 0 ? track.Name : segment.Name,
+        new ChapterSet(
+            segment.Name.Length == 0 ? track.Name : segment.Name,
+            segment.SourceName,
+            segment.ImportFormat,
+            segment.FrameRate is ChapterFrameRate rate ? (double)rate.Numerator / rate.Denominator : 0,
+            segment.Duration.IsKnown ? TimeSpan.FromTicks(segment.Duration.Ticks) : TimeSpan.Zero,
+            []),
+        CanCombine: true,
+        ReferencedMediaFiles: segment.ReferencedMediaFiles,
+        MediaTracks: segment.MediaTracks,
+        ImportDisplayName: segment.ImportDisplayName,
+        DiscTitleNumber: segment.DiscTitleNumber,
+        ChapterCount: chapterCount,
+        SourceChapterCount: segment.SourceChapterCount ?? segment.ChapterCount);
+
+    private static int CountChapters(EditableChapterTrack track, EditableChapterSegment segment, ChapterDuration totalDuration)
+    {
+        if (track.Segments.Length == 1)
+        {
+            return track.Chapters.Length;
+        }
+
+        if (!segment.Duration.IsKnown)
+        {
+            return segment.ChapterCount;
+        }
+
+        var end = checked(segment.StartTicks + segment.Duration.Ticks);
+        return track.Chapters.Count(chapter =>
+            (chapter.StartTicks >= segment.StartTicks && chapter.StartTicks < end)
+            || (totalDuration.IsKnown && chapter.StartTicks == totalDuration.Ticks && end == totalDuration.Ticks));
     }
 
     private static ChapterSet EmptyChapterSet() =>
         new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+
+    /// <summary>Removes chapter values from selector metadata so the document stays the only editable source.</summary>
+    public static ChapterImportSource MetadataOnly(ChapterImportSource source) => source with
+    {
+        Entries = source.Entries.Select(static entry => entry with
+        {
+            ChapterSet = entry.ChapterSet with { Chapters = [] },
+            ChapterCount = entry.ChapterCount ?? entry.ChapterSet.Chapters.Count,
+            SourceChapterCount = entry.SourceChapterCount ?? entry.ChapterCount ?? entry.ChapterSet.Chapters.Count
+        }).ToArray()
+    };
 }
