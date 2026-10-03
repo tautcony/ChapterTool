@@ -94,6 +94,11 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             ShellService,
             SettingsStore);
         MainView = new MainView(ViewModel, _ => FilePickerService);
+
+        // Headless tests cannot interact with the native confirmation dialog. Keep
+        // replacement workflows moving and test cancellation through the injected
+        // ViewModel callback in the non-Headless suite.
+        ViewModel.SessionLossConfirmation = _ => ValueTask.FromResult(true);
         Window = new MainWindow(MainView, "ChapterTool Test");
     }
 
@@ -338,6 +343,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public void Dispose()
     {
         localizationAdapter.Dispose();
+        ViewModel.EndDocumentSession();
         Window.Close();
         Window.Content = null;
         Dispatcher.UIThread.RunJobs();

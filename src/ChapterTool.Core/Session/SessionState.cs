@@ -55,8 +55,10 @@ public sealed record TransactionOutcome(
 public sealed class SessionState
 {
     private readonly SemaphoreSlim commandQueue = new(1, 1);
+    private readonly CancellationTokenSource lifetimeCancellation = new();
     private readonly Action<SessionHistoryFailurePoint>? historyFailureInjector;
     private SessionVersion current;
+    private int isEnded;
 
     /// <summary>Creates a session for a validated document.</summary>
     public SessionState(EditableChapterDocument document)
@@ -93,6 +95,21 @@ public sealed class SessionState
         }
     }
 
+    /// <summary>Gets the token canceled when this document session ends.</summary>
+    public CancellationToken LifetimeToken => lifetimeCancellation.Token;
+
+    /// <summary>Gets whether this session has ended.</summary>
+    public bool IsEnded => Volatile.Read(ref isEnded) != 0;
+
+    /// <summary>Invalidates the session and cancels work owned by it.</summary>
+    public void EndSession()
+    {
+        if (Interlocked.Exchange(ref isEnded, 1) == 0)
+        {
+            lifetimeCancellation.Cancel();
+        }
+    }
+
     /// <summary>Gets the root, cursor, and all retained history nodes.</summary>
     public SessionHistorySnapshot GetHistorySnapshot() => Volatile.Read(ref current).History.Snapshot();
 
@@ -110,6 +127,8 @@ public sealed class SessionState
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(requestFingerprint);
         ArgumentNullException.ThrowIfNull(createCandidate);
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, LifetimeToken);
+        cancellationToken = linkedCancellation.Token;
 
         var queueEntered = false;
         try
@@ -118,6 +137,10 @@ public sealed class SessionState
             queueEntered = true;
 
             var version = Volatile.Read(ref current);
+            if (IsEnded)
+            {
+                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+            }
             if (version.Transactions.TryGetValue(transactionId, out var cached))
             {
                 return string.Equals(cached.RequestFingerprint, requestFingerprint, StringComparison.Ordinal)
@@ -206,6 +229,11 @@ public sealed class SessionState
                     return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
                 }
 
+                if (IsEnded)
+                {
+                    return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+                }
+
                 // This reference write is the transaction's publication point.
                 Volatile.Write(ref current, nextVersion);
                 return outcome;
@@ -223,6 +251,10 @@ public sealed class SessionState
             try
             {
                 var version = Volatile.Read(ref current);
+                if (IsEnded)
+                {
+                    return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+                }
                 if (version.Transactions.TryGetValue(transactionId, out var cached))
                 {
                     return string.Equals(cached.RequestFingerprint, requestFingerprint, StringComparison.Ordinal)
@@ -282,10 +314,31 @@ public sealed class SessionState
         Guid? requestedId = null,
         bool requireDirectChild = false)
     {
-        await commandQueue.WaitAsync(cancellationToken).ConfigureAwait(false);
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, LifetimeToken);
+        cancellationToken = linkedCancellation.Token;
+        try
+        {
+            await commandQueue.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (IsEnded)
+        {
+            var version = Volatile.Read(ref current);
+            return HistoryOutcome(HistoryNavigationOutcomeKind.Cancelled, version, []);
+        }
+
+        if (IsEnded)
+        {
+            commandQueue.Release();
+            return HistoryOutcome(HistoryNavigationOutcomeKind.Cancelled, Volatile.Read(ref current), []);
+        }
+
         try
         {
             var version = Volatile.Read(ref current);
+            if (IsEnded)
+            {
+                return HistoryOutcome(HistoryNavigationOutcomeKind.Cancelled, version, []);
+            }
             var tree = version.History;
             var targetId = selectTarget(tree);
             if (targetId is null)

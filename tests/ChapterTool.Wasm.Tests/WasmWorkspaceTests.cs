@@ -201,6 +201,57 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task Successful_save_records_snapshot_baseline_without_clearing_history()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, null, "Edited opening");
+        Assert.True(workspace.HasUnexportedChanges);
+        var historyCount = workspace.HistoryEntries.Count;
+
+        var save = workspace.Save();
+
+        Assert.True(save.Success);
+        Assert.False(workspace.HasUnexportedChanges);
+        Assert.Equal(historyCount, workspace.HistoryEntries.Count);
+    }
+
+    [Fact]
+    public async Task Failed_replacement_preserves_current_document_and_history()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, null, "Keep this edit");
+        var originalPath = workspace.SourcePath;
+        var originalHistoryCount = workspace.HistoryEntries.Count;
+        var originalRows = workspace.Rows.ToArray();
+
+        await workspace.LoadAsync("invalid.json", [.. "{}"u8]);
+
+        Assert.Equal(originalPath, workspace.SourcePath);
+        Assert.Equal(originalHistoryCount, workspace.HistoryEntries.Count);
+        Assert.Equal(originalRows, workspace.Rows);
+    }
+
+    [Fact]
+    public async Task Cancelled_replacement_preserves_wasm_session_and_history()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, null, "Keep this edit");
+        var originalPath = workspace.SourcePath;
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Select(entry => entry.Id).ToArray();
+        workspace.SessionLossConfirmation = _ => ValueTask.FromResult(false);
+
+        await workspace.LoadAsync("replacement.txt", [.. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Replacement"u8]);
+
+        Assert.Equal(originalPath, workspace.SourcePath);
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Select(entry => entry.Id));
+    }
+
+    [Fact]
     public async Task AutoGenerateNamesModeRewritesDisplayedNames()
     {
         var workspace = CreateWorkspace();

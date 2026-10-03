@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
@@ -59,6 +61,7 @@ public sealed partial class MainView : UserControl
         this.viewModel = viewModel;
         this.filePickerServiceFactory = filePickerServiceFactory;
         this.embeddedToolPresenter = embeddedToolPresenter;
+        viewModel.SessionLossConfirmation = ConfirmSessionLossAsync;
         shortcutRouter = new ShortcutRouter(
             viewModel,
             load: () => new ValueTask(BrowseAndLoadAsync()),
@@ -191,7 +194,6 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        viewModel.SourcePath = source is LocalPathChapterSource local ? local.Path : source.DisplayName;
         await viewModel.LoadCommand.ExecuteAsync(source);
     }
 
@@ -261,12 +263,70 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        viewModel.SourcePath = source is LocalPathChapterSource local ? local.Path : source.DisplayName;
         await viewModel.DropPathLoadCommand.ExecuteAsync(source);
     });
 
     private IFilePickerService FilePickerService =>
         filePickerService ?? throw new InvalidOperationException("The shared main view must be attached before file actions can run.");
+
+    private async ValueTask<bool> ConfirmSessionLossAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (TopLevel.GetTopLevel(this) is not Window owner)
+        {
+            return false;
+        }
+
+        var dialog = new Window
+        {
+            Title = viewModel.Localizer.GetString("SessionLoss.Title"),
+            Width = 420,
+            MinWidth = 380,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+        var message = new TextBlock
+        {
+            Text = viewModel.Localizer.GetString("SessionLoss.Message"),
+            TextWrapping = TextWrapping.Wrap
+        };
+        var continueButton = new Button
+        {
+            Content = viewModel.Localizer.GetString("SessionLoss.Continue"),
+            MinWidth = 100
+        };
+        var cancelButton = new Button
+        {
+            Content = viewModel.Localizer.GetString("Common.Cancel"),
+            MinWidth = 82
+        };
+        continueButton.Click += (_, _) => dialog.Close(true);
+        cancelButton.Click += (_, _) => dialog.Close(false);
+        var content = new Grid
+        {
+            Margin = new Thickness(16),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            Children =
+            {
+                message,
+                new StackPanel
+                {
+                    Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                    Spacing = 8,
+                    Margin = new Thickness(0, 16, 0, 0),
+                    Children = { continueButton, cancelButton }
+                }
+            }
+        };
+        Grid.SetRow(message, 0);
+        Grid.SetRow(content.Children[1], 1);
+        dialog.Content = content;
+        var confirmed = await dialog.ShowDialog<bool>(owner);
+        cancellationToken.ThrowIfCancellationRequested();
+        return confirmed;
+    }
 
     private async void OnKeyDown(object? sender, KeyEventArgs args) => await uiOperationBoundary.RunAsync(async () =>
     {

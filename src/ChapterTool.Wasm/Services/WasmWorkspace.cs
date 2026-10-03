@@ -115,6 +115,33 @@ public sealed class WasmWorkspace : IDisposable
 
     public bool HasHistory => session.ContentSession is not null;
 
+    public bool HasUnexportedChanges
+    {
+        get
+        {
+            if (BaseChapterSet is null)
+            {
+                return false;
+            }
+
+            var snapshot = session.CaptureExportSnapshot(BaseChapterSet, CreateExportOptions(), session.CurrentTrackIndex);
+            return !session.IsExported(snapshot);
+        }
+    }
+
+    public bool HasActiveDraft => false;
+
+    public bool RequiresSessionLossConfirmation
+    {
+        get
+        {
+            var history = session.ContentSession?.GetHistorySnapshot();
+            return (history is not null && history.Nodes.Length > 1) || HasActiveDraft || HasUnexportedChanges;
+        }
+    }
+
+    public Func<CancellationToken, ValueTask<bool>>? SessionLossConfirmation { get; set; }
+
     public bool CanRedo => PreferredRedoNode is not null && !IsBusy;
 
     public ICollection<WasmHistoryEntry> HistoryEntries
@@ -381,6 +408,7 @@ public sealed class WasmWorkspace : IDisposable
     public void Dispose()
     {
         localizer.CultureChanged -= OnCultureChanged;
+        session.ClearSession();
     }
 
     public void SelectRow(int index, bool ctrl = false, bool shift = false)
@@ -622,18 +650,33 @@ public sealed class WasmWorkspace : IDisposable
 
             if (!result.Success || result.Groups.Count == 0)
             {
-                if (session.IsCurrentRevision(operationRevision))
-                {
-                    ClearSession();
-                }
-
                 diagnostics = WasmWorkspaceProjection.ToDiagnostics(result.Diagnostics);
                 StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.LoadFailed");
                 AddLog("Error", StatusText);
                 return;
             }
 
-            if (!ApplySuccessfulLoad(fileName, content, result, operationRevision))
+            var replacementToken = session.CaptureContentToken();
+            var candidate = result.Groups[0];
+            var candidateSession = ClipSessionTransitions.FromLoad(candidate);
+            var candidateDocument = EditableChapterDocumentAdapter.FromChapterImportSource(candidate);
+            while (RequiresSessionLossConfirmation && SessionLossConfirmation is not null)
+            {
+                if (!await SessionLossConfirmation(cancellationToken))
+                {
+                    SetLocalizedStatus("Status.SessionReplacementCanceled");
+                    return;
+                }
+
+                if (session.IsContentTokenCurrent(replacementToken))
+                {
+                    break;
+                }
+
+                replacementToken = session.CaptureContentToken();
+            }
+
+            if (!ApplySuccessfulLoad(fileName, content, result, operationRevision, candidateSession, candidateDocument, replacementToken))
             {
                 return;
             }
@@ -643,11 +686,6 @@ public sealed class WasmWorkspace : IDisposable
         }
         catch (Exception ex)
         {
-            if (session.IsCurrentRevision(operationRevision))
-            {
-                ClearSession();
-            }
-
             StatusText = ex.Message;
             diagnostics = [];
             AddLog("Error", localizer.T("Status.LoadFailed"), ex.ToString());
@@ -1046,6 +1084,7 @@ public sealed class WasmWorkspace : IDisposable
 
             var format = ChapterContentService.FormatAt(SaveFormatIndex);
             var options = CreateExportOptions();
+            var exportSnapshot = session.CaptureExportSnapshot(BaseChapterSet, options, session.CurrentTrackIndex);
             var export = wasmChapterService.Export(BaseChapterSet, options);
             diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
             if (!export.Success)
@@ -1053,6 +1092,11 @@ public sealed class WasmWorkspace : IDisposable
                 StatusText = WasmWorkspaceProjection.FirstError(export.Diagnostics) ?? localizer.T("Status.SaveFailed");
                 Notify();
                 return new SaveResult(false, StatusText);
+            }
+
+            if (exportSnapshot is not null)
+            {
+                session.RecordSuccessfulExport(exportSnapshot);
             }
 
             var baseName = Path.GetFileNameWithoutExtension(SourcePath);
@@ -1133,15 +1177,14 @@ public sealed class WasmWorkspace : IDisposable
         string fileName,
         byte[] content,
         ChapterImportResult result,
-        int operationRevision)
+        int operationRevision,
+        ClipSession newSession,
+        EditableChapterDocument document,
+        SessionBaseToken? expectedToken)
     {
         var sourceGroup = result.Groups.Count > 0 ? result.Groups[0] : null;
-        var newSession = sourceGroup is not null
-            ? ClipSessionTransitions.FromLoad(sourceGroup)
-            : null;
-        var document = sourceGroup is null ? null : EditableChapterDocumentAdapter.FromChapterImportSource(sourceGroup);
-        if (newSession is null || document is null
-            || !session.TryCommitLoad(operationRevision, new LocalPathChapterSource(fileName), newSession, document))
+        if (sourceGroup is null
+            || !session.TryCommitLoad(operationRevision, new LocalPathChapterSource(fileName), newSession, document, expectedToken))
         {
             return false;
         }

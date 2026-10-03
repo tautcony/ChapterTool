@@ -60,6 +60,28 @@ public sealed class SessionStateTests
     }
 
     [Fact]
+    public async Task Ended_session_cancels_new_mutations_and_history_navigation()
+    {
+        var session = new SessionState(CreateDocument());
+        var captured = session.Snapshot;
+        var token = session.LifetimeToken;
+        session.EndSession();
+
+        var edit = await session.ExecuteAsync(
+            captured.BaseToken,
+            Guid.NewGuid(),
+            "edit after close",
+            (document, _) => ValueTask.FromResult(Rename(document, "Changed")));
+        var undo = await session.UndoAsync();
+
+        Assert.True(token.IsCancellationRequested);
+        Assert.Equal(TransactionOutcomeKind.Cancelled, edit.Kind);
+        Assert.Equal(HistoryNavigationOutcomeKind.Cancelled, undo.Kind);
+        Assert.Same(captured.Document, session.Snapshot.Document);
+        Assert.Equal(captured.MutationRevision, session.Snapshot.MutationRevision);
+    }
+
+    [Fact]
     public async Task Stale_base_token_is_rejected_without_running_candidate()
     {
         var session = new SessionState(CreateDocument());

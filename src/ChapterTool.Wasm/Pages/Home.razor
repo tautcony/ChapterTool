@@ -792,6 +792,7 @@
 
     protected override void OnInitialized()
     {
+        Workspace.SessionLossConfirmation = ConfirmSessionLossAsync;
         Workspace.Changed += OnWorkspaceChanged;
         L.CultureChanged += OnCultureChanged;
         PullOptionsFromWorkspace();
@@ -1233,6 +1234,14 @@
     {
         CloseContextMenu();
         await PreviewAsync();
+    }
+
+    private async ValueTask<bool> ConfirmSessionLossAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var confirmed = await Js.InvokeAsync<bool>("confirm", cancellationToken, L.T("SessionLoss.Message"));
+        cancellationToken.ThrowIfCancellationRequested();
+        return confirmed;
     }
 
     private void ToggleHistory() => showHistory = !showHistory;

@@ -158,6 +158,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public void Dispose()
     {
+        EndDocumentSession();
         Localizer.CultureChanged -= cultureChangedHandler;
         ClipOptions.CollectionChanged -= OnClipOptionsChanged;
         Rows.CollectionChanged -= OnRowsChanged;
@@ -665,6 +666,64 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string HistoryLifetimeText => Localizer.GetString("History.SessionLifetimeShort");
 
+    /// <summary>Gets whether ending this document session would discard history, a draft, or unexported content.</summary>
+    public bool RequiresSessionLossConfirmation
+    {
+        get
+        {
+            var history = Workspace.ContentSession?.GetHistorySnapshot();
+            var hasHistory = history is not null && history.Nodes.Length > 1;
+            return hasHistory || pendingContentPreview is not null || HasUnexportedContent;
+        }
+    }
+
+    public bool HasUnexportedContent
+    {
+        get
+        {
+            if (CurrentInfo is null)
+            {
+                return false;
+            }
+
+            var projection = CurrentOutputProjection();
+            var capture = Workspace.CaptureExportSnapshot(
+                projection.Info,
+                CurrentExportOptionsForProjectedInfo(),
+                Workspace.CurrentTrackIndex);
+            return !Workspace.IsExported(capture);
+        }
+    }
+
+    internal Func<CancellationToken, ValueTask<bool>>? SessionLossConfirmation { get; set; }
+
+    /// <summary>Asks the host before ending the current session.</summary>
+    public ValueTask<bool> ConfirmSessionLossAsync(CancellationToken cancellationToken) =>
+        SessionLossConfirmation is null
+            ? ValueTask.FromResult(true)
+            : SessionLossConfirmation(cancellationToken);
+
+    /// <summary>Ends the current session and drops its host projections and drafts.</summary>
+    public void EndDocumentSession()
+    {
+        if (pendingContentPreview is { } preview)
+        {
+            CancelContentPreview(preview);
+            pendingContentPreview = null;
+        }
+
+        Workspace.ClearSession();
+        SourcePath = string.Empty;
+        Rows.Clear();
+        ClipOptions.Clear();
+        ClipDisplayOptions.Clear();
+        SelectedClipIndex = -1;
+        SelectedRowIndexes = [];
+        HistoryEntries = [];
+        historySnapshot = null;
+        NotifyStateChanged();
+    }
+
     public bool IsHistoryPanelExpanded
     {
         get => isHistoryPanelExpanded;
@@ -964,6 +1023,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(CanAppendMpls));
         OnPropertyChanged(nameof(CanCombine));
         OnPropertyChanged(nameof(CanSave));
+        OnPropertyChanged(nameof(Workspace.HasUnexportedChanges));
+        OnPropertyChanged(nameof(HasUnexportedContent));
         OnPropertyChanged(nameof(CanRefreshRows));
         OnPropertyChanged(nameof(CanEditRows));
         OnPropertyChanged(nameof(CanOpenRelatedMedia));

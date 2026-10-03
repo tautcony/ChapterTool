@@ -9,6 +9,34 @@ namespace ChapterTool.Core.Tests.Session;
 public sealed class ChapterWorkspaceTests
 {
     [Fact]
+    public void Ended_session_history_owner_is_collectible()
+    {
+        var weak = CreateEndedSessionReference();
+        for (var attempt = 0; attempt < 3 && weak.IsAlive; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        Assert.False(weak.IsAlive);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference CreateEndedSessionReference()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var group = SingleGroup("old.txt", "Old");
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("old.txt"), group, ClipSessionTransitions.FromLoad(group)));
+        var session = workspace.ContentSession!;
+        _ = session.GetHistorySnapshot();
+        var weak = new WeakReference(session);
+        workspace.ClearSession();
+        return weak;
+    }
+
+    [Fact]
     public void TryCommitLoad_ReplacesPathAndSessionAtomically()
     {
         var workspace = new ChapterWorkspace();
@@ -70,6 +98,97 @@ public sealed class ChapterWorkspaceTests
 
         Assert.Equal("fast.txt", workspace.CurrentPath);
         Assert.Equal("Fast", workspace.CurrentChapterSet?.Chapters[0].Name);
+    }
+
+    [Fact]
+    public void Replacing_session_ends_old_history_owner_and_cancels_its_token()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var originalGroup = SingleGroup("old.txt", "Old");
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("old.txt"), originalGroup, ClipSessionTransitions.FromLoad(originalGroup)));
+        var oldSession = workspace.ContentSession!;
+        var oldToken = oldSession.LifetimeToken;
+
+        var replacementRevision = workspace.BeginLoadOperation();
+        var replacementGroup = SingleGroup("new.txt", "New");
+        Assert.True(CommitLoad(workspace, replacementRevision, new LocalPathChapterSource("new.txt"), replacementGroup, ClipSessionTransitions.FromLoad(replacementGroup)));
+
+        Assert.True(oldSession.IsEnded);
+        Assert.True(oldToken.IsCancellationRequested);
+        Assert.False(workspace.ContentSession!.IsEnded);
+        Assert.NotSame(oldSession, workspace.ContentSession);
+    }
+
+    [Fact]
+    public void Successful_export_baseline_is_track_scoped_and_tracks_later_edits()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var group = MultiMplsGroup();
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
+        var options = workspace.CreateExportOptionsForProjectedInfo();
+        var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, options, trackIndex: 0)!;
+
+        Assert.True(workspace.RecordSuccessfulExport(captured));
+        Assert.NotNull(workspace.GetExportBaseline(captured.TrackId));
+        Assert.True(workspace.HasUnexportedChanges); // The second track has no baseline.
+
+        workspace.SelectClip(0);
+        workspace.WriteBackCurrentChapterSet(workspace.CurrentChapterSet! with
+        {
+            Chapters = [workspace.CurrentChapterSet!.Chapters[0] with { Name = "Edited" }, .. workspace.CurrentChapterSet.Chapters.Skip(1)]
+        });
+        Assert.True(workspace.HasUnexportedChanges);
+
+        var editedCapture = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, options, trackIndex: 0)!;
+        Assert.True(workspace.RecordSuccessfulExport(editedCapture));
+        workspace.SelectClip(1);
+        var otherTrackOptions = workspace.CreateExportOptionsForProjectedInfo();
+        var otherTrackCapture = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, otherTrackOptions, trackIndex: 1)!;
+        Assert.True(workspace.RecordSuccessfulExport(otherTrackCapture));
+        Assert.Equal(workspace.GetExportBaseline(editedCapture.TrackId)!.Digest,
+            workspace.CaptureExportSnapshot(EditableChapterDocumentAdapter.ToChapterSet(workspace.ContentSession!.Snapshot.Document, 0),
+                workspace.CreateExportOptionsForProjectedInfo() with { SourceFileName = "00001" }, 0)!.Digest);
+        Assert.Equal(workspace.GetExportBaseline(otherTrackCapture.TrackId)!.Digest,
+            workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptionsForProjectedInfo(), 1)!.Digest);
+        Assert.False(workspace.HasUnexportedChanges);
+        Assert.Equal(editedCapture.Content.StateIdentity, workspace.GetExportBaseline(editedCapture.TrackId)!.StateIdentity);
+        Assert.Equal(2, workspace.ContentSession!.GetHistorySnapshot().Nodes.Length);
+    }
+
+    [Fact]
+    public void Stale_export_completion_cannot_update_replacement_baseline()
+    {
+        var workspace = new ChapterWorkspace();
+        var revision = workspace.BeginLoadOperation();
+        var group = SingleGroup("old.txt", "Old");
+        Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("old.txt"), group, ClipSessionTransitions.FromLoad(group)));
+        var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptionsForProjectedInfo(), 0)!;
+
+        var replacementRevision = workspace.BeginLoadOperation();
+        var replacement = SingleGroup("new.txt", "New");
+        Assert.True(CommitLoad(workspace, replacementRevision, new LocalPathChapterSource("new.txt"), replacement, ClipSessionTransitions.FromLoad(replacement)));
+
+        Assert.False(workspace.RecordSuccessfulExport(captured));
+        Assert.Null(workspace.GetExportBaseline(workspace.ContentSession!.Snapshot.Document.Tracks[0].Id));
+    }
+
+    [Fact]
+    public void Clearing_session_invalidates_pending_load_revision_and_releases_owner()
+    {
+        var workspace = new ChapterWorkspace();
+        var oldRevision = workspace.BeginLoadOperation();
+        var group = SingleGroup("old.txt", "Old");
+        Assert.True(CommitLoad(workspace, oldRevision, new LocalPathChapterSource("old.txt"), group, ClipSessionTransitions.FromLoad(group)));
+        var ending = workspace.ContentSession!;
+        var pendingRevision = workspace.BeginLoadOperation();
+
+        workspace.ClearSession();
+
+        Assert.True(ending.IsEnded);
+        Assert.Null(workspace.ContentSession);
+        Assert.False(workspace.IsCurrentRevision(pendingRevision));
     }
 
     [Fact]

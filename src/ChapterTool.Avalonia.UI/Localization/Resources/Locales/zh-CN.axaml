@@ -330,6 +330,10 @@
   <x:String x:Key="Settings.Unsaved.Discard" xml:space="preserve">放弃</x:String>
   <x:String x:Key="Settings.Unsaved.Message" xml:space="preserve">设置修改已实时应用到当前会话，但尚未保存。关闭前要保存吗？</x:String>
   <x:String x:Key="Settings.Unsaved.Title" xml:space="preserve">设置尚未保存</x:String>
+  <x:String x:Key="SessionLoss.Title" xml:space="preserve">结束当前文档会话？</x:String>
+  <x:String x:Key="SessionLoss.Message" xml:space="preserve">继续后将结束当前文档会话及其撤销历史。导出的章节文件不包含历史记录。要继续吗？</x:String>
+  <x:String x:Key="SessionLoss.Continue" xml:space="preserve">继续</x:String>
+  <x:String x:Key="Status.SessionReplacementCanceled" xml:space="preserve">当前文档会话未更改。</x:String>
   <x:String x:Key="Settings.ValidateTools" xml:space="preserve">检查工具</x:String>
   <x:String x:Key="Status.AppendFailed" xml:space="preserve">追加失败</x:String>
   <x:String x:Key="Status.Appended" xml:space="preserve">已从 {1} 追加 {0} 个 MPLS 片段。</x:String>

@@ -27,7 +27,9 @@ public enum HistoryNavigationOutcomeKind
     /// <summary>The requested history node does not exist.</summary>
     NotFound,
     /// <summary>Resources were exhausted before the target could be published.</summary>
-    ResourceFailure
+    ResourceFailure,
+    /// <summary>The document session ended before navigation could be published.</summary>
+    Cancelled
 }
 
 /// <summary>The result of a history navigation command.</summary>

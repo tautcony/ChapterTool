@@ -82,7 +82,7 @@ public sealed partial class MainWindowViewModel
         {
             Progress = Math.Clamp(update.Fraction ?? Progress, 0, 0.98);
             SetProgressStatus(update.Phase);
-        }, cancellationToken);
+        }, cancellationToken, () => RequiresSessionLossConfirmation, ConfirmSessionLossAsync);
         switch (outcome.State)
         {
             case LoadWorkflowState.Stale:
@@ -91,6 +91,12 @@ public sealed partial class MainWindowViewModel
                 SetStatus("Status.NoSourceSelected");
                 Log(LogLevel.Information, "Load source skipped: no source selected", "Load",
                     ("displayName", source.DisplayName));
+                NotifyStateChanged();
+                return;
+            case LoadWorkflowState.Cancelled:
+                SetStatus("Status.SessionReplacementCanceled");
+                ClearProgressStatus();
+                Progress = 0;
                 NotifyStateChanged();
                 return;
             case LoadWorkflowState.Failed:
@@ -149,7 +155,13 @@ public sealed partial class MainWindowViewModel
             ("encoding", entries.TextEncoding),
             ("bom", entries.EmitBom));
         LogDiagnostics("Output projection", projection.Diagnostics);
+        var exportSnapshot = Workspace.CaptureExportSnapshot(projection.Info, entries, Workspace.CurrentTrackIndex);
         var result = await loadSaveWorkflow.SaveAsync(projection.Info, entries, directory, cancellationToken);
+        if (result.Success && exportSnapshot is not null)
+        {
+            Workspace.RecordSuccessfulExport(exportSnapshot);
+        }
+
         ApplySaveStatus(result);
         LogDiagnostics("Save", result.Diagnostics);
         NotifyStateChanged();

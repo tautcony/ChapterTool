@@ -29,7 +29,7 @@ Startup and main shell entry points:
 
 Main-window workflow owners under `src/ChapterTool.Avalonia.UI/Workflows/` use the same `ChapterWorkspace`:
 
-- `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
+- `LoadSaveWorkflow.cs` — staged replacement, confirmation rechecks, append, and snapshot-bound save orchestration
 - `ClipEditingCoordinator.cs` — clip selection, merge/split-by-boundaries, and selected-track edits written through the workspace
 - `ProjectionFacade.cs` — workspace-backed row materialization and preview/save options
 - `StatusDiagnosticsPresenter.cs` — localized status/progress rendering and structured diagnostic logging
@@ -63,7 +63,7 @@ Avalonia owns only host ports:
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs` — concrete main-window adapters
 
-`MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append commits use workspace revision rules.
+`MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load and append commits use workspace revision rules. Replacement and close confirm session loss, then end the old session and cancel its work.
 
 `MainWindowViewModel` projects the Core history tree into `HistoryEntryViewModel` rows. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `MainView.axaml` renders these rows in a virtualized list.
 

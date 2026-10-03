@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views;
 
 namespace ChapterTool.Avalonia.Views;
@@ -6,6 +7,9 @@ namespace ChapterTool.Avalonia.Views;
 /// <summary>Provides the desktop lifetime wrapper for the shared main view.</summary>
 public sealed partial class MainWindow : Window
 {
+    private bool closeConfirmed;
+    private bool closeConfirmationPending;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -21,5 +25,36 @@ public sealed partial class MainWindow : Window
         MinHeight = 520;
         Content = mainView;
         DataContext = mainView.DataContext;
+        Closing += OnClosing;
+    }
+
+    private async void OnClosing(object? sender, WindowClosingEventArgs args)
+    {
+        if (closeConfirmed || DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        if (closeConfirmationPending)
+        {
+            return;
+        }
+
+        closeConfirmationPending = true;
+        try
+        {
+            if (!viewModel.RequiresSessionLossConfirmation
+                || await viewModel.ConfirmSessionLossAsync(CancellationToken.None))
+            {
+                viewModel.EndDocumentSession();
+                closeConfirmed = true;
+                Close();
+            }
+        }
+        finally
+        {
+            closeConfirmationPending = false;
+        }
     }
 }

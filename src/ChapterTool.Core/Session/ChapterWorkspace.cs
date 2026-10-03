@@ -14,7 +14,9 @@ namespace ChapterTool.Core.Session;
 public sealed class ChapterWorkspace
 {
     private readonly object commitSync = new();
+    private readonly Dictionary<ChapterTrackId, ChapterExportBaseline> exportBaselines = [];
     private int currentRevision;
+    private Guid sessionGeneration = Guid.NewGuid();
 
     /// <summary>Gets typed source identity (null when no session).</summary>
     public ChapterSourceDocument? CurrentSource { get; private set; }
@@ -39,6 +41,86 @@ public sealed class ChapterWorkspace
 
     /// <summary>Gets monotonic operation revision used for anti-stale load/append commits.</summary>
     public int CurrentRevision => Volatile.Read(ref currentRevision);
+
+    /// <summary>Gets whether the current content differs from its successful export baseline.</summary>
+    public bool HasUnexportedChanges
+    {
+        get
+        {
+            var document = ContentSession?.Snapshot.Document;
+            if (document is null)
+            {
+                return false;
+            }
+
+            return document.Tracks.Select((track, index) =>
+            {
+                var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document, index);
+                var options = CreateExportOptionsForProjectedInfo() with { SourceFileName = chapterSet.SourceName };
+                return !exportBaselines.TryGetValue(track.Id, out var baseline)
+                    || baseline.Digest != ChapterExportFingerprint.Digest(chapterSet, options)
+                    || baseline.FormatFingerprint != ChapterExportFingerprint.FormatFingerprint(options);
+            }).Any(static unexported => unexported);
+        }
+    }
+
+    /// <summary>Captures one track and its format options without retaining the history owner.</summary>
+    public ChapterExportSnapshot? CaptureExportSnapshot(ChapterSet chapterSet, ChapterExportOptions options, int trackIndex)
+    {
+        ArgumentNullException.ThrowIfNull(chapterSet);
+        ArgumentNullException.ThrowIfNull(options);
+        var contentSession = ContentSession;
+        if (contentSession is null)
+        {
+            return null;
+        }
+
+        var snapshot = contentSession.Snapshot;
+        if (trackIndex < 0 || trackIndex >= snapshot.Document.Tracks.Length)
+        {
+            return null;
+        }
+
+        var copy = chapterSet with { Chapters = Array.AsReadOnly(chapterSet.Chapters.ToArray()) };
+        return new ChapterExportSnapshot(
+            sessionGeneration,
+            snapshot,
+            snapshot.Document.Tracks[trackIndex].Id,
+            copy,
+            options,
+            ChapterExportFingerprint.Digest(copy, options),
+            ChapterExportFingerprint.FormatFingerprint(options));
+    }
+
+    /// <summary>Records a successful export only for the session and captured track that produced it.</summary>
+    public bool RecordSuccessfulExport(ChapterExportSnapshot snapshot)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+        var session = ContentSession;
+        if (session is null || sessionGeneration != snapshot.SessionGeneration
+            || session.Snapshot.Document.Id != snapshot.Content.Document.Id
+            || !session.Snapshot.Document.Tracks.Any(track => track.Id == snapshot.TrackId))
+        {
+            return false;
+        }
+
+        exportBaselines[snapshot.TrackId] = new ChapterExportBaseline(
+            snapshot.Content.StateIdentity,
+            snapshot.Digest,
+            snapshot.FormatFingerprint);
+        return true;
+    }
+
+    /// <summary>Gets the successful export baseline for a track, if one exists.</summary>
+    public ChapterExportBaseline? GetExportBaseline(ChapterTrackId trackId) =>
+        exportBaselines.TryGetValue(trackId, out var baseline) ? baseline : null;
+
+    /// <summary>Checks whether a captured export matches the baseline for its track.</summary>
+    public bool IsExported(ChapterExportSnapshot? snapshot) => snapshot is not null
+        && sessionGeneration == snapshot.SessionGeneration
+        && exportBaselines.TryGetValue(snapshot.TrackId, out var baseline)
+        && baseline.Digest == snapshot.Digest
+        && baseline.FormatFingerprint == snapshot.FormatFingerprint;
 
     /// <summary>Gets projection state (naming, order, expression, last-good cache).</summary>
     public ProjectionState Projection { get; } = new();
@@ -69,6 +151,13 @@ public sealed class ChapterWorkspace
     public bool IsCurrentRevision(int operationRevision) =>
         operationRevision == Volatile.Read(ref currentRevision);
 
+    /// <summary>Captures the active content token before a replacement confirmation.</summary>
+    public SessionBaseToken? CaptureContentToken() => ContentSession?.Snapshot.BaseToken;
+
+    /// <summary>Checks that the active document did not change during replacement confirmation.</summary>
+    public bool IsContentTokenCurrent(SessionBaseToken? token) =>
+        token is null ? ContentSession is null : ContentSession?.Snapshot.BaseToken == token;
+
     /// <summary>
     /// Commits a successful load: replaces path, clip session, and edit buffer atomically
     /// only when <paramref name="operationRevision"/> is still current.
@@ -86,14 +175,34 @@ public sealed class ChapterWorkspace
         ChapterSourceDocument source,
         ClipSession session,
         EditableChapterDocument document)
+        => TryCommitLoad(operationRevision, source, session, document, expectedContentToken: null, verifyExpectedContentToken: false);
+
+    /// <summary>Commits only if the active content token still matches the confirmation snapshot.</summary>
+    public bool TryCommitLoad(
+        int operationRevision,
+        ChapterSourceDocument source,
+        ClipSession session,
+        EditableChapterDocument document,
+        SessionBaseToken? expectedContentToken)
+        => TryCommitLoad(operationRevision, source, session, document, expectedContentToken, verifyExpectedContentToken: true);
+
+    private bool TryCommitLoad(
+        int operationRevision,
+        ChapterSourceDocument source,
+        ClipSession session,
+        EditableChapterDocument document,
+        SessionBaseToken? expectedContentToken,
+        bool verifyExpectedContentToken)
     {
         lock (commitSync)
         {
-            if (!IsCurrentRevision(operationRevision))
+            if (!IsCurrentRevision(operationRevision)
+                || (verifyExpectedContentToken && !IsContentTokenCurrent(expectedContentToken)))
             {
                 return false;
             }
 
+            EndContentSession();
             CurrentSource = source;
             CurrentPath = source is LocalPathChapterSource local ? local.Path : string.Empty;
             DisplayPath = source.DisplayName;
@@ -234,6 +343,9 @@ public sealed class ChapterWorkspace
     /// <summary>Replaces the active source group and its canonical content document.</summary>
     public void ReplaceSession(ClipSession session, EditableChapterDocument document)
     {
+        EndContentSession();
+        sessionGeneration = Guid.NewGuid();
+        exportBaselines.Clear();
         ClipSession = session;
         ContentSession = new SessionState(document);
         SyncCurrentChapterSet();
@@ -242,11 +354,22 @@ public sealed class ChapterWorkspace
     /// <summary>Clears the loaded session and edit buffer.</summary>
     public void ClearSession()
     {
+        Interlocked.Increment(ref currentRevision);
+        EndContentSession();
+        sessionGeneration = Guid.NewGuid();
+        exportBaselines.Clear();
         CurrentSource = null;
         CurrentPath = string.Empty;
         DisplayPath = string.Empty;
         ClipSession = null;
         CurrentChapterSet = null;
+        ContentSession = null;
+        Projection.ClearProjectionCache();
+    }
+
+    private void EndContentSession()
+    {
+        ContentSession?.EndSession();
         ContentSession = null;
     }
 

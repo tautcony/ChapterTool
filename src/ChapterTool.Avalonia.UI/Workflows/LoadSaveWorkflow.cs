@@ -29,7 +29,9 @@ internal sealed class LoadSaveWorkflow(
     public async ValueTask<LoadWorkflowResult> LoadAsync(
         ChapterSourceDocument source,
         Action<ChapterImportProgress> reportProgress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<bool>? hasSessionLoss = null,
+        Func<CancellationToken, ValueTask<bool>>? confirmReplacement = null)
     {
         var operationRevision = workspace.BeginLoadOperation();
         if (string.IsNullOrWhiteSpace(source.DisplayName))
@@ -59,7 +61,23 @@ internal sealed class LoadSaveWorkflow(
 
         var session = ClipSessionTransitions.FromLoad(result.Groups[0]);
         var document = EditableChapterDocumentAdapter.FromChapterImportSource(result.Groups[0]);
-        return workspace.TryCommitLoad(operationRevision, source, session, document)
+        var expectedToken = workspace.CaptureContentToken();
+        while (hasSessionLoss?.Invoke() == true && confirmReplacement is not null)
+        {
+            if (!await confirmReplacement(cancellationToken))
+            {
+                return new LoadWorkflowResult(LoadWorkflowState.Cancelled, result, null);
+            }
+
+            if (workspace.IsContentTokenCurrent(expectedToken))
+            {
+                break;
+            }
+
+            expectedToken = workspace.CaptureContentToken();
+        }
+
+        return workspace.TryCommitLoad(operationRevision, source, session, document, expectedToken)
             ? new LoadWorkflowResult(LoadWorkflowState.Succeeded, result, session)
             : LoadWorkflowResult.Stale;
     }
@@ -151,6 +169,7 @@ internal enum LoadWorkflowState
 {
     EmptyPath,
     Failed,
+    Cancelled,
     Succeeded,
     Stale
 }

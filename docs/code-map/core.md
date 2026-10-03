@@ -117,8 +117,9 @@ In-memory chapter mutations:
 Host-agnostic interactive session state shared by Avalonia and WASM:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, selected-track projections, revision and session-token commit rules for Avalonia and WASM
-- `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, base tokens, cancellation, request idempotency, and history navigation
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, selected-track projections, staged replacement checks, and export baselines
+- `src/ChapterTool.Core/Session/ChapterExportBaseline.cs` — snapshot-only export state and canonical content and format fingerprints
+- `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, session-end cancellation, request idempotency, and history navigation
 - `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
 - `src/ChapterTool.Core/Session/ChapterContentOperationSession.cs` — typed preview diffs and stale-safe apply for content candidates
 - `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache

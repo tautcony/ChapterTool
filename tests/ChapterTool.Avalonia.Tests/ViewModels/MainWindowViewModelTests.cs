@@ -83,6 +83,78 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Cancelled_replacement_keeps_current_document_and_history()
+    {
+        var load = new FakeLoadService(
+            ImportResult("first.txt", Info(ChapterImportFormat.Ogm, "first.txt", new Chapter(1, TimeSpan.Zero, "First"))),
+            ImportResult("second.txt", Info(ChapterImportFormat.Ogm, "second.txt", new Chapter(1, TimeSpan.Zero, "Second"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("first.txt");
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Keep this edit"));
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.True(vm.IsContentPreviewPending);
+        var beforeHistory = vm.HistoryEntries.ToArray();
+        vm.SessionLossConfirmation = _ => ValueTask.FromResult(false);
+
+        await vm.LoadCommand.ExecuteAsync("second.txt");
+
+        Assert.Equal("first.txt", vm.CurrentPath);
+        Assert.Equal("Keep this edit", vm.Rows[0].Name);
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.Equal(beforeHistory.Select(entry => entry.Id), vm.HistoryEntries.Select(entry => entry.Id));
+        Assert.Equal("The current document session is unchanged.", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task Successful_save_marks_only_the_captured_state_exported_and_keeps_history()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        Assert.True(vm.RequiresSessionLossConfirmation);
+        Assert.True(vm.HasUnexportedContent);
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Edited"));
+        Assert.True(vm.RequiresSessionLossConfirmation);
+        var historyCount = vm.HistoryEntries.Count;
+
+        await vm.SaveCommand.ExecuteAsync();
+
+        Assert.False(vm.HasUnexportedContent);
+        Assert.True(vm.RequiresSessionLossConfirmation);
+        Assert.Equal(historyCount, vm.HistoryEntries.Count);
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Later edit"));
+        Assert.True(vm.RequiresSessionLossConfirmation);
+    }
+
+    [Fact]
+    public async Task Replacement_rechecks_confirmation_after_document_changes_during_dialog()
+    {
+        var load = new FakeLoadService(
+            ImportResult("first.txt", Info(ChapterImportFormat.Ogm, "first.txt", new Chapter(1, TimeSpan.Zero, "First"))),
+            ImportResult("second.txt", Info(ChapterImportFormat.Ogm, "second.txt", new Chapter(1, TimeSpan.Zero, "Second"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("first.txt");
+        var firstHistoryRoot = vm.HistoryEntries[0].Id;
+        var confirmations = 0;
+        vm.SessionLossConfirmation = async _ =>
+        {
+            confirmations++;
+            if (confirmations == 1)
+            {
+                await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Changed during confirmation"));
+            }
+
+            return true;
+        };
+
+        await vm.LoadCommand.ExecuteAsync("second.txt");
+
+        Assert.Equal(2, confirmations);
+        Assert.Equal("second.txt", vm.CurrentPath);
+        Assert.Equal("Second", vm.Rows[0].Name);
+        Assert.NotEqual(firstHistoryRoot, vm.HistoryEntries[0].Id);
+    }
+
+    [Fact]
     public async Task HistoryUndoRedoAndArbitraryNavigationRefreshTheCommittedRows()
     {
         var vm = CreateViewModel();

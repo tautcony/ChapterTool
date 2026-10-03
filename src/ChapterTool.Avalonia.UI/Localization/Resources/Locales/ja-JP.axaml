@@ -330,6 +330,10 @@
   <x:String x:Key="Settings.Unsaved.Discard" xml:space="preserve">破棄</x:String>
   <x:String x:Key="Settings.Unsaved.Message" xml:space="preserve">設定の変更は現在のセッションにすでに反映されていますが、まだ保存されていません。閉じる前に保存しますか？</x:String>
   <x:String x:Key="Settings.Unsaved.Title" xml:space="preserve">未保存の設定</x:String>
+  <x:String x:Key="SessionLoss.Title" xml:space="preserve">ドキュメントセッションを終了しますか？</x:String>
+  <x:String x:Key="SessionLoss.Message" xml:space="preserve">続行すると、このドキュメントセッションと取り消し履歴を終了します。エクスポートした章ファイルに履歴は含まれません。続行しますか？</x:String>
+  <x:String x:Key="SessionLoss.Continue" xml:space="preserve">続行</x:String>
+  <x:String x:Key="Status.SessionReplacementCanceled" xml:space="preserve">現在のドキュメントセッションは変更されていません。</x:String>
   <x:String x:Key="Settings.ValidateTools" xml:space="preserve">ツールを確認</x:String>
   <x:String x:Key="Status.AppendFailed" xml:space="preserve">MPLS の追加に失敗しました</x:String>
   <x:String x:Key="Status.Appended" xml:space="preserve">{1} から {0} 個の MPLS セグメントを追加しました。</x:String>
