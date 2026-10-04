@@ -1,3 +1,4 @@
+using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -6,12 +7,20 @@ using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
 
-public sealed class ExpressionToolViewModel : ObservableViewModel
+public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 {
     private readonly IExpressionSessionPort expressionSession;
     private readonly IChapterContentOperationPort? contentOperations;
     private readonly IFilePickerService? filePicker;
+    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
     private ChapterContentPreview? pendingPreview;
+    private bool settingExpressionFromPreset;
+    private bool isPreviewScheduled;
+    private int selectedPresetIndex = -1;
+    private string expression = string.Empty;
+    private string expressionSourceName = string.Empty;
+    private string statusText = string.Empty;
+    private string previewSummary = string.Empty;
 
     public ExpressionToolViewModel(
         IExpressionSessionPort expressionSession,
@@ -24,97 +33,51 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
         this.contentOperations = contentOperations;
         this.filePicker = filePicker;
         ExpressionAuthoringService = expressionAuthoringService;
-        Expression = expressionSession.Expression;
-        ApplyExpression = expressionSession.ApplyExpression;
-        ExpressionSourceName = expressionSession.ExpressionSourceName;
+        expression = expressionSession.Expression;
+        expressionSourceName = expressionSession.ExpressionSourceName;
         Presets =
         [
-            .. expressionSession.ExpressionPresets
-                .Select(static preset =>
-                    new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
+            .. expressionSession.ExpressionPresets.Select(static preset =>
+                new ExpressionPresetViewModel(preset.Id, preset.DisplayName, preset.Description, preset.ScriptText))
         ];
-        SelectedPresetIndex = Presets.ToList().FindIndex(preset => string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
+        selectedPresetIndex = Presets.ToList().FindIndex(preset =>
+            string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
+        previewTimer.Tick += OnPreviewTimerTick;
+
         BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null)
         {
             ErrorHandler = errorHandler
         };
-        ApplyCommand = new UiCommand((parameter, _) =>
+
+        // Retain this command for programmatic callers. The view refreshes automatically as the draft changes.
+        ApplyCommand = new UiCommand((_, _) =>
         {
-            if (parameter is ExpressionToolViewModel viewModel)
-            {
-                if (contentOperations is not null)
-                {
-                    viewModel.pendingPreview = contentOperations!.PrepareExpression(viewModel.Expression);
-                    viewModel.OnPropertyChanged(nameof(IsPreviewPending));
-                    viewModel.OnPropertyChanged(nameof(CanApplyPreview));
-                    viewModel.PreviewSummary = BuildPreviewSummary(viewModel.pendingPreview);
-                    viewModel.StatusText = viewModel.pendingPreview.IsValid
-                        ? viewModel.PreviewSummary
-                        : string.Join("; ", viewModel.pendingPreview.Errors);
-                    viewModel.ConfirmApplyCommand!.RaiseCanExecuteChanged();
-                    viewModel.CancelPreviewCommand!.RaiseCanExecuteChanged();
-                    return ValueTask.CompletedTask;
-                }
-
-                var diagnostic = expressionSession.ApplyLuaExpressionSettings(
-                    viewModel.Expression,
-                    viewModel.ApplyExpression,
-                    viewModel.SelectedPreset?.Id ?? string.Empty,
-                    viewModel.ExpressionSourceName);
-                viewModel.StatusText = diagnostic is null
-                    ? expressionSession.Localizer.GetString("Status.Updated")
-                    : expressionSession.FormatDiagnosticForDisplay(diagnostic);
-            }
-
+            RefreshPreviewNow();
             return ValueTask.CompletedTask;
-        })
+        }, _ => contentOperations is not null)
         {
             ErrorHandler = errorHandler
         };
-        ConfirmApplyCommand = new UiCommand(async (_, token) =>
-        {
-            if (contentOperations is null || pendingPreview is null || !pendingPreview.IsValid)
-            {
-                return;
-            }
-
-            var preview = pendingPreview;
-            pendingPreview = null;
-            OnPropertyChanged(nameof(IsPreviewPending));
-            OnPropertyChanged(nameof(CanApplyPreview));
-            var result = await contentOperations!.ApplyAsync(preview, token);
-            if (result.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
-            {
-                expressionSession.ApplyLuaExpressionSettings(
-                    Expression,
-                    applyExpression: false,
-                    SelectedPreset?.Id ?? string.Empty,
-                    ExpressionSourceName);
-                ApplyExpression = false;
-            }
-            StatusText = result.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange
-                ? expressionSession.Localizer.GetString("Status.Updated")
-                : string.Join("; ", result.Errors);
-            ConfirmApplyCommand!.RaiseCanExecuteChanged();
-            CancelPreviewCommand!.RaiseCanExecuteChanged();
-        })
+        ConfirmApplyCommand = new UiCommand(ApplyPreviewAsync, _ => CanApplyPreview)
         {
             ErrorHandler = errorHandler
         };
         CancelPreviewCommand = new UiCommand((_, _) =>
         {
+            var hadPreview = IsPreviewPending;
+            previewTimer.Stop();
+            isPreviewScheduled = false;
             if (pendingPreview is { } preview)
             {
-                contentOperations!.Cancel(preview);
+                contentOperations?.Cancel(preview);
                 pendingPreview = null;
-                PreviewSummary = string.Empty;
-                StatusText = expressionSession.Localizer.GetString("Status.Updated");
-                OnPropertyChanged(nameof(IsPreviewPending));
-                OnPropertyChanged(nameof(CanApplyPreview));
             }
-
-            ConfirmApplyCommand!.RaiseCanExecuteChanged();
-            CancelPreviewCommand!.RaiseCanExecuteChanged();
+            if (hadPreview)
+            {
+                PreviewSummary = expressionSession.Localizer.GetString("Expression.Preview.Cancelled");
+                StatusText = PreviewSummary;
+                NotifyPreviewStateChanged();
+            }
             return ValueTask.CompletedTask;
         }, _ => IsPreviewPending);
     }
@@ -130,10 +93,10 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
 
     public int SelectedPresetIndex
     {
-        get;
+        get => selectedPresetIndex;
         set
         {
-            if (!SetProperty(ref field, value))
+            if (!SetProperty(ref selectedPresetIndex, value))
             {
                 return;
             }
@@ -141,50 +104,75 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
             OnPropertyChanged(nameof(SelectedPreset));
             if (SelectedPreset is { } preset)
             {
-                Expression = preset.ScriptText;
+                settingExpressionFromPreset = true;
+                try
+                {
+                    Expression = preset.ScriptText;
+                }
+                finally
+                {
+                    settingExpressionFromPreset = false;
+                }
                 ExpressionSourceName = preset.DisplayName;
-                StatusText = expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
+                StatusText = expressionSession.Localizer.Format(
+                    LocalizedMessage.Create("Status.LuaExpressionPresetSelected", ("preset", preset.DisplayName)));
+                SchedulePreview();
             }
         }
     }
 
     public string Expression
     {
-        get;
-        set => SetProperty(ref field, value);
+        get => expression;
+        set
+        {
+            if (!SetProperty(ref expression, value ?? string.Empty))
+            {
+                return;
+            }
+
+            if (!settingExpressionFromPreset && SelectedPresetIndex >= 0)
+            {
+                selectedPresetIndex = -1;
+                OnPropertyChanged(nameof(SelectedPresetIndex));
+                OnPropertyChanged(nameof(SelectedPreset));
+            }
+            SchedulePreview();
+        }
     }
 
+    // Compatibility for callers that used the former toggle. Expression drafts are never projections.
     public bool ApplyExpression
     {
-        get;
-        set => SetProperty(ref field, value);
+        get => false;
+        set { }
     }
 
     public string ExpressionSourceName
     {
-        get;
-        set => SetProperty(ref field, value);
+        get => expressionSourceName;
+        set => SetProperty(ref expressionSourceName, value ?? string.Empty);
     }
 
     public string StatusText
     {
-        get;
-        private set => SetProperty(ref field, value);
-    } = string.Empty;
+        get => statusText;
+        private set => SetProperty(ref statusText, value);
+    }
 
     public bool CanBrowseScript => filePicker is not null;
 
-    public bool IsPreviewPending => pendingPreview is not null;
+    public bool IsPreviewPending => pendingPreview is not null || isPreviewScheduled;
 
-    public bool CanPreparePreview => pendingPreview is null;
+    public bool CanPreparePreview => false;
 
     public bool CanApplyPreview => pendingPreview?.IsValid == true;
 
     public string PreviewSummary
     {
-        get;
-        private set => SetProperty(ref field, value);
-    } = string.Empty;
+        get => previewSummary;
+        private set => SetProperty(ref previewSummary, value);
+    }
 
     public UiCommand BrowseScriptCommand { get; }
 
@@ -194,10 +182,141 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
 
     public UiCommand CancelPreviewCommand { get; }
 
-    private static string BuildPreviewSummary(ChapterContentPreview? preview) => preview is null || preview.Differences.IsEmpty
-        ? "No chapter values will change."
-        : string.Join("; ", preview.Differences.Take(4).Select(static difference =>
-            $"{difference.Field}: '{difference.Before}' → '{difference.After}'"));
+    public void RefreshPreviewNow()
+    {
+        previewTimer.Stop();
+        isPreviewScheduled = false;
+        if (contentOperations is null)
+        {
+            return;
+        }
+
+        if (pendingPreview is { } previous)
+        {
+            contentOperations.Cancel(previous);
+        }
+
+        isPreviewScheduled = false;
+        pendingPreview = contentOperations.PrepareExpression(Expression);
+        PreviewSummary = BuildPreviewSummary(pendingPreview, expressionSession.Localizer);
+        var diagnostic = pendingPreview.IsValid
+            ? null
+            : expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+        StatusText = diagnostic is not null
+            ? expressionSession.FormatDiagnosticForDisplay(diagnostic)
+            : pendingPreview.IsValid
+                ? PreviewSummary
+                : string.Join(Environment.NewLine, pendingPreview.Errors);
+        NotifyPreviewStateChanged();
+    }
+
+    public void Dispose()
+    {
+        previewTimer.Stop();
+        previewTimer.Tick -= OnPreviewTimerTick;
+        if (pendingPreview is { } preview)
+        {
+            contentOperations?.Cancel(preview);
+            pendingPreview = null;
+        }
+    }
+
+    private async ValueTask ApplyPreviewAsync(object? sender, CancellationToken cancellationToken)
+    {
+        if (contentOperations is null)
+        {
+            return;
+        }
+
+        // Apply always uses a candidate prepared from the latest draft, even if the debounce is pending.
+        RefreshPreviewNow();
+        if (pendingPreview is not { IsValid: true } preview)
+        {
+            return;
+        }
+
+        pendingPreview = null;
+        PreviewSummary = string.Empty;
+        NotifyPreviewStateChanged();
+        var result = await contentOperations.ApplyAsync(preview, cancellationToken);
+        if (result.Kind == TransactionOutcomeKind.Conflict)
+        {
+            RefreshPreviewNow();
+            return;
+        }
+
+        if (result.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+        {
+            expressionSession.ApplyLuaExpressionSettings(
+                Expression,
+                applyExpression: false,
+                SelectedPreset?.Id ?? string.Empty,
+                ExpressionSourceName);
+            StatusText = expressionSession.Localizer.GetString("Status.Updated");
+        }
+        else
+        {
+            StatusText = string.Join(Environment.NewLine, result.Errors);
+        }
+        NotifyPreviewStateChanged();
+    }
+
+    private void SchedulePreview()
+    {
+        previewTimer.Stop();
+        if (contentOperations is null)
+        {
+            return;
+        }
+
+        if (pendingPreview is { } previous)
+        {
+            contentOperations.Cancel(previous);
+            pendingPreview = null;
+        }
+        PreviewSummary = Localizer.GetString("Expression.Preview.Pending");
+        StatusText = PreviewSummary;
+        isPreviewScheduled = true;
+        NotifyPreviewStateChanged();
+        previewTimer.Start();
+    }
+
+    private void OnPreviewTimerTick(object? sender, EventArgs args)
+    {
+        previewTimer.Stop();
+        isPreviewScheduled = false;
+        RefreshPreviewNow();
+    }
+
+    private void NotifyPreviewStateChanged()
+    {
+        OnPropertyChanged(nameof(IsPreviewPending));
+        OnPropertyChanged(nameof(CanPreparePreview));
+        OnPropertyChanged(nameof(CanApplyPreview));
+        ConfirmApplyCommand.RaiseCanExecuteChanged();
+        CancelPreviewCommand.RaiseCanExecuteChanged();
+    }
+
+    private static string BuildPreviewSummary(ChapterContentPreview preview, IAppLocalizer localizer) =>
+        preview.Differences.IsEmpty
+            ? localizer.GetString("Expression.Preview.NoChanges")
+            : string.Join(Environment.NewLine, preview.Differences.Take(8).Select(difference =>
+                DescribeDifference(preview, difference)));
+
+    private static string DescribeDifference(ChapterContentPreview preview, ChapterContentDifference difference)
+    {
+        if (difference.ChapterId is not { } chapterId)
+        {
+            return $"{difference.Field}: {difference.Before} → {difference.After}";
+        }
+
+        var chapter = preview.Before.Tracks.SelectMany(static track => track.Chapters)
+            .FirstOrDefault(item => item.Id == chapterId)
+            ?? preview.Candidate.Tracks.SelectMany(static track => track.Chapters)
+                .FirstOrDefault(item => item.Id == chapterId);
+        var label = chapter is null ? chapterId.ToString() : $"#{chapter.DisplayNumber} {chapter.Name}";
+        return $"{label} · {difference.Field}: {difference.Before} → {difference.After}";
+    }
 
     private async ValueTask BrowseScriptAsync(CancellationToken cancellationToken)
     {
@@ -214,13 +333,13 @@ public sealed class ExpressionToolViewModel : ObservableViewModel
 
         try
         {
-            var text = await File.ReadAllTextAsync(path, cancellationToken);
-            Expression = text;
+            Expression = await File.ReadAllTextAsync(path, cancellationToken);
             ExpressionSourceName = Path.GetFileName(path);
             SelectedPresetIndex = -1;
             var diagnostic = expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
             StatusText = diagnostic is null
-                ? expressionSession.Localizer.Format(LocalizedMessage.Create("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
+                ? expressionSession.Localizer.Format(LocalizedMessage.Create(
+                    "Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName)))
                 : expressionSession.FormatDiagnosticForDisplay(diagnostic);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)

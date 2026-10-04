@@ -26,24 +26,36 @@ test('B19 history panel navigates between retained sibling edits and redoes the 
   await expect(chapters(page).locator('tbody tr')).toHaveCount(2);
 });
 
-test('B20 applied expression is committed content shared by preview, download, and undo', async ({ readyPage: page }, testInfo) => {
+test('B20 expression preview is read-only until applied, then export and undo use committed content', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const secondTime = chapters(page).getByRole('textbox', { name: 'Time 2', exact: true });
   await expect(secondTime).toHaveValue('00:00:12.500');
 
-  await page.getByLabel('Use', { exact: true }).check();
   const expression = page.getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
-  await expression.press('Tab');
-  await expect(secondTime).toHaveValue('00:00:06.250');
+  const livePreview = page.getByTestId('expression-preview');
+  await expect(livePreview).toContainText('00:00:12.500');
+  await expect(livePreview).toContainText('00:00:06.250');
+  await expect(secondTime).toHaveValue('00:00:12.500');
 
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const previewDialog = page.getByRole('dialog', { name: 'Preview', exact: true });
-  const preview = await previewDialog.locator('[data-testid="preview-content"]').textContent();
-  expect(preview).toContain('00:00:06.250');
+  const uncommittedPreview = await previewDialog.locator('[data-testid="preview-content"]').textContent();
+  expect(uncommittedPreview).toContain('00:00:12.500');
+  expect(uncommittedPreview).not.toContain('00:00:06.250');
   await previewDialog.getByRole('button', { name: 'Close', exact: true }).click();
-  const downloaded = await downloadText(page, testInfo);
-  expect(downloaded.content.toString('utf8')).toBe(preview);
+  const uncommittedDownload = await downloadText(page, testInfo);
+  expect(uncommittedDownload.content.toString('utf8')).toBe(uncommittedPreview);
+
+  await livePreview.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(secondTime).toHaveValue('00:00:06.250');
+  await page.getByRole('button', { name: 'Preview', exact: true }).click();
+  const committedPreview = await page.getByRole('dialog', { name: 'Preview', exact: true })
+    .locator('[data-testid="preview-content"]').textContent();
+  expect(committedPreview).toContain('00:00:06.250');
+  await page.getByRole('dialog', { name: 'Preview', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
+  const committedDownload = await downloadText(page, testInfo);
+  expect(committedDownload.content.toString('utf8')).toBe(committedPreview);
 
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:12.500');
@@ -54,4 +66,48 @@ test('B20 applied expression is committed content shared by preview, download, a
   await page.getByRole('dialog', { name: 'Preview', exact: true }).getByRole('button', { name: 'Close', exact: true }).click();
   const undoneDownload = await downloadText(page, testInfo);
   expect(undoneDownload.content.toString('utf8')).toBe(undonePreview);
+});
+
+test('B21 expression diagnostics cannot be applied and cancel leaves committed rows unchanged', async ({ readyPage: page }) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  const secondTime = chapters(page).getByRole('textbox', { name: 'Time 2', exact: true });
+  const expression = page.getByLabel('Custom expression', { exact: true });
+  await expression.fill('return bad()');
+
+  const livePreview = page.getByTestId('expression-preview');
+  await expect(livePreview).toContainText('Lua');
+  await expect(livePreview.getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(secondTime).toHaveValue('00:00:12.500');
+  await livePreview.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByTestId('expression-preview')).toHaveCount(0);
+  await expect(secondTime).toHaveValue('00:00:12.500');
+});
+
+test('B22 editing an applied chapter does not rerun its previous expression during export', async ({ readyPage: page }, testInfo) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  const secondTime = chapters(page).getByRole('textbox', { name: 'Time 2', exact: true });
+  await page.getByLabel('Custom expression', { exact: true }).fill('t / 2');
+  const livePreview = page.getByTestId('expression-preview');
+  await expect(livePreview).toBeVisible();
+  await livePreview.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(secondTime).toHaveValue('00:00:06.250');
+
+  await commit(secondTime, '00:00:08.000');
+  await expect(chapters(page).locator('tbody tr').nth(1).locator('.frame-text')).toHaveText('192');
+  await expect(secondTime).toHaveValue('00:00:08.000');
+  const downloaded = await downloadText(page, testInfo);
+  expect(downloaded.content.toString('utf8')).toContain('00:00:08.000');
+  expect(downloaded.content.toString('utf8')).not.toContain('00:00:04.000');
+});
+
+test('B23 rapid expression edits display diagnostics only for the latest draft', async ({ readyPage: page }) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  const expression = page.getByLabel('Custom expression', { exact: true });
+  await expression.fill('t / 2');
+  await expression.fill('return bad()');
+
+  const livePreview = page.getByTestId('expression-preview');
+  await expect(livePreview).toContainText('Lua');
+  await expect(livePreview.getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(chapters(page).getByRole('textbox', { name: 'Time 2', exact: true })).toHaveValue('00:00:12.500');
 });

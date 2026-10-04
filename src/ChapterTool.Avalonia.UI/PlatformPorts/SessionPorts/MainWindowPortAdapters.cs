@@ -50,7 +50,7 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
 
     public string Expression => owner.Workspace.OperationDrafts.Expression;
 
-    public bool ApplyExpression => owner.Workspace.OperationDrafts.ApplyExpression;
+    public bool ApplyExpression => false;
 
     public string ExpressionPresetId => owner.Workspace.OperationDrafts.ExpressionPresetId;
 
@@ -64,11 +64,13 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         }
 
         var text = await File.ReadAllTextAsync(path, cancellationToken);
-        var diagnostic = ApplyLuaExpressionSettings(
-            string.IsNullOrWhiteSpace(text) ? "t" : text,
-            applyExpression: true,
-            expressionPresetId: string.Empty,
-            expressionSourceName: Path.GetFileName(path));
+        var script = string.IsNullOrWhiteSpace(text) ? "t" : text;
+        owner.Expression = script;
+        owner.ApplyExpression = false;
+        owner.ExpressionPresetId = string.Empty;
+        owner.ExpressionSourceName = Path.GetFileName(path);
+        notifications.RefreshExpressionFields();
+        var diagnostic = ValidateLuaExpressionScript(script, logDiagnostics: true);
 
         if (diagnostic is null)
         {
@@ -86,16 +88,8 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         string expressionPresetId,
         string expressionSourceName)
     {
-        owner.Workspace.SetExpressionOperationDrafts(expression, applyExpression, expressionPresetId, expressionSourceName);
+        owner.Workspace.SetExpressionOperationDrafts(expression, applyExpression: false, expressionPresetId, expressionSourceName);
         notifications.RefreshExpressionFields();
-        notifications.RefreshRows();
-
-        if (!ApplyExpression)
-        {
-            owner.SetStatus("Status.Updated");
-            notifications.RefreshStatus();
-            return null;
-        }
 
         var diagnostic = ValidateLuaExpressionScript(Expression, logDiagnostics: true);
         if (diagnostic is null)

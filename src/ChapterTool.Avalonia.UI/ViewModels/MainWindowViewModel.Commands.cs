@@ -167,6 +167,10 @@ public sealed partial class MainWindowViewModel
 
             var preview = pendingContentPreview;
             pendingContentPreview = null;
+            if (preview.Operation == "Apply expression")
+            {
+                ExpressionPreviewText = string.Empty;
+            }
             OnPropertyChanged(nameof(IsContentPreviewPending));
             OnPropertyChanged(nameof(CanPreviewContentOptions));
             OnPropertyChanged(nameof(CanApplyContentPreview));
@@ -176,10 +180,26 @@ public sealed partial class MainWindowViewModel
         }, _ => CanApplyContentPreview);
         CancelContentPreviewCommand = new UiCommand((_, _) =>
         {
+            if (expressionPreviewTimer.IsEnabled)
+            {
+                expressionPreviewTimer.Stop();
+                ExpressionPreviewText = Localizer.GetString("Expression.Preview.Cancelled");
+                OnPropertyChanged(nameof(IsContentPreviewPending));
+                OnPropertyChanged(nameof(CanPreviewContentOptions));
+                ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+                CancelContentPreviewCommand.RaiseCanExecuteChanged();
+                return ValueTask.CompletedTask;
+            }
+
             if (pendingContentPreview is { } preview)
             {
                 CancelContentPreview(preview);
                 pendingContentPreview = null;
+                if (preview.Operation == "Apply expression")
+                {
+                    expressionPreviewTimer.Stop();
+                    ExpressionPreviewText = string.Empty;
+                }
                 OnPropertyChanged(nameof(IsContentPreviewPending));
                 OnPropertyChanged(nameof(CanPreviewContentOptions));
                 OnPropertyChanged(nameof(CanApplyContentPreview));

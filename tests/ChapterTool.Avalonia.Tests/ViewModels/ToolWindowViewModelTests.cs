@@ -187,6 +187,7 @@ public sealed class ToolWindowViewModelTests
             await expression.BrowseScriptCommand.ExecuteAsync();
             await expression.ApplyCommand.ExecuteAsync(expression);
             Assert.True(expression.IsPreviewPending);
+            Assert.Contains("StartTicks", expression.PreviewSummary, StringComparison.Ordinal);
             Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
             await expression.ConfirmApplyCommand.ExecuteAsync();
 
@@ -244,22 +245,24 @@ public sealed class ToolWindowViewModelTests
     {
         var owner = CreateOwner(new AppLocalizationManager("en-US"));
         await owner.LoadCommand.ExecuteAsync("movie.txt");
-        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression)
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, contentOperations: owner.ToolSession.ContentOperations)
         {
-            Expression = "return (",
-            ApplyExpression = true
+            Expression = "return ("
         };
 
-        await expression.ApplyCommand.ExecuteAsync(expression);
+        expression.RefreshPreviewNow();
 
-        Assert.Equal("return (", owner.Expression);
-        Assert.True(owner.ApplyExpression);
-        Assert.Contains("Lua expression syntax error", owner.StatusText, StringComparison.Ordinal);
+        Assert.Equal("t", owner.Expression);
+        Assert.Equal("return (", expression.Expression);
+        Assert.False(expression.CanApplyPreview);
         Assert.Contains("Lua expression syntax error", expression.StatusText, StringComparison.Ordinal);
         Assert.Contains(owner.LogService.Entries, static entry =>
             entry.Operation == "Lua expression script"
             && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
             && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+
+        await expression.CancelPreviewCommand.ExecuteAsync();
+        Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
 
     private static MainWindowViewModel CreateOwner(IAppLocalizer? localizer = null)

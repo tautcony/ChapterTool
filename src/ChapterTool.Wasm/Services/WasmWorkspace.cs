@@ -33,6 +33,7 @@ public sealed class WasmWorkspace : IDisposable
     private readonly List<WasmLogEntry> logs = [];
     private readonly HashSet<int> selectedRowIndexes = [];
     private IReadOnlyList<DiagnosticView> diagnostics = [];
+    private ChapterContentPreview? expressionPreview;
 
     private ChapterImportResult? importResult;
     private int activeGroupIndex;
@@ -246,7 +247,32 @@ public sealed class WasmWorkspace : IDisposable
 
     public string XmlLanguage { get; set; }
 
-    public bool ApplyExpression { get; set; }
+    /// <summary>Gets the read-only candidate prepared from the current committed document.</summary>
+    public ChapterContentPreview? ExpressionPreview => expressionPreview;
+
+    public string FormatExpressionDifference(ChapterContentDifference difference)
+    {
+        ArgumentNullException.ThrowIfNull(difference);
+        var preview = expressionPreview;
+        var before = preview?.Before.Tracks.SelectMany(static track => track.Chapters)
+            .FirstOrDefault(candidate => candidate.Id == difference.ChapterId);
+        var after = preview?.Candidate.Tracks.SelectMany(static track => track.Chapters)
+            .FirstOrDefault(candidate => candidate.Id == difference.ChapterId);
+        var number = before?.DisplayNumber.ToString() ?? after?.DisplayNumber.ToString() ?? string.Empty;
+        if (difference.Field == "StartTicks"
+            && before is not null
+            && after is not null)
+        {
+            return $"Chapter {number}: {wasmChapterService.TimeFormatter.Format(TimeSpan.FromTicks(before.StartTicks))} → {wasmChapterService.TimeFormatter.Format(TimeSpan.FromTicks(after.StartTicks))}";
+        }
+
+        if (difference.Field == "FramesInfo" && before is not null && after is not null)
+        {
+            return $"Chapter {number} frames: {before.FramesInfo} → {after.FramesInfo}";
+        }
+
+        return $"{difference.Field}: {difference.Before} → {difference.After}";
+    }
 
     public string Expression
     {
@@ -966,26 +992,12 @@ public sealed class WasmWorkspace : IDisposable
         var document = session.ContentSession!.Snapshot.Document;
         var outcome = session.ExecuteTrackCandidate("Apply chapter options", candidate =>
         {
-            if (ApplyExpression && candidate.FrameRate is null)
-            {
-                var detected = ApplyFrames(BaseChapterSet!).FramesPerSecond;
-                if (detected > 0)
-                {
-                    var rate = new ChapterFrameRate(checked((long)Math.Round(detected * 1_000_000m, MidpointRounding.AwayFromZero)), 1_000_000);
-                    var track = candidate.Tracks[0];
-                    var segments = track.Segments.Select(segment => segment with { FrameRate = rate }).ToImmutableArray();
-                    var ratedTrack = new EditableChapterTrack(track.Id, track.Name, track.Chapters, segments);
-                    candidate = new EditableChapterDocument(candidate.Id, candidate.Title, candidate.SourceName,
-                        candidate.ImportFormat, candidate.Duration, rate, [ratedTrack]);
-                }
-            }
-
             return candidateBuilder.ApplyOutputOptions(candidate,
                 ChapterNameModeIndex == 1,
                 ChapterNameModeIndex == 2,
                 ChapterNameTemplateText ?? string.Empty,
                 OrderShift,
-                ApplyExpression,
+                false,
                 string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim());
         });
         CompleteCandidate(outcome, "Status.FramesUpdated", FramesPerSecondDisplay,
@@ -993,7 +1005,7 @@ public sealed class WasmWorkspace : IDisposable
     }
 
     /// <summary>
-    /// Applies a built-in Core expression preset and refreshes the projected rows.
+    /// Selects a built-in Core expression preset without changing the committed document.
     /// </summary>
     /// <param name="presetId">The preset identifier from <see cref="ExpressionPresets"/>.</param>
     /// <returns><see langword="true"/> when the preset was found and applied.</returns>
@@ -1017,7 +1029,6 @@ public sealed class WasmWorkspace : IDisposable
 
         Expression = preset.ScriptText;
         ExpressionPresetId = preset.Id;
-        ApplyExpression = true;
         AddLog("Info", localizer.Format("Status.ExpressionPresetApplied", preset.DisplayName));
         if (BaseChapterSet is null)
         {
@@ -1026,8 +1037,126 @@ public sealed class WasmWorkspace : IDisposable
             return true;
         }
 
-        ApplyOptionsAndRefresh();
         return true;
+    }
+
+    /// <summary>Prepares a read-only expression candidate from the active session snapshot.</summary>
+    public ChapterContentPreview? PrepareExpressionPreview(string expressionText)
+    {
+        Expression = expressionText ?? string.Empty;
+        var content = session.ContentSession;
+        if (content is null || IsBusy)
+        {
+            expressionPreview = null;
+            Notify();
+            return null;
+        }
+
+        var trackIndex = session.CurrentTrackIndex;
+        expressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
+        {
+            var expressionSource = AddDetectedFrameRate(document);
+            var focused = FocusTrack(expressionSource, trackIndex);
+            var built = candidateBuilder.ApplyExpression(focused, string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim());
+            return built.IsValid
+                ? built with { Candidate = ReplaceFocusedTrack(expressionSource, trackIndex, built.Candidate) }
+                : built with { Candidate = document };
+        });
+        Notify();
+        return expressionPreview;
+    }
+
+    /// <summary>Commits the latest valid expression candidate as one history transaction.</summary>
+    public async ValueTask<bool> ApplyExpressionPreviewAsync(CancellationToken cancellationToken = default)
+    {
+        var preview = expressionPreview;
+        var content = session.ContentSession;
+        if (preview is null || !preview.IsValid || content is null || IsBusy)
+        {
+            return false;
+        }
+
+        if (content.Snapshot.BaseToken != preview.BaseToken)
+        {
+            PrepareExpressionPreview(Expression);
+            return false;
+        }
+
+        var outcome = await ChapterContentOperationSession.ApplyAsync(content, preview, cancellationToken);
+        if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+        {
+            session.PublishContentDocument(outcome.Snapshot.Document);
+            expressionPreview = null;
+            RefreshDisplay(updateStatus: true, statusKey: "Status.FramesUpdated", statusArgs: [FramesPerSecondDisplay, rows.Count]);
+            return true;
+        }
+
+        if (outcome.Kind == TransactionOutcomeKind.Conflict)
+        {
+            PrepareExpressionPreview(Expression);
+            return false;
+        }
+
+        StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("Status.ChangeFpsFailed");
+        Notify();
+        return false;
+    }
+
+    /// <summary>Discards the current expression candidate without changing the document.</summary>
+    public void CancelExpressionPreview()
+    {
+        expressionPreview = null;
+        Notify();
+    }
+
+    private static EditableChapterDocument FocusTrack(EditableChapterDocument source, int trackIndex)
+    {
+        var track = source.Tracks[trackIndex];
+        var segment = track.Segments.FirstOrDefault();
+        return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
+            segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
+            segment?.Duration ?? source.Duration, segment?.FrameRate ?? source.FrameRate, [track]);
+    }
+
+    private EditableChapterDocument AddDetectedFrameRate(EditableChapterDocument source)
+    {
+        if (source.FrameRate is not null || BaseChapterSet is null)
+        {
+            return source;
+        }
+
+        var detected = ApplyFrames(BaseChapterSet).FramesPerSecond;
+        if (detected <= 0)
+        {
+            return source;
+        }
+
+        var rate = new ChapterFrameRate(
+            checked((long)Math.Round(detected * 1_000_000m, MidpointRounding.AwayFromZero)),
+            1_000_000);
+        var tracks = source.Tracks.Select(track => new EditableChapterTrack(
+            track.Id,
+            track.Name,
+            track.Chapters,
+            track.Segments.Select(segment => segment with { FrameRate = rate }))).ToImmutableArray();
+        return new EditableChapterDocument(
+            source.Id,
+            source.Title,
+            source.SourceName,
+            source.ImportFormat,
+            source.Duration,
+            rate,
+            tracks);
+    }
+
+    private static EditableChapterDocument ReplaceFocusedTrack(
+        EditableChapterDocument source,
+        int trackIndex,
+        EditableChapterDocument focused)
+    {
+        var tracks = source.Tracks.SetItem(trackIndex, focused.Tracks[0]);
+        return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
+            source.Duration, source.FrameRate, tracks);
     }
 
     /// <summary>
@@ -1396,13 +1525,9 @@ public sealed class WasmWorkspace : IDisposable
             ChapterNameTemplateText: string.Empty,
             OrderShift: 0,
             ApplyExpression: false,
-            Expression: string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim(),
-            ExpressionPresetId: ExpressionPresetId,
-            ExpressionSourceName: !string.IsNullOrWhiteSpace(ExpressionPresetId)
-                ? ExpressionPresets.FirstOrDefault(preset =>
-                      string.Equals(preset.Id, ExpressionPresetId, StringComparison.OrdinalIgnoreCase))?.DisplayName
-                  ?? ExpressionPresetId
-                : string.Empty,
+            Expression: "t",
+            ExpressionPresetId: string.Empty,
+            ExpressionSourceName: string.Empty,
             TextEncoding: TextEncoding,
             EmitBom: EmitBom,
             ProjectOutput: false);

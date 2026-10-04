@@ -43,7 +43,7 @@ Default URL: `http://localhost:5261`
 | **Save** | `ChapterExportService` with bottom options → browser download |
 | **Round frames + FPS** | `FrameRateService.UpdateFrames` fills Frames column (Auto detect or fixed rate) |
 | **Frame rate context menu** | Change chapter timing from the current frame rate to the selected valid rate |
-| **Expression + Use** | `ChapterOutputProjectionService` / Lua engine rewrites times + frames in the grid; built-in Core presets; invalid expressions surface Core diagnostics |
+| **Expression preview** | Lua drafts build a read-only candidate from committed chapters; Apply commits one undoable transaction; Cancel discards the candidate; built-in Core presets; export uses committed values |
 | **Save as** | TXT, XML, QPFile, TimeCodes, … |
 | **Chapter name** | As is / Auto generate |
 | **Order +** | Display number shift |

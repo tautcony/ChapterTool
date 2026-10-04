@@ -261,26 +261,24 @@ public sealed class MainWindowInteractionHeadlessTests
             "movie.txt",
             MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro")));
         await host.LoadAsync("movie.txt");
-        host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t + 1";
         Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
-        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        host.ViewModel.RefreshExpressionPreviewNow();
         Assert.True(host.ViewModel.CanApplyContentPreview);
         Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Contains("StartTicks", host.ViewModel.ExpressionPreviewText, StringComparison.Ordinal);
         await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
 
-        host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t +";
-        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        host.ViewModel.RefreshExpressionPreviewNow();
         Assert.False(host.ViewModel.CanApplyContentPreview);
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
         await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
 
-        host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t + 2";
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
-        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        host.ViewModel.RefreshExpressionPreviewNow();
         Assert.True(host.ViewModel.CanApplyContentPreview);
         await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         Assert.Equal("00:00:03.000", Assert.Single(host.ViewModel.Rows).TimeText);

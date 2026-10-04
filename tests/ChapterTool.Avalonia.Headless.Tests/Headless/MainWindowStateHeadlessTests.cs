@@ -95,7 +95,6 @@ public sealed class MainWindowStateHeadlessTests
         var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
         var chapterNameModeBox = host.RequiredControl<ComboBox>("ChapterNameModeBox");
         var orderShiftBox = host.RequiredControl<NumericUpDown>("OrderShiftBox");
-        var expressionCheckBox = host.RequiredControl<CheckBox>("ApplyExpressionBox");
         var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
         var frameRateBox = host.RequiredControl<ComboBox>("FrameRateBox");
         var roundFramesBox = host.RequiredControl<CheckBox>("RoundFramesBox");
@@ -107,15 +106,16 @@ public sealed class MainWindowStateHeadlessTests
         xmlLanguageBox.SelectedIndex = host.ViewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         chapterNameModeBox.SelectedIndex = 1;
         orderShiftBox.Value = 2;
-        expressionCheckBox.IsChecked = true;
         expressionBox.Text = "t + 1";
         Assert.True(expressionBox.Bounds.Height <= 34);
         frameRateBox.SelectedIndex = 3;
         roundFramesBox.IsChecked = false;
         Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
-        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        host.ViewModel.RefreshExpressionPreviewNow();
         Assert.True(host.ViewModel.CanApplyContentPreview);
         Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
         await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         await host.ViewModel.SaveCommand.ExecuteAsync("out");
         await host.LayoutAsync();
@@ -128,7 +128,7 @@ public sealed class MainWindowStateHeadlessTests
         Assert.NotNull(host.SaveService.LastInfo);
         Assert.Equal(3, host.SaveService.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", host.SaveService.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(1), host.SaveService.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, host.SaveService.LastInfo.Chapters[0].StartTime);
 
         formatBox.SelectedIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         await host.LayoutAsync();

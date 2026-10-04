@@ -416,6 +416,11 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">現在のオプションでグリッドを更新</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">現在のオプションで書き出してダウンロード</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">式を適用</x:String>
+  <x:String x:Key="Expression.Preview.Title" xml:space="preserve">式のプレビュー</x:String>
+  <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">チャプターの値は変更されません。</x:String>
+  <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">式のプレビューをキャンセルしました。</x:String>
+  <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">式のプレビューを更新しています…</x:String>
+  <x:String x:Key="Expression.Preview.Options" xml:space="preserve">オプションをプレビュー</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Lua スクリプトを読み込む…</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">プリセット</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">式エディター</x:String>

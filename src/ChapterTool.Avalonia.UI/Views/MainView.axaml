@@ -402,7 +402,7 @@
       <Grid x:Name="AdvancedOptionsGrid"
             Grid.Row="2"
             ColumnDefinitions="*,2*,*"
-            RowDefinitions="Auto,Auto,*"
+            RowDefinitions="Auto,Auto,Auto,Auto"
             ColumnSpacing="16"
             RowSpacing="8"
             Margin="0"
@@ -512,15 +512,7 @@
               Grid.Row="2"
               Grid.Column="0"
               ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto,Auto,Auto">
-          <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="6">
-            <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
-            <CheckBox x:Name="ApplyExpressionBox"
-                      Grid.Column="1"
-                      AutomationProperties.Name="{DynamicResource Common.Enable}"
-                      AutomationProperties.AutomationId="ApplyExpression"
-                      IsChecked="{Binding ApplyExpression}"
-                      ToolTip.Tip="{DynamicResource Common.Enable}" />
-          </Grid>
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
           <controls:ExpressionEditor x:Name="ExpressionBox"
                                      Grid.Column="1"
                                      MinWidth="128"
@@ -545,7 +537,7 @@
                   Grid.Column="3"
                   Classes="flat"
                   MinWidth="76"
-                  Content="{DynamicResource Menu.Preview}"
+                  Content="{DynamicResource Expression.Preview.Options}"
                   IsVisible="{Binding CanPreviewContentOptions}"
                   Command="{Binding PreviewContentOptionsCommand}"
                   AutomationProperties.AutomationId="PreviewContentOptions" />
@@ -566,6 +558,20 @@
                   IsVisible="{Binding IsContentPreviewPending}"
                   Command="{Binding CancelContentPreviewCommand}"
                   AutomationProperties.AutomationId="CancelContentPreview" />
+        </Grid>
+        <Grid Grid.Row="3"
+              Grid.Column="0"
+              Grid.ColumnSpan="3"
+              ColumnDefinitions="Auto,*"
+              ColumnSpacing="8"
+              IsVisible="{Binding IsExpressionPreviewVisible}">
+          <TextBlock Grid.Column="0" Classes="optionLabel" Text="{DynamicResource Expression.Preview.Title}" />
+          <TextBlock x:Name="ExpressionPreviewText"
+                     Grid.Column="1"
+                     Text="{Binding ExpressionPreviewText}"
+                     TextWrapping="Wrap"
+                     MaxHeight="72"
+                     AutomationProperties.AutomationId="ExpressionPreview" />
         </Grid>
       </Grid>
       <ContentControl x:Name="SecondarySurface"

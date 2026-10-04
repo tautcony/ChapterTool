@@ -416,6 +416,11 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">Refresh grid from current options</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">Export with current options and download</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">Apply expression</x:String>
+  <x:String x:Key="Expression.Preview.Title" xml:space="preserve">Expression preview</x:String>
+  <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">No chapter values will change.</x:String>
+  <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">Expression preview canceled.</x:String>
+  <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">Updating expression preview…</x:String>
+  <x:String x:Key="Expression.Preview.Options" xml:space="preserve">Preview options</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Load Lua...</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">Expression editor</x:String>

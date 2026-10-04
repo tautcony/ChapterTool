@@ -88,7 +88,6 @@ public sealed class MainWindowHeadlessTests
         var expressionGroup = host.RequiredControl<Grid>("ExpressionOptionsGroup");
         var expressionEditor = host.RequiredControl<Control>("ExpressionBox");
         var loadExpressionButton = host.RequiredControl<Button>("LoadExpressionButton");
-        var applyExpression = host.RequiredControl<CheckBox>("ApplyExpressionBox");
         var chapterNameMode = host.RequiredControl<ComboBox>("ChapterNameModeBox");
         var formatBox = host.RequiredControl<ComboBox>("FormatBox");
         var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
@@ -98,8 +97,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
         Assert.True(expressionEditor.Bounds.Width >= 400);
         Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
-        Assert.Null(applyExpression.Content);
-        Assert.False(string.IsNullOrWhiteSpace(ToolTip.GetTip(applyExpression)?.ToString()));
+        Assert.Null(host.Window.FindControl<CheckBox>("ApplyExpressionBox"));
         Assert.True(chapterNameMode.Bounds.Width >= 128);
         Assert.True(formatBox.Bounds.Right <= options.Bounds.Right);
         Assert.True(xmlLanguageBox.Bounds.Right <= options.Bounds.Right);

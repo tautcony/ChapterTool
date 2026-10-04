@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
@@ -275,6 +276,46 @@ public sealed class ToolViewsHeadlessTests
         finally
         {
             window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_tool_renders_live_read_only_before_after_candidate()
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterTool.Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro")));
+        await host.LoadAsync("movie.txt");
+        var viewModel = new ExpressionToolViewModel(
+            host.ViewModel.ToolSession.Expression,
+            contentOperations: host.ViewModel.ToolSession.ContentOperations)
+        {
+            Expression = "t + 1"
+        };
+        viewModel.RefreshPreviewNow();
+        var view = new ExpressionToolView { DataContext = viewModel };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(view, viewModel);
+        try
+        {
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            var preview = Assert.Single(MainWindowHeadlessTestHost.Descendants<TextBlock>(window),
+                control => AutomationProperties.GetAutomationId(control) == "ExpressionPreview");
+            Assert.Contains("#1 Intro", preview.Text, StringComparison.Ordinal);
+            Assert.Contains("StartTicks", preview.Text, StringComparison.Ordinal);
+            Assert.Empty(MainWindowHeadlessTestHost.Descendants<CheckBox>(window));
+            Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+
+            var apply = Assert.Single(MainWindowHeadlessTestHost.Descendants<Button>(window),
+                button => button.Content?.ToString() == "Apply");
+            Assert.True(apply.IsEnabled);
+            await viewModel.ConfirmApplyCommand.ExecuteAsync();
+            Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        }
+        finally
+        {
+            window.Close();
+            viewModel.Dispose();
         }
     }
 

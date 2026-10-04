@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Wasm.Services;
 
 namespace ChapterTool.Wasm.Tests;
@@ -316,18 +317,26 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task ExpressionModeCommitsTimesOnceBeforePreview()
+    public async Task ExpressionPreviewDoesNotMutateRowsHistoryOrExportUntilApplied()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
-        workspace.ApplyExpression = true;
-        workspace.Expression = "t / 2";
-        workspace.ApplyOptionsAndRefresh();
-        Assert.Contains("00:00:41.728", workspace.Rows[1].TimeText, StringComparison.Ordinal);
+        Assert.True(workspace.Save().Success);
+        Assert.False(workspace.HasUnexportedChanges);
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
 
+        var candidate = Assert.IsType<ChapterContentPreview>(workspace.PrepareExpressionPreview("t / 2"));
+
+        Assert.True(candidate.IsValid);
+        Assert.NotEmpty(candidate.Differences);
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Count);
+        Assert.False(workspace.HasUnexportedChanges);
         var preview = workspace.Preview();
         Assert.True(preview.Success);
-        Assert.Contains("00:00:41.728", preview.Content, StringComparison.Ordinal);
+        Assert.Contains(originalRows[1].TimeText, preview.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("00:00:41.728", preview.Content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -341,26 +350,105 @@ public sealed class WasmWorkspaceTests
         var priorRows = workspace.Rows.ToArray();
         var priorHistory = workspace.HistoryEntries.Count;
         Assert.True(workspace.ApplyExpressionPreset(offset.Id));
-        Assert.True(workspace.ApplyExpression);
+        workspace.PrepareExpressionPreview(offset.ScriptText);
         Assert.Equal(offset.Id, workspace.ExpressionPresetId);
         Assert.Equal(offset.ScriptText, workspace.Expression);
 
         Assert.Equal(priorRows, workspace.Rows);
         Assert.Equal(priorHistory, workspace.HistoryEntries.Count);
-        Assert.Contains("duration", workspace.StatusText, StringComparison.OrdinalIgnoreCase);
+        Assert.NotNull(workspace.ExpressionPreview);
+        Assert.False(workspace.ExpressionPreview!.IsValid);
+        Assert.Contains(workspace.ExpressionPreview.Errors, error => error.Contains("duration", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public async Task InvalidExpressionSurfacesCoreDiagnosticToStatusAndLog()
+    public async Task InvalidExpressionShowsDiagnosticAndCannotBeApplied()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
-        workspace.ApplyExpression = true;
-        workspace.Expression = "return bad()";
-        workspace.ApplyOptionsAndRefresh();
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
 
-        Assert.Contains("Lua", workspace.StatusText, StringComparison.OrdinalIgnoreCase);
-        Assert.Single(workspace.HistoryEntries);
+        var candidate = Assert.IsType<ChapterContentPreview>(workspace.PrepareExpressionPreview("return bad()"));
+
+        Assert.False(candidate.IsValid);
+        Assert.Contains(candidate.Errors, error => error.Contains("Lua", StringComparison.OrdinalIgnoreCase));
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Count);
+    }
+
+    [Fact]
+    public async Task CancelExpressionPreviewDiscardsCandidateWithoutChangingDocumentOrHistory()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
+        var originalExport = workspace.Preview().Content;
+        workspace.PrepareExpressionPreview("t / 2");
+
+        workspace.CancelExpressionPreview();
+
+        Assert.Null(workspace.ExpressionPreview);
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Count);
+        Assert.Equal(originalExport, workspace.Preview().Content);
+    }
+
+    [Fact]
+    public async Task ApplyingExpressionPreviewCreatesOneTransactionAndUndoRestoresCommittedValues()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
+        workspace.PrepareExpressionPreview("t / 2");
+
+        Assert.True(await workspace.ApplyExpressionPreviewAsync());
+
+        Assert.Equal(originalHistory + 1, workspace.HistoryEntries.Count);
+        Assert.Null(workspace.ExpressionPreview);
+        Assert.NotEqual(originalRows[1].TimeText, workspace.Rows[1].TimeText);
+        await workspace.UndoAsync();
+        Assert.Equal(
+            originalRows.Select(static row => (row.Number, row.TimeText, row.Name, row.FramesInfo)),
+            workspace.Rows.Select(static row => (row.Number, row.TimeText, row.Name, row.FramesInfo)));
+    }
+
+    [Fact]
+    public async Task StaleExpressionPreviewRefreshesFromCurrentDocumentWithoutCommitting()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.PrepareExpressionPreview("t / 2");
+        workspace.UpdateRow(0, null, "Edited after preview");
+        var editedRows = workspace.Rows.ToArray();
+        var historyCount = workspace.HistoryEntries.Count;
+
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
+
+        Assert.Equal(editedRows, workspace.Rows);
+        Assert.Equal(historyCount, workspace.HistoryEntries.Count);
+        Assert.NotNull(workspace.ExpressionPreview);
+        Assert.Contains(workspace.ExpressionPreview!.Before.Tracks.SelectMany(static track => track.Chapters),
+            chapter => chapter.Name == "Edited after preview");
+    }
+
+    [Fact]
+    public async Task EditingRowAfterApplyingExpressionDoesNotReapplyExpressionOnExport()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.PrepareExpressionPreview("t / 2");
+        Assert.True(await workspace.ApplyExpressionPreviewAsync());
+
+        workspace.UpdateRow(1, "00:00:20.000", null);
+
+        Assert.Equal("00:00:20.000", workspace.Rows[1].TimeText);
+        var preview = workspace.Preview();
+        Assert.True(preview.Success);
+        Assert.Contains("00:00:20.000", preview.Content, StringComparison.Ordinal);
     }
 
     [Fact]

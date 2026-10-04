@@ -1065,7 +1065,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(ChapterExportFormat.Xml, save.LastOptions.Format);
         Assert.Equal("eng", save.LastOptions.XmlLanguage);
         Assert.Equal("t + 2", save.LastOptions.Expression);
-        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo!.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo!.Chapters[0].StartTime);
     }
 
     [Theory]
@@ -1129,33 +1129,40 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastInfo);
         Assert.Equal(3, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
         Assert.Equal(Path.GetFullPath("out"), save.LastDirectory);
     }
 
     [Fact]
-    public async Task ExpressionAppliesToRowsPreviewAndSavedInfo()
+    public async Task ExpressionPreviewIsReadOnlyUntilAppliedAndExportUsesCommittedValues()
     {
         var save = new FakeSaveService();
         var vm = CreateViewModel(saveService: save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SaveFormat = ChapterExportFormat.Txt;
 
-        vm.ApplyExpression = true;
         vm.Expression = "t + 1";
         vm.AutoGenerateNames = true;
         vm.OrderShift = 2;
 
-        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        vm.RefreshExpressionPreviewNow();
+        Assert.True(vm.CanApplyContentPreview);
         Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
         Assert.Equal(1, vm.Rows[0].Number);
+        Assert.Contains("StartTicks", vm.ExpressionPreviewText, StringComparison.Ordinal);
+        await vm.CancelContentPreviewCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+
+        vm.RefreshExpressionPreviewNow();
         await vm.ApplyContentPreviewCommand.ExecuteAsync();
         vm.ExpressionSourceName = "inline";
 
         Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
         Assert.Equal("24", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
-        Assert.Contains("CHAPTER03=00:00:01.000", vm.BuildPreview(), StringComparison.Ordinal);
+        Assert.Contains("CHAPTER01=00:00:01.000", vm.BuildPreview(), StringComparison.Ordinal);
+        Assert.True(vm.AutoGenerateNames);
+        Assert.Equal(2, vm.OrderShift);
 
         await vm.SaveCommand.ExecuteAsync("out");
 
@@ -1171,13 +1178,12 @@ public sealed class MainWindowViewModelTests
 
 
     [Fact]
-    public async Task PreviewAndSaveUseSameLuaProjectionForTimesNamesAndNumbers()
+    public async Task ExpressionDraftDoesNotRunDuringOptionPreviewOrExport()
     {
         var save = new FakeSaveService();
         var vm = CreateViewModel(saveService: save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SaveFormat = ChapterExportFormat.Txt;
-        vm.ApplyExpression = true;
         vm.Expression = "t + 2";
         vm.AutoGenerateNames = true;
         vm.OrderShift = 3;
@@ -1189,12 +1195,32 @@ public sealed class MainWindowViewModelTests
         var preview = vm.BuildPreview();
         await vm.SaveCommand.ExecuteAsync("out");
 
-        Assert.Contains("CHAPTER04=00:00:02.000", preview, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER04=00:00:00.000", preview, StringComparison.Ordinal);
         Assert.Contains("CHAPTER04NAME=Chapter 01", preview, StringComparison.Ordinal);
         Assert.NotNull(save.LastInfo);
         Assert.Equal(4, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
+    }
+
+    [Fact]
+    public async Task StaleExpressionCandidateRefreshesFromCurrentDocumentBeforeApply()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.Expression = "t + 1";
+        vm.RefreshExpressionPreviewNow();
+
+        await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "00:00:10.000"));
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Contains("100000000", vm.ExpressionPreviewText, StringComparison.Ordinal);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:11.000", vm.Rows[0].TimeText);
     }
 
     [Fact]
@@ -1303,10 +1329,9 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(load, save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        vm.ApplyExpression = true;
         vm.Expression = "t - 10000";
 
-        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        vm.RefreshExpressionPreviewNow();
         Assert.False(vm.CanApplyContentPreview);
         Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
         await vm.CancelContentPreviewCommand.ExecuteAsync();
@@ -1614,7 +1639,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task LoadLuaExpressionScriptAsyncReportsCompileDiagnosticToStatusAndLog()
+    public async Task LoadLuaExpressionScriptAsyncReportsCompileDiagnosticToLog()
     {
         var log = new ApplicationLogPanelProvider();
         var vm = CreateViewModel(logService: log);
@@ -1626,7 +1651,6 @@ public sealed class MainWindowViewModelTests
 
             Assert.NotNull(diagnostic);
             Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
-            Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
             Assert.Contains(log.Entries, static entry =>
                 entry.Operation == "Lua expression script"
                 && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)

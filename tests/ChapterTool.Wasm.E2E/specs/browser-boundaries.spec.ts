@@ -37,15 +37,19 @@ test('B12 fixed frame rate and an expression update chapter projection', async (
   await loadFixture(page, 'minimal-ogm.txt');
   await page.locator('select.fps-box').selectOption('2');
   await expect(chapters(page).locator('tbody tr').nth(1).locator('.frame-text')).toHaveText('300');
-  await page.getByLabel('Use', { exact: true }).check();
   const expression = page.getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
-  await expression.press('Tab');
-  await expect(chapters(page).locator('tbody tr').nth(1).locator('input[aria-label="Time 2"]')).toHaveValue('00:00:06.250');
-  const committed = await chapters(page).locator('tbody tr').nth(1).locator('input[aria-label="Time 2"]').inputValue();
+  const livePreview = page.getByTestId('expression-preview');
+  await expect(livePreview).toContainText('00:00:06.250');
+  const secondTime = chapters(page).getByRole('textbox', { name: 'Time 2', exact: true });
+  await expect(secondTime).toHaveValue('00:00:12.500');
+  await livePreview.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(secondTime).toHaveValue('00:00:06.250');
+  const committed = await secondTime.inputValue();
   await expression.fill('t + (');
-  await expression.press('Tab');
-  await expect(chapters(page).locator('tbody tr').nth(1).locator('input[aria-label="Time 2"]')).toHaveValue(committed);
+  await expect(page.getByTestId('expression-preview')).toContainText('unexpected symbol');
+  await expect(page.getByTestId('expression-preview').getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(secondTime).toHaveValue(committed);
 });
 
 test('B13 DOM file drop imports a file and oversized file input is rejected', async ({ readyPage: page }) => {

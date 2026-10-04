@@ -320,19 +320,11 @@
             <div class="option-cell option-expression">
                 <div class="expression-label-group">
                     <span class="option-label" id="expressionLabel">@L.T("Label.Expression")</span>
-                    <label class="check expression-enable"
-                           title="@L.T("Label.UseExpression")">
-                        <input type="checkbox"
-                               checked="@applyExpression"
-                               disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
-                               aria-label="@L.T("Label.UseExpression")"
-                               @onchange="OnApplyExpressionChanged" />
-                    </label>
                 </div>
                 <div class="expression-controls">
                     <select class="expression-preset"
                             value="@expressionPresetId"
-                            disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
+                            disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
                             title="@L.T("Label.ExpressionPreset")"
                             aria-label="@L.T("Label.ExpressionPreset")"
                             @onchange="OnExpressionPresetChanged">
@@ -344,13 +336,50 @@
                     </select>
                     <input class="expression-input"
                            value="@expression"
-                           disabled="@(Workspace.IsBusy || !applyExpression || Workspace.IsChapterGridEmpty)"
+                           disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
                            spellcheck="false"
                            title="@L.T("Title.Expression")"
                            aria-labelledby="expressionLabel"
-                           @oninput="OnExpressionInput"
-                           @onchange="OnExpressionCommit" />
+                           @oninput="OnExpressionInput" />
                 </div>
+                @if (expressionPreviewPending)
+                {
+                    <div class="expression-preview" role="status" aria-live="polite" data-testid="expression-preview-pending">
+                        @L.T("Expression.Preview.Pending")
+                    </div>
+                }
+                else if (Workspace.ExpressionPreview is { } expressionCandidate)
+                {
+                    <section class="expression-preview" aria-labelledby="expression-preview-title" data-testid="expression-preview">
+                        <h3 id="expression-preview-title">@L.T("Expression.Preview.Title")</h3>
+                        @if (!expressionCandidate.Errors.IsEmpty)
+                        {
+                            <ul class="expression-preview-errors" role="alert">
+                                @foreach (var error in expressionCandidate.Errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        }
+                        else if (expressionCandidate.Differences.IsEmpty)
+                        {
+                            <p>@L.T("Expression.Preview.NoChanges")</p>
+                        }
+                        else
+                        {
+                            <ul class="expression-preview-differences">
+                                @foreach (var difference in expressionCandidate.Differences)
+                                {
+                                    <li>@Workspace.FormatExpressionDifference(difference)</li>
+                                }
+                            </ul>
+                        }
+                        <div class="expression-preview-actions">
+                            <button type="button" class="primary" disabled="@(Workspace.IsBusy || !expressionCandidate.IsValid || expressionCandidate.Differences.IsEmpty)" @onclick="ApplyExpressionPreviewAsync">@L.T("Common.Apply")</button>
+                            <button type="button" class="secondary" disabled="@Workspace.IsBusy" @onclick="CancelExpressionPreview">@L.T("Common.Cancel")</button>
+                        </div>
+                    </section>
+                }
             </div>
         </div>
     </div>
@@ -745,9 +774,11 @@
     private int orderShift;
     private int selectedFrameRateIndex;
     private string xmlLanguage = "eng";
-    private bool applyExpression;
     private string expression = "t";
     private string expressionPresetId = string.Empty;
+    private CancellationTokenSource? expressionPreviewCancellation;
+    private bool expressionPreviewPending;
+    private long expressionPreviewRevision;
     private bool roundFrames = true;
     private string uiLanguage = "en-US";
     private int outputTextEncodingIndex;
@@ -770,8 +801,6 @@
     private int draftOrderShift;
     private int draftFrameRateIndex;
     private string draftXmlLanguage = "eng";
-    private bool draftApplyExpression;
-    private string draftExpression = "t";
     private bool draftRoundFrames = true;
     private string draftUiLanguage = "en-US";
     private int draftOutputTextEncodingIndex;
@@ -873,6 +902,8 @@
 
     public void Dispose()
     {
+        expressionPreviewCancellation?.Cancel();
+        expressionPreviewCancellation?.Dispose();
         Workspace.Changed -= OnWorkspaceChanged;
         L.CultureChanged -= OnCultureChanged;
         dropZoneRef?.Dispose();
@@ -949,7 +980,6 @@
         chapterNameModeIndex = Workspace.ChapterNameModeIndex;
         orderShift = Workspace.OrderShift;
         xmlLanguage = Workspace.XmlLanguage;
-        applyExpression = Workspace.ApplyExpression;
         expression = Workspace.Expression;
         expressionPresetId = Workspace.ExpressionPresetId;
         roundFrames = Workspace.RoundFrames;
@@ -972,8 +1002,6 @@
     {
         Workspace.ChapterNameModeIndex = chapterNameModeIndex;
         Workspace.OrderShift = orderShift;
-        Workspace.ApplyExpression = applyExpression;
-        Workspace.Expression = expression;
         Workspace.RoundFrames = roundFrames;
     }
 
@@ -1012,17 +1040,6 @@
         }
     }
 
-    private async Task OnApplyExpressionChanged(ChangeEventArgs args)
-    {
-        applyExpression = args.Value is bool b
-            ? b
-            : string.Equals(args.Value?.ToString(), "true", StringComparison.OrdinalIgnoreCase);
-        Workspace.ApplyExpression = applyExpression;
-        Workspace.Expression = expression;
-        Workspace.ApplyOptionsAndRefresh();
-        await PersistSettingsAsync();
-    }
-
     private async Task OnExpressionPresetChanged(ChangeEventArgs args)
     {
         var presetId = args.Value?.ToString() ?? string.Empty;
@@ -1030,40 +1047,73 @@
         {
             Workspace.ClearExpressionPresetSelection();
             expressionPresetId = string.Empty;
+            await ScheduleExpressionPreviewAsync(expression);
             StateHasChanged();
-            await PersistSettingsAsync();
             return;
         }
 
         if (Workspace.ApplyExpressionPreset(presetId))
         {
-            applyExpression = true;
             expression = Workspace.Expression;
             expressionPresetId = Workspace.ExpressionPresetId;
+            await ScheduleExpressionPreviewAsync(expression);
         }
 
         StateHasChanged();
-        await PersistSettingsAsync();
     }
 
-    private void OnExpressionInput(ChangeEventArgs args)
+    private Task OnExpressionInput(ChangeEventArgs args)
     {
         expression = args.Value?.ToString() ?? "t";
-        Workspace.Expression = expression;
-        expressionPresetId = Workspace.ExpressionPresetId;
+        return ScheduleExpressionPreviewAsync(expression);
     }
 
-    private async Task OnExpressionCommit(ChangeEventArgs args)
+    private async Task ScheduleExpressionPreviewAsync(string value)
     {
-        expression = args.Value?.ToString() ?? "t";
-        Workspace.Expression = expression;
+        expressionPreviewCancellation?.Cancel();
+        expressionPreviewCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        expressionPreviewCancellation = cancellation;
+        var revision = ++expressionPreviewRevision;
+        expressionPreviewPending = true;
+        expression = value;
+        Workspace.Expression = value;
         expressionPresetId = Workspace.ExpressionPresetId;
-        if (applyExpression)
+        Workspace.CancelExpressionPreview();
+        StateHasChanged();
+
+        try
         {
-            Workspace.ApplyOptionsAndRefresh();
-        }
+            await Task.Delay(250, cancellation.Token);
+            if (revision != expressionPreviewRevision)
+            {
+                return;
+            }
 
-        await PersistSettingsAsync();
+            Workspace.PrepareExpressionPreview(value);
+            expressionPreviewPending = false;
+            StateHasChanged();
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+            // A newer input or component disposal owns the next preview refresh.
+        }
+    }
+
+    private async Task ApplyExpressionPreviewAsync()
+    {
+        expressionPreviewPending = false;
+        await Workspace.ApplyExpressionPreviewAsync();
+        StateHasChanged();
+    }
+
+    private void CancelExpressionPreview()
+    {
+        expressionPreviewCancellation?.Cancel();
+        expressionPreviewPending = false;
+        Workspace.CancelExpressionPreview();
+        Workspace.SetStatusMessage(L.T("Expression.Preview.Cancelled"));
+        StateHasChanged();
     }
 
     private async Task TriggerLoad()
@@ -1319,8 +1369,6 @@
         draftOrderShift = orderShift;
         draftFrameRateIndex = selectedFrameRateIndex;
         draftXmlLanguage = xmlLanguage;
-        draftApplyExpression = applyExpression;
-        draftExpression = expression;
         draftRoundFrames = roundFrames;
         draftUiLanguage = uiLanguage;
         draftOutputTextEncodingIndex = outputTextEncodingIndex;
@@ -1345,8 +1393,6 @@
         draftOrderShift = 0;
         draftFrameRateIndex = 0;
         draftXmlLanguage = Workspace.XmlLanguages.FirstOrDefault("und");
-        draftApplyExpression = false;
-        draftExpression = "t";
         draftRoundFrames = true;
         draftUiLanguage = "en-US";
         draftOutputTextEncodingIndex = 0;
@@ -1454,8 +1500,6 @@
         chapterNameModeIndex = Math.Clamp(draftChapterNameModeIndex, 0, 2);
         orderShift = Math.Max(0, draftOrderShift);
         selectedFrameRateIndex = Math.Max(0, draftFrameRateIndex);
-        applyExpression = draftApplyExpression;
-        expression = string.IsNullOrWhiteSpace(draftExpression) ? "t" : draftExpression.Trim();
         roundFrames = draftRoundFrames;
         PushProjectionOptions();
         Workspace.SelectedFrameRateIndex = selectedFrameRateIndex;

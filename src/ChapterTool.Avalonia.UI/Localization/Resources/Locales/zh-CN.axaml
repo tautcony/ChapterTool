@@ -416,6 +416,11 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">按当前选项刷新表格</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">按当前选项导出并下载</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">应用表达式</x:String>
+  <x:String x:Key="Expression.Preview.Title" xml:space="preserve">表达式预览</x:String>
+  <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">章节值不会发生变化。</x:String>
+  <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">已取消表达式预览。</x:String>
+  <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">正在更新表达式预览…</x:String>
+  <x:String x:Key="Expression.Preview.Options" xml:space="preserve">预览其他选项</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">加载 Lua...</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">表达式</x:String>

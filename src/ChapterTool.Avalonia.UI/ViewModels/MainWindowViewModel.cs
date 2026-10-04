@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using Avalonia.Input;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -22,6 +23,7 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposable
 {
     private readonly IChapterEditingService editingService;
+    private readonly DispatcherTimer expressionPreviewTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
     private readonly IFrameRateService frameRateService;
     private readonly IChapterTimeFormatter timeFormatter;
     private readonly ChapterExportService exportService;
@@ -41,6 +43,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private string statusText;
     private string? lastExpressionDiagnosticSignature;
     private ChapterContentPreview? pendingContentPreview;
+    private string expressionPreviewText = string.Empty;
     private IReadOnlyList<HistoryEntryViewModel> historyEntries = [];
     private SessionHistorySnapshot? historySnapshot;
 
@@ -152,11 +155,14 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         Rows.CollectionChanged += OnRowsChanged;
 
         InitializeCommands();
+        expressionPreviewTimer.Tick += OnExpressionPreviewTimerTick;
         RefreshHistoryEntries();
     }
 
     public void Dispose()
     {
+        expressionPreviewTimer.Stop();
+        expressionPreviewTimer.Tick -= OnExpressionPreviewTimerTick;
         EndDocumentSession();
         Localizer.CultureChanged -= cultureChangedHandler;
         ClipOptions.CollectionChanged -= OnClipOptionsChanged;
@@ -576,15 +582,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool ApplyExpression
     {
-        get => Workspace.OperationDrafts.ApplyExpression;
-        set
-        {
-            if (Workspace.OperationDrafts.SetApplyExpression(value))
-            {
-                OnPropertyChanged();
-                RefreshRows();
-            }
-        }
+        get => false;
+        set => Workspace.OperationDrafts.SetApplyExpression(false);
     }
 
     public string Expression
@@ -595,7 +594,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             if (Workspace.OperationDrafts.SetExpression(value))
             {
                 OnPropertyChanged();
-                RefreshRows();
+                ScheduleExpressionPreview();
             }
         }
     }
@@ -704,11 +703,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     /// <summary>Ends the current session and drops its host projections and drafts.</summary>
     public void EndDocumentSession()
     {
+        expressionPreviewTimer.Stop();
         if (pendingContentPreview is { } preview)
         {
             CancelContentPreview(preview);
             pendingContentPreview = null;
         }
+        ExpressionPreviewText = string.Empty;
 
         Workspace.ClearSession();
         SourcePath = string.Empty;
@@ -891,9 +892,24 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public UiCommand NavigateHistoryCommand { get; private set; } = null!;
 
-    public bool IsContentPreviewPending => pendingContentPreview is not null;
+    public bool IsContentPreviewPending => pendingContentPreview is not null || expressionPreviewTimer.IsEnabled;
 
-    public bool CanPreviewContentOptions => pendingContentPreview is null;
+    public string ExpressionPreviewText
+    {
+        get => expressionPreviewText;
+        private set
+        {
+            if (SetProperty(ref expressionPreviewText, value))
+            {
+                OnPropertyChanged(nameof(IsExpressionPreviewVisible));
+            }
+        }
+    }
+
+    public bool IsExpressionPreviewVisible => !string.IsNullOrWhiteSpace(ExpressionPreviewText);
+
+    public bool CanPreviewContentOptions => pendingContentPreview is null
+        && !expressionPreviewTimer.IsEnabled;
 
     public bool CanApplyContentPreview => pendingContentPreview?.IsValid == true;
 

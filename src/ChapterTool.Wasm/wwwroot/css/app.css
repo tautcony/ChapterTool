@@ -457,10 +457,6 @@ button.template-button.icon-button svg {
   min-width: 0;
 }
 
-.expression-enable {
-  margin: 0;
-}
-
 .expression-controls {
   display: grid;
   grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
@@ -676,6 +672,42 @@ input:disabled {
 .settings-modal {
   width: min(38rem, calc(100vw - 2rem));
   height: min(40rem, calc(100vh - 2rem));
+}
+
+.expression-preview {
+  grid-column: 2 / -1;
+  min-width: 0;
+  max-height: 8rem;
+  overflow: auto;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.expression-preview h3,
+.expression-preview p {
+  margin: 0 0 0.35rem;
+  font-size: inherit;
+}
+
+.expression-preview ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.expression-preview li {
+  overflow-wrap: anywhere;
+}
+
+.expression-preview-errors {
+  color: var(--danger, #c0392b);
+}
+
+.expression-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding-top: 0.4rem;
 }
 
 .modal-header,

@@ -1,4 +1,5 @@
 using System.Collections.Specialized;
+using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
@@ -175,7 +176,7 @@ public sealed partial class MainWindowViewModel
                 Workspace.OperationDrafts.UseTemplateNames,
                 Workspace.OperationDrafts.ChapterNameTemplateText,
                 Workspace.OperationDrafts.OrderShift,
-                Workspace.OperationDrafts.ApplyExpression,
+                applyExpression: false,
                 Workspace.OperationDrafts.Expression));
 
     internal ChapterContentPreview PrepareFrameRateOperation(decimal sourceFps, decimal targetFps) =>
@@ -189,7 +190,7 @@ public sealed partial class MainWindowViewModel
         var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
         ApplyContentOutcome(outcome, preview.Operation);
         if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
-            && preview.Operation is "Apply chapter options" or "Apply expression" or "Apply template names")
+            && preview.Operation is "Apply chapter options" or "Apply template names")
         {
             Workspace.SetExpressionOperationDrafts(
                 Workspace.OperationDrafts.Expression,
@@ -203,6 +204,11 @@ public sealed partial class MainWindowViewModel
             OnPropertyChanged(nameof(UseTemplateNames));
             OnPropertyChanged(nameof(OrderShift));
             OnPropertyChanged(nameof(ApplyExpression));
+        }
+
+        if (preview.Operation == "Apply expression" && outcome.Kind == TransactionOutcomeKind.Conflict)
+        {
+            RefreshExpressionPreviewNow();
         }
 
         if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
@@ -234,6 +240,91 @@ public sealed partial class MainWindowViewModel
     internal void CancelContentPreview(ChapterContentPreview preview)
     {
         ArgumentNullException.ThrowIfNull(preview);
+    }
+
+    private void ScheduleExpressionPreview()
+    {
+        expressionPreviewTimer.Stop();
+        if (pendingContentPreview is { } current)
+        {
+            CancelContentPreview(current);
+            pendingContentPreview = null;
+            OnPropertyChanged(nameof(IsContentPreviewPending));
+            OnPropertyChanged(nameof(CanPreviewContentOptions));
+            OnPropertyChanged(nameof(CanApplyContentPreview));
+        }
+
+        ExpressionPreviewText = Localizer.GetString("Expression.Preview.Pending");
+        if (CurrentInfo is not null && !string.IsNullOrWhiteSpace(Expression))
+        {
+            expressionPreviewTimer.Start();
+        }
+        else
+        {
+            ExpressionPreviewText = string.Empty;
+        }
+
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void OnExpressionPreviewTimerTick(object? sender, EventArgs args)
+    {
+        expressionPreviewTimer.Stop();
+        RefreshExpressionPreviewNow();
+    }
+
+    internal void RefreshExpressionPreviewNow()
+    {
+        expressionPreviewTimer.Stop();
+        if (CurrentInfo is null || string.IsNullOrWhiteSpace(Expression))
+        {
+            ExpressionPreviewText = string.Empty;
+            return;
+        }
+
+        pendingContentPreview = PrepareExpressionOperation(Expression);
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    private static string BuildExpressionPreviewText(ChapterContentPreview preview, IAppLocalizer localizer)
+    {
+        if (!preview.IsValid)
+        {
+            return string.Join(Environment.NewLine, preview.Errors);
+        }
+
+        if (preview.Differences.IsEmpty)
+        {
+            return localizer.GetString("Expression.Preview.NoChanges");
+        }
+
+        return string.Join(Environment.NewLine, preview.Differences.Take(6).Select(difference =>
+            DescribeExpressionDifference(preview, difference)));
+    }
+
+    private static string DescribeExpressionDifference(ChapterContentPreview preview, ChapterContentDifference difference)
+    {
+        if (difference.ChapterId is not { } chapterId)
+        {
+            return $"{difference.Field}: {difference.Before} → {difference.After}";
+        }
+
+        var chapter = preview.Before.Tracks.SelectMany(static track => track.Chapters)
+            .FirstOrDefault(item => item.Id == chapterId)
+            ?? preview.Candidate.Tracks.SelectMany(static track => track.Chapters)
+                .FirstOrDefault(item => item.Id == chapterId);
+        var label = chapter is null
+            ? chapterId.ToString()
+            : $"#{chapter.DisplayNumber} {chapter.Name}";
+        return $"{label} · {difference.Field}: {difference.Before} → {difference.After}";
     }
 
     private void ApplyFrameInfo(bool logResult = true)
