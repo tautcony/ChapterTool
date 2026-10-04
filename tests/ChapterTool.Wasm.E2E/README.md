@@ -7,7 +7,7 @@ TypeScript. It is separate from the .NET solution and `packages/chaptertool`.
 
 - Node.js 22.x
 - .NET 10 SDK
-- Chromium for the pull request suite; Chromium, Firefox, and WebKit for full
+- Chromium and WebKit for the pull request suite; Chromium, Firefox, and WebKit for full
   acceptance
 
 ## Install and run
@@ -51,15 +51,18 @@ open the attached trace first. Check the console and network requests next.
 Tests must wait for visible state changes. Do not add fixed delays to hide a
 race. A test that passes only after retry still fails the CI gate.
 
-`@smoke` marks startup and core import/edit/download flows. The Pages workflow
+`@smoke` marks startup, core import/edit/download flows, and short-screen modal closure. The Pages workflow
 runs these tests against the exact prepared directory it uploads. The
 `.NET 10 CI` workflow runs all implemented behavior tests in Chromium. The
 weekly and manually triggered WASM browser acceptance workflow runs Chromium,
 Firefox, and WebKit.
 
+The WASM acceptance workflow also runs targeted WebKit modal and editing checks on pull requests. Set `E2E_RUN_NAME=webkit` for a separate report and result directory. The default browser suite includes `modal-layout.spec.ts`. It asserts geometry, actual clicks, focus, cancellation, background isolation, and long-content scrolling. It checks 320-pixel width and both sides of the 520- and 760-pixel breakpoints.
+
 ## Visual checks
 
-`specs/layout.spec.ts` checks the core workflow at 1280×800, 1920×1080, and
-390×844. It verifies outer overflow and captures reviewed screenshots. Create
+`specs/layout.spec.ts` checks idle, history, expression, diagnostics, advanced export, and settings states at 1280×800, 1920×1080, 390×844, 390×640, and 844×390. Visual checks run on pull requests. Results use `results-visual`, `report-visual`, and `junit-visual.xml`. Create
 or update baselines only in the fixed Linux environment. Review each image
 change before committing it.
+
+Physical iPhone browser chrome and keyboard behavior require a device check. Mobile viewports and WebKit emulation do not establish that result.

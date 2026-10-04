@@ -6,7 +6,7 @@ The app provides chapter import, editing, time transforms, preview, and export. 
 
 1. **Top** — Load / Save, optional clip selector, frame rate readout
 2. **Center** — chapter grid (`#`, Time, Name, Frames)
-3. **Bottom** — save format, chapter name mode, order shift, XML language, expression
+3. **Bottom** — save format, chapter name mode, expression and advanced export actions
 4. **Status strip** — status text + progress
 
 Load imports data into the grid. Save and Preview use the Core projection and export options. Reload reuses the last successful file bytes. Append MPLS combines another playlist through the Core segment service.
@@ -43,7 +43,9 @@ Default URL: `http://localhost:5261`
 | **Save** | `ChapterExportService` with bottom options → browser download |
 | **Round frames + FPS** | `FrameRateService.UpdateFrames` fills Frames column (Auto detect or fixed rate) |
 | **Frame rate context menu** | Change chapter timing from the current frame rate to the selected valid rate |
-| **Expression preview** | Lua drafts build a read-only candidate from committed chapters; Apply commits one undoable transaction; Cancel discards the candidate; built-in Core presets; export uses committed values |
+| **Expression** | A dialog validates Lua drafts and Core presets. Apply commits one transaction. Cancel or Escape restores the previous expression and discards the candidate. |
+| **Edit history** | A dialog navigates retained branches. Navigation takes effect immediately. |
+| **Advanced export options** | A dialog stages order shift, XML language, encoding, BOM, and template input. Apply updates projection and output preferences. Cancel leaves them unchanged. |
 | **Save as** | TXT, XML, QPFile, TimeCodes, … |
 | **Chapter name** | As is / Auto generate |
 | **Order +** | Display number shift |
@@ -53,6 +55,8 @@ Default URL: `http://localhost:5261`
 | **Drag and drop / language** | Drop-to-load with size/read errors; `en-US`, `zh-CN`, and `ja-JP` UI dictionaries |
 
 Empty grid offers **Load OGM sample** for a quick smoke path.
+
+All tools use the native browser dialog lifecycle. Dialogs contain focus and make the main page inert. Escape closes a dialog from focused inputs. Close returns focus to the opener when it still exists. Dialog bodies scroll independently. Short pages can scroll to retain the toolbar, grid, bottom controls, and status strip.
 
 The browser app imports file bytes. It does not use local file paths for import.
 

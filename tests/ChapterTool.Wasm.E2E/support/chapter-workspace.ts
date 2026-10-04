@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 
-export const chapters = (page: Page): Locator => page.getByRole('table', { name: 'Chapters', exact: true });
+export const chapters = (page: Page): Locator => page.getByRole('table', { includeHidden: true, name: 'Chapters', exact: true });
 
 export async function loadFixture(page: Page, fixture: string): Promise<void> {
   const chooserPromise = page.waitForEvent('filechooser');
@@ -18,7 +18,7 @@ export async function loadBytes(page: Page, name: string, buffer: Buffer): Promi
 }
 
 export async function chapterName(page: Page, row: number): Promise<Locator> {
-  return chapters(page).getByRole('textbox', { name: `Name ${row}`, exact: true });
+  return chapters(page).getByRole('textbox', { includeHidden: true, name: `Name ${row}`, exact: true });
 }
 
 export async function commit(locator: Locator, value: string): Promise<void> {

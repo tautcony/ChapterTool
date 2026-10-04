@@ -47,7 +47,7 @@ test('B04 preview content and Save download contain the same chapter data', asyn
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Preview', exact: true });
   const preview = await dialog.locator('[data-testid="preview-content"]').textContent();
-  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
   const downloaded = await downloadText(page, testInfo);
   expect(downloaded.content.toString('utf8')).toBe(preview);
 });

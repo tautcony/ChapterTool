@@ -29,7 +29,7 @@ test('B02–B04 @smoke imports, edits, undoes, redoes, previews, and downloads a
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Preview', exact: true });
   await expect(dialog.getByText('Revised opening')).toBeVisible();
-  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
 
   const downloaded = await downloadText(page, testInfo);
   expect(downloaded.filename).toMatch(/\.txt$/i);

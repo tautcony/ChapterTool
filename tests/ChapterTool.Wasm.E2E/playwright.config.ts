@@ -4,11 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 const suiteDir = dirname(fileURLToPath(import.meta.url));
 const baseURL = 'http://127.0.0.1:5261/ChapterTool/';
+const runSuffix = process.env.E2E_RUN_NAME ? `-${process.env.E2E_RUN_NAME}` : '';
 
 export default defineConfig({
   testDir: './specs',
   testIgnore: '**/layout.spec.ts',
-  outputDir: '../../artifacts/wasm-e2e/results',
+  outputDir: `../../artifacts/wasm-e2e/results${runSuffix}`,
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
@@ -18,8 +19,8 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: [
     ['list'],
-    ['html', { outputFolder: '../../artifacts/wasm-e2e/report', open: 'never' }],
-    ['junit', { outputFile: '../../artifacts/wasm-e2e/junit.xml' }],
+    ['html', { outputFolder: `../../artifacts/wasm-e2e/report${runSuffix}`, open: 'never' }],
+    ['junit', { outputFile: `../../artifacts/wasm-e2e/junit${runSuffix}.xml` }],
   ],
   use: {
     baseURL,

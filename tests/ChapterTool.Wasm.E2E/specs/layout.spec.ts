@@ -1,13 +1,16 @@
 import { expect, test } from '../support/fixtures';
-import { chapters, downloadText, loadFixture } from '../support/chapter-workspace';
+import { chapters, downloadText, loadBytes, loadFixture } from '../support/chapter-workspace';
 
 const viewports = [
   { name: 'default', width: 1280, height: 800 },
   { name: 'wide', width: 1920, height: 1080 },
   { name: 'narrow', width: 390, height: 844 },
+  { name: 'narrow-short', width: 390, height: 640 },
+  { name: 'landscape', width: 844, height: 390 },
 ];
 
-test('B18 layout supports the core workflow at default, wide, and narrow sizes', async ({ readyPage: page }, testInfo) => {
+test('B18 idle and dialog visual states at desktop and mobile sizes', async ({ readyPage: page }, testInfo) => {
+  test.setTimeout(180_000);
   await loadFixture(page, 'minimal-ogm.txt');
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
@@ -34,7 +37,7 @@ test('B18 layout supports the core workflow at default, wide, and narrow sizes',
     expect(previewBounds).not.toBeNull();
     expect(previewBounds!.x + previewBounds!.width).toBeLessThanOrEqual(viewportSize!.width);
     expect(previewBounds!.y + previewBounds!.height).toBeLessThanOrEqual(viewportSize!.height);
-    await preview.getByRole('button', { name: 'Close', exact: true }).click();
+    await preview.getByRole('button', { name: 'Close', exact: true }).first().click();
     const downloaded = await downloadText(page, testInfo);
     expect(downloaded.filename).toMatch(/\.txt$/i);
 
@@ -42,5 +45,42 @@ test('B18 layout supports the core workflow at default, wide, and narrow sizes',
     expect(overflow, `Unexpected outer horizontal overflow at ${viewport.name}`).toBe(false);
     await page.evaluate(() => document.fonts.ready);
     await expect(page).toHaveScreenshot(`wasm-${viewport.name}.png`, { fullPage: true, animations: 'disabled' });
+    for (const [title, state] of [['Edit history', 'history'], ['Expression', 'expression'], ['Advanced export options', 'export-options'], ['Settings', 'settings']] as const) {
+      await page.getByRole('button', { name: title, exact: true }).click();
+      const dialog = page.getByRole('dialog', { name: title, exact: true });
+      await expect(dialog).toBeVisible();
+      if (title === 'Expression') {
+        await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
+        await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:06.250');
+      }
+      await expect(page).toHaveScreenshot(`wasm-${viewport.name}-${state}.png`, { animations: 'disabled' });
+      if (title === 'Expression') {
+        await dialog.getByLabel('Custom expression', { exact: true }).fill('return missing_function()');
+        await expect(dialog.getByRole('alert')).toContainText('Lua');
+        await expect(page).toHaveScreenshot(`wasm-${viewport.name}-expression-error.png`, { animations: 'disabled' });
+      }
+      await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
+      await expect(dialog).toHaveCount(0);
+    }
+  }
+});
+
+test('long expression differences keep the footer visible', async ({ readyPage: page }) => {
+  const text = Array.from({ length: 80 }, (_, i) => {
+    const number = String(i + 1).padStart(2, '0');
+    const time = `00:${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}.000`;
+    return `CHAPTER${number}=${time}\nCHAPTER${number}NAME=Chapter ${i + 1}`;
+  }).join('\n');
+  await loadBytes(page, 'many.txt', Buffer.from(text));
+  for (const viewport of viewports.filter(size => ['narrow-short', 'landscape'].includes(size.name))) {
+    await page.setViewportSize(viewport);
+    await page.getByRole('button', { name: 'Expression', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
+    await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
+    await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:39.500');
+    await dialog.locator('.modal-body').evaluate(el => { el.scrollTop = el.scrollHeight; });
+    await expect(dialog.getByRole('button', { name: 'Cancel', exact: true })).toBeInViewport();
+    await expect(page).toHaveScreenshot(`wasm-${viewport.name}-expression-long.png`, { animations: 'disabled' });
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   }
 });

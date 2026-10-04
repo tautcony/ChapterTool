@@ -450,5 +450,7 @@
   "Shortcuts.Action.NextClip": "Next clip",
   "Shortcuts.Action.Undo": "Undo edit",
   "Shortcuts.Action.Redo": "Redo edit",
-  "Shortcuts.Action.SaveFormat": "Select save format"
+  "Shortcuts.Action.SaveFormat": "Select save format",
+  "Modal.ExpressionTitle": "Expression",
+  "Modal.ExportOptionsTitle": "Advanced export options"
 }

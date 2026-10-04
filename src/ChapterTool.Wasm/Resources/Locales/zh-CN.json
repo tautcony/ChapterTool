@@ -450,5 +450,7 @@
   "Shortcuts.Action.NextClip": "下一个片段",
   "Shortcuts.Action.Undo": "撤销编辑",
   "Shortcuts.Action.Redo": "重做编辑",
-  "Shortcuts.Action.SaveFormat": "选择保存格式"
+  "Shortcuts.Action.SaveFormat": "选择保存格式",
+  "Modal.ExpressionTitle": "表达式",
+  "Modal.ExportOptionsTitle": "高级导出选项"
 }

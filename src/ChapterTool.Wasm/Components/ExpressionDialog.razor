@@ -1,0 +1,138 @@
+@implements IDisposable
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+
+<WasmDialog Title="@L.T("Modal.ExpressionTitle")" CssClass="expression-modal" OnClose="Cancel">
+    <div class="modal-body">
+        <label for="expression-draft">@L.T("Label.Expression")</label>
+        <div class="expression-controls">
+            <select value="@presetId" aria-label="@L.T("Label.ExpressionPreset")" @onchange="OnPresetChanged">
+                <option value="">@L.T("ExpressionPreset.Custom")</option>
+                @foreach (var preset in Workspace.ExpressionPresets)
+                {
+                    <option value="@preset.Id" title="@preset.Description">@preset.DisplayName</option>
+                }
+            </select>
+            <input id="expression-draft" class="expression-input" value="@expression" spellcheck="false"
+                   title="@L.T("Title.Expression")" @oninput="OnInput" />
+        </div>
+        @if (pending)
+        {
+            <p role="status" aria-live="polite" data-testid="expression-preview-pending">@L.T("Expression.Preview.Pending")</p>
+        }
+        else if (Workspace.ExpressionPreview is { } candidate)
+        {
+            <section class="expression-preview" aria-labelledby="expression-preview-title" data-testid="expression-preview">
+                <h3 id="expression-preview-title">@L.T("Expression.Preview.Title")</h3>
+                @if (!candidate.Errors.IsEmpty)
+                {
+                    <ul class="expression-preview-errors" role="alert">
+                        @foreach (var error in candidate.Errors) { <li>@error</li> }
+                    </ul>
+                }
+                else if (candidate.Differences.IsEmpty)
+                {
+                    <p>@L.T("Expression.Preview.NoChanges")</p>
+                }
+                else
+                {
+                    <ul class="expression-preview-differences">
+                        @foreach (var difference in candidate.Differences) { <li>@Workspace.FormatExpressionDifference(difference)</li> }
+                    </ul>
+                }
+            </section>
+        }
+    </div>
+    <footer class="modal-footer">
+        <span class="modal-spacer"></span>
+        <button type="button" class="secondary" @onclick="Cancel">@L.T("Common.Cancel")</button>
+        <button type="button" class="primary" disabled="@(!CanApply)" @onclick="ApplyAsync">@L.T("Common.Apply")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    private string expression = string.Empty;
+    private string presetId = string.Empty;
+    private string originalExpression = string.Empty;
+    private string originalPresetId = string.Empty;
+    private CancellationTokenSource? cancellation;
+    private bool pending;
+    private bool applied;
+    private bool disposed;
+    private long revision;
+    private bool CanApply => !pending && !Workspace.IsBusy && Workspace.ExpressionPreview is { IsValid: true } candidate && !candidate.Differences.IsEmpty;
+
+    protected override void OnInitialized()
+    {
+        originalExpression = expression = Workspace.Expression;
+        originalPresetId = presetId = Workspace.ExpressionPresetId;
+        Workspace.PrepareExpressionPreview(expression);
+    }
+
+    private Task OnInput(ChangeEventArgs args) => ScheduleAsync(args.Value?.ToString() ?? string.Empty);
+
+    private async Task OnPresetChanged(ChangeEventArgs args)
+    {
+        var selected = args.Value?.ToString() ?? string.Empty;
+        if (selected.Length == 0) Workspace.ClearExpressionPresetSelection();
+        else Workspace.ApplyExpressionPreset(selected);
+        presetId = Workspace.ExpressionPresetId;
+        await ScheduleAsync(selected.Length == 0 ? expression : Workspace.Expression);
+    }
+
+    private async Task ScheduleAsync(string value)
+    {
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+        var source = cancellation = new CancellationTokenSource();
+        var currentRevision = ++revision;
+        pending = true;
+        expression = value;
+        Workspace.Expression = value;
+        presetId = Workspace.ExpressionPresetId;
+        Workspace.CancelExpressionPreview();
+        try
+        {
+            await Task.Delay(250, source.Token);
+            if (disposed || currentRevision != revision) return;
+            Workspace.PrepareExpressionPreview(value);
+            pending = false;
+        }
+        catch (OperationCanceledException) when (source.IsCancellationRequested) { }
+    }
+
+    private async Task ApplyAsync()
+    {
+        if (!CanApply) return;
+        if (await Workspace.ApplyExpressionPreviewAsync())
+        {
+            applied = true;
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        RestoreDraft();
+        await OnClose.InvokeAsync();
+    }
+
+    private void RestoreDraft()
+    {
+        cancellation?.Cancel();
+        revision++;
+        Workspace.CancelExpressionPreview();
+        if (originalPresetId.Length > 0) Workspace.ApplyExpressionPreset(originalPresetId);
+        else Workspace.ClearExpressionPresetSelection();
+        Workspace.Expression = originalExpression;
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        if (!applied) RestoreDraft();
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+    }
+}

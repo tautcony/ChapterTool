@@ -1,0 +1,81 @@
+@using System.Text
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+
+<WasmDialog Title="@L.T("Modal.ExportOptionsTitle")" CssClass="export-options-modal" OnClose="OnClose">
+    <div class="modal-body">
+        <div class="settings-grid">
+            <label for="orderShift">@L.T("Label.OrderShift")</label>
+            <input id="orderShift" type="number" min="0" max="1000" step="1" @bind="orderShift" />
+            <label for="xmlLang">@L.T("Label.XmlLang")</label>
+            <select id="xmlLang" @bind="xmlLanguage" disabled="@(!Workspace.IsXmlLanguageEnabled)">
+                @foreach (var language in Workspace.XmlLanguages) { <option value="@language">@language</option> }
+            </select>
+            <label for="export-encoding">@L.T("Settings.OutputTextEncoding")</label>
+            <select id="export-encoding" @bind="encodingIndex">
+                @for (var i = 0; i < OutputTextEncodings.All.Count; i++)
+                {
+                    <option value="@i">@OutputTextEncodings.DisplayName(OutputTextEncodings.All[i])</option>
+                }
+            </select>
+            <label for="export-bom">@L.T("Settings.EmitBom")</label>
+            <label class="settings-check"><input id="export-bom" type="checkbox" @bind="emitBom" />@L.T("Settings.EmitBomLabel")</label>
+            <label for="templateFileInput">@L.T("Label.ChapterName")</label>
+            <div class="template-setting">
+                <InputFile id="templateFileInput" class="hidden-file" OnChange="OnTemplateSelected" accept=".txt,.text,text/*" />
+                <button type="button" class="secondary" @onclick="BrowseTemplate">@L.T("Action.BrowseTemplate")</button>
+                <span role="status">@(templateName ?? Workspace.ChapterNameTemplateStatus)</span>
+            </div>
+        </div>
+        @if (error is not null) { <p role="alert">@error</p> }
+    </div>
+    <footer class="modal-footer">
+        <span class="modal-spacer"></span>
+        <button type="button" class="secondary" @onclick="OnClose">@L.T("Common.Cancel")</button>
+        <button type="button" class="primary" disabled="@(error is not null || readingTemplate)" @onclick="ApplyAsync">@L.T("Common.Apply")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Inject] public IJSRuntime Js { get; set; } = default!;
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public EventCallback<ExportOptionsDraft> OnApply { get; set; }
+    private int orderShift;
+    private string xmlLanguage = string.Empty;
+    private int encodingIndex;
+    private bool emitBom;
+    private string? templateName;
+    private string? templateText;
+    private string? error;
+    private bool readingTemplate;
+
+    protected override void OnInitialized()
+    {
+        orderShift = Workspace.OrderShift;
+        xmlLanguage = Workspace.XmlLanguage;
+        encodingIndex = OutputTextEncodings.All.ToList().IndexOf(Workspace.TextEncoding);
+        emitBom = Workspace.EmitBom;
+    }
+
+    private Task BrowseTemplate() => Js.InvokeVoidAsync("chapterToolWasm.click", "templateFileInput").AsTask();
+
+    private async Task OnTemplateSelected(InputFileChangeEventArgs args)
+    {
+        readingTemplate = true;
+        error = null;
+        try
+        {
+            await using var stream = args.File.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            var text = await reader.ReadToEndAsync();
+            if (string.IsNullOrWhiteSpace(text)) throw new IOException();
+            templateName = args.File.Name;
+            templateText = text;
+        }
+        catch (IOException) { error = L.T("Status.TemplateFailed"); }
+        finally { readingTemplate = false; }
+    }
+
+    private Task ApplyAsync() => OnApply.InvokeAsync(new ExportOptionsDraft(
+        Math.Clamp(orderShift, 0, 1000), xmlLanguage, encodingIndex, emitBom, templateName, templateText));
+}

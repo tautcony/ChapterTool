@@ -37,18 +37,20 @@ test('B12 fixed frame rate and an expression update chapter projection', async (
   await loadFixture(page, 'minimal-ogm.txt');
   await page.locator('select.fps-box').selectOption('2');
   await expect(chapters(page).locator('tbody tr').nth(1).locator('.frame-text')).toHaveText('300');
+  await page.getByRole('button', { name: 'Expression', exact: true }).click();
   const expression = page.getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toContainText('00:00:06.250');
-  const secondTime = chapters(page).getByRole('textbox', { name: 'Time 2', exact: true });
+  const secondTime = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Time 2', exact: true });
   await expect(secondTime).toHaveValue('00:00:12.500');
-  await livePreview.getByRole('button', { name: 'Apply', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:06.250');
   const committed = await secondTime.inputValue();
+  await page.getByRole('button', { name: 'Expression', exact: true }).click();
   await expression.fill('t + (');
   await expect(page.getByTestId('expression-preview')).toContainText('unexpected symbol');
-  await expect(page.getByTestId('expression-preview').getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
   await expect(secondTime).toHaveValue(committed);
 });
 
@@ -88,10 +90,11 @@ test('B13 DOM file drop imports a file and oversized file input is rejected', as
   await expect(chapters(page).locator('tbody tr')).toHaveCount(1);
   await rm(directory, { recursive: true, force: true });
 
+  await page.getByRole('button', { name: 'Advanced export options', exact: true }).click();
   const templateChooser = page.waitForEvent('filechooser');
   await page.getByRole('button', { name: /Browse template/ }).click();
   await (await templateChooser).setFiles({ name: 'oversized-template.txt', mimeType: 'text/plain', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
-  await expect(page.locator('.status-text')).toContainText(/template|large|size/i);
+  await expect(page.getByRole('dialog').getByRole('alert')).toContainText(/template|large|size/i);
 });
 
 test('B14 separate tabs keep chapter sessions independent and refresh clears only the current session', async ({ page, context, diagnostics }) => {

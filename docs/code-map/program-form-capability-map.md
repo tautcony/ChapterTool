@@ -273,6 +273,10 @@ Start with these paths for browser behavior:
 - Application startup: `src/ChapterTool.Wasm/Program.cs`
 - Root components: `src/ChapterTool.Wasm/App.razor` and `src/ChapterTool.Wasm/Layout/MainLayout.razor`
 - Workspace page: `src/ChapterTool.Wasm/Pages/Home.razor`
+- Native dialog lifecycle: `src/ChapterTool.Wasm/Components/WasmDialog.razor` and `src/ChapterTool.Wasm/wwwroot/js/download.js`
+- History dialog: `src/ChapterTool.Wasm/Components/HistoryDialog.razor`
+- Expression draft and debounce: `src/ChapterTool.Wasm/Components/ExpressionDialog.razor`
+- Advanced export draft: `src/ChapterTool.Wasm/Components/ExportOptionsDialog.razor`
 - Workspace state: `src/ChapterTool.Wasm/Services/WasmWorkspace.cs`
 - Core import and export adapter: `src/ChapterTool.Wasm/Services/WasmChapterService.cs`
 - Shared session state: `src/ChapterTool.Core/Session/ChapterWorkspace.cs`

@@ -1,0 +1,26 @@
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+
+<WasmDialog Title="@L.T("History.Title")" CssClass="history-modal" OnClose="OnClose" LightDismiss="true">
+    <div class="modal-body history-body">
+        <p class="history-note">@L.T("History.SessionLifetime")</p>
+        <div class="history-list">
+            <Virtualize Items="@Workspace.HistoryEntries" Context="entry" ItemSize="44">
+                <button @key="entry.Id" type="button" class="history-entry @(entry.IsCurrent ? "current" : null)"
+                        @onclick="async () => await Workspace.NavigateHistoryAsync(entry.Id)"
+                        aria-current="@(entry.IsCurrent ? "step" : null)"
+                        title="@entry.Description">@entry.DisplayDescription</button>
+            </Virtualize>
+        </div>
+    </div>
+    <footer class="modal-footer">
+        <button type="button" class="secondary" disabled="@(!Workspace.CanUndo)" @onclick="async () => await Workspace.UndoAsync()">@L.T("History.Undo")</button>
+        <button type="button" class="secondary" disabled="@(!Workspace.CanRedo)" @onclick="async () => await Workspace.RedoAsync()">@L.T("History.Redo")</button>
+        <span class="modal-spacer"></span>
+        <button type="button" class="secondary" @onclick="OnClose">@L.T("Action.Close")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+}

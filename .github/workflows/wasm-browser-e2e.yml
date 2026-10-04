@@ -73,10 +73,10 @@ jobs:
         working-directory: tests/ChapterTool.Wasm.E2E
         run: npm run typecheck
 
-      - name: Install Chromium for pull request and push checks
+      - name: Install Chromium and WebKit for pull request and push checks
         if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
         working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm exec -- playwright install --with-deps chromium
+        run: npm exec -- playwright install --with-deps chromium webkit
 
       - name: Install all browser engines for acceptance runs
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
@@ -95,8 +95,14 @@ jobs:
           E2E_NO_RETRY: "1"
         run: npm run test:e2e
 
+      - name: Run WebKit modal and editing regression checks
+        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
+        working-directory: tests/ChapterTool.Wasm.E2E
+        env:
+          E2E_RUN_NAME: webkit
+        run: npm run test:e2e -- --project=webkit modal-layout.spec.ts unified-editing.spec.ts
+
       - name: Run fixed-Linux visual acceptance
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: |
           docker run --rm \
             --volume "${GITHUB_WORKSPACE}:/work" \

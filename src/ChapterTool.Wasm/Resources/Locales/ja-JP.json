@@ -450,5 +450,7 @@
   "Shortcuts.Action.NextClip": "次のクリップ",
   "Shortcuts.Action.Undo": "編集を元に戻す",
   "Shortcuts.Action.Redo": "編集をやり直す",
-  "Shortcuts.Action.SaveFormat": "保存形式を選択"
+  "Shortcuts.Action.SaveFormat": "保存形式を選択",
+  "Modal.ExpressionTitle": "式",
+  "Modal.ExportOptionsTitle": "詳細なエクスポート設定"
 }

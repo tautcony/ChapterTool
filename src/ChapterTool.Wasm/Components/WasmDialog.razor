@@ -1,0 +1,44 @@
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+@inject WasmLocalizer L
+
+<dialog id="@titleId" @ref="element" class="modal-dialog @CssClass" aria-labelledby="@(titleId + "-title")">
+    <header class="modal-header">
+        <h2 id="@(titleId + "-title")">@Title</h2>
+        <button type="button" class="modal-close" aria-label="@L.T("Action.Close")" @onclick="OnClose">×</button>
+    </header>
+    @ChildContent
+</dialog>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? CssClass { get; set; }
+    [Parameter] public bool LightDismiss { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private readonly string titleId = $"dialog-{Guid.NewGuid():N}";
+    private ElementReference element;
+    private DotNetObjectReference<WasmDialog>? reference;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        reference = DotNetObjectReference.Create(this);
+        await Js.InvokeVoidAsync("chapterToolWasm.openDialog", element, reference, LightDismiss);
+    }
+
+    [JSInvokable]
+    public Task CancelAsync() => OnClose.InvokeAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("chapterToolWasm.disposeDialog", titleId);
+        }
+        finally
+        {
+            reference?.Dispose();
+        }
+    }
+}

@@ -35,10 +35,13 @@ html, body {
   height: 100%;
 }
 
+#app { height: 100dvh; }
+
 .shell {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--window-bg);
   outline: none;
   position: relative;
@@ -62,10 +65,10 @@ html, body {
 .main {
   flex: 1;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(10rem, 1fr) auto;
   gap: 0.7rem;
   padding: 0.9rem;
-  min-height: 0;
+  min-height: min-content;
   min-width: 0;
 }
 
@@ -88,35 +91,20 @@ html, body {
   display: inline-flex;
 }
 
-.history-panel {
-  max-height: 15rem;
-  padding: 0.5rem;
-  border: 1px solid var(--border);
-  background: var(--control-bg);
-}
 
-.history-heading {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.4rem;
-}
 
-.history-heading span {
-  flex: 1;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
 
 .history-list {
-  max-height: 11rem;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
 }
 
 .history-entry {
   display: block;
   width: 100%;
-  min-height: 30px;
+  height: 44px;
+  min-height: 44px;
   overflow: hidden;
   padding: 0.2rem 0.4rem;
   border: 0;
@@ -259,7 +247,7 @@ button.secondary {
 
 /* —— Chapter grid zone —— */
 .grid-zone {
-  min-height: 13rem;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -276,7 +264,7 @@ button.secondary {
 
 .grid-wrap {
   flex: 1;
-  min-height: 13rem;
+  min-height: 0;
   border: 1px solid var(--border);
   background: #fff;
   overflow: auto;
@@ -380,8 +368,7 @@ tr.separator {
 /* —— Bottom options zone —— */
 .options-zone {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) auto;
   column-gap: 14.4px;
   row-gap: 8px;
   align-items: center;
@@ -406,56 +393,19 @@ tr.separator {
   grid-row: 1;
 }
 
-.option-order-shift {
-  grid-column: 3;
-  grid-row: 1;
-}
 
-.option-xml-lang {
-  grid-column: 1;
-  grid-row: 2;
-}
 
-.option-expression {
-  grid-column: 2 / -1;
-  grid-row: 2;
-  grid-template-columns: auto minmax(0, 1fr);
-}
 
 .name-mode-controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6.4px;
   min-width: 0;
   align-items: center;
 }
 
-button.template-button.icon-button {
-  width: 35.2px;
-  min-width: 35.2px;
-  height: 25.6px;
-  min-height: 25.6px;
-  padding: 3.2px 6.4px;
-  display: inline-grid;
-  place-content: center;
-}
 
-button.template-button.icon-button svg {
-  width: 12px;
-  height: 12px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
 
-.expression-label-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 6.4px;
-  min-width: 0;
-}
 
 .expression-controls {
   display: grid;
@@ -477,10 +427,6 @@ button.template-button.icon-button svg {
   font-size: 11.2px;
 }
 
-.order-shift-input {
-  font-family: var(--mono);
-  min-width: 73.6px;
-}
 
 .preview-modal,
 .related-modal {
@@ -567,7 +513,8 @@ input:disabled {
   grid-template-columns: minmax(0, 1fr) auto auto;
   gap: 0.75rem;
   align-items: center;
-  height: 27.2px;
+  flex-shrink: 0;
+  min-height: 27.2px;
   padding: 0 8px;
   background: var(--status-bg);
   border-top: 1px solid var(--border);
@@ -645,21 +592,16 @@ input:disabled {
 .context-menu button:hover:not(:disabled) { background: var(--hover); }
 .context-menu button.danger { color: var(--accent-frame-bad); }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: grid;
-  place-items: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.32);
-}
 
 .modal-dialog {
+  padding: 0;
+  color: var(--control-fg);
+  max-width: calc(100vw - 2rem);
   display: flex;
   flex-direction: column;
   width: min(46rem, calc(100vw - 2rem));
   max-height: min(38rem, calc(100vh - 2rem));
+  max-height: min(38rem, calc(100dvh - 2rem));
   border: 1px solid var(--border);
   background: var(--window-bg);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
@@ -672,13 +614,12 @@ input:disabled {
 .settings-modal {
   width: min(38rem, calc(100vw - 2rem));
   height: min(40rem, calc(100vh - 2rem));
+  height: min(40rem, calc(100dvh - 2rem));
 }
 
 .expression-preview {
-  grid-column: 2 / -1;
   min-width: 0;
-  max-height: 8rem;
-  overflow: auto;
+  margin-top: 1rem;
   padding-top: 0.4rem;
   border-top: 1px solid var(--border);
   font-size: 0.85rem;
@@ -703,12 +644,6 @@ input:disabled {
   color: var(--danger, #c0392b);
 }
 
-.expression-preview-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  padding-top: 0.4rem;
-}
 
 .modal-header,
 .modal-footer {
@@ -1027,7 +962,7 @@ input:disabled {
   }
 
   .grid-wrap {
-    min-height: 10rem;
+    min-height: 0;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -1039,10 +974,7 @@ input:disabled {
   }
 
   .option-format,
-  .option-name-mode,
-  .option-xml-lang,
-  .option-order-shift,
-  .option-expression {
+  .option-name-mode {
     grid-column: 1;
     grid-row: auto;
   }
@@ -1064,10 +996,7 @@ input:disabled {
   }
 
   .option-format,
-  .option-name-mode,
-  .option-xml-lang,
-  .option-order-shift,
-  .option-expression {
+  .option-name-mode {
     grid-column: 1;
     grid-row: auto;
   }
@@ -1076,14 +1005,42 @@ input:disabled {
     grid-template-columns: minmax(5rem, auto) minmax(0, 1fr);
   }
 
-  .option-expression {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
   .option-label {
     white-space: normal;
   }
-  .option-cell.option-expression .expression-input {
-    grid-column: 1 / -1;
-  }
+}
+
+/* Native top layer keeps tool content outside the editing grid. */
+.modal-dialog:not([open]) { display: none; }
+.modal-dialog::backdrop { background: rgba(0, 0, 0, 0.32); }
+.modal-dialog {
+  max-width: calc(100vw - 2 * max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)));
+  max-height: min(38rem, calc(100dvh - 2 * max(1rem, env(safe-area-inset-top), env(safe-area-inset-bottom))));
+}
+.modal-header, .modal-footer, .settings-tabs { flex-shrink: 0; }
+.modal-footer { flex-wrap: wrap; }
+.modal-header h2 { min-width: 0; overflow-wrap: anywhere; }
+.modal-close { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+.modal-body { min-width: 0; overscroll-behavior: contain; overflow-wrap: anywhere; }
+.modal-body input, .modal-body select { min-width: 0; font-size: 1rem; min-height: 36px; }
+.modal-body input[type="checkbox"] { min-height: auto; }
+.modal-body .settings-check { gap: 0.5rem; }
+.modal-footer button { min-height: 44px; }
+.history-body { display: flex; flex-direction: column; height: min(24rem, 50dvh); }
+.history-note { margin: 0 0 0.7rem; color: var(--muted); }
+.expression-modal { width: min(52rem, calc(100vw - 2rem)); }
+.expression-controls { margin-top: 0.5rem; }
+.option-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.template-setting { min-width: 0; display: grid; gap: 0.5rem; }
+button { text-align: center; }
+@media (max-width: 760px) {
+  .option-tools { grid-column: 1; }
+  .option-tools button { flex: 1; min-height: 44px; }
+  .modal-body input, .modal-body select, .modal-body button { min-height: 44px; }
+  .modal-body input[type="checkbox"] { min-height: auto; }
+  .settings-inline { flex-wrap: wrap; }
+}
+@media (max-height: 500px) {
+  .main { grid-template-rows: auto minmax(8rem, 1fr) auto; }
+  .modal-dialog { max-height: calc(100dvh - 2 * max(0.5rem, env(safe-area-inset-top), env(safe-area-inset-bottom))); }
 }

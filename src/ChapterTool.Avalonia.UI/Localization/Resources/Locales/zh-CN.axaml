@@ -452,4 +452,6 @@
   <x:String x:Key="Shortcuts.Action.Undo" xml:space="preserve">撤销编辑</x:String>
   <x:String x:Key="Shortcuts.Action.Redo" xml:space="preserve">重做编辑</x:String>
   <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">选择保存格式</x:String>
+  <x:String x:Key="Modal.ExpressionTitle">表达式</x:String>
+  <x:String x:Key="Modal.ExportOptionsTitle">高级导出选项</x:String>
 </ResourceDictionary>

@@ -3,6 +3,12 @@ import baseConfig from './playwright.config.js';
 
 export default defineConfig({
   ...baseConfig,
+  outputDir: '../../artifacts/wasm-e2e/results-visual',
+  reporter: [
+    ['list'],
+    ['html', { outputFolder: '../../artifacts/wasm-e2e/report-visual', open: 'never' }],
+    ['junit', { outputFile: '../../artifacts/wasm-e2e/junit-visual.xml' }],
+  ],
   testIgnore: [],
   testMatch: '**/layout.spec.ts',
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],

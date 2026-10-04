@@ -47,7 +47,7 @@
                 <button type="button" class="secondary history-action" disabled="@(!Workspace.CanRedo)"
                         @onclick="RedoHistoryAsync" title="@L.T("History.Redo")" aria-label="@L.T("History.Redo")">@L.T("History.Redo")</button>
                 <button type="button" class="secondary history-action" disabled="@(!Workspace.HasHistory)"
-                        @onclick="ToggleHistory" aria-expanded="@showHistory" aria-controls="sessionHistory">@L.T("History.Title")</button>
+                        @onclick="ToggleHistory" aria-haspopup="dialog">@L.T("History.Title")</button>
                 <InputFile id="loadFileInput"
                            class="hidden-file"
                            OnChange="OnFileSelected"
@@ -56,10 +56,6 @@
                            class="hidden-file"
                            OnChange="OnAppendMplsSelected"
                            accept=".mpls,application/octet-stream" />
-                <InputFile id="templateFileInput"
-                           class="hidden-file"
-                           OnChange="OnTemplateSelected"
-                           accept=".txt,.text,text/*" />
             </div>
 
             <div class="top-clip">
@@ -229,26 +225,7 @@
             </div>
         </div>
 
-        @if (showHistory)
-        {
-            <section id="sessionHistory" class="history-panel" aria-label="@L.T("History.Title")">
-                <div class="history-heading">
-                    <strong>@L.T("History.Title")</strong>
-                    <span>@L.T("History.SessionLifetime")</span>
-                    <button type="button" class="secondary" @onclick="ToggleHistory" aria-label="@L.T("Action.Close")">×</button>
-                </div>
-                <div class="history-list">
-                    <Virtualize Items="@Workspace.HistoryEntries" Context="entry" ItemSize="30">
-                        <button type="button" class="history-entry @(entry.IsCurrent ? "current" : null)"
-                                @onclick="async () => await Workspace.NavigateHistoryAsync(entry.Id)"
-                                aria-current="@(entry.IsCurrent ? "step" : null)"
-                                title="@entry.Description">@entry.DisplayDescription</button>
-                    </Virtualize>
-                </div>
-            </section>
-        }
-
-        <!-- Bottom: export / projection options (Avalonia AdvancedOptionsGrid parity) -->
+        <!-- Bottom: compact export controls and independent tool actions -->
         <div class="options-zone" data-automation-id="AdvancedOptions">
             <div class="option-cell option-format">
                 <label class="option-label" for="saveFormat">@L.T("Label.Format")</label>
@@ -275,111 +252,12 @@
                             <option value="@i">@L.ChapterNameModes[i]</option>
                         }
                     </select>
-                    <button type="button"
-                            class="secondary template-button icon-button"
-                            disabled="@Workspace.IsBusy"
-                            @onclick="TriggerTemplateLoad"
-                            title="@(string.IsNullOrWhiteSpace(Workspace.ChapterNameTemplateStatus)
-                                ? L.T("Action.BrowseTemplate")
-                                : $"{L.T("Action.BrowseTemplate")} — {Workspace.ChapterNameTemplateStatus}")"
-                            aria-label="@L.T("Action.BrowseTemplate")">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l1.8 1.8H19.5A1.5 1.5 0 0 1 21 8.3v9.2A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5v-11Z" />
-                            <path d="M8 13h8M8 16h5" />
-                        </svg>
-                    </button>
                 </div>
             </div>
 
-            <div class="option-cell option-order-shift">
-                <label class="option-label" for="orderShift">@L.T("Label.OrderShift")</label>
-                <input id="orderShift"
-                       class="order-shift-input"
-                       type="number"
-                       min="0"
-                       max="1000"
-                       step="1"
-                       @bind="orderShift"
-                       @bind:after="OnProjectionOptionsChanged"
-                       disabled="@Workspace.IsBusy" />
-            </div>
-
-            <div class="option-cell option-xml-lang">
-                <label class="option-label" for="xmlLang">@L.T("Label.XmlLang")</label>
-                <select id="xmlLang"
-                        @bind="xmlLanguage"
-                        @bind:after="OnExportOptionsChanged"
-                        disabled="@(Workspace.IsBusy || !Workspace.IsXmlLanguageEnabled)">
-                    @foreach (var language in Workspace.XmlLanguages)
-                    {
-                        <option value="@language">@language</option>
-                    }
-                </select>
-            </div>
-
-            <div class="option-cell option-expression">
-                <div class="expression-label-group">
-                    <span class="option-label" id="expressionLabel">@L.T("Label.Expression")</span>
-                </div>
-                <div class="expression-controls">
-                    <select class="expression-preset"
-                            value="@expressionPresetId"
-                            disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
-                            title="@L.T("Label.ExpressionPreset")"
-                            aria-label="@L.T("Label.ExpressionPreset")"
-                            @onchange="OnExpressionPresetChanged">
-                        <option value="">@L.T("ExpressionPreset.Custom")</option>
-                        @foreach (var preset in Workspace.ExpressionPresets)
-                        {
-                            <option value="@preset.Id" title="@preset.Description">@preset.DisplayName</option>
-                        }
-                    </select>
-                    <input class="expression-input"
-                           value="@expression"
-                           disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
-                           spellcheck="false"
-                           title="@L.T("Title.Expression")"
-                           aria-labelledby="expressionLabel"
-                           @oninput="OnExpressionInput" />
-                </div>
-                @if (expressionPreviewPending)
-                {
-                    <div class="expression-preview" role="status" aria-live="polite" data-testid="expression-preview-pending">
-                        @L.T("Expression.Preview.Pending")
-                    </div>
-                }
-                else if (Workspace.ExpressionPreview is { } expressionCandidate)
-                {
-                    <section class="expression-preview" aria-labelledby="expression-preview-title" data-testid="expression-preview">
-                        <h3 id="expression-preview-title">@L.T("Expression.Preview.Title")</h3>
-                        @if (!expressionCandidate.Errors.IsEmpty)
-                        {
-                            <ul class="expression-preview-errors" role="alert">
-                                @foreach (var error in expressionCandidate.Errors)
-                                {
-                                    <li>@error</li>
-                                }
-                            </ul>
-                        }
-                        else if (expressionCandidate.Differences.IsEmpty)
-                        {
-                            <p>@L.T("Expression.Preview.NoChanges")</p>
-                        }
-                        else
-                        {
-                            <ul class="expression-preview-differences">
-                                @foreach (var difference in expressionCandidate.Differences)
-                                {
-                                    <li>@Workspace.FormatExpressionDifference(difference)</li>
-                                }
-                            </ul>
-                        }
-                        <div class="expression-preview-actions">
-                            <button type="button" class="primary" disabled="@(Workspace.IsBusy || !expressionCandidate.IsValid || expressionCandidate.Differences.IsEmpty)" @onclick="ApplyExpressionPreviewAsync">@L.T("Common.Apply")</button>
-                            <button type="button" class="secondary" disabled="@Workspace.IsBusy" @onclick="CancelExpressionPreview">@L.T("Common.Cancel")</button>
-                        </div>
-                    </section>
-                }
+            <div class="option-tools">
+                <button type="button" class="secondary" aria-haspopup="dialog" disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)" @onclick="() => OpenDialog(DialogKind.Expression)">@L.T("Modal.ExpressionTitle")</button>
+                <button type="button" class="secondary" aria-haspopup="dialog" disabled="@Workspace.IsBusy" @onclick="() => OpenDialog(DialogKind.ExportOptions)">@L.T("Modal.ExportOptionsTitle")</button>
             </div>
         </div>
     </div>
@@ -440,14 +318,9 @@
     </div>
 }
 
-@if (showLogModal)
+@if (activeDialog == DialogKind.Logs)
 {
-    <div class="modal-backdrop" @onclick="CloseLogs">
-        <section class="modal-dialog log-modal" role="dialog" aria-modal="true" aria-labelledby="log-title" @onclick:stopPropagation>
-            <header class="modal-header">
-                <h2 id="log-title">@L.T("Modal.LogTitle")</h2>
-                <button type="button" class="modal-close" @onclick="CloseLogs" title="@L.T("Action.Close")">×</button>
-            </header>
+    <WasmDialog Title="@L.T("Modal.LogTitle")" CssClass="log-modal" OnClose="CloseLogs" LightDismiss="true">
             <div class="modal-body log-list">
                 @if (Workspace.Logs.Count == 0)
                 {
@@ -469,18 +342,12 @@
                 <button type="button" class="secondary" @onclick="Workspace.ClearLogs">@L.T("Common.Clear")</button>
                 <button type="button" class="secondary" @onclick="CloseLogs">@L.T("Action.Close")</button>
             </footer>
-        </section>
-    </div>
+    </WasmDialog>
 }
 
-@if (showPreviewModal)
+@if (activeDialog == DialogKind.Preview)
 {
-    <div class="modal-backdrop" @onclick="ClosePreview">
-        <section class="modal-dialog preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-title" @onclick:stopPropagation>
-            <header class="modal-header">
-                <h2 id="preview-title">@L.T("Modal.PreviewTitle")</h2>
-                <button type="button" class="modal-close" @onclick="ClosePreview" title="@L.T("Action.Close")">×</button>
-            </header>
+    <WasmDialog Title="@L.T("Modal.PreviewTitle")" CssClass="preview-modal" OnClose="ClosePreview" LightDismiss="true">
             <div class="modal-body">
                 <pre class="preview-text" data-testid="preview-content">@previewText</pre>
             </div>
@@ -490,18 +357,12 @@
                 <span class="modal-spacer"></span>
                 <button type="button" class="secondary" @onclick="ClosePreview">@L.T("Action.Close")</button>
             </footer>
-        </section>
-    </div>
+    </WasmDialog>
 }
 
-@if (showForwardModal)
+@if (activeDialog == DialogKind.Forward)
 {
-    <div class="modal-backdrop" @onclick="CloseForwardModal">
-        <section class="modal-dialog forward-modal" role="dialog" aria-modal="true" aria-labelledby="forward-title" @onclick:stopPropagation>
-            <header class="modal-header">
-                <h2 id="forward-title">@L.T("Modal.ForwardTitle")</h2>
-                <button type="button" class="modal-close" @onclick="CloseForwardModal" title="@L.T("Action.Close")">×</button>
-            </header>
+    <WasmDialog Title="@L.T("Modal.ForwardTitle")" CssClass="forward-modal" OnClose="CloseForwardModal">
             <div class="modal-body">
                 <div class="settings-grid">
                     <label for="forward-frames">@L.T("Modal.Frames")</label>
@@ -512,18 +373,12 @@
                 <button type="button" class="secondary" @onclick="CloseForwardModal">@L.T("Common.Cancel")</button>
                 <button type="button" class="secondary" @onclick="ApplyForwardShift">@L.T("Common.Apply")</button>
             </footer>
-        </section>
-    </div>
+    </WasmDialog>
 }
 
-@if (showRelatedModal)
+@if (activeDialog == DialogKind.Related)
 {
-    <div class="modal-backdrop" @onclick="CloseRelatedModal">
-        <section class="modal-dialog related-modal" role="dialog" aria-modal="true" aria-labelledby="related-title" @onclick:stopPropagation>
-            <header class="modal-header">
-                <h2 id="related-title">@L.T("Modal.RelatedTitle")</h2>
-                <button type="button" class="modal-close" @onclick="CloseRelatedModal" title="@L.T("Action.Close")">×</button>
-            </header>
+    <WasmDialog Title="@L.T("Modal.RelatedTitle")" CssClass="related-modal" OnClose="CloseRelatedModal" LightDismiss="true">
             <div class="modal-body">
                 @if (Workspace.RelatedMediaReferences.Count == 0)
                 {
@@ -560,18 +415,12 @@
             <footer class="modal-footer">
                 <button type="button" class="secondary" @onclick="CloseRelatedModal">@L.T("Action.Close")</button>
             </footer>
-        </section>
-    </div>
+    </WasmDialog>
 }
 
-@if (showSettingsModal)
+@if (activeDialog == DialogKind.Settings)
 {
-    <div class="modal-backdrop" @onclick="CancelSettings">
-        <section class="modal-dialog settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" @onclick:stopPropagation>
-            <header class="modal-header">
-                <h2 id="settings-title">@L.T("Modal.SettingsTitle")</h2>
-                <button type="button" class="modal-close" @onclick="CancelSettings" title="@L.T("Action.Close")">×</button>
-            </header>
+    <WasmDialog Title="@L.T("Modal.SettingsTitle")" CssClass="settings-modal" OnClose="CancelSettings">
             <nav class="settings-tabs" aria-label="@L.T("Modal.SettingsTitle")">
                 @for (var tab = 0; tab < L.SettingsTabs.Count; tab++)
                 {
@@ -723,8 +572,20 @@
                 <button type="button" class="secondary" data-testid="settings-cancel" @onclick="CancelSettings">@L.T("Common.Cancel")</button>
                 <button type="button" class="secondary" data-testid="settings-apply" @onclick="ApplySettingsAsync">@L.T("Common.Save")</button>
             </footer>
-        </section>
-    </div>
+    </WasmDialog>
+}
+
+@if (activeDialog == DialogKind.History)
+{
+    <HistoryDialog OnClose="CloseDialog" />
+}
+@if (activeDialog == DialogKind.Expression)
+{
+    <ExpressionDialog OnClose="CloseDialog" />
+}
+@if (activeDialog == DialogKind.ExportOptions)
+{
+    <ExportOptionsDialog OnClose="CloseDialog" OnApply="ApplyExportOptionsAsync" />
 }
 
 @code {
@@ -774,11 +635,6 @@
     private int orderShift;
     private int selectedFrameRateIndex;
     private string xmlLanguage = "eng";
-    private string expression = "t";
-    private string expressionPresetId = string.Empty;
-    private CancellationTokenSource? expressionPreviewCancellation;
-    private bool expressionPreviewPending;
-    private long expressionPreviewRevision;
     private bool roundFrames = true;
     private string uiLanguage = "en-US";
     private int outputTextEncodingIndex;
@@ -787,13 +643,9 @@
     private string themePresetId = "avalonia-default";
     private string uiFontFamily = "system-ui";
     private string monospaceFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-    private bool showLogModal;
-    private bool showSettingsModal;
-    private bool showPreviewModal;
     private bool appReady;
-    private bool showHistory;
-    private bool showForwardModal;
-    private bool showRelatedModal;
+    private enum DialogKind { None, History, Expression, ExportOptions, Settings, Logs, Preview, Forward, Related }
+    private DialogKind activeDialog;
     private bool isDragOver;
     private int settingsTab;
     private int draftSaveFormatIndex;
@@ -902,8 +754,6 @@
 
     public void Dispose()
     {
-        expressionPreviewCancellation?.Cancel();
-        expressionPreviewCancellation?.Dispose();
         Workspace.Changed -= OnWorkspaceChanged;
         L.CultureChanged -= OnCultureChanged;
         dropZoneRef?.Dispose();
@@ -912,6 +762,7 @@
     [JSInvokable]
     public void OnDragStateChanged(bool over)
     {
+        if (activeDialog != DialogKind.None) return;
         if (isDragOver == over)
         {
             return;
@@ -929,6 +780,7 @@
     [JSInvokable]
     public async Task OnBrowserFileDropped(string name, byte[]? bytes)
     {
+        if (activeDialog != DialogKind.None) return;
         isDragOver = false;
         CloseContextMenu();
         if (string.IsNullOrWhiteSpace(name) || bytes is null || bytes.Length == 0)
@@ -957,6 +809,7 @@
     [JSInvokable]
     public void OnBrowserFileDropRejected(string reason)
     {
+        if (activeDialog != DialogKind.None) return;
         isDragOver = false;
         var message = string.Equals(reason, "too-large", StringComparison.OrdinalIgnoreCase)
             ? L.T("Status.DropTooLarge")
@@ -980,8 +833,6 @@
         chapterNameModeIndex = Workspace.ChapterNameModeIndex;
         orderShift = Workspace.OrderShift;
         xmlLanguage = Workspace.XmlLanguage;
-        expression = Workspace.Expression;
-        expressionPresetId = Workspace.ExpressionPresetId;
         roundFrames = Workspace.RoundFrames;
         selectedFrameRateIndex = Workspace.SelectedFrameRateIndex;
         outputTextEncodingIndex = OutputTextEncodings.All.ToList().IndexOf(Workspace.TextEncoding);
@@ -1040,82 +891,6 @@
         }
     }
 
-    private async Task OnExpressionPresetChanged(ChangeEventArgs args)
-    {
-        var presetId = args.Value?.ToString() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(presetId))
-        {
-            Workspace.ClearExpressionPresetSelection();
-            expressionPresetId = string.Empty;
-            await ScheduleExpressionPreviewAsync(expression);
-            StateHasChanged();
-            return;
-        }
-
-        if (Workspace.ApplyExpressionPreset(presetId))
-        {
-            expression = Workspace.Expression;
-            expressionPresetId = Workspace.ExpressionPresetId;
-            await ScheduleExpressionPreviewAsync(expression);
-        }
-
-        StateHasChanged();
-    }
-
-    private Task OnExpressionInput(ChangeEventArgs args)
-    {
-        expression = args.Value?.ToString() ?? "t";
-        return ScheduleExpressionPreviewAsync(expression);
-    }
-
-    private async Task ScheduleExpressionPreviewAsync(string value)
-    {
-        expressionPreviewCancellation?.Cancel();
-        expressionPreviewCancellation?.Dispose();
-        var cancellation = new CancellationTokenSource();
-        expressionPreviewCancellation = cancellation;
-        var revision = ++expressionPreviewRevision;
-        expressionPreviewPending = true;
-        expression = value;
-        Workspace.Expression = value;
-        expressionPresetId = Workspace.ExpressionPresetId;
-        Workspace.CancelExpressionPreview();
-        StateHasChanged();
-
-        try
-        {
-            await Task.Delay(250, cancellation.Token);
-            if (revision != expressionPreviewRevision)
-            {
-                return;
-            }
-
-            Workspace.PrepareExpressionPreview(value);
-            expressionPreviewPending = false;
-            StateHasChanged();
-        }
-        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
-        {
-            // A newer input or component disposal owns the next preview refresh.
-        }
-    }
-
-    private async Task ApplyExpressionPreviewAsync()
-    {
-        expressionPreviewPending = false;
-        await Workspace.ApplyExpressionPreviewAsync();
-        StateHasChanged();
-    }
-
-    private void CancelExpressionPreview()
-    {
-        expressionPreviewCancellation?.Cancel();
-        expressionPreviewPending = false;
-        Workspace.CancelExpressionPreview();
-        Workspace.SetStatusMessage(L.T("Expression.Preview.Cancelled"));
-        StateHasChanged();
-    }
-
     private async Task TriggerLoad()
     {
         CloseContextMenu();
@@ -1126,11 +901,6 @@
     {
         CloseContextMenu();
         await Js.InvokeVoidAsync("chapterToolWasm.click", "appendMplsInput");
-    }
-
-    private async Task TriggerTemplateLoad()
-    {
-        await Js.InvokeVoidAsync("chapterToolWasm.click", "templateFileInput");
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs args)
@@ -1145,28 +915,6 @@
         var file = args.File;
 
         await AppendMplsFileAsync(file);
-    }
-
-    private async Task OnTemplateSelected(InputFileChangeEventArgs args)
-    {
-        var file = args.File;
-
-        try
-        {
-            await using var stream = file.OpenReadStream(maxAllowedSize: 2 * 1024 * 1024);
-            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-            var text = await reader.ReadToEndAsync();
-            if (Workspace.SetChapterNameTemplate(file.Name, text))
-            {
-                chapterNameModeIndex = 2;
-                PullOptionsFromWorkspace();
-            }
-        }
-        catch (Exception)
-        {
-            Workspace.SetStatusMessage(L.T("Status.TemplateFailed"));
-            Workspace.RecordAction(L.T("Status.TemplateFailed"));
-        }
     }
 
     private async Task LoadFileAsync(IBrowserFile file)
@@ -1280,7 +1028,7 @@
         {
             previewText = result.Content;
             previewFileName = result.FileName;
-            showPreviewModal = true;
+            OpenDialog(DialogKind.Preview);
         }
 
         return Task.CompletedTask;
@@ -1300,7 +1048,34 @@
         return confirmed;
     }
 
-    private void ToggleHistory() => showHistory = !showHistory;
+    private void ToggleHistory() => OpenDialog(DialogKind.History);
+
+    private void OpenDialog(DialogKind kind)
+    {
+        if (activeDialog != DialogKind.None) return;
+        CloseContextMenu();
+        isDragOver = false;
+        activeDialog = kind;
+    }
+
+    private void CloseDialog() => activeDialog = DialogKind.None;
+
+    private async Task ApplyExportOptionsAsync(ExportOptionsDraft draft)
+    {
+        orderShift = draft.OrderShift;
+        xmlLanguage = draft.XmlLanguage;
+        outputTextEncodingIndex = draft.EncodingIndex;
+        emitBom = draft.EmitBom;
+        PushExportOptions();
+        PushProjectionOptions();
+        if (draft.TemplateName is not null && draft.TemplateText is not null)
+            Workspace.SetChapterNameTemplate(draft.TemplateName, draft.TemplateText);
+        else
+            Workspace.ApplyOptionsAndRefresh();
+        PullOptionsFromWorkspace();
+        await PersistSettingsAsync();
+        CloseDialog();
+    }
 
     private async Task UndoHistoryAsync() => await Workspace.UndoAsync();
 
@@ -1313,7 +1088,7 @@
         Workspace.RefreshRows();
     }
 
-    private void ClosePreview() => showPreviewModal = false;
+    private void ClosePreview() => CloseDialog();
 
     private async Task CopyPreviewAsync()
     {
@@ -1358,9 +1133,9 @@
     private void OnNameChanged(int index, ChangeEventArgs args) =>
         Workspace.UpdateRow(index, null, args.Value?.ToString());
 
-    private void OpenLogs() => showLogModal = true;
+    private void OpenLogs() => OpenDialog(DialogKind.Logs);
 
-    private void CloseLogs() => showLogModal = false;
+    private void CloseLogs() => CloseDialog();
 
     private void OpenSettings()
     {
@@ -1381,10 +1156,10 @@
         draftUiFontFamily = uiFontFamily;
         draftMonospaceFontFamily = monospaceFontFamily;
         settingsTab = 0;
-        showSettingsModal = true;
+        OpenDialog(DialogKind.Settings);
     }
 
-    private void CancelSettings() => showSettingsModal = false;
+    private void CancelSettings() => CloseDialog();
 
     private void ResetSettings()
     {
@@ -1413,7 +1188,7 @@
         ApplySessionDraft();
         await ApplyAppearanceAsync();
         await PersistSettingsAsync();
-        showSettingsModal = false;
+        CloseDialog();
         StateHasChanged();
     }
 
@@ -1619,15 +1394,15 @@
     {
         CloseContextMenu();
         forwardFrames = 1;
-        showForwardModal = true;
+        OpenDialog(DialogKind.Forward);
     }
 
-    private void CloseForwardModal() => showForwardModal = false;
+    private void CloseForwardModal() => CloseDialog();
 
     private void ApplyForwardShift()
     {
         Workspace.ShiftFramesForward(forwardFrames);
-        showForwardModal = false;
+        CloseDialog();
     }
 
     private void OpenRelatedMedia()
@@ -1640,11 +1415,11 @@
             return;
         }
 
-        showRelatedModal = true;
+        OpenDialog(DialogKind.Related);
         Workspace.RecordAction(L.T("Status.RelatedMediaNote"));
     }
 
-    private void CloseRelatedModal() => showRelatedModal = false;
+    private void CloseRelatedModal() => CloseDialog();
 
     private async Task CopyTextAsync(string text, string action)
     {
@@ -1659,6 +1434,7 @@
 
     private async Task OnKeyDownAsync(KeyboardEventArgs args)
     {
+        if (activeDialog != DialogKind.None) return;
         bool typing;
         try
         {
@@ -1671,21 +1447,6 @@
 
         if (typing)
         {
-            return;
-        }
-
-        if (showSettingsModal || showLogModal || showPreviewModal || showForwardModal || showRelatedModal)
-        {
-            if (args.Key is "Escape")
-            {
-                showSettingsModal = false;
-                showLogModal = false;
-                showPreviewModal = false;
-                showForwardModal = false;
-                showRelatedModal = false;
-                CloseContextMenu();
-            }
-
             return;
         }
 
