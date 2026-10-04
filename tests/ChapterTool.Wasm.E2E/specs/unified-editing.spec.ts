@@ -52,7 +52,7 @@ test('B20 expression preview is read-only until applied, then export and undo us
   await page.getByRole('button', { name: 'Expression', exact: true }).click();
   await expression.fill('t / 2');
   await expect(livePreview).toContainText('00:00:06.250');
-  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:06.250');
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const committedPreview = await page.getByRole('dialog', { name: 'Preview', exact: true })
@@ -82,7 +82,7 @@ test('B21 expression diagnostics cannot be applied and cancel leaves committed r
 
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toContainText('Lua');
-  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await expect(secondTime).toHaveValue('00:00:12.500');
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(page.getByTestId('expression-preview')).toHaveCount(0);
@@ -96,7 +96,7 @@ test('B22 editing an applied chapter does not rerun its previous expression duri
   await page.getByLabel('Custom expression', { exact: true }).fill('t / 2');
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toBeVisible();
-  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:06.250');
 
   await commit(secondTime, '00:00:08.000');
@@ -116,6 +116,45 @@ test('B23 rapid expression edits display diagnostics only for the latest draft',
 
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toContainText('Lua');
-  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await expect(chapters(page).getByRole('textbox', { includeHidden: true, name: 'Time 2', exact: true })).toHaveValue('00:00:12.500');
+});
+
+test('B24 expression review shows before and after values and keeps multiline preset edits', async ({ readyPage: page }) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
+  const editor = dialog.getByLabel('Custom expression', { exact: true });
+  const preset = dialog.getByLabel('Preset', { exact: true });
+  await preset.selectOption('offset-seconds');
+  const presetText = await editor.inputValue();
+  expect(presetText).toContain('\n');
+  await editor.fill('local factor = 0.5\nreturn t * factor');
+  await dialog.getByRole('checkbox', { name: 'All chapters', exact: true }).check();
+  await expect(dialog.locator('.expression-chapter')).toHaveCount(2);
+  await expect(dialog.locator('.expression-chapter').nth(1)).toContainText('00:00:12.500');
+  await expect(dialog.locator('.expression-chapter').nth(1)).toContainText('00:00:06.250');
+  await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+});
+
+test('B25 input composition delays calculation until composition ends', async ({ readyPage: page }) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
+  const editor = dialog.getByLabel('Custom expression', { exact: true });
+  await expect(editor).toHaveAttribute('data-composition-ready', 'true');
+  await editor.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+  await expect(dialog.getByText(/Finish text composition/)).toBeVisible();
+  await editor.evaluate(element => {
+    (element as HTMLTextAreaElement).value = 't / 2';
+    element.dispatchEvent(new InputEvent('input', {
+      bubbles: true, data: 't / 2', inputType: 'insertCompositionText', isComposing: true,
+    }));
+  });
+  await expect(dialog.getByText(/Finish text composition/)).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
+  await editor.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+  await expect(dialog.locator('.expression-chapter').nth(1)).toContainText('00:00:06.250');
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
 });

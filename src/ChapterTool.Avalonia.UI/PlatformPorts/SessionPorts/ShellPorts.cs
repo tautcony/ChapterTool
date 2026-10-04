@@ -32,6 +32,12 @@ public interface IExpressionSessionPort
         string expressionPresetId,
         string expressionSourceName);
 
+    void SaveAppliedExpressionPreview(
+        string expression,
+        string expressionPresetId,
+        string expressionSourceName,
+        ExpressionPreviewProjection projection);
+
     ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics);
 
     string FormatDiagnosticForDisplay(ChapterDiagnostic diagnostic);
@@ -86,6 +92,8 @@ public interface IChapterEditPort
 /// <summary>Builds one-shot content previews and applies them through the active history session.</summary>
 public interface IChapterContentOperationPort
 {
+    bool CanPrepareExpression => true;
+
     ChapterContentPreview PrepareExpression(string expression);
 
     ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames);

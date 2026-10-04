@@ -34,6 +34,8 @@ public sealed class WasmWorkspace : IDisposable
     private readonly HashSet<int> selectedRowIndexes = [];
     private IReadOnlyList<DiagnosticView> diagnostics = [];
     private ChapterContentPreview? expressionPreview;
+    private ChapterTrackId? expressionPreviewTrackId;
+    private bool expressionPreviewStale;
 
     private ChapterImportResult? importResult;
     private int activeGroupIndex;
@@ -250,29 +252,37 @@ public sealed class WasmWorkspace : IDisposable
     /// <summary>Gets the read-only candidate prepared from the current committed document.</summary>
     public ChapterContentPreview? ExpressionPreview => expressionPreview;
 
-    public string FormatExpressionDifference(ChapterContentDifference difference)
+    public ExpressionPreviewProjection? ExpressionPreviewProjection => expressionPreview is { } preview
+        ? ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId)
+        : null;
+
+    public bool IsExpressionPreviewStale => expressionPreviewStale;
+
+    public string FormatExpressionTimeTicks(long ticks)
     {
-        ArgumentNullException.ThrowIfNull(difference);
-        var preview = expressionPreview;
-        var before = preview?.Before.Tracks.SelectMany(static track => track.Chapters)
-            .FirstOrDefault(candidate => candidate.Id == difference.ChapterId);
-        var after = preview?.Candidate.Tracks.SelectMany(static track => track.Chapters)
-            .FirstOrDefault(candidate => candidate.Id == difference.ChapterId);
-        var number = before?.DisplayNumber.ToString() ?? after?.DisplayNumber.ToString() ?? string.Empty;
-        if (difference.Field == "StartTicks"
-            && before is not null
-            && after is not null)
-        {
-            return $"Chapter {number}: {wasmChapterService.TimeFormatter.Format(TimeSpan.FromTicks(before.StartTicks))} → {wasmChapterService.TimeFormatter.Format(TimeSpan.FromTicks(after.StartTicks))}";
-        }
-
-        if (difference.Field == "FramesInfo" && before is not null && after is not null)
-        {
-            return $"Chapter {number} frames: {before.FramesInfo} → {after.FramesInfo}";
-        }
-
-        return $"{difference.Field}: {difference.Before} → {difference.After}";
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.Culture);
+        var totalHours = ticks / TimeSpan.TicksPerHour;
+        var minutes = (ticks / TimeSpan.TicksPerMinute) % 60;
+        var seconds = (ticks / TimeSpan.TicksPerSecond) % 60;
+        var fraction = Math.Abs(ticks % TimeSpan.TicksPerSecond).ToString("D7", System.Globalization.CultureInfo.InvariantCulture);
+        var precision = ticks % 10_000 == 0 ? 3 : ticks % 10 == 0 ? 6 : 7;
+        return string.Create(culture, $"{totalHours:00}:{minutes:00}:{seconds:00}{culture.NumberFormat.NumberDecimalSeparator}{fraction[..precision]}");
     }
+
+    public string FormatExpressionPropertyName(string property) => property switch
+    {
+        "Title" => localizer.T("Expression.Property.Title"),
+        "SourceName" => localizer.T("Expression.Property.Source"),
+        "ImportFormat" => localizer.T("Expression.Property.ImportFormat"),
+        "Duration" => localizer.T("Expression.Property.Duration"),
+        "FrameRate" => localizer.T("Expression.Property.FrameRate"),
+        "Name" => localizer.T("Expression.Property.Name"),
+        "DisplayNumber" => localizer.T("Expression.Property.Number"),
+        "Kind" => localizer.T("Expression.Property.Type"),
+        "Presence" => localizer.T("Expression.Property.Presence"),
+        "TrackOrder" => localizer.T("Expression.Property.TrackOrder"),
+        _ => localizer.T("Expression.Property.Additional")
+    };
 
     public string Expression
     {
@@ -1045,19 +1055,30 @@ public sealed class WasmWorkspace : IDisposable
     {
         Expression = expressionText ?? string.Empty;
         var content = session.ContentSession;
-        if (content is null || IsBusy)
+        if (string.IsNullOrWhiteSpace(Expression) || content is null || IsBusy)
         {
             expressionPreview = null;
+            expressionPreviewTrackId = null;
+            expressionPreviewStale = false;
             Notify();
             return null;
         }
 
         var trackIndex = session.CurrentTrackIndex;
+        if (trackIndex < 0 || trackIndex >= content.Snapshot.Document.Tracks.Length)
+        {
+            expressionPreview = null;
+            expressionPreviewTrackId = null;
+            Notify();
+            return null;
+        }
+        expressionPreviewTrackId = content.Snapshot.Document.Tracks[trackIndex].Id;
+        expressionPreviewStale = false;
         expressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
         {
             var expressionSource = AddDetectedFrameRate(document);
             var focused = FocusTrack(expressionSource, trackIndex);
-            var built = candidateBuilder.ApplyExpression(focused, string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim());
+            var built = candidateBuilder.ApplyExpression(focused, Expression.Trim());
             return built.IsValid
                 ? built with { Candidate = ReplaceFocusedTrack(expressionSource, trackIndex, built.Candidate) }
                 : built with { Candidate = document };
@@ -1071,29 +1092,48 @@ public sealed class WasmWorkspace : IDisposable
     {
         var preview = expressionPreview;
         var content = session.ContentSession;
-        if (preview is null || !preview.IsValid || content is null || IsBusy)
+        if (preview is null
+            || !preview.IsValid
+            || content is null
+            || IsBusy
+            || !ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId).HasChanges)
         {
             return false;
         }
 
-        if (content.Snapshot.BaseToken != preview.BaseToken)
+        var currentTrackIndex = session.CurrentTrackIndex;
+        var currentTrackId = currentTrackIndex >= 0 && currentTrackIndex < content.Snapshot.Document.Tracks.Length
+            ? content.Snapshot.Document.Tracks[currentTrackIndex].Id
+            : (ChapterTrackId?)null;
+        if (content.Snapshot.BaseToken != preview.BaseToken || currentTrackId != expressionPreviewTrackId)
         {
-            PrepareExpressionPreview(Expression);
+            expressionPreviewStale = true;
+            Notify();
             return false;
         }
 
+        var projection = ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId);
         var outcome = await ChapterContentOperationSession.ApplyAsync(content, preview, cancellationToken);
         if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
         {
             session.PublishContentDocument(outcome.Snapshot.Document);
             expressionPreview = null;
-            RefreshDisplay(updateStatus: true, statusKey: "Status.FramesUpdated", statusArgs: [FramesPerSecondDisplay, rows.Count]);
+            expressionPreviewTrackId = null;
+            expressionPreviewStale = false;
+            RefreshDisplay(updateStatus: false, statusKey: null);
+            StatusText = localizer.Format("Expression.Preview.Applied",
+                projection.AffectedChapterCount,
+                projection.TimeChangedChapterCount,
+                projection.FrameInformationChangedChapterCount);
+            AddLog("Info", StatusText);
+            Notify();
             return true;
         }
 
         if (outcome.Kind == TransactionOutcomeKind.Conflict)
         {
-            PrepareExpressionPreview(Expression);
+            expressionPreviewStale = true;
+            Notify();
             return false;
         }
 
@@ -1106,6 +1146,8 @@ public sealed class WasmWorkspace : IDisposable
     public void CancelExpressionPreview()
     {
         expressionPreview = null;
+        expressionPreviewTrackId = null;
+        expressionPreviewStale = false;
         Notify();
     }
 

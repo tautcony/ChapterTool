@@ -162,7 +162,6 @@ public sealed class ToolViewsHeadlessTests
         try
         {
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
-
             Assert.False(editor.IsMultilineExpanded);
             Assert.Equal(32, editor.ActualEditorHeightForTesting);
 
@@ -279,38 +278,124 @@ public sealed class ToolViewsHeadlessTests
         }
     }
 
-    [AvaloniaFact]
-    public async Task Expression_tool_renders_live_read_only_before_after_candidate()
+    [AvaloniaTheory]
+    [InlineData("en-US", "Time changes: 1/2")]
+    [InlineData("zh-CN", "时间修改 1/2 个章节")]
+    public async Task Expression_tool_renders_live_read_only_before_after_candidate(string language, string summary)
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
-            MainWindowHeadlessTestHost.Entry(ChapterTool.Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro")));
+            MainWindowHeadlessTestHost.Entry(ChapterTool.Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro", "End")),
+            localizer: new AppLocalizationManager(language),
+            appSettings: new ChapterTool.Contracts.Configuration.AppSettings(Language: language));
         await host.LoadAsync("movie.txt");
         var viewModel = new ExpressionToolViewModel(
             host.ViewModel.ToolSession.Expression,
             contentOperations: host.ViewModel.ToolSession.ContentOperations)
         {
-            Expression = "t + 1"
+            Expression = "t / 2"
         };
+        Assert.Equal(ExpressionPreviewReadiness.Waiting, viewModel.PreviewReadiness);
         viewModel.RefreshPreviewNow();
         var view = new ExpressionToolView { DataContext = viewModel };
         var window = await MainWindowHeadlessTestHost.RenderToolAsync(view, viewModel);
         try
         {
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            var suffix = language == "en-US" ? string.Empty : "-zh";
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(window, $"artifacts/expression-preview/avalonia-default{suffix}.png");
 
             var preview = Assert.Single(MainWindowHeadlessTestHost.Descendants<TextBlock>(window),
-                control => AutomationProperties.GetAutomationId(control) == "ExpressionPreview");
-            Assert.Contains("#1 Intro", preview.Text, StringComparison.Ordinal);
-            Assert.Contains("StartTicks", preview.Text, StringComparison.Ordinal);
-            Assert.Empty(MainWindowHeadlessTestHost.Descendants<CheckBox>(window));
-            Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+                control => AutomationProperties.GetAutomationId(control) == "ExpressionPreviewStatus");
+            Assert.Equal(host.Localizer.GetString("Expression.State.Ready"), preview.Text);
+            var filters = MainWindowHeadlessTestHost.Descendants<CheckBox>(window).ToArray();
+            Assert.Equal(2, filters.Length);
+            filters.Single(check => check.Content?.ToString() == host.Localizer.GetString("Expression.Preview.AllChapters")).IsChecked = true;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            Assert.True(viewModel.ShowAllChapters);
+            var renderedRows = MainWindowHeadlessTestHost.Descendants<TextBlock>(window)
+                .Select(static control => control.Text)
+                .ToArray();
+            Assert.Contains(summary, renderedRows);
+            Assert.Contains(renderedRows, static text => text?.Contains("Intro", StringComparison.Ordinal) == true);
+            Assert.Contains(renderedRows, static text => text?.Contains("00:00:00.000", StringComparison.Ordinal) == true);
+            Assert.Contains(renderedRows, static text => text?.Contains("00:00:05.000", StringComparison.Ordinal) == true);
+            filters.Single(check => check.Content?.ToString() == host.Localizer.GetString("Expression.Preview.FrameUnits")).IsChecked = true;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            Assert.Equal(2, viewModel.PreviewRows.Count);
+            Assert.Contains(MainWindowHeadlessTestHost.Descendants<TextBlock>(window),
+                control => control.Text?.Contains("120 " + host.Localizer.GetString("Expression.Unit.FramesShort"), StringComparison.Ordinal) == true);
+            Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
+
+            viewModel.ShowFrames = false;
+            viewModel.ShowAllChapters = false;
+
+            window.Width = 1280;
+            window.Height = 800;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(window, $"artifacts/expression-preview/avalonia-wide{suffix}.png");
+
+            window.Width = 520;
+            window.Height = 680;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(window, $"artifacts/expression-preview/avalonia-narrow{suffix}.png");
+
+            var before = Assert.Single(MainWindowHeadlessTestHost.Descendants<TextBlock>(window), control => control.Text == "00:00:10.000");
+            var after = Assert.Single(MainWindowHeadlessTestHost.Descendants<TextBlock>(window), control => control.Text == "00:00:05.000");
+            var delta = Assert.Single(MainWindowHeadlessTestHost.Descendants<TextBlock>(window), control => control.Text == "−00:00:05.000");
+            var beforePosition = before.TranslatePoint(default, window)!.Value;
+            var afterPosition = after.TranslatePoint(default, window)!.Value;
+            var deltaPosition = delta.TranslatePoint(default, window)!.Value;
+            Assert.True(afterPosition.X > beforePosition.X);
+            Assert.Equal(beforePosition.Y, afterPosition.Y);
+            Assert.True(deltaPosition.Y > afterPosition.Y);
 
             var apply = Assert.Single(MainWindowHeadlessTestHost.Descendants<Button>(window),
-                button => button.Content?.ToString() == "Apply");
+                button => button.Content?.ToString() == host.Localizer.GetString("Expression.Action.Apply"));
             Assert.True(apply.IsEnabled);
             await viewModel.ConfirmApplyCommand.ExecuteAsync();
-            Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+            Assert.Equal("00:00:05.000", host.ViewModel.Rows[1].TimeText);
+            await host.ViewModel.UndoCommand.ExecuteAsync();
+            Assert.Equal("00:00:10.000", host.ViewModel.Rows[1].TimeText);
+        }
+        finally
+        {
+            window.Close();
+            viewModel.Dispose();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Expression_tool_escape_discards_candidate_and_closes_the_review_surface()
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterTool.Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro")));
+        await host.LoadAsync("movie.txt");
+        var closeCount = 0;
+        var viewModel = new ExpressionToolViewModel(
+            host.ViewModel.ToolSession.Expression,
+            contentOperations: host.ViewModel.ToolSession.ContentOperations,
+            closeTool: () => closeCount++)
+        {
+            Expression = "t / 2"
+        };
+        viewModel.RefreshPreviewNow();
+        var view = new ExpressionToolView { DataContext = viewModel };
+        var window = await MainWindowHeadlessTestHost.RenderToolAsync(view, viewModel);
+        try
+        {
+            view.RaiseEvent(new KeyEventArgs
+            {
+                RoutedEvent = InputElement.KeyDownEvent,
+                Key = Key.Escape,
+                Source = view
+            });
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+
+            Assert.Equal(1, closeCount);
+            Assert.False(viewModel.HasPreviewResult);
+            Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
         }
         finally
         {

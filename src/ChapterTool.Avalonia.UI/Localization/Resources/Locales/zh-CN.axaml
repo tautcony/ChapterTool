@@ -416,11 +416,73 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">按当前选项刷新表格</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">按当前选项导出并下载</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">应用表达式</x:String>
+  <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">时间修改 {times}/{count} 个章节</x:String>
+  <x:String x:Key="Expression.Review.OtherSummary" xml:space="preserve">影响 {affected} 章 · 帧更新 {frames} 项 · 属性 {properties} 项</x:String>
+  <x:String x:Key="Expression.Review.Details" xml:space="preserve">其他修改</x:String>
   <x:String x:Key="Expression.Preview.Title" xml:space="preserve">表达式预览</x:String>
   <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">章节值不会发生变化。</x:String>
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">已取消表达式预览。</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">正在更新表达式预览…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">预览其他选项</x:String>
+  <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">当前轨道：{track} · {count} 个章节</x:String>
+  <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">已排除 {count} 个分隔行</x:String>
+  <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">受影响章节：{affected} · 时间变化：{times} · 帧信息更新：{frames} · 属性变化：{properties}</x:String>
+  <x:String x:Key="Expression.Preview.DeltaFrames" xml:space="preserve">{value} 帧</x:String>
+  <x:String x:Key="Expression.Preview.Applied" xml:space="preserve">已应用表达式：{affected} 个受影响章节，{times} 处时间变化，{frames} 处帧信息更新。撤销一次即可恢复。</x:String>
+  <x:String x:Key="Expression.Preview.TimesUnchanged" xml:space="preserve">章节时间未变化。</x:String>
+  <x:String x:Key="Expression.Preview.Properties" xml:space="preserve">文档和轨道属性</x:String>
+  <x:String x:Key="Expression.Preview.Filter" xml:space="preserve">显示</x:String>
+  <x:String x:Key="Expression.Preview.ChangedOnly" xml:space="preserve">仅显示变化</x:String>
+  <x:String x:Key="Expression.Preview.AllChapters" xml:space="preserve">所有章节</x:String>
+  <x:String x:Key="Expression.Preview.Units" xml:space="preserve">单位</x:String>
+  <x:String x:Key="Expression.Preview.TimeUnits" xml:space="preserve">时间</x:String>
+  <x:String x:Key="Expression.Preview.FrameUnits" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="Expression.Preview.Chapter" xml:space="preserve">章节</x:String>
+  <x:String x:Key="Expression.Preview.Before" xml:space="preserve">修改前</x:String>
+  <x:String x:Key="Expression.Preview.After" xml:space="preserve">修改后</x:String>
+  <x:String x:Key="Expression.Preview.Delta" xml:space="preserve">变化量</x:String>
+  <x:String x:Key="Expression.Preview.FrameDetails" xml:space="preserve">帧信息详情</x:String>
+  <x:String x:Key="Expression.Preview.BeforeFrames" xml:space="preserve">修改前帧数</x:String>
+  <x:String x:Key="Expression.Preview.AfterFrames" xml:space="preserve">修改后帧数</x:String>
+  <x:String x:Key="Expression.Preview.Accuracy" xml:space="preserve">帧精度</x:String>
+  <x:String x:Key="Expression.State.Unavailable" xml:space="preserve">当前没有可预览的章节。</x:String>
+  <x:String x:Key="Expression.State.Waiting" xml:space="preserve">等待更新预览…</x:String>
+  <x:String x:Key="Expression.State.Computing" xml:space="preserve">正在计算预览…</x:String>
+  <x:String x:Key="Expression.State.Ready" xml:space="preserve">预览已就绪。</x:String>
+  <x:String x:Key="Expression.State.Empty" xml:space="preserve">请输入表达式或选择预设。</x:String>
+  <x:String x:Key="Expression.State.Composing" xml:space="preserve">完成文字输入后再更新预览。</x:String>
+  <x:String x:Key="Expression.State.Stale" xml:space="preserve">章节已变化。请先更新预览再应用。</x:String>
+  <x:String x:Key="Expression.State.Invalid" xml:space="preserve">此表达式无法应用。</x:String>
+  <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">结果没有可应用的变化。</x:String>
+  <x:String x:Key="Expression.State.Applying" xml:space="preserve">正在应用已检查的更改…</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">更新预览</x:String>
+  <x:String x:Key="Expression.Action.Apply" xml:space="preserve">应用更改</x:String>
+  <x:String x:Key="Expression.Value.Missing" xml:space="preserve">不可用</x:String>
+  <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">未计算</x:String>
+  <x:String x:Key="Expression.Value.NotSet" xml:space="preserve">未设置</x:String>
+  <x:String x:Key="Expression.Value.IncompatibleFrames" xml:space="preserve">帧率不同</x:String>
+  <x:String x:Key="Expression.Unit.FramesShort" xml:space="preserve">帧</x:String>
+  <x:String x:Key="Expression.Unit.FramesPerSecond" xml:space="preserve">帧/秒</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Accurate" xml:space="preserve">帧精确</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Inexact" xml:space="preserve">位于帧之间</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.NotCalculated" xml:space="preserve">未计算</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Policy" xml:space="preserve">与最近帧的距离小于 0.01 帧时，标记为帧精确。</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Document" xml:space="preserve">文档</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Track" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Segment" xml:space="preserve">片段</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Chapter" xml:space="preserve">章节</x:String>
+  <x:String x:Key="Expression.Property.Title" xml:space="preserve">标题</x:String>
+  <x:String x:Key="Expression.Property.Source" xml:space="preserve">来源</x:String>
+  <x:String x:Key="Expression.Property.ImportFormat" xml:space="preserve">导入格式</x:String>
+  <x:String x:Key="Expression.Property.Duration" xml:space="preserve">时长</x:String>
+  <x:String x:Key="Expression.Property.FrameRate" xml:space="preserve">帧率</x:String>
+  <x:String x:Key="Expression.Property.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="Expression.Property.Number" xml:space="preserve">章节编号</x:String>
+  <x:String x:Key="Expression.Property.Type" xml:space="preserve">章节类型</x:String>
+  <x:String x:Key="Expression.Property.Presence" xml:space="preserve">章节条目</x:String>
+  <x:String x:Key="Expression.Property.TrackOrder" xml:space="preserve">轨道顺序</x:String>
+  <x:String x:Key="Expression.Property.Additional" xml:space="preserve">其他字段</x:String>
+  <x:String x:Key="Expression.Property.ValueChanged" xml:space="preserve">已更新</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">加载 Lua...</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">表达式</x:String>

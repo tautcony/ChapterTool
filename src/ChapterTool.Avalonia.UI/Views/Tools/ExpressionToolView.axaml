@@ -5,73 +5,150 @@
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.ExpressionToolView"
              x:DataType="tools:ExpressionToolViewModel"
-             x:CompileBindings="True">
-  <Grid RowDefinitions="*,Auto">
-    <Grid Grid.Row="0" Margin="16" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="10">
-    <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="8">
-      <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource Tool.Expression.Preset}" />
-      <ComboBox Grid.Column="1"
-                MinWidth="220"
-                ItemsSource="{Binding Presets}"
-                SelectedIndex="{Binding SelectedPresetIndex}">
-        <ComboBox.ItemTemplate>
-          <DataTemplate x:DataType="tools:ExpressionPresetViewModel">
-            <StackPanel>
-              <TextBlock Text="{Binding DisplayName}" />
-              <TextBlock Text="{Binding Description}" FontSize="12" Opacity="0.72" TextWrapping="Wrap" />
-            </StackPanel>
-          </DataTemplate>
-        </ComboBox.ItemTemplate>
-      </ComboBox>
-    </Grid>
-
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-      <controls:ExpressionEditor Grid.Column="0"
-                                 IsMultilineExpandable="True"
-                                 VerticalAlignment="Top"
-                                 Text="{Binding Expression}"
-                                 Localizer="{Binding Localizer}"
-                                 AuthoringService="{Binding ExpressionAuthoringService}" />
-      <Button Grid.Column="1"
-              Classes="icon_button"
-              Width="32"
-              Height="32"
-              VerticalAlignment="Top"
-              ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"
-              AutomationProperties.Name="{DynamicResource Tool.Expression.LoadLuaScript}"
-              IsVisible="{Binding CanBrowseScript}"
-              Command="{Binding BrowseScriptCommand}">
-        <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
-      </Button>
-    </Grid>
-
-    <Grid Grid.Row="2" ColumnDefinitions="Auto,*" ColumnSpacing="8">
-      <TextBlock Grid.Column="0" VerticalAlignment="Center" Text="{DynamicResource Expression.Preview.Title}" />
-      <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding ExpressionSourceName}" TextTrimming="CharacterEllipsis" />
-    </Grid>
-    <Border Grid.Row="3" Padding="8" BorderThickness="1" BorderBrush="{DynamicResource Brush.Border1}" CornerRadius="2">
-      <ScrollViewer MaxHeight="180" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-        <TextBlock Text="{Binding PreviewSummary}" TextWrapping="Wrap" AutomationProperties.AutomationId="ExpressionPreview" />
-      </ScrollViewer>
+             x:CompileBindings="True"
+             Focusable="True"
+             KeyDown="OnKeyDown">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource Brush.FG2}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Expander /template/ ToggleButton">
+      <Setter Property="MinHeight" Value="28" />
+      <Setter Property="Padding" Value="6,3" />
+    </Style>
+  </UserControl.Styles>
+  <Grid RowDefinitions="Auto,*,Auto">
+    <Border Grid.Row="0" Padding="10,8" Background="{DynamicResource Brush.Contents}"
+            BorderBrush="{DynamicResource Brush.Border1}" BorderThickness="0,0,0,1">
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="*,Auto,180" ColumnSpacing="8">
+          <TextBlock Classes="hint" VerticalAlignment="Center" Text="{Binding ScopeSummary}" />
+          <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{DynamicResource Tool.Expression.Preset}" />
+          <ComboBox Grid.Column="2" MinWidth="180" ItemsSource="{Binding Presets}"
+                    SelectedIndex="{Binding SelectedPresetIndex}" IsEnabled="{Binding CanEditExpression}"
+                    PlaceholderText="{DynamicResource ExpressionPreset.Custom}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="tools:ExpressionPresetViewModel">
+                <TextBlock Text="{Binding DisplayName}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </Grid>
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+          <controls:ExpressionEditor IsMultilineExpandable="True" VerticalAlignment="Top" MaxHeight="160"
+                                     IsEnabled="{Binding CanEditExpression}" Text="{Binding Expression}"
+                                     Localizer="{Binding Localizer}" AuthoringService="{Binding ExpressionAuthoringService}"
+                                     AutomationProperties.Name="{DynamicResource Label.Expression}" />
+          <Button Grid.Column="1" Classes="icon_button" Width="32" Height="32" VerticalAlignment="Top"
+                  ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"
+                  AutomationProperties.Name="{DynamicResource Tool.Expression.LoadLuaScript}"
+                  IsVisible="{Binding CanBrowseScript}" IsEnabled="{Binding CanEditExpression}"
+                  Command="{Binding BrowseScriptCommand}">
+            <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
+          </Button>
+        </Grid>
+      </StackPanel>
     </Border>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="10,8" Spacing="6">
+        <TextBlock Text="{Binding ExcludedSeparatorSummary}" TextWrapping="Wrap"
+                   IsVisible="{Binding HasExcludedSeparators}" />
 
-    </Grid>
-    <Border Grid.Row="1" Classes="toolFooter">
+        <TextBlock Text="{Binding PreviewStateText}" TextWrapping="Wrap" IsVisible="{Binding ShowPreviewState}"
+                   AutomationProperties.LiveSetting="Polite" AutomationProperties.AutomationId="ExpressionPreviewStatus" />
+        <Button Classes="flat" Content="{DynamicResource Expression.Action.Refresh}"
+                Command="{Binding UpdatePreviewCommand}" IsVisible="{Binding CanRefreshPreview}" />
+
+        <StackPanel Spacing="4" IsVisible="{Binding HasPreviewResult}">
+          <TextBlock Text="{Binding TimeChangeSummary}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"
+                     AutomationProperties.LiveSetting="Polite" />
+          <TextBlock Classes="hint" Text="{Binding OtherChangeSummary}" />
+
+          <StackPanel Orientation="Horizontal" Spacing="14">
+            <CheckBox Content="{DynamicResource Expression.Preview.AllChapters}"
+                      IsChecked="{Binding ShowAllChapters}" />
+            <CheckBox Content="{DynamicResource Expression.Preview.FrameUnits}"
+                      IsChecked="{Binding ShowFrames}" />
+          </StackPanel>
+
+          <ItemsControl ItemsSource="{Binding PreviewRows}" AutomationProperties.AutomationId="ExpressionPreviewRows">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="tools:ExpressionChapterRowViewModel">
+                <Border Padding="6" Margin="0,0,0,4" CornerRadius="4" Background="{DynamicResource Brush.Contents}" BorderThickness="1" BorderBrush="{DynamicResource Brush.Border1}">
+                  <Grid Classes="comparisonRow" ColumnSpacing="8" RowSpacing="3" AttachedToVisualTree="OnComparisonAttached">
+                    <TextBlock Classes="chapterName" Text="{Binding NumberAndName}"
+                               TextWrapping="Wrap" FontWeight="SemiBold" />
+                    <StackPanel Classes="beforeValue" Spacing="2">
+                      <TextBlock Text="{DynamicResource Expression.Preview.Before}" FontSize="12" Opacity="0.72" />
+                      <TextBlock Text="{Binding BeforeValue}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Classes="afterValue" Spacing="2">
+                      <TextBlock Text="{DynamicResource Expression.Preview.After}" FontSize="12" Opacity="0.72" />
+                      <TextBlock Text="{Binding CandidateValue}" TextWrapping="Wrap" FontWeight="SemiBold" />
+                    </StackPanel>
+                    <StackPanel Classes="deltaValue" Spacing="2">
+                      <TextBlock Text="{DynamicResource Expression.Preview.Delta}" FontSize="12" Opacity="0.72" />
+                      <TextBlock Text="{Binding DeltaValue}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <Expander Classes="frameDetails" HorizontalAlignment="Stretch" Header="{DynamicResource Expression.Preview.FrameDetails}">
+                      <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="2">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource Expression.Preview.BeforeFrames}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding BeforeFrameDetails}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{DynamicResource Expression.Preview.AfterFrames}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding CandidateFrameDetails}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{DynamicResource Expression.Preview.Accuracy}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" TextWrapping="Wrap">
+                          <Run Text="{Binding BeforeAccuracy}" />
+                          <Run Text=" → " />
+                          <Run Text="{Binding CandidateAccuracy}" />
+                        </TextBlock>
+                        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{DynamicResource Expression.FrameAccuracy.Policy}"
+                                   FontSize="12" Opacity="0.72" TextWrapping="Wrap" />
+                      </Grid>
+                    </Expander>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Expander Header="{DynamicResource Expression.Review.Details}" IsVisible="{Binding HasPropertyChanges}" HorizontalAlignment="Stretch">
+            <StackPanel Spacing="4">
+              <ItemsControl ItemsSource="{Binding PropertyRows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="tools:ExpressionPropertyRowViewModel">
+                    <Border Padding="6" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Brush.Border1}">
+                      <TextBlock TextWrapping="Wrap">
+                        <Run Text="{Binding OwnerLabel}" />
+                        <Run Text=" · " />
+                        <Run Text="{Binding OwnerName}" />
+                        <Run Text=" · " />
+                        <Run Text="{Binding PropertyLabel}" />
+                        <Run Text=": " />
+                        <Run Text="{Binding BeforeValue}" />
+                        <Run Text=" → " />
+                        <Run Text="{Binding CandidateValue}" />
+                      </TextBlock>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Expander>
+
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+    <Border Grid.Row="2" Classes="toolFooter">
       <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
-        <TextBlock Grid.Column="0" Classes="toolStatus" VerticalAlignment="Center" Text="{Binding StatusText}" TextTrimming="CharacterEllipsis" />
-        <Button Grid.Column="1"
-                Classes="flat primary"
-                Content="{DynamicResource Common.Apply}"
-                MinWidth="88"
-                Command="{Binding ConfirmApplyCommand}"
-                IsEnabled="{Binding CanApplyPreview}"
-                IsVisible="{Binding IsPreviewPending}" />
-        <Button Grid.Column="2"
-                Classes="flat"
-                Content="{DynamicResource Common.Cancel}"
-                MinWidth="88"
-                Command="{Binding CancelPreviewCommand}"
-                IsVisible="{Binding IsPreviewPending}" />
+        <TextBlock Grid.Column="0" Classes="toolStatus" VerticalAlignment="Center"
+                   Text="{Binding FooterStatusText}" TextTrimming="CharacterEllipsis" />
+        <Button Grid.Column="1" Classes="flat" Content="{DynamicResource Common.Cancel}"
+                MinWidth="88" IsEnabled="{Binding CanEditExpression}"
+                Command="{Binding CancelPreviewCommand}" />
+        <Button Grid.Column="2" Classes="flat primary" Content="{DynamicResource Expression.Action.Apply}"
+                MinWidth="104" Command="{Binding ConfirmApplyCommand}" IsEnabled="{Binding CanApplyPreview}" />
       </Grid>
     </Border>
   </Grid>

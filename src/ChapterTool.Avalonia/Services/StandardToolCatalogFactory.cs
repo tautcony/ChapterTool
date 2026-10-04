@@ -89,8 +89,10 @@ public static class StandardToolCatalogFactory
                         context.FilePicker,
                         context.ExpressionAuthoringService,
                         context.Session.ReportUnexpectedUiException,
-                        contentOperations: context.Session.ContentOperations)
-                }),
+                        contentOperations: context.Session.ContentOperations,
+                        closeTool: () => context.HostWindow?.Close())
+                },
+                IsModal: true),
             new ToolDescriptor(
                 ToolIds.TemplateNames,
                 "Tool.TemplateNames.Title",

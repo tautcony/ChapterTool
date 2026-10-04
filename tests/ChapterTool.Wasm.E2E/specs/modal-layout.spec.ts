@@ -54,8 +54,8 @@ test('M02 dialogs preserve main geometry and reachable actions across viewport b
       await inViewport(dialog, size.width, size.height);
       if (title === 'Expression') {
         await dialog.getByLabel('Custom expression', { exact: true }).fill('return missing_function()');
-        await expect(dialog.getByRole('alert')).toContainText('Lua');
-        await expect(dialog.getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+        await expect(dialog.getByTestId('expression-preview')).toContainText('Lua');
+        await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
         const input = await dialog.getByLabel('Custom expression', { exact: true }).boundingBox();
         expect(input!.width).toBeGreaterThan(150);
       }
@@ -106,12 +106,12 @@ test('M08 cancellation restores an applied preset and no-change Apply stays disa
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   const preset = dialog.getByLabel('Preset', { exact: true });
   await preset.selectOption('identity');
-  await expect(dialog.getByRole('button', { name: 'Apply', exact: true })).toBeEnabled();
-  await dialog.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await opener.click();
   await expect(preset).toHaveValue('identity');
-  await expect(dialog.getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
   await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:06.250');
   await page.keyboard.press('Escape');
@@ -142,7 +142,7 @@ test('M03 modal focus, Escape, rapid cancellation and background isolation prese
   await expect(dialog.getByTestId('expression-preview')).toBeVisible();
   await expect(dialog.getByTestId('expression-preview')).not.toContainText('00:00:06.250');
   await input.fill('return bad()');
-  await expect(dialog.getByRole('alert')).toContainText('Lua');
+  await expect(dialog.getByTestId('expression-preview')).toContainText('Lua');
   // Native focus stays inside the dialog during forward and reverse navigation.
   for (const key of ['Tab', 'Shift+Tab', ...Array<string>(12).fill('Tab')]) {
     await page.keyboard.press(key);
@@ -264,11 +264,11 @@ test('M05 long expression results scroll while footer actions remain reachable',
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
   await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:39.500');
-  expect(await dialog.locator('.expression-preview-differences li').count()).toBeGreaterThanOrEqual(79);
+  expect(await dialog.locator('.expression-chapter').count()).toBeGreaterThanOrEqual(79);
   const body = dialog.locator('.modal-body');
   expect(await body.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
   await body.evaluate(el => { el.scrollTop = el.scrollHeight; });
-  await inViewport(dialog.getByRole('button', { name: 'Apply', exact: true }), 844, 390);
+  await inViewport(dialog.getByRole('button', { name: 'Apply changes', exact: true }), 844, 390);
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(chapters(page).locator('tbody tr')).toHaveCount(80);
 });

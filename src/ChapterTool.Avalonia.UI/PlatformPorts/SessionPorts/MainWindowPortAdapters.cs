@@ -105,6 +105,22 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         return diagnostic;
     }
 
+    public void SaveAppliedExpressionPreview(
+        string expression,
+        string expressionPresetId,
+        string expressionSourceName,
+        ExpressionPreviewProjection projection)
+    {
+        ArgumentNullException.ThrowIfNull(projection);
+        owner.Workspace.SetExpressionOperationDrafts(expression, applyExpression: false, expressionPresetId, expressionSourceName);
+        notifications.RefreshExpressionFields();
+        owner.SetStatus("Expression.Preview.Applied",
+            ("affected", projection.AffectedChapterCount),
+            ("times", projection.TimeChangedChapterCount),
+            ("frames", projection.FrameInformationChangedChapterCount));
+        notifications.RefreshStatus();
+    }
+
     public ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics)
     {
         var result = owner.ExpressionEngine.Evaluate(
@@ -243,6 +259,8 @@ public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapter
 
 public sealed class ChapterContentOperationPortAdapter(MainWindowViewModel owner) : IChapterContentOperationPort
 {
+    public bool CanPrepareExpression => owner.CurrentChapterSet is not null;
+
     public ChapterContentPreview PrepareExpression(string expression) => owner.PrepareExpressionOperation(expression);
 
     public ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames) =>

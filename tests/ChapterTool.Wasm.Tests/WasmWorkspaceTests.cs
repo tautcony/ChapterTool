@@ -337,6 +337,19 @@ public sealed class WasmWorkspaceTests
         Assert.True(preview.Success);
         Assert.Contains(originalRows[1].TimeText, preview.Content, StringComparison.Ordinal);
         Assert.DoesNotContain("00:00:41.728", preview.Content, StringComparison.Ordinal);
+        Assert.Equal("OGM Chapters", workspace.ExpressionPreviewProjection!.ScopeTrackName);
+        Assert.True(workspace.ExpressionPreviewProjection.TimeChangedChapterCount > 0);
+    }
+
+    [Fact]
+    public async Task EmptyExpressionPreviewIsUnavailableInsteadOfAnIdentityCandidate()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+
+        Assert.Null(workspace.PrepareExpressionPreview("  \n"));
+        Assert.Null(workspace.ExpressionPreview);
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
     }
 
     [Fact]
@@ -414,10 +427,28 @@ public sealed class WasmWorkspaceTests
         Assert.Equal(
             originalRows.Select(static row => (row.Number, row.TimeText, row.Name, row.FramesInfo)),
             workspace.Rows.Select(static row => (row.Number, row.TimeText, row.Name, row.FramesInfo)));
+        await workspace.RedoAsync();
+        Assert.NotEqual(originalRows[1].TimeText, workspace.Rows[1].TimeText);
     }
 
     [Fact]
-    public async Task StaleExpressionPreviewRefreshesFromCurrentDocumentWithoutCommitting()
+    public async Task Explicit_identity_expression_uses_complete_candidate_effects()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+
+        var candidate = Assert.IsType<ChapterContentPreview>(workspace.PrepareExpressionPreview("t"));
+        var projection = Assert.IsType<ExpressionPreviewProjection>(workspace.ExpressionPreviewProjection);
+
+        Assert.True(candidate.IsValid);
+        Assert.True(projection.TimesUnchanged);
+        Assert.True(projection.HasChanges);
+        Assert.True(projection.FrameInformationChangedChapterCount > 0 || projection.Properties.Length > 0);
+        Assert.True(await workspace.ApplyExpressionPreviewAsync());
+    }
+
+    [Fact]
+    public async Task StaleExpressionPreviewRequiresAnExplicitRefreshBeforeItCanBeReviewedAgain()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
@@ -431,7 +462,14 @@ public sealed class WasmWorkspaceTests
         Assert.Equal(editedRows, workspace.Rows);
         Assert.Equal(historyCount, workspace.HistoryEntries.Count);
         Assert.NotNull(workspace.ExpressionPreview);
-        Assert.Contains(workspace.ExpressionPreview!.Before.Tracks.SelectMany(static track => track.Chapters),
+        Assert.True(workspace.IsExpressionPreviewStale);
+        Assert.DoesNotContain(workspace.ExpressionPreview!.Before.Tracks.SelectMany(static track => track.Chapters),
+            chapter => chapter.Name == "Edited after preview");
+
+        var refreshed = workspace.PrepareExpressionPreview(workspace.Expression);
+        Assert.NotNull(refreshed);
+        Assert.False(workspace.IsExpressionPreviewStale);
+        Assert.Contains(refreshed!.Before.Tracks.SelectMany(static track => track.Chapters),
             chapter => chapter.Name == "Edited after preview");
     }
 

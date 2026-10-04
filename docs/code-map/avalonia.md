@@ -257,6 +257,10 @@ Then inspect the matching pair in:
 - `src/ChapterTool.Avalonia.UI/Views/Tools/`
 - `src/ChapterTool.Avalonia.UI/ViewModels/`
 
+The Expression tool uses `ExpressionToolViewModel` and `ExpressionToolView` for draft state and typed candidate review. `IChapterContentOperationPort` prepares and applies the captured candidate. `IExpressionSessionPort.SaveAppliedExpressionPreview` stores accepted settings without evaluating Lua again. `AvaloniaWindowService` hosts this tool as a modal window and blocks close while Apply runs.
+
+`ExpressionToolView` keeps the editor above the result scroll area. It reflows comparison grids when the view width changes. The summary separates chapter time changes from frame updates and property changes. Property details follow the time comparisons.
+
 ### Application log window
 
 Start with:
@@ -313,7 +317,7 @@ Start with:
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/`
 - `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
 
-Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live valid projections, editing-key routing, and single-editor multiline expansion.
+Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live candidate review, typed before/after values, editing-key routing, and single-editor multiline expansion. AvaloniaEdit keeps IME preedit text inside the editor until it commits text to the bound value; the preview timer responds to committed edits.
 `AppCompositionRootIdentityHeadlessTests` additionally exercises both production XAML editor hosts with a sentinel authoring service, including initial binding and subsequent text edits.
 
 ### Settings / theme / language UI

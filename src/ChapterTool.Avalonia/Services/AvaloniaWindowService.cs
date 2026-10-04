@@ -1,7 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Transform;
@@ -121,7 +124,15 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             windows.Remove(toolId.Value);
         };
         windows[toolId.Value] = window;
-        window.Show();
+        if (descriptor.IsModal
+            && Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } owner })
+        {
+            _ = window.ShowDialog(owner);
+        }
+        else
+        {
+            window.Show();
+        }
         return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
     }
 
@@ -182,6 +193,17 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
 
     private void ConfigureCloseBehavior(Window window, ToolId toolId, ToolDescriptor descriptor)
     {
+        if (descriptor.IsModal)
+        {
+            window.Closing += (_, args) =>
+            {
+                if (window.Content is Control { DataContext: ExpressionToolViewModel { IsApplying: true } })
+                {
+                    args.Cancel = true;
+                }
+            };
+        }
+
         if (!descriptor.RequiresCloseConfirmation)
         {
             return;

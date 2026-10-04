@@ -153,7 +153,8 @@ public sealed record ToolDescriptor(
     ToolRefreshPolicy RefreshPolicy,
     Func<ToolCreationContext, Control> CreateContent,
     bool RequiresCloseConfirmation = false,
-    IReadOnlySet<string>? RequiredPorts = null);
+    IReadOnlySet<string>? RequiredPorts = null,
+    bool IsModal = false);
 
 public interface IToolCatalog
 {

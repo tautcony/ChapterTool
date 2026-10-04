@@ -124,6 +124,7 @@ Host-agnostic interactive session state shared by Avalonia and WASM:
 - `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
 - `src/ChapterTool.Core/Session/ChapterContentOperationSession.cs` — typed preview diffs and stale-safe apply for content candidates
 - `src/ChapterTool.Core/Session/ContentOperationDraftState.cs` — naming, numbering, and expression parameters for explicit operations
+- `src/ChapterTool.Core/Session/ExpressionPreviewProjection.cs` — host-neutral before/candidate comparison rows, change categories, property ownership, and frame-unit projection
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
 - `src/ChapterTool.Core/Session/ChapterSourceDocument.cs` — host-neutral chapter source identity (`LocalPathChapterSource`, `BufferedChapterSource`)
 

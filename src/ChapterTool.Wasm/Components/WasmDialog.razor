@@ -5,7 +5,7 @@
 <dialog id="@titleId" @ref="element" class="modal-dialog @CssClass" aria-labelledby="@(titleId + "-title")">
     <header class="modal-header">
         <h2 id="@(titleId + "-title")">@Title</h2>
-        <button type="button" class="modal-close" aria-label="@L.T("Action.Close")" @onclick="OnClose">×</button>
+        <button type="button" class="modal-close" aria-label="@L.T("Action.Close")" disabled="@(!DismissEnabled)" @onclick="OnClose">×</button>
     </header>
     @ChildContent
 </dialog>
@@ -14,6 +14,7 @@
     [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
     [Parameter] public string? CssClass { get; set; }
     [Parameter] public bool LightDismiss { get; set; }
+    [Parameter] public bool DismissEnabled { get; set; } = true;
     [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     private readonly string titleId = $"dialog-{Guid.NewGuid():N}";
@@ -28,7 +29,7 @@
     }
 
     [JSInvokable]
-    public Task CancelAsync() => OnClose.InvokeAsync();
+    public Task CancelAsync() => DismissEnabled ? OnClose.InvokeAsync() : Task.CompletedTask;
 
     public async ValueTask DisposeAsync()
     {

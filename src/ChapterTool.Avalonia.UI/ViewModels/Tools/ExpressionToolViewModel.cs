@@ -1,7 +1,9 @@
+using System.Globalization;
 using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 
@@ -12,26 +14,37 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
     private readonly IExpressionSessionPort expressionSession;
     private readonly IChapterContentOperationPort? contentOperations;
     private readonly IFilePickerService? filePicker;
-    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
+    private readonly Action? closeTool;
+    private readonly DispatcherTimer previewTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private ChapterContentPreview? pendingPreview;
     private bool settingExpressionFromPreset;
-    private bool isPreviewScheduled;
     private int selectedPresetIndex = -1;
+    private long draftRevision;
+    private long preparedDraftRevision = -1;
     private string expression = string.Empty;
     private string expressionSourceName = string.Empty;
     private string statusText = string.Empty;
     private string previewSummary = string.Empty;
+    private ExpressionPreviewProjection? projection;
+    private IReadOnlyList<ExpressionChapterRowViewModel> previewRows = [];
+    private IReadOnlyList<ExpressionPropertyRowViewModel> propertyRows = [];
+    private ExpressionPreviewReadiness previewReadiness = ExpressionPreviewReadiness.Unavailable;
+    private bool isApplying;
+    private bool showAllChapters;
+    private bool showFrames;
 
     public ExpressionToolViewModel(
         IExpressionSessionPort expressionSession,
         IFilePickerService? filePicker = null,
         IExpressionAuthoringService? expressionAuthoringService = null,
         Func<Exception, ValueTask>? errorHandler = null,
-        IChapterContentOperationPort? contentOperations = null)
+        IChapterContentOperationPort? contentOperations = null,
+        Action? closeTool = null)
     {
         this.expressionSession = expressionSession;
         this.contentOperations = contentOperations;
         this.filePicker = filePicker;
+        this.closeTool = closeTool;
         ExpressionAuthoringService = expressionAuthoringService;
         expression = expressionSession.Expression;
         expressionSourceName = expressionSession.ExpressionSourceName;
@@ -49,12 +62,12 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
             ErrorHandler = errorHandler
         };
 
-        // Retain this command for programmatic callers. The view refreshes automatically as the draft changes.
+        // Retain this command for callers that request an immediate preview.
         ApplyCommand = new UiCommand((_, _) =>
         {
             RefreshPreviewNow();
             return ValueTask.CompletedTask;
-        }, _ => contentOperations is not null)
+        }, _ => contentOperations is not null && !isApplying)
         {
             ErrorHandler = errorHandler
         };
@@ -64,22 +77,41 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
         };
         CancelPreviewCommand = new UiCommand((_, _) =>
         {
-            var hadPreview = IsPreviewPending;
             previewTimer.Stop();
-            isPreviewScheduled = false;
             if (pendingPreview is { } preview)
             {
                 contentOperations?.Cancel(preview);
                 pendingPreview = null;
             }
-            if (hadPreview)
+            previewReadiness = ExpressionPreviewReadiness.Empty;
+            projection = null;
+            previewRows = [];
+            propertyRows = [];
+            PreviewSummary = Localizer.GetString("Expression.State.Empty");
+            StatusText = PreviewSummary;
+            NotifyPreviewStateChanged();
+            closeTool?.Invoke();
+            return ValueTask.CompletedTask;
+        }, _ => !isApplying);
+        UpdatePreviewCommand = new UiCommand((_, _) =>
+        {
+            if (previewReadiness == ExpressionPreviewReadiness.Stale)
             {
-                PreviewSummary = expressionSession.Localizer.GetString("Expression.Preview.Cancelled");
-                StatusText = PreviewSummary;
-                NotifyPreviewStateChanged();
+                RefreshPreviewNow();
             }
             return ValueTask.CompletedTask;
-        }, _ => IsPreviewPending);
+        }, _ => previewReadiness == ExpressionPreviewReadiness.Stale && !isApplying);
+
+        if (contentOperations?.CanPrepareExpression == true && !string.IsNullOrWhiteSpace(Expression))
+        {
+            RefreshPreviewNow();
+        }
+        else if (contentOperations?.CanPrepareExpression == false)
+        {
+            previewReadiness = ExpressionPreviewReadiness.Unavailable;
+            PreviewSummary = Localizer.GetString("Expression.State.Unavailable");
+            StatusText = PreviewSummary;
+        }
     }
 
     public IAppLocalizer Localizer => expressionSession.Localizer;
@@ -162,11 +194,106 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 
     public bool CanBrowseScript => filePicker is not null;
 
-    public bool IsPreviewPending => pendingPreview is not null || isPreviewScheduled;
+    public bool IsPreviewPending => previewReadiness is ExpressionPreviewReadiness.Waiting or ExpressionPreviewReadiness.Computing;
 
     public bool CanPreparePreview => false;
 
-    public bool CanApplyPreview => pendingPreview?.IsValid == true;
+    public bool CanApplyPreview => previewReadiness == ExpressionPreviewReadiness.Ready
+        && pendingPreview is { IsValid: true }
+        && preparedDraftRevision == draftRevision
+        && projection?.HasChanges == true
+        && !isApplying;
+
+    public ExpressionPreviewReadiness PreviewReadiness => previewReadiness;
+
+    public bool IsApplying => isApplying;
+
+    public bool CanEditExpression => !isApplying;
+
+    public bool HasPreviewResult => projection is not null;
+
+    public bool HasPropertyChanges => propertyRows.Count > 0;
+
+    public bool TimesUnchanged => projection?.TimesUnchanged == true;
+
+    public bool ShowPreviewState => previewReadiness != ExpressionPreviewReadiness.Ready;
+
+    public bool CanRefreshPreview => previewReadiness == ExpressionPreviewReadiness.Stale && !isApplying;
+
+    public bool HasExcludedSeparators => projection?.ExcludedSeparatorCount > 0;
+
+    public string ExcludedSeparatorSummary => projection is null || projection.ExcludedSeparatorCount == 0
+        ? string.Empty
+        : Localizer.Format(LocalizedMessage.Create("Expression.Preview.Separators", ("count", projection.ExcludedSeparatorCount)));
+
+    public string PreviewStateText => previewReadiness switch
+    {
+        ExpressionPreviewReadiness.Empty => Localizer.GetString("Expression.State.Empty"),
+        ExpressionPreviewReadiness.Waiting => Localizer.GetString("Expression.State.Waiting"),
+        ExpressionPreviewReadiness.Computing => Localizer.GetString("Expression.State.Computing"),
+        ExpressionPreviewReadiness.Ready => Localizer.GetString("Expression.State.Ready"),
+        ExpressionPreviewReadiness.Unchanged => Localizer.GetString("Expression.State.Unchanged"),
+        ExpressionPreviewReadiness.Invalid => StatusText,
+        ExpressionPreviewReadiness.Stale => Localizer.GetString("Expression.State.Stale"),
+        ExpressionPreviewReadiness.Applying => Localizer.GetString("Expression.State.Applying"),
+        ExpressionPreviewReadiness.Failed => StatusText,
+        _ => Localizer.GetString("Expression.State.Unavailable")
+    };
+
+    public string FooterStatusText => previewReadiness switch
+    {
+        ExpressionPreviewReadiness.Applying => Localizer.GetString("Expression.State.Applying"),
+        ExpressionPreviewReadiness.Failed => StatusText,
+        _ => string.Empty
+    };
+
+    public string ScopeSummary => projection is null
+        ? string.Empty
+        : Localizer.Format(LocalizedMessage.Create(
+            "Expression.Preview.Scope",
+            ("track", projection.ScopeTrackName),
+            ("count", projection.ParticipatingChapterCount)));
+
+    public string TimeChangeSummary => projection is null ? string.Empty : Localizer.Format(
+        LocalizedMessage.Create("Expression.Review.TimeSummary",
+            ("times", projection.TimeChangedChapterCount), ("count", projection.ParticipatingChapterCount)));
+
+    public string OtherChangeSummary => projection is null ? string.Empty : Localizer.Format(
+        LocalizedMessage.Create("Expression.Review.OtherSummary",
+            ("affected", projection.AffectedChapterCount), ("frames", projection.FrameInformationChangedChapterCount), ("properties", projection.Properties.Length)));
+
+    public ExpressionPreviewProjection? Projection => projection;
+
+    public IReadOnlyList<ExpressionChapterRowViewModel> PreviewRows => showAllChapters
+        ? previewRows
+        : previewRows.Where(static row => row.Changes != ExpressionChapterChangeKind.None).ToArray();
+
+    public IReadOnlyList<ExpressionPropertyRowViewModel> PropertyRows => propertyRows;
+
+    public bool ShowAllChapters
+    {
+        get => showAllChapters;
+        set
+        {
+            if (SetProperty(ref showAllChapters, value))
+            {
+                OnPropertyChanged(nameof(PreviewRows));
+            }
+        }
+    }
+
+    public bool ShowFrames
+    {
+        get => showFrames;
+        set
+        {
+            if (SetProperty(ref showFrames, value))
+            {
+                previewRows = BuildRows(projection, value, Localizer);
+                OnPropertyChanged(nameof(PreviewRows));
+            }
+        }
+    }
 
     public string PreviewSummary
     {
@@ -182,31 +309,61 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 
     public UiCommand CancelPreviewCommand { get; }
 
+    public UiCommand UpdatePreviewCommand { get; }
+
     public void RefreshPreviewNow()
     {
         previewTimer.Stop();
-        isPreviewScheduled = false;
-        if (contentOperations is null)
+        if (contentOperations is null || !contentOperations.CanPrepareExpression)
         {
+            previewReadiness = ExpressionPreviewReadiness.Unavailable;
+            PreviewSummary = Localizer.GetString("Expression.State.Unavailable");
+            StatusText = PreviewSummary;
+            NotifyPreviewStateChanged();
             return;
         }
 
         if (pendingPreview is { } previous)
         {
             contentOperations.Cancel(previous);
+            pendingPreview = null;
         }
 
-        isPreviewScheduled = false;
+        if (string.IsNullOrWhiteSpace(Expression))
+        {
+            projection = null;
+            previewRows = [];
+            propertyRows = [];
+            previewReadiness = ExpressionPreviewReadiness.Empty;
+            PreviewSummary = Localizer.GetString("Expression.State.Empty");
+            StatusText = PreviewSummary;
+            NotifyPreviewStateChanged();
+            return;
+        }
+
+        previewReadiness = ExpressionPreviewReadiness.Computing;
+        PreviewSummary = Localizer.GetString("Expression.Preview.Pending");
+        StatusText = PreviewSummary;
+        NotifyPreviewStateChanged();
         pendingPreview = contentOperations.PrepareExpression(Expression);
-        PreviewSummary = BuildPreviewSummary(pendingPreview, expressionSession.Localizer);
+        projection = ExpressionPreviewProjector.Build(pendingPreview);
+        preparedDraftRevision = draftRevision;
+        previewRows = BuildRows(projection, showFrames, Localizer);
+        propertyRows = projection.Properties.Select(row => new ExpressionPropertyRowViewModel(row, Localizer)).ToArray();
+        PreviewSummary = BuildPreviewSummary(projection, expressionSession.Localizer);
         var diagnostic = pendingPreview.IsValid
             ? null
             : expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
+        previewReadiness = !pendingPreview.IsValid
+            ? ExpressionPreviewReadiness.Invalid
+            : projection.ParticipatingChapterCount == 0
+            ? ExpressionPreviewReadiness.Unavailable
+            : projection.HasChanges
+                ? ExpressionPreviewReadiness.Ready
+                : ExpressionPreviewReadiness.Unchanged;
         StatusText = diagnostic is not null
             ? expressionSession.FormatDiagnosticForDisplay(diagnostic)
-            : pendingPreview.IsValid
-                ? PreviewSummary
-                : string.Join(Environment.NewLine, pendingPreview.Errors);
+            : pendingPreview.IsValid ? PreviewSummary : string.Join(Environment.NewLine, pendingPreview.Errors);
         NotifyPreviewStateChanged();
     }
 
@@ -223,49 +380,73 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 
     private async ValueTask ApplyPreviewAsync(object? sender, CancellationToken cancellationToken)
     {
-        if (contentOperations is null)
+        if (!CanApplyPreview || contentOperations is null || pendingPreview is not { IsValid: true } preview)
         {
             return;
         }
 
-        // Apply always uses a candidate prepared from the latest draft, even if the debounce is pending.
-        RefreshPreviewNow();
-        if (pendingPreview is not { IsValid: true } preview)
-        {
-            return;
-        }
-
-        pendingPreview = null;
-        PreviewSummary = string.Empty;
+        isApplying = true;
+        previewReadiness = ExpressionPreviewReadiness.Applying;
+        StatusText = Localizer.GetString("Expression.State.Applying");
         NotifyPreviewStateChanged();
-        var result = await contentOperations.ApplyAsync(preview, cancellationToken);
-        if (result.Kind == TransactionOutcomeKind.Conflict)
+        try
         {
-            RefreshPreviewNow();
-            return;
-        }
+            var result = await contentOperations.ApplyAsync(preview, cancellationToken);
+            if (result.Kind == TransactionOutcomeKind.Conflict)
+            {
+                previewReadiness = ExpressionPreviewReadiness.Stale;
+                StatusText = Localizer.GetString("Expression.State.Stale");
+                return;
+            }
 
-        if (result.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
-        {
-            expressionSession.ApplyLuaExpressionSettings(
-                Expression,
-                applyExpression: false,
-                SelectedPreset?.Id ?? string.Empty,
-                ExpressionSourceName);
-            StatusText = expressionSession.Localizer.GetString("Status.Updated");
+            if (result.Kind == TransactionOutcomeKind.Committed && projection is { } appliedProjection)
+            {
+                expressionSession.SaveAppliedExpressionPreview(
+                    Expression,
+                    SelectedPreset?.Id ?? string.Empty,
+                    ExpressionSourceName,
+                    appliedProjection);
+                pendingPreview = null;
+                StatusText = Localizer.Format(LocalizedMessage.Create(
+                    "Expression.Preview.Applied",
+                    ("affected", projection?.AffectedChapterCount ?? 0),
+                    ("times", projection?.TimeChangedChapterCount ?? 0),
+                    ("frames", projection?.FrameInformationChangedChapterCount ?? 0)));
+                closeTool?.Invoke();
+            }
+            else
+            {
+                previewReadiness = ExpressionPreviewReadiness.Failed;
+                StatusText = string.Join(Environment.NewLine, result.Errors);
+            }
         }
-        else
+        catch (Exception exception) when (exception is not StackOverflowException)
         {
-            StatusText = string.Join(Environment.NewLine, result.Errors);
+            previewReadiness = ExpressionPreviewReadiness.Failed;
+            StatusText = exception.Message;
         }
-        NotifyPreviewStateChanged();
+        finally
+        {
+            isApplying = false;
+            if (previewReadiness == ExpressionPreviewReadiness.Applying)
+            {
+                previewReadiness = ExpressionPreviewReadiness.Ready;
+            }
+            NotifyPreviewStateChanged();
+        }
     }
 
     private void SchedulePreview()
     {
         previewTimer.Stop();
-        if (contentOperations is null)
+        draftRevision++;
+        preparedDraftRevision = -1;
+        if (contentOperations is null || !contentOperations.CanPrepareExpression)
         {
+            previewReadiness = ExpressionPreviewReadiness.Unavailable;
+            PreviewSummary = Localizer.GetString("Expression.State.Unavailable");
+            StatusText = PreviewSummary;
+            NotifyPreviewStateChanged();
             return;
         }
 
@@ -274,9 +455,21 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
             contentOperations.Cancel(previous);
             pendingPreview = null;
         }
+        projection = null;
+        previewRows = [];
+        propertyRows = [];
+        if (string.IsNullOrWhiteSpace(Expression))
+        {
+            previewReadiness = ExpressionPreviewReadiness.Empty;
+            PreviewSummary = Localizer.GetString("Expression.State.Empty");
+            StatusText = PreviewSummary;
+            NotifyPreviewStateChanged();
+            return;
+        }
+
+        previewReadiness = ExpressionPreviewReadiness.Waiting;
         PreviewSummary = Localizer.GetString("Expression.Preview.Pending");
         StatusText = PreviewSummary;
-        isPreviewScheduled = true;
         NotifyPreviewStateChanged();
         previewTimer.Start();
     }
@@ -284,39 +477,51 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
     private void OnPreviewTimerTick(object? sender, EventArgs args)
     {
         previewTimer.Stop();
-        isPreviewScheduled = false;
         RefreshPreviewNow();
     }
 
     private void NotifyPreviewStateChanged()
     {
         OnPropertyChanged(nameof(IsPreviewPending));
+        OnPropertyChanged(nameof(IsApplying));
+        OnPropertyChanged(nameof(CanEditExpression));
+        OnPropertyChanged(nameof(HasPreviewResult));
+        OnPropertyChanged(nameof(HasPropertyChanges));
+        OnPropertyChanged(nameof(TimesUnchanged));
+        OnPropertyChanged(nameof(CanRefreshPreview));
+        OnPropertyChanged(nameof(HasExcludedSeparators));
+        OnPropertyChanged(nameof(ExcludedSeparatorSummary));
+        OnPropertyChanged(nameof(PreviewStateText));
+        OnPropertyChanged(nameof(ShowPreviewState));
+        OnPropertyChanged(nameof(FooterStatusText));
+        OnPropertyChanged(nameof(ScopeSummary));
+        OnPropertyChanged(nameof(TimeChangeSummary));
+        OnPropertyChanged(nameof(OtherChangeSummary));
         OnPropertyChanged(nameof(CanPreparePreview));
         OnPropertyChanged(nameof(CanApplyPreview));
+        OnPropertyChanged(nameof(PreviewReadiness));
+        OnPropertyChanged(nameof(Projection));
+        OnPropertyChanged(nameof(PreviewRows));
+        OnPropertyChanged(nameof(PropertyRows));
         ConfirmApplyCommand.RaiseCanExecuteChanged();
         CancelPreviewCommand.RaiseCanExecuteChanged();
+        UpdatePreviewCommand.RaiseCanExecuteChanged();
     }
 
-    private static string BuildPreviewSummary(ChapterContentPreview preview, IAppLocalizer localizer) =>
-        preview.Differences.IsEmpty
-            ? localizer.GetString("Expression.Preview.NoChanges")
-            : string.Join(Environment.NewLine, preview.Differences.Take(8).Select(difference =>
-                DescribeDifference(preview, difference)));
+    private static IReadOnlyList<ExpressionChapterRowViewModel> BuildRows(
+        ExpressionPreviewProjection? preview,
+        bool showFrames,
+        IAppLocalizer localizer) => preview?.Chapters
+            .Select(row => new ExpressionChapterRowViewModel(row, showFrames, localizer))
+            .ToArray() ?? [];
 
-    private static string DescribeDifference(ChapterContentPreview preview, ChapterContentDifference difference)
-    {
-        if (difference.ChapterId is not { } chapterId)
-        {
-            return $"{difference.Field}: {difference.Before} → {difference.After}";
-        }
-
-        var chapter = preview.Before.Tracks.SelectMany(static track => track.Chapters)
-            .FirstOrDefault(item => item.Id == chapterId)
-            ?? preview.Candidate.Tracks.SelectMany(static track => track.Chapters)
-                .FirstOrDefault(item => item.Id == chapterId);
-        var label = chapter is null ? chapterId.ToString() : $"#{chapter.DisplayNumber} {chapter.Name}";
-        return $"{label} · {difference.Field}: {difference.Before} → {difference.After}";
-    }
+    private static string BuildPreviewSummary(ExpressionPreviewProjection preview, IAppLocalizer localizer) =>
+        localizer.Format(LocalizedMessage.Create(
+            "Expression.Preview.Summary",
+            ("affected", preview.AffectedChapterCount),
+            ("times", preview.TimeChangedChapterCount),
+            ("frames", preview.FrameInformationChangedChapterCount),
+            ("properties", preview.Properties.Length)));
 
     private async ValueTask BrowseScriptAsync(CancellationToken cancellationToken)
     {
@@ -351,3 +556,185 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 }
 
 public sealed record ExpressionPresetViewModel(string Id, string DisplayName, string Description, string ScriptText);
+
+public enum ExpressionPreviewReadiness
+{
+    Unavailable,
+    Empty,
+    Waiting,
+    Computing,
+    Ready,
+    Unchanged,
+    Invalid,
+    Stale,
+    Applying,
+    Failed
+}
+
+public sealed record ExpressionChapterRowViewModel
+{
+    public ExpressionChapterRowViewModel(ExpressionChapterComparison comparison, bool showFrames, IAppLocalizer localizer)
+    {
+        Comparison = comparison;
+        var before = comparison.Before;
+        var candidate = comparison.Candidate;
+        NumberAndName = candidate is null && before is null
+            ? localizer.GetString("Expression.Preview.Chapter")
+            : $"{(candidate ?? before)!.DisplayNumber} · {(candidate ?? before)!.Name}";
+        BeforeValue = FormatValue(before, comparison.BeforeFrames, showFrames, localizer);
+        CandidateValue = FormatValue(candidate, comparison.CandidateFrames, showFrames, localizer);
+        DeltaValue = FormatDelta(comparison, showFrames, localizer);
+        BeforeFrameDetails = FormatFrameDetails(comparison.BeforeFrames, localizer);
+        CandidateFrameDetails = FormatFrameDetails(comparison.CandidateFrames, localizer);
+        BeforeAccuracy = FormatAccuracy(comparison.BeforeFrames?.Accuracy, localizer);
+        CandidateAccuracy = FormatAccuracy(comparison.CandidateFrames?.Accuracy, localizer);
+    }
+
+    public ExpressionChapterComparison Comparison { get; }
+
+    public ChapterId Id => Comparison.Id;
+
+    public ExpressionChapterChangeKind Changes => Comparison.Changes;
+
+    public string NumberAndName { get; }
+
+    public string BeforeValue { get; }
+
+    public string CandidateValue { get; }
+
+    public string DeltaValue { get; }
+
+    public string BeforeFrameDetails { get; }
+
+    public string CandidateFrameDetails { get; }
+
+    public string BeforeAccuracy { get; }
+
+    public string CandidateAccuracy { get; }
+
+    private static string FormatValue(EditableChapter? chapter, ExpressionFrameValue? frames, bool showFrames, IAppLocalizer localizer) =>
+        chapter is null
+            ? localizer.GetString("Expression.Value.Missing")
+            : showFrames ? FormatFrameDetails(frames, localizer) : FormatTicks(chapter.StartTicks, CultureInfo.CurrentUICulture);
+
+    private static string FormatDelta(ExpressionChapterComparison comparison, bool showFrames, IAppLocalizer localizer)
+    {
+        if (showFrames)
+        {
+            return comparison.DeltaFrames is { } frames
+                ? localizer.Format(LocalizedMessage.Create("Expression.Preview.DeltaFrames", ("value", frames)))
+                : localizer.GetString("Expression.Value.IncompatibleFrames");
+        }
+
+        if (comparison.DeltaTicks is not { } ticks)
+        {
+            return localizer.GetString("Expression.Value.Missing");
+        }
+
+        var sign = ticks > 0 ? "+" : ticks < 0 ? "−" : string.Empty;
+        return sign + FormatTicks(Math.Abs(ticks), CultureInfo.CurrentUICulture);
+    }
+
+    private static string FormatFrameDetails(ExpressionFrameValue? value, IAppLocalizer localizer)
+    {
+        if (value is null || value.IsMissing)
+        {
+            return localizer.GetString("Expression.Value.NotCalculated");
+        }
+
+        var rate = value.FrameRate is { } fps
+            ? $"{fps.Numerator}/{fps.Denominator} {localizer.GetString("Expression.Unit.FramesPerSecond")}"
+            : localizer.GetString("Expression.Value.NotSet");
+        return $"{value.Text} {localizer.GetString("Expression.Unit.FramesShort")} · {rate}";
+    }
+
+    private static string FormatAccuracy(FrameAccuracy? accuracy, IAppLocalizer localizer) => accuracy switch
+    {
+        FrameAccuracy.Accurate => localizer.GetString("Expression.FrameAccuracy.Accurate"),
+        FrameAccuracy.Inexact => localizer.GetString("Expression.FrameAccuracy.Inexact"),
+        _ => localizer.GetString("Expression.FrameAccuracy.NotCalculated")
+    };
+
+    internal static string FormatTicks(long ticks, CultureInfo culture)
+    {
+        var hours = ticks / TimeSpan.TicksPerHour;
+        var minutes = ticks / TimeSpan.TicksPerMinute % 60;
+        var seconds = ticks / TimeSpan.TicksPerSecond % 60;
+        var fraction = (ticks % TimeSpan.TicksPerSecond).ToString("D7", CultureInfo.InvariantCulture);
+        var precision = ticks % 10_000 == 0 ? 3 : ticks % 10 == 0 ? 6 : 7;
+        return string.Create(culture, $"{hours:00}:{minutes:00}:{seconds:00}{culture.NumberFormat.NumberDecimalSeparator}{fraction[..precision]}");
+    }
+}
+
+public sealed record ExpressionPropertyRowViewModel
+{
+    public ExpressionPropertyRowViewModel(ExpressionPropertyComparison comparison, IAppLocalizer localizer)
+    {
+        OwnerLabel = comparison.OwnerKind switch
+        {
+            ExpressionPropertyOwnerKind.Document => localizer.GetString("Expression.PropertyOwner.Document"),
+            ExpressionPropertyOwnerKind.Track => localizer.GetString("Expression.PropertyOwner.Track"),
+            ExpressionPropertyOwnerKind.Segment => localizer.GetString("Expression.PropertyOwner.Segment"),
+            _ => localizer.GetString("Expression.PropertyOwner.Chapter")
+        };
+        OwnerName = comparison.OwnerName;
+        PropertyLabel = comparison.Property switch
+        {
+            "Title" => localizer.GetString("Expression.Property.Title"),
+            "SourceName" => localizer.GetString("Expression.Property.Source"),
+            "ImportFormat" => localizer.GetString("Expression.Property.ImportFormat"),
+            "Duration" => localizer.GetString("Expression.Property.Duration"),
+            "FrameRate" => localizer.GetString("Expression.Property.FrameRate"),
+            "Name" => localizer.GetString("Expression.Property.Name"),
+            "DisplayNumber" => localizer.GetString("Expression.Property.Number"),
+            "Kind" => localizer.GetString("Expression.Property.Type"),
+            "Presence" => localizer.GetString("Expression.Property.Presence"),
+            "TrackOrder" => localizer.GetString("Expression.Property.TrackOrder"),
+            _ => localizer.GetString("Expression.Property.Additional")
+        };
+        BeforeValue = FormatValue(comparison.Property, comparison.Before, localizer);
+        CandidateValue = FormatValue(comparison.Property, comparison.Candidate, localizer);
+    }
+
+    public string OwnerLabel { get; }
+
+    public string OwnerName { get; }
+
+    public string PropertyLabel { get; }
+
+    public string BeforeValue { get; }
+
+    public string CandidateValue { get; }
+
+    private static string FormatValue(string property, object? value, IAppLocalizer localizer)
+    {
+        if (value is null)
+        {
+            return localizer.GetString("Expression.Value.NotSet");
+        }
+
+        if (value is ChapterFrameRate rate)
+        {
+            return $"{rate.Numerator}/{rate.Denominator} {localizer.GetString("Expression.Unit.FramesPerSecond")}";
+        }
+        if (value is ChapterDuration duration)
+        {
+            if (!duration.IsKnown)
+            {
+                return localizer.GetString("Expression.Value.NotSet");
+            }
+            return ExpressionChapterRowViewModel.FormatTicks(duration.Ticks, CultureInfo.CurrentUICulture);
+        }
+
+        if (value is string text && property is "Title" or "SourceName" or "Name")
+        {
+            return text;
+        }
+
+        if (value is int or long or bool)
+        {
+            return Convert.ToString(value, CultureInfo.CurrentUICulture) ?? string.Empty;
+        }
+        return localizer.GetString("Expression.Property.ValueChanged");
+    }
+}

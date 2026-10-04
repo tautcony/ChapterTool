@@ -44,13 +44,13 @@ test('B12 fixed frame rate and an expression update chapter projection', async (
   await expect(livePreview).toContainText('00:00:06.250');
   const secondTime = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Time 2', exact: true });
   await expect(secondTime).toHaveValue('00:00:12.500');
-  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:06.250');
   const committed = await secondTime.inputValue();
   await page.getByRole('button', { name: 'Expression', exact: true }).click();
   await expression.fill('t + (');
   await expect(page.getByTestId('expression-preview')).toContainText('unexpected symbol');
-  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await expect(secondTime).toHaveValue(committed);
 });
 

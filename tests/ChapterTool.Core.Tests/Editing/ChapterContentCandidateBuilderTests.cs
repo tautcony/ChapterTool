@@ -86,6 +86,32 @@ public sealed class ChapterContentCandidateBuilderTests
         Assert.Equal("other", session.Snapshot.Document.Tracks[0].Chapters[1].Name);
     }
 
+    [Fact]
+    public async Task Expression_preview_commits_the_prepared_candidate_once_and_redoes_without_rebuilding()
+    {
+        var session = new SessionState(CreateDocument());
+        var buildCount = 0;
+        var preview = ChapterContentOperationSession.Prepare(session, "expression", document =>
+        {
+            buildCount++;
+            return Builder().ApplyExpression(document, "t + 1");
+        });
+        var reviewedCandidate = preview.Candidate;
+
+        var committed = await ChapterContentOperationSession.ApplyAsync(session, preview);
+        var retry = await ChapterContentOperationSession.ApplyAsync(session, preview);
+
+        Assert.Equal(1, buildCount);
+        Assert.Same(committed, retry);
+        Assert.Equal(reviewedCandidate.Tracks[0].Chapters, committed.Snapshot.Document.Tracks[0].Chapters);
+        Assert.Equal(1, session.GetHistorySnapshot().Nodes.Length - 1);
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, (await session.UndoAsync()).Kind);
+        var redone = await session.RedoAsync();
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, redone.Kind);
+        Assert.Equal(reviewedCandidate.Tracks[0].Chapters, redone.Snapshot.Document.Tracks[0].Chapters);
+        Assert.Equal(1, buildCount);
+    }
+
     public static IEnumerable<object[]> OperationFamilies()
     {
         yield return ["edit name", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>

@@ -416,11 +416,73 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">Refresh grid from current options</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">Export with current options and download</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">Apply expression</x:String>
+  <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">Time changes: {times}/{count}</x:String>
+  <x:String x:Key="Expression.Review.OtherSummary" xml:space="preserve">Affected: {affected} · Frames: {frames} · Properties: {properties}</x:String>
+  <x:String x:Key="Expression.Review.Details" xml:space="preserve">Other changes</x:String>
   <x:String x:Key="Expression.Preview.Title" xml:space="preserve">Expression preview</x:String>
   <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">No chapter values will change.</x:String>
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">Expression preview canceled.</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">Updating expression preview…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">Preview options</x:String>
+  <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">Current track: {track} · {count} chapters</x:String>
+  <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">{count} separator rows excluded</x:String>
+  <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">Affected chapters: {affected} · time changes: {times} · frame updates: {frames} · properties: {properties}</x:String>
+  <x:String x:Key="Expression.Preview.DeltaFrames" xml:space="preserve">{value} frames</x:String>
+  <x:String x:Key="Expression.Preview.Applied" xml:space="preserve">Applied expression: {affected} affected chapters, {times} time changes, {frames} frame updates. One Undo restores the previous values.</x:String>
+  <x:String x:Key="Expression.Preview.TimesUnchanged" xml:space="preserve">Chapter times are unchanged.</x:String>
+  <x:String x:Key="Expression.Preview.Properties" xml:space="preserve">Document and track properties</x:String>
+  <x:String x:Key="Expression.Preview.Filter" xml:space="preserve">Show</x:String>
+  <x:String x:Key="Expression.Preview.ChangedOnly" xml:space="preserve">Changed chapters</x:String>
+  <x:String x:Key="Expression.Preview.AllChapters" xml:space="preserve">All chapters</x:String>
+  <x:String x:Key="Expression.Preview.Units" xml:space="preserve">Units</x:String>
+  <x:String x:Key="Expression.Preview.TimeUnits" xml:space="preserve">Time</x:String>
+  <x:String x:Key="Expression.Preview.FrameUnits" xml:space="preserve">Frames</x:String>
+  <x:String x:Key="Expression.Preview.Chapter" xml:space="preserve">Chapter</x:String>
+  <x:String x:Key="Expression.Preview.Before" xml:space="preserve">Before</x:String>
+  <x:String x:Key="Expression.Preview.After" xml:space="preserve">After</x:String>
+  <x:String x:Key="Expression.Preview.Delta" xml:space="preserve">Change</x:String>
+  <x:String x:Key="Expression.Preview.FrameDetails" xml:space="preserve">Frame details</x:String>
+  <x:String x:Key="Expression.Preview.BeforeFrames" xml:space="preserve">Before frames</x:String>
+  <x:String x:Key="Expression.Preview.AfterFrames" xml:space="preserve">After frames</x:String>
+  <x:String x:Key="Expression.Preview.Accuracy" xml:space="preserve">Frame accuracy</x:String>
+  <x:String x:Key="Expression.State.Unavailable" xml:space="preserve">No chapters are available for preview.</x:String>
+  <x:String x:Key="Expression.State.Waiting" xml:space="preserve">Waiting to update the preview…</x:String>
+  <x:String x:Key="Expression.State.Computing" xml:space="preserve">Computing the preview…</x:String>
+  <x:String x:Key="Expression.State.Ready" xml:space="preserve">Preview ready.</x:String>
+  <x:String x:Key="Expression.State.Empty" xml:space="preserve">Enter an expression or choose a preset.</x:String>
+  <x:String x:Key="Expression.State.Composing" xml:space="preserve">Finish text composition to update the preview.</x:String>
+  <x:String x:Key="Expression.State.Stale" xml:space="preserve">The chapters changed. Update the preview before applying.</x:String>
+  <x:String x:Key="Expression.State.Invalid" xml:space="preserve">This expression cannot be applied.</x:String>
+  <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">The complete result has no changes to apply.</x:String>
+  <x:String x:Key="Expression.State.Applying" xml:space="preserve">Applying reviewed changes…</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">Update preview</x:String>
+  <x:String x:Key="Expression.Action.Apply" xml:space="preserve">Apply changes</x:String>
+  <x:String x:Key="Expression.Value.Missing" xml:space="preserve">Not available</x:String>
+  <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">Not calculated</x:String>
+  <x:String x:Key="Expression.Value.NotSet" xml:space="preserve">Not set</x:String>
+  <x:String x:Key="Expression.Value.IncompatibleFrames" xml:space="preserve">Frame rates differ</x:String>
+  <x:String x:Key="Expression.Unit.FramesShort" xml:space="preserve">frames</x:String>
+  <x:String x:Key="Expression.Unit.FramesPerSecond" xml:space="preserve">fps</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Accurate" xml:space="preserve">Frame accurate</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Inexact" xml:space="preserve">Between frames</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.NotCalculated" xml:space="preserve">Not calculated</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Policy" xml:space="preserve">Frame accurate means the distance from the nearest frame is under 0.01 frame.</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Document" xml:space="preserve">Document</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Track" xml:space="preserve">Track</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Segment" xml:space="preserve">Segment</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Chapter" xml:space="preserve">Chapter</x:String>
+  <x:String x:Key="Expression.Property.Title" xml:space="preserve">Title</x:String>
+  <x:String x:Key="Expression.Property.Source" xml:space="preserve">Source</x:String>
+  <x:String x:Key="Expression.Property.ImportFormat" xml:space="preserve">Import format</x:String>
+  <x:String x:Key="Expression.Property.Duration" xml:space="preserve">Duration</x:String>
+  <x:String x:Key="Expression.Property.FrameRate" xml:space="preserve">Frame rate</x:String>
+  <x:String x:Key="Expression.Property.Name" xml:space="preserve">Name</x:String>
+  <x:String x:Key="Expression.Property.Number" xml:space="preserve">Chapter number</x:String>
+  <x:String x:Key="Expression.Property.Type" xml:space="preserve">Chapter type</x:String>
+  <x:String x:Key="Expression.Property.Presence" xml:space="preserve">Chapter entry</x:String>
+  <x:String x:Key="Expression.Property.TrackOrder" xml:space="preserve">Track order</x:String>
+  <x:String x:Key="Expression.Property.Additional" xml:space="preserve">Additional field</x:String>
+  <x:String x:Key="Expression.Property.ValueChanged" xml:space="preserve">Updated</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Load Lua...</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">Expression editor</x:String>

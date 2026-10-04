@@ -5,6 +5,7 @@ using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Avalonia.Tests.ViewModels;
@@ -77,6 +78,10 @@ public sealed class ToolViewModelPortConstructionTests
         public ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken) => ValueTask.FromResult<ChapterDiagnostic?>(null);
 
         public ChapterDiagnostic? ApplyLuaExpressionSettings(string expression, bool applyExpression, string expressionPresetId, string expressionSourceName) => null;
+
+        public void SaveAppliedExpressionPreview(string expression, string expressionPresetId, string expressionSourceName, ExpressionPreviewProjection projection)
+        {
+        }
 
         public ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics) => null;
 

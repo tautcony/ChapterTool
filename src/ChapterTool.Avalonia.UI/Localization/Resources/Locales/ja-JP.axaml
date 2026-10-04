@@ -416,11 +416,73 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">現在のオプションでグリッドを更新</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">現在のオプションで書き出してダウンロード</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">式を適用</x:String>
+  <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">時刻変更 {times}/{count} 件</x:String>
+  <x:String x:Key="Expression.Review.OtherSummary" xml:space="preserve">対象 {affected} 件 · フレーム {frames} 件 · プロパティ {properties} 件</x:String>
+  <x:String x:Key="Expression.Review.Details" xml:space="preserve">その他の変更</x:String>
   <x:String x:Key="Expression.Preview.Title" xml:space="preserve">式のプレビュー</x:String>
   <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">チャプターの値は変更されません。</x:String>
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">式のプレビューをキャンセルしました。</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">式のプレビューを更新しています…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">オプションをプレビュー</x:String>
+  <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">現在のトラック：{track} · {count} 件のチャプター</x:String>
+  <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">区切り行 {count} 件を除外</x:String>
+  <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">影響するチャプター：{affected} · 時刻の変更：{times} · フレーム情報の更新：{frames} · プロパティの変更：{properties}</x:String>
+  <x:String x:Key="Expression.Preview.DeltaFrames" xml:space="preserve">{value} フレーム</x:String>
+  <x:String x:Key="Expression.Preview.Applied" xml:space="preserve">式を適用しました：影響するチャプター {affected} 件、時刻の変更 {times} 件、フレーム情報の更新 {frames} 件。1 回の取り消しで戻せます。</x:String>
+  <x:String x:Key="Expression.Preview.TimesUnchanged" xml:space="preserve">チャプター時刻は変わりません。</x:String>
+  <x:String x:Key="Expression.Preview.Properties" xml:space="preserve">ドキュメントとトラックのプロパティ</x:String>
+  <x:String x:Key="Expression.Preview.Filter" xml:space="preserve">表示</x:String>
+  <x:String x:Key="Expression.Preview.ChangedOnly" xml:space="preserve">変更したチャプター</x:String>
+  <x:String x:Key="Expression.Preview.AllChapters" xml:space="preserve">すべてのチャプター</x:String>
+  <x:String x:Key="Expression.Preview.Units" xml:space="preserve">単位</x:String>
+  <x:String x:Key="Expression.Preview.TimeUnits" xml:space="preserve">時刻</x:String>
+  <x:String x:Key="Expression.Preview.FrameUnits" xml:space="preserve">フレーム</x:String>
+  <x:String x:Key="Expression.Preview.Chapter" xml:space="preserve">チャプター</x:String>
+  <x:String x:Key="Expression.Preview.Before" xml:space="preserve">変更前</x:String>
+  <x:String x:Key="Expression.Preview.After" xml:space="preserve">変更後</x:String>
+  <x:String x:Key="Expression.Preview.Delta" xml:space="preserve">差分</x:String>
+  <x:String x:Key="Expression.Preview.FrameDetails" xml:space="preserve">フレーム情報の詳細</x:String>
+  <x:String x:Key="Expression.Preview.BeforeFrames" xml:space="preserve">変更前のフレーム</x:String>
+  <x:String x:Key="Expression.Preview.AfterFrames" xml:space="preserve">変更後のフレーム</x:String>
+  <x:String x:Key="Expression.Preview.Accuracy" xml:space="preserve">フレーム精度</x:String>
+  <x:String x:Key="Expression.State.Unavailable" xml:space="preserve">プレビューできるチャプターがありません。</x:String>
+  <x:String x:Key="Expression.State.Waiting" xml:space="preserve">プレビューの更新を待っています…</x:String>
+  <x:String x:Key="Expression.State.Computing" xml:space="preserve">プレビューを計算しています…</x:String>
+  <x:String x:Key="Expression.State.Ready" xml:space="preserve">プレビューを確認できます。</x:String>
+  <x:String x:Key="Expression.State.Empty" xml:space="preserve">式を入力するか、プリセットを選択してください。</x:String>
+  <x:String x:Key="Expression.State.Composing" xml:space="preserve">文字入力が完了するとプレビューを更新します。</x:String>
+  <x:String x:Key="Expression.State.Stale" xml:space="preserve">チャプターが変更されました。適用前にプレビューを更新してください。</x:String>
+  <x:String x:Key="Expression.State.Invalid" xml:space="preserve">この式は適用できません。</x:String>
+  <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">適用できる変更はありません。</x:String>
+  <x:String x:Key="Expression.State.Applying" xml:space="preserve">確認済みの変更を適用しています…</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">プレビューを更新</x:String>
+  <x:String x:Key="Expression.Action.Apply" xml:space="preserve">変更を適用</x:String>
+  <x:String x:Key="Expression.Value.Missing" xml:space="preserve">利用できません</x:String>
+  <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">未計算</x:String>
+  <x:String x:Key="Expression.Value.NotSet" xml:space="preserve">未設定</x:String>
+  <x:String x:Key="Expression.Value.IncompatibleFrames" xml:space="preserve">フレームレートが異なります</x:String>
+  <x:String x:Key="Expression.Unit.FramesShort" xml:space="preserve">フレーム</x:String>
+  <x:String x:Key="Expression.Unit.FramesPerSecond" xml:space="preserve">fps</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Accurate" xml:space="preserve">フレーム境界に一致</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Inexact" xml:space="preserve">フレーム間</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.NotCalculated" xml:space="preserve">未計算</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Policy" xml:space="preserve">最も近いフレームとの差が 0.01 フレーム未満の場合、フレーム境界に一致と表示します。</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Document" xml:space="preserve">ドキュメント</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Track" xml:space="preserve">トラック</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Segment" xml:space="preserve">セグメント</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Chapter" xml:space="preserve">チャプター</x:String>
+  <x:String x:Key="Expression.Property.Title" xml:space="preserve">タイトル</x:String>
+  <x:String x:Key="Expression.Property.Source" xml:space="preserve">ソース</x:String>
+  <x:String x:Key="Expression.Property.ImportFormat" xml:space="preserve">インポート形式</x:String>
+  <x:String x:Key="Expression.Property.Duration" xml:space="preserve">長さ</x:String>
+  <x:String x:Key="Expression.Property.FrameRate" xml:space="preserve">フレームレート</x:String>
+  <x:String x:Key="Expression.Property.Name" xml:space="preserve">名前</x:String>
+  <x:String x:Key="Expression.Property.Number" xml:space="preserve">チャプター番号</x:String>
+  <x:String x:Key="Expression.Property.Type" xml:space="preserve">チャプター種別</x:String>
+  <x:String x:Key="Expression.Property.Presence" xml:space="preserve">チャプター項目</x:String>
+  <x:String x:Key="Expression.Property.TrackOrder" xml:space="preserve">トラック順序</x:String>
+  <x:String x:Key="Expression.Property.Additional" xml:space="preserve">追加フィールド</x:String>
+  <x:String x:Key="Expression.Property.ValueChanged" xml:space="preserve">更新済み</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">Lua スクリプトを読み込む…</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">プリセット</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">式エディター</x:String>
