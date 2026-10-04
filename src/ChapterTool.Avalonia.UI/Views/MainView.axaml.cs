@@ -626,7 +626,7 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,2*,*");
+        AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,3*,*");
         AdvancedOptionsGrid.RowDefinitions = new RowDefinitions("Auto,Auto");
 
         SetGridPosition(FormatOptionsGroup, 0, 0);
