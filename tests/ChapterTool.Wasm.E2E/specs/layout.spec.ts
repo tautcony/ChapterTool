@@ -56,7 +56,9 @@ test('B18 idle and dialog visual states at desktop and mobile sizes', async ({ r
       await expect(page).toHaveScreenshot(`wasm-${viewport.name}-${state}.png`, { animations: 'disabled' });
       if (title === 'Expression') {
         await dialog.getByLabel('Custom expression', { exact: true }).fill('return missing_function()');
-        await expect(dialog.getByRole('alert')).toContainText('Lua');
+        await expect(dialog.getByRole('alert')).toBeVisible();
+        await expect(dialog.getByTestId('expression-preview')).toContainText('Lua');
+        await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
         await expect(page).toHaveScreenshot(`wasm-${viewport.name}-expression-error.png`, { animations: 'disabled' });
       }
       await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
