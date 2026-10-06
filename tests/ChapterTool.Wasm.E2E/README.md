@@ -7,6 +7,7 @@ TypeScript. It is separate from the .NET solution and `packages/chaptertool`.
 
 - Node.js 22.x
 - .NET 10 SDK
+- Python 3.9+
 - Chromium and WebKit for the pull request suite; Chromium, Firefox, and WebKit for full
   acceptance
 
@@ -15,13 +16,7 @@ TypeScript. It is separate from the .NET solution and `packages/chaptertool`.
 Run from the repository root:
 
 ```bash
-dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
-dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --configuration Release --no-restore --output artifacts/wasm-e2e/publish
-npm --prefix tests/ChapterTool.Wasm.E2E ci
-npm --prefix tests/ChapterTool.Wasm.E2E exec -- playwright install chromium
-npm --prefix tests/ChapterTool.Wasm.E2E run prepare:site
-npm --prefix tests/ChapterTool.Wasm.E2E run typecheck
-npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e -- --project=chromium
+python scripts/check-ci.py --stage browser --browser-suite chromium
 ```
 
 The default Playwright configuration serves the prepared Release output at
@@ -64,5 +59,9 @@ The WASM acceptance workflow also runs targeted WebKit modal and editing checks 
 `specs/layout.spec.ts` checks idle, history, expression, diagnostics, advanced export, and settings states at 1280×800, 1920×1080, 390×844, 390×640, and 844×390. Visual checks run on pull requests. Results use `results-visual`, `report-visual`, and `junit-visual.xml`. Create
 or update baselines only in the fixed Linux environment. Review each image
 change before committing it.
+
+Run `python scripts/check-ci.py --stage visual-review` from the repository root to review these workflows on Windows, macOS, or Linux. Prepare the Release site first. This stage uses `playwright.review.config.ts` and disables retries. It writes host images to `artifacts/wasm-e2e/review-snapshots/`. It keeps the committed Linux baselines unchanged. The direct test command is `npm --prefix tests/ChapterTool.Wasm.E2E run test:visual:review`.
+
+Run `WASM browser acceptance` manually with `update_visual_snapshots` to generate Linux baselines. Download the `wasm-linux-baselines` artifact. Run `python scripts/ci/review-wasm-baselines.py <downloaded-zip>` to extract the images and list changes. Review the images, then run the same command with `--apply`. Normal CI must compare the committed baselines. See `scripts/README.md` for the complete review workflow.
 
 Physical iPhone browser chrome and keyboard behavior require a device check. Mobile viewports and WebKit emulation do not establish that result.

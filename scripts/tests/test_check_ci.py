@@ -190,6 +190,19 @@ class RunnerTests(unittest.TestCase):
         preflight.assert_not_called()
         run.assert_not_called()
 
+    def test_visual_review_can_run_on_windows_with_a_prepared_site(self):
+        options = ci.parser().parse_args(["--stage", "visual-review", "--step", "review-visual-workflows"])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            site = root / "artifacts/wasm-e2e/site/ChapterTool/index.html"
+            site.parent.mkdir(parents=True)
+            site.touch()
+            with patch.object(ci, "ROOT", root), patch.object(ci.platform, "system", return_value="Windows"), \
+                    patch.object(ci.shutil, "which", return_value="npm"), \
+                    patch.object(ci.subprocess, "check_output", return_value="v22.16.0"):
+                ci.preflight(options)
+        self.assertEqual(["npm", "run", "test:visual:review"], ci.plan(options, ci.ROOT)[0].args)
+
     def test_unsupported_macos_packaging_fails_before_commands_run(self):
         with patch.object(ci.platform, "system", return_value="Windows"):
             with self.assertRaisesRegex(ValueError, "macOS host"):

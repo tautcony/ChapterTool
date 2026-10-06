@@ -53,6 +53,8 @@ Use `tests/ChapterTool.Wasm.E2E` for rendered Blazor workflows and browser bound
 
 An intentional layout change must update its reviewed Linux screenshot baselines. A manual `WASM browser acceptance` run can generate the images with `update_visual_snapshots`. The artifact is `wasm-linux-baselines`. Normal CI runs must compare the committed images without regenerating them. See `scripts/README.md` for the review workflow.
 
+`playwright.review.config.ts` runs the visual workflow assertions on each host and writes review images under `artifacts/wasm-e2e/review-snapshots/`. `scripts/check-ci.py --stage visual-review` selects this configuration through `test:visual:review`. `scripts/ci/review-wasm-baselines.py` extracts the Linux baseline artifact for review and can apply reviewed images. `scripts/tests/test_review_wasm_baselines.py` verifies extraction, explicit application, and failure before mutation for incomplete or duplicate images.
+
 `specs/expression-preview-screenshots.spec.ts` verifies that changed time values stay above the footer at default, wide, and narrow portrait sizes. It checks English and Chinese count text and expandable property values. It writes review images under `artifacts/expression-preview/`. `ToolViewsHeadlessTests` verifies the desktop comparison reflow in English and Chinese and writes images to the same directory.
 
 CI runs Chromium, targeted WebKit regressions, and fixed-Linux visual checks for relevant pull requests. Scheduled and manual acceptance runs use all three browser engines. Pages deployment runs `@smoke`, including a short-screen dialog workflow. Reports and diagnostics are under `artifacts/wasm-e2e/`. Browser emulation does not verify a physical iPhone keyboard.

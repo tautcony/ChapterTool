@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parent.parent
 NODE = "packages/chaptertool"
 E2E = "tests/ChapterTool.Wasm.E2E"
-STAGES = ("resources", "dotnet", "node", "build-test", "browser", "pack-node", "pack-desktop", "visual")
+STAGES = ("resources", "dotnet", "node", "build-test", "browser", "pack-node", "pack-desktop", "visual", "visual-review")
 DEFAULT_STAGES = ("resources", "dotnet", "node", "browser", "pack-node", "pack-desktop")
 
 
@@ -148,13 +148,17 @@ def plan(options: argparse.Namespace, root: Path) -> list[Step]:
         elif stage == "pack-desktop":
             runtimes = options.runtime or (["osx-arm64"] if platform.system() == "Darwin" else ["win-x64", "linux-x64"])
             steps.extend(desktop_steps(runtimes))
-        elif stage == "visual":
+        elif stage in ("visual", "visual-review"):
             steps.extend([
                 Step("Install visual test dependencies", ["npm", "ci"], E2E),
                 Step("Install Chromium", ["npm", "exec", "--", "playwright", "install", *(["--with-deps"] if options.install_browser_deps else []), "chromium"], E2E),
-                Step("Compare Linux screenshot baselines", ["npm", "run", "test:visual",
-                     *(["--", "--update-snapshots", "--retries=0"] if options.update_visual_snapshots else [])], E2E),
             ])
+            if stage == "visual-review":
+                steps.append(Step("Review visual workflows", ["npm", "run", "test:visual:review"], E2E))
+            else:
+                steps.append(
+                    Step("Compare Linux screenshot baselines", ["npm", "run", "test:visual",
+                         *(["--", "--update-snapshots", "--retries=0"] if options.update_visual_snapshots else [])], E2E))
     if options.step:
         unknown = set(options.step) - {step.key for step in steps}
         if unknown:
@@ -217,11 +221,11 @@ def preflight(options: argparse.Namespace) -> None:
             raise ValueError("CI requires wasm-tools. Run 'dotnet workload install wasm-tools' once, then retry.")
     if options.stage == "pack-node" and not (ROOT / NODE / "dist/index.mjs").is_file():
         raise ValueError("pack-node needs the dist output from --stage node or --stage build-test.")
-    if options.stage == "visual":
-        if platform.system() != "Linux":
+    if options.stage in ("visual", "visual-review"):
+        if options.stage == "visual" and platform.system() != "Linux":
             raise ValueError("The screenshot baselines require the CI Linux environment. Use --stage browser for cross-platform layout behavior checks.")
         if not (ROOT / "artifacts/wasm-e2e/site/ChapterTool/index.html").is_file():
-            raise ValueError("visual needs the prepared Release site from --stage browser.")
+            raise ValueError(f"{options.stage} needs the prepared Release site from --stage browser.")
 
 
 def parser() -> argparse.ArgumentParser:

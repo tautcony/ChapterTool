@@ -262,13 +262,13 @@ npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e
 
 首次短视口尝试正常关闭历史时发生超时。后续采集将该遮挡记录为诊断，再通过顶部历史开关继续采集。没有使用强制点击。最终采集脚本的通过结果仅表示证据已保存。
 
-本次复现命令：
+上述结果来自修复前的临时采集。当前回归使用正式测试入口：
 
 ```text
-node tests/ChapterTool.Wasm.E2E/node_modules/@playwright/test/cli.js test --config=artifacts/wasm-layout-analysis/playwright.probe.config.mjs
+npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e -- modal-layout.spec.ts --project=chromium --project=webkit
 ```
 
-该脚本和配置均位于被忽略的 artifacts 目录。本次没有运行完整正式 E2E 套件，也没有生成修复后的截图基线。
+临时采集脚本不作为仓库维护工具保留。该回归命令检查当前弹窗流程。`python scripts/check-ci.py --stage visual-review` 在当前主机采集视觉复核图片。Linux 基线的生成、复核和导入步骤见 `scripts/README.md`。
 
 调整完成后，必须同时满足以下条件：
 

@@ -10,6 +10,7 @@
     "test:e2e:headed": "playwright test --config=playwright.config.ts --headed",
     "test:e2e:ui": "playwright test --config=playwright.config.ts --ui",
     "test:visual": "playwright test --config=playwright.visual.config.ts",
+    "test:visual:review": "playwright test --config=playwright.review.config.ts --update-snapshots --retries=0",
     "report": "playwright show-report ../../artifacts/wasm-e2e/report",
     "serve:published": "node scripts/serve-published.mjs"
   },

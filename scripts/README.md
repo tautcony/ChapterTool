@@ -9,6 +9,7 @@ The tables below show what each script helps you do and what it needs to run.
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
 | `check-ci.py` | Python 3.9+; cross-platform | Python standard library; see prerequisites below | Run the checks shared with GitHub Actions. |
+| `ci/review-wasm-baselines.py` | Python 3.9+; cross-platform | Python standard library | Extract a Linux baseline ZIP for review. Apply reviewed changes with `--apply`. |
 | `test-coverage.py` | Python 3; cross-platform | Python standard library, `defusedxml` (uv-managed), .NET SDK; optional `reportgenerator` | Build test projects, run their assemblies through VSTest, and collect coverage. |
 | `report-analyzers.py` | Python 3; cross-platform | Python standard library, .NET SDK | Build the solution and summarize compiler and analyzer diagnostics. |
 | `publish.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate Linux, macOS, or Windows runtime artifacts. macOS bundles require a macOS host. |
@@ -72,6 +73,9 @@ python scripts/check-ci.py --stage node
 # Publish and test browser workflows.
 python scripts/check-ci.py --stage browser
 
+# Review visual workflows on the current host after preparing the browser site.
+python scripts/check-ci.py --stage visual-review
+
 # Include the weekly three-engine acceptance suite.
 python scripts/check-ci.py --browser-suite full
 
@@ -101,9 +105,11 @@ The browser publish step removes its generated publish directory first. Old hash
 
 Run `WASM browser acceptance` manually with `update_visual_snapshots` enabled after an intentional layout change. This run prepares the Release site and generates baselines in the pinned Linux screenshot environment. It uploads `wasm-linux-baselines`. It does not run the browser acceptance matrix. The visual tests must still pass their workflow and geometry assertions. This mode disables retries.
 
-Download the artifact and review each changed image before copying it into `tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/`. Commit the reviewed images. The subsequent push must pass normal screenshot comparison. Push, pull request, and scheduled checks never regenerate baselines.
+Download the artifact. Run `python scripts/ci/review-wasm-baselines.py <downloaded-zip>` to extract its images into `artifacts/wasm-e2e/baseline-review/` and list the changes. Review each changed image. Run the same command with `--apply` to copy reviewed changes into `tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/`. The tool must reject missing or duplicate baseline names before it writes committed images. Commit the reviewed images. The subsequent push must pass normal screenshot comparison. Push, pull request, and scheduled checks never regenerate baselines.
 
 On a matching Linux host, the equivalent command is `python3 scripts/check-ci.py --stage visual --update-visual-snapshots`. Windows and macOS cannot generate the Linux baseline images. A baseline must not hide an unintended layout change or a host difference.
+
+`python scripts/check-ci.py --stage visual-review` runs the same visual workflow assertions on Windows, macOS, or Linux. It requires the prepared site from `--stage browser`. It writes host review images under `artifacts/wasm-e2e/review-snapshots/`. It does not change or compare the committed Linux baselines. It disables retries. The Playwright configuration is `tests/ChapterTool.Wasm.E2E/playwright.review.config.ts`.
 
 ### Platform limits
 
