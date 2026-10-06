@@ -35,7 +35,7 @@ The default checks run in this order:
 5. Pack the npm tarball. Install it in a temporary consumer and run its Core API.
 6. Publish and validate desktop artifacts. Windows and Linux hosts cover `win-x64` and `linux-x64`. Windows uses Git Bash for Linux cross-publishing. macOS hosts cover the `osx-arm64` DMG.
 
-The script stops at the first failed check and returns a nonzero exit code. It does not regenerate translations or screenshot baselines. Browser reports remain under `artifacts/wasm-e2e/`. Packages use the existing `artifacts/nuget/`, `artifacts/cli-nuget/`, `artifacts/npm/`, and `artifacts/publish/` directories.
+The script stops at the first failed check and returns a nonzero exit code. The default checks do not regenerate translations or screenshot baselines. Browser reports remain under `artifacts/wasm-e2e/`. Packages use the existing `artifacts/nuget/`, `artifacts/cli-nuget/`, `artifacts/npm/`, and `artifacts/publish/` directories.
 
 ### Prerequisites
 
@@ -96,6 +96,14 @@ The .NET solution check builds all projects in `ChapterTool.slnx`, including Nod
 Browser publishing uses the SDK prebuilt WASM runtime, as the original browser CI did without `wasm-tools`. The shared publish command sets `WasmBuildNative=false` and `WasmRunWasmOpt=false`. Installing the Node build workload on a local host must not change the browser artifact under test. These properties apply only to the browser publish command.
 
 The browser publish step removes its generated publish directory first. Old hashed runtime files must not affect a local check. Browser reports and other artifact directories remain available.
+
+### Review intentional screenshot changes
+
+Run `WASM browser acceptance` manually with `update_visual_snapshots` enabled after an intentional layout change. This run prepares the Release site and generates baselines in the pinned Linux screenshot environment. It uploads `wasm-linux-baselines`. It does not run the browser acceptance matrix. The visual tests must still pass their workflow and geometry assertions. This mode disables retries.
+
+Download the artifact and review each changed image before copying it into `tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/`. Commit the reviewed images. The subsequent push must pass normal screenshot comparison. Push, pull request, and scheduled checks never regenerate baselines.
+
+On a matching Linux host, the equivalent command is `python3 scripts/check-ci.py --stage visual --update-visual-snapshots`. Windows and macOS cannot generate the Linux baseline images. A baseline must not hide an unintended layout change or a host difference.
 
 ### Platform limits
 

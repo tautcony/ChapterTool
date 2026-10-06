@@ -51,6 +51,8 @@ Use `tests/ChapterTool.Wasm.E2E` for rendered Blazor workflows and browser bound
 
 `specs/modal-layout.spec.ts` owns dialog geometry, focus, hit targets, draft cancellation, background isolation, and long-body scrolling. It includes viewport boundaries from 320 pixels through desktop widths. `specs/unified-editing.spec.ts` owns modal history branches, expression before/after review, composition, and commits. `specs/layout.spec.ts` owns fixed-Linux visual states for idle pages and dialogs. Visual results use separate output paths.
 
+An intentional layout change must update its reviewed Linux screenshot baselines. A manual `WASM browser acceptance` run can generate the images with `update_visual_snapshots`. The artifact is `wasm-linux-baselines`. Normal CI runs must compare the committed images without regenerating them. See `scripts/README.md` for the review workflow.
+
 `specs/expression-preview-screenshots.spec.ts` verifies that changed time values stay above the footer at default, wide, and narrow portrait sizes. It checks English and Chinese count text and expandable property values. It writes review images under `artifacts/expression-preview/`. `ToolViewsHeadlessTests` verifies the desktop comparison reflow in English and Chinese and writes images to the same directory.
 
 CI runs Chromium, targeted WebKit regressions, and fixed-Linux visual checks for relevant pull requests. Scheduled and manual acceptance runs use all three browser engines. Pages deployment runs `@smoke`, including a short-screen dialog workflow. Reports and diagnostics are under `artifacts/wasm-e2e/`. Browser emulation does not verify a physical iPhone keyboard.

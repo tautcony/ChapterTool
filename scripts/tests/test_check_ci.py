@@ -170,6 +170,26 @@ class RunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not part of"):
             ci.browser_steps("pr", False, "firefox")
 
+    def test_visual_comparison_does_not_update_baselines_by_default(self):
+        with patch.object(ci, "preflight"), patch.object(ci.subprocess, "run") as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, ci.main(["--stage", "visual", "--step", "compare-linux-screenshot-baselines"]))
+        self.assertEqual(["run", "test:visual"], run.call_args.args[0][1:])
+
+    def test_visual_update_is_explicit_and_keeps_behavior_assertions_without_retries(self):
+        with patch.object(ci, "preflight"), patch.object(ci.subprocess, "run") as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, ci.main(["--stage", "visual", "--step", "compare-linux-screenshot-baselines", "--update-visual-snapshots"]))
+        self.assertEqual(["run", "test:visual", "--", "--update-snapshots", "--retries=0"], run.call_args.args[0][1:])
+        self.assertTrue(run.call_args.kwargs["check"])
+
+    def test_visual_update_cannot_change_other_stage_checks(self):
+        with patch.object(ci, "preflight") as preflight, patch.object(ci.subprocess, "run") as run, \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(1, ci.main(["--stage", "browser", "--update-visual-snapshots"]))
+        preflight.assert_not_called()
+        run.assert_not_called()
+
     def test_unsupported_macos_packaging_fails_before_commands_run(self):
         with patch.object(ci.platform, "system", return_value="Windows"):
             with self.assertRaisesRegex(ValueError, "macOS host"):

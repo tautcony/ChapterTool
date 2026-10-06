@@ -128,6 +128,8 @@ def desktop_steps(runtimes: list[str]) -> list[Step]:
 
 
 def plan(options: argparse.Namespace, root: Path) -> list[Step]:
+    if options.update_visual_snapshots and options.stage != "visual":
+        raise ValueError("Screenshot updates require --stage visual in the matching Linux environment.")
     stages = DEFAULT_STAGES if options.stage == "all" else (options.stage,)
     steps = []
     for stage in stages:
@@ -150,7 +152,8 @@ def plan(options: argparse.Namespace, root: Path) -> list[Step]:
             steps.extend([
                 Step("Install visual test dependencies", ["npm", "ci"], E2E),
                 Step("Install Chromium", ["npm", "exec", "--", "playwright", "install", *(["--with-deps"] if options.install_browser_deps else []), "chromium"], E2E),
-                Step("Compare Linux screenshot baselines", ["npm", "run", "test:visual"], E2E),
+                Step("Compare Linux screenshot baselines", ["npm", "run", "test:visual",
+                     *(["--", "--update-snapshots", "--retries=0"] if options.update_visual_snapshots else [])], E2E),
             ])
     if options.step:
         unknown = set(options.step) - {step.key for step in steps}
@@ -229,6 +232,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--browser-engine", choices=("chromium", "firefox", "webkit"), help="Select one engine from the browser suite for an isolated CI job.")
     result.add_argument("--runtime", action="append", choices=("win-x64", "linux-x64", "osx-arm64"))
     result.add_argument("--install-browser-deps", action="store_true", help="Install Playwright system packages on Linux.")
+    result.add_argument("--update-visual-snapshots", action="store_true", help="Generate screenshot baselines for review. Requires --stage visual on matching Linux.")
     result.add_argument("--plan", action="store_true", help="Print commands without running checks.")
     return result
 

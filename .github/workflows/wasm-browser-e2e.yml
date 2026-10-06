@@ -5,9 +5,14 @@ on:
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
+    inputs:
+      update_visual_snapshots:
+        description: Generate Linux screenshot baselines for review
+        type: boolean
+        default: false
 
 concurrency:
-  group: wasm-browser-acceptance-${{ github.ref }}
+  group: wasm-browser-acceptance-${{ github.ref }}-${{ inputs.update_visual_snapshots && 'baselines' || 'checks' }}
   cancel-in-progress: true
 
 jobs:
@@ -50,6 +55,7 @@ jobs:
 
   browser-acceptance:
     name: Browser acceptance (${{ matrix.engine }})
+    if: github.event_name != 'workflow_dispatch' || !inputs.update_visual_snapshots
     needs: prepare-site
     runs-on: ubuntu-24.04
     strategy:
@@ -121,7 +127,19 @@ jobs:
       - name: Install Chromium and system dependencies
         run: python3 scripts/check-ci.py --stage visual --install-browser-deps --step install-chromium
       - name: Compare Linux screenshot baselines
+        if: ${{ !inputs.update_visual_snapshots }}
         run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines
+      - name: Generate Linux screenshot baselines
+        if: inputs.update_visual_snapshots
+        run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines --update-visual-snapshots
+      - name: Upload generated Linux baselines for review
+        if: inputs.update_visual_snapshots
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-linux-baselines
+          path: tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/*.png
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload visual diagnostics
         if: always()
         uses: actions/upload-artifact@v7
