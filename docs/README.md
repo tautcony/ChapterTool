@@ -8,6 +8,7 @@ This directory contains documentation for the current ChapterTool codebase.
 - `testing/` contains current testing guidance and performance notes.
 - `code-map/ui-logging.md` maps shared Avalonia UI logging scenarios and log outputs.
 - `tasks/ui-visual-consistency.md` provides the current workflow for investigating Avalonia visual inconsistencies.
+- `tasks/unified-editing-and-unbounded-history.md` defines one document editing model and in-memory session history without an operation-count limit.
 - `tasks/wasm-modal-layout-and-regression-plan.md` analyzes browser layout failures and defines modal workflows and layout regression checks.
 - `testing/headless-performance.md` records the Headless UI lifecycle diagnosis and triage steps.
 - `testing/wasm-browser-e2e-plan.md` records the Playwright browser test design, execution commands, CI gates, and acceptance criteria for the Blazor WebAssembly app.
