@@ -1,30 +1,7 @@
 name: WASM browser acceptance
 
 on:
-  push:
-    paths:
-      - ".github/workflows/wasm-browser-e2e.yml"
-      - "Directory.Build.props"
-      - "Directory.Build.targets"
-      - "Directory.Packages.props"
-      - "src/ChapterTool.Wasm/**"
-      - "src/ChapterTool.Core/**"
-      - "src/ChapterTool.Contracts/**"
-      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
-      - "tests/ChapterTool.Wasm.E2E/**"
-      - "tests/ChapterTool.Core.Tests/Fixtures/Importing/Disc/**"
-  pull_request:
-    paths:
-      - ".github/workflows/wasm-browser-e2e.yml"
-      - "Directory.Build.props"
-      - "Directory.Build.targets"
-      - "Directory.Packages.props"
-      - "src/ChapterTool.Wasm/**"
-      - "src/ChapterTool.Core/**"
-      - "src/ChapterTool.Contracts/**"
-      - "src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/**"
-      - "tests/ChapterTool.Wasm.E2E/**"
-      - "tests/ChapterTool.Core.Tests/Fixtures/Importing/Disc/**"
+  workflow_call:
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
@@ -34,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  browser-acceptance:
-    name: WASM browser acceptance
+  prepare-site:
+    name: Publish and prepare WASM site
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -53,68 +30,106 @@ jobs:
           cache: npm
           cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
 
-      - name: Restore and publish WASM
-        run: |
-          dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
-          dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj \
-            --configuration Release --no-restore --output artifacts/wasm-e2e/publish
-
-      - name: Install E2E dependencies
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm ci
-
+      - name: Restore WASM
+        run: python3 scripts/check-ci.py --stage browser --step restore-wasm
+      - name: Publish Release WASM
+        run: python3 scripts/check-ci.py --stage browser --step publish-release-wasm
+      - name: Install browser test dependencies
+        run: python3 scripts/check-ci.py --stage browser --step install-browser-test-dependencies
       - name: Prepare Pages-shaped site
-        working-directory: tests/ChapterTool.Wasm.E2E
-        env:
-          CHAPTERTOOL_E2E_PUBLISH: artifacts/wasm-e2e/publish/wwwroot
-        run: npm run prepare:site
+        run: python3 scripts/check-ci.py --stage browser --step prepare-pages-shaped-site
+      - name: Type check browser tests
+        run: python3 scripts/check-ci.py --stage browser --step type-check-browser-tests
+      - name: Upload prepared site
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-prepared-site
+          path: artifacts/wasm-e2e/site/
+          if-no-files-found: error
+          retention-days: 1
 
-      - name: Type check
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm run typecheck
-
-      - name: Install Chromium and WebKit for pull request and push checks
-        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm exec -- playwright install --with-deps chromium webkit
-
-      - name: Install all browser engines for acceptance runs
+  browser-acceptance:
+    name: Browser acceptance (${{ matrix.engine }})
+    needs: prepare-site
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["chromium","firefox","webkit"]' || '["chromium","webkit"]') }}
+    env:
+      BROWSER_SUITE: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'full' || 'pr' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22.x
+          cache: npm
+          cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
+      - name: Download prepared site
+        uses: actions/download-artifact@v8
+        with:
+          name: wasm-prepared-site
+          path: artifacts/wasm-e2e/site/
+      - name: Install browser test dependencies
+        run: python3 scripts/check-ci.py --stage browser --step install-browser-test-dependencies
+      - name: Install ${{ matrix.engine }}
+        run: python3 scripts/check-ci.py --stage browser --browser-suite "$BROWSER_SUITE" --browser-engine ${{ matrix.engine }} --install-browser-deps --step install-browser-engines
+      - name: Run Chromium workflows
+        if: env.BROWSER_SUITE == 'pr' && matrix.engine == 'chromium'
+        run: python3 scripts/check-ci.py --stage browser --browser-engine chromium --step run-chromium-e2e
+      - name: Run WebKit modal and editing regressions
+        if: env.BROWSER_SUITE == 'pr' && matrix.engine == 'webkit'
+        run: python3 scripts/check-ci.py --stage browser --browser-engine webkit --step run-webkit-regressions
+      - name: Run full ${{ matrix.engine }} acceptance without retries
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm exec -- playwright install --with-deps
-
-      - name: Run Chromium checks
-        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm run test:e2e -- --project=chromium
-
-      - name: Run three-engine acceptance suite
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        working-directory: tests/ChapterTool.Wasm.E2E
-        env:
-          E2E_NO_RETRY: "1"
-        run: npm run test:e2e
-
-      - name: Run WebKit modal and editing regression checks
-        if: github.event_name != 'schedule' && github.event_name != 'workflow_dispatch'
-        working-directory: tests/ChapterTool.Wasm.E2E
-        env:
-          E2E_RUN_NAME: webkit
-        run: npm run test:e2e -- --project=webkit modal-layout.spec.ts unified-editing.spec.ts
-
-      - name: Run fixed-Linux visual acceptance
-        run: |
-          docker run --rm \
-            --volume "${GITHUB_WORKSPACE}:/work" \
-            --workdir /work/tests/ChapterTool.Wasm.E2E \
-            node:22-slim@sha256:7af03b14a13c8cdd38e45058fd957bf00a72bbe17feac43b1c15a689c029c732 \
-            bash -lc 'npm ci && npx playwright install --with-deps chromium && npm run test:visual'
+        run: python3 scripts/check-ci.py --stage browser --browser-suite full --browser-engine ${{ matrix.engine }} --step run-full-browser-acceptance
 
       - name: Upload browser diagnostics
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: wasm-browser-acceptance
-          path: artifacts/wasm-e2e/
+          name: wasm-browser-acceptance-${{ matrix.engine }}
+          path: |
+            artifacts/wasm-e2e/report*/
+            artifacts/wasm-e2e/results*/
+            artifacts/wasm-e2e/*.xml
+          if-no-files-found: warn
+          retention-days: 14
+
+  visual-acceptance:
+    name: Linux screenshot baselines
+    needs: prepare-site
+    runs-on: ubuntu-24.04
+    # Preserve the existing Debian screenshot environment and image digest.
+    container: node:22-slim@sha256:7af03b14a13c8cdd38e45058fd957bf00a72bbe17feac43b1c15a689c029c732
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Python
+        run: |
+          apt-get update
+          apt-get install -y python3
+      - name: Download prepared site
+        uses: actions/download-artifact@v8
+        with:
+          name: wasm-prepared-site
+          path: artifacts/wasm-e2e/site/
+      - name: Install visual test dependencies
+        run: python3 scripts/check-ci.py --stage visual --step install-visual-test-dependencies
+      - name: Install Chromium and system dependencies
+        run: python3 scripts/check-ci.py --stage visual --install-browser-deps --step install-chromium
+      - name: Compare Linux screenshot baselines
+        run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines
+      - name: Upload visual diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: wasm-visual-acceptance
+          path: |
+            artifacts/wasm-e2e/report*/
+            artifacts/wasm-e2e/results*/
+            artifacts/wasm-e2e/*.xml
           if-no-files-found: warn
           retention-days: 14

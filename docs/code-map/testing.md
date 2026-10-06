@@ -61,7 +61,7 @@ Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js 
 
 `tests/ChapterTool.Core.Tests/Session/ExpressionPreviewProjectorTests.cs` verifies typed candidate comparison, chapter and property effects, track scope, frame bases, and complete document equality. `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers expression preview freshness, exact-candidate commit, status, and undo/redo.
 
-The `.NET 10 CI` workflow builds `dist/` once for changes under `packages/chaptertool`. The build and test job runs `npm run typecheck` and `npm run test:built` against this output. The npm pack job downloads the same output. It runs `npm run pack:verify` without lifecycle scripts. The pack check installs the generated tarball into a temporary consumer and calls `ChapterTool.import`. The `Publish to npm` workflow uses npm Trusted Publishing after a successful version tag run. Configure the GitHub Actions trusted publisher for this workflow and the `npm` environment on npmjs.com.
+The `.NET 10 CI` workflow builds `dist/` once in the Node.js job. That job runs `npm run typecheck` and `npm run test:built` against this output. It then runs `npm run pack:verify` without lifecycle scripts. The pack check installs the generated tarball into a temporary consumer and calls `ChapterTool.import`. The `Publish to npm` workflow uses npm Trusted Publishing after a successful version tag run. Configure the GitHub Actions trusted publisher for this workflow and the `npm` environment on npmjs.com.
 
 High-signal test files:
 
@@ -268,6 +268,13 @@ Cyclomatic complexity (CA1502): the threshold is 10, set in `CodeMetricsConfig.t
 Per-target-framework reports: `Directory.Build.targets` sets a separate `ErrorLog` file for each target framework. Parallel compilers of a multi-target project cannot corrupt a shared file. The parser also accepts several concatenated JSON documents, so combined files do not break the report.
 
 ## Distribution Verification
+
+Pre-push CI entry point:
+
+- `python scripts/check-ci.py` runs the shared build, test, browser, npm package, and desktop publish checks on the current host. Browser reports use `artifacts/wasm-e2e/`. Published packages use their existing artifact directories.
+- `scripts/check-ci.py` owns build, test, and packaging commands. CI workflows select stage and step keys from that script. Each Actions step identifies one check. Resource checks, .NET checks, Node.js checks, and desktop runtime jobs start independently. Browser jobs share one prepared site and run in parallel with the screenshot job. .NET test projects run sequentially in separate processes. The script reads test membership from `ChapterTool.slnx`.
+- `scripts/tests/test_check_ci.py` verifies failure propagation, timeouts, step selection, scoped environment settings, Windows tool discovery, browser matrix coverage, test-process separation, and platform publish selection. `scripts/ci/check-powershell.ps1` reports publish script parse errors.
+- `scripts/README.md` documents prerequisites, individual stages, historical failures, and platform limits. Screenshot comparison requires the matching Linux baseline environment. macOS DMG checks must run on a macOS host.
 
 Coverage entry point:
 

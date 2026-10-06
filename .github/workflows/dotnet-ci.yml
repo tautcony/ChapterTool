@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - ".github/workflows/dotnet-ci.yml"
+      - ".github/workflows/wasm-browser-e2e.yml"
       - "Directory.Build.props"
       - "Directory.Build.targets"
       - "Directory.Packages.props"
@@ -19,6 +20,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/dotnet-ci.yml"
+      - ".github/workflows/wasm-browser-e2e.yml"
       - "Directory.Build.props"
       - "Directory.Build.targets"
       - "Directory.Packages.props"
@@ -37,25 +39,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  wasm-browser-e2e:
+    name: WASM browser checks
+    uses: ./.github/workflows/wasm-browser-e2e.yml
+
+  resources:
+    name: Resources and scripts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Sync locked Python tools
+        run: python3 scripts/check-ci.py --stage resources --step sync-locked-python-tools
+      - name: Verify localization resources
+        run: python3 scripts/check-ci.py --stage resources --step verify-localization-resources
+      - name: Lint Python scripts
+        run: python3 scripts/check-ci.py --stage resources --step lint-python-scripts
+      - name: Test CI runner
+        run: python3 scripts/check-ci.py --stage resources --step test-ci-runner
+      - name: Validate PowerShell publish script
+        run: python3 scripts/check-ci.py --stage resources --step validate-powershell-publish-script
+
   build-test:
-    name: Build and test
+    name: .NET build, tests, and NuGet
     runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: Sync locked Python tools
-        run: uv sync --locked --no-build --project scripts
-
-      - name: Verify localization resources
-        run: uv run --locked --no-build --project scripts scripts/axaml-to-json.py --check
-
-      - name: Lint Python scripts
-        run: uv run --locked --no-build --project scripts ruff check scripts/
 
       - name: Install .NET 10
         uses: actions/setup-dotnet@v6
@@ -66,67 +79,38 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
       - name: Install .NET wasm-tools workload
         run: dotnet workload install wasm-tools
 
-      - name: Install Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22.x
-          cache: npm
-          cache-dependency-path: packages/chaptertool/package-lock.json
-
-      - name: Install npm dependencies
-        working-directory: packages/chaptertool
-        run: npm ci --ignore-scripts
-
-      - name: Restore
-        run: dotnet restore ChapterTool.slnx
-
-      - name: Build
-        run: dotnet build ChapterTool.slnx --configuration Release --no-restore
-
-      - name: Build Node.js package
-        working-directory: packages/chaptertool
-        run: npm run build
-
-      - name: Validate PowerShell publish script
-        shell: pwsh
-        run: |
-          $null = [System.Management.Automation.Language.Parser]::ParseFile(
-            (Join-Path $PWD 'scripts/publish.ps1'),
-            [ref]$null,
-            [ref]$null)
-
-      - name: Pack ChapterTool.Core
-        run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-build --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
-
-      - name: Pack ChapterTool CLI
-        run: dotnet pack src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj --configuration Release --no-build --no-restore --output artifacts/cli-nuget /p:ContinuousIntegrationBuild=true
-
       - name: Install external tools
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg mkvtoolnix
 
-      - name: Test .NET
-        run: dotnet test ChapterTool.slnx --configuration Release --no-build --no-restore --timeout 10m
-
-      - name: Test Node.js package
-        working-directory: packages/chaptertool
-        run: npm run typecheck && npm run test:built
-
-      - name: Upload Node.js build output
-        uses: actions/upload-artifact@v7
-        with:
-          name: ChapterTool-node-dist
-          path: packages/chaptertool/dist
-          if-no-files-found: error
-          retention-days: 1
+      - name: Restore solution
+        run: python3 scripts/check-ci.py --stage dotnet --step restore
+      - name: Build Release
+        run: python3 scripts/check-ci.py --stage dotnet --step build-release
+      - name: Test Avalonia Headless
+        run: python3 scripts/check-ci.py --stage dotnet --step test-chaptertool-avalonia-headless-tests
+      - name: Test Avalonia ViewModels and services
+        run: python3 scripts/check-ci.py --stage dotnet --step test-chaptertool-avalonia-tests
+      - name: Test CLI
+        run: python3 scripts/check-ci.py --stage dotnet --step test-chaptertool-commandline-tests
+      - name: Test Core
+        run: python3 scripts/check-ci.py --stage dotnet --step test-chaptertool-core-tests
+      - name: Test WASM workspace
+        run: python3 scripts/check-ci.py --stage dotnet --step test-chaptertool-wasm-tests
+      - name: Test Infrastructure integrations
+        run: python3 scripts/check-ci.py --stage dotnet --step test-chaptertool-infrastructure-tests
+      - name: Pack Core NuGet
+        run: python3 scripts/check-ci.py --stage dotnet --step pack-chaptertool-core
+      - name: Pack CLI NuGet
+        run: python3 scripts/check-ci.py --stage dotnet --step pack-chaptertool-commandline
 
       - name: Upload NuGet artifact
         uses: actions/upload-artifact@v7
@@ -146,64 +130,7 @@ jobs:
             artifacts/cli-nuget/*.snupkg
           if-no-files-found: error
 
-  wasm-browser-e2e:
-    name: WASM browser E2E (Chromium)
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install .NET 10
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Install Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22.x
-          cache: npm
-          cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
-
-      - name: Restore and publish WASM
-        run: |
-          dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
-          dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj \
-            --configuration Release --no-restore --output artifacts/wasm-e2e/publish
-
-      - name: Install E2E dependencies
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm ci
-
-      - name: Prepare Pages-shaped site
-        working-directory: tests/ChapterTool.Wasm.E2E
-        env:
-          CHAPTERTOOL_E2E_PUBLISH: artifacts/wasm-e2e/publish/wwwroot
-        run: npm run prepare:site
-
-      - name: Type check
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm run typecheck
-
-      - name: Install Chromium
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm exec -- playwright install --with-deps chromium
-
-      - name: Run Chromium E2E suite
-        working-directory: tests/ChapterTool.Wasm.E2E
-        run: npm run test:e2e -- --project=chromium
-
-      - name: Upload browser diagnostics
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: wasm-browser-e2e-chromium
-          path: artifacts/wasm-e2e/
-          if-no-files-found: warn
-          retention-days: 14
-
   pack-dotnet:
-    needs: build-test
     name: Pack Avalonia (${{ matrix.runtime }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -233,22 +160,14 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore .NET projects
-        run: |
-          dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
-
-      - name: Publish Avalonia
-        run: >-
-          ./scripts/publish.sh
-          -Configuration Release
-          -Runtime ${{ matrix.runtime }}
-          -SelfContained=false
-          -NoRestore
-          -PublishSingleFile
+      - name: Restore desktop runtime
+        run: python3 scripts/check-ci.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step restore-desktop-${{ matrix.runtime }}
+      - name: Publish and validate desktop artifact
+        run: python3 scripts/check-ci.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step publish-desktop-${{ matrix.runtime }}
 
       - name: Upload Avalonia artifact
         uses: actions/upload-artifact@v7
@@ -258,8 +177,7 @@ jobs:
           if-no-files-found: error
 
   pack-nodejs:
-    needs: build-test
-    name: Pack Node.js package
+    name: Node.js build, tests, and package
     runs-on: ubuntu-24.04
 
     steps:
@@ -270,16 +188,33 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22.x
+          cache: npm
+          cache-dependency-path: packages/chaptertool/package-lock.json
 
-      - name: Download Node.js build output
-        uses: actions/download-artifact@v8
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v6
         with:
-          name: ChapterTool-node-dist
-          path: packages/chaptertool/dist
+          dotnet-version: 10.0.x
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Install .NET wasm-tools workload
+        run: dotnet workload install wasm-tools
+      - name: Install npm dependencies
+        run: python3 scripts/check-ci.py --stage node --step install-npm-dependencies
+      - name: Build Node.js package
+        run: python3 scripts/check-ci.py --stage node --step build-node-js-package
+      - name: Type check Node.js package
+        run: python3 scripts/check-ci.py --stage node --step type-check-node-js-package
+      - name: Test built Node.js package
+        run: python3 scripts/check-ci.py --stage node --step test-built-node-js-package
 
       - name: Pack and verify npm tarball
-        working-directory: packages/chaptertool
-        run: npm run pack:verify
+        run: python3 scripts/check-ci.py --stage pack-node
 
       - name: Upload npm artifact
         uses: actions/upload-artifact@v7
