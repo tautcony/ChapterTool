@@ -1,7 +1,7 @@
 @using ChapterTool.Core.Editing
 @inject WasmWorkspace Workspace
 
-<input class="cell-edit" aria-label="@Label" value="@text" disabled="@Disabled"
+<input class="cell-edit @CssClass" aria-label="@Label" value="@text" disabled="@Disabled"
        aria-invalid="@(error is null ? "false" : "true")" aria-describedby="@(error is null ? null : errorId)"
        @onfocus="Begin" @oninput="Input" @onblur="CommitAsync" @onkeydown="KeyAsync"
        @onkeydown:stopPropagation @onclick:stopPropagation />
@@ -12,6 +12,7 @@
     [Parameter] public ChapterCellField Field { get; set; }
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
     [Parameter] public bool Disabled { get; set; }
     private readonly string errorId = $"cell-error-{Guid.NewGuid():N}";
     private WasmCellDraft? draft;

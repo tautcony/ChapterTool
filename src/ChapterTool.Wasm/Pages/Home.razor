@@ -207,7 +207,7 @@
                                 <td class="col-frames">
                                     @if (!row.IsSeparator && Workspace.FramesPerSecond > 0)
                                     {
-                                        <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo" Label="@($"{L.T("Grid.Frames")} {index + 1}")" Disabled="@Workspace.IsBusy" />
+                                        <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo" Label="@($"{L.T("Grid.Frames")} {index + 1}")" CssClass="@($"frame-text {(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")}")" Disabled="@Workspace.IsBusy" />
                                     }
                                     else { <span class="frame-text">—</span> }
                                 </td>
