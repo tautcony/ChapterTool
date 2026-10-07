@@ -251,7 +251,7 @@ public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapter
             return;
         }
 
-        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames);
+        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.DisplayFrameRate);
         var outcome = await owner.ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
         owner.ApplyContentOutcome(outcome, $"Shift frames forward: frames={frames}");
     }
@@ -268,7 +268,7 @@ public sealed class ChapterContentOperationPortAdapter(MainWindowViewModel owner
 
     public ChapterContentPreview PrepareContentOptions() => owner.PrepareContentOptionsOperation();
 
-    public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames);
+    public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.DisplayFrameRate);
 
     public ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps) => owner.PrepareFrameRateOperation(sourceFps, targetFps);
 

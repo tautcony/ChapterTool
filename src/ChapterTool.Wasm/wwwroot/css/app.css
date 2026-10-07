@@ -1087,6 +1087,40 @@ input:disabled {
 }
 
 /* Native top layer keeps tool content outside the editing grid. */
+.cell-error { display: block; color: var(--accent-frame-bad); font-size: 0.8rem; overflow-wrap: anywhere; }
+.candidate-review article { border-bottom: 1px solid var(--border); padding: 0.5rem 0; overflow-wrap: anywhere; }
+.candidate-review dl { display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; }
+.candidate-review dd { margin: 0; }
+.shortcut-row { display: grid; grid-template-columns: minmax(8rem, 1fr) minmax(5rem, 1fr) auto auto; gap: 0.4rem; margin-bottom: 0.5rem; align-items: center; }
+.settings-discard { background: var(--panel-bg); border: 1px solid var(--accent); padding: 0.75rem; }
+.log-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding-bottom: 0.5rem; }
+.log-surfaces { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; min-height: 0; }
+.log-surfaces.inspecting { grid-template-columns: minmax(0, 1fr) minmax(15rem, 40%); }
+.log-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-entry { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+.log-entry.selected { background: var(--active); }
+.log-inspector { min-width: 0; overflow: auto; border-left: 1px solid var(--border); padding-left: 0.5rem; }
+.log-inspector pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.log-export { position: relative; }
+.log-export summary { cursor: pointer; padding: 0.5rem; }
+.lua-editor { position: relative; min-width: 0; }
+.lua-editor .expression-input, .lua-highlight { font: inherit; font-family: var(--mono); line-height: 1.5; padding: 0.5rem; border: 1px solid var(--border); margin: 0; white-space: pre-wrap; overflow-wrap: break-word; tab-size: 4; }
+.lua-highlight { position: absolute; inset: 0; pointer-events: none; overflow: hidden; background: var(--control-bg); color: var(--control-fg); border-radius: 4px; }
+.lua-editor .expression-input { position: relative; background: transparent; color: transparent; caret-color: var(--control-fg); width: 100%; resize: vertical; }
+.lua-token-keyword, .lua-token-function { color: var(--accent); }
+.lua-token-string, .lua-token-number { color: var(--accent-frame-ok); }
+.lua-token-comment { color: var(--muted); }
+.lua-completions { display: flex; flex-direction: column; max-height: 12rem; overflow: auto; border: 1px solid var(--border); }
+.lua-completions button { text-align: left; white-space: pre-wrap; }
+.lua-completions button[aria-selected="true"] { background: var(--active); }
+.lua-diagnostics { margin: 0; padding-left: 1rem; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .shortcut-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .log-surfaces.inspecting { grid-template-columns: minmax(0, 1fr); }
+  .log-surfaces.inspecting > .log-list { display: none; }
+  .log-entry { display: flex; flex-wrap: wrap; }
+  .log-summary { flex: 1 1 100%; }
+}
 .modal-dialog:not([open]) { display: none; }
 .modal-dialog::backdrop { background: rgba(0, 0, 0, 0.32); }
 .modal-dialog {

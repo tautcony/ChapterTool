@@ -100,7 +100,7 @@ test('B22 editing an applied chapter does not rerun its previous expression duri
   await expect(secondTime).toHaveValue('00:00:06.250');
 
   await commit(secondTime, '00:00:08.000');
-  await expect(chapters(page).locator('tbody tr').nth(1).locator('.frame-text')).toHaveText('192');
+  await expect(chapters(page).getByLabel('Frames 2', { exact: true })).toHaveValue('192');
   await expect(secondTime).toHaveValue('00:00:08.000');
   const downloaded = await downloadText(page, testInfo);
   expect(downloaded.content.toString('utf8')).toContain('00:00:08.000');

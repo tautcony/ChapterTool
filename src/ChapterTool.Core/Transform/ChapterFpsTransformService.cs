@@ -26,16 +26,20 @@ public sealed class ChapterFpsTransformService
         }
 
         var chapters = info.Chapters.Select(chapter => TransformChapter(chapter, sourceFps, targetFps)).ToList();
-        var durationFrames = ChapterRounding.RoundToInt64((decimal)info.Duration.TotalSeconds * sourceFps);
         var updated = info with
         {
             FramesPerSecond = (double)targetFps,
-            Duration = ChapterRounding.SecondsToTimeSpan(durationFrames / targetFps),
+            Duration = TimeSpan.FromTicks(ConvertTicks(info.Duration.Ticks, sourceFps, targetFps)),
             Chapters = chapters
         };
 
         return new ChangeFpsResult(true, updated, []);
     }
+
+    /// <summary>Converts an absolute boundary through the same frame quantization as chapter times.</summary>
+    internal static long ConvertTicks(long ticks, decimal sourceFps, decimal targetFps) =>
+        ChapterRounding.SecondsToTimeSpan(ChapterRounding.RoundToInt64(
+            (decimal)TimeSpan.FromTicks(ticks).TotalSeconds * sourceFps) / targetFps).Ticks;
 
     private static Chapter TransformChapter(Chapter chapter, decimal sourceFps, decimal targetFps)
     {

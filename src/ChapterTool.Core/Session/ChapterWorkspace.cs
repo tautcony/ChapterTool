@@ -529,7 +529,7 @@ public sealed class ChapterWorkspace
         var segment = track.Segments.FirstOrDefault();
         return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
-            segment?.Duration ?? source.Duration, segment?.FrameRate ?? source.FrameRate, [track]);
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), segment?.FrameRate ?? source.FrameRate, [track]);
     }
 
     private static EditableChapterDocument ReplaceFocusedTrack(

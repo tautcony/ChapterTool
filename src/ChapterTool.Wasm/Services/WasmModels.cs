@@ -5,6 +5,8 @@ namespace ChapterTool.Wasm.Services;
 /// </summary>
 public sealed class ChapterRowModel
 {
+    public ChapterTool.Core.Models.ChapterId Id { get; set; }
+
     public int Number { get; set; }
 
     public string TimeText { get; set; } = string.Empty;
@@ -41,13 +43,18 @@ public sealed record WasmLogEntry(
     DateTimeOffset Timestamp,
     string Level,
     string Message,
-    string? Details = null);
+    string? Details = null)
+{
+    public Guid Id { get; } = Guid.NewGuid();
+}
 
 public sealed record WasmSettings(
     int SchemaVersion = 1,
     WasmApplicationSettings? Application = null,
     WasmThemeSettings? Theme = null,
-    WasmFontSettings? Font = null);
+    WasmFontSettings? Font = null,
+    [property: System.Text.Json.Serialization.JsonConverter(typeof(WasmShortcutSettingsConverter))]
+    ChapterTool.Contracts.Shortcuts.ShortcutSettings? Shortcuts = null);
 
 public sealed record WasmApplicationSettings(
     string? SavingPath = null,

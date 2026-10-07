@@ -472,9 +472,10 @@
                          Grid.Column="1"
                          HorizontalAlignment="Stretch"
                          FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
-                         Minimum="-1000"
+                         Minimum="0"
                          Maximum="1000"
                          Increment="1"
+                         ParsingNumberStyle="Integer"
                          Value="{Binding OrderShift}"
                          ValueChanged="OnOrderShiftValueChanged"
                          AutomationProperties.AutomationId="OrderShift" />

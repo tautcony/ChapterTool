@@ -167,34 +167,38 @@ test('M03 modal focus, Escape, rapid cancellation and background isolation prese
   await page.keyboard.press('Escape');
 });
 
-test('M04 advanced options stage templates and bytes until Apply, then persist output preferences', async ({ readyPage: page }, testInfo) => {
+test('M04 output preferences stage bytes and templates use separate content review', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const baseline = await downloadText(page, testInfo);
   const storage = await page.evaluate(() => localStorage.getItem('chaptertool.wasm.settings'));
   const opener = page.getByRole('button', { name: 'Advanced export options', exact: true });
   await opener.click();
   const dialog = page.getByRole('dialog', { name: 'Advanced export options', exact: true });
-  await dialog.getByLabel('Order +', { exact: true }).fill('2');
   await dialog.locator('#export-encoding').selectOption('1');
   await dialog.locator('#export-bom').check();
-  const chooser = page.waitForEvent('filechooser');
-  await dialog.getByRole('button', { name: /^Browse template/ }).click();
-  await (await chooser).setFiles({ name: 'names.txt', mimeType: 'text/plain', buffer: Buffer.from('Alpha\nBeta\nGamma\nDelta') });
-  await expect(dialog.getByRole('status')).toHaveText('names.txt');
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   expect(await page.evaluate(() => localStorage.getItem('chaptertool.wasm.settings'))).toBe(storage);
   expect((await downloadText(page, testInfo)).content.equals(baseline.content)).toBe(true);
   await opener.click();
-  await expect(dialog.getByLabel('Order +', { exact: true })).toHaveValue('0');
   await expect(dialog.locator('#export-encoding')).toHaveValue('0');
   await dialog.locator('#export-encoding').selectOption('1');
   await dialog.locator('#export-bom').check();
-  const applyChooser = page.waitForEvent('filechooser');
-  await dialog.getByRole('button', { name: /^Browse template/ }).click();
-  await (await applyChooser).setFiles({ name: 'names.txt', mimeType: 'text/plain', buffer: Buffer.from('Alpha\nBeta') });
-  await expect(dialog.getByRole('status')).toHaveText('names.txt');
   await dialog.getByRole('button', { name: 'Apply', exact: true }).click();
   await expect(dialog).toHaveCount(0);
+  const name = chapters(page).getByRole('textbox', { name: 'Name 1', exact: true });
+  const original = await name.inputValue();
+  await page.getByRole('button', { name: 'Naming and numbering', exact: true }).click();
+  const naming = page.getByRole('dialog', { name: 'Naming and numbering', exact: true });
+  await naming.locator('#content-template').setInputFiles({ name: 'names.txt', mimeType: 'text/plain', buffer: Buffer.from('Alpha\nBeta') });
+  await naming.getByRole('button', { name: 'Preview', exact: true }).click();
+  await expect(naming.getByTestId('content-review')).toContainText('Alpha');
+  await expect(name).toHaveValue(original);
+  await naming.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(name).toHaveValue(original);
+  await page.getByRole('button', { name: 'Naming and numbering', exact: true }).click();
+  await naming.locator('#content-template').setInputFiles({ name: 'names.txt', mimeType: 'text/plain', buffer: Buffer.from('Alpha\nBeta') });
+  await naming.getByRole('button', { name: 'Preview', exact: true }).click();
+  await naming.getByRole('button', { name: 'Apply', exact: true }).click();
   await expect(chapters(page).getByRole('textbox', { name: 'Name 1', exact: true })).toHaveValue('Alpha');
   const applied = await downloadText(page, testInfo);
   expect([...applied.content.subarray(0, 2)]).toEqual([0xff, 0xfe]);
@@ -225,6 +229,8 @@ test('M06 existing tools share Escape, focus restoration and draft dismissal beh
   await expect(settings).toBeVisible();
   await settings.locator('#settings-encoding').focus();
   await page.keyboard.press('Escape');
+  await expect(settings.getByRole('alertdialog')).toBeVisible();
+  await settings.getByRole('button', { name: 'Discard', exact: true }).click();
   await page.getByRole('button', { name: 'Advanced export options', exact: true }).click();
   await expect(page.getByRole('dialog').locator('#export-encoding')).toHaveValue('0');
   await page.keyboard.press('Escape');

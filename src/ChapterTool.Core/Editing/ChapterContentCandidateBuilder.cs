@@ -302,8 +302,17 @@ public sealed partial class ChapterContentCandidateBuilder(
                 return Failure(source, "A captured frame-offset target no longer exists.", targetIds);
             }
 
+            if (frames == 0)
+            {
+                return ValidateAndSucceed(source, targetIds);
+            }
+
+            if (track.Chapters.Any(chapter => targetIds.Contains(chapter.Id) && checked(chapter.StartTicks + shift) < 0))
+            {
+                return Failure(source, "The frame offset would make a chapter time negative.", targetIds);
+            }
+
             var chapters = track.Chapters
-                .Where(chapter => !targetIds.Contains(chapter.Id) || checked(chapter.StartTicks + shift) >= 0)
                 .Select(chapter => !targetIds.Contains(chapter.Id)
                     ? chapter
                     : chapter with

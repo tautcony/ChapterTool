@@ -1,0 +1,43 @@
+@using ChapterTool.Core.Editing
+@inject WasmWorkspace Workspace
+
+<input class="cell-edit" aria-label="@Label" value="@text" disabled="@Disabled"
+       aria-invalid="@(error is null ? "false" : "true")" aria-describedby="@(error is null ? null : errorId)"
+       @onfocus="Begin" @oninput="Input" @onblur="CommitAsync" @onkeydown="KeyAsync"
+       @onkeydown:stopPropagation @onclick:stopPropagation />
+@if (error is not null) { <span id="@errorId" class="cell-error" role="alert">@error</span> }
+
+@code {
+    [Parameter] public int Index { get; set; }
+    [Parameter] public ChapterCellField Field { get; set; }
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public bool Disabled { get; set; }
+    private readonly string errorId = $"cell-error-{Guid.NewGuid():N}";
+    private WasmCellDraft? draft;
+    private string text = string.Empty;
+    private string? error;
+    private bool committing;
+
+    protected override void OnParametersSet() { if (draft is null) text = Value; }
+    private void Begin() { draft ??= Workspace.BeginCellEdit(Index, Field); }
+    private void Input(ChangeEventArgs args) { Begin(); text = args.Value?.ToString() ?? string.Empty; error = null; }
+
+    private async Task CommitAsync()
+    {
+        if (draft is null || committing) return;
+        committing = true;
+        try
+        {
+            error = await Workspace.CommitCellEditAsync(draft, text);
+            if (error is null) draft = null;
+        }
+        finally { committing = false; }
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") { draft = null; error = null; text = Value; }
+        else if (args.Key is "Enter" or "Tab") await CommitAsync();
+    }
+}

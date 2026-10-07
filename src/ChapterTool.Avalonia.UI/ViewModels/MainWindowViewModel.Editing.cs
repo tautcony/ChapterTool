@@ -61,7 +61,7 @@ public sealed partial class MainWindowViewModel
             EditKind.Name => ChapterEditKind.Name,
             EditKind.Frame => ChapterEditKind.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
-        });
+        }, DisplayFrameRate);
         var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview);
         ApplyContentOutcome(outcome, $"Edit {kind.ToString().ToLowerInvariant()}: row={edit.Index}, value='{edit.Value}', previous='{previous}'");
     }
@@ -155,7 +155,9 @@ public sealed partial class MainWindowViewModel
 
     internal ChapterContentPreview PrepareExpressionOperation(string expression) =>
         ClipEditingCoordinator.PrepareCandidate("Apply expression", document =>
-            ClipEditingCoordinator.CandidateBuilder.ApplyExpression(document, string.IsNullOrWhiteSpace(expression) ? "t" : expression));
+            ClipEditingCoordinator.CandidateBuilder.ApplyExpression(
+                EditableChapterDocumentAdapter.WithFallbackFrameRate(document, DisplayFrameRate),
+                string.IsNullOrWhiteSpace(expression) ? "t" : expression));
 
     internal ChapterContentPreview PrepareTemplateNamesOperation(bool autoGenerateNames, bool useTemplateNames) =>
         ClipEditingCoordinator.PrepareCandidate("Apply template names", document =>
@@ -218,6 +220,7 @@ public sealed partial class MainWindowViewModel
             configuredFrameRate = (decimal)currentInfo.FramesPerSecond;
             selectedFrameRateOption = frameRateService.FindByValue(configuredFrameRate.Value);
             SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+            ApplyFrameInfo(logResult: false);
             var sourceFps = preview.Before.FrameRate is { } sourceRate
                 ? (decimal)sourceRate.Numerator / sourceRate.Denominator
                 : 0m;

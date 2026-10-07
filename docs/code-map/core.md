@@ -28,6 +28,8 @@ Canonical data contracts shared across the pipeline:
 Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState`.
 `ChapterWorkspace.CurrentChapterSet` is a transient selected-track view. It is not editable workspace storage.
 
+`EditableChapterDocumentAdapter.TrackDuration` covers every segment in a selected track. `ReplacedTrackDuration` updates document bounds after a reviewed track conversion. `WithFallbackFrameRate` supplies detected FPS to expression preparation when source FPS is absent. `ChapterFpsTransformService` uses one frame quantization rule for chapter times, document duration, and absolute segment boundaries. Source FPS metadata remains unchanged.
+
 ### Diagnostics
 
 Shared diagnostic contracts:

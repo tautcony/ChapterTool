@@ -53,9 +53,10 @@ internal static class WasmWorkspaceProjection
         ];
     }
 
-    internal static ChapterRowModel ToRow(Chapter chapter, IChapterTimeFormatter formatter) =>
+    internal static ChapterRowModel ToRow(Chapter chapter, IChapterTimeFormatter formatter, ChapterId id) =>
         new()
         {
+            Id = id,
             Number = chapter.DisplayNumber,
             TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.StartTime),
             Name = chapter.Name,

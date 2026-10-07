@@ -1,0 +1,29 @@
+@using ChapterTool.Contracts.Shortcuts
+@inject WasmLocalizer L
+
+<div class="shortcut-settings">
+    @foreach (var action in ShortcutCatalog.EditableActions)
+    {
+        var id = action.Id;
+        <div class="shortcut-row">
+            <label for="@($"shortcut-{id}")">@L.T(action.NameKey)</label>
+            <input id="@($"shortcut-{id}")" value="@Draft[id]" aria-invalid="@Invalid.Contains(id)"
+                   @onkeydown="e => Capture(id, e)" @onkeydown:preventDefault @onkeydown:stopPropagation />
+            <button type="button" class="secondary" @onclick="() => SetAsync(id, string.Empty)">@L.T("Common.Clear")</button>
+            <button type="button" class="secondary" @onclick="() => SetAsync(id, action.DefaultGesture)">@L.T("Settings.Shortcuts.Reset")</button>
+            @if (Invalid.Contains(id)) { <span role="alert">@L.T("Parity.InvalidShortcut")</span> }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ShortcutSettings Draft { get; set; } = new();
+    [Parameter] public EventCallback OnChanged { get; set; }
+    private IReadOnlySet<string> Invalid => WasmShortcuts.InvalidActions(Draft);
+    private Task Capture(string id, KeyboardEventArgs args)
+    {
+        if (args.Key is "Control" or "Alt" or "Meta" or "Shift") return Task.CompletedTask;
+        return SetAsync(id, WasmShortcuts.Gesture(args.Key, args.CtrlKey, args.AltKey, args.MetaKey, args.ShiftKey));
+    }
+    private Task SetAsync(string id, string value) { Draft[id] = value; return OnChanged.InvokeAsync(); }
+}

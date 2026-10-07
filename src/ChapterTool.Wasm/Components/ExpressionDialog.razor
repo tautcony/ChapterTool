@@ -4,6 +4,8 @@
 @inject IJSRuntime JSRuntime
 @using ChapterTool.Core.Models
 @using ChapterTool.Core.Session
+@using ChapterTool.Core.Transform
+@using System.Text
 
 <WasmDialog Title="@L.T("Modal.ExpressionTitle")" CssClass="expression-modal" OnClose="CloseAsync" DismissEnabled="@(!applying)">
     <div class="modal-body expression-body">
@@ -33,9 +35,35 @@
                 </select>
             </div>
 
+            <label for="expression-script">@L.T("Tool.Expression.LoadLuaScript")</label>
+            <InputFile id="expression-script" OnChange="LoadScriptAsync" accept=".lua,text/*" disabled="@applying" />
+            @if (!string.IsNullOrEmpty(Workspace.ExpressionSourceName)) { <p role="status">@Workspace.ExpressionSourceName</p> }
+            <div class="lua-editor">
+            <pre class="lua-highlight" aria-hidden="true">@HighlightScript()</pre>
             <textarea @ref="expressionEditorElement" id="expression-draft" class="expression-input" rows="2" spellcheck="false"
                       aria-label="@L.T("Label.Expression")" disabled="@applying"
                       @oninput="OnInput">@expression</textarea>
+            </div>
+            @if (completionOpen && analysis is not null)
+            {
+                <div class="lua-completions" role="listbox" aria-label="@L.T("Parity.Completions")">
+                    @for (var i = 0; i < analysis.Completions.Count; i++)
+                    {
+                        var index = i;
+                        <button type="button" role="option" aria-selected="@(index == completionIndex)" @onclick="() => AcceptCompletionAsync(index)">@analysis.Completions[index].Text</button>
+                    }
+                </div>
+            }
+            @if (!composing && analysis is not null)
+            {
+                <ul class="lua-diagnostics">
+                    @foreach (var diagnostic in analysis.Diagnostics)
+                    {
+                        <li><button type="button" class="secondary" @onclick="() => SelectDiagnosticAsync(diagnostic)">@diagnostic.Diagnostic.Message (@L.T("Parity.Position"): @(diagnostic.Start + 1))</button></li>
+                    }
+                </ul>
+            }
+            @if (scriptError is not null) { <p role="alert">@scriptError</p> }
 
         </div>
 
@@ -162,6 +190,11 @@
     private string presetId = string.Empty;
     private string originalExpression = string.Empty;
     private string originalPresetId = string.Empty;
+    private string originalSourceName = string.Empty;
+    private string? scriptError;
+    private ExpressionAnalysisResult? analysis;
+    private bool completionOpen;
+    private int completionIndex;
     private CancellationTokenSource? cancellation;
     private bool pending;
     private bool applied;
@@ -176,6 +209,7 @@
     private bool showAll;
     private bool showFrames;
     private long revision;
+    private long inputRevision;
     private bool CanApply => !pending && !composing && !applying && !Workspace.IsBusy
         && !Workspace.IsExpressionPreviewStale
         && Workspace.ExpressionPreview is { IsValid: true }
@@ -185,6 +219,8 @@
     {
         originalExpression = expression = Workspace.Expression;
         originalPresetId = presetId = Workspace.ExpressionPresetId;
+        originalSourceName = Workspace.ExpressionSourceName;
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length);
         Workspace.PrepareExpressionPreview(expression);
     }
 
@@ -196,7 +232,95 @@
         await compositionModule.InvokeVoidAsync("attach", expressionEditorElement, compositionCallback);
     }
 
-    private Task OnInput(ChangeEventArgs args) => ScheduleAsync(args.Value?.ToString() ?? string.Empty, schedule: !composing);
+    private async Task OnInput(ChangeEventArgs args)
+    {
+        if (disposed) return;
+        var currentInput = ++inputRevision;
+        pending = true;
+        Workspace.CancelExpressionPreview();
+        completionOpen = false;
+        var value = args.Value?.ToString() ?? string.Empty;
+        if (!composing)
+        {
+            var caret = await compositionModule!.InvokeAsync<int>("caret", expressionEditorElement);
+            if (disposed || currentInput != inputRevision) return;
+            analysis = Workspace.AuthoringService.Analyze(value, caret, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+        }
+        await ScheduleAsync(value, schedule: !composing);
+        if (!disposed) await UpdateCompletionStateAsync();
+    }
+
+    private async Task LoadScriptAsync(InputFileChangeEventArgs args)
+    {
+        scriptError = null;
+        try
+        {
+            await using var stream = args.File.OpenReadStream(2 * 1024 * 1024);
+            using var reader = new StreamReader(stream, new UTF8Encoding(false, true), true);
+            var value = await reader.ReadToEndAsync();
+            if (disposed) return;
+            if (string.IsNullOrWhiteSpace(value)) throw new IOException();
+            var result = Workspace.AuthoringService.Analyze(value, value.Length, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+            if (result.Diagnostics.Count > 0) { scriptError = result.Diagnostics[0].Diagnostic.Message; return; }
+            Workspace.ClearExpressionPresetSelection();
+            Workspace.ExpressionSourceName = args.File.Name;
+            analysis = result;
+            await ScheduleAsync(value, true);
+        }
+        catch (Exception exception) when (exception is IOException or DecoderFallbackException)
+        { scriptError = L.T("Parity.ScriptLoadFailed"); }
+    }
+
+    [JSInvokable]
+    public async Task EditorKey(string key, int caret)
+    {
+        if (disposed || composing || applying) return;
+        if (key == "Complete")
+        {
+            analysis = Workspace.AuthoringService.Analyze(expression, caret, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+            completionIndex = 0;
+            completionOpen = analysis.Completions.Count > 0;
+        }
+        else if (key == "Escape") completionOpen = false;
+        else if (completionOpen && key is "Enter" or "Tab") { await AcceptCompletionAsync(completionIndex); return; }
+        else if (completionOpen && analysis is not null && key is "ArrowDown" or "ArrowUp")
+            completionIndex = Math.Clamp(completionIndex + (key == "ArrowDown" ? 1 : -1), 0, analysis.Completions.Count - 1);
+        await UpdateCompletionStateAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AcceptCompletionAsync(int index)
+    {
+        if (analysis is null || index < 0 || index >= analysis.Completions.Count) return;
+        var completion = analysis.Completions[index];
+        completionOpen = false;
+        await UpdateCompletionStateAsync();
+        await compositionModule!.InvokeVoidAsync("replace", expressionEditorElement,
+            completion.ReplacementStart, completion.ReplacementLength, completion.InsertText);
+    }
+
+    private Task UpdateCompletionStateAsync() => disposed || compositionModule is null ? Task.CompletedTask
+        : compositionModule.InvokeVoidAsync("completionState", expressionEditorElement, completionOpen).AsTask();
+
+    private Task SelectDiagnosticAsync(ExpressionAuthoringDiagnostic diagnostic) =>
+        compositionModule!.InvokeVoidAsync("select", expressionEditorElement, diagnostic.Start, diagnostic.Length).AsTask();
+
+    private RenderFragment HighlightScript() => builder =>
+    {
+        var position = 0;
+        var sequence = 0;
+        foreach (var span in analysis?.Spans ?? [])
+        {
+            if (span.Start < position || span.Start + span.Length > expression.Length) continue;
+            builder.AddContent(sequence++, expression[position..span.Start]);
+            builder.OpenElement(sequence++, "span");
+            builder.AddAttribute(sequence++, "class", "lua-token-" + span.Kind.ToString().ToLowerInvariant());
+            builder.AddContent(sequence++, expression.Substring(span.Start, span.Length));
+            builder.CloseElement();
+            position = span.Start + span.Length;
+        }
+        builder.AddContent(sequence++, expression[position..] + "\n");
+    };
 
     private async Task OnPresetChanged(ChangeEventArgs args)
     {
@@ -205,6 +329,7 @@
         else Workspace.ApplyExpressionPreset(selected);
         presetId = Workspace.ExpressionPresetId;
         expression = selected.Length == 0 ? expression : Workspace.Expression;
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
         await ScheduleAsync(expression, schedule: !composing);
     }
 
@@ -212,6 +337,7 @@
     public Task CompositionStarted() => InvokeAsync(() =>
     {
         composing = true;
+        completionOpen = false;
         StateHasChanged();
     });
 
@@ -219,6 +345,7 @@
     public Task CompositionEnded() => InvokeAsync(async () =>
     {
         composing = false;
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
         await ScheduleAsync(expression, schedule: true);
     });
 
@@ -308,6 +435,7 @@
         if (originalPresetId.Length > 0) Workspace.ApplyExpressionPreset(originalPresetId);
         else Workspace.ClearExpressionPresetSelection();
         Workspace.Expression = originalExpression;
+        Workspace.ExpressionSourceName = originalSourceName;
     }
 
     private IEnumerable<ExpressionChapterComparison> VisibleChapters(ExpressionPreviewProjection projection) =>

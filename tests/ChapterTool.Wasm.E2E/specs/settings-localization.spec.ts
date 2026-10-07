@@ -64,6 +64,7 @@ test('B05 exports representative formats through the visible controls', async ({
         await expect(fps).toHaveValue('2');
         await fps.dispatchEvent('contextmenu', { button: 2 });
         await page.getByRole('button', { name: 'Change FPS', exact: true }).click();
+        await page.getByRole('dialog', { name: 'Change FPS', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
       }
       const output = await downloadText(page, testInfo);
       expect(output.filename.toLowerCase()).toContain(extension.toLowerCase());

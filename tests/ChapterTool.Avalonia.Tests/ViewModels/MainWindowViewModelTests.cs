@@ -919,8 +919,8 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.Rows[0].IsFrameNeutral);
         Assert.Equal(3, vm.SelectedFrameRateIndex);
         Assert.NotNull(save.LastInfo);
-        Assert.Equal("12.5", save.LastInfo.Chapters[0].FramesInfo);
-        Assert.Equal(FrameAccuracy.Neutral, save.LastInfo.Chapters[0].FrameAccuracy);
+        Assert.Equal(info.Chapters[0].FramesInfo, save.LastInfo.Chapters[0].FramesInfo);
+        Assert.Equal(info.Chapters[0].FrameAccuracy, save.LastInfo.Chapters[0].FrameAccuracy);
     }
 
     [Fact]
@@ -1345,7 +1345,7 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastInfo);
         Assert.Equal(TimeSpan.FromSeconds(10), save.LastInfo.Chapters[0].StartTime);
         Assert.Equal("240", save.LastInfo.Chapters[0].FramesInfo);
-        Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
+        Assert.Equal(FrameAccuracy.Neutral, save.LastInfo.Chapters[0].FrameAccuracy);
     }
 
     [Fact]
@@ -1462,8 +1462,10 @@ public sealed class MainWindowViewModelTests
         await vm.ToolSession.ChapterEdit.ShiftFramesForwardAsync(24);
 
         Assert.StartsWith("--zones ", zones, StringComparison.Ordinal);
-        Assert.Single(vm.Rows);
-        Assert.Equal("00:00:09.000", vm.Rows[0].TimeText);
+        Assert.Equal(2, vm.Rows.Count);
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.Equal("00:00:10.000", vm.Rows[1].TimeText);
+        Assert.Contains("negative", vm.StatusText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

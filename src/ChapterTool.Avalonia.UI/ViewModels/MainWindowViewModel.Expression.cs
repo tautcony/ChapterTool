@@ -7,8 +7,14 @@ public sealed partial class MainWindowViewModel
 {
     private void RefreshRows()
     {
-        workspaceContentRows.RefreshRows(Rows);
+        var display = CurrentInfo is null ? null : ClipEditingCoordinator.UpdateFrames(CurrentInfo,
+            selectedFrameRateOption, RoundFrames ? 0 : EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces ? EditingOptions.EffectiveFrameDecimalPlaces : -1,
+            FrameAccuracyTolerance, configuredFrameRate).FrameResult;
+        DisplayFrameRate = display?.FramesPerSecond ?? 0m;
+        workspaceContentRows.RefreshRows(Rows, display?.Info);
     }
+
+    internal decimal DisplayFrameRate { get; private set; }
 
     internal void RefreshRowsFromPort() => RefreshRows();
 

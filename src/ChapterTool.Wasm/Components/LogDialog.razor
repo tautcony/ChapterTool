@@ -1,0 +1,109 @@
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+@inject IJSRuntime Js
+@implements IDisposable
+
+<WasmDialog Title="@L.T("Modal.LogTitle")" CssClass="log-modal" OnClose="CloseOrBackAsync" LightDismiss="true">
+    <div class="modal-body">
+        <div class="log-filters">
+            <label for="log-search">@L.T("Parity.LogSearch")</label>
+            <input id="log-search" type="search" @bind="view.Search" @bind:event="oninput" @bind:after="Refresh" />
+            <label for="log-severity">@L.T("Parity.LogSeverity")</label>
+            <select id="log-severity" @bind="view.Severity" @bind:after="Refresh">
+                <option value="">@L.T("Parity.LogAll")</option>
+                @foreach (var level in new[] { "Info", "Warning", "Error" }) { <option value="@level">@LevelName(level)</option> }
+            </select>
+            <output aria-live="polite">@L.Format("Parity.LogCount", view.Visible.Count)</output>
+        </div>
+        <div class="log-surfaces @(view.InspectorOpen ? "inspecting" : null)">
+            <div class="log-list" id="log-list" tabindex="-1">
+                @if (view.Visible.Count == 0) { <p>@L.T("Modal.LogEmpty")</p> }
+                @foreach (var entry in view.Visible.Reverse())
+                {
+                    <div @key="entry.Id" id="@($"log-{entry.Id}")" class="log-entry @(view.SelectedId == entry.Id ? "selected" : null)"
+                         tabindex="0" role="button" @onclick="() => view.SelectedId = entry.Id" @onkeydown="e => RowKey(entry, e)">
+                        <time>@entry.Timestamp.ToLocalTime().ToString("HH:mm:ss")</time>
+                        <span class="log-level @entry.Level.ToLowerInvariant()" aria-label="@LevelName(entry.Level)">@LevelName(entry.Level)</span>
+                        <span class="log-summary">@Highlight(entry.Message)</span>
+                        @if (view.Search.Length > 0 && (entry.Details?.Contains(view.Search, StringComparison.OrdinalIgnoreCase) ?? false)) { <span>@L.T("Parity.LogDetailMatch")</span> }
+                        <button type="button" class="secondary" aria-label="@L.T("Parity.LogDetails")" @onclick="() => Inspect(entry)" @onclick:stopPropagation>@L.T("Parity.LogDetails")</button>
+                    </div>
+                }
+            </div>
+            @if (view.InspectorOpen && view.Selected is { } selected)
+            {
+                <section class="log-inspector" aria-label="@L.T("Parity.LogDetails")">
+                    <button id="log-back" type="button" class="secondary" @onclick="BackAsync">@L.T("Parity.LogBack")</button>
+                    <p>@selected.Timestamp.ToLocalTime() · @LevelName(selected.Level)</p>
+                    <p>@selected.Message</p>
+                    @if (!string.IsNullOrWhiteSpace(selected.Details)) { <pre>@selected.Details</pre> }
+                    <details><summary>@L.T("Parity.LogRaw")</summary><pre>@System.Text.Json.JsonSerializer.Serialize(selected)</pre></details>
+                    <button type="button" class="secondary" @onclick="CopyAsync">@L.T("Text.Copy")</button>
+                </section>
+            }
+        </div>
+        @if (status is not null) { <p role="status">@status</p> }
+    </div>
+    <footer class="modal-footer">
+        <button type="button" class="secondary" @onclick="Clear">@L.T("Common.Clear")</button>
+        <details class="log-export"><summary>@L.T("Parity.LogExport")</summary>
+            <button type="button" class="secondary" @onclick="() => ExportAsync(false)">JSON</button>
+            <button type="button" class="secondary" @onclick="() => ExportAsync(true)">CSV</button>
+        </details>
+        <span class="modal-spacer"></span>
+        <button type="button" class="secondary" @onclick="OnClose">@L.T("Action.Close")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    private WasmLogView view = null!;
+    private string? status;
+    private string? pendingFocus;
+    protected override void OnInitialized() { view = new(Workspace.Logs); Workspace.Changed += Changed; }
+    private void Changed() => InvokeAsync(() => { view.Refresh(); StateHasChanged(); });
+    public void Dispose() => Workspace.Changed -= Changed;
+    protected override void OnParametersSet() => view?.Refresh();
+    private void Refresh() => view.Refresh();
+    private void Inspect(WasmLogEntry entry) { view.SelectedId = entry.Id; view.InspectorOpen = true; pendingFocus = "log-back"; }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (pendingFocus is not { } target) return;
+        pendingFocus = null;
+        await Js.InvokeVoidAsync("chapterToolWasm.focus", target);
+    }
+    private void RowKey(WasmLogEntry entry, KeyboardEventArgs args) { if (args.Key is "Enter" or " ") Inspect(entry); }
+    private string LevelName(string level) => L.T("Parity.LogLevel." + level);
+    private void Clear() { Workspace.ClearLogs(); view.Refresh(); }
+    private Task CloseOrBackAsync() => view.InspectorOpen ? BackAsync() : OnClose.InvokeAsync();
+    private Task BackAsync()
+    {
+        view.InspectorOpen = false;
+        pendingFocus = view.SelectedId is { } id ? $"log-{id}" : "log-list";
+        return Task.CompletedTask;
+    }
+    private async Task CopyAsync()
+    {
+        if (view.Selected is not { } selected) return;
+        try { await Js.InvokeVoidAsync("chapterToolWasm.copyText", System.Text.Json.JsonSerializer.Serialize(selected)); status = L.T("Copy.Preview"); }
+        catch (JSException) { status = L.T("Parity.LogFailed"); }
+    }
+    private async Task ExportAsync(bool csv)
+    {
+        var content = view.Export(csv);
+        try
+        {
+            await Js.InvokeVoidAsync("chapterToolWasm.downloadText", csv ? "chaptertool-log.csv" : "chaptertool-log.json", content, "utf8", false);
+            status = L.T("Parity.LogExported");
+        }
+        catch (JSException) { status = L.T("Parity.LogFailed"); }
+    }
+    private RenderFragment Highlight(string text) => builder =>
+    {
+        var match = view.Search.Length == 0 ? -1 : text.IndexOf(view.Search, StringComparison.OrdinalIgnoreCase);
+        if (match < 0) { builder.AddContent(0, text); return; }
+        builder.AddContent(0, text[..match]);
+        builder.OpenElement(1, "mark"); builder.AddContent(2, text.Substring(match, view.Search.Length)); builder.CloseElement();
+        builder.AddContent(3, text[(match + view.Search.Length)..]);
+    };
+}

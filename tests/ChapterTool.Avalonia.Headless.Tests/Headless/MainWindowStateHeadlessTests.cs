@@ -83,6 +83,25 @@ public sealed class MainWindowStateHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Numbering_control_rejects_fractional_and_negative_input()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+        var control = host.RequiredControl<NumericUpDown>("OrderShiftBox");
+        var initialHistoryCount = host.ViewModel.HistoryEntries.Count;
+        control.Text = "1.5";
+        await host.LayoutAsync();
+        Assert.Equal(0, host.ViewModel.OrderShift);
+        control.Text = "-1";
+        await host.LayoutAsync();
+        Assert.Equal(0, host.ViewModel.OrderShift);
+        control.Text = "2";
+        await host.LayoutAsync();
+        Assert.Equal(2, host.ViewModel.OrderShift);
+        Assert.Equal(initialHistoryCount, host.ViewModel.HistoryEntries.Count);
+    }
+
+    [AvaloniaFact]
     public async Task Save_options_changed_through_rendered_controls_route_to_save_service()
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(

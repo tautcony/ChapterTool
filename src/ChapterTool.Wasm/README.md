@@ -39,18 +39,20 @@ Default URL: `http://localhost:5261`
 | **Reload / Append MPLS** | Load context menu reuses the last file or appends another MPLS group |
 | **Clip combo** | Shown when import has multiple entries; switches active `ChapterSet` |
 | **Clip combo context menu** | Combine MPLS/IFO entries or restore separate clips |
-| **Grid edit** | Time / Name editable; used on save |
+| **Grid edit** | Time, name, and frame drafts use Core cell edits. Enter, Tab, and valid blur commit once. Escape cancels. Invalid drafts retain an accessible error. |
 | **Save** | `ChapterExportService` with bottom options → browser download |
 | **Round frames + FPS** | `FrameRateService.UpdateFrames` fills Frames column (Auto detect or fixed rate) |
-| **Frame rate context menu** | Change chapter timing from the current frame rate to the selected valid rate |
-| **Expression** | A dialog validates Lua drafts and Core presets. Apply commits one transaction. Cancel or Escape restores the previous expression and discards the candidate. |
+| **Frame rate context menu** | Review source and target FPS before applying one captured conversion candidate |
+| **Expression** | Load bounded UTF-8 Lua files. Use shared highlighting, completion, and positioned diagnostics. Review a candidate before Apply. Cancel restores the entry draft and source. |
 | **Edit history** | A dialog navigates retained branches. Navigation takes effect immediately. |
-| **Advanced export options** | A dialog stages order shift, XML language, encoding, BOM, and template input. Apply updates projection and output preferences. Cancel leaves them unchanged. |
+| **Advanced export options** | Stage XML language, encoding, and BOM preferences. Apply updates output preferences. |
+| **Naming and numbering** | Review automatic names, loaded templates, and integer numbering offsets from 0 to 1000. Apply commits once and clears the active intent. |
 | **Save as** | TXT, XML, QPFile, TimeCodes, … |
 | **Chapter name** | As is / Auto generate |
 | **Order +** | Display number shift |
 | **XML lang** | Enabled only for XML export |
-| **Settings** | Modal settings pages with browser-persisted output, appearance, and WASM capability preferences |
+| **Settings** | Draft output, appearance, and shared shortcuts. Save persists before activation. Close can discard a changed draft or keep editing. Settings do not replay content operations. |
+| **Log** | Filter the bounded list by severity and text. Open details explicitly. Copy an entry or download a captured filtered JSON/CSV snapshot. |
 | **Selection / context actions** | Ctrl/Shift multi-select; batch delete, `--zones`, Preview, forward translation, and related-media references |
 | **Drag and drop / language** | Drop-to-load with size/read errors; `en-US`, `zh-CN`, and `ja-JP` UI dictionaries |
 
@@ -97,7 +99,7 @@ The first multi-browser and visual acceptance results are in
 
 The browser app imports text, XML, CUE, WebVTT, MPLS, IFO, HD-DVD XPL, and embedded FLAC/TAK CUE data from bytes. It supports chapter editing, managed Lua expressions with Core presets, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
 
-The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`ffprobe`, importing external-tool media sources, opening local Related Media through a desktop shell, system font catalog, desktop Sentry telemetry, or loading Lua script files and the Lua editor/completion workflow.
+The browser does not expose choosing a local save directory, running `mkvtoolnix`/`ffprobe`, importing external-tool media sources, opening local Related Media through a desktop shell, system font enumeration, or desktop Sentry telemetry.
 
 Related Media paths are informational. Relative paths are rendered as browser links when present, but local filesystem paths are not made accessible by WASM.
 

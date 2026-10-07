@@ -105,7 +105,7 @@ internal sealed class ClipEditingCoordinator(
         return workspace.ToggleClipStructure();
     }
 
-    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind)
+    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind, decimal displayFrameRate)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var snapshot = session.Snapshot;
@@ -127,7 +127,7 @@ internal sealed class ClipEditingCoordinator(
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         return PrepareCandidate($"Edit {field}", document =>
-            candidateBuilder.EditCell(document, chapter.Id, field, edit.Value, (decimal)(workspace.CurrentChapterSet?.FramesPerSecond ?? 0d)));
+            candidateBuilder.EditCell(document, chapter.Id, field, edit.Value, displayFrameRate));
     }
 
     public ChapterContentPreview Delete(IReadOnlySet<int> indexes, ChapterEditingOptions options)
@@ -148,12 +148,11 @@ internal sealed class ClipEditingCoordinator(
         return PrepareCandidate("Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId));
     }
 
-    public ChapterContentPreview ShiftFramesForward(int frames)
+    public ChapterContentPreview ShiftFramesForward(int frames, decimal displayFrameRate)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
-        var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Select(static chapter => chapter.Id).ToHashSet();
-        var fps = (decimal)(workspace.CurrentChapterSet?.FramesPerSecond ?? 0d);
-        return PrepareCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps));
+        var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Where(static chapter => chapter.Kind != ChapterKind.Separator).Select(static chapter => chapter.Id).ToHashSet();
+        return PrepareCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, displayFrameRate));
     }
 
     public FrameUpdateOutcome UpdateFrames(
@@ -172,15 +171,7 @@ internal sealed class ClipEditingCoordinator(
         }
 
         var frameResult = frameRateService.UpdateFrames(current, appliedOption, frameDecimalPlaces, tolerance);
-        var storedInfo = configuredFrameRate is null
-            ? frameResult.Info
-            : frameResult.Info with { FramesPerSecond = (double)configuredFrameRate.Value };
-        var outcome = workspace.CommitNonStructuralChapterSetResult(storedInfo, "Update frame information");
-        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
-        {
-            throw new InvalidOperationException(string.Join("; ", outcome.Errors));
-        }
-        return new FrameUpdateOutcome(frameResult, detection, appliedOption, workspace.CurrentChapterSet ?? storedInfo);
+        return new FrameUpdateOutcome(frameResult, detection, appliedOption, current);
     }
 
     private static ChapterSet EmptyChapterSet() =>
@@ -197,8 +188,10 @@ internal sealed class ClipEditingCoordinator(
         }
 
         var track = source.Tracks[trackIndex];
-        var focused = new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
-            track.Segments.FirstOrDefault()?.Duration ?? source.Duration,
+        var segment = track.Segments.FirstOrDefault();
+        var focused = new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
+            segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex),
             track.Segments.FirstOrDefault()?.FrameRate ?? source.FrameRate,
             [track]);
         var result = build(focused);
@@ -214,8 +207,8 @@ internal sealed class ClipEditingCoordinator(
             .Select(static rate => rate!.Value)
             .Distinct()
             .ToArray();
-        var candidate = new EditableChapterDocument(source.Id, result.Candidate.Title, result.Candidate.SourceName,
-            result.Candidate.ImportFormat, source.Duration,
+        var candidate = new EditableChapterDocument(source.Id, source.Title, source.SourceName,
+            source.ImportFormat, EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, result.Candidate),
             effectiveRates.Length == 1 ? effectiveRates[0] : effectiveRates.Length == 0 ? source.FrameRate : null,
             tracks);
         return result with { Candidate = candidate };

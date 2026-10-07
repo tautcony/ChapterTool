@@ -86,10 +86,7 @@ window.chapterToolWasm = {
     }
   },
   setLocalStorage: function (key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-    } catch (error) {
-    }
+    window.localStorage.setItem(key, value);
   },
   removeLocalStorage: function (key) {
     try {
@@ -156,6 +153,8 @@ window.chapterToolWasm = {
       }, true);
     }
   },
+  focus: function (id) { document.getElementById(id)?.focus(); },
+  setShortcutBindings: function (gestures) { window.__chapterToolBindings = new Set(gestures); },
   shouldPreventBrowserShortcut: function (event) {
     return shouldPreventBrowserShortcut(event);
   },
@@ -234,10 +233,11 @@ function shouldPreventBrowserShortcut(event) {
   if (isEditableShortcutTarget(event.target)) {
     return false;
   }
-  if (ctrl && ['s', 'o', 'l', 'z', 'y'].includes(key.toLowerCase())) {
-    return true;
-  }
-  return key === 'F11' || key === 'F9';
+  const aliases = { ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', ' ': 'Space' };
+  const normalizedKey = aliases[key] || (key.length === 1 ? key.toUpperCase() : key);
+  const gesture = (event.ctrlKey ? 'Ctrl+' : '') + (event.altKey ? 'Alt+' : '') +
+    (event.metaKey ? 'Meta+' : '') + (event.shiftKey ? 'Shift+' : '') + normalizedKey;
+  return window.__chapterToolBindings?.has(gesture) === true;
 }
 
 function encodeText(text, encodingId, emitBom) {

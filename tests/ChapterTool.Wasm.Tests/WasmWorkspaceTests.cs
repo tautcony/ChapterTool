@@ -138,6 +138,8 @@ public sealed class WasmWorkspaceTests
         Assert.True(workspace.SetChapterNameTemplate("names.txt", "Alpha\nBeta\nGamma"));
         Assert.Equal(2, workspace.ChapterNameModeIndex);
         Assert.Equal("names.txt", workspace.ChapterNameTemplateStatus);
+        workspace.PrepareNamingPreview();
+        Assert.True(await workspace.ApplyContentPreviewAsync());
         Assert.Equal("Alpha", workspace.Rows[0].Name);
         Assert.Equal("Beta", workspace.Rows[1].Name);
         Assert.Equal("Gamma", workspace.Rows[2].Name);
@@ -175,6 +177,7 @@ public sealed class WasmWorkspaceTests
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, "00:00:01.000", null);
 
         // Force a known FPS via fixed frame rate option when present.
         if (workspace.FrameRateChoices.Count > 1)
@@ -258,7 +261,8 @@ public sealed class WasmWorkspaceTests
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
         workspace.ChapterNameModeIndex = 1;
-        workspace.ApplyOptionsAndRefresh();
+        workspace.PrepareNamingPreview();
+        Assert.True(await workspace.ApplyContentPreviewAsync());
         Assert.All(workspace.Rows, row => Assert.StartsWith("Chapter ", row.Name, StringComparison.Ordinal));
     }
 

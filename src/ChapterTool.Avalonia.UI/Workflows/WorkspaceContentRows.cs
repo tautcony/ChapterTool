@@ -13,10 +13,10 @@ internal sealed class WorkspaceContentRows(
 {
     public ChapterSet GetCurrentChapterSet() => workspace.CurrentChapterSet ?? EmptyChapterSet();
 
-    public void RefreshRows(ObservableCollection<ChapterRowViewModel> rows)
+    public void RefreshRows(ObservableCollection<ChapterRowViewModel> rows, ChapterSet? display = null)
     {
         rows.Clear();
-        if (workspace.CurrentChapterSet is not { } current)
+        if ((display ?? workspace.CurrentChapterSet) is not { } current)
         {
             return;
         }

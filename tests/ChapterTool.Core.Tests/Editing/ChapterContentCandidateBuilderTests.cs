@@ -7,6 +7,62 @@ namespace ChapterTool.Core.Tests.Editing;
 
 public sealed class ChapterContentCandidateBuilderTests
 {
+    [Fact]
+    public void Zero_frame_shift_preserves_previously_applied_numbering()
+    {
+        var numbered = Builder().ApplyNumbering(CreateDocument(), 2).Candidate;
+        var targets = numbered.Tracks[0].Chapters.Select(chapter => chapter.Id).ToHashSet();
+        var shifted = Builder().ShiftFrames(numbered, targets, 0, 25m);
+        Assert.True(shifted.IsValid);
+        AssertDocumentValues(numbered, shifted.Candidate);
+    }
+
+    [Fact]
+    public void Portable_naming_and_frame_candidates_preserve_separator_identity_and_reject_missing_FPS()
+    {
+        var source = EditableChapterDocumentAdapter.FromChapterSet(new ChapterSet("Title", "source.txt", ChapterImportFormat.Ogm,
+            24000d / 1001d, TimeSpan.FromSeconds(30),
+            [new Chapter(1, TimeSpan.Zero, "章节"), Chapter.Separator("Boundary"), new Chapter(2, TimeSpan.FromSeconds(10), "日本語")]));
+        var named = Builder().ApplyOutputOptions(source, true, false, string.Empty, 2, false, "t");
+        Assert.True(named.IsValid);
+        Assert.Equal([3, 0, 4], named.Candidate.Tracks[0].Chapters.Select(chapter => chapter.DisplayNumber));
+        Assert.Equal(source.Tracks[0].Chapters[1], named.Candidate.Tracks[0].Chapters[1]);
+        var targets = source.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator).Select(chapter => chapter.Id).ToHashSet();
+        var shifted = Builder().ShiftFrames(source, targets, -1, 24000m / 1001m);
+        Assert.True(shifted.IsValid);
+        Assert.Equal(source.Tracks[0].Chapters[1], shifted.Candidate.Tracks[0].Chapters[1]);
+        Assert.False(Builder().EditCell(source, source.Tracks[0].Chapters[0].Id, ChapterCellField.Frame, "240", 0).IsValid);
+    }
+
+    [Theory]
+    [InlineData(25)]
+    [InlineData(50)]
+    public void Rational_conversion_preserves_quantized_segment_bounds_and_source_metadata(decimal targetFps)
+    {
+        var rate = new ChapterFrameRate(24000, 1001);
+        var trackId = ChapterTrackId.New();
+        var duration = ChapterDuration.FromTicks(TimeSpan.FromSeconds(30.123).Ticks);
+        var boundary = TimeSpan.FromSeconds(10.123).Ticks;
+        var chapters = new[] { new EditableChapter(ChapterId.New(), 1, boundary, "章节 日本語") };
+        var segments = new[]
+        {
+            EditableChapterSegment.Create(trackId, "first", "First", 0, ChapterDuration.FromTicks(boundary), rate, ChapterImportFormat.Mpls, "first.mpls"),
+            EditableChapterSegment.Create(trackId, "second", "Second", boundary, ChapterDuration.FromTicks(duration.Ticks - boundary), rate, ChapterImportFormat.Mpls, "second.mpls")
+        };
+        var source = new EditableChapterDocument(ChapterDocumentId.New(), "Title", "source.mpls", ChapterImportFormat.Mpls,
+            duration, rate, [new EditableChapterTrack(trackId, "Combined", chapters, segments)]);
+        var result = Builder().ChangeFrameRate(source, 24000m / 1001m, targetFps);
+        Assert.True(result.IsValid, string.Join("; ", result.Errors));
+        Assert.True(EditableChapterDocumentValidator.Validate(result.Candidate).IsValid);
+        var converted = result.Candidate.Tracks[0].Segments;
+        Assert.Equal(converted[1].StartTicks, converted[0].Duration.Ticks);
+        Assert.Equal(result.Candidate.Duration.Ticks, converted[1].StartTicks + converted[1].Duration.Ticks);
+        Assert.Equal(result.Candidate.Tracks[0].Chapters[0].StartTicks, converted[1].StartTicks);
+        Assert.All(converted, segment => Assert.Equal(rate, segment.SourceFrameRate));
+        Assert.Equal(segments.Select(segment => segment.Id), converted.Select(segment => segment.Id));
+        Assert.Equal(source.Tracks[0].Chapters[0].Id, result.Candidate.Tracks[0].Chapters[0].Id);
+    }
+
     [Theory]
     [MemberData(nameof(OperationFamilies))]
     public async Task Candidate_family_commits_and_round_trips_through_history(
@@ -133,7 +189,7 @@ public sealed class ChapterContentCandidateBuilderTests
         yield return ["offset", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.Offset(document, document.Tracks[0].Chapters.Select(static chapter => chapter.Id).ToHashSet(), TimeSpan.FromSeconds(1)))];
         yield return ["frame offset", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
-            builder.ShiftFrames(document, document.Tracks[0].Chapters.Select(static chapter => chapter.Id).ToHashSet(), 2, 25))];
+            builder.ShiftFrames(document, new HashSet<ChapterId> { document.Tracks[0].Chapters[1].Id }, 2, 25))];
         yield return ["frame rate", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.ChangeFrameRate(document, 25, 50))];
         yield return ["expression", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
@@ -147,6 +203,20 @@ public sealed class ChapterContentCandidateBuilderTests
     }
 
     private static ChapterContentCandidateBuilder Builder() => new(new ChapterEditingService(new ChapterTimeFormatter()));
+
+    [Fact]
+    public void FrameShiftRejectsTheWholeCandidateInsteadOfDeletingNegativeTargets()
+    {
+        var document = CreateDocument();
+        var targets = document.Tracks[0].Chapters.Select(chapter => chapter.Id).ToHashSet();
+        var result = Builder().ShiftFrames(document, targets, 1, 25);
+        Assert.False(result.IsValid);
+        Assert.Equal(document, result.Candidate);
+        Assert.Equal(2, result.Candidate.Tracks[0].Chapters.Length);
+        var backward = Builder().ShiftFrames(document, targets, -1, 25);
+        Assert.True(backward.IsValid);
+        Assert.Equal(document.Tracks[0].Chapters[0].StartTicks + 400000, backward.Candidate.Tracks[0].Chapters[0].StartTicks);
+    }
 
     private static EditableChapterDocument CreateDocument() => EditableChapterDocumentAdapter.FromChapterSet(new ChapterSet(
         "Title",

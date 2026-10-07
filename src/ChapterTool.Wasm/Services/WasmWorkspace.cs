@@ -16,7 +16,7 @@ namespace ChapterTool.Wasm.Services;
 /// Browser-side workspace that mirrors Avalonia main-window load / grid / frames / expression / save flow.
 /// Clip combine/append/select transitions use the shared Core session kernel.
 /// </summary>
-public sealed class WasmWorkspace : IDisposable
+public sealed partial class WasmWorkspace : IDisposable
 {
     public const long MaxLoadBytes = PortableInputPolicy.MaxBytes;
 
@@ -76,6 +76,7 @@ public sealed class WasmWorkspace : IDisposable
         this.localizer.CultureChanged += OnCultureChanged;
         this.maxLoadBytes = maxLoadBytes is > 0 and var limit ? limit : MaxLoadBytes;
         expressionEngine = new LuaExpressionScriptService();
+        AuthoringService = new ExpressionAuthoringService(expressionEngine);
         editingService = new ChapterEditingService(wasmChapterService.TimeFormatter);
         candidateBuilder = new ChapterContentCandidateBuilder(editingService);
         SaveFormatIndex = 0;
@@ -96,6 +97,10 @@ public sealed class WasmWorkspace : IDisposable
     }
 
     public string SourcePath { get; private set; } = string.Empty;
+
+    public IExpressionAuthoringService AuthoringService { get; }
+
+    public string ExpressionSourceName { get; set; } = string.Empty;
 
     public string StatusText { get; private set; } = string.Empty;
 
@@ -132,7 +137,7 @@ public sealed class WasmWorkspace : IDisposable
         }
     }
 
-    public bool HasActiveDraft => false;
+    public bool HasActiveDraft => contentPreview is not null || expressionPreview is not null;
 
     public bool RequiresSessionLossConfirmation
     {
@@ -989,29 +994,11 @@ public sealed class WasmWorkspace : IDisposable
         && ResolveSelectedFrameRateOption().IsValid;
 
     /// <summary>
-    /// Applies current option state (round frames, expression, order shift, naming) and refreshes the grid.
+    /// Refreshes derived display without applying content drafts.
     /// </summary>
     public void ApplyOptionsAndRefresh()
     {
-        if (BaseChapterSet is null)
-        {
-            Notify();
-            return;
-        }
-
-        var document = session.ContentSession!.Snapshot.Document;
-        var outcome = session.ExecuteTrackCandidate("Apply chapter options", candidate =>
-        {
-            return candidateBuilder.ApplyOutputOptions(candidate,
-                ChapterNameModeIndex == 1,
-                ChapterNameModeIndex == 2,
-                ChapterNameTemplateText ?? string.Empty,
-                OrderShift,
-                false,
-                string.IsNullOrWhiteSpace(Expression) ? "t" : Expression.Trim());
-        });
-        CompleteCandidate(outcome, "Status.FramesUpdated", FramesPerSecondDisplay,
-            document.Tracks[session.CurrentTrackIndex].Chapters.Length);
+        RefreshDisplay(updateStatus: false, statusKey: null);
     }
 
     /// <summary>
@@ -1076,11 +1063,10 @@ public sealed class WasmWorkspace : IDisposable
         expressionPreviewStale = false;
         expressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
         {
-            var expressionSource = AddDetectedFrameRate(document);
-            var focused = FocusTrack(expressionSource, trackIndex);
+            var focused = AddDetectedFrameRate(FocusTrack(document, trackIndex));
             var built = candidateBuilder.ApplyExpression(focused, Expression.Trim());
             return built.IsValid
-                ? built with { Candidate = ReplaceFocusedTrack(expressionSource, trackIndex, built.Candidate) }
+                ? built with { Candidate = ReplaceFocusedTrack(document, trackIndex, built.Candidate) }
                 : built with { Candidate = document };
         });
         Notify();
@@ -1157,38 +1143,13 @@ public sealed class WasmWorkspace : IDisposable
         var segment = track.Segments.FirstOrDefault();
         return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
-            segment?.Duration ?? source.Duration, segment?.FrameRate ?? source.FrameRate, [track]);
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), segment?.FrameRate ?? source.FrameRate, [track]);
     }
 
     private EditableChapterDocument AddDetectedFrameRate(EditableChapterDocument source)
     {
-        if (source.FrameRate is not null || BaseChapterSet is null)
-        {
-            return source;
-        }
-
-        var detected = ApplyFrames(BaseChapterSet).FramesPerSecond;
-        if (detected <= 0)
-        {
-            return source;
-        }
-
-        var rate = new ChapterFrameRate(
-            checked((long)Math.Round(detected * 1_000_000m, MidpointRounding.AwayFromZero)),
-            1_000_000);
-        var tracks = source.Tracks.Select(track => new EditableChapterTrack(
-            track.Id,
-            track.Name,
-            track.Chapters,
-            track.Segments.Select(segment => segment with { FrameRate = rate }))).ToImmutableArray();
-        return new EditableChapterDocument(
-            source.Id,
-            source.Title,
-            source.SourceName,
-            source.ImportFormat,
-            source.Duration,
-            rate,
-            tracks);
+        return EditableChapterDocumentAdapter.WithFallbackFrameRate(source,
+            BaseChapterSet is null ? 0m : ApplyFrames(BaseChapterSet).FramesPerSecond);
     }
 
     private static EditableChapterDocument ReplaceFocusedTrack(
@@ -1197,8 +1158,10 @@ public sealed class WasmWorkspace : IDisposable
         EditableChapterDocument focused)
     {
         var tracks = source.Tracks.SetItem(trackIndex, focused.Tracks[0]);
+        var rates = tracks.SelectMany(track => track.Segments.Select(segment => segment.FrameRate))
+            .Where(rate => rate.HasValue).Select(rate => rate!.Value).Distinct().ToArray();
         return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
-            source.Duration, source.FrameRate, tracks);
+            EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, focused), rates.Length == 1 ? rates[0] : rates.Length == 0 ? source.FrameRate : null, tracks);
     }
 
     /// <summary>
@@ -1231,7 +1194,7 @@ public sealed class WasmWorkspace : IDisposable
         ChapterNameTemplateStatus = Path.GetFileName(fileName);
         ChapterNameModeIndex = 2;
         AddLog("Info", localizer.Format("Status.TemplateLoaded", ChapterNameTemplateStatus));
-        ApplyOptionsAndRefresh();
+        Notify();
         return true;
     }
 
@@ -1474,6 +1437,8 @@ public sealed class WasmWorkspace : IDisposable
             return;
         }
 
+        var selectedIds = selectedRowIndexes.Where(index => index >= 0 && index < rows.Count)
+            .Select(index => rows[index].Id).ToHashSet();
         var framed = ApplyFrames(BaseChapterSet);
         FramesPerSecond = (double)framed.FramesPerSecond;
         RebuildFrameRateChoices(BaseChapterSet);
@@ -1481,15 +1446,19 @@ public sealed class WasmWorkspace : IDisposable
         rows =
         [
             .. displayContent.Chapters
-                .Select(chapter => WasmWorkspaceProjection.ToRow(chapter, wasmChapterService.TimeFormatter))
+                .Select((chapter, index) => WasmWorkspaceProjection.ToRow(chapter, wasmChapterService.TimeFormatter,
+                    session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex].Chapters[index].Id))
         ];
-
-        // Drop selection indexes that no longer exist after edits.
-        selectedRowIndexes.RemoveWhere(index => index < 0 || index >= rows.Count);
-        if (SelectedRowIndex >= rows.Count)
+        selectedRowIndexes.Clear();
+        for (var index = 0; index < rows.Count; index++)
         {
-            SelectedRowIndex = selectedRowIndexes.Count > 0 ? selectedRowIndexes.Max() : -1;
+            if (selectedIds.Contains(rows[index].Id))
+            {
+                selectedRowIndexes.Add(index);
+            }
         }
+        SelectedRowIndex = selectedRowIndexes.Count > 0 ? selectedRowIndexes.Max() : -1;
+        selectionAnchor = SelectedRowIndex;
 
         diagnostics = [];
         if (updateStatus && statusKey is not null)
@@ -1508,8 +1477,11 @@ public sealed class WasmWorkspace : IDisposable
     {
         var option = ResolveSelectedFrameRateOption();
 
-        // Auto (LegacyMplsCode == 0): detect when rounding, otherwise still need a valid option for fps.
-        return frameRateService.UpdateFrames(info, option, RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces, FrameAccuracyTolerance);
+        if (option.LegacyMplsCode == 0)
+        {
+            option = frameRateService.DetectDetailed(info, FrameAccuracyTolerance).Option;
+        }
+        return frameRateService.UpdateFrames(info, option, RoundFrames ? 0 : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces ? EditingOptions.EffectiveFrameDecimalPlaces : -1, FrameAccuracyTolerance);
     }
 
     private FrameRateOption ResolveSelectedFrameRateOption()
@@ -1561,7 +1533,7 @@ public sealed class WasmWorkspace : IDisposable
         new(
             Format: ChapterContentService.FormatAt(SaveFormatIndex),
             XmlLanguage: XmlLanguage,
-            SourceFileName: SourcePath,
+            SourceFileName: BaseChapterSet?.SourceName,
             AutoGenerateNames: false,
             UseTemplateNames: false,
             ChapterNameTemplateText: string.Empty,

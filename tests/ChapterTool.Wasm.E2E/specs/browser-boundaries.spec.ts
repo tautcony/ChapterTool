@@ -36,7 +36,7 @@ test('B11 Ctrl+S downloads through the app and Ctrl+Z inside a field stays an ed
 test('B12 fixed frame rate and an expression update chapter projection', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
   await page.locator('select.fps-box').selectOption('2');
-  await expect(chapters(page).locator('tbody tr').nth(1).locator('.frame-text')).toHaveText('300');
+  await expect(chapters(page).getByLabel('Frames 2', { exact: true })).toHaveValue('300');
   await page.getByRole('button', { name: 'Expression', exact: true }).click();
   const expression = page.getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
@@ -90,10 +90,8 @@ test('B13 DOM file drop imports a file and oversized file input is rejected', as
   await expect(chapters(page).locator('tbody tr')).toHaveCount(1);
   await rm(directory, { recursive: true, force: true });
 
-  await page.getByRole('button', { name: 'Advanced export options', exact: true }).click();
-  const templateChooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: /Browse template/ }).click();
-  await (await templateChooser).setFiles({ name: 'oversized-template.txt', mimeType: 'text/plain', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
+  await page.getByRole('button', { name: 'Naming and numbering', exact: true }).click();
+  await page.getByRole('dialog').locator('#content-template').setInputFiles({ name: 'oversized-template.txt', mimeType: 'text/plain', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
   await expect(page.getByRole('dialog').getByRole('alert')).toContainText(/template|large|size/i);
 });
 
