@@ -242,7 +242,9 @@
         var value = args.Value?.ToString() ?? string.Empty;
         if (!composing)
         {
-            var caret = await compositionModule!.InvokeAsync<int>("caret", expressionEditorElement);
+            var caret = compositionModule is null
+                ? value.Length
+                : await compositionModule.InvokeAsync<int>("caret", expressionEditorElement);
             if (disposed || currentInput != inputRevision) return;
             analysis = Workspace.AuthoringService.Analyze(value, caret, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
         }
