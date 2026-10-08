@@ -357,7 +357,7 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task ExpressionPresetBeyondKnownDurationIsRejectedWithoutPartialCommit()
+    public async Task ExpressionPresetBeyondLastChapterStartIsValidWithoutPartialCommit()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
@@ -374,8 +374,7 @@ public sealed class WasmWorkspaceTests
         Assert.Equal(priorRows, workspace.Rows);
         Assert.Equal(priorHistory, workspace.HistoryEntries.Count);
         Assert.NotNull(workspace.ExpressionPreview);
-        Assert.False(workspace.ExpressionPreview!.IsValid);
-        Assert.Contains(workspace.ExpressionPreview.Errors, error => error.Contains("duration", StringComparison.OrdinalIgnoreCase));
+        Assert.True(workspace.ExpressionPreview!.IsValid);
     }
 
     [Fact]

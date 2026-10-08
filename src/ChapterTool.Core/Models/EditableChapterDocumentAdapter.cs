@@ -426,11 +426,6 @@ public static class EditableChapterDocumentValidator
                     errors.Add("Chapter end time must not precede its start time.");
                 }
 
-                if (document.Duration.IsKnown && chapter.StartTicks > document.Duration.Ticks)
-                {
-                    errors.Add("Chapter start time exceeds the known document duration.");
-                }
-
                 if (document.Duration.IsKnown && chapter.EndTicks is long endTicks && endTicks > document.Duration.Ticks)
                 {
                     errors.Add("Chapter end time exceeds the known document duration.");
