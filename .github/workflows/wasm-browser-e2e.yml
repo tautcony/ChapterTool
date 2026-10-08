@@ -127,13 +127,13 @@ jobs:
       - name: Install Chromium and system dependencies
         run: python3 scripts/check-ci.py --stage visual --install-browser-deps --step install-chromium
       - name: Compare Linux screenshot baselines
-        if: ${{ !inputs.update_visual_snapshots && github.event_name != 'push' }}
+        if: ${{ !inputs.update_visual_snapshots }}
         run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines
       - name: Generate Linux screenshot baselines
-        if: ${{ inputs.update_visual_snapshots || github.event_name == 'push' }}
+        if: inputs.update_visual_snapshots
         run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines --update-visual-snapshots
       - name: Upload generated Linux baselines for review
-        if: ${{ inputs.update_visual_snapshots || github.event_name == 'push' }}
+        if: inputs.update_visual_snapshots
         uses: actions/upload-artifact@v7
         with:
           name: wasm-linux-baselines
