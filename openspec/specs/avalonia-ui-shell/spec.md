@@ -347,7 +347,7 @@ The Avalonia shell SHALL use a dedicated Lua expression/script editor for all ex
 - **THEN** the error and suggestion feedback SHALL be cleared
 
 ### Requirement: Lua expression script authoring
-The Avalonia shell SHALL allow users to apply Lua expression transforms with built-in presets and external script selection.
+The Avalonia shell SHALL allow users to author and apply Lua expression transforms with built-in presets and external script selection. Expression text SHALL remain an operation draft until the user explicitly applies its candidate.
 
 #### Scenario: Expression tool exposes Lua script editing
 - **WHEN** the expression tool window is opened
@@ -356,22 +356,27 @@ The Avalonia shell SHALL allow users to apply Lua expression transforms with bui
 
 #### Scenario: Built-in Lua preset can populate script text
 - **WHEN** the user selects a built-in Lua script preset in the expression tool or accepts a `preset.*` completion in the editor
-- **THEN** the tool SHALL show or insert the preset script text and apply that script through the owner ViewModel when the user applies the tool
+- **THEN** the tool SHALL show or insert the preset script text
+- **AND** it SHALL prepare a live candidate preview without changing the document
+- **AND** it SHALL apply that script to the document only after the user confirms Apply
 
 #### Scenario: External Lua script can be selected
 - **WHEN** the user chooses an external `.lua` script from the main expression input or expression tool
 - **THEN** the UI SHALL expose the load action as a button at the right side of the Lua expression input
 - **AND** it SHALL use the file picker service abstraction to select and read the script text
-- **AND** applying or using the loaded script SHALL pass that script text into chapter preview and save options without requiring Core to read the file path
+- **AND** loading the script SHALL prepare a preview without changing the document
+- **AND** applying the loaded script SHALL pass its text into the candidate operation without requiring Core to read the file path
 
-#### Scenario: Lua expression or script participates in preview and save
-- **WHEN** expression application is enabled and the current chapters are previewed or saved
-- **THEN** the main ViewModel SHALL project chapter output using Lua expression/script options
-- **AND** Lua diagnostics SHALL be surfaced through the same status/log diagnostic path as expression diagnostics
+#### Scenario: Lua expression or script is applied as a document operation
+- **WHEN** the user edits or loads a Lua expression script
+- **THEN** the UI SHALL refresh a read-only candidate preview and surface Lua diagnostics through the status/log diagnostic path
+- **AND** format preview and save SHALL use committed chapter values and SHALL NOT apply the expression draft
+- **WHEN** the user applies a valid candidate
+- **THEN** the UI SHALL commit the candidate as one undoable transaction
 
 #### Scenario: Simple arithmetic remains approachable through Lua
 - **WHEN** the user enters a simple Lua arithmetic expression such as `t + 1`
-- **THEN** preview and save SHALL apply the transform without requiring `return`, a function wrapper, or any legacy postfix expression syntax
+- **THEN** the live candidate preview SHALL apply the transform without requiring `return`, a function wrapper, or any legacy postfix expression syntax
 
 ### Requirement: Preview and save use shared Lua projection
 The Avalonia shell SHALL route preview, text preview, and save through the same Lua expression projection options and the same injected export/projection service path exposed by the main ViewModel/workspace.
@@ -896,7 +901,7 @@ ChapterTool SHALL keep an attribution record for the imported SourceGit resource
 - **AND** `Themes.axaml` and `Styles.axaml` SHALL each include the SourceGit copyright and MIT license notice
 
 ### Requirement: Global styles preserve workflow usability
-The ported style layer SHALL keep ChapterTool workflows usable at supported window sizes.
+The ported style layer SHALL keep ChapterTool workflows usable at supported window sizes. Preview readiness, diagnostics, and inline comparison SHALL NOT add rows to the bottom options form or change the allocated chapter viewport bounds at a fixed window size and input layout. Narrow comparison cells MAY use two labeled lines without reducing the allocated viewport.
 
 #### Scenario: Main window uses the global styles
 - **WHEN** the main window opens
@@ -907,6 +912,12 @@ The ported style layer SHALL keep ChapterTool workflows usable at supported wind
 - **WHEN** a tool window is resized to its minimum width
 - **THEN** primary actions SHALL remain visible
 - **AND** text SHALL remain inside its control bounds
+
+#### Scenario: Inline comparison preserves chapter space
+- **WHEN** a fixed-size main window moves through empty, computing, ready, invalid, unchanged, and stale preview states
+- **THEN** its allocated chapter viewport bounds SHALL remain equal within layout rounding tolerance
+- **AND** no detailed result panel SHALL appear below the options form
+- **AND** responsive comparison SHALL remain readable without overlapping values
 
 ### Requirement: Settings window uses compact imported form composition
 The settings window SHALL use the imported input and action styles.
@@ -982,3 +993,297 @@ Host selection SHALL change platform effects and tool presentation without chang
 - **WHEN** two Avalonia hosts invoke the same typed source load command with equivalent source documents
 - **THEN** both shells SHALL apply the same workspace commit and projection rules
 - **AND** only their host-specific source and surface effects may differ
+
+### Requirement: Avalonia expression editing provides a live read-only preview
+Avalonia expression inputs SHALL refresh a read-only candidate preview while the user edits the script or selects a preset. The preview SHALL remain separate from the editable chapter grid and SHALL require an explicit Apply action to change the document.
+
+#### Scenario: Main expression input refreshes the candidate preview
+- **WHEN** the user edits the expression in the main window or selects an expression preset
+- **THEN** the UI SHALL refresh the candidate from the current committed document
+- **AND** it SHALL display changed chapter values or a no-change result
+- **AND** the main chapter grid SHALL continue to display committed values
+
+#### Scenario: Expression tool shows live differences and diagnostics
+- **WHEN** the expression tool is open and the user edits its Lua script
+- **THEN** the UI SHALL refresh a read-only before-and-after preview
+- **AND** it SHALL show current Lua and document validation errors
+- **AND** it SHALL disable Apply while the candidate is invalid
+
+#### Scenario: User applies or cancels the live candidate
+- **WHEN** the user applies a valid current expression candidate
+- **THEN** the UI SHALL commit one history transaction and refresh the grid from the committed document
+- **AND** format preview and save SHALL use those committed values without rerunning the expression
+- **WHEN** the user cancels the candidate
+- **THEN** the UI SHALL clear preview data without changing document content or history
+
+#### Scenario: Expression text is a draft without a persistent enable toggle
+- **WHEN** the user edits expression text or selects a preset
+- **THEN** the UI SHALL treat that value as an unapplied operation draft
+- **AND** it SHALL require an explicit Apply action to commit it
+- **AND** it SHALL NOT expose a persistent checkbox that silently enables expression projection during preview or save
+
+### Requirement: History opens in a button-invoked dialog
+Avalonia 编辑历史 MUST 由历史按钮打开独立模态弹框。主窗口 MUST NOT 常驻显示历史列表或为历史预留侧栏空间。历史弹框 MUST 使用当前文档会话的历史和命令。打开、关闭或调整弹框尺寸 MUST NOT 创建历史事务。
+
+#### Scenario: Load without opening history
+- **WHEN** 用户加载章节文档但没有点击历史按钮
+- **THEN** 主窗口不显示历史列表或历史侧栏占位
+- **AND** 章节工作区使用完整中央宽度
+- **AND** 历史按钮具有本地化的可访问名称
+
+#### Scenario: Open and dismiss history
+- **WHEN** 用户点击历史按钮
+- **THEN** 一个属于主窗口的模态历史弹框打开
+- **AND** 弹框显示当前节点、撤销、重做、分支导航和当前会话生命周期提示
+- **AND** 主窗口后台点击、快捷键和拖放不能通过弹框修改文档
+- **WHEN** 用户通过关闭按钮、窗口关闭或 Escape 退出弹框
+- **THEN** 弹框关闭并归还焦点到历史按钮
+- **AND** 仅关闭弹框不会回滚弹框内已执行的历史导航
+- **AND** 主窗口章节区域不因开关弹框而改变分配尺寸
+
+#### Scenario: Navigate history in the dialog
+- **WHEN** 用户在弹框中执行撤销、重做或选择保留的另一分支
+- **THEN** 操作调用当前会话的既有历史命令
+- **AND** 弹框更新当前节点、按钮可用性和操作描述
+- **AND** 主窗口章节数据刷新为对应历史状态
+- **AND** 关闭并重新打开后显示相同的当前历史状态
+
+#### Scenario: Reopen history and release its resources
+- **WHEN** 用户反复打开和关闭历史弹框
+- **THEN** 同一时刻最多存在一个该会话的历史弹框
+- **AND** 已关闭弹框释放内容树及会话订阅
+- **AND** 无可用文档会话时历史按钮禁用
+
+#### Scenario: Inspect a long branching history
+- **WHEN** 历史包含大量条目、多个分支和长操作描述
+- **THEN** 用户能通过虚拟化列表滚动及键盘导航访问保留节点
+- **AND** 当前节点和分支关系不只依赖颜色或空格识别
+- **AND** 撤销、重做和关闭操作保持可达
+
+### Requirement: Chapter grid fills its allocated workspace
+章节表格 MUST 填充顶部工具区与底部选项之间的中央分配区。该区域 MUST NOT 为已隐藏的空状态或历史保留独立空白行。空状态 MUST 在相同工作区居中显示。列标题、值和编辑控件 MUST 保持可读。
+
+#### Scenario: Loaded table uses the full central area
+- **WHEN** 用户在 760×600、1280×800 或 760×520 的窗口加载足够多的章节
+- **THEN** 表格边界覆盖中央分配区的完整可用宽度和高度
+- **AND** 表格下方没有额外的等高空白区域
+- **AND** 用户能滚动到最后一个章节并提交单元格编辑
+- **AND** 表格虚拟化和扩展选择继续工作
+
+#### Scenario: Empty and loaded states share the same area
+- **WHEN** 窗口尚未加载章节
+- **THEN** 空状态图像和提示在章节工作区居中
+- **AND** 空状态不会阻止加载或拖放操作
+- **WHEN** 章节加载成功
+- **THEN** 空状态隐藏且表格使用同一完整工作区
+
+#### Scenario: Resize with long chapter values
+- **WHEN** 用户调整窗口尺寸并编辑长章节名称、时间或帧值
+- **THEN** 列保留合理最小宽度，标题和内容不相互覆盖
+- **AND** 必要的滚动保持可用
+- **AND** 编辑按稳定列身份提交，选择和滚动位置在身份仍有效时保持
+
+### Requirement: Main-window content previews have a bounded review region
+表达式及主窗口其他待确认内容操作 MUST 显示在独立结果区域。该区域 MUST 显示操作名称、作用范围、完整变更计数和可检查的结果。状态条 MUST 只显示简短状态，不能作为唯一的差异展示。Apply 和 Cancel MUST 位于结果滚动区之外。没有预览时，结果区域 MUST 折叠。
+
+#### Scenario: Preview an expression without overlapping options
+- **WHEN** 用户输入有效表达式 `t + 1` 并得到候选
+- **THEN** 预览出现在独立结果区域
+- **AND** 保存格式、XML 语言、命名、编号偏移和表达式输入不被结果文字覆盖
+- **AND** 用户能检查预览并点击 Apply 或 Cancel
+
+#### Scenario: Review another content operation
+- **WHEN** 用户准备命名、编号偏移或帧率变换候选
+- **THEN** 同一结果区域显示该操作的名称、范围和修改前后值
+- **AND** 用户不需要从状态条的技术摘要判断将要提交的内容
+- **AND** Apply 绑定该区域所展示的候选
+
+#### Scenario: Inspect all differences from a compact result
+- **WHEN** 候选包含 1,000 个章节的变化，紧凑区域只能显示部分条目
+- **THEN** 摘要计数覆盖完整候选
+- **AND** 界面明确表示当前只显示部分条目
+- **AND** 所有差异都能通过滚动或完整差异入口访问
+- **AND** 完整差异入口展示同一个候选且不重新计算表达式
+
+#### Scenario: Clear a preview
+- **WHEN** 用户取消候选、应用成功或文档会话结束
+- **THEN** 对应预览结果和确认操作清除
+- **AND** 结果区域不保留空白占位或过期值
+
+### Requirement: Main-window preview values use localized business formats
+主窗口预览 MUST 从 typed snapshot 展示本地化业务值。它 MUST 按章节组织修改前、修改后和变化量。时间变化、帧信息更新和属性变化 MUST 明确区分。普通结果 MUST NOT 直接显示 ticks、内部字段标识、原始枚举或对象转储。
+
+#### Scenario: Review a one-second change
+- **WHEN** 候选将章节时间从 00:00:00 改为 00:00:01
+- **THEN** 对比显示章节身份、可读的原时间、目标时间和正一秒变化量
+- **AND** 同一章节的帧信息变化在该章节的明细中显示
+- **AND** 原始 `StartTicks` 数字不是默认时间表示
+
+#### Scenario: Distinguish frame-only and property-only changes
+- **WHEN** 候选只更新帧信息或持久化属性而没有时间变化
+- **THEN** 摘要明确说明没有章节时间变化
+- **AND** 相关更新以本地化字段和原值、目标值显示
+- **AND** 同一章节的多种变化只计为一个受影响章节
+
+#### Scenario: Preserve precise and missing values
+- **WHEN** 时间差小于一毫秒，或原帧信息缺失而目标为零帧
+- **THEN** 时间精度能区分实际变化且变化量不显示为零
+- **AND** 缺失帧值与零帧使用不同的业务表示
+- **AND** 帧率依据不同的两侧各自显示依据且不生成误导的帧差
+
+#### Scenario: Localize normal review content
+- **WHEN** 用户使用中文或英文检查预览
+- **THEN** 字段标签、单位、空值、状态和错误摘要使用当前语言
+- **AND** accuracy 等枚举含义以业务说明展示
+- **AND** 长文本可换行或展开且含义不只依赖颜色
+
+### Requirement: Preview UX preserves candidate transactions
+预览展示和布局调整 MUST 保留现有候选事务语义。准备 MUST 保持已提交章节和历史不变。Apply MUST 只提交展示的有效且当前的候选。输入、目标或历史变化 MUST 使旧候选不可应用。取消、失败和过期状态 MUST 不提交部分结果。
+
+#### Scenario: Apply and undo the reviewed result
+- **WHEN** 用户确认一个有效且当前的候选
+- **THEN** 提交值与展示值完全相同且只创建一个事务
+- **AND** 应用路径不重新计算表达式
+- **AND** 一次撤销恢复该事务的全部变化
+
+#### Scenario: Cancel or reject an invalid result
+- **WHEN** 用户取消预览，或候选无效、无变化、等待计算或正在计算
+- **THEN** 不创建内容事务
+- **AND** 不符合提交条件时 Apply 禁用
+- **AND** 错误和等待状态位于结果区域且不覆盖输入
+
+#### Scenario: Invalidate a ready result
+- **WHEN** 用户修改输入、切换目标或通过历史弹框改变基础内容
+- **THEN** 旧候选不能提交
+- **AND** 界面显示等待新预览或过期状态
+- **AND** 拒绝过期提交时保留草稿并提供更新预览入口
+
+### Requirement: UX regressions require rendered workflow evidence
+实现 MUST 通过真实渲染和交互验证以上要求。测试 MUST 使用实际生产资源和确定性会话数据。截图 MUST 补充行为断言，不能替代断言。验收 MUST 包含中文、英文、默认、宽和最小窗口，以及布局阈值两侧。
+
+#### Scenario: Verify layout and interactions
+- **WHEN** 对本 change 执行验收
+- **THEN** Headless 覆盖 760×600、1280×800、760×520、860 和 861 宽度及宽→窄→宽切换
+- **AND** 断言章节表格覆盖中央分配区，选项和结果边界不相交
+- **AND** 验证历史开关及分支、末行编辑、完整差异访问、应用、取消和一步撤销
+- **AND** 代表性状态在放大字体和浅色、深色主题下保持可用
+- **AND** 默认、宽、窄截图保存于 `artifacts/main-window-editing-ux/` 并复核
+
+### Requirement: Candidate comparisons appear in original chapter cells
+候选预览 MUST 显示在原章节表的对应单元格内。原值和预览值 MUST 明确区分。时间变化 MUST 显示带符号的变化量。宽窗口 MUST 使用可读的同格横向比较；窄窗口 MUST 使用紧凑两行比较或表格内滚动。单元格 MUST NOT 显示“原/预览”或 `Original/Preview` 文本标签。图标、语义颜色、无障碍名称及工具提示 MUST 区分已提交值和预览值。普通逐章比较 MUST NOT 要求打开独立审阅弹框。
+
+#### Scenario: Review a time shift in place
+- **WHEN** 用户准备 `t + 1` 候选
+- **THEN** 对应章节的时间单元格显示原时间、预览时间和正一秒变化量
+- **AND** 章节名称和其他未变化字段继续显示已提交值
+- **AND** 短表头保持时间、名称、帧和编号
+- **AND** 图标和语义颜色明确表示尚未应用的预览，辅助功能名称或工具提示解释值的角色
+- **AND** 用户沿原章节位置即可比对结果
+
+#### Scenario: Compare other fields
+- **WHEN** 候选改变名称、编号或帧信息
+- **THEN** 对应原单元格显示实际原值和目标值
+- **AND** 未变化单元格不出现虚假的变化标记
+- **AND** 显示的原帧值与进入预览前同一行的可见帧值一致
+- **AND** 只有进入预览前没有可见帧计算值时才显示本地化缺失值
+- **AND** 原帧保留进入预览前可见行的准确、近似或中性颜色
+- **AND** 候选帧按候选准确度显示对应语义颜色，不使用统一的预览强调色
+- **AND** 文档或轨道属性差异可从相关现有控件的本地化工具提示检查
+- **AND** 缺失值与零值使用不同业务表示
+
+### Requirement: Inline review preserves row identity and committed values
+比较 MUST 通过稳定轨道及章节身份映射。原行顺序、未变化章节、选择、滚动和虚拟化 MUST 保持。准备和展示 MUST NOT 修改已提交字段或产生内容事务。
+
+#### Scenario: Compare repeated names and shifted numbering
+- **WHEN** 多个章节有相同名称且候选改变编号
+- **THEN** 对比通过稳定身份显示在正确原行
+- **AND** 不按名称、显示编号或行索引推断对应关系
+
+#### Scenario: Review a large candidate
+- **WHEN** 候选涉及 1,000 个章节并且用户滚动到末行
+- **THEN** 所有原章节仍然可达且比较值正确
+- **AND** 表格不默认只显示变化行或插入重复章节行
+- **AND** 可视区域分配高度不因候选大小变化
+
+#### Scenario: Save while preview is visible
+- **WHEN** 用户尚未确认候选而保存已提交内容
+- **THEN** 保存结果不包含未应用的预览值
+- **AND** 展示投影不改写正常编辑字段或导出源
+
+### Requirement: Grid preview is read-only while candidate input remains editable
+有效候选展示期间章节表及直接内容变更入口 MUST 只读。滚动和选择 MUST 继续可用。表达式输入 MUST 保持可编辑。输入或基础内容变化 MUST 立即使旧候选不可应用。
+
+#### Scenario: Edit an expression during review
+- **WHEN** 用户在预览状态修改表达式
+- **THEN** 旧候选立即失效且应用禁用
+- **AND** 旧目标值清除或明确标为过期，不能冒充当前结果
+- **AND** 自动准备完成后仅展示最新草稿对应候选
+- **AND** 输入编辑的撤销不改变文档历史
+
+#### Scenario: Attempt a chapter edit during preview
+- **WHEN** 用户尝试编辑单元格、插入或删除章节
+- **THEN** 直接内容编辑保持禁用，并明确提供放弃预览的动作
+- **AND** 放弃后普通表格编辑恢复
+- **AND** 预览准备前的单元格草稿按既有规则结束
+
+### Requirement: Inline preview actions share the existing options row
+主窗口 MUST 在原操作槽显示应用及放弃操作，并保留需要的更新和错误反馈。它 MUST NOT 新增确认行或结果面板。章节摘要和重复逐章详情入口 MUST NOT 显示。无法放入章节单元格的属性差异 MUST 通过相关现有操作的本地化工具提示检查。错误 MUST 使用现有错误反馈显示。
+
+#### Scenario: Confirm an inline result
+- **WHEN** 有效当前候选显示在原章节表中
+- **THEN** 原操作槽提供应用和放弃按钮
+- **AND** 原操作槽不显示章节摘要、完整范围摘要工具提示或重复逐章详情按钮
+- **AND** 无需先打开模态审阅才能应用
+- **AND** 入口标明实际操作而不把所有候选都误标为表达式
+
+#### Scenario: Review property-only effects
+- **WHEN** 候选只有文档或轨道属性变化
+- **THEN** 相关现有操作的本地化工具提示显示属性差异
+- **AND** 用户可查看原值、目标值和所属范围
+- **AND** 即使章节时间不变，完整候选有变化时仍可应用
+- **AND** 检查工具提示不增加底部布局行或修改候选
+
+#### Scenario: Invalid, unchanged, or stale preview
+- **WHEN** 候选无效、无变化、计算中或过期
+- **THEN** 应用禁用且原操作槽显示对应状态
+- **AND** 错误通过现有错误反馈查看
+- **AND** 更新过期结果需要显式动作，不能替换后自动提交
+
+### Requirement: Apply and discard restore the normal table
+应用 MUST 提交原表格实际展示的有效当前候选，不得重新计算表达式。放弃 MUST 移除比较并保持原文档。成功或放弃后 MUST 恢复普通编辑且尽可能保留选择和滚动。
+
+#### Scenario: Apply and undo
+- **WHEN** 用户点击应用
+- **THEN** 目标值成为普通表格的已提交值且比较标记消失
+- **AND** 只创建一次原子事务，一次撤销恢复全部变化
+- **AND** 重复点击不重复提交
+
+#### Scenario: Discard without erasing input
+- **WHEN** 用户点击放弃
+- **THEN** 原值恢复为普通表格，文档和历史保持不变
+- **AND** 表达式草稿保留
+- **AND** 同一草稿版本不立即自动重建被放弃候选
+- **AND** 下一次修改或显式准备可以创建新候选
+
+### Requirement: Bottom option inputs share responsive label alignment
+底部选项中的文本输入 MUST 使用响应式共享标签列，且不能按某个固定语言文本设置像素宽度。表达式编辑器 MUST 与同列输入左边界对齐，并在中、英、日文、字号变化及宽窄布局中保持一致。
+
+#### Scenario: Align bottom text inputs
+- **WHEN** 主窗口以支持语言和字体大小渲染
+- **THEN** 保存格式、XML 语言及表达式输入的同列控件左边界对齐
+- **AND** 断言实际 TextBox 或 ExpressionEditor 的边界，而不是只检查容器
+
+### Requirement: Inline review requires rendered workflow evidence
+验收 MUST 覆盖中文及英文、760×600、1280×800、760×520 和布局阈值两侧。测试 MUST 检查原值保持、身份映射、单元格可读性及表格可视区域。截图 MUST 补充行为断言。
+
+#### Scenario: Validate the inline design
+- **WHEN** 对本 change 执行验收
+- **THEN** 验证预览前后可视区域边界相同，允许窄布局两行单元格增加行高
+- **AND** 验证显示帧率 24000/1001 下原 0 和 8357 等可见帧值在预览中保持，且候选目标帧正确
+- **AND** 验证无候选时没有可见原/预标签、章节摘要或重复详情按钮
+- **AND** 验证箭头图标资源、颜色、accessible name 及工具提示
+- **AND** 验证稳定身份、未变化行、末行、名称及帧变化、属性独立变化和亚毫秒时间差
+- **AND** 验证应用、放弃、候选失效和一次撤销
+- **AND** 代表性字体放大及深浅主题保持可用
+- **AND** 截图保存在 `artifacts/compact-content-preview-review/`
+
