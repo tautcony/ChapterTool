@@ -49,6 +49,7 @@ public static class ToolIds
     public static readonly ToolId TemplateNames = new("template-names");
     public static readonly ToolId Zones = new("zones");
     public static readonly ToolId ForwardShift = new("forward-shift");
+    public static readonly ToolId History = new("history");
 }
 
 public enum ToolRefreshPolicy
@@ -78,7 +79,8 @@ public sealed record AuxiliaryToolRequest(
     IRuntimeCapabilities Capabilities,
     Window? HostWindow = null,
     IFilePickerService? FilePicker = null,
-    IClipboardService? Clipboard = null);
+    IClipboardService? Clipboard = null,
+    Action? CloseTool = null);
 
 public interface IAuxiliaryToolHost : IDisposable
 {
@@ -144,7 +146,8 @@ public sealed record ToolCreationContext(
     IClipboardService Clipboard,
     Window? HostWindow = null,
     IFilePickerService? FilePicker = null,
-    IRuntimeCapabilities? Capabilities = null);
+    IRuntimeCapabilities? Capabilities = null,
+    Action? CloseTool = null);
 
 public sealed record ToolDescriptor(
     ToolId Id,

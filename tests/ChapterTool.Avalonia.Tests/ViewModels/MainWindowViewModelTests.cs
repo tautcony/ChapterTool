@@ -1149,7 +1149,8 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.CanApplyContentPreview);
         Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
         Assert.Equal(1, vm.Rows[0].Number);
-        Assert.Contains("StartTicks", vm.ExpressionPreviewText, StringComparison.Ordinal);
+        Assert.Equal("00:00:01.000", vm.Rows[0].PreviewTimeText);
+        Assert.Empty(vm.ExpressionPreviewText);
         await vm.CancelContentPreviewCommand.ExecuteAsync();
         Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
 
@@ -1174,6 +1175,55 @@ public sealed class MainWindowViewModelTests
         Assert.False(save.LastOptions.ApplyExpression);
         Assert.Equal("t + 1", save.LastOptions.Expression);
         Assert.Equal("inline", save.LastOptions.ExpressionSourceName);
+    }
+
+    [Fact]
+    public async Task Candidate_projection_keeps_committed_rows_and_content_history_unchanged()
+    {
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Txt;
+
+        var row = Assert.Single(vm.Rows);
+        var trackId = row.TrackId;
+        var chapterId = row.ChapterId;
+        var originalTime = row.TimeText;
+        var originalNumber = row.Number;
+        var originalName = row.Name;
+        var originalFrames = row.FramesInfo;
+        var mutationRevision = vm.Workspace.ContentSession!.Snapshot.MutationRevision;
+        Assert.False(row.HasPreviewTimeChange);
+        Assert.False(row.HasPreviewNameChange);
+        Assert.False(row.HasPreviewNumberChange);
+        Assert.False(row.HasPreviewFramesChange);
+
+        vm.Expression = "t + 1";
+        vm.RefreshExpressionPreviewNow();
+
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Same(row, vm.Rows[0]);
+        Assert.Equal(trackId, row.TrackId);
+        Assert.Equal(chapterId, row.ChapterId);
+        Assert.Equal(originalTime, row.TimeText);
+        Assert.Equal(originalNumber, row.Number);
+        Assert.Equal(originalName, row.Name);
+        Assert.Equal(originalFrames, row.FramesInfo);
+        Assert.True(row.HasPreviewTimeChange);
+        Assert.Equal("00:00:00.000", row.PreviewBeforeTimeText);
+        Assert.Equal("00:00:01.000", row.PreviewTimeText);
+        Assert.Equal("+00:00:01.000", row.PreviewTimeDelta);
+        Assert.False(row.HasPreviewNameChange);
+        Assert.False(row.HasPreviewNumberChange);
+        Assert.True(row.HasPreviewFramesChange);
+        Assert.Equal("24", row.PreviewFrames);
+        Assert.Equal(mutationRevision, vm.Workspace.ContentSession.Snapshot.MutationRevision);
+
+        await vm.SaveCommand.ExecuteAsync("out");
+
+        Assert.NotNull(save.LastInfo);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(originalName, save.LastInfo.Chapters[0].Name);
     }
 
 
@@ -1211,16 +1261,84 @@ public sealed class MainWindowViewModelTests
         vm.Expression = "t + 1";
         vm.RefreshExpressionPreviewNow();
 
-        await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "00:00:10.000"));
+        var session = Assert.IsType<SessionState>(vm.Workspace.ContentSession);
+        var snapshot = session.Snapshot;
+        var track = snapshot.Document.Tracks[0];
+        var candidateTrack = new EditableChapterTrack(
+            track.Id,
+            track.Name,
+            track.Chapters.SetItem(0, track.Chapters[0] with { StartTicks = TimeSpan.FromSeconds(10).Ticks }),
+            track.Segments);
+        var candidateDocument = new EditableChapterDocument(
+            snapshot.Document.Id,
+            snapshot.Document.Title,
+            snapshot.Document.SourceName,
+            snapshot.Document.ImportFormat,
+            snapshot.Document.Duration,
+            snapshot.Document.FrameRate,
+            snapshot.Document.Tracks.SetItem(0, candidateTrack));
+        var externalOutcome = await session.ExecuteAsync(
+            snapshot.BaseToken,
+            Guid.NewGuid(),
+            "external-time-change",
+            (_, _) => ValueTask.FromResult(candidateDocument),
+            operationDescription: "External edit");
+        Assert.Equal(TransactionOutcomeKind.Committed, externalOutcome.Kind);
+        vm.Workspace.PublishContentDocument(externalOutcome.Snapshot.Document);
+        vm.RefreshRowsFromPort();
+
         Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
-        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+        Assert.False(vm.Rows[0].HasPreviewTimeChange);
+        Assert.Contains("out of date", vm.ExpressionPreviewText, StringComparison.Ordinal);
+        Assert.False(vm.CanApplyContentPreview);
+        Assert.True(vm.CanRefreshContentPreview);
+        await vm.RefreshContentPreviewCommand.ExecuteAsync();
 
         Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
         Assert.True(vm.CanApplyContentPreview);
-        Assert.Contains("100000000", vm.ExpressionPreviewText, StringComparison.Ordinal);
+        Assert.Equal("00:00:10.000", vm.Rows[0].PreviewBeforeTimeText);
+        Assert.Equal("00:00:11.000", vm.Rows[0].PreviewTimeText);
         await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         Assert.Equal("00:00:11.000", vm.Rows[0].TimeText);
+    }
+
+    [Fact]
+    public async Task StaleChapterOptionsPreviewRequiresRefreshBeforeApply()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.OrderShift = 2;
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+
+        var session = Assert.IsType<SessionState>(vm.Workspace.ContentSession);
+        var snapshot = session.Snapshot;
+        var externalOutcome = await session.ExecuteAsync(
+            snapshot.BaseToken,
+            Guid.NewGuid(),
+            "external-title-change",
+            (document, _) => ValueTask.FromResult(new EditableChapterDocument(
+                document.Id,
+                "External title",
+                document.SourceName,
+                document.ImportFormat,
+                document.Duration,
+                document.FrameRate,
+                document.Tracks)),
+            operationDescription: "External edit");
+        Assert.Equal(TransactionOutcomeKind.Committed, externalOutcome.Kind);
+
+        Assert.False(vm.CanApplyContentPreview);
+        Assert.True(vm.CanRefreshContentPreview);
+        await vm.RefreshContentPreviewCommand.ExecuteAsync();
+
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.False(vm.CanRefreshContentPreview);
+        Assert.Empty(vm.ContentPreviewMetadataTooltip);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal(3, vm.Rows[0].Number);
+        Assert.Equal("External title", vm.Workspace.ContentSession!.Snapshot.Document.Title);
     }
 
     [Fact]

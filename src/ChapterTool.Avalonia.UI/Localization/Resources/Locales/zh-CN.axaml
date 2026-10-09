@@ -404,6 +404,8 @@
   <x:String x:Key="History.SessionLifetimeShort" xml:space="preserve">仅当前会话</x:String>
   <x:String x:Key="History.Undo" xml:space="preserve">撤销</x:String>
   <x:String x:Key="History.Redo" xml:space="preserve">重做</x:String>
+  <x:String x:Key="History.Close" xml:space="preserve">关闭</x:String>
+  <x:String x:Key="History.Current" xml:space="preserve">当前历史位置</x:String>
   <x:String x:Key="History.UndoApplied" xml:space="preserve">已撤销编辑</x:String>
   <x:String x:Key="History.RedoApplied" xml:space="preserve">已重做编辑</x:String>
   <x:String x:Key="History.NavigationFailed" xml:space="preserve">无法切换历史记录。</x:String>
@@ -424,6 +426,11 @@
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">已取消表达式预览。</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">正在更新表达式预览…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">预览其他选项</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">更新预览</x:String>
+  <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">放弃</x:String>
+  <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">预览已过期。请更新后再应用。</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">浅色值为已提交内容；箭头指向预览值。</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonAccessibleName" xml:space="preserve">{field}：已提交 {before}；预览 {candidate}；变化 {delta}。</x:String>
   <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">当前轨道：{track} · {count} 个章节</x:String>
   <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">已排除 {count} 个分隔行</x:String>
   <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">受影响章节：{affected} · 时间变化：{times} · 帧信息更新：{frames} · 属性变化：{properties}</x:String>

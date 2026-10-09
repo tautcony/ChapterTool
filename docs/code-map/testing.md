@@ -172,7 +172,7 @@ High-signal test files:
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/ToolViewModelPortConstructionTests.cs`
   - `tests/ChapterTool.Avalonia.Tests/ViewModels/LogToolViewModelTests.cs`
 
-Shortcut catalog and routing tests belong in `tests/ChapterTool.Avalonia.Tests`. `MainWindowViewModelTests` covers command-level history navigation. `MainWindowInteractionHeadlessTests` covers history branches, text-control focus, shortcuts, and virtualized rows. Settings persistence remains in `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`. Headless shortcut workflow coverage belongs in `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`.
+Shortcut catalog and routing tests belong in `tests/ChapterTool.Avalonia.Tests`. `MainWindowViewModelTests` covers command-level history navigation and candidate application. `AvaloniaWindowServiceHeadlessTests` covers history dialog reuse, branch navigation, Escape, reopening, and content detachment. `MainWindowHeadlessTests` covers inline before/candidate values, preview lifecycle, property-only frame-rate changes, submillisecond display, selection state, localization, and responsive workspace bounds. It captures default, wide, narrow, dark, enlarged-font, and Chinese review images under `artifacts/compact-content-preview-review/`. `MainWindowInteractionHeadlessTests` verifies selection and scroll retention through apply and discard. Settings persistence remains in `tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs`. Headless shortcut workflow coverage belongs in `tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs`.
 
 LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first projection, severity and text filters, compact summaries, explicit inspector selection, search highlights, flat structured properties, raw values, live updates, eviction handling, localization, and secondary command state. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs` covers append-order snapshots, minimum-level filtering, bounded retention, clear notifications, and concurrent access. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs` covers UTF-8 JSON and CSV output, deterministic ordering, CSV quoting, output paths, and recoverable failures. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs` and `UiResourceResolutionHeadlessTests.cs` cover rendered list and inspector workflows, keyboard close behavior, responsive layouts, and locale resource resolution.
 - commands and services
@@ -199,6 +199,7 @@ LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first
   - `tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs`
 - headless shell/interaction/integration
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs`
+  - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowEditingUxScreenshotHeadlessTests.cs` (optional main, history, and preview screenshots)
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowInteractionHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowStateHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiScreenshotCaptureHeadlessTests.cs` (optional default, wide, and narrow screenshot capture)
@@ -218,11 +219,13 @@ LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs`
   - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootFontTests.cs`
 
-Use `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs` for typed tool identifiers, duplicate catalog validation, custom descriptor selection, embedded reuse, disposal, and unknown-tool results. Use `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs` for Native Window close confirmation and content detachment. Keep Native Window and Headless test projects in separate processes.
+Use `tests/ChapterTool.Avalonia.Tests/PlatformPorts/AuxiliaryToolContractTests.cs` for typed tool identifiers, duplicate catalog validation, custom descriptor selection, embedded reuse, close callbacks, disposal, and unknown-tool results. Use `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AvaloniaWindowServiceHeadlessTests.cs` for Native Window history and close behavior. Keep Native Window and Headless test projects in separate processes. Set `CHAPTERTOOL_MAIN_WINDOW_UX_SCREENSHOTS=1` to capture the main, history, and preview surfaces under `artifacts/main-window-editing-ux/`.
 
 Theme preset coverage is concentrated in `ThemePresetCatalogTests`, `SettingsToolViewModelTests`, `AvaloniaThemeApplicationServiceTests`, and `SettingsToolHeadlessTests`. The Headless workflow switches representative light and dark presets. It verifies the live palette preview, application variant, semantic resources, and DataGrid column-header brushes.
 
 Editing-preference coverage for delete-rows timing and frame display is in `ChapterEditingServiceTests` at the Core level and `SettingsToolViewModelTests` for draft/apply lifecycle.
+
+`ChapterGridCaretHeadlessTests` verifies rendered caret geometry in all three editable chapter columns. It covers keyboard navigation, centered text, long-name scrolling, resizing, and edit commits. It checks the input-method cursor rectangle through the public input client. It writes default, wide, and narrow review images under `artifacts/chapter-grid-caret/`.
 
 Imported theme resource coverage is in `AvaloniaThemeApplicationServiceTests`. The tests resolve representative theme brushes and the configured monospace font through the runtime resource tree. They verify every imported `Color.*` token for a dark preset. Headless workflow tests verify visible `Optris.Icons.Avalonia.FontAwesome` icons.
 

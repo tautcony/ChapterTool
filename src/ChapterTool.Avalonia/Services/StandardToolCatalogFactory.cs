@@ -124,7 +124,20 @@ public static class StandardToolCatalogFactory
                         context.Session.ChapterEdit,
                         context.Session.ReportUnexpectedUiException,
                         context.Session.ContentOperations)
-                })
+                }),
+            new ToolDescriptor(
+                ToolIds.History,
+                "History.Title",
+                new ToolSizeConstraints(520, 560, 420, 320),
+                ToolRefreshPolicy.Reuse,
+                context => new HistoryToolView
+                {
+                    DataContext = new HistoryToolViewModel(
+                        context.Session.History,
+                        context.Localizer,
+                        context.CloseTool ?? (() => context.HostWindow?.Close()))
+                },
+                IsModal: true)
         ]);
     }
 }

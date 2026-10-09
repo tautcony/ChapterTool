@@ -163,6 +163,8 @@ public sealed class ToolWindowViewModelTests
         Assert.True(catalog.TryGet(ToolIds.Preview, out _));
         Assert.True(catalog.TryGet(ToolIds.Settings, out _));
         Assert.True(catalog.TryGet(ToolIds.Expression, out _));
+        Assert.True(catalog.TryGet(ToolIds.History, out var history));
+        Assert.True(history.IsModal);
         Assert.True(catalog.TryGet(ToolIds.Language, out _));
         Assert.False(catalog.TryGet("missing-tool", out _));
     }

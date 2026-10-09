@@ -5,6 +5,8 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Provides a lightweight row for the virtualized session history list.</summary>
 public sealed record HistoryEntryViewModel(Guid Id, string Description, int Depth, bool IsCurrent)
 {
+    public string BranchPrefix => Depth > 0 ? "↳" : string.Empty;
+
     public string DisplayDescription => $"{new string(' ', Depth * 2)}{(IsCurrent ? "• " : string.Empty)}{Description}";
 
     internal static IReadOnlyList<HistoryEntryViewModel> Create(SessionHistorySnapshot? history)

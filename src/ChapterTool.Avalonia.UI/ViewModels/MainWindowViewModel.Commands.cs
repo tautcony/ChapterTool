@@ -37,8 +37,10 @@ public sealed partial class MainWindowViewModel
         yield return TemplateNamesCommand;
         yield return ZonesCommand;
         yield return ForwardShiftCommand;
+        yield return HistoryCommand;
         yield return PreviewContentOptionsCommand;
         yield return ApplyContentPreviewCommand;
+        yield return RefreshContentPreviewCommand;
         yield return CancelContentPreviewCommand;
         yield return UndoCommand;
         yield return RedoCommand;
@@ -107,8 +109,8 @@ public sealed partial class MainWindowViewModel
         {
             ApplyFrameInfo();
             return ValueTask.CompletedTask;
-        }, _ => CurrentInfo is not null);
-        ChangeFpsCommand = new UiCommand((_, token) => ChangeFpsToSelectedOption(token), _ => CurrentInfo is not null && selectedFrameRateOption.IsValid);
+        }, _ => CanEditRows);
+        ChangeFpsCommand = new UiCommand((_, token) => ChangeFpsToSelectedOption(token), _ => CanEditRows && selectedFrameRateOption.IsValid);
         SelectClipCommand = new UiCommand((parameter, _) =>
         {
             SelectClip(Convert.ToInt32(parameter));
@@ -130,7 +132,7 @@ public sealed partial class MainWindowViewModel
                 var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, token);
                 ApplyContentOutcome(outcome, $"Delete rows: indexes={string.Join(",", indexes.Order())}");
             }
-        }, _ => CurrentInfo is not null);
+        }, _ => CanEditRows);
         InsertCommand = new UiCommand(async (parameter, token) =>
         {
             if (CurrentInfo is not null)
@@ -140,20 +142,19 @@ public sealed partial class MainWindowViewModel
                 var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, token);
                 ApplyContentOutcome(outcome, $"Insert row: index={index}");
             }
-        }, _ => CurrentInfo is not null);
+        }, _ => CanEditRows);
         PreviewContentOptionsCommand = new UiCommand((_, _) =>
         {
             pendingContentPreview = PrepareContentOptionsOperation();
             OnPropertyChanged(nameof(IsContentPreviewPending));
             OnPropertyChanged(nameof(CanPreviewContentOptions));
             OnPropertyChanged(nameof(CanApplyContentPreview));
+            OnPropertyChanged(nameof(CanRefreshContentPreview));
             var preview = pendingContentPreview;
-            StatusText = !preview.IsValid
-                ? string.Join("; ", preview.Errors)
-                : preview.Differences.IsEmpty
-                    ? "No chapter values will change."
-                    : string.Join("; ", preview.Differences.Take(4).Select(static difference =>
-                        $"{difference.Field}: '{difference.Before}' → '{difference.After}'"));
+            ExpressionPreviewText = BuildExpressionPreviewText(preview, Localizer);
+            StatusText = Localizer.GetString(preview.IsValid
+                ? "Expression.State.Ready"
+                : "Expression.State.Invalid");
             ApplyContentPreviewCommand.RaiseCanExecuteChanged();
             CancelContentPreviewCommand.RaiseCanExecuteChanged();
             return ValueTask.CompletedTask;
@@ -166,24 +167,78 @@ public sealed partial class MainWindowViewModel
             }
 
             var preview = pendingContentPreview;
+            var previewText = ExpressionPreviewText;
+            isApplyingContentPreview = true;
             pendingContentPreview = null;
-            if (preview.Operation == "Apply expression")
-            {
-                ExpressionPreviewText = string.Empty;
-            }
             OnPropertyChanged(nameof(IsContentPreviewPending));
             OnPropertyChanged(nameof(CanPreviewContentOptions));
             OnPropertyChanged(nameof(CanApplyContentPreview));
-            _ = await ApplyContentPreviewAsync(preview, token);
+            OnPropertyChanged(nameof(CanRefreshContentPreview));
+            OnPropertyChanged(nameof(IsChapterGridReadOnly));
+            OnPropertyChanged(nameof(CanEditRows));
+            TransactionOutcome outcome;
+            try
+            {
+                outcome = await ApplyContentPreviewAsync(preview, token);
+            }
+            finally
+            {
+                isApplyingContentPreview = false;
+                OnPropertyChanged(nameof(IsChapterGridReadOnly));
+                OnPropertyChanged(nameof(CanEditRows));
+            }
+            if (pendingContentPreview is null
+                && outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+            {
+                pendingContentPreview = preview;
+                ExpressionPreviewText = previewText;
+            }
+            else if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+            {
+                ExpressionPreviewText = string.Empty;
+            }
+
+            OnPropertyChanged(nameof(IsContentPreviewPending));
+            OnPropertyChanged(nameof(CanPreviewContentOptions));
+            OnPropertyChanged(nameof(CanApplyContentPreview));
+            OnPropertyChanged(nameof(CanRefreshContentPreview));
             ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+            RefreshContentPreviewCommand.RaiseCanExecuteChanged();
             CancelContentPreviewCommand.RaiseCanExecuteChanged();
         }, _ => CanApplyContentPreview);
+        RefreshContentPreviewCommand = new UiCommand((_, _) =>
+        {
+            if (pendingContentPreview is not { } stalePreview || !CanRefreshContentPreview)
+            {
+                return ValueTask.CompletedTask;
+            }
+
+            pendingContentPreview = stalePreview.Operation switch
+            {
+                "Apply expression" => PrepareExpressionOperation(Expression),
+                "Change chapter frame rate" => PrepareFrameRateOperation(
+                    configuredFrameRate ?? (decimal)(CurrentInfo?.FramesPerSecond ?? 0),
+                    selectedFrameRateOption.Value),
+                _ => PrepareContentOptionsOperation()
+            };
+            ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+            StatusText = Localizer.GetString(pendingContentPreview.IsValid
+                ? "Expression.State.Ready"
+                : "Expression.State.Invalid");
+            OnPropertyChanged(nameof(IsContentPreviewPending));
+            OnPropertyChanged(nameof(CanApplyContentPreview));
+            OnPropertyChanged(nameof(CanRefreshContentPreview));
+            ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+            RefreshContentPreviewCommand.RaiseCanExecuteChanged();
+            CancelContentPreviewCommand.RaiseCanExecuteChanged();
+            return ValueTask.CompletedTask;
+        }, _ => CanRefreshContentPreview);
         CancelContentPreviewCommand = new UiCommand((_, _) =>
         {
             if (expressionPreviewTimer.IsEnabled)
             {
                 expressionPreviewTimer.Stop();
-                ExpressionPreviewText = Localizer.GetString("Expression.Preview.Cancelled");
+                ExpressionPreviewText = string.Empty;
                 OnPropertyChanged(nameof(IsContentPreviewPending));
                 OnPropertyChanged(nameof(CanPreviewContentOptions));
                 ApplyContentPreviewCommand.RaiseCanExecuteChanged();
@@ -195,14 +250,12 @@ public sealed partial class MainWindowViewModel
             {
                 CancelContentPreview(preview);
                 pendingContentPreview = null;
-                if (preview.Operation == "Apply expression")
-                {
-                    expressionPreviewTimer.Stop();
-                    ExpressionPreviewText = string.Empty;
-                }
+                expressionPreviewTimer.Stop();
+                ExpressionPreviewText = string.Empty;
                 OnPropertyChanged(nameof(IsContentPreviewPending));
                 OnPropertyChanged(nameof(CanPreviewContentOptions));
                 OnPropertyChanged(nameof(CanApplyContentPreview));
+                OnPropertyChanged(nameof(CanRefreshContentPreview));
                 SetStatus("Status.Updated");
             }
 
@@ -214,14 +267,7 @@ public sealed partial class MainWindowViewModel
 
     private async ValueTask NavigateHistoryAsync(string action, Guid? nodeId, CancellationToken cancellationToken)
     {
-        if (pendingContentPreview is { } preview)
-        {
-            CancelContentPreview(preview);
-            pendingContentPreview = null;
-            OnPropertyChanged(nameof(IsContentPreviewPending));
-            OnPropertyChanged(nameof(CanPreviewContentOptions));
-            OnPropertyChanged(nameof(CanApplyContentPreview));
-        }
+        InvalidatePendingContentPreview();
 
         var session = Workspace.ContentSession;
         if (session is null)
@@ -256,9 +302,10 @@ public sealed partial class MainWindowViewModel
         SettingsCommand = WindowCommand("settings");
         LanguageCommand = WindowCommand("language");
         ExpressionCommand = WindowCommand("expression");
-        TemplateNamesCommand = WindowCommand("template-names");
-        ZonesCommand = WindowCommand("zones");
-        ForwardShiftCommand = WindowCommand("forward-shift");
+        TemplateNamesCommand = WindowCommand("template-names", () => CanOpenContentTools);
+        ZonesCommand = WindowCommand("zones", () => CanOpenContentTools);
+        ForwardShiftCommand = WindowCommand("forward-shift", () => CanOpenContentTools);
+        HistoryCommand = WindowCommand("history", () => CanOpenHistory);
         OpenRelatedMediaCommand = new UiCommand(async (parameter, token) => await OpenRelatedMediaAsync(parameter, token), _ => RelatedMediaReferences.Count > 0);
     }
 }

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
@@ -57,6 +58,68 @@ public sealed class AvaloniaWindowServiceHeadlessTests
 
         Assert.False(firstWindow.IsVisible);
         Assert.True(state.IsDisposed);
+    }
+
+    [AvaloniaFact]
+    public async Task History_tool_reuses_the_session_dialog_and_tracks_branch_navigation()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "First branch"));
+        var firstNode = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent);
+        await host.ViewModel.UndoCommand.ExecuteAsync();
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Alternate branch"));
+        for (var index = 0; index < 48; index++)
+        {
+            await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, $"Long history value {index} {new string('x', 180)}"));
+        }
+        using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
+        var request = new AuxiliaryToolRequest(host.ViewModel.ToolSession, host.Localizer, Capabilities: host.ViewModel.Capabilities);
+
+        var opened = await service.OpenAsync(ToolIds.History, request, TestContext.Current.CancellationToken);
+        var window = FindWindow(service, ToolIds.History.Value);
+        var activated = await service.OpenAsync(ToolIds.History, request, TestContext.Current.CancellationToken);
+        var viewModel = Assert.IsType<HistoryToolViewModel>(Assert.IsAssignableFrom<Control>(window.Content).DataContext);
+        var view = Assert.IsType<HistoryToolView>(window.Content);
+        await DrainUiAsync();
+
+        Assert.Equal(AuxiliaryToolResultKind.Opened, opened.Kind);
+        Assert.Equal(AuxiliaryToolResultKind.Activated, activated.Kind);
+        Assert.Same(window, FindWindow(service, ToolIds.History.Value));
+        var currentNode = Assert.Single(viewModel.Entries, entry => entry.IsCurrent);
+        Assert.NotEqual(firstNode.Id, currentNode.Id);
+        Assert.Contains(viewModel.Entries, entry => entry.Depth > 0 && entry.BranchPrefix == "↳");
+        var historyList = view.FindControl<ListBox>("HistoryEntries");
+        Assert.NotNull(historyList);
+        var realizedRows = historyList.GetVisualDescendants().OfType<ListBoxItem>().Count();
+        Assert.True(realizedRows < viewModel.Entries.Count,
+            $"Expected virtualized history rows, but realized {realizedRows} of {viewModel.Entries.Count}.");
+
+        host.ViewModel.Expression = "t + 1";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        await viewModel.NavigateCommand.ExecuteAsync(firstNode.Id);
+        await DrainUiAsync();
+        Assert.Equal("First branch", host.ViewModel.Rows[0].Name);
+        Assert.False(host.ViewModel.CanApplyContentPreview);
+        Assert.Contains(viewModel.Entries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
+
+        view.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Escape,
+            Source = view
+        });
+        await DrainUiAsync();
+        Assert.Null(window.Content);
+        Assert.Contains(host.ViewModel.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
+        await service.OpenAsync(ToolIds.History, request, TestContext.Current.CancellationToken);
+        var reopenedWindow = FindWindow(service, ToolIds.History.Value);
+        var reopenedViewModel = Assert.IsType<HistoryToolViewModel>(Assert.IsAssignableFrom<Control>(reopenedWindow.Content).DataContext);
+        Assert.Contains(reopenedViewModel.Entries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
+        await reopenedViewModel.CloseCommand.ExecuteAsync();
+        await DrainUiAsync();
+        Assert.Null(reopenedWindow.Content);
     }
 
     [AvaloniaFact]
@@ -261,7 +324,8 @@ public sealed class AvaloniaWindowServiceHeadlessTests
                      ToolIds.Language,
                      ToolIds.TemplateNames,
                      ToolIds.Zones,
-                     ToolIds.ForwardShift
+                     ToolIds.ForwardShift,
+                     ToolIds.History
                  })
         {
             var request = new AuxiliaryToolRequest(

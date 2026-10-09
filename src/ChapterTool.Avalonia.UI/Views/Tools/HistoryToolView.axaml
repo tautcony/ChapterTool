@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tools="using:ChapterTool.Avalonia.UI.ViewModels.Tools"
+             xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
+             x:Class="ChapterTool.Avalonia.UI.Views.Tools.HistoryToolView"
+             x:Name="HistoryRoot"
+             x:DataType="tools:HistoryToolViewModel"
+             x:CompileBindings="True"
+             KeyDown="OnKeyDown">
+  <Grid RowDefinitions="Auto,*,Auto" RowSpacing="8" Margin="12">
+    <StackPanel Grid.Row="0" Spacing="6">
+      <TextBlock Classes="toolLabel" Text="{DynamicResource History.Title}" />
+      <TextBlock Text="{Binding SessionLifetimeText}" TextWrapping="Wrap" />
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Classes="flat" Content="{DynamicResource History.Undo}" Command="{Binding UndoCommand}"
+                IsEnabled="{Binding CanUndo}" ToolTip.Tip="{Binding UndoDescription}" />
+        <Button Classes="flat" Content="{DynamicResource History.Redo}" Command="{Binding RedoCommand}"
+                IsEnabled="{Binding CanRedo}" ToolTip.Tip="{Binding RedoDescription}" />
+      </StackPanel>
+    </StackPanel>
+    <ListBox x:Name="HistoryEntries" Grid.Row="1" ItemsSource="{Binding Entries}"
+             AutomationProperties.AutomationId="HistoryEntries">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:HistoryEntryViewModel">
+          <Button Classes="flat" HorizontalContentAlignment="Stretch"
+                  Command="{Binding #HistoryRoot.DataContext.NavigateCommand}"
+                  CommandParameter="{Binding Id}"
+                  ToolTip.Tip="{Binding Description}">
+            <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="6">
+              <TextBlock Grid.Column="0" Text="{Binding BranchPrefix}" />
+              <TextBlock Grid.Column="1" Text="●" IsVisible="{Binding IsCurrent}"
+                         AutomationProperties.Name="{DynamicResource History.Current}" />
+              <TextBlock Grid.Column="2" Text="{Binding Description}" TextWrapping="Wrap" />
+            </Grid>
+          </Button>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <Border Grid.Row="2" Classes="toolFooter">
+      <Button Classes="flat primary" MinWidth="88" HorizontalAlignment="Right"
+              Content="{DynamicResource History.Close}" Command="{Binding CloseCommand}" />
+    </Border>
+  </Grid>
+</UserControl>

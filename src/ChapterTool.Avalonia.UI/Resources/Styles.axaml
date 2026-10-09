@@ -1586,6 +1586,10 @@ xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels">
   </Style>
 
   <Style Selector="TextBox.gridEditor">
+    <!-- Center the presenter as a whole. Avalonia 12.1.3 can render a stale
+         caret offset when TextAlignment centers text inside a wide presenter. -->
+    <Setter Property="TextAlignment" Value="Left" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="0" />

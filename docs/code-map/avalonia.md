@@ -65,13 +65,17 @@ Avalonia owns only host ports:
 
 `MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Operation parameters remain drafts until an explicit candidate is applied. Row materialization reads committed workspace content. It derives frame text and accuracy from the current display preferences. Display refresh must not create content history. Frame edits and signed shifts use the displayed FPS. Expression preparation can supply detected FPS to the selected track when source FPS is absent. Preview and save serialize committed content. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load and append commits use workspace revision rules. Replacement and close confirm session loss, then end the old session and cancel its work.
 
-`MainWindowViewModel` projects the Core history tree into `HistoryEntryViewModel` rows. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `MainView.axaml` renders these rows in a virtualized list.
+`MainWindowViewModel` projects the Core history tree into `HistoryEntryViewModel` rows. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `HistoryToolView` renders these rows in a virtualized modal dialog. `IHistorySessionPort` gives the tool access to the current workspace history.
+
+`MainView.axaml` gives the chapter grid one central workspace. Its empty state overlays that workspace. Content previews compare changed values inside the original chapter cells. Arrow icons and semantic colors mark candidate values. Each row keeps the visible frame value captured before preview. The option row keeps apply and discard actions. Its apply tooltip lists changed non-chapter metadata. Expression diagnostics show invalid and stale states. The grid stays read-only while a candidate is valid.
 
 Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordinator` and `IChapterContentOperationPort`. Clip boundaries and media placement live in track segments. `ClipSession` contains selector metadata only. Batch tools preview, apply, or cancel typed candidates. Cell edits commit to the selected track. Tables and exports read committed chapter values. The browser host uses `ChapterContentOperationSession` for reviewed candidates and `ChapterWorkspace.ExecuteTrackCandidate` for immediate row commands.
 
 `MainView.axaml` bounds the numbering offset to 0..1000. `ContentOperationDialog.razor` provides the browser draft and review surface. `WasmWorkspace.Operations.cs` owns preparation, freshness checks, exact application, and cell identity capture. Preferences refresh display and output without replaying content edits.
 
-`tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/` verifies rendered preview/apply workflows and responsive layouts.
+`ChapterRowViewModel` keeps committed values and projects typed before/candidate comparisons by track and chapter ID. It captures visible frame text, accuracy, and display rate when preview starts. Candidate frame accuracy comes from the typed candidate. `MainView.axaml` renders both values with the frame accuracy palette; the arrow marks the candidate. `MainView.ApplyContentPreviewPreservingGridStateAsync` applies the captured candidate and restores selection and scroll state. Bottom option labels share measured widths across responsive columns.
+
+`tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs` verifies visible frame snapshots, inline values, preview lifecycle, localized layouts, control alignment, and viewport bounds. `MainWindowInteractionHeadlessTests.cs` verifies selection and scroll retention through apply and discard.
 
 ### Composition root
 
@@ -97,6 +101,8 @@ Window-bound file picker, settings picker, and clipboard services use host-owned
 `AppCompositionOptions.ConfigureOverrides` adds test registrations before the container is built. `RegisterProductionModules = false` creates an intentionally incomplete graph for missing-registration tests.
 
 `src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs` owns `ToolId`, typed auxiliary-tool requests and results, host service groups, catalog descriptors, and the embedded presenter contract. `EmbeddedAuxiliaryToolHost.cs` provides the single-content host implementation. `UnavailableHostAdapters.cs` provides explicit no-op adapters for unavailable capabilities.
+
+`HistoryToolViewModel` reads history through `IHistorySessionPort`. The desktop catalog registers it as a modal tool. The embedded host supplies a tool-close callback.
 
 `BrowserPortableAdapters.cs` remains in the shared assembly because it contains no browser API implementation. It defines the bounded source-read behavior and the `IBrowserFileAccess` host port. A browser host owns the `IBrowserFileAccess` implementation.
 

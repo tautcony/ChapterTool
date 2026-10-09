@@ -404,6 +404,8 @@
   <x:String x:Key="History.SessionLifetimeShort" xml:space="preserve">現在のセッションのみ</x:String>
   <x:String x:Key="History.Undo" xml:space="preserve">元に戻す</x:String>
   <x:String x:Key="History.Redo" xml:space="preserve">やり直す</x:String>
+  <x:String x:Key="History.Close" xml:space="preserve">閉じる</x:String>
+  <x:String x:Key="History.Current" xml:space="preserve">現在の履歴位置</x:String>
   <x:String x:Key="History.UndoApplied" xml:space="preserve">編集を元に戻しました</x:String>
   <x:String x:Key="History.RedoApplied" xml:space="preserve">編集をやり直しました</x:String>
   <x:String x:Key="History.NavigationFailed" xml:space="preserve">履歴を移動できませんでした。</x:String>
@@ -424,6 +426,11 @@
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">式のプレビューをキャンセルしました。</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">式のプレビューを更新しています…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">オプションをプレビュー</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">プレビューを更新</x:String>
+  <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">破棄</x:String>
+  <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">プレビューが古くなっています。更新してから適用してください。</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">薄い値は確定済みです。矢印はプレビュー値を示します。</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonAccessibleName" xml:space="preserve">{field}: 確定値 {before}、プレビュー {candidate}、変更 {delta}。</x:String>
   <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">現在のトラック：{track} · {count} 件のチャプター</x:String>
   <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">区切り行 {count} 件を除外</x:String>
   <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">影響するチャプター：{affected} · 時刻の変更：{times} · フレーム情報の更新：{frames} · プロパティの変更：{properties}</x:String>

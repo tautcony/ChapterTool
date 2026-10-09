@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
@@ -23,6 +24,7 @@ public sealed partial class MainWindowViewModel
         {
             return;
         }
+        InvalidatePendingContentPreview();
         SelectedClipIndex = Workspace.ClipSession.SelectedIndex;
         if (CurrentInfo is null)
         {
@@ -49,7 +51,7 @@ public sealed partial class MainWindowViewModel
 
     private async ValueTask EditCell(object? parameter, EditKind kind)
     {
-        if (CurrentInfo is null || parameter is not ChapterCellEdit edit)
+        if (!CanEditRows || CurrentInfo is null || parameter is not ChapterCellEdit edit)
         {
             return;
         }
@@ -247,15 +249,7 @@ public sealed partial class MainWindowViewModel
 
     private void ScheduleExpressionPreview()
     {
-        expressionPreviewTimer.Stop();
-        if (pendingContentPreview is { } current)
-        {
-            CancelContentPreview(current);
-            pendingContentPreview = null;
-            OnPropertyChanged(nameof(IsContentPreviewPending));
-            OnPropertyChanged(nameof(CanPreviewContentOptions));
-            OnPropertyChanged(nameof(CanApplyContentPreview));
-        }
+        InvalidatePendingContentPreview();
 
         ExpressionPreviewText = Localizer.GetString("Expression.Preview.Pending");
         if (CurrentInfo is not null && !string.IsNullOrWhiteSpace(Expression))
@@ -269,7 +263,29 @@ public sealed partial class MainWindowViewModel
 
         OnPropertyChanged(nameof(IsContentPreviewPending));
         OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
         ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void InvalidatePendingContentPreview()
+    {
+        expressionPreviewTimer.Stop();
+        if (pendingContentPreview is { } preview)
+        {
+            CancelContentPreview(preview);
+            pendingContentPreview = null;
+        }
+
+        ExpressionPreviewText = string.Empty;
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
         CancelContentPreviewCommand?.RaiseCanExecuteChanged();
     }
 
@@ -292,8 +308,10 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(IsContentPreviewPending));
         OnPropertyChanged(nameof(CanPreviewContentOptions));
         OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
         ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
         ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
         CancelContentPreviewCommand?.RaiseCanExecuteChanged();
     }
 
@@ -304,30 +322,8 @@ public sealed partial class MainWindowViewModel
             return string.Join(Environment.NewLine, preview.Errors);
         }
 
-        if (preview.Differences.IsEmpty)
-        {
-            return localizer.GetString("Expression.Preview.NoChanges");
-        }
-
-        return string.Join(Environment.NewLine, preview.Differences.Take(6).Select(difference =>
-            DescribeExpressionDifference(preview, difference)));
-    }
-
-    private static string DescribeExpressionDifference(ChapterContentPreview preview, ChapterContentDifference difference)
-    {
-        if (difference.ChapterId is not { } chapterId)
-        {
-            return $"{difference.Field}: {difference.Before} → {difference.After}";
-        }
-
-        var chapter = preview.Before.Tracks.SelectMany(static track => track.Chapters)
-            .FirstOrDefault(item => item.Id == chapterId)
-            ?? preview.Candidate.Tracks.SelectMany(static track => track.Chapters)
-                .FirstOrDefault(item => item.Id == chapterId);
-        var label = chapter is null
-            ? chapterId.ToString()
-            : $"#{chapter.DisplayNumber} {chapter.Name}";
-        return $"{label} · {difference.Field}: {difference.Before} → {difference.After}";
+        var projection = ExpressionPreviewProjector.Build(preview);
+        return projection.HasChanges ? string.Empty : localizer.GetString("Expression.Preview.NoChanges");
     }
 
     private void ApplyFrameInfo(bool logResult = true)
@@ -398,10 +394,10 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(IsContentPreviewPending));
         OnPropertyChanged(nameof(CanPreviewContentOptions));
         OnPropertyChanged(nameof(CanApplyContentPreview));
-        StatusText = !pendingContentPreview.IsValid
-            ? string.Join("; ", pendingContentPreview.Errors)
-            : string.Join("; ", pendingContentPreview.Differences.Take(4).Select(static difference =>
-                $"{difference.Field}: '{difference.Before}' → '{difference.After}'"));
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        StatusText = Localizer.GetString(pendingContentPreview.IsValid
+            ? "Expression.State.Ready"
+            : "Expression.State.Invalid");
         ApplyContentPreviewCommand.RaiseCanExecuteChanged();
         CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }

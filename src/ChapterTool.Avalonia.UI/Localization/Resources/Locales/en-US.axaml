@@ -404,6 +404,8 @@
   <x:String x:Key="History.SessionLifetimeShort" xml:space="preserve">Current session only</x:String>
   <x:String x:Key="History.Undo" xml:space="preserve">Undo</x:String>
   <x:String x:Key="History.Redo" xml:space="preserve">Redo</x:String>
+  <x:String x:Key="History.Close" xml:space="preserve">Close</x:String>
+  <x:String x:Key="History.Current" xml:space="preserve">Current history position</x:String>
   <x:String x:Key="History.UndoApplied" xml:space="preserve">Edit undone</x:String>
   <x:String x:Key="History.RedoApplied" xml:space="preserve">Edit redone</x:String>
   <x:String x:Key="History.NavigationFailed" xml:space="preserve">History navigation failed.</x:String>
@@ -424,6 +426,11 @@
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">Expression preview canceled.</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">Updating expression preview…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">Preview options</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">Update preview</x:String>
+  <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">Discard</x:String>
+  <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">Preview is out of date. Update it before applying.</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">The muted value is committed. The arrow points to the preview value.</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonAccessibleName" xml:space="preserve">{field}: committed {before}; preview {candidate}; change {delta}.</x:String>
   <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">Current track: {track} · {count} chapters</x:String>
   <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">{count} separator rows excluded</x:String>
   <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">Affected chapters: {affected} · time changes: {times} · frame updates: {frames} · properties: {properties}</x:String>

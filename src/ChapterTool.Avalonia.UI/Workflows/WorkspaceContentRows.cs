@@ -21,9 +21,22 @@ internal sealed class WorkspaceContentRows(
             return;
         }
 
-        foreach (var chapter in current.Chapters)
+        var document = workspace.ContentSession?.Snapshot.Document;
+        var trackIndex = workspace.CurrentTrackIndex;
+        var track = document is not null && trackIndex >= 0 && trackIndex < document.Tracks.Length
+            ? document.Tracks[trackIndex]
+            : null;
+        for (var index = 0; index < current.Chapters.Count; index++)
         {
-            rows.Add(new ChapterRowViewModel(chapter, formatter));
+            var chapter = current.Chapters[index];
+            var row = new ChapterRowViewModel(chapter, formatter);
+            if (track is not null && index < track.Chapters.Length)
+            {
+                row.TrackId = track.Id;
+                row.ChapterId = track.Chapters[index].Id;
+            }
+
+            rows.Add(row);
         }
     }
 

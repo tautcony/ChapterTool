@@ -5,6 +5,7 @@ using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
@@ -38,7 +39,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private FrameRateOption selectedFrameRateOption;
     private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
-    private bool isHistoryPanelExpanded = true;
+    private bool isApplyingContentPreview;
+    private bool isNarrowPreviewLayout;
     private string chapterNameTemplateStatus;
     private string statusText;
     private string? lastExpressionDiagnosticSignature;
@@ -311,6 +313,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         {
             if (SetProperty(ref field, value))
             {
+                InvalidatePendingContentPreview();
                 OnFrameOptionsChangedFromBinding();
             }
         }
@@ -324,6 +327,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             var normalized = NormalizeFrameAccuracyTolerance(value);
             if (SetProperty(ref field, normalized))
             {
+                InvalidatePendingContentPreview();
                 RefreshRows();
             }
         }
@@ -477,6 +481,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             var previousTemplate = Workspace.OperationDrafts.UseTemplateNames;
             if (Workspace.OperationDrafts.SetAutoGenerateNames(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 if (previousTemplate != Workspace.OperationDrafts.UseTemplateNames)
                 {
@@ -498,6 +503,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             var previousAuto = Workspace.OperationDrafts.AutoGenerateNames;
             if (Workspace.OperationDrafts.SetUseTemplateNames(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 if (previousAuto != Workspace.OperationDrafts.AutoGenerateNames)
                 {
@@ -518,6 +524,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         {
             if (Workspace.OperationDrafts.SetChapterNameTemplateText(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
                 RefreshRows();
@@ -574,6 +581,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         {
             if (Workspace.OperationDrafts.SetOrderShift(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 RefreshRows();
             }
@@ -660,7 +668,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool HasHistory => HistoryEntries.Count > 0;
 
-    public bool ShowHistoryPanel => HasHistory && IsHistoryPanelExpanded;
+    public bool CanOpenHistory => Workspace.ContentSession is not null;
 
     public string HistoryLifetimeText => Localizer.GetString("History.SessionLifetimeShort");
 
@@ -721,18 +729,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         HistoryEntries = [];
         historySnapshot = null;
         NotifyStateChanged();
-    }
-
-    public bool IsHistoryPanelExpanded
-    {
-        get => isHistoryPanelExpanded;
-        set
-        {
-            if (SetProperty(ref isHistoryPanelExpanded, value))
-            {
-                OnPropertyChanged(nameof(ShowHistoryPanel));
-            }
-        }
     }
 
     public string UndoDescription => CurrentHistoryNode?.Description ?? string.Empty;
@@ -796,13 +792,15 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool CanAppendMpls => Workspace.ClipSession?.CanAppendMpls == true;
 
-    public bool CanCombine => Workspace.ClipSession?.CanCombine == true;
+    public bool CanCombine => Workspace.ClipSession?.CanCombine == true && !IsChapterGridReadOnly;
+
+    public bool CanOpenContentTools => CanEditRows;
 
     public bool CanSave => CurrentInfo is not null;
 
     public bool CanRefreshRows => CurrentInfo is not null;
 
-    public bool CanEditRows => CurrentInfo is not null;
+    public bool CanEditRows => CurrentInfo is not null && !IsChapterGridReadOnly;
 
     public bool CanOpenRelatedMedia => Capabilities.CanOpenLocalPaths && RelatedMediaReferences.Count > 0;
 
@@ -880,9 +878,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public UiCommand ForwardShiftCommand { get; private set; } = null!;
 
+    public UiCommand HistoryCommand { get; private set; } = null!;
+
     public UiCommand PreviewContentOptionsCommand { get; private set; } = null!;
 
     public UiCommand ApplyContentPreviewCommand { get; private set; } = null!;
+
+    public UiCommand RefreshContentPreviewCommand { get; private set; } = null!;
 
     public UiCommand CancelContentPreviewCommand { get; private set; } = null!;
 
@@ -896,22 +898,66 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ExpressionPreviewText
     {
-        get => expressionPreviewText;
+        get => pendingContentPreview is { } preview && !Workspace.IsContentTokenCurrent(preview.BaseToken)
+            ? Localizer.GetString("Expression.Preview.Stale")
+            : expressionPreviewText;
         private set
         {
-            if (SetProperty(ref expressionPreviewText, value))
+            SetProperty(ref expressionPreviewText, value);
+            OnPropertyChanged(nameof(ContentPreviewMetadataTooltip));
+            OnPropertyChanged(nameof(IsChapterGridReadOnly));
+            OnPropertyChanged(nameof(CanEditRows));
+            OnPropertyChanged(nameof(CanOpenContentTools));
+            OnPropertyChanged(nameof(CanCombine));
+            UpdateInlinePreviewProjection();
+            if (InsertCommand is not null)
             {
-                OnPropertyChanged(nameof(IsExpressionPreviewVisible));
+                InsertCommand.RaiseCanExecuteChanged();
+                DeleteCommand.RaiseCanExecuteChanged();
+                ChangeFpsCommand.RaiseCanExecuteChanged();
+                CombineCommand.RaiseCanExecuteChanged();
+                TemplateNamesCommand.RaiseCanExecuteChanged();
+                ZonesCommand.RaiseCanExecuteChanged();
+                ForwardShiftCommand.RaiseCanExecuteChanged();
             }
         }
     }
 
-    public bool IsExpressionPreviewVisible => !string.IsNullOrWhiteSpace(ExpressionPreviewText);
+    public bool IsChapterGridReadOnly => isApplyingContentPreview || CanApplyContentPreview;
+
+    public bool IsInlineCandidateVisible => pendingContentPreview is { IsValid: true } preview
+        && Workspace.IsContentTokenCurrent(preview.BaseToken)
+        && ExpressionPreviewProjector.Build(preview).HasChanges;
+
+    public string ContentPreviewMetadataTooltip
+    {
+        get
+        {
+            if (pendingContentPreview is not { IsValid: true } preview
+                || !Workspace.IsContentTokenCurrent(preview.BaseToken))
+            {
+                return string.Empty;
+            }
+
+            var projection = ExpressionPreviewProjector.Build(preview);
+            return string.Join(Environment.NewLine, projection.Properties
+                .Where(static property => property.OwnerKind != ExpressionPropertyOwnerKind.Chapter)
+                .Select(property =>
+                {
+                    var row = new ExpressionPropertyRowViewModel(property, Localizer);
+                    return $"{row.OwnerLabel} · {row.OwnerName} · {row.PropertyLabel}: {row.BeforeValue} → {row.CandidateValue}";
+                }));
+        }
+    }
 
     public bool CanPreviewContentOptions => pendingContentPreview is null
         && !expressionPreviewTimer.IsEnabled;
 
-    public bool CanApplyContentPreview => pendingContentPreview?.IsValid == true;
+    public bool CanRefreshContentPreview => pendingContentPreview is { } preview
+        && !Workspace.IsContentTokenCurrent(preview.BaseToken);
+
+    public bool CanApplyContentPreview => pendingContentPreview is { IsValid: true, Differences.IsEmpty: false } preview
+        && Workspace.IsContentTokenCurrent(preview.BaseToken);
 
     public UiCommand OpenRelatedMediaCommand { get; private set; } = null!;
 
@@ -947,6 +993,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             return;
         }
 
+        InvalidatePendingContentPreview();
         ApplyFrameInfo();
     }
 
@@ -1056,6 +1103,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(CanRedo));
         OnPropertyChanged(nameof(UndoDescription));
         OnPropertyChanged(nameof(RedoDescription));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
         OnPropertyChanged(nameof(HistoryLifetimeText));
         NotifyCommandStates();
     }
@@ -1065,7 +1114,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         historySnapshot = Workspace.ContentSession?.GetHistorySnapshot();
         HistoryEntries = HistoryEntryViewModel.Create(historySnapshot);
         OnPropertyChanged(nameof(HasHistory));
-        OnPropertyChanged(nameof(ShowHistoryPanel));
+        OnPropertyChanged(nameof(CanOpenHistory));
+        HistoryCommand?.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
         OnPropertyChanged(nameof(UndoDescription));
@@ -1073,6 +1123,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         UndoCommand?.RaiseCanExecuteChanged();
         RedoCommand?.RaiseCanExecuteChanged();
         NavigateHistoryCommand?.RaiseCanExecuteChanged();
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
     }
 
     private void NotifyCommandStates()
@@ -1097,6 +1149,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         ForwardShiftCommand.RaiseCanExecuteChanged();
         PreviewContentOptionsCommand.RaiseCanExecuteChanged();
         ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand.RaiseCanExecuteChanged();
         CancelContentPreviewCommand.RaiseCanExecuteChanged();
         UndoCommand.RaiseCanExecuteChanged();
         RedoCommand.RaiseCanExecuteChanged();

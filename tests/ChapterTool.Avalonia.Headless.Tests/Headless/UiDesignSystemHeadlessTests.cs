@@ -33,7 +33,11 @@ public sealed class UiDesignSystemHeadlessTests
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
         var frameTexts = grid.GetVisualDescendants()
             .OfType<TextBlock>()
-            .Where(block => block.Classes.Contains("frameText"))
+            .Where(block => block.Classes.Contains("frameText")
+                && !block.Classes.Contains("framePreview")
+                && block.IsVisible
+                && block.Bounds.Width > 0
+                && block.Bounds.Height > 0)
             .ToArray();
         Assert.Equal(2, frameTexts.Length);
         Assert.All(frameTexts, block => Assert.Null(block.Effect));

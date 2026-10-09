@@ -187,7 +187,8 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             request.Clipboard ?? clipboardServiceFactory(window),
             window,
             filePicker,
-            request.Capabilities);
+            request.Capabilities,
+            request.CloseTool);
         return descriptor.CreateContent(context);
     }
 

@@ -59,7 +59,7 @@ public sealed class EmbeddedAuxiliaryToolHost : IAuxiliaryToolHost
             if (descriptor.RefreshPolicy == ToolRefreshPolicy.RefreshRequest)
             {
                 DisposeContent(existing);
-                existing = descriptor.CreateContent(contextFactory(request));
+                existing = descriptor.CreateContent(contextFactory(CreateToolRequest(toolId, request)));
                 contentById[toolId] = existing;
             }
 
@@ -67,7 +67,7 @@ public sealed class EmbeddedAuxiliaryToolHost : IAuxiliaryToolHost
             return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Activated, toolId));
         }
 
-        var content = descriptor.CreateContent(contextFactory(request));
+        var content = descriptor.CreateContent(contextFactory(CreateToolRequest(toolId, request)));
         contentById.Add(toolId, content);
         presenter.SetContent(toolId, content);
         return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
@@ -139,4 +139,9 @@ public sealed class EmbeddedAuxiliaryToolHost : IAuxiliaryToolHost
             content.DataContext = null;
         }
     }
+
+    private AuxiliaryToolRequest CreateToolRequest(ToolId toolId, AuxiliaryToolRequest request) => request with
+    {
+        CloseTool = () => _ = CloseAsync(toolId, CancellationToken.None)
+    };
 }

@@ -76,8 +76,9 @@ public sealed partial class MainView : UserControl
         LoadLuaExpressionScriptCommand = new UiCommand(async (_, _) => await LoadLuaExpressionScriptAsync());
         InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute(null));
         DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute(null));
-        OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
-        OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
+        OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.CanOpenContentTools);
+        OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.CanOpenContentTools);
+        ApplyContentPreviewCommand = new UiCommand(async (_, _) => await ApplyContentPreviewPreservingGridStateAsync(), _ => viewModel.CanApplyContentPreview);
 
         viewModel.SetUiErrorHandler(viewModel.ReportUnexpectedUiException);
         foreach (var command in UiAdapterCommands())
@@ -177,6 +178,40 @@ public sealed partial class MainView : UserControl
     public UiCommand OpenZonesCommand { get; }
 
     public UiCommand OpenForwardShiftCommand { get; }
+
+    public UiCommand ApplyContentPreviewCommand { get; }
+
+    private async ValueTask ApplyContentPreviewPreservingGridStateAsync()
+    {
+        var selected = ChapterGrid.SelectedItems
+            .OfType<ChapterRowViewModel>()
+            .Select(static row => (row.TrackId, row.ChapterId))
+            .ToArray();
+        var scrollViewer = ChapterGrid.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
+        var offset = scrollViewer?.Offset ?? default;
+
+        await viewModel.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            ChapterGrid.SelectedItems.Clear();
+            foreach (var row in viewModel.Rows.Where(row => selected.Contains((row.TrackId, row.ChapterId))))
+            {
+                ChapterGrid.SelectedItems.Add(row);
+            }
+
+            if (selected.Length == 1)
+            {
+                ChapterGrid.SelectedItem = viewModel.Rows.FirstOrDefault(row =>
+                    selected[0] == (row.TrackId, row.ChapterId));
+            }
+
+            if (scrollViewer is not null)
+            {
+                scrollViewer.Offset = offset;
+            }
+        });
+    }
 
     private async Task LoadAsync()
     {
@@ -489,14 +524,6 @@ public sealed partial class MainView : UserControl
         await viewModel.DeleteCommand.ExecuteAsync(SelectedIndexes());
     }
 
-    private async void OnHistoryEntryClick(object? sender, RoutedEventArgs args)
-    {
-        if (sender is Control { DataContext: HistoryEntryViewModel entry })
-        {
-            await uiOperationBoundary.RunAsync(async () => await viewModel.NavigateHistoryCommand.ExecuteAsync(entry.Id));
-        }
-    }
-
     private int SelectedRowIndex() =>
         ChapterGrid.SelectedItem is ChapterRowViewModel row ? viewModel.Rows.IndexOf(row) : viewModel.Rows.Count;
 
@@ -561,6 +588,7 @@ public sealed partial class MainView : UserControl
         yield return viewModel.SaveCommand;
         yield return viewModel.InsertCommand;
         yield return viewModel.DeleteCommand;
+        yield return viewModel.ApplyContentPreviewCommand;
         yield return viewModel.ZonesCommand;
         yield return viewModel.ForwardShiftCommand;
     }
@@ -575,6 +603,7 @@ public sealed partial class MainView : UserControl
         yield return DeleteSelectedCommand;
         yield return OpenZonesCommand;
         yield return OpenForwardShiftCommand;
+        yield return ApplyContentPreviewCommand;
     }
 
     private void RaiseCommandStates()
@@ -584,6 +613,7 @@ public sealed partial class MainView : UserControl
         DeleteSelectedCommand.RaiseCanExecuteChanged();
         OpenZonesCommand.RaiseCanExecuteChanged();
         OpenForwardShiftCommand.RaiseCanExecuteChanged();
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
     private void ScheduleWindowCommandRefresh(object? sender, EventArgs e)
@@ -607,6 +637,14 @@ public sealed partial class MainView : UserControl
     {
         var layoutWidth = Bounds.Width > 0 ? Bounds.Width : Width;
         var narrow = IsNarrowAdvancedOptions(layoutWidth);
+        viewModel.SetNarrowPreviewLayout(narrow);
+        var timeColumn = ChapterGrid.Columns.FirstOrDefault(column =>
+            string.Equals(column.Tag?.ToString(), ChapterGridColumnIds.Time, StringComparison.Ordinal));
+        if (timeColumn is not null)
+        {
+            timeColumn.Width = new DataGridLength(narrow ? 300 : 400);
+        }
+
         if (advancedOptionsNarrow == narrow)
         {
             return;
