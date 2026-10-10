@@ -173,6 +173,12 @@ html, body {
   flex-wrap: wrap;
 }
 
+.fps-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .fps-box {
   width: 9.5rem;
   text-align: left;
@@ -1104,7 +1110,8 @@ input:disabled {
   }
 
   .fps-box {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
 
   .grid-wrap {

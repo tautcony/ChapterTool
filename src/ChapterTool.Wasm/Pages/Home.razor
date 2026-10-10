@@ -124,25 +124,37 @@
                         </svg>
                     </button>
                 </div>
-                <select class="fps-box"
-                        value="@selectedFrameRateIndex"
-                        disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
-                        @onchange="OnFrameRateChanged"
-                        @oncontextmenu="OpenFrameRateContextMenu"
-                        @oncontextmenu:preventDefault
-                        title="@L.T("Label.FrameRate")">
-                    @if (Workspace.FrameRateChoices.Count == 0)
-                    {
-                        <option value="0">—</option>
-                    }
-                    else
-                    {
-                        @foreach (var choice in Workspace.FrameRateChoices)
+                <div class="fps-controls">
+                    <select class="fps-box"
+                            value="@selectedFrameRateIndex"
+                            disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
+                            @onchange="OnFrameRateChanged"
+                            @oncontextmenu="OpenFrameRateContextMenu"
+                            @oncontextmenu:preventDefault
+                            title="@L.T("Label.FrameRate")">
+                        @if (Workspace.FrameRateChoices.Count == 0)
                         {
-                            <option value="@choice.Index">@choice.DisplayName</option>
+                            <option value="0">—</option>
                         }
-                    }
-                </select>
+                        else
+                        {
+                            @foreach (var choice in Workspace.FrameRateChoices)
+                            {
+                                <option value="@choice.Index">@choice.DisplayName</option>
+                            }
+                        }
+                    </select>
+                    <button type="button"
+                            class="icon-button tool-icon-button"
+                            disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty || !Workspace.CanChangeSelectedFrameRate)"
+                            @onclick="ChangeFrameRateContext"
+                            title="@L.T("Menu.ChangeFps")"
+                            aria-label="@L.T("Menu.ChangeFps")">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3 12h3l2-7 4 14 2-7h7" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
 

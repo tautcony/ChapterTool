@@ -1144,8 +1144,9 @@ public sealed class MainWindowViewModelTests
         switch (columnId)
         {
             case ChapterGridColumnIds.Time:
-                await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "00:00:05.000"));
+                await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "0:0:5.000"));
                 Assert.Equal("00:00:05.000", vm.Rows[0].TimeText);
+                Assert.Equal("120", vm.Rows[0].FramesInfo);
                 break;
             case ChapterGridColumnIds.Name:
                 await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Renamed"));
