@@ -85,8 +85,9 @@
       </TreeView>
       <GridSplitter Grid.Column="1" Width="6" MinWidth="6" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="{DynamicResource Brush.Window}" ResizeDirection="Columns" />
       <Border x:Name="HistoryDetails" Grid.Column="2" MinWidth="360" BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" Background="{DynamicResource Brush.Contents}" Padding="12" Focusable="True">
-        <ScrollViewer>
-          <StackPanel Spacing="10">
+        <Grid RowDefinitions="Auto,*" RowSpacing="8">
+          <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="10">
             <TextBlock Classes="toolLabel" Text="{Binding SelectedEntry.Title}" IsVisible="{Binding HasSelection}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding SelectedEntryDescription}" IsVisible="{Binding HasSelectedEntryDescription}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding SelectedPublishedAtText}" IsVisible="{Binding HasPublishedAtText}" />
@@ -116,12 +117,13 @@
             <ComboBox ItemsSource="{Binding ChangeFilters}" SelectedItem="{Binding SelectedChangeFilter}" IsVisible="{Binding HasChanges}" />
             <TextBlock Text="{DynamicResource History.NoFilteredChanges}" IsVisible="{Binding HasNoVisibleChanges}" />
             <Grid ColumnDefinitions="*,*,*,Auto" IsVisible="{Binding HasVisibleChanges}"><TextBlock Grid.Column="0" Text="{DynamicResource History.FieldHeader}" /><TextBlock Grid.Column="1" Text="{DynamicResource History.BeforeHeader}" /><TextBlock Grid.Column="2" Text="{DynamicResource History.AfterHeader}" /><TextBlock Grid.Column="3" Text="{DynamicResource History.DeltaHeader}" IsVisible="{Binding HasDeltas}" /></Grid>
-            <ListBox x:Name="HistoryChanges" ItemsSource="{Binding VisibleChanges}" Height="300" IsVisible="{Binding HasVisibleChanges}">
-              <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
-              <ListBox.ItemTemplate><DataTemplate x:DataType="tools:HistoryFieldRow"><Grid ColumnDefinitions="*,*,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" Margin="0,4"><SelectableTextBlock Grid.Row="0" Grid.ColumnSpan="4" Text="{Binding ObjectLabel}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Field}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BeforeText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AfterText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="3" Text="{Binding DeltaText}" TextWrapping="Wrap" /></Grid></DataTemplate></ListBox.ItemTemplate>
-            </ListBox>
-          </StackPanel>
-        </ScrollViewer>
+            </StackPanel>
+          </ScrollViewer>
+          <ListBox x:Name="HistoryChanges" Grid.Row="1" ItemsSource="{Binding VisibleChangeGroups}" IsVisible="{Binding HasVisibleChanges}">
+            <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
+            <ListBox.ItemTemplate><DataTemplate x:DataType="tools:HistoryChangeGroup"><Grid ColumnDefinitions="*,*,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" Margin="0,4"><SelectableTextBlock Grid.Row="0" Grid.ColumnSpan="4" Text="{Binding ObjectLabel}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Field}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BeforeText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AfterText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="3" Text="{Binding DeltaText}" TextWrapping="Wrap" /></Grid></DataTemplate></ListBox.ItemTemplate>
+          </ListBox>
+        </Grid>
       </Border>
     </Grid>
     <TabControl Grid.Row="1" SelectedIndex="{Binding NarrowPageIndex, Mode=TwoWay}" IsVisible="{Binding IsNarrowLayout}">
@@ -143,8 +145,9 @@
       </TabItem>
       <TabItem Header="{DynamicResource History.DetailsPage}">
         <Grid RowDefinitions="*,Auto">
-        <ScrollViewer Grid.Row="0">
-          <StackPanel x:Name="NarrowHistoryDetails" Spacing="10" Margin="12" Focusable="True">
+          <Grid Grid.Row="0" RowDefinitions="Auto,*" RowSpacing="8">
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+              <StackPanel x:Name="NarrowHistoryDetails" Spacing="10" Margin="12" Focusable="True">
             <TextBlock Classes="toolLabel" Text="{Binding SelectedEntry.Title}" IsVisible="{Binding HasSelection}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding SelectedEntryDescription}" IsVisible="{Binding HasSelectedEntryDescription}" TextWrapping="Wrap" />
             <TextBlock Text="{Binding SelectedPublishedAtText}" IsVisible="{Binding HasPublishedAtText}" />
@@ -166,13 +169,14 @@
             <ComboBox ItemsSource="{Binding ChangeFilters}" SelectedItem="{Binding SelectedChangeFilter}" IsVisible="{Binding HasChanges}" />
             <TextBlock Text="{DynamicResource History.NoFilteredChanges}" IsVisible="{Binding HasNoVisibleChanges}" />
             <Grid ColumnDefinitions="*,*,*,Auto" IsVisible="{Binding HasVisibleChanges}"><TextBlock Grid.Column="0" Text="{DynamicResource History.FieldHeader}" /><TextBlock Grid.Column="1" Text="{DynamicResource History.BeforeHeader}" /><TextBlock Grid.Column="2" Text="{DynamicResource History.AfterHeader}" /><TextBlock Grid.Column="3" Text="{DynamicResource History.DeltaHeader}" IsVisible="{Binding HasDeltas}" /></Grid>
-            <ListBox ItemsSource="{Binding VisibleChanges}" Height="300" IsVisible="{Binding HasVisibleChanges}">
+              </StackPanel>
+            </ScrollViewer>
+            <ListBox Grid.Row="1" ItemsSource="{Binding VisibleChangeGroups}" IsVisible="{Binding HasVisibleChanges}">
               <ListBox.ItemsPanel><ItemsPanelTemplate><VirtualizingStackPanel /></ItemsPanelTemplate></ListBox.ItemsPanel>
-              <ListBox.ItemTemplate><DataTemplate x:DataType="tools:HistoryFieldRow"><Grid ColumnDefinitions="*,*,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" Margin="0,4"><SelectableTextBlock Grid.Row="0" Grid.ColumnSpan="4" Text="{Binding ObjectLabel}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Field}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BeforeText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AfterText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="3" Text="{Binding DeltaText}" TextWrapping="Wrap" /></Grid></DataTemplate></ListBox.ItemTemplate>
+              <ListBox.ItemTemplate><DataTemplate x:DataType="tools:HistoryChangeGroup"><Grid ColumnDefinitions="*,*,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" Margin="0,4"><SelectableTextBlock Grid.Row="0" Grid.ColumnSpan="4" Text="{Binding ObjectLabel}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Field}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BeforeText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="2" Text="{Binding AfterText}" TextWrapping="Wrap" /><SelectableTextBlock Grid.Row="1" Grid.Column="3" Text="{Binding DeltaText}" TextWrapping="Wrap" /></Grid></DataTemplate></ListBox.ItemTemplate>
             </ListBox>
-          </StackPanel>
-        </ScrollViewer>
-        <Button x:Name="NarrowRestore" Grid.Row="1" Classes="flat primary" HorizontalAlignment="Right" Content="{DynamicResource History.Restore}" Command="{Binding RestoreCommand}" CommandParameter="{Binding SelectedEntry.Id}" Margin="8" />
+          </Grid>
+          <Button x:Name="NarrowRestore" Grid.Row="1" Classes="flat primary" HorizontalAlignment="Right" Content="{DynamicResource History.Restore}" Command="{Binding RestoreCommand}" CommandParameter="{Binding SelectedEntry.Id}" Margin="8" />
         </Grid>
       </TabItem>
     </TabControl>

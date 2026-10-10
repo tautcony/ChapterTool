@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Models;
@@ -419,16 +418,6 @@ public static class EditableChapterDocumentValidator
                 if (chapter.StartTicks < 0)
                 {
                     errors.Add("Chapter start time must not be negative.");
-                }
-
-                if (chapter.EndTicks is long end && end < chapter.StartTicks)
-                {
-                    errors.Add("Chapter end time must not precede its start time.");
-                }
-
-                if (document.Duration.IsKnown && chapter.EndTicks is long endTicks && endTicks > document.Duration.Ticks)
-                {
-                    errors.Add("Chapter end time exceeds the known document duration.");
                 }
             }
         }

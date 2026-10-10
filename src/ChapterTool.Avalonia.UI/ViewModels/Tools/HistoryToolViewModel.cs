@@ -3,6 +3,7 @@ using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
+using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
 
@@ -258,6 +259,21 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         _ => fieldRows
     };
 
+    public IReadOnlyList<HistoryChangeGroup> VisibleChangeGroups => VisibleChanges
+        .GroupBy(static row => (row.Group, row.ObjectId))
+        .Select(group => new HistoryChangeGroup(
+            group.Key.Group,
+            group.Key.ObjectId,
+            group.FirstOrDefault(row => row.ObjectLabel.Contains(localizer.GetString("History.Parameter.displayFps"), StringComparison.Ordinal))?.ObjectLabel
+                ?? group.First().ObjectLabel,
+            string.Join(Environment.NewLine, group.Select(static row => row.Field)),
+            string.Join(Environment.NewLine, group.Select(static row => row.BeforeText)),
+            string.Join(Environment.NewLine, group.Select(static row => row.AfterText)),
+            group.Any(static row => !string.IsNullOrWhiteSpace(row.DeltaText))
+                ? string.Join(Environment.NewLine, group.Select(static row => row.DeltaText ?? string.Empty))
+                : null))
+        .ToArray();
+
     public bool HasParameters => Parameters.Count > 0;
 
     public bool HasChanges => fieldRows.Count > 0;
@@ -309,6 +325,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
             if (SetProperty(ref selectedChangeFilter, value))
             {
                 OnPropertyChanged(nameof(VisibleChanges));
+                OnPropertyChanged(nameof(VisibleChangeGroups));
                 OnPropertyChanged(nameof(HasDeltas));
                 OnPropertyChanged(nameof(HasVisibleChanges));
                 OnPropertyChanged(nameof(HasNoVisibleChanges));
@@ -623,8 +640,8 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
             FormatFieldContext(change),
             change.Before,
             change.After,
-            FormatValue(change.Before, change.Field),
-            FormatValue(change.After, change.Field),
+            FormatHistoryValue(change, change.Before, before: true),
+            FormatHistoryValue(change, change.After, before: false),
             FormatDelta(change))).ToArray() ?? [];
         var operationKind = Details?.Operation?.Kind;
         var cellEditField = Details?.Operation?.Parameters
@@ -639,6 +656,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
                 FormatParameter(parameter),
                 parameter.ValueKind)).ToArray() ?? [];
         OnPropertyChanged(nameof(VisibleChanges));
+        OnPropertyChanged(nameof(VisibleChangeGroups));
         OnPropertyChanged(nameof(HasChanges));
         OnPropertyChanged(nameof(HasVisibleChanges));
         OnPropertyChanged(nameof(HasNoVisibleChanges));
@@ -652,8 +670,17 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var context = change.Group == "Chapter"
             ? localizer.FormatPositional("History.ChapterContext", change.Context ?? string.Empty, change.ObjectLabel)
             : change.Context is null ? change.ObjectLabel : $"{change.Context} · {change.ObjectLabel}";
-        if (change.Field is not ("StartTicks" or "EndTicks" or "FramesInfo") ||
-            (change.BeforeFrameRate is null && change.AfterFrameRate is null))
+        if (change.Field is not ("StartTicks" or "EndTicks" or "FramesInfo"))
+        {
+            return context;
+        }
+
+        if (TryGetCapturedDisplayRate(out var displayRate))
+        {
+            return $"{context} · {localizer.GetString("History.Parameter.displayFps")}: {FormatFrameRate(displayRate)}";
+        }
+
+        if (change.BeforeFrameRate is null && change.AfterFrameRate is null)
         {
             return context;
         }
@@ -661,6 +688,63 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var oldRate = change.BeforeFrameRate is { } before ? FormatFrameRate(before) : localizer.GetString("History.Presence.Absent");
         var newRate = change.AfterFrameRate is { } after ? FormatFrameRate(after) : localizer.GetString("History.Presence.Absent");
         return $"{context} · {localizer.FormatPositional("History.FrameRateContext", oldRate, newRate)}";
+    }
+
+    private string FormatHistoryValue(HistoryFieldChange change, HistoryFieldValue value, bool before)
+    {
+        if (value.IsPresent
+            && TryGetCapturedDisplayRate(out var displayRate)
+            && TryGetRelatedStartTicks(change, before, out var startTicks))
+        {
+            var exactFrames = (decimal)startTicks / TimeSpan.TicksPerSecond * displayRate;
+            var roundedFrames = ChapterRounding.RoundToInt64(exactFrames);
+            if (change.Field == "FramesInfo" && value.Value is string frameText && string.IsNullOrWhiteSpace(frameText))
+            {
+                return roundedFrames.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            if (change.Field == "FrameAccuracy" && value.Value is FrameAccuracy.Neutral)
+            {
+                var inferredAccuracy = Math.Abs(exactFrames - roundedFrames) < 0.01m
+                    ? FrameAccuracy.Accurate
+                    : FrameAccuracy.Inexact;
+                return FormatValue(new HistoryFieldValue(true, inferredAccuracy), change.Field);
+            }
+        }
+
+        return FormatValue(value, change.Field);
+    }
+
+    private bool TryGetRelatedStartTicks(HistoryFieldChange change, bool before, out long startTicks)
+    {
+        var startChange = Details?.Changes.FirstOrDefault(candidate =>
+            candidate.Group == change.Group
+            && candidate.ObjectId == change.ObjectId
+            && candidate.Field == "StartTicks");
+        var value = before ? startChange?.Before : startChange?.After;
+        if (value is { IsPresent: true, Value: long ticks })
+        {
+            startTicks = ticks;
+            return true;
+        }
+
+        startTicks = 0;
+        return false;
+    }
+
+    private bool TryGetCapturedDisplayRate(out decimal displayRate)
+    {
+        var value = Details?.Operation?.Parameters
+            .FirstOrDefault(static parameter => parameter.Name == "displayFps")?.Value;
+        return decimal.TryParse(value, System.Globalization.NumberStyles.Number,
+                   System.Globalization.CultureInfo.InvariantCulture, out displayRate)
+            && displayRate > 0;
+    }
+
+    private string FormatFrameRate(decimal frameRate)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        return string.Concat(frameRate.ToString("0.###", culture), " ", localizer.GetString("History.Unit.Fps"));
     }
 
     private string FormatFrameRate(ChapterFrameRate frameRate)
@@ -790,6 +874,11 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         }
         if (parameter.ValueKind == "decimal" && decimal.TryParse(parameter.Value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var decimalValue))
         {
+            if (parameter.Name == "displayFps")
+            {
+                return FormatFrameRate(decimalValue);
+            }
+
             return decimalValue.ToString(System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName));
         }
         if (parameter.Name is "deleteTiming" or "frameDisplay")
@@ -871,6 +960,9 @@ public sealed record HistoryRedoChoice(Guid Id, string Title, string Description
 
 public sealed record HistoryFieldRow(string Group, string ObjectId, string Field, string ObjectLabel, HistoryFieldValue Before,
     HistoryFieldValue After, string BeforeText, string AfterText, string? DeltaText);
+
+public sealed record HistoryChangeGroup(string Group, string ObjectId, string ObjectLabel, string Field,
+    string BeforeText, string AfterText, string? DeltaText);
 
 public sealed record HistoryParameterRow(string Name, string? Value, string ValueKind);
 

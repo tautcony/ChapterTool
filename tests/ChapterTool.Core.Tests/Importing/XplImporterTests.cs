@@ -123,7 +123,7 @@ public sealed class XplImporterTests
     }
 
     [Fact]
-    public async Task XplImporterRejectsDtdInput()
+    public async Task XplImporterIgnoresDtdInput()
     {
         const string xml = """
                            <!DOCTYPE Playlist [<!ENTITY injected "untrusted">]>
@@ -137,7 +137,8 @@ public sealed class XplImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("untrusted.xpl", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplNoChapters);
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
     }
 
     private static string Diagnostics(ChapterImportResult result) =>

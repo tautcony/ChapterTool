@@ -286,13 +286,13 @@ public sealed class HistoryInspectionViewModelTests
         await history.LastInspection;
         var displayRate = Assert.Single(viewModel.Parameters);
         Assert.Equal(localizer.GetString("History.Parameter.displayFps"), displayRate.Name);
-        Assert.Equal("30", displayRate.Value);
+        Assert.Equal("30 fps", displayRate.Value);
 
         var capturedDetails = viewModel.Details;
         history.HasPendingPreview = true;
         history.RaiseStateChanged();
         Assert.Same(capturedDetails, viewModel.Details);
-        Assert.Equal("30", Assert.Single(viewModel.Parameters).Value);
+        Assert.Equal("30 fps", Assert.Single(viewModel.Parameters).Value);
 
         viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == tree.Right);
         await history.LastInspection;

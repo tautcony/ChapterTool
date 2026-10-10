@@ -65,7 +65,7 @@ public sealed class ChapterOutputProjectionServiceTests
                 ApplyExpression: true,
                 Expression: "return bad()"));
 
-        Assert.Equal(3, result.Diagnostics.Count);
+        Assert.Single(result.Diagnostics);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, diagnostic.Code));
         Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
         Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03"], result.OutputChapters.Select(static chapter => chapter.Name));

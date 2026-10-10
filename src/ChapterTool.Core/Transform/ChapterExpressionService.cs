@@ -36,6 +36,7 @@ public sealed class ChapterExpressionService
         }
 
         var diagnostics = new List<ChapterDiagnostic>();
+        var seenDiagnostics = new HashSet<(ChapterDiagnosticCode Code, string Message, string? Location)>();
         var expressionChapters = info.Chapters.Where(static chapter => !chapter.IsSeparator).ToList();
         var nonSeparatorCount = expressionChapters.Count;
         var nonSeparatorIndex = 0;
@@ -56,7 +57,16 @@ public sealed class ChapterExpressionService
             var evaluated = expressionEngine.Evaluate(
                 expression,
                 new ChapterExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount, originalSeconds, framesPerSecond, expressionChapters));
-            diagnostics.AddRange(evaluated.Diagnostics);
+            foreach (var expressionDiagnostic in evaluated.Diagnostics)
+            {
+                // An expression can fail identically for every chapter (for example, while
+                // the user is typing an incomplete identifier). Keep the preview diagnostic
+                // list focused on distinct problems instead of repeating one message per row.
+                if (seenDiagnostics.Add((expressionDiagnostic.Code, expressionDiagnostic.Message, expressionDiagnostic.Location)))
+                {
+                    diagnostics.Add(expressionDiagnostic);
+                }
+            }
             if (!evaluated.Success)
             {
                 return chapter;
