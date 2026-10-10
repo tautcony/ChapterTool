@@ -296,13 +296,13 @@ public sealed class ChapterExportServiceTests
     public void Snapshot_serialization_writes_captured_value_once_without_replaying_transforms()
     {
         var engine = new CountingExpressionEngine();
-        var service = new ChapterExportService(new ChapterTimeFormatter(), engine);
+        var exportService = new ChapterExportService(new ChapterTimeFormatter(), engine);
         var document = EditableChapterDocumentAdapter.FromChapterSet(Sample() with
         {
             Chapters = [new Chapter(1, TimeSpan.FromSeconds(3), "Edited")]
         });
 
-        var result = service.Serialize(document, new ChapterSerializationOptions(ChapterExportFormat.Txt));
+        var result = exportService.Serialize(document, new ChapterSerializationOptions(ChapterExportFormat.Txt));
 
         Assert.True(result.Success);
         Assert.Equal("CHAPTER01=00:00:03.000" + Environment.NewLine + "CHAPTER01NAME=Edited" + Environment.NewLine, result.Content);
