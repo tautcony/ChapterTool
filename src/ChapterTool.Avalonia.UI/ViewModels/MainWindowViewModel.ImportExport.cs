@@ -44,6 +44,12 @@ public sealed partial class MainWindowViewModel
             SetStatus("Status.TemplateLoaded", ("name", ChapterNameTemplateStatus));
             Log(LogLevel.Information, $"Loaded chapter name template '{ChapterNameTemplateStatus}' from '{path}'", "Template",
                 ("path", path), ("name", ChapterNameTemplateStatus));
+
+            if (CurrentInfo is not null)
+            {
+                PreviewLoadedTemplateNames();
+                SetStatus("Status.TemplateLoaded", ("name", ChapterNameTemplateStatus));
+            }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -57,6 +63,19 @@ public sealed partial class MainWindowViewModel
             Log(LogLevel.Warning, $"Failed to load chapter name template from '{path}': {exception.Message}", "Template",
                 technicalDetail: exception.Message, ("path", path));
         }
+    }
+
+    private void PreviewLoadedTemplateNames()
+    {
+        pendingContentPreview = PrepareTemplateNamesOperation(autoGenerateNames: false, useTemplateNames: true);
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
     private ValueTask LoadPathAsync(string path, CancellationToken cancellationToken) =>

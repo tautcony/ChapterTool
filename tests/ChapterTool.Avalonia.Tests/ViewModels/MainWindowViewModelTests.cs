@@ -731,6 +731,38 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task LoadingChapterNameTemplateWithDocumentPreparesContentPreview()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "names.txt");
+        await File.WriteAllTextAsync(path, "Opening\nMiddle\nFinale");
+        var vm = CreateViewModel();
+
+        try
+        {
+            await vm.LoadCommand.ExecuteAsync("movie.txt");
+            var historyNodeCount = vm.ToolSession.History.Snapshot!.Nodes.Length;
+
+            await vm.LoadChapterNameTemplateFromPathAsync(path, TestContext.Current.CancellationToken);
+
+            Assert.True(vm.IsContentPreviewPending);
+            Assert.True(vm.CanApplyContentPreview);
+            Assert.Equal("Intro", vm.Rows[0].Name);
+            Assert.Equal(historyNodeCount, vm.ToolSession.History.Snapshot!.Nodes.Length);
+
+            await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+            Assert.Equal("Opening", vm.Rows[0].Name);
+            Assert.Equal(historyNodeCount + 1, vm.ToolSession.History.Snapshot!.Nodes.Length);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task LoadChapterNameTemplateFromMissingPathKeepsPreviousTemplateState()
     {
         var log = new ApplicationLogPanelProvider();
