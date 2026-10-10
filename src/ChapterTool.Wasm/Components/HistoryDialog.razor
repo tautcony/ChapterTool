@@ -1,21 +1,81 @@
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
+@using ChapterTool.Core.Session
+@implements IDisposable
 
 <WasmDialog Title="@L.T("History.Title")" CssClass="history-modal" OnClose="OnClose" LightDismiss="true">
     <div class="modal-body history-body">
-        <p class="history-note">@L.T("History.SessionLifetime")</p>
-        <div class="history-list">
-            <Virtualize Items="@Workspace.HistoryEntries" Context="entry" ItemSize="44">
-                <button @key="entry.Id" type="button" class="history-entry @(entry.IsCurrent ? "current" : null)"
-                        @onclick="async () => await Workspace.NavigateHistoryAsync(entry.Id)"
-                        aria-current="@(entry.IsCurrent ? "step" : null)"
-                        title="@entry.Description">@entry.DisplayDescription</button>
-            </Virtualize>
+        <header class="history-toolbar">
+            <div>
+                <p class="history-note">@L.T("History.SessionLifetime")</p>
+                @if (Workspace.HasPendingContentPreview)
+                {
+                    <p class="history-note">@L.T("History.PendingPreviewNotice")</p>
+                }
+            </div>
+            <div class="history-actions">
+                <button type="button" class="secondary" disabled="@(!Workspace.CanUndo)" @onclick="async () => await Workspace.UndoAsync()">@L.T("History.Undo")</button>
+                <button type="button" class="secondary" disabled="@(!Workspace.CanRedo)" @onclick="async () => await Workspace.RedoAsync()">@L.T("History.Redo")</button>
+                <button type="button" class="secondary" @onclick="LocateCurrentAsync">@L.T("History.LocateCurrent")</button>
+            </div>
+        </header>
+        <div class="history-content">
+            <div class="history-list" role="list" aria-label="@L.T("History.Title")">
+                @foreach (var entry in Entries)
+                {
+                    <div @key="entry.Id" class="history-row @(selectedId == entry.Id ? "selected" : null)" role="listitem">
+                        <button type="button" class="history-toggle" style="margin-left:@(entry.Depth * 0.8)rem" disabled="@(!entry.HasChildren)"
+                                aria-label="@(L.T("History.Title") + ": " + entry.Description)" aria-expanded="@(entry.HasChildren ? expanded.Contains(entry.Id) : null)"
+                                @onclick="() => Toggle(entry.Id)">@((MarkupString)(entry.HasChildren ? expanded.Contains(entry.Id) ? "▾" : "▸" : "·"))</button>
+                        <button type="button" class="history-entry @(entry.IsCurrent ? "current" : null) @(selectedId == entry.Id ? "selected" : null)" aria-current="@(entry.IsCurrent ? "step" : null)"
+                                title="@entry.Description" @onclick="() => SelectAsync(entry.Id)">
+                            @if (entry.IsCurrent) { <span class="history-current" aria-label="@L.T("History.Current")">● </span> }
+                            @if (entry.HasCurrentDescendant) { <span class="history-hidden-current" title="@L.T("History.CurrentHidden")">… </span> }
+                            @entry.Description
+                        </button>
+                    </div>
+                }
+            </div>
+            <section class="history-details" aria-live="polite">
+                @if (detailLoading)
+                {
+                    <p>@L.T("History.Loading")</p>
+                }
+                else if (detailError is not null)
+                {
+                    <p role="alert">@L.T("History.Detail" + detailError)</p>
+                    <button type="button" class="secondary" @onclick="() => SelectAsync(selectedId)">@L.T("History.Retry")</button>
+                }
+                else if (details is { } node)
+                {
+                    <h3>@node.Description</h3>
+                    @if (node.RootDocument is { } root)
+                    {
+                        <p>@L.T("History.RootOverview")</p>
+                        <p>@root.Title · @root.Tracks.Length · @root.Tracks.Sum(track => track.Chapters.Length)</p>
+                    }
+                    <div class="history-summary">
+                        <span>@L.T("History.Added"): @node.Summary.AddedChapters</span>
+                        <span>@L.T("History.Removed"): @node.Summary.RemovedChapters</span>
+                        <span>@L.T("History.Modified"): @node.Summary.ModifiedChapters</span>
+                    </div>
+                    @if (node.PublishedAt is { } published) { <p class="history-note">@published.ToLocalTime()</p> }
+                    @foreach (var change in node.Changes)
+                    {
+                        <article class="history-change" @key="(change.Group, change.ObjectId, change.Field)">
+                            <strong>@change.ObjectLabel</strong>
+                            <span>@change.Field</span>
+                            <span>@ValueText(change.Before)</span>
+                            <span>→</span>
+                            <span>@ValueText(change.After)</span>
+                        </article>
+                    }
+                }
+            </section>
         </div>
     </div>
     <footer class="modal-footer">
-        <button type="button" class="secondary" disabled="@(!Workspace.CanUndo)" @onclick="async () => await Workspace.UndoAsync()">@L.T("History.Undo")</button>
-        <button type="button" class="secondary" disabled="@(!Workspace.CanRedo)" @onclick="async () => await Workspace.RedoAsync()">@L.T("History.Redo")</button>
+        <button type="button" class="secondary" disabled="@(selectedId is null || selectedId == CurrentId || Workspace.IsHistoryEnded || Workspace.IsBusy)" @onclick="RestoreAsync">@L.T("History.Restore")</button>
         <span class="modal-spacer"></span>
         <button type="button" class="secondary" @onclick="OnClose">@L.T("Action.Close")</button>
     </footer>
@@ -23,4 +83,135 @@
 
 @code {
     [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    private readonly HashSet<Guid> expanded = [];
+    private Guid? selectedId;
+    private HistoryNodeDetails? details;
+    private string? detailError;
+    private bool detailLoading;
+    private Guid? lastCurrentId;
+    private long detailGeneration;
+    private Guid? CurrentId => Workspace.HistoryEntries.FirstOrDefault(entry => entry.IsCurrent)?.Id;
+    private ICollection<WasmHistoryEntry> Entries => Workspace.GetHistoryEntries(expanded);
+
+    protected override void OnInitialized() => Workspace.Changed += OnWorkspaceChanged;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        SyncTree();
+        if (selectedId is null || Workspace.HistoryEntries.All(row => row.Id != selectedId))
+        {
+            selectedId = CurrentId ?? Workspace.HistoryEntries.FirstOrDefault()?.Id;
+            await LoadDetailsAsync(selectedId);
+        }
+    }
+
+    private void SyncTree()
+    {
+        var rows = Workspace.HistoryEntries;
+        if (CurrentId is not { } currentId || currentId == lastCurrentId) return;
+        lastCurrentId = currentId;
+        var byId = rows.ToDictionary(row => row.Id);
+        var nodeId = currentId;
+        while (byId.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
+        {
+            expanded.Add(parentId);
+            nodeId = parentId;
+        }
+    }
+
+    private void OnWorkspaceChanged() => _ = InvokeAsync(async () =>
+    {
+        var currentChanged = CurrentId != lastCurrentId;
+        SyncTree();
+        if (currentChanged)
+        {
+            selectedId = CurrentId;
+            await LoadDetailsAsync(selectedId);
+        }
+        StateHasChanged();
+    });
+
+    public void Dispose() => Workspace.Changed -= OnWorkspaceChanged;
+
+    private async Task Toggle(Guid id)
+    {
+        if (!expanded.Add(id))
+        {
+            expanded.Remove(id);
+            if (selectedId is { } selected && IsDescendant(selected, id))
+            {
+                selectedId = id;
+                await LoadDetailsAsync(selectedId);
+            }
+        }
+    }
+
+    private bool IsDescendant(Guid nodeId, Guid ancestorId)
+    {
+        var byId = Workspace.HistoryEntries.ToDictionary(row => row.Id);
+        while (byId.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
+        {
+            if (parentId == ancestorId) return true;
+            nodeId = parentId;
+        }
+        return false;
+    }
+
+    private async Task LocateCurrentAsync()
+    {
+        var current = CurrentId;
+        if (current is null) return;
+        lastCurrentId = null;
+        SyncTree();
+        selectedId = current;
+        await LoadDetailsAsync(selectedId);
+    }
+
+    private async Task SelectAsync(Guid? id)
+    {
+        selectedId = id;
+        await LoadDetailsAsync(id);
+    }
+
+    private async Task LoadDetailsAsync(Guid? id)
+    {
+        var generation = ++detailGeneration;
+        details = null;
+        detailError = null;
+        if (id is null)
+        {
+            detailLoading = false;
+            return;
+        }
+        detailLoading = true;
+        try
+        {
+            var result = await Workspace.InspectHistoryAsync(id.Value);
+            if (generation != detailGeneration || selectedId != id) return;
+            if (result.Kind == HistoryInspectionOutcomeKind.Available) details = result.Details;
+            else if (result.Kind is HistoryInspectionOutcomeKind.ResourceFailure or HistoryInspectionOutcomeKind.NotFound or HistoryInspectionOutcomeKind.Ended)
+                detailError = result.Kind.ToString();
+            else detailError = "Failed";
+        }
+        catch (OutOfMemoryException)
+        {
+            if (generation == detailGeneration && selectedId == id) detailError = "ResourceFailure";
+        }
+        catch (Exception)
+        {
+            if (generation == detailGeneration && selectedId == id) detailError = "Failed";
+        }
+        finally
+        {
+            if (generation == detailGeneration) detailLoading = false;
+        }
+    }
+
+    private async Task RestoreAsync()
+    {
+        if (selectedId is { } id) await Workspace.RestoreHistoryAsync(id);
+    }
+
+    private static string ValueText(HistoryFieldValue value) =>
+        value.IsPresent ? Convert.ToString(value.Value, System.Globalization.CultureInfo.CurrentCulture) ?? "" : "—";
 }

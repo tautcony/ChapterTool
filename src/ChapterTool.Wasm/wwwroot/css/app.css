@@ -119,6 +119,32 @@ html, body {
   background: var(--hover);
 }
 
+.history-modal { width: min(78rem, calc(100vw - 2rem)); }
+.history-body { height: min(42rem, 72dvh); gap: 0.75rem; }
+.history-toolbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.history-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.4rem; }
+.history-content { display: grid; grid-template-columns: minmax(15rem, 2fr) minmax(18rem, 3fr); gap: 0.75rem; min-height: 0; flex: 1; }
+.history-list { overflow: auto; min-height: 0; border: 1px solid var(--border); border-radius: 0.35rem; }
+.history-row { display: flex; align-items: stretch; min-height: 2.2rem; }
+.history-row.selected { background: var(--hover); }
+.history-toggle { flex: 0 0 2rem; width: 2rem; border: 0; background: transparent; color: var(--control-fg); padding: 0; }
+.history-toggle:disabled { opacity: 0.55; }
+.history-entry { flex: 1; min-width: 0; height: auto; min-height: 2.2rem; padding: 0.3rem 0.4rem; white-space: normal; text-overflow: clip; }
+.history-entry.current { font-weight: 600; }
+.history-current { color: var(--accent); }
+.history-hidden-current { color: var(--muted); }
+.history-details { overflow: auto; min-width: 0; padding: 0.8rem; border: 1px solid var(--border); border-radius: 0.35rem; }
+.history-details h3 { margin-top: 0; }
+.history-summary { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; padding: 0.5rem 0; }
+.history-change { display: grid; grid-template-columns: minmax(6rem, 1fr) auto minmax(4rem, 1fr) auto minmax(4rem, 1fr); gap: 0.35rem; padding: 0.4rem 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.history-change strong { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .history-body { height: min(48rem, 78dvh); }
+  .history-toolbar { flex-direction: column; }
+  .history-actions { justify-content: flex-start; }
+  .history-content { grid-template-columns: 1fr; grid-template-rows: minmax(10rem, 1fr) minmax(10rem, 1.2fr); }
+}
+
 .top-clip {
   min-width: 0;
   display: flex;

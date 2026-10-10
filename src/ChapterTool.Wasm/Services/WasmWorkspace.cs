@@ -153,35 +153,69 @@ public sealed partial class WasmWorkspace : IDisposable
     public bool CanRedo => PreferredRedoNode is not null && !IsBusy;
 
     public ICollection<WasmHistoryEntry> HistoryEntries
+        => GetHistoryEntries(null);
+
+    public ICollection<WasmHistoryEntry> GetHistoryEntries(IReadOnlySet<Guid>? expandedNodeIds)
     {
-        get
+        var history = session.ContentSession?.GetHistorySnapshot();
+        if (history is null)
         {
-            var history = session.ContentSession?.GetHistorySnapshot();
-            if (history is null)
-            {
-                return [];
-            }
-
-            var nodes = history.Nodes.ToDictionary(static node => node.Id);
-            var rows = new List<WasmHistoryEntry>(nodes.Count);
-            var pending = new Stack<(Guid Id, int Depth)>();
-            pending.Push((history.RootId, 0));
-            while (pending.TryPop(out var item))
-            {
-                if (!nodes.TryGetValue(item.Id, out var node))
-                {
-                    continue;
-                }
-
-                rows.Add(new WasmHistoryEntry(node.Id, node.Description, item.Depth, node.Id == history.CursorId));
-                for (var index = node.ChildIds.Length - 1; index >= 0; index--)
-                {
-                    pending.Push((node.ChildIds[index], item.Depth + 1));
-                }
-            }
-
-            return rows;
+            return [];
         }
+
+        var nodes = history.Nodes.ToDictionary(static node => node.Id);
+        var rows = new List<WasmHistoryEntry>(nodes.Count);
+        var pending = new Stack<(Guid Id, int Depth)>();
+        pending.Push((history.RootId, 0));
+        while (pending.TryPop(out var item))
+        {
+            if (!nodes.TryGetValue(item.Id, out var node))
+            {
+                continue;
+            }
+
+            var hiddenCurrent = expandedNodeIds?.Contains(node.Id) == false
+                && node.Id != history.CursorId
+                && IsAncestorOf(node.Id, history.CursorId, nodes);
+            rows.Add(new WasmHistoryEntry(node.Id, node.ParentId, node.Description, item.Depth, node.Id == history.CursorId,
+                !node.ChildIds.IsEmpty, hiddenCurrent));
+            if (expandedNodeIds?.Contains(node.Id) == false)
+            {
+                continue;
+            }
+            for (var index = node.ChildIds.Length - 1; index >= 0; index--)
+            {
+                pending.Push((node.ChildIds[index], item.Depth + 1));
+            }
+        }
+
+        return rows;
+    }
+
+    public bool HasPendingContentPreview => contentPreview is not null || expressionPreview is not null;
+
+    public bool IsHistoryEnded => session.ContentSession?.IsEnded ?? true;
+
+    public async ValueTask<HistoryInspectionOutcome> InspectHistoryAsync(Guid nodeId, CancellationToken cancellationToken = default) =>
+        session.ContentSession is { } content
+            ? await content.InspectHistoryNodeAsync(nodeId, cancellationToken)
+            : new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.Ended, null, []);
+
+    public async ValueTask RestoreHistoryAsync(Guid nodeId, CancellationToken cancellationToken = default) =>
+        await NavigateHistoryAsync("restore", nodeId, cancellationToken);
+
+    private static bool IsAncestorOf(Guid ancestorId, Guid nodeId,
+        IReadOnlyDictionary<Guid, ChapterTool.Core.Session.SessionHistoryNodeSnapshot> nodes)
+    {
+        while (nodes.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
+        {
+            if (parentId == ancestorId)
+            {
+                return true;
+            }
+            nodeId = parentId;
+        }
+        return false;
     }
 
     private SessionHistoryNodeSnapshot? PreferredRedoNode
@@ -438,7 +472,13 @@ public sealed partial class WasmWorkspace : IDisposable
         if (outcome.Kind == HistoryNavigationOutcomeKind.Committed)
         {
             session.PublishContentDocument(outcome.Snapshot.Document);
-            RefreshDisplay(updateStatus: true, statusKey: action == "undo" ? "History.UndoApplied" : "History.RedoApplied");
+            var statusKey = action switch
+            {
+                "undo" => "History.UndoApplied",
+                "restore" => "History.RestoreApplied",
+                _ => "History.RedoApplied"
+            };
+            RefreshDisplay(updateStatus: true, statusKey);
         }
         else if (outcome.Kind is not HistoryNavigationOutcomeKind.NoChange)
         {
