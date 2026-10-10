@@ -18,6 +18,21 @@ public sealed class ChapterContentCandidateBuilderTests
     }
 
     [Fact]
+    public void Editing_invalid_time_does_not_produce_a_candidate()
+    {
+        var source = CreateDocument();
+        var chapterId = source.Tracks[0].Chapters[1].Id;
+
+        var tooLong = Builder().EditCell(source, chapterId, ChapterCellField.StartTime, "25:00:00.000", 25m);
+        var invalid = Builder().EditCell(source, chapterId, ChapterCellField.StartTime, "not a time", 25m);
+
+        Assert.False(tooLong.IsValid);
+        Assert.Equal(source, tooLong.Candidate);
+        Assert.False(invalid.IsValid);
+        Assert.Equal(source, invalid.Candidate);
+    }
+
+    [Fact]
     public void Portable_naming_and_frame_candidates_preserve_separator_identity_and_reject_missing_FPS()
     {
         var source = EditableChapterDocumentAdapter.FromChapterSet(new ChapterSet("Title", "source.txt", ChapterImportFormat.Ogm,

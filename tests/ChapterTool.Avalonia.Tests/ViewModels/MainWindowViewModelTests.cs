@@ -1098,6 +1098,18 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Rejected_time_edit_restores_the_committed_row_value()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "25:00:00.000"));
+
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.Contains("24 hours", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task SaveProjectsChaptersAndDelegatesNeutralOptions()
     {
         var save = new FakeSaveService();

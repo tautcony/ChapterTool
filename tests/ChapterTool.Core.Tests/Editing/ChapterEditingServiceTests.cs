@@ -10,11 +10,12 @@ public sealed class ChapterEditingServiceTests
     private readonly ChapterEditingService service = new(new ChapterTimeFormatter());
 
     [Fact]
-    public void EditTime_resets_values_over_one_day()
+    public void EditTime_rejects_values_over_one_day_without_changing_the_chapter()
     {
-        var result = service.EditTime(Sample(), 1, "25:00:00.000");
+        var source = Sample();
+        var result = service.EditTime(source, 1, "25:00:00.000");
 
-        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[1].StartTime);
+        Assert.Equal(source, result.ChapterSet);
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidTimeText);
     }
 

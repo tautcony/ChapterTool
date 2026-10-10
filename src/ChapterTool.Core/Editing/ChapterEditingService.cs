@@ -32,11 +32,11 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         var value = parsed.Value;
         if (value >= TimeSpan.FromDays(1))
         {
-            value = TimeSpan.Zero;
             diagnostics.Add(new ChapterDiagnostic(
                 DiagnosticSeverity.Warning,
                 ChapterDiagnosticCode.InvalidTimeText,
-                "A chapter time of 24 hours or more was reset to zero."));
+                "A chapter time must be less than 24 hours."));
+            return new ChapterEditResult(info, diagnostics);
         }
 
         chapters[index] = chapter with { StartTime = value };
