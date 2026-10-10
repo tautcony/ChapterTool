@@ -295,7 +295,10 @@ public sealed partial class WasmWorkspace : IDisposable
         ? ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId)
         : null;
 
-    public bool IsExpressionPreviewStale => expressionPreviewStale;
+    public bool IsExpressionPreviewStale => expressionPreviewStale
+        || (expressionPreview is { } preview
+            && (session.ContentSession?.Snapshot.BaseToken != preview.BaseToken
+                || CurrentTrackId != expressionPreviewTrackId));
 
     public string FormatExpressionTimeTicks(long ticks)
     {
