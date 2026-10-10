@@ -14,11 +14,9 @@ internal sealed class ClipEditingCoordinator(
     IChapterEditingService editingService,
     IFrameRateService frameRateService)
 {
-    private readonly ChapterContentCandidateBuilder candidateBuilder = new(editingService);
-
     public ChapterSet? CurrentChapterSet => workspace.CurrentChapterSet;
 
-    public ChapterContentCandidateBuilder CandidateBuilder => candidateBuilder;
+    public ChapterContentCandidateBuilder CandidateBuilder { get; } = new(editingService);
 
     public ChapterContentPreview PrepareCandidate(
         string operation,
@@ -131,7 +129,7 @@ internal sealed class ClipEditingCoordinator(
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         return PrepareCandidate($"Edit {field}", document =>
-            candidateBuilder.EditCell(document, chapter.Id, field, edit.Value, displayFrameRate),
+            CandidateBuilder.EditCell(document, chapter.Id, field, edit.Value, displayFrameRate),
             new HistoryOperationDescriptor("chapter.cell-edit",
             [
                 new HistoryOperationParameter("field", field.ToString()),
@@ -149,7 +147,7 @@ internal sealed class ClipEditingCoordinator(
         var snapshot = session.Snapshot;
         var chapters = snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters;
         var targets = indexes.Where(index => index >= 0 && index < chapters.Length).Select(index => chapters[index].Id).ToHashSet();
-        return PrepareCandidate("Delete chapters", document => candidateBuilder.Delete(document, targets, options),
+        return PrepareCandidate("Delete chapters", document => CandidateBuilder.Delete(document, targets, options),
             new HistoryOperationDescriptor("chapter.delete",
             [
                 new HistoryOperationParameter("chapterIds", string.Join(",", targets)),
@@ -167,7 +165,7 @@ internal sealed class ClipEditingCoordinator(
         var snapshot = session.Snapshot;
         var chapters = snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters;
         var beforeId = index >= 0 && index < chapters.Length ? chapters[index].Id : (ChapterId?)null;
-        return PrepareCandidate("Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId),
+        return PrepareCandidate("Insert chapter", document => CandidateBuilder.InsertBefore(document, beforeId),
             new HistoryOperationDescriptor("chapter.insert",
             [
                 new HistoryOperationParameter("beforeChapterId", beforeId?.ToString()),
@@ -180,7 +178,7 @@ internal sealed class ClipEditingCoordinator(
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Where(static chapter => chapter.Kind != ChapterKind.Separator).Select(static chapter => chapter.Id).ToHashSet();
-        return PrepareCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, displayFrameRate),
+        return PrepareCandidate("Shift chapter frames", document => CandidateBuilder.ShiftFrames(document, targets, frames, displayFrameRate),
             new HistoryOperationDescriptor("chapter.frame-shift",
             [
                 new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),

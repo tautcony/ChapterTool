@@ -104,7 +104,8 @@
                           <Run Text=" → " />
                           <Run Text="{Binding CandidateAccuracy}" />
                         </TextBlock>
-                        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="{DynamicResource Expression.FrameAccuracy.Policy}"
+                        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Grid.Column="0"
+                                   Text="{DynamicResource Expression.FrameAccuracy.Policy}"
                                    FontSize="12" Opacity="0.72" TextWrapping="Wrap" />
                       </Grid>
                     </Expander>

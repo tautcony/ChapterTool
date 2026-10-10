@@ -3,6 +3,10 @@ using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Session;
 
+internal sealed class SessionResourceFailureException(string message) : Exception(message)
+{
+}
+
 /// <summary>Identifies one immutable document state that a transaction was based on.</summary>
 public readonly record struct SessionBaseToken(
     ChapterDocumentId DocumentId,
@@ -214,7 +218,7 @@ public sealed class SessionState
             var kind = IsEnded ? HistoryInspectionOutcomeKind.Ended : HistoryInspectionOutcomeKind.Cancelled;
             return new HistoryInspectionOutcome(kind, null, []);
         }
-        catch (OutOfMemoryException)
+        catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
         {
             return new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.ResourceFailure, null, ["Resources were exhausted during history inspection."]);
         }
@@ -279,7 +283,7 @@ public sealed class SessionState
             {
                 return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
             }
-            catch (OutOfMemoryException)
+            catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
             {
                 return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure, ["Resources were exhausted before the transaction could be published."]);
             }
@@ -346,7 +350,7 @@ public sealed class SessionState
                 Volatile.Write(ref current, nextVersion);
                 return outcome;
             }
-            catch (OutOfMemoryException)
+            catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
             {
                 return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure, ["Resources were exhausted before the transaction could be published."]);
             }
@@ -498,7 +502,7 @@ public sealed class SessionState
                 Volatile.Write(ref current, nextVersion);
                 return outcome;
             }
-            catch (OutOfMemoryException)
+            catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
             {
                 return HistoryOutcome(HistoryNavigationOutcomeKind.ResourceFailure, version, ["Resources were exhausted before history navigation could be published."]);
             }

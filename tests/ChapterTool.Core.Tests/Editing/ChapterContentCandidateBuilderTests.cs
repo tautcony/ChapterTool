@@ -194,7 +194,7 @@ public sealed class ChapterContentCandidateBuilderTests
         yield return ["delete", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.Delete(document, new HashSet<ChapterId> { document.Tracks[0].Chapters[0].Id }))];
         yield return ["reorder", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
-            builder.Reorder(document, document.Tracks[0].Chapters.Reverse().Select(static chapter => chapter.Id).ToArray()))];
+            builder.Reorder(document, [.. document.Tracks[0].Chapters.Reverse().Select(static chapter => chapter.Id)]))];
         yield return ["number", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.ApplyNumbering(document, 3))];
         yield return ["template", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>

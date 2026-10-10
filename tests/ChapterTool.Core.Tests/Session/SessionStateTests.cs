@@ -166,7 +166,8 @@ public sealed class SessionStateTests
             before.BaseToken,
             Guid.NewGuid(),
             "resource failure",
-            (_, _) => ValueTask.FromException<EditableChapterDocument>(new OutOfMemoryException()));
+            (_, _) => ValueTask.FromException<EditableChapterDocument>(
+                new SessionResourceFailureException("Injected candidate resource failure.")));
 
         Assert.Equal(TransactionOutcomeKind.ResourceFailure, outcome.Kind);
         Assert.Same(before.Document, session.Snapshot.Document);

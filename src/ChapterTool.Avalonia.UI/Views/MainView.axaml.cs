@@ -206,10 +206,7 @@ public sealed partial class MainView : UserControl
                     selected[0] == (row.TrackId, row.ChapterId));
             }
 
-            if (scrollViewer is not null)
-            {
-                scrollViewer.Offset = offset;
-            }
+            scrollViewer?.Offset = offset;
         });
     }
 
@@ -640,10 +637,7 @@ public sealed partial class MainView : UserControl
         viewModel.SetNarrowPreviewLayout(narrow);
         var timeColumn = ChapterGrid.Columns.FirstOrDefault(column =>
             string.Equals(column.Tag?.ToString(), ChapterGridColumnIds.Time, StringComparison.Ordinal));
-        if (timeColumn is not null)
-        {
-            timeColumn.Width = new DataGridLength(narrow ? 300 : 400);
-        }
+        timeColumn?.Width = new DataGridLength(narrow ? 300 : 400);
 
         if (advancedOptionsNarrow == narrow)
         {

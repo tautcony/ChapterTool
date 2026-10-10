@@ -278,7 +278,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
                 if (armed && point == failurePoint)
                 {
                     armed = false;
-                    throw new OutOfMemoryException("Injected history allocation failure.");
+                    throw new SessionResourceFailureException("Injected history allocation failure.");
                 }
             });
             var before = session.Snapshot;
@@ -308,7 +308,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
             if (armed && point == SessionHistoryFailurePoint.Reconstruction)
             {
                 armed = false;
-                throw new OutOfMemoryException("Injected reconstruction failure.");
+                throw new SessionResourceFailureException("Injected reconstruction failure.");
             }
         });
         var root = session.Snapshot;
@@ -369,7 +369,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         var session = new SessionState(CreateDocument([CreateChapter(1, "A")]));
         var before = session.Snapshot;
         var id = Guid.NewGuid();
-        var request = "rename:A-to-B";
+        const string request = "rename:A-to-B";
         var first = await session.ExecuteAsync(before.BaseToken, id, request,
             (document, _) => ValueTask.FromResult(ChangeChapter(document, 0, name: "B")));
         var retry = await session.ExecuteAsync(before.BaseToken, id, request,

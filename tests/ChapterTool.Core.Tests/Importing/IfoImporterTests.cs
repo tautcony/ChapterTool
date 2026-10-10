@@ -75,7 +75,7 @@ public sealed class IfoImporterTests
         Assert.Equal(TimeSpan.FromMilliseconds(1411200), info.Duration);
         Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);
         AssertTimesWithin(info.Chapters.Take(46).Select(static chapter => chapter.StartTime),
-            Enumerable.Range(0, 46).Select(static index => index * 30d).ToArray());
+            [.. Enumerable.Range(0, 46).Select(static index => index * 30d)]);
         Assert.Equal(TimeSpan.FromSeconds(1380), info.Chapters[^1].StartTime);
     }
 

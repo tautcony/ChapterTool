@@ -33,7 +33,6 @@ public sealed partial class WasmWorkspace : IDisposable
     private readonly List<WasmLogEntry> logs = [];
     private readonly HashSet<int> selectedRowIndexes = [];
     private IReadOnlyList<DiagnosticView> diagnostics = [];
-    private ChapterContentPreview? expressionPreview;
     private ChapterTrackId? expressionPreviewTrackId;
     private bool expressionPreviewStale;
 
@@ -137,7 +136,7 @@ public sealed partial class WasmWorkspace : IDisposable
         }
     }
 
-    public bool HasActiveDraft => contentPreview is not null || expressionPreview is not null;
+    public bool HasActiveDraft => ContentPreview is not null || ExpressionPreview is not null;
 
     public bool RequiresSessionLossConfirmation
     {
@@ -192,7 +191,7 @@ public sealed partial class WasmWorkspace : IDisposable
         return rows;
     }
 
-    public bool HasPendingContentPreview => contentPreview is not null || expressionPreview is not null;
+    public bool HasPendingContentPreview => ContentPreview is not null || ExpressionPreview is not null;
 
     public bool IsHistoryEnded => session.ContentSession?.IsEnded ?? true;
 
@@ -289,14 +288,14 @@ public sealed partial class WasmWorkspace : IDisposable
     public string XmlLanguage { get; set; }
 
     /// <summary>Gets the read-only candidate prepared from the current committed document.</summary>
-    public ChapterContentPreview? ExpressionPreview => expressionPreview;
+    public ChapterContentPreview? ExpressionPreview { get; private set; }
 
-    public ExpressionPreviewProjection? ExpressionPreviewProjection => expressionPreview is { } preview
+    public ExpressionPreviewProjection? ExpressionPreviewProjection => ExpressionPreview is { } preview
         ? ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId)
         : null;
 
     public bool IsExpressionPreviewStale => expressionPreviewStale
-        || (expressionPreview is { } preview
+        || (ExpressionPreview is { } preview
             && (session.ContentSession?.Snapshot.BaseToken != preview.BaseToken
                 || CurrentTrackId != expressionPreviewTrackId));
 
@@ -1087,7 +1086,7 @@ public sealed partial class WasmWorkspace : IDisposable
         var content = session.ContentSession;
         if (string.IsNullOrWhiteSpace(Expression) || content is null || IsBusy)
         {
-            expressionPreview = null;
+            ExpressionPreview = null;
             expressionPreviewTrackId = null;
             expressionPreviewStale = false;
             Notify();
@@ -1097,14 +1096,14 @@ public sealed partial class WasmWorkspace : IDisposable
         var trackIndex = session.CurrentTrackIndex;
         if (trackIndex < 0 || trackIndex >= content.Snapshot.Document.Tracks.Length)
         {
-            expressionPreview = null;
+            ExpressionPreview = null;
             expressionPreviewTrackId = null;
             Notify();
             return null;
         }
         expressionPreviewTrackId = content.Snapshot.Document.Tracks[trackIndex].Id;
         expressionPreviewStale = false;
-        expressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
+        ExpressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
         {
             var focused = AddDetectedFrameRate(FocusTrack(document, trackIndex));
             var built = candidateBuilder.ApplyExpression(focused, Expression.Trim());
@@ -1113,13 +1112,13 @@ public sealed partial class WasmWorkspace : IDisposable
                 : built with { Candidate = document };
         });
         Notify();
-        return expressionPreview;
+        return ExpressionPreview;
     }
 
     /// <summary>Commits the latest valid expression candidate as one history transaction.</summary>
     public async ValueTask<bool> ApplyExpressionPreviewAsync(CancellationToken cancellationToken = default)
     {
-        var preview = expressionPreview;
+        var preview = ExpressionPreview;
         var content = session.ContentSession;
         if (preview is null
             || !preview.IsValid
@@ -1146,7 +1145,7 @@ public sealed partial class WasmWorkspace : IDisposable
         if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
         {
             session.PublishContentDocument(outcome.Snapshot.Document);
-            expressionPreview = null;
+            ExpressionPreview = null;
             expressionPreviewTrackId = null;
             expressionPreviewStale = false;
             RefreshDisplay(updateStatus: false, statusKey: null);
@@ -1174,7 +1173,7 @@ public sealed partial class WasmWorkspace : IDisposable
     /// <summary>Discards the current expression candidate without changing the document.</summary>
     public void CancelExpressionPreview()
     {
-        expressionPreview = null;
+        ExpressionPreview = null;
         expressionPreviewTrackId = null;
         expressionPreviewStale = false;
         Notify();

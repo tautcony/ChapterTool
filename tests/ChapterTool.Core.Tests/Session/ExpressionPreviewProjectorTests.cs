@@ -106,7 +106,8 @@ public sealed class ExpressionPreviewProjectorTests
             .Select(index => new EditableChapter(new ChapterId(Guid.NewGuid()), index + 1, index, $"Chapter {index + 1}"))
             .ToArray();
         var before = CreateDocument(chapters, new ChapterFrameRate(25, 1));
-        var candidate = ReplaceChapters(before, chapters.Select(static chapter => chapter with { StartTicks = chapter.StartTicks + 1 }).ToArray());
+        var candidate = ReplaceChapters(before,
+            [.. chapters.Select(static chapter => chapter with { StartTicks = chapter.StartTicks + 1 })]);
 
         var projection = Project(before, candidate);
 
@@ -159,8 +160,8 @@ public sealed class ExpressionPreviewProjectorTests
                 track.Chapters,
                 track.Segments.Select(static segment => segment with
                 {
-                    ReferencedMediaFiles = segment.ReferencedMediaFiles.ToArray().ToImmutableArray(),
-                    MediaTracks = segment.MediaTracks.ToArray().ToImmutableArray()
+                    ReferencedMediaFiles = [.. segment.ReferencedMediaFiles],
+                    MediaTracks = [.. segment.MediaTracks]
                 }))));
 
     private static EditableChapterDocument CreateDocumentWithMetadataSegment(IEnumerable<EditableChapter> chapters, ChapterFrameRate? rate)

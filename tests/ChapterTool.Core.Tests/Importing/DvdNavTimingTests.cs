@@ -146,7 +146,7 @@ public sealed class DvdNavTimingTests
         Assert.InRange(Math.Abs(set.Duration.Ticks - exactDurationTicks), 0, 0.5m);
         Assert.True(Math.Abs(set.Chapters[1].StartTime.Ticks - exactStartTicks) <= Math.Abs(legacyStart.Ticks - exactStartTicks));
         Assert.True(Math.Abs(set.Duration.Ticks - exactDurationTicks) <= Math.Abs((legacyStart + legacyCell).Ticks - exactDurationTicks));
-        var rate = 30000m / 1001m;
+        const decimal rate = 30000m / 1001m;
         Assert.Equal(framesPerCell * 99, decimal.Round((decimal)set.Chapters[1].StartTime.TotalSeconds * rate));
     }
 
@@ -183,7 +183,7 @@ public sealed class DvdNavTimingTests
             SetCell(0, 3, 0, 2, 3);
             SetCell(1, 1, 4, 4, 5);
 
-            var start = uint.MaxValue - 45_000;
+            const uint start = uint.MaxValue - 45_000;
             SetNav(0, start, unchecked(start + 90_090), 1, 2);
             SetNav(2, unchecked(start + 90_090), unchecked(start + 180_180), 1, 0x3FFF_FFFF);
             SetNav(4, 90_000, 180_090, 2, 0x3FFF_FFFF);

@@ -205,7 +205,7 @@ public sealed class IfoChapterImporter : IChapterImporter
                 tracksByTitleSet.Add(title.TitleSetNumber, DvdIfoMetadataReader.ReadTitleSetTracks(vtsPath));
             }
 
-            ChapterSet? set = title.TitleWithinTitleSet >= 1 && title.TitleWithinTitleSet <= titleSet.Count
+            var set = title.TitleWithinTitleSet >= 1 && title.TitleWithinTitleSet <= titleSet.Count
                 ? titleSet[title.TitleWithinTitleSet - 1]
                 : null;
             if (set is null)
@@ -353,7 +353,6 @@ public sealed class IfoChapterImporter : IChapterImporter
 
     private static ChapterSet CreateProgramChapterSet(string path, VmgTitle title, PgcPlaybackInfo playback)
     {
-        TimeSpan Convert(long value) => playback.UsesNavTiming ? FromPts(value) : FromDvdFrames(value, playback.IsNtsc);
         var chapters = (playback.NavProgramStartPts ?? playback.ProgramStartFrames)
             .Select((start, index) => new Chapter(index + 1, Convert(start), $"Chapter {index + 1:D2}"))
             .ToArray();
@@ -365,6 +364,7 @@ public sealed class IfoChapterImporter : IChapterImporter
             playback.IsNtsc ? 30000d / 1001d : 25d,
             Convert(playback.NavDurationPts ?? playback.DurationFrames),
             chapters);
+        TimeSpan Convert(long value) => playback.UsesNavTiming ? FromPts(value) : FromDvdFrames(value, playback.IsNtsc);
     }
 
     private static (PttEntry Entry, int TitleCount) GetFirstPttEntry(Stream stream, int titleNumber)
@@ -472,10 +472,7 @@ public sealed class IfoChapterImporter : IChapterImporter
         }
 
         var useNav = titleChapters.All(chapter => chapter.Pgc.UsesNavTiming);
-        long Start((PttEntry Entry, PgcPlaybackInfo Pgc) chapter) =>
-            (useNav ? chapter.Pgc.NavProgramStartPts! : chapter.Pgc.ProgramStartFrames)[chapter.Entry.ProgramNumber - 1];
-        long Duration(PgcPlaybackInfo pgc) => useNav ? pgc.NavDurationPts!.Value : pgc.DurationFrames;
-        TimeSpan Convert(long value) => useNav ? FromPts(value) : FromDvdFrames(value, titleChapters[0].Pgc.IsNtsc);
+
         var starts = new long[titleChapters.Count];
         for (var index = 1; index < titleChapters.Count; index++)
         {
@@ -511,6 +508,12 @@ public sealed class IfoChapterImporter : IChapterImporter
             titleChapters[0].Pgc.IsNtsc ? 30000d / 1001d : 25d,
             Convert(duration),
             chapters);
+
+        long Start((PttEntry Entry, PgcPlaybackInfo Pgc) chapter) =>
+            (useNav ? chapter.Pgc.NavProgramStartPts! : chapter.Pgc.ProgramStartFrames)[chapter.Entry.ProgramNumber - 1];
+
+        long Duration(PgcPlaybackInfo pgc) => useNav ? pgc.NavDurationPts!.Value : pgc.DurationFrames;
+        TimeSpan Convert(long value) => useNav ? FromPts(value) : FromDvdFrames(value, titleChapters[0].Pgc.IsNtsc);
     }
 
     private static string GetTitleSourceName(string path, int titleNumber)

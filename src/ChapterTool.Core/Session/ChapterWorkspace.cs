@@ -320,8 +320,7 @@ public sealed class ChapterWorkspace
                 return ClipAppendCommitResult.Failed(contentOutcome.Errors);
             }
 
-            var next = ClipSessionTransitions.FromDocument(ClipSession, contentOutcome.Snapshot.Document, combined: true) as CombinedClipSession;
-            if (next is null)
+            if (ClipSessionTransitions.FromDocument(ClipSession, contentOutcome.Snapshot.Document, combined: true) is not CombinedClipSession next)
             {
                 return ClipAppendCommitResult.Failed(["The appended document did not produce a combined clip session."]);
             }

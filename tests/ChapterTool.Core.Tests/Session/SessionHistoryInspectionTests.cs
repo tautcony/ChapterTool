@@ -118,7 +118,7 @@ public sealed class SessionHistoryInspectionTests
             if (armed && point == SessionHistoryFailurePoint.InspectionReconstruction)
             {
                 armed = false;
-                throw new OutOfMemoryException("Injected history inspection reconstruction failure.");
+                throw new SessionResourceFailureException("Injected history inspection reconstruction failure.");
             }
         });
         var rootId = session.GetHistorySnapshot().RootId;

@@ -18,7 +18,7 @@ internal static class DvdIfoMetadataReader
 
     internal static IReadOnlyList<ChapterImportMediaTrack> ReadTitleSetTracks(string path)
     {
-        var requiredLength = VtsSubtitleAttributesOffset + MaximumSubtitleStreams * 6;
+        const int requiredLength = VtsSubtitleAttributesOffset + MaximumSubtitleStreams * 6;
         var file = new FileInfo(path);
         if (!PortableInputPolicy.IsWithinLimit(file.Length) || file.Length < requiredLength)
         {

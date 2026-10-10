@@ -249,9 +249,12 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
 
     public IReadOnlyList<HistoryFieldRow> VisibleChanges => SelectedChangeFilter switch
     {
-        var value when value == localizer.GetString("History.Filter.Added") => fieldRows.Where(static row => !row.Before.IsPresent && row.After.IsPresent).ToArray(),
-        var value when value == localizer.GetString("History.Filter.Removed") => fieldRows.Where(static row => row.Before.IsPresent && !row.After.IsPresent).ToArray(),
-        var value when value == localizer.GetString("History.Filter.Modified") => fieldRows.Where(static row => row.Before.IsPresent && row.After.IsPresent).ToArray(),
+        var value when value == localizer.GetString("History.Filter.Added") =>
+            [.. fieldRows.Where(static row => !row.Before.IsPresent && row.After.IsPresent)],
+        var value when value == localizer.GetString("History.Filter.Removed") =>
+            [.. fieldRows.Where(static row => row.Before.IsPresent && !row.After.IsPresent)],
+        var value when value == localizer.GetString("History.Filter.Modified") =>
+            [.. fieldRows.Where(static row => row.Before.IsPresent && row.After.IsPresent)],
         _ => fieldRows
     };
 
@@ -559,9 +562,13 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
             return;
         }
 
-        redoChoices = current.ChildIds.Select(childId => nodes.TryGetValue(childId, out var child)
-            ? new HistoryRedoChoice(child.Id, LocalizeHistoryTitle(child), child.Description, current.PreferredChildId == child.Id)
-            : null).Where(choice => choice is not null).Cast<HistoryRedoChoice>().ToArray();
+        redoChoices =
+        [
+            .. current.ChildIds.Select(childId => nodes.TryGetValue(childId, out var child)
+                ? new HistoryRedoChoice(child.Id, LocalizeHistoryTitle(child), child.Description,
+                    current.PreferredChildId == child.Id)
+                : null).Where(choice => choice is not null).Cast<HistoryRedoChoice>()
+        ];
         SelectedRedoChoice = redoChoices.FirstOrDefault(choice => choice.Id == oldSelection)
             ?? redoChoices.FirstOrDefault(choice => choice.IsPreferred)
             ?? redoChoices.FirstOrDefault();
@@ -760,7 +767,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var prefix = signed && value > TimeSpan.Zero ? "+" : string.Empty;
         var absolute = value.Duration();
         var body = absolute.TotalDays >= 1
-            ? $"{(int)absolute.TotalDays}.{absolute:hh\\:mm\\:ss\\.fffffff}"
+            ? $@"{(int)absolute.TotalDays}.{absolute:hh\:mm\:ss\.fffffff}"
             : absolute.ToString(@"hh\:mm\:ss\.fffffff", System.Globalization.CultureInfo.InvariantCulture);
         return string.Concat(value < TimeSpan.Zero ? "−" : prefix, body);
     }

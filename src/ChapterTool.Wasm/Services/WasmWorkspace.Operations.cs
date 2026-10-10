@@ -13,19 +13,18 @@ public sealed partial class WasmWorkspace
             .GroupBy(item => item.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(group => group.Key, group => group.First().Culture, StringComparer.OrdinalIgnoreCase);
 
-    private ChapterContentPreview? contentPreview;
     private ChapterTrackId? contentPreviewTrackId;
     private object? contentPreviewDraft;
 
     /// <summary>Gets the current chapter-content preview, if one is prepared.</summary>
-    public ChapterContentPreview? ContentPreview => contentPreview;
+    public ChapterContentPreview? ContentPreview { get; private set; }
 
     /// <summary>Gets the projected changes and diagnostics for the current preview.</summary>
-    public ExpressionPreviewProjection? ContentPreviewProjection => contentPreview is { } preview
+    public ExpressionPreviewProjection? ContentPreviewProjection => ContentPreview is { } preview
         ? ExpressionPreviewProjector.Build(preview, contentPreviewTrackId) : null;
 
     /// <summary>Gets whether the current preview no longer matches the workspace state.</summary>
-    public bool IsContentPreviewStale => contentPreview is { } preview
+    public bool IsContentPreviewStale => ContentPreview is { } preview
         && (session.ContentSession?.Snapshot.BaseToken != preview.BaseToken
             || CurrentTrackId != contentPreviewTrackId
             || !Equals(contentPreviewDraft, CaptureContentDraft(preview.Operation)));
@@ -73,7 +72,7 @@ public sealed partial class WasmWorkspace
         var trackIndex = session.CurrentTrackIndex;
         contentPreviewTrackId = CurrentTrackId;
         contentPreviewDraft = CaptureContentDraft(operation);
-        contentPreview = ChapterContentOperationSession.Prepare(content, operation, document =>
+        ContentPreview = ChapterContentOperationSession.Prepare(content, operation, document =>
         {
             var focused = FocusTrack(document, trackIndex);
             var built = build(focused);
@@ -81,7 +80,7 @@ public sealed partial class WasmWorkspace
                 ? ReplaceFocusedTrack(document, trackIndex, built.Candidate) : document };
         });
         Notify();
-        return contentPreview;
+        return ContentPreview;
     }
 
     /// <summary>Applies the current valid preview as a content-session transaction.</summary>
@@ -89,7 +88,7 @@ public sealed partial class WasmWorkspace
     /// <returns><see langword="true"/> if the preview was committed or made no changes.</returns>
     public async ValueTask<bool> ApplyContentPreviewAsync(CancellationToken cancellationToken = default)
     {
-        if (contentPreview is not { IsValid: true } preview || IsBusy || IsContentPreviewStale
+        if (ContentPreview is not { IsValid: true } preview || IsBusy || IsContentPreviewStale
             || ContentPreviewProjection is not { HasChanges: true } || session.ContentSession is not { } content)
         {
             return false;
@@ -115,7 +114,7 @@ public sealed partial class WasmWorkspace
     /// <summary>Discards the current chapter-content preview.</summary>
     public void CancelContentPreview()
     {
-        contentPreview = null;
+        ContentPreview = null;
         contentPreviewTrackId = null;
         contentPreviewDraft = null;
         Notify();

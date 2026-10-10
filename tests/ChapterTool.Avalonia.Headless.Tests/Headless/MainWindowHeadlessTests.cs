@@ -83,7 +83,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(rows[0].PreviewTimeAccessibleName, AutomationProperties.GetName(accessibleTimePreview));
         Assert.False(rows[0].HasPreviewNameChange);
         Assert.Equal("Chapter 0001 · " + new string('x', 80), rows[0].Name);
-        Assert.Equal(chapterIds, host.ViewModel.Rows.Select(row => row.ChapterId).ToArray());
+        Assert.Equal(chapterIds, [.. host.ViewModel.Rows.Select(row => row.ChapterId)]);
 
         var nameColumn = Assert.Single(grid.Columns, column => column.Tag?.ToString() == ChapterTool.Avalonia.UI.ViewModels.ChapterGridColumnIds.Name);
         grid.SelectedItem = rows[^1];
@@ -143,7 +143,7 @@ public sealed class MainWindowHeadlessTests
         {
             Assert.Contains(rows, row => row.HasPreviewFramesChange);
             await host.MainView.ApplyContentPreviewCommand.ExecuteAsync();
-            rows = host.ViewModel.Rows.ToArray();
+            rows = [.. host.ViewModel.Rows];
         }
 
         host.ViewModel.Expression = "t * 1";
@@ -644,8 +644,10 @@ public sealed class MainWindowHeadlessTests
         {
             using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
                 "movie.txt",
-                MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", Enumerable.Range(1, 20)
-                    .Select(index => $"Chapter {index:D2} · A longer preview title").ToArray())));
+                MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", [
+                    .. Enumerable.Range(1, 20)
+                        .Select(index => $"Chapter {index:D2} · A longer preview title")
+                ])));
             await host.LoadAsync("movie.txt");
             await host.LayoutAsync(width, height);
             MainWindowHeadlessTestHost.CaptureRenderedFrame(
@@ -663,7 +665,7 @@ public sealed class MainWindowHeadlessTests
                 var renderedRows = host.RequiredControl<DataGrid>("ChapterGrid")
                     .GetVisualDescendants()
                     .OfType<DataGridRow>()
-                    .Where(static row => row.IsVisible && row.Bounds.Height > 0)
+                    .Where(static row => row is { IsVisible: true, Bounds.Height: > 0 })
                     .ToArray();
                 Assert.NotEmpty(renderedRows);
                 Assert.All(renderedRows, row => Assert.InRange(row.Bounds.Height, 0, 56));
@@ -693,18 +695,19 @@ public sealed class MainWindowHeadlessTests
                     ChapterImportFormat.Ogm,
                     24000d / 1001d,
                     TimeSpan.Zero,
-                    Enumerable.Range(0, 20)
-                        .Select(index => new Chapter(
-                            index + 1,
-                            index switch
-                            {
-                                0 => TimeSpan.Zero,
-                                1 => TimeSpan.FromMilliseconds(348557),
-                                2 => TimeSpan.FromMilliseconds(599600),
-                                _ => TimeSpan.FromSeconds(600 + 60 * (index - 3))
-                            },
-                            $"第 {index + 1:D2} 章 · 较长的预览标题"))
-                        .ToArray()))));
+                    [
+                        .. Enumerable.Range(0, 20)
+                            .Select(index => new Chapter(
+                                index + 1,
+                                index switch
+                                {
+                                    0 => TimeSpan.Zero,
+                                    1 => TimeSpan.FromMilliseconds(348557),
+                                    2 => TimeSpan.FromMilliseconds(599600),
+                                    _ => TimeSpan.FromSeconds(600 + 60 * (index - 3))
+                                },
+                                $"第 {index + 1:D2} 章 · 较长的预览标题"))
+                    ]))));
             await host.LoadAsync("movie.txt");
             host.Localizer.SetCulture("zh-CN");
             host.ViewModel.FrameAccuracyTolerance = 0.01m;
@@ -727,7 +730,7 @@ public sealed class MainWindowHeadlessTests
             var renderedRows = host.RequiredControl<DataGrid>("ChapterGrid")
                 .GetVisualDescendants()
                 .OfType<DataGridRow>()
-                .Where(static row => row.IsVisible && row.Bounds.Height > 0)
+                .Where(static row => row is { IsVisible: true, Bounds.Height: > 0 })
                 .ToArray();
             Assert.NotEmpty(renderedRows);
             Assert.All(renderedRows, row => Assert.InRange(row.Bounds.Height, 0, 56));
@@ -738,8 +741,10 @@ public sealed class MainWindowHeadlessTests
 
         using (var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
                    "movie.txt",
-                   MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", Enumerable.Range(1, 20)
-                       .Select(index => $"Chapter {index:D2} · Long title").ToArray()))))
+                   MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", [
+                       .. Enumerable.Range(1, 20)
+                           .Select(index => $"Chapter {index:D2} · Long title")
+                   ]))))
         {
             await host.LoadAsync("movie.txt");
             host.Localizer.SetCulture("ja-JP");
@@ -757,8 +762,7 @@ public sealed class MainWindowHeadlessTests
             var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
             var application = global::Avalonia.Application.Current!;
             var themeResourceKeys = ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.ImportedThemeColorKeys
-                .Concat(new[]
-                {
+                .Concat([
                     ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
                     ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey,
                     ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey,
@@ -769,7 +773,7 @@ public sealed class MainWindowHeadlessTests
                     "ChapterTool.FontSize.Small",
                     "ChapterTool.FontSize.Default",
                     "ChapterTool.FontSize.Large"
-                })
+                ])
                 .ToArray();
             var originalResources = themeResourceKeys.ToDictionary(key => key, key => application.Resources[key]);
             var originalThemeVariant = application.RequestedThemeVariant;
@@ -798,7 +802,7 @@ public sealed class MainWindowHeadlessTests
                 var enlargedCandidate = host.RequiredControl<DataGrid>("ChapterGrid")
                     .GetVisualDescendants()
                     .OfType<TextBlock>()
-                    .FirstOrDefault(block => block.Text == "00:00:01.000" && block.FontSize >= 18);
+                    .FirstOrDefault(block => block is { Text: "00:00:01.000", FontSize: >= 18 });
                 Assert.NotNull(enlargedCandidate);
                 var statusBar = host.RequiredControl<Border>("StatusBar");
                 var logButton = host.RequiredControl<Button>("LogButton");
@@ -835,9 +839,9 @@ public sealed class MainWindowHeadlessTests
             .OfType<DataGridRow>()
             .Single(item => ReferenceEquals(item.DataContext, row));
         var frameText = Assert.Single(renderedRow.GetVisualDescendants().OfType<TextBlock>(),
-            block => block.IsVisible && block.Bounds.Width > 0 && block.Bounds.Height > 0
-                && block.Text == text && block.Classes.Contains("framePreview")
-                && (row.IsNarrowPreviewLayout ? block.Parent is Grid : block.Parent is StackPanel));
+            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                     && block.Text == text && block.Classes.Contains("framePreview")
+                     && (row.IsNarrowPreviewLayout ? block.Parent is Grid : block.Parent is StackPanel));
         var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
         var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
         Assert.Equal(expectedBrush.Color, actualBrush.Color);
@@ -854,7 +858,7 @@ public sealed class MainWindowHeadlessTests
             .OfType<DataGridRow>()
             .Single(item => ReferenceEquals(item.DataContext, row));
         var frameText = Assert.Single(renderedRow.GetVisualDescendants().OfType<TextBlock>(),
-            block => block.IsVisible && block.Bounds.Width > 0 && block.Bounds.Height > 0 && block.Text == text
+            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } } && block.Text == text
                 && block.Classes.Contains("frameText") && !block.Classes.Contains("framePreview"));
         var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
         var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
