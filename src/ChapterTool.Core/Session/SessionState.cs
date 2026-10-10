@@ -113,6 +113,113 @@ public sealed class SessionState
     /// <summary>Gets the root, cursor, and all retained history nodes.</summary>
     public SessionHistorySnapshot GetHistorySnapshot() => Volatile.Read(ref current).History.Snapshot();
 
+    /// <summary>Inspects one retained node without changing the current document or history cursor.</summary>
+    public ValueTask<HistoryInspectionOutcome> InspectHistoryNodeAsync(Guid nodeId, CancellationToken cancellationToken = default)
+    {
+        return new ValueTask<HistoryInspectionOutcome>(Task.Run(() => InspectHistoryNode(nodeId, cancellationToken)));
+    }
+
+    private HistoryInspectionOutcome InspectHistoryNode(Guid nodeId, CancellationToken callerToken)
+    {
+        using var linkedCancellation = CancellationTokenSource.CreateLinkedTokenSource(callerToken, LifetimeToken);
+        var cancellationToken = linkedCancellation.Token;
+        try
+        {
+            if (IsEnded)
+            {
+                return new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.Ended, null, []);
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            var version = Volatile.Read(ref current);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!version.History.Nodes.TryGetValue(nodeId, out var node))
+            {
+                return new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.NotFound, null, []);
+            }
+
+            EditableChapterDocument? rootDocument = null;
+            ImmutableArray<HistoryFieldChange> changes = [];
+            var summary = new HistoryNodeSummary(0, 0, 0, 0, 0);
+            if (node.ParentId is null)
+            {
+                rootDocument = version.History.RootDocument;
+            }
+            else
+            {
+                var tree = version.History;
+                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.InspectionReconstruction);
+                var before = Reconstruct(tree, version.Document, tree.CursorId, node.ParentId.Value, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var after = tree.Nodes[nodeId].ChangeSet!.Apply(before, forward: true);
+                changes = HistoryNodeDetailsProjector.ProjectChanges(before, after, cancellationToken);
+                var added = new HashSet<string>(StringComparer.Ordinal);
+                var removed = new HashSet<string>(StringComparer.Ordinal);
+                var modified = new HashSet<string>(StringComparer.Ordinal);
+                var changedTracks = new HashSet<string>(StringComparer.Ordinal);
+                var changedSegments = new HashSet<string>(StringComparer.Ordinal);
+                var beforeTrackByChapter = before.Tracks.SelectMany(track => track.Chapters.Select(chapter => (ChapterId: chapter.Id, TrackId: track.Id)))
+                    .ToDictionary(pair => pair.ChapterId, pair => pair.TrackId);
+                var afterTrackByChapter = after.Tracks.SelectMany(track => track.Chapters.Select(chapter => (ChapterId: chapter.Id, TrackId: track.Id)))
+                    .ToDictionary(pair => pair.ChapterId, pair => pair.TrackId);
+                foreach (var change in changes)
+                {
+                    if (change.Group == "Chapter")
+                    {
+                        if (!change.Before.IsPresent)
+                        {
+                            added.Add(change.ObjectId);
+                        }
+                        else if (!change.After.IsPresent)
+                        {
+                            removed.Add(change.ObjectId);
+                        }
+                        else
+                        {
+                            modified.Add(change.ObjectId);
+                        }
+                        if (Guid.TryParse(change.ObjectId, out var chapterGuid))
+                        {
+                            var chapterId = new ChapterId(chapterGuid);
+                            if (beforeTrackByChapter.TryGetValue(chapterId, out var beforeTrackId))
+                            {
+                                changedTracks.Add(beforeTrackId.Value.ToString("D"));
+                            }
+                            if (afterTrackByChapter.TryGetValue(chapterId, out var afterTrackId))
+                            {
+                                changedTracks.Add(afterTrackId.Value.ToString("D"));
+                            }
+                        }
+                    }
+                    else if (change.Group == "Track")
+                    {
+                        changedTracks.Add(change.ObjectId);
+                    }
+                    else if (change.Group == "Segment")
+                    {
+                        changedSegments.Add(change.ObjectId);
+                    }
+                }
+                modified.ExceptWith(added);
+                modified.ExceptWith(removed);
+                summary = new HistoryNodeSummary(added.Count, removed.Count, modified.Count, changedTracks.Count, changedSegments.Count);
+            }
+
+            var details = new HistoryNodeDetails(RootId: version.History.RootId, NodeId: nodeId, ParentId: node.ParentId,
+                Description: node.Description, Operation: node.Operation, PublishedAt: node.PublishedAt,
+                Summary: summary, Changes: changes, RootDocument: rootDocument);
+            return new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.Available, details, []);
+        }
+        catch (OperationCanceledException)
+        {
+            var kind = IsEnded ? HistoryInspectionOutcomeKind.Ended : HistoryInspectionOutcomeKind.Cancelled;
+            return new HistoryInspectionOutcome(kind, null, []);
+        }
+        catch (OutOfMemoryException)
+        {
+            return new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.ResourceFailure, null, ["Resources were exhausted during history inspection."]);
+        }
+    }
+
     /// <summary>
     /// Computes and atomically publishes a candidate. The request fingerprint must identify
     /// all transaction inputs that affect the candidate.
@@ -123,7 +230,8 @@ public sealed class SessionState
         string requestFingerprint,
         Func<EditableChapterDocument, CancellationToken, ValueTask<EditableChapterDocument>> createCandidate,
         CancellationToken cancellationToken = default,
-        string? operationDescription = null)
+        string? operationDescription = null,
+        HistoryOperationDescriptor? operation = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(requestFingerprint);
         ArgumentNullException.ThrowIfNull(createCandidate);
@@ -218,7 +326,7 @@ public sealed class SessionState
                 historyFailureInjector?.Invoke(SessionHistoryFailurePoint.NodePublication);
                 var nextIdentity = Guid.NewGuid();
                 var nextRevision = version.MutationRevision + 1;
-                var history = version.History.Append(nextIdentity, changeSet, NormalizeDescription(operationDescription));
+                var history = version.History.Append(nextIdentity, changeSet, NormalizeDescription(operationDescription), operation, DateTimeOffset.UtcNow);
                 var nextSnapshot = new SessionSnapshot(candidate, nextIdentity, nextRevision);
                 var outcome = new TransactionOutcome(transactionId, TransactionOutcomeKind.Committed, nextSnapshot, []);
                 var transactions = version.Transactions.Add(transactionId, new CachedTransaction(requestFingerprint, outcome));
@@ -401,8 +509,14 @@ public sealed class SessionState
         }
     }
 
-    private static EditableChapterDocument Reconstruct(SessionHistoryTree tree, EditableChapterDocument sourceDocument, Guid fromId, Guid targetId)
+    private static EditableChapterDocument Reconstruct(
+        SessionHistoryTree tree,
+        EditableChapterDocument sourceDocument,
+        Guid fromId,
+        Guid targetId,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         if (tree.Nodes[fromId].ParentId == targetId)
         {
             return tree.Nodes[fromId].ChangeSet!.Apply(sourceDocument, forward: false);
@@ -417,6 +531,7 @@ public sealed class SessionState
         var currentId = targetId;
         while (true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             targetAncestors.Add(currentId);
             if (currentId == tree.RootId)
             {
@@ -430,6 +545,7 @@ public sealed class SessionState
         currentId = fromId;
         while (!targetAncestors.Contains(currentId))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             sourcePath.Add(currentId);
             currentId = tree.Nodes[currentId].ParentId!.Value;
         }
@@ -438,6 +554,7 @@ public sealed class SessionState
         var document = sourceDocument;
         foreach (var id in sourcePath)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             document = tree.Nodes[id].ChangeSet!.Apply(document, false);
         }
 
@@ -445,6 +562,7 @@ public sealed class SessionState
         currentId = targetId;
         while (currentId != commonAncestor)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             targetPath.Add(currentId);
             currentId = tree.Nodes[currentId].ParentId!.Value;
         }
@@ -452,6 +570,7 @@ public sealed class SessionState
         targetPath.Reverse();
         foreach (var id in targetPath)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             document = tree.Nodes[id].ChangeSet!.Apply(document, true);
         }
 

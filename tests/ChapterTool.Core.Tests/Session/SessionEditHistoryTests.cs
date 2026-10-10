@@ -16,6 +16,8 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         var root = session.GetHistorySnapshot();
         Assert.Single(root.Nodes);
         Assert.Equal(root.RootId, root.CursorId);
+        Assert.Equal("load", root.Nodes.Single().Operation?.Kind);
+        Assert.NotNull(root.Nodes.Single().PublishedAt);
 
         var first = await CommitAsync(session, document => ChangeChapter(document, 0, name: "First"), "Rename first");
         var firstNode = session.GetHistorySnapshot().CursorId;
@@ -54,10 +56,78 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         Assert.Contains(tree.Nodes, node => node.Id == secondNode);
         Assert.Equal(tree.CursorId, selectedOriginal.CursorId);
 
+        var cursorBeforeInspection = session.GetHistorySnapshot().CursorId;
+        var alternateDetails = await session.InspectHistoryNodeAsync(alternateNode);
+        Assert.Equal(HistoryInspectionOutcomeKind.Available, alternateDetails.Kind);
+        Assert.Equal("First", Assert.Single(alternateDetails.Details!.Changes.Where(change => change.Field == "Name")).Before.Value);
+        Assert.Equal("Alternate", Assert.Single(alternateDetails.Details.Changes.Where(change => change.Field == "Name")).After.Value);
+        Assert.Equal(cursorBeforeInspection, session.GetHistorySnapshot().CursorId);
+
         var crossBranch = await session.NavigateToAsync(alternateNode);
         Assert.Equal(HistoryNavigationOutcomeKind.Committed, crossBranch.Kind);
         Assert.Equal("Alternate", crossBranch.Snapshot.Document.Tracks[0].Chapters[0].Name);
         Assert.Equal("B", crossBranch.Snapshot.Document.Tracks[0].Chapters[1].Name);
+    }
+
+    [Fact]
+    public async Task Inspection_returns_parent_relative_values_without_moving_the_cursor()
+    {
+        var initial = CreateDocument([CreateChapter(1, "A")]);
+        var session = new SessionState(initial);
+        var root = session.GetHistorySnapshot();
+        var commit = await CommitAsync(session, document => ChangeChapter(document, 0, name: "B"), "Rename");
+        var nodeId = session.GetHistorySnapshot().CursorId;
+        var before = session.Snapshot;
+        var preferred = session.GetHistorySnapshot().Nodes.Single(node => node.Id == root.RootId).PreferredChildId;
+
+        var details = await session.InspectHistoryNodeAsync(nodeId);
+
+        Assert.Equal(HistoryInspectionOutcomeKind.Available, details.Kind);
+        Assert.Equal("A", Assert.Single(details.Details!.Changes.Where(change => change.Group == "Chapter" && change.Field == "Name")).Before.Value);
+        Assert.Equal("B", Assert.Single(details.Details.Changes.Where(change => change.Group == "Chapter" && change.Field == "Name")).After.Value);
+        Assert.Equal(1, details.Details.Summary.ModifiedChapters);
+        Assert.DoesNotContain(details.Details.Changes, change => change.Field is "TrackOrder" or "ChapterOrder" or "SegmentOrder");
+        Assert.Equal(before, session.Snapshot);
+        Assert.Equal(preferred, session.GetHistorySnapshot().Nodes.Single(node => node.Id == root.RootId).PreferredChildId);
+        AssertDocument(commit.Snapshot.Document, session.Snapshot.Document);
+
+        var rootDetails = await session.InspectHistoryNodeAsync(root.RootId);
+        Assert.Equal(initial, rootDetails.Details!.RootDocument);
+        Assert.Empty(rootDetails.Details.Changes);
+
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var cancelled = await session.InspectHistoryNodeAsync(nodeId, cancellation.Token);
+        Assert.Equal(HistoryInspectionOutcomeKind.Cancelled, cancelled.Kind);
+    }
+
+    [Fact]
+    public async Task Operation_metadata_is_published_only_with_a_committed_history_node()
+    {
+        var session = new SessionState(CreateDocument([CreateChapter(1, "A")]));
+        var root = session.GetHistorySnapshot();
+        var before = session.Snapshot;
+        var noChange = await session.ExecuteAsync(before.BaseToken, Guid.NewGuid(), "No change",
+            (document, _) => ValueTask.FromResult(document), operationDescription: "No change",
+            operation: new HistoryOperationDescriptor("test.no-change", [new HistoryOperationParameter("value", "discarded")]));
+        Assert.Equal(TransactionOutcomeKind.NoChange, noChange.Kind);
+        Assert.Single(session.GetHistorySnapshot().Nodes);
+
+        var descriptor = new HistoryOperationDescriptor("chapter.rename", [new HistoryOperationParameter("field", "Name")]);
+        var committed = await session.ExecuteAsync(before.BaseToken, Guid.NewGuid(), "Rename",
+            (document, _) => ValueTask.FromResult(ChangeChapter(document, 0, name: "B")),
+            operationDescription: "Rename", operation: descriptor);
+        Assert.Equal(TransactionOutcomeKind.Committed, committed.Kind);
+        var node = session.GetHistorySnapshot().Nodes.Single(item => item.Id == session.GetHistorySnapshot().CursorId);
+        Assert.Equal(descriptor, node.Operation);
+        Assert.NotNull(node.PublishedAt);
+        Assert.NotNull(root.Nodes.Single().PublishedAt);
+
+        var stale = await session.ExecuteAsync(before.BaseToken, Guid.NewGuid(), "Stale",
+            (document, _) => ValueTask.FromResult(ChangeChapter(document, 0, name: "C")),
+            operationDescription: "Stale", operation: new HistoryOperationDescriptor("test.stale", []));
+        Assert.Equal(TransactionOutcomeKind.Conflict, stale.Kind);
+        Assert.Equal(2, session.GetHistorySnapshot().Nodes.Length);
     }
 
     [Fact]
@@ -108,6 +178,13 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         stopwatch.Restart();
         var leaf = await session.NavigateToAsync(retained.Nodes[^1].Id);
         Assert.Equal(HistoryNavigationOutcomeKind.Committed, leaf.Kind);
+        var allocationBeforeInspection = GC.GetTotalAllocatedBytes(precise: true);
+        stopwatch.Restart();
+        var leafDetails = await session.InspectHistoryNodeAsync(retained.Nodes[^1].Id);
+        var inspectionTicks = stopwatch.ElapsedTicks;
+        var inspectionAllocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - allocationBeforeInspection;
+        Assert.Equal(HistoryInspectionOutcomeKind.Available, leafDetails.Kind);
+        Assert.Equal(1, leafDetails.Details!.Summary.ModifiedChapters);
         stopwatch.Restart();
         var root = await session.NavigateToAsync(retained.RootId);
         var navigationTicks = stopwatch.ElapsedTicks;
@@ -115,7 +192,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         Assert.Equal("0", root.Snapshot.Document.Tracks[0].Chapters[0].Name);
         Assert.Equal(editCount + 1, session.GetHistorySnapshot().Nodes.Length);
         var totalAllocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - allocatedBefore;
-        var measurement = $"History measurement: edits={editCount}; nodes={retained.Nodes.Length}; commitAllocatedBytes={commitAllocatedBytes}; fullSequenceAllocatedBytes={totalAllocatedBytes}; allocatedBytesPerCommand={totalAllocatedBytes / ((editCount * 2) + 2)}; commitMs={commitMilliseconds}; rootNavigationStopwatchTicks={navigationTicks}; stopwatchFrequency={Stopwatch.Frequency}.";
+        var measurement = $"History measurement: edits={editCount}; nodes={retained.Nodes.Length}; commitAllocatedBytes={commitAllocatedBytes}; fullSequenceAllocatedBytes={totalAllocatedBytes}; allocatedBytesPerCommand={totalAllocatedBytes / ((editCount * 2) + 2)}; commitMs={commitMilliseconds}; detailInspectionStopwatchTicks={inspectionTicks}; detailInspectionAllocatedBytes={inspectionAllocatedBytes}; rootNavigationStopwatchTicks={navigationTicks}; stopwatchFrequency={Stopwatch.Frequency}.";
         output.WriteLine(measurement);
     }
 

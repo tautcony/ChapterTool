@@ -236,13 +236,19 @@ public sealed class ChapterWorkspace
 
         var basis = ClipSession;
         var wasCombined = basis.IsCombined;
+        var operationKind = wasCombined ? "workspace.split" : "workspace.merge";
         var preview = ChapterContentOperationSession.Prepare(ContentSession,
             wasCombined ? "Split by boundaries" : "Merge clips",
             document => wasCombined
                 ? document.Tracks.Length == 1
                     ? ChapterClipCandidateBuilder.SplitByBoundaries(document, document.Tracks[0].Id)
                     : new ChapterCandidateBuildResult(false, document, [], ["The combined document must have one track."])
-                : ChapterClipCandidateBuilder.MergeTracks(document, document.Tracks.Select(static track => track.Id)));
+                : ChapterClipCandidateBuilder.MergeTracks(document, document.Tracks.Select(static track => track.Id)),
+            new HistoryOperationDescriptor(operationKind,
+            [
+                new HistoryOperationParameter("trackIds", string.Join(",", ContentSession.Snapshot.Document.Tracks.Select(static track => track.Id.ToString()))),
+                new HistoryOperationParameter("trackCount", ContentSession.Snapshot.Document.Tracks.Length.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer")
+            ]));
         if (!preview.IsValid)
         {
             return new ClipCombineTransitionResult(null,
@@ -273,7 +279,8 @@ public sealed class ChapterWorkspace
         Guid expectedSessionId,
         SessionSnapshot capturedContent,
         ChapterImportSource appended,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        HistoryOperationDescriptor? operationDescriptor = null)
     {
         ArgumentNullException.ThrowIfNull(capturedContent);
         ArgumentNullException.ThrowIfNull(appended);
@@ -301,7 +308,8 @@ public sealed class ChapterWorkspace
                 $"append:{expectedSessionId:N}:{appended.SourcePath}",
                 (_, _) => ValueTask.FromResult(candidate.Candidate),
                 cancellationToken,
-                "Append clips").AsTask().GetAwaiter().GetResult();
+                "Append clips",
+                operationDescriptor).AsTask().GetAwaiter().GetResult();
             if (contentOutcome.Kind == TransactionOutcomeKind.Conflict)
             {
                 return ClipAppendCommitResult.Stale;
@@ -366,7 +374,10 @@ public sealed class ChapterWorkspace
     }
 
     /// <summary>Converts one legacy service result to an immutable candidate and commits it atomically.</summary>
-    public TransactionOutcome CommitNonStructuralChapterSetResult(ChapterSet result, string operation = "Update chapter content")
+    public TransactionOutcome CommitNonStructuralChapterSetResult(
+        ChapterSet result,
+        string operation = "Update chapter content",
+        HistoryOperationDescriptor? operationDescriptor = null)
     {
         ArgumentNullException.ThrowIfNull(result);
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
@@ -392,7 +403,8 @@ public sealed class ChapterWorkspace
             Guid.NewGuid(),
             $"{operation}:{snapshot.MutationRevision}",
             (_, _) => ValueTask.FromResult(candidate),
-            operationDescription: operation).AsTask().GetAwaiter().GetResult();
+            operationDescription: operation,
+            operation: operationDescriptor).AsTask().GetAwaiter().GetResult();
         if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
         {
             PublishContentDocument(outcome.Snapshot.Document);
@@ -405,7 +417,8 @@ public sealed class ChapterWorkspace
     public TransactionOutcome ExecuteTrackCandidate(
         string operation,
         Func<EditableChapterDocument, ChapterCandidateBuildResult> buildCandidate,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        HistoryOperationDescriptor? operationDescriptor = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
         ArgumentNullException.ThrowIfNull(buildCandidate);
@@ -436,7 +449,7 @@ public sealed class ChapterWorkspace
         }
 
         var preview = new ChapterContentPreview(Guid.NewGuid(), snapshot.BaseToken, operation,
-            snapshot.Document, candidate, built.TargetIds, [], []);
+            snapshot.Document, candidate, built.TargetIds, [], [], operationDescriptor);
         var outcome = ChapterContentOperationSession.ApplyAsync(content, preview, cancellationToken)
             .AsTask().GetAwaiter().GetResult();
         if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)

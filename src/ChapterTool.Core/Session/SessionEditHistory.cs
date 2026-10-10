@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using ChapterTool.Core.Models;
 
+#pragma warning disable CS1591
+
 namespace ChapterTool.Core.Session;
 
 /// <summary>Describes one node in a session's retained edit history.</summary>
@@ -9,7 +11,60 @@ public sealed record SessionHistoryNodeSnapshot(
     Guid? ParentId,
     ImmutableArray<Guid> ChildIds,
     Guid? PreferredChildId,
-    string Description);
+    string Description,
+    HistoryOperationDescriptor? Operation = null,
+    DateTimeOffset? PublishedAt = null);
+
+/// <summary>Stable identity and immutable captured parameters for a committed edit.</summary>
+public sealed record HistoryOperationDescriptor(
+    string Kind,
+    ImmutableArray<HistoryOperationParameter> Parameters)
+{
+    public static HistoryOperationDescriptor Generic { get; } = new("generic", []);
+}
+
+/// <summary>A scalar parameter captured when an operation was prepared.</summary>
+public sealed record HistoryOperationParameter(string Name, string? Value, string ValueKind = "text");
+
+/// <summary>Presence-aware value in a read-only history detail.</summary>
+public sealed record HistoryFieldValue(bool IsPresent, object? Value);
+
+/// <summary>A stable identity with historical display text for an ordered collection.</summary>
+public sealed record HistoryOrderItem(string Id, string Label);
+
+/// <summary>A stable track identity with the label captured from that historical document.</summary>
+public sealed record HistoryTrackReference(ChapterTrackId Id, string Label);
+
+/// <summary>A typed before/after field projection for a retained history edge.</summary>
+public sealed record HistoryFieldChange(
+    string Group,
+    string ObjectId,
+    string Field,
+    HistoryFieldValue Before,
+    HistoryFieldValue After,
+    string ObjectLabel,
+    string? Context = null,
+    ChapterFrameRate? BeforeFrameRate = null,
+    ChapterFrameRate? AfterFrameRate = null);
+
+/// <summary>Lightweight count summary for a retained history node.</summary>
+public sealed record HistoryNodeSummary(int AddedChapters, int RemovedChapters, int ModifiedChapters, int ChangedTracks, int ChangedSegments);
+
+/// <summary>Detailed, parent-relative view of one retained history node.</summary>
+public sealed record HistoryNodeDetails(Guid RootId, Guid NodeId, Guid? ParentId, string Description,
+    HistoryOperationDescriptor? Operation, DateTimeOffset? PublishedAt, HistoryNodeSummary Summary,
+    ImmutableArray<HistoryFieldChange> Changes, EditableChapterDocument? RootDocument);
+
+public enum HistoryInspectionOutcomeKind
+{
+    Available,
+    NotFound,
+    Ended,
+    Cancelled,
+    ResourceFailure
+}
+
+public sealed record HistoryInspectionOutcome(HistoryInspectionOutcomeKind Kind, HistoryNodeDetails? Details, ImmutableArray<string> Errors);
 
 /// <summary>A stable view of the complete retained history tree.</summary>
 public sealed record SessionHistorySnapshot(
@@ -43,7 +98,8 @@ internal enum SessionHistoryFailurePoint
 {
     ChangeSetConstruction,
     NodePublication,
-    Reconstruction
+    Reconstruction,
+    InspectionReconstruction
 }
 
 internal sealed record SessionHistoryTree(
@@ -55,11 +111,11 @@ internal sealed record SessionHistoryTree(
     public static SessionHistoryTree Create(EditableChapterDocument document)
     {
         var rootId = Guid.NewGuid();
-        var root = new SessionHistoryNode(rootId, null, [], null, "Document loaded", null);
+        var root = new SessionHistoryNode(rootId, null, [], null, "Document loaded", null, new HistoryOperationDescriptor("load", []), DateTimeOffset.UtcNow);
         return new SessionHistoryTree(document, rootId, rootId, ImmutableDictionary<Guid, SessionHistoryNode>.Empty.Add(rootId, root));
     }
 
-    public SessionHistoryTree Append(Guid id, DomainChangeSet changeSet, string description)
+    public SessionHistoryTree Append(Guid id, DomainChangeSet changeSet, string description, HistoryOperationDescriptor? operation, DateTimeOffset publishedAt)
     {
         var parent = Nodes[CursorId];
         var updatedParent = parent with
@@ -67,7 +123,7 @@ internal sealed record SessionHistoryTree(
             Children = parent.Children.Add(id),
             PreferredChildId = id
         };
-        var node = new SessionHistoryNode(id, CursorId, [], null, description, changeSet);
+        var node = new SessionHistoryNode(id, CursorId, [], null, description, changeSet, operation, publishedAt);
         return this with { CursorId = id, Nodes = Nodes.SetItem(CursorId, updatedParent).Add(id, node) };
     }
 
@@ -98,7 +154,7 @@ internal sealed record SessionHistoryTree(
         while (pending.TryPop(out var id))
         {
             var node = Nodes[id];
-            result.Add(new SessionHistoryNodeSnapshot(node.Id, node.ParentId, node.Children, node.PreferredChildId, node.Description));
+            result.Add(new SessionHistoryNodeSnapshot(node.Id, node.ParentId, node.Children, node.PreferredChildId, node.Description, node.Operation, node.PublishedAt));
             for (var index = node.Children.Length - 1; index >= 0; index--)
             {
                 pending.Push(node.Children[index]);
@@ -115,7 +171,9 @@ internal sealed record SessionHistoryNode(
     ImmutableArray<Guid> Children,
     Guid? PreferredChildId,
     string Description,
-    DomainChangeSet? ChangeSet);
+    DomainChangeSet? ChangeSet,
+    HistoryOperationDescriptor? Operation,
+    DateTimeOffset? PublishedAt);
 
 internal sealed record DomainChangeSet(
     DocumentValues BeforeValues,

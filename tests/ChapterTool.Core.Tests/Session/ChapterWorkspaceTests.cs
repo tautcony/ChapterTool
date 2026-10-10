@@ -1,8 +1,6 @@
-using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
-using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Session;
 

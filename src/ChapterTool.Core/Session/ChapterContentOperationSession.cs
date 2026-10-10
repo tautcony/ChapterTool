@@ -14,7 +14,8 @@ public sealed record ChapterContentPreview(
     EditableChapterDocument Candidate,
     ImmutableHashSet<ChapterId> TargetIds,
     ImmutableArray<ChapterContentDifference> Differences,
-    ImmutableArray<string> Errors)
+    ImmutableArray<string> Errors,
+    HistoryOperationDescriptor? OperationDescriptor = null)
 {
     /// <summary>Gets a value indicating whether the candidate can be applied.</summary>
     public bool IsValid => Errors.IsEmpty;
@@ -34,7 +35,8 @@ public static class ChapterContentOperationSession
     public static ChapterContentPreview Prepare(
         SessionState session,
         string operation,
-        Func<EditableChapterDocument, ChapterCandidateBuildResult> buildCandidate)
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> buildCandidate,
+        HistoryOperationDescriptor? operationDescriptor = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
@@ -62,7 +64,8 @@ public static class ChapterContentOperationSession
             candidate,
             result.TargetIds,
             Diff(snapshot.Document, candidate),
-            errors);
+            errors,
+            operationDescriptor);
     }
 
     /// <summary>Applies a valid preview only when its captured base is still current.</summary>
@@ -88,7 +91,8 @@ public static class ChapterContentOperationSession
             Fingerprint(preview),
             (_, _) => ValueTask.FromResult(preview.Candidate),
             cancellationToken,
-            preview.Operation);
+            preview.Operation,
+            preview.OperationDescriptor);
     }
 
     private static ImmutableArray<ChapterContentDifference> Diff(
