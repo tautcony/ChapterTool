@@ -766,9 +766,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
     {
         var prefix = signed && value > TimeSpan.Zero ? "+" : string.Empty;
         var absolute = value.Duration();
-        var body = absolute.TotalDays >= 1
-            ? $@"{(int)absolute.TotalDays}.{absolute:hh\:mm\:ss\.fffffff}"
-            : absolute.ToString(@"hh\:mm\:ss\.fffffff", System.Globalization.CultureInfo.InvariantCulture);
+        var body = ExpressionChapterRowViewModel.FormatTicks(absolute.Ticks);
         return string.Concat(value < TimeSpan.Zero ? "−" : prefix, body);
     }
 

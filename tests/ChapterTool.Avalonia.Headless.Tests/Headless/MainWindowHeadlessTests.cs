@@ -141,7 +141,7 @@ public sealed class MainWindowHeadlessTests
         host.ViewModel.RefreshExpressionPreviewNow();
         if (host.ViewModel.CanApplyContentPreview)
         {
-            Assert.Contains(rows, row => row.HasPreviewFramesChange);
+            Assert.DoesNotContain(rows, row => row.HasPreviewFramesChange);
             await host.MainView.ApplyContentPreviewCommand.ExecuteAsync();
             rows = [.. host.ViewModel.Rows];
         }
@@ -444,8 +444,7 @@ public sealed class MainWindowHeadlessTests
         host.ViewModel.RefreshExpressionPreviewNow();
         Assert.True(host.ViewModel.CanApplyContentPreview);
         host.ViewModel.OrderShift = 1;
-        Assert.False(host.ViewModel.CanApplyContentPreview);
-        Assert.Empty(host.ViewModel.ExpressionPreviewText);
+        Assert.True(host.ViewModel.CanApplyContentPreview);
 
         host.ViewModel.Expression = "t + (";
         host.ViewModel.RefreshExpressionPreviewNow();
@@ -542,7 +541,7 @@ public sealed class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
-    public async Task Inline_projection_keeps_submillisecond_before_and_candidate_values_distinct()
+    public async Task Inline_projection_formats_preview_times_to_milliseconds()
     {
         var start = TimeSpan.FromTicks(1_000);
         var info = new ChapterSet(
@@ -556,7 +555,7 @@ public sealed class MainWindowHeadlessTests
             "movie.txt",
             new ChapterImportEntry("movie.txt", "movie.txt", info)));
         await host.LoadAsync("movie.txt");
-        host.ViewModel.Expression = "t + 0.0001";
+        host.ViewModel.Expression = "t + 0.0006";
         host.ViewModel.RefreshExpressionPreviewNow();
         await host.LayoutAsync(1280, 800);
 
@@ -564,9 +563,9 @@ public sealed class MainWindowHeadlessTests
         Assert.True(host.ViewModel.CanApplyContentPreview);
         Assert.False(row.IsNarrowPreviewLayout);
         Assert.True(row.HasPreviewTimeChange);
-        Assert.NotEqual(row.PreviewBeforeTimeText, row.PreviewTimeText);
-        Assert.NotEqual("00:00:00.000", row.PreviewTimeText);
-        Assert.NotEqual("+00:00:00.000", row.PreviewTimeDelta);
+        Assert.Equal("00:00:00.000", row.PreviewBeforeTimeText);
+        Assert.Equal("00:00:00.001", row.PreviewTimeText);
+        Assert.Equal("+00:00:00.001", row.PreviewTimeDelta);
 
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
         var timeCell = Assert.Single(grid.GetVisualDescendants().OfType<DataGridCell>(), cell =>
@@ -616,11 +615,11 @@ public sealed class MainWindowHeadlessTests
 
         var row = Assert.Single(host.ViewModel.Rows);
         Assert.True(host.ViewModel.CanApplyContentPreview);
-        Assert.True(row.HasPreviewFramesChange);
+        Assert.False(row.HasPreviewFramesChange);
         Assert.True(row.PreviewComparison?.BeforeFrames?.IsMissing);
         Assert.Equal("0", row.FramesInfo);
-        Assert.Equal("0", row.PreviewBeforeFrames);
-        Assert.Equal("0", row.PreviewFrames);
+        Assert.Empty(row.PreviewBeforeFrames);
+        Assert.Empty(row.PreviewFrames);
         Assert.True(host.ContainsRenderedText("0"));
 
         var comparison = row.PreviewComparison;

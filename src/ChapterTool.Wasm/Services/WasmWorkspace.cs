@@ -40,6 +40,7 @@ public sealed partial class WasmWorkspace : IDisposable
     private int activeGroupIndex;
     private List<ChapterRowModel> rows = [];
     private int selectedFrameRateIndex;
+    private decimal exactFramesPerSecond;
     private int selectionAnchor = -1;
     private LoadedSourceSnapshot? lastLoadedSource;
     private string chapterNameTemplateText = string.Empty;
@@ -291,7 +292,8 @@ public sealed partial class WasmWorkspace : IDisposable
     public ChapterContentPreview? ExpressionPreview { get; private set; }
 
     public ExpressionPreviewProjection? ExpressionPreviewProjection => ExpressionPreview is { } preview
-        ? ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId)
+        ? ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId, ExactFramesPerSecond,
+            RoundFrames ? 0 : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces ? EditingOptions.EffectiveFrameDecimalPlaces : -1)
         : null;
 
     public bool IsExpressionPreviewStale => expressionPreviewStale
@@ -387,6 +389,8 @@ public sealed partial class WasmWorkspace : IDisposable
     }
 
     public double FramesPerSecond { get; private set; }
+
+    internal decimal ExactFramesPerSecond => exactFramesPerSecond;
 
     public string FramesPerSecondDisplay =>
         FramesPerSecond > 0
@@ -689,7 +693,7 @@ public sealed partial class WasmWorkspace : IDisposable
             return string.Empty;
         }
 
-        var result = editingService.CreateZones(BaseChapterSet, indexes, (decimal)FramesPerSecond);
+        var result = editingService.CreateZones(BaseChapterSet, indexes, ExactFramesPerSecond);
         RecordDiagnostics(result.Diagnostics);
         if (result.Zones.Length > 0)
         {
@@ -1361,12 +1365,12 @@ public sealed partial class WasmWorkspace : IDisposable
             var candidate = new ChapterCandidateBuildResult(true, document, [chapterId], []);
             if (name is not null)
             {
-                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, (decimal)FramesPerSecond);
+                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, ExactFramesPerSecond);
             }
 
             if (candidate.IsValid && timeText is not null && track.Chapters[index].Kind != ChapterKind.Separator)
             {
-                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, (decimal)FramesPerSecond);
+                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, ExactFramesPerSecond);
             }
 
             return candidate;
@@ -1470,6 +1474,7 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             rows = [];
             FramesPerSecond = 0;
+            exactFramesPerSecond = 0;
             if (updateStatus && statusKey is not null)
             {
                 SetLocalizedStatus(statusKey, statusArgs);
@@ -1482,6 +1487,7 @@ public sealed partial class WasmWorkspace : IDisposable
         var selectedIds = selectedRowIndexes.Where(index => index >= 0 && index < rows.Count)
             .Select(index => rows[index].Id).ToHashSet();
         var framed = ApplyFrames(BaseChapterSet);
+        exactFramesPerSecond = framed.FramesPerSecond;
         FramesPerSecond = (double)framed.FramesPerSecond;
         RebuildFrameRateChoices(BaseChapterSet);
         var displayContent = framed.Info;
@@ -1597,6 +1603,7 @@ public sealed partial class WasmWorkspace : IDisposable
         ClipOptions = [];
         SelectedClipId = null;
         FramesPerSecond = 0;
+        exactFramesPerSecond = 0;
         FrameRateChoices = [];
         ClearSelection();
         diagnostics = [];

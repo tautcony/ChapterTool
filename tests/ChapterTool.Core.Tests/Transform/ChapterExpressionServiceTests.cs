@@ -29,6 +29,19 @@ public sealed class ChapterExpressionServiceTests
         Assert.Same(separator, result.Info.Chapters[1]);
     }
 
+    [Fact]
+    public void Apply_preserves_lua_submillisecond_seconds_without_double_conversion_drift()
+    {
+        var chapter = new Chapter(1, TimeSpan.FromSeconds(384), "Opening");
+        var chapterSet = new ChapterSet("Test", null, ChapterImportFormat.Ogm, 24,
+            TimeSpan.FromMinutes(10), [chapter]);
+
+        var result = new ChapterExpressionService().Apply(chapterSet, true, "t + 0.0001");
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Equal(1_000, result.Info.Chapters[0].StartTime.Ticks - chapter.StartTime.Ticks);
+    }
+
     private sealed class RecordingExpressionEngine : IChapterExpressionEngine
     {
         public string EngineId => "recording";

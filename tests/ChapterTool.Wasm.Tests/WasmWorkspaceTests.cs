@@ -346,6 +346,23 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task ExpressionPreviewUsesUnroundedFrameDisplayWhenRoundingIsDisabled()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.RoundFrames = false;
+        workspace.ApplyOptionsAndRefresh();
+
+        Assert.NotNull(workspace.PrepareExpressionPreview("t + 0.0004"));
+
+        var comparison = Assert.Single(workspace.ExpressionPreviewProjection!.Chapters,
+            item => item.Before?.DisplayNumber == 1);
+        Assert.Equal(workspace.Rows[0].FramesInfo, comparison.BeforeFrames!.Text);
+        Assert.Contains('.', comparison.CandidateFrames!.Text);
+        Assert.NotEqual("0", comparison.CandidateFrames.Text);
+    }
+
+    [Fact]
     public async Task EmptyExpressionPreviewIsUnavailableInsteadOfAnIdentityCandidate()
     {
         var workspace = CreateWorkspace();

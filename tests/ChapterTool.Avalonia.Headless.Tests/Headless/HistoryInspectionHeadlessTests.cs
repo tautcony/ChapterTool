@@ -71,7 +71,7 @@ public sealed class HistoryInspectionHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
             Assert.Single(viewModel.VisibleChanges);
-            Assert.Contains(details.GetVisualDescendants().OfType<TextBlock>(), block =>
+            Assert.Contains(view.GetVisualDescendants().OfType<TextBlock>(), block =>
                 block.IsVisible && block.Text == host.Localizer.GetString("History.Field.Name"));
 
             historyTree.SelectedItem = root;

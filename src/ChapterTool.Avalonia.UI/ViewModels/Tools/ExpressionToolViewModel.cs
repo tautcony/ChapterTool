@@ -611,7 +611,7 @@ public sealed record ExpressionChapterRowViewModel
     private static string FormatValue(EditableChapter? chapter, ExpressionFrameValue? frames, bool showFrames, IAppLocalizer localizer) =>
         chapter is null
             ? localizer.GetString("Expression.Value.Missing")
-            : showFrames ? FormatFrameDetails(frames, localizer) : FormatTicks(chapter.StartTicks, CultureInfo.CurrentUICulture);
+            : showFrames ? FormatFrameDetails(frames, localizer) : FormatTicks(chapter.StartTicks);
 
     private static string FormatDelta(ExpressionChapterComparison comparison, bool showFrames, IAppLocalizer localizer)
     {
@@ -628,7 +628,7 @@ public sealed record ExpressionChapterRowViewModel
         }
 
         var sign = ticks > 0 ? "+" : ticks < 0 ? "−" : string.Empty;
-        return sign + FormatTicks(Math.Abs(ticks), CultureInfo.CurrentUICulture);
+        return sign + FormatTicks(Math.Abs(ticks));
     }
 
     private static string FormatFrameDetails(ExpressionFrameValue? value, IAppLocalizer localizer)
@@ -651,14 +651,17 @@ public sealed record ExpressionChapterRowViewModel
         _ => localizer.GetString("Expression.FrameAccuracy.NotCalculated")
     };
 
-    internal static string FormatTicks(long ticks, CultureInfo culture)
+    internal static string FormatTicks(long ticks)
     {
-        var hours = ticks / TimeSpan.TicksPerHour;
-        var minutes = ticks / TimeSpan.TicksPerMinute % 60;
-        var seconds = ticks / TimeSpan.TicksPerSecond % 60;
-        var fraction = (ticks % TimeSpan.TicksPerSecond).ToString("D7", CultureInfo.InvariantCulture);
-        var precision = ticks % 10_000 == 0 ? 3 : ticks % 10 == 0 ? 6 : 7;
-        return string.Create(culture, $"{hours:00}:{minutes:00}:{seconds:00}{culture.NumberFormat.NumberDecimalSeparator}{fraction[..precision]}");
+        var totalMilliseconds = (long)decimal.Round(
+            ticks / (decimal)TimeSpan.TicksPerMillisecond,
+            0,
+            MidpointRounding.ToEven);
+        var hours = totalMilliseconds / 3_600_000;
+        var minutes = totalMilliseconds / 60_000 % 60;
+        var seconds = totalMilliseconds / 1_000 % 60;
+        var milliseconds = totalMilliseconds % 1_000;
+        return string.Create(CultureInfo.InvariantCulture, $"{hours:00}:{minutes:00}:{seconds:00}.{milliseconds:000}");
     }
 }
 
@@ -719,7 +722,7 @@ public sealed record ExpressionPropertyRowViewModel
             {
                 return localizer.GetString("Expression.Value.NotSet");
             }
-            return ExpressionChapterRowViewModel.FormatTicks(duration.Ticks, CultureInfo.CurrentUICulture);
+            return ExpressionChapterRowViewModel.FormatTicks(duration.Ticks);
         }
 
         if (value is string text && property is "Title" or "SourceName" or "Name")

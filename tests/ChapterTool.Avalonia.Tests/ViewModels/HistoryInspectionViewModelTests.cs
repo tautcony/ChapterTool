@@ -248,8 +248,8 @@ public sealed class HistoryInspectionViewModelTests
         await history.LastInspection;
 
         var rows = viewModel.VisibleChanges.ToDictionary(row => row.Field, StringComparer.Ordinal);
-        Assert.Equal("00:00:00.0000000", rows["Start time"].BeforeText);
-        Assert.Contains("+00:00:01.0000005", rows["Start time"].DeltaText);
+        Assert.Equal("00:00:00.000", rows["Start time"].BeforeText);
+        Assert.Equal("+00:00:01.000", rows["Start time"].DeltaText);
         Assert.Equal("Not present", rows["Name"].BeforeText);
         Assert.Equal("Empty", rows["Name"].AfterText);
         Assert.Equal("Marker", rows["Type"].BeforeText);

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Transform;
 
 #pragma warning disable CS1591
 
@@ -82,7 +83,9 @@ public static class ExpressionPreviewProjector
 {
     public static ExpressionPreviewProjection Build(
         ChapterContentPreview preview,
-        ChapterTrackId? scopeTrackId = null)
+        ChapterTrackId? scopeTrackId = null,
+        decimal? displayFrameRate = null,
+        int frameDecimalPlaces = -1)
     {
         ArgumentNullException.ThrowIfNull(preview);
         var targetIds = preview.TargetIds;
@@ -134,8 +137,8 @@ public static class ExpressionPreviewProjector
                 track.Name,
                 before,
                 candidate,
-                ToFrameValue(before, beforeTrack, preview.Before.FrameRate),
-                ToFrameValue(candidate, candidateTrack, preview.Candidate.FrameRate),
+                ToFrameValue(before, beforeTrack, preview.Before.FrameRate, displayFrameRate, frameDecimalPlaces),
+                ToFrameValue(candidate, candidateTrack, preview.Candidate.FrameRate, displayFrameRate, frameDecimalPlaces),
                 changes));
         }
 
@@ -244,17 +247,34 @@ public static class ExpressionPreviewProjector
     private static ExpressionFrameValue? ToFrameValue(
         EditableChapter? chapter,
         EditableChapterTrack? track,
-        ChapterFrameRate? documentRate)
+        ChapterFrameRate? documentRate,
+        decimal? displayFrameRate,
+        int frameDecimalPlaces)
     {
         if (chapter is null)
         {
             return null;
         }
 
-        long? frameCount = long.TryParse(chapter.FramesInfo, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
-            ? parsed
-            : null;
         var rate = track?.Segments.FirstOrDefault()?.FrameRate ?? documentRate;
+        if (displayFrameRate is > 0)
+        {
+            var frames = (decimal)chapter.StartTicks / TimeSpan.TicksPerSecond * displayFrameRate.Value;
+            var text = frameDecimalPlaces == 0
+                ? ChapterRounding.RoundToInt64(frames).ToString(CultureInfo.InvariantCulture)
+                : frameDecimalPlaces > 0
+                    ? frames.ToString($"F{Math.Clamp(frameDecimalPlaces, 1, 6)}", CultureInfo.InvariantCulture)
+                    : frames.ToString(CultureInfo.InvariantCulture);
+            var formattedAccuracy = frameDecimalPlaces == 0 ? chapter.FrameAccuracy : FrameAccuracy.Neutral;
+            long? formattedCount = long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : null;
+            return new ExpressionFrameValue(text, formattedCount, rate, formattedAccuracy);
+        }
+
+        long? frameCount = long.TryParse(chapter.FramesInfo, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedFrames)
+            ? parsedFrames
+            : null;
         return new ExpressionFrameValue(chapter.FramesInfo, frameCount, rate, chapter.FrameAccuracy);
     }
 

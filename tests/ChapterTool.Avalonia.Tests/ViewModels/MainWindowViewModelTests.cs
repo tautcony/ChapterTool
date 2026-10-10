@@ -1357,6 +1357,63 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(originalName, save.LastInfo.Chapters[0].Name);
     }
 
+    [Fact]
+    public async Task Inline_time_preview_is_hidden_when_values_match_at_millisecond_precision()
+    {
+        var start = TimeSpan.FromTicks(1_000);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24,
+            TimeSpan.FromSeconds(1), [new Chapter(1, start, "Submillisecond")]);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var row = Assert.Single(vm.Rows);
+
+        vm.Expression = "t + 0.0001";
+        vm.RefreshExpressionPreviewNow();
+
+        Assert.Equal("00:00:00.000", row.TimeText);
+        Assert.False(row.HasPreviewTimeChange);
+        Assert.Empty(row.PreviewBeforeTimeText);
+        Assert.Empty(row.PreviewTimeText);
+        Assert.Empty(row.PreviewTimeDelta);
+        Assert.False(row.HasPreviewFramesChange);
+    }
+
+    [Fact]
+    public async Task Inline_time_preview_uses_fixed_millisecond_precision()
+    {
+        var start = TimeSpan.FromTicks(1_000);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24,
+            TimeSpan.FromSeconds(1), [new Chapter(1, start, "Submillisecond")]);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var row = Assert.Single(vm.Rows);
+
+        vm.Expression = "t + 0.0006";
+        vm.RefreshExpressionPreviewNow();
+
+        Assert.Equal("00:00:00.000", row.PreviewBeforeTimeText);
+        Assert.Equal("00:00:00.001", row.PreviewTimeText);
+        Assert.Equal("+00:00:00.001", row.PreviewTimeDelta);
+    }
+
+    [Fact]
+    public async Task Inline_frame_preview_preserves_unrounded_display_when_rounding_is_disabled()
+    {
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24,
+            TimeSpan.FromSeconds(1), [new Chapter(1, TimeSpan.Zero, "Intro")]);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SetFrameOptions(frameRateIndex: 3, roundFrames: false);
+
+        vm.Expression = "t + 0.0004";
+        vm.RefreshExpressionPreviewNow();
+
+        var row = Assert.Single(vm.Rows);
+        Assert.True(row.HasPreviewFramesChange);
+        Assert.Equal("0", row.PreviewBeforeFrames);
+        Assert.Equal("0.0096", row.PreviewFrames);
+    }
+
 
     [Fact]
     public async Task ExpressionDraftDoesNotRunDuringOptionPreviewOrExport()

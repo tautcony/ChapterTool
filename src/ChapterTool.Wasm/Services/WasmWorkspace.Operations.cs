@@ -32,7 +32,7 @@ public sealed partial class WasmWorkspace
     private object CaptureContentDraft(string operation) => operation switch
     {
         "Apply chapter options" => (ChapterNameModeIndex, OrderShift, ChapterNameTemplateText),
-        "Shift chapter frames" => (SelectedFrameRateIndex, FramesPerSecond),
+        "Shift chapter frames" => (SelectedFrameRateIndex, ExactFramesPerSecond),
         "Change chapter frame rate" => SelectedFrameRateIndex,
         _ => operation
     };
@@ -54,7 +54,7 @@ public sealed partial class WasmWorkspace
             ? new(false, document, [], [localizer.T("Parity.InvalidShift")])
             : candidateBuilder.ShiftFrames(document,
                 document.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator)
-                    .Select(chapter => chapter.Id).ToHashSet(), frames, (decimal)FramesPerSecond));
+                    .Select(chapter => chapter.Id).ToHashSet(), frames, ExactFramesPerSecond));
 
     /// <summary>Prepares a preview that changes the chapter frame rate to the selected rate.</summary>
     public ChapterContentPreview? PrepareFrameRatePreview() => PrepareContentPreview("Change chapter frame rate", document =>

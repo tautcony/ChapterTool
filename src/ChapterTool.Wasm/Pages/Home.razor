@@ -236,7 +236,8 @@
                                     @if (!row.IsSeparator && Workspace.FramesPerSecond > 0)
                                     {
                                         @if (showExpressionCandidate && expressionComparison is { CandidateFrames: not null } framesChange
-                                            && (framesChange.Changes & ExpressionChapterChangeKind.FrameInformation) != 0)
+                                            && (framesChange.Changes & ExpressionChapterChangeKind.FrameInformation) != 0
+                                            && !string.Equals(framesChange.BeforeFrames?.Text, framesChange.CandidateFrames.Text, StringComparison.Ordinal))
                                         { <span class="expression-cell-preview frame-text"><span>@framesChange.BeforeFrames?.Text</span><span aria-hidden="true"> → </span><strong>@framesChange.CandidateFrames.Text</strong></span> }
                                         else { <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo" Label="@($"{L.T("Grid.Frames")} {index + 1}")" CssClass="@($"frame-text {(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")}")" Disabled="@(Workspace.IsBusy || showExpressionCandidate)" /> }
                                     }

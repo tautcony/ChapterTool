@@ -26,7 +26,8 @@ public sealed partial class MainWindowViewModel
         var preview = pendingContentPreview;
         IReadOnlyDictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison> comparisons = preview is { IsValid: true }
             && Workspace.IsContentTokenCurrent(preview.BaseToken)
-            ? ExpressionPreviewProjector.Build(preview).Chapters.ToDictionary(item => (item.TrackId, item.Id))
+            ? ExpressionPreviewProjector.Build(preview, displayFrameRate: DisplayFrameRate, frameDecimalPlaces: PreviewFrameDecimalPlaces)
+                .Chapters.ToDictionary(item => (item.TrackId, item.Id))
             : new Dictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison>();
         foreach (var row in Rows)
         {
@@ -36,10 +37,10 @@ public sealed partial class MainWindowViewModel
                     : null;
             row.UpdatePreviewComparison(comparison, DisplayFrameRate, Localizer.GetString("Expression.Value.NotCalculated"));
             row.PreviewTimeText = row.HasPreviewTimeChange && row.PreviewComparison?.Candidate is { } candidate
-                ? ExpressionChapterRowViewModel.FormatTicks(candidate.StartTicks, CultureInfo.CurrentUICulture)
+                ? ExpressionChapterRowViewModel.FormatTicks(candidate.StartTicks)
                 : string.Empty;
             row.PreviewBeforeTimeText = row.HasPreviewTimeChange && row.PreviewComparison?.Before is { } before
-                ? ExpressionChapterRowViewModel.FormatTicks(before.StartTicks, CultureInfo.CurrentUICulture)
+                ? ExpressionChapterRowViewModel.FormatTicks(before.StartTicks)
                 : string.Empty;
             row.PreviewTimeDelta = row.PreviewComparison is { } timeComparison && row.HasPreviewTimeChange
                 ? new ExpressionChapterRowViewModel(timeComparison, showFrames: false, Localizer).DeltaValue
@@ -89,6 +90,12 @@ public sealed partial class MainWindowViewModel
     }
 
     internal decimal DisplayFrameRate { get; private set; }
+
+    private int PreviewFrameDecimalPlaces => RoundFrames
+        ? 0
+        : EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces
+            ? EditingOptions.EffectiveFrameDecimalPlaces
+            : -1;
 
     internal void RefreshRowsFromPort() => RefreshRows();
 

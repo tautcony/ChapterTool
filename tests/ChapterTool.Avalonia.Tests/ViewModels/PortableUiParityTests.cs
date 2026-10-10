@@ -97,6 +97,9 @@ public sealed class PortableUiParityTests
         Assert.True(await web.ApplyContentPreviewAsync());
         AssertRows(desktop, web);
 
+        var desktopShiftedTicks = desktop.ToolSession.ContentOperations.PrepareContentOptions().Before.Tracks[0].Chapters[0].StartTicks;
+        var webShiftedTicks = web.PrepareNamingPreview()!.Before.Tracks[0].Chapters[0].StartTicks;
+        Assert.Equal(desktopShiftedTicks, webShiftedTicks);
         var desktopExpression = desktop.ToolSession.ContentOperations.PrepareExpression("t / 2");
         web.PrepareExpressionPreview("t / 2");
         Assert.Equal(TransactionOutcomeKind.Committed, (await desktop.ToolSession.ContentOperations.ApplyAsync(desktopExpression)).Kind);
@@ -165,6 +168,8 @@ public sealed class PortableUiParityTests
         Assert.Equal((desktopDocument.Title, desktopDocument.SourceName, desktopDocument.ImportFormat, desktopDocument.Duration, desktopDocument.FrameRate),
             (webDocument.Title, webDocument.SourceName, webDocument.ImportFormat, webDocument.Duration, webDocument.FrameRate));
         Assert.Equal(desktopDocument.Tracks.Select(track => track.Name), webDocument.Tracks.Select(track => track.Name));
+        Assert.Equal(desktopDocument.Tracks.SelectMany(track => track.Chapters).Select(chapter => chapter.StartTicks),
+            webDocument.Tracks.SelectMany(track => track.Chapters).Select(chapter => chapter.StartTicks));
         Assert.Equal(desktopDocument.Tracks.SelectMany(track => track.Segments).Select(segment => (segment.StartTicks, segment.Duration, segment.FrameRate, segment.SourceFrameRate)),
             webDocument.Tracks.SelectMany(track => track.Segments).Select(segment => (segment.StartTicks, segment.Duration, segment.FrameRate, segment.SourceFrameRate)));
     }

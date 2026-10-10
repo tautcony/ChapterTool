@@ -75,7 +75,7 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
         chapters[index] = chapter with
         {
-            StartTime = TimeSpan.FromSeconds((double)seconds),
+            StartTime = TimeSpan.FromTicks(ChapterRounding.RoundToInt64(seconds * TimeSpan.TicksPerSecond)),
             FramesInfo = frame.ToString("0", CultureInfo.InvariantCulture),
             FrameAccuracy = FrameAccuracy.Accurate
         };

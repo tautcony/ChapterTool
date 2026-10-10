@@ -72,7 +72,21 @@ public sealed class ChapterRowViewModel(
         }
     }
 
-    public bool HasPreviewTimeChange => ((PreviewComparison?.Changes ?? ExpressionChapterChangeKind.None) & ExpressionChapterChangeKind.Time) != ExpressionChapterChangeKind.None;
+    public bool HasPreviewTimeChange
+    {
+        get
+        {
+            if (((PreviewComparison?.Changes ?? ExpressionChapterChangeKind.None) & ExpressionChapterChangeKind.Time) == ExpressionChapterChangeKind.None
+                || PreviewComparison?.Before is not { } before
+                || PreviewComparison.Candidate is not { } candidate)
+            {
+                return false;
+            }
+
+            return formatter.Format(TimeSpan.FromTicks(before.StartTicks))
+                != formatter.Format(TimeSpan.FromTicks(candidate.StartTicks));
+        }
+    }
 
     public bool HasPreviewNameChange => PreviewComparison is { Changes: var changes, Before: var before, Candidate: var candidate }
         && (changes & ExpressionChapterChangeKind.OtherProperties) != ExpressionChapterChangeKind.None
@@ -82,7 +96,10 @@ public sealed class ChapterRowViewModel(
         && (changes & ExpressionChapterChangeKind.OtherProperties) != ExpressionChapterChangeKind.None
         && before?.DisplayNumber != candidate?.DisplayNumber;
 
-    public bool HasPreviewFramesChange => ((PreviewComparison?.Changes ?? ExpressionChapterChangeKind.None) & ExpressionChapterChangeKind.FrameInformation) != ExpressionChapterChangeKind.None;
+    public bool HasPreviewFramesChange =>
+        ((PreviewComparison?.Changes ?? ExpressionChapterChangeKind.None) & ExpressionChapterChangeKind.FrameInformation) != ExpressionChapterChangeKind.None
+        && PreviewComparison?.CandidateFrames is { } candidateFrames
+        && !string.Equals(previewFrameBaseline, candidateFrames.Text, StringComparison.Ordinal);
 
     public string PreviewTimeText { get => previewTimeText; internal set => SetProperty(ref previewTimeText, value); }
 

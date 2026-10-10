@@ -68,10 +68,11 @@ public sealed class ChapterExpressionService
                 diagnostics.Add(diagnostic);
             }
 
+            var startTime = TimeSpan.FromTicks(ChapterRounding.RoundToInt64(normalized * TimeSpan.TicksPerSecond));
             var frameDisplay = FormatFrames(normalized, framesPerSecond);
             return chapter with
             {
-                StartTime = TimeSpan.FromSeconds((double)normalized),
+                StartTime = startTime,
                 FramesInfo = frameDisplay.Text,
                 FrameAccuracy = frameDisplay.Accuracy
             };

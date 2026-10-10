@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
 using Lua;
@@ -202,7 +203,11 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
 
         try
         {
-            return new ChapterExpressionEvaluationResult(true, (decimal)number, []);
+            var exactRoundTrip = number.ToString("R", CultureInfo.InvariantCulture);
+            return new ChapterExpressionEvaluationResult(
+                true,
+                decimal.Parse(exactRoundTrip, NumberStyles.Float, CultureInfo.InvariantCulture),
+                []);
         }
         catch (OverflowException exception)
         {

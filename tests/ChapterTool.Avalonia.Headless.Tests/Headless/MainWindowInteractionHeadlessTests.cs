@@ -38,6 +38,7 @@ public sealed class MainWindowInteractionHeadlessTests
 
         await host.ViewModel.SaveCommand.ExecuteAsync();
         Assert.Equal(1, host.SaveService.Calls);
+        host.ViewModel.OrderShift = 0;
 
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
         var tags = grid.Columns

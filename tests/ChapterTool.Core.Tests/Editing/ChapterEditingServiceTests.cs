@@ -29,6 +29,14 @@ public sealed class ChapterEditingServiceTests
         Assert.Equal(FrameAccuracy.Accurate, result.ChapterSet.Chapters[1].FrameAccuracy);
     }
 
+    [Fact]
+    public void EditFrame_uses_decimal_tick_conversion_for_fractional_frame_rates()
+    {
+        var result = service.EditFrame(Sample(), 1, "240 frames", 24000m / 1001m);
+
+        Assert.Equal(100_100_000, result.ChapterSet.Chapters[1].StartTime.Ticks);
+    }
+
     [Theory]
     [InlineData("999999999999999999999999999999999999999 frames", 24)]
     [InlineData("99999999999999999999999999999 frames", 0.000000001)]
