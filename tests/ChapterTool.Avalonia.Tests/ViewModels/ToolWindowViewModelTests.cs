@@ -277,7 +277,8 @@ public sealed class ToolWindowViewModelTests
         await owner.LoadCommand.ExecuteAsync("movie.txt");
         var operations = new DeferredContentOperationPort(owner.ToolSession.ContentOperations, completion: null, forceNoChange: true);
         using var expression = new ExpressionToolViewModel(owner.ToolSession.Expression,
-            contentOperations: operations) { Expression = "t + 2" };
+            contentOperations: operations);
+        expression.Expression = "t + 2";
 
         expression.RefreshPreviewNow();
 
