@@ -22,11 +22,15 @@ Closing or replacing a session SHALL invalidate its token, cancel its outstandin
 - **THEN** it SHALL NOT mutate the new session or its export baseline
 
 #### Scenario: Session ends
-- **WHEN** the user confirms closing or replacing the active session
+- **WHEN** the desktop window closes or the user confirms replacing the active session
 - **THEN** its history SHALL become unreachable from the host while a captured export may finish with content only
 
+#### Scenario: Window close is canceled
+- **WHEN** another close handler cancels the desktop window close
+- **THEN** the active session and its lifetime token SHALL remain valid
+
 ### Requirement: Hosts explain session-only history before destructive replacement
-Application-initiated close, reload, or replacement SHALL offer a continue/cancel choice when the current session has history, an active draft, or unexported content. Browser refresh or process termination SHALL NOT be represented as recoverable history.
+Reload or replacement SHALL offer a continue/cancel choice when the current session has history, an active draft, or unexported content. Closing the desktop window SHALL end the session without a session-loss confirmation. Browser refresh or process termination SHALL NOT be represented as recoverable history.
 
 #### Scenario: User cancels replacement
 - **WHEN** the user cancels the loss confirmation
@@ -46,4 +50,3 @@ Successful export SHALL record the captured track's canonical content digest, fo
 #### Scenario: One track is exported
 - **WHEN** a document with multiple tracks exports one track
 - **THEN** other tracks SHALL remain unexported unless separately included in a successful export
-

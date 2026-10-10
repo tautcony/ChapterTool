@@ -178,6 +178,8 @@ Shortcut catalog and routing tests belong in `tests/ChapterTool.Avalonia.Tests`.
 
 `HistoryInspectionHeadlessTests` covers rendered history details, empty change filters, retry and restore failure feedback, alternate redo choices, and pending preview lifetime. Keep these workflows in the isolated Avalonia Headless test project.
 
+`MainWindowCloseHeadlessTests` verifies that closing the desktop window ends its document session without a history prompt. It also verifies that a canceled close keeps the session active.
+
 `EmbeddedHistoryHeadlessTests` covers history inspection through the embedded host. It verifies footer bounds at 520x420 and 520x600. It also verifies content detachment and tool-state disposal on close.
 
 LogTool coverage is split by boundary. `LogToolViewModelTests` covers list-first projection, severity and text filters, compact summaries, explicit inspector selection, search highlights, flat structured properties, raw values, live updates, eviction handling, localization, and secondary command state. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogPanelProviderTests.cs` covers append-order snapshots, minimum-level filtering, bounded retention, clear notifications, and concurrent access. `tests/ChapterTool.Infrastructure.Tests/ApplicationLogFileExporterTests.cs` covers UTF-8 JSON and CSV output, deterministic ordering, CSV quoting, output paths, and recoverable failures. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/AuxiliaryToolHeadlessTests.cs` and `UiResourceResolutionHeadlessTests.cs` cover rendered list and inspector workflows, keyboard close behavior, responsive layouts, and locale resource resolution.
