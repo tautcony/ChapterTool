@@ -13,6 +13,7 @@
                 <option value="">@L.T("Parity.LogAll")</option>
                 @foreach (var level in new[] { "Info", "Warning", "Error" }) { <option value="@level">@LevelName(level)</option> }
             </select>
+            <button type="button" class="secondary" disabled="@(view.Search.Length == 0 && view.Severity.Length == 0)" @onclick="ResetFilters">@L.T("Tool.Log.ResetFilters")</button>
             <output aria-live="polite">@L.Format("Parity.LogCount", view.Visible.Count)</output>
         </div>
         <div class="log-surfaces @(view.InspectorOpen ? "inspecting" : null)">
@@ -38,6 +39,8 @@
                     <p>@selected.Message</p>
                     @if (!string.IsNullOrWhiteSpace(selected.Details)) { <pre>@selected.Details</pre> }
                     <details><summary>@L.T("Parity.LogRaw")</summary><pre>@System.Text.Json.JsonSerializer.Serialize(selected)</pre></details>
+                    <button type="button" class="secondary" @onclick="() => CopyTextAsync(selected.Message)">@L.T("Tool.Log.CopySummary")</button>
+                    <button type="button" class="secondary" disabled="@string.IsNullOrWhiteSpace(selected.Details)" @onclick="() => CopyTextAsync(selected.Details)">@L.T("Tool.Log.CopyDetails")</button>
                     <button type="button" class="secondary" @onclick="CopyAsync">@L.T("Text.Copy")</button>
                 </section>
             }
@@ -65,6 +68,12 @@
     public void Dispose() => Workspace.Changed -= Changed;
     protected override void OnParametersSet() => view?.Refresh();
     private void Refresh() => view.Refresh();
+    private void ResetFilters()
+    {
+        view.Search = string.Empty;
+        view.Severity = string.Empty;
+        view.Refresh();
+    }
     private void Inspect(WasmLogEntry entry) { view.SelectedId = entry.Id; view.InspectorOpen = true; pendingFocus = "log-back"; }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -85,7 +94,12 @@
     private async Task CopyAsync()
     {
         if (view.Selected is not { } selected) return;
-        try { await Js.InvokeVoidAsync("chapterToolWasm.copyText", System.Text.Json.JsonSerializer.Serialize(selected)); status = L.T("Copy.Preview"); }
+        await CopyTextAsync(System.Text.Json.JsonSerializer.Serialize(selected));
+    }
+    private async Task CopyTextAsync(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+        try { await Js.InvokeVoidAsync("chapterToolWasm.copyText", text); status = L.T("Copy.Preview"); }
         catch (JSException) { status = L.T("Parity.LogFailed"); }
     }
     private async Task ExportAsync(bool csv)

@@ -52,7 +52,7 @@ Default URL: `http://localhost:5261`
 | **Order +** | Display number shift |
 | **XML lang** | Enabled only for XML export |
 | **Settings** | Draft output, appearance, and shared shortcuts. Save persists before activation. Close can discard a changed draft or keep editing. Settings do not replay content operations. |
-| **Log** | Filter the bounded list by severity and text. Open details explicitly. Copy an entry or download a captured filtered JSON/CSV snapshot. |
+| **Log** | Filter the bounded list by severity and text, then reset both filters together. Open details explicitly. Copy an entry or download a captured filtered JSON/CSV snapshot. |
 | **Selection / context actions** | Ctrl/Shift multi-select; batch delete, `--zones`, Preview, forward translation, and related-media references |
 | **Drag and drop / language** | Drop-to-load with size/read errors; `en-US`, `zh-CN`, and `ja-JP` UI dictionaries |
 
