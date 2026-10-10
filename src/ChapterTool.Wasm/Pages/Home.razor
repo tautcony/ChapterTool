@@ -8,6 +8,7 @@
 @using FrameDisplayModes = ChapterTool.Contracts.Configuration.FrameDisplayModes
 @using ContractFrameDisplayMode = ChapterTool.Contracts.Configuration.FrameDisplayMode
 @using ChapterTool.Core.Editing
+@using ChapterTool.Core.Session
 @using ChapterTool.Contracts.Shortcuts
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
@@ -186,28 +187,46 @@
                         {
                             var index = i;
                             var row = Workspace.Rows[i];
+                            var expressionComparison = ExpressionComparison(row);
+                            var showExpressionCandidate = ShowMainExpressionCandidate;
                             <tr @key="row.Id" tabindex="0" class="@(row.IsSeparator ? "separator" : null) @(Workspace.IsRowSelected(index) ? "selected" : null)"
                                 @onclick="e => OnRowClick(index, e)"
                                 @oncontextmenu="e => OpenContextMenu(index, e)"
                                 @oncontextmenu:preventDefault>
-                                <td class="col-num">@(row.IsSeparator ? "—" : row.Number.ToString())</td>
+                                <td class="col-num">
+                                    @if (showExpressionCandidate && expressionComparison is { Before: not null, Candidate: not null } numberChange
+                                        && numberChange.Before.DisplayNumber != numberChange.Candidate.DisplayNumber)
+                                    { <span class="expression-cell-preview"><span>@numberChange.Before.DisplayNumber</span><span aria-hidden="true"> → </span><strong>@numberChange.Candidate.DisplayNumber</strong></span> }
+                                    else { @(row.IsSeparator ? "—" : row.Number.ToString()) }
+                                </td>
                                 <td class="col-time">
                                     @if (row.IsSeparator)
                                     {
                                         <span></span>
                                     }
+                                    else if (showExpressionCandidate && expressionComparison is { Before: not null, Candidate: not null } timeChange
+                                        && (timeChange.Changes & ExpressionChapterChangeKind.Time) != 0)
+                                    {
+                                        <span class="expression-cell-preview"><span>@Workspace.FormatExpressionTimeTicks(timeChange.Before.StartTicks)</span><span aria-hidden="true"> → </span><strong>@Workspace.FormatExpressionTimeTicks(timeChange.Candidate.StartTicks)</strong><span class="expression-delta">(@FormatExpressionDelta(timeChange.DeltaTicks))</span></span>
+                                    }
                                     else
                                     {
-                                        <ChapterCellEditor Index="@index" Field="ChapterCellField.StartTime" Value="@row.TimeText" Label="@($"{L.T("Grid.Time")} {index + 1}")" Disabled="@Workspace.IsBusy" />
+                                        <ChapterCellEditor Index="@index" Field="ChapterCellField.StartTime" Value="@row.TimeText" Label="@($"{L.T("Grid.Time")} {index + 1}")" Disabled="@(Workspace.IsBusy || showExpressionCandidate)" />
                                     }
                                 </td>
                                 <td class="col-name">
-                                    <ChapterCellEditor Index="@index" Field="ChapterCellField.Name" Value="@row.Name" Label="@($"{L.T("Grid.Name")} {index + 1}")" Disabled="@Workspace.IsBusy" />
+                                    @if (showExpressionCandidate && expressionComparison is { Before: not null, Candidate: not null } nameChange
+                                        && nameChange.Before.Name != nameChange.Candidate.Name)
+                                    { <span class="expression-cell-preview"><span>@nameChange.Before.Name</span><span aria-hidden="true"> → </span><strong>@nameChange.Candidate.Name</strong></span> }
+                                    else { <ChapterCellEditor Index="@index" Field="ChapterCellField.Name" Value="@row.Name" Label="@($"{L.T("Grid.Name")} {index + 1}")" Disabled="@(Workspace.IsBusy || showExpressionCandidate)" /> }
                                 </td>
                                 <td class="col-frames">
                                     @if (!row.IsSeparator && Workspace.FramesPerSecond > 0)
                                     {
-                                        <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo" Label="@($"{L.T("Grid.Frames")} {index + 1}")" CssClass="@($"frame-text {(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")}")" Disabled="@Workspace.IsBusy" />
+                                        @if (showExpressionCandidate && expressionComparison is { CandidateFrames: not null } framesChange
+                                            && (framesChange.Changes & ExpressionChapterChangeKind.FrameInformation) != 0)
+                                        { <span class="expression-cell-preview frame-text"><span>@framesChange.BeforeFrames?.Text</span><span aria-hidden="true"> → </span><strong>@framesChange.CandidateFrames.Text</strong></span> }
+                                        else { <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo" Label="@($"{L.T("Grid.Frames")} {index + 1}")" CssClass="@($"frame-text {(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")}")" Disabled="@(Workspace.IsBusy || showExpressionCandidate)" /> }
                                     }
                                     else { <span class="frame-text">—</span> }
                                 </td>
@@ -251,9 +270,45 @@
 
             <div class="option-tools">
                 <button type="button" class="secondary" aria-haspopup="dialog" disabled="@(!Workspace.CanRefreshRows)" @onclick="OpenNaming">@L.T("Parity.NamingTitle")</button>
-                <button type="button" class="secondary" aria-haspopup="dialog" disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)" @onclick="() => OpenDialog(DialogKind.Expression)">@L.T("Modal.ExpressionTitle")</button>
                 <button type="button" class="secondary" aria-haspopup="dialog" disabled="@Workspace.IsBusy" @onclick="() => OpenDialog(DialogKind.ExportOptions)">@L.T("Modal.ExportOptionsTitle")</button>
             </div>
+            <section class="inline-expression" aria-label="@L.T("Expression.Preview.Title")">
+                <label for="main-expression-editor">@L.T("Label.Expression")</label>
+                <textarea id="main-expression-editor" value="@Workspace.Expression" aria-label="@L.T("Label.Expression")"
+                          disabled="@Workspace.IsBusy" @oninput="OnMainExpressionInput"></textarea>
+                <InputFile id="main-expression-script" aria-label="@L.T("Tool.Expression.LoadLuaScript")"
+                           OnChange="LoadMainExpressionScriptAsync" accept=".lua,text/*" disabled="@Workspace.IsBusy" />
+                <button type="button" class="secondary" aria-haspopup="dialog"
+                        disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
+                        @onclick="OpenExpressionDialog">@L.T("Tool.Expression.Title")</button>
+                @if (mainExpressionPreviewPending)
+                {
+                    <p role="status" aria-live="polite">@L.T("Expression.Preview.Pending")</p>
+                }
+                else if (Workspace.IsExpressionPreviewStale)
+                {
+                    <p role="status">@L.T("Expression.State.Stale")</p>
+                    <button type="button" class="secondary" @onclick="RefreshMainExpressionPreview">@L.T("Expression.Action.Refresh")</button>
+                    <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                }
+                else if (Workspace.ExpressionPreview is { IsValid: false } invalidExpressionPreview)
+                {
+                    <div role="alert" class="inline-expression-errors">
+                        @foreach (var error in invalidExpressionPreview.Errors) { <p>@error</p> }
+                    </div>
+                    <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                }
+                else if (Workspace.ExpressionPreviewProjection is { } expressionProjection && Workspace.ExpressionPreview is not null)
+                {
+                    <p role="status" aria-live="polite">@L.Format("Expression.Review.TimeSummary", expressionProjection.TimeChangedChapterCount, expressionProjection.ParticipatingChapterCount)</p>
+                    <p class="inline-expression-summary">@L.Format("Expression.Review.OtherSummary", expressionProjection.AffectedChapterCount, expressionProjection.FrameInformationChangedChapterCount, expressionProjection.Properties.Length)</p>
+                    @if (expressionProjection.HasChanges)
+                    {
+                        <button type="button" class="primary" disabled="@Workspace.IsBusy" @onclick="ApplyMainExpressionPreviewAsync">@L.T("Expression.Action.Apply")</button>
+                    }
+                    <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                }
+            </section>
         </div>
     </div>
 
@@ -625,6 +680,8 @@
     private DialogKind activeDialog;
     private string contentOperation = "naming";
     private bool isDragOver;
+    private bool mainExpressionPreviewPending;
+    private CancellationTokenSource? mainExpressionPreviewCancellation;
     private int settingsTab;
     private ShortcutSettings shortcuts = WasmShortcuts.Normalize(null);
     private ShortcutSettings draftShortcuts = WasmShortcuts.Normalize(null);
@@ -737,6 +794,8 @@
     {
         Workspace.Changed -= OnWorkspaceChanged;
         L.CultureChanged -= OnCultureChanged;
+        mainExpressionPreviewCancellation?.Cancel();
+        mainExpressionPreviewCancellation?.Dispose();
         dropZoneRef?.Dispose();
     }
 
@@ -1061,6 +1120,113 @@
         PushExportOptions();
         PushProjectionOptions();
         Workspace.RefreshRows();
+    }
+
+    private bool ShowMainExpressionCandidate => !mainExpressionPreviewPending
+        && !Workspace.IsExpressionPreviewStale
+        && Workspace.ExpressionPreview is { IsValid: true }
+        && Workspace.ExpressionPreviewProjection is { HasChanges: true };
+
+    private ExpressionChapterComparison? ExpressionComparison(ChapterRowModel row) =>
+        Workspace.ExpressionPreviewProjection?.Chapters.FirstOrDefault(item => item.Id == row.Id);
+
+    private string FormatExpressionDelta(long? ticks)
+    {
+        if (ticks is null)
+        {
+            return L.T("Expression.Value.Missing");
+        }
+
+        var value = Workspace.FormatExpressionTimeTicks(Math.Abs(ticks.Value));
+        return ticks > 0 ? "+" + value : ticks < 0 ? "−" + value : value;
+    }
+
+    private async Task OnMainExpressionInput(ChangeEventArgs args)
+    {
+        mainExpressionPreviewCancellation?.Cancel();
+        mainExpressionPreviewCancellation?.Dispose();
+        Workspace.CancelExpressionPreview();
+        Workspace.Expression = args.Value?.ToString() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(Workspace.Expression) || Workspace.IsChapterGridEmpty)
+        {
+            mainExpressionPreviewPending = false;
+            return;
+        }
+
+        var cancellation = mainExpressionPreviewCancellation = new CancellationTokenSource();
+        mainExpressionPreviewPending = true;
+        try
+        {
+            await Task.Delay(250, cancellation.Token);
+            if (!cancellation.IsCancellationRequested)
+            {
+                Workspace.PrepareExpressionPreview(Workspace.Expression);
+                mainExpressionPreviewPending = false;
+            }
+        }
+        catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+        {
+        }
+        if (!cancellation.IsCancellationRequested)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OpenExpressionDialog()
+    {
+        mainExpressionPreviewCancellation?.Cancel();
+        mainExpressionPreviewPending = false;
+        if (!string.IsNullOrWhiteSpace(Workspace.Expression) && !Workspace.IsChapterGridEmpty)
+        {
+            Workspace.PrepareExpressionPreview(Workspace.Expression);
+        }
+        OpenDialog(DialogKind.Expression);
+    }
+
+    private async Task LoadMainExpressionScriptAsync(InputFileChangeEventArgs args)
+    {
+        try
+        {
+            await using var stream = args.File.OpenReadStream(2 * 1024 * 1024);
+            using var reader = new StreamReader(stream, new UTF8Encoding(false, true), true);
+            var script = await reader.ReadToEndAsync();
+            Workspace.ClearExpressionPresetSelection();
+            Workspace.ExpressionSourceName = args.File.Name;
+            await OnMainExpressionInput(new ChangeEventArgs { Value = script });
+        }
+        catch (Exception exception) when (exception is IOException or DecoderFallbackException)
+        {
+            Workspace.SetStatusMessage(L.T("Parity.ScriptLoadFailed"));
+        }
+    }
+
+    private async Task ApplyMainExpressionPreviewAsync()
+    {
+        if (!ShowMainExpressionCandidate || Workspace.IsBusy)
+        {
+            return;
+        }
+
+        await Workspace.ApplyExpressionPreviewAsync();
+    }
+
+    private void DiscardMainExpressionPreview()
+    {
+        mainExpressionPreviewCancellation?.Cancel();
+        mainExpressionPreviewPending = false;
+        Workspace.CancelExpressionPreview();
+    }
+
+    private void RefreshMainExpressionPreview()
+    {
+        if (Workspace.IsBusy || string.IsNullOrWhiteSpace(Workspace.Expression))
+        {
+            return;
+        }
+
+        Workspace.PrepareExpressionPreview(Workspace.Expression);
+        mainExpressionPreviewPending = false;
     }
 
     private void ClosePreview() => CloseDialog();

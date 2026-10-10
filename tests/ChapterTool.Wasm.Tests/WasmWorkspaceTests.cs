@@ -472,7 +472,7 @@ public sealed class WasmWorkspaceTests
         var refreshed = workspace.PrepareExpressionPreview(workspace.Expression);
         Assert.NotNull(refreshed);
         Assert.False(workspace.IsExpressionPreviewStale);
-        Assert.Contains(refreshed!.Before.Tracks.SelectMany(static track => track.Chapters),
+        Assert.Contains(refreshed.Before.Tracks.SelectMany(static track => track.Chapters),
             chapter => chapter.Name == "Edited after preview");
     }
 

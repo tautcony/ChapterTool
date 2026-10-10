@@ -400,6 +400,50 @@ tr.separator {
   align-items: center;
 }
 
+.inline-expression {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) auto auto auto;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding-top: 0.2rem;
+}
+
+.inline-expression textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.25rem;
+  max-height: 8rem;
+  resize: vertical;
+  font-family: var(--mono);
+}
+
+.inline-expression > p,
+.inline-expression-errors {
+  grid-column: 1 / -1;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.inline-expression-summary {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.expression-cell-preview {
+  display: inline-flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.25rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.expression-cell-preview strong {
+  color: var(--accent);
+}
+
 .option-cell {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -1079,6 +1123,17 @@ input:disabled {
   .option-name-mode {
     grid-column: 1;
     grid-row: auto;
+  }
+
+  .inline-expression {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .inline-expression > label,
+  .inline-expression textarea,
+  .inline-expression > p,
+  .inline-expression-errors {
+    grid-column: 1 / -1;
   }
 
   .option-cell {

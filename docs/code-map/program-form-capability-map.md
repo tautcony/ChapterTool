@@ -160,8 +160,8 @@ They do not describe product priority.
 | Chapter name preservation | Provides projection options | Preserves names by default | Provides a source-name option | Provides a source-name option | `ChapterOutputProjectionService` `[Shared]` |
 | Automatic chapter names | Provides projection logic | Uses export projection | Provides an automatic-name option | Provides an automatic-name option | `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` `[Shared]` |
 | Template names | Provides template projection | Does not expose a template file option | Reads a local template file | Reads a browser text file | `ChapterNameTemplateReader` and `WasmWorkspace` `[Host variant]` |
-| Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides expression editing and application | Applies text expressions and Core built-in presets through `WasmWorkspace` | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
-| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Loads Lua files and renders highlighting, completion, and positioned diagnostics | `ExpressionEditor`, `ExpressionDialog.razor`, and `ExpressionAuthoringService` `[Host variant]` |
+| Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides inline expression editing, candidate preview, and application | Provides inline expression editing, candidate preview, and application through `WasmWorkspace` | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
+| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Loads Lua files and renders highlighting, completion, and positioned diagnostics in the inline editor and advanced dialog | `Home.razor`, `ExpressionDialog.razor`, and `ExpressionAuthoringService` `[Host variant]` |
 | Export formats | Provides all Core export formats | Lists and writes all CLI formats | Provides all desktop save formats | Provides all browser save formats | `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs` `[Shared]` |
 | XML language | Provides the language catalog | Supports `--xml-language` | Provides a localized language selector | Provides a language selector | `XmlChapterLanguageCatalog` `[Host variant]` |
 | Text encoding | Provides encoding options | Writes UTF-8 output without a BOM | Uses selected encoding and BOM options | Uses selected encoding and browser download bytes | `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs` `[Host variant]` |
@@ -275,7 +275,8 @@ Start with these paths for browser behavior:
 - Workspace page: `src/ChapterTool.Wasm/Pages/Home.razor`
 - Native dialog lifecycle: `src/ChapterTool.Wasm/Components/WasmDialog.razor` and `src/ChapterTool.Wasm/wwwroot/js/download.js`
 - History dialog: `src/ChapterTool.Wasm/Components/HistoryDialog.razor`
-- Expression draft and debounce: `src/ChapterTool.Wasm/Components/ExpressionDialog.razor`
+- Inline expression draft and candidate workflow: `src/ChapterTool.Wasm/Pages/Home.razor` and `Services/WasmWorkspace.cs`
+- Advanced expression editor: `src/ChapterTool.Wasm/Components/ExpressionDialog.razor`
 - Advanced export draft: `src/ChapterTool.Wasm/Components/ExportOptionsDialog.razor`
 - Reviewed naming, numbering, frame shift, and conversion: `src/ChapterTool.Wasm/Components/ContentOperationDialog.razor` and `Services/WasmWorkspace.Operations.cs`
 - Identity-based cell drafts: `src/ChapterTool.Wasm/Components/ChapterCellEditor.razor`

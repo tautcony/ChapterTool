@@ -43,8 +43,8 @@ Default URL: `http://localhost:5261`
 | **Save** | `ChapterExportService` with bottom options → browser download |
 | **Round frames + FPS** | `FrameRateService.UpdateFrames` fills Frames column (Auto detect or fixed rate) |
 | **Frame rate context menu** | Review source and target FPS before applying one captured conversion candidate |
-| **Expression** | Load bounded UTF-8 Lua files. Use shared highlighting, completion, and positioned diagnostics. Review a candidate before Apply. Cancel restores the entry draft and source. |
-| **Edit history** | A dialog navigates retained branches. Navigation takes effect immediately. |
+| **Expression** | Edit expressions inline and review candidate values in the grid before Apply or Discard. The advanced editor loads bounded UTF-8 Lua files and provides shared highlighting, completion, and positioned diagnostics. |
+| **Edit history** | Expand or collapse retained branches, locate the current node, inspect its field changes, and restore any node. Undo and redo remain available. |
 | **Advanced export options** | Stage XML language, encoding, and BOM preferences. Apply updates output preferences. |
 | **Naming and numbering** | Review automatic names, loaded templates, and integer numbering offsets from 0 to 1000. Apply commits once and clears the active intent. |
 | **Save as** | TXT, XML, QPFile, TimeCodes, … |
