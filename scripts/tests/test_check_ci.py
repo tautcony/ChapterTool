@@ -182,12 +182,14 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(1, ci.main(["--stage", "test-dotnet", "--test-project", "../Other"]))
         run.assert_not_called()
 
-    def test_isolated_infrastructure_requires_real_tools(self):
-        options = ci.parser().parse_args(["--stage", "test-dotnet", "--test-project", "ChapterTool.Infrastructure.Tests", "--step", "run-tests"])
-        with patch.object(ci.shutil, "which", side_effect=lambda name, **kwargs: "dotnet" if name == "dotnet" else None), \
-                patch.object(ci.subprocess, "check_output", return_value="10.0.401"):
-            with self.assertRaisesRegex(ValueError, "ffmpeg.*ffprobe.*mkvextract.*mkvmerge"):
-                ci.preflight(options)
+    def test_isolated_media_consumers_require_real_tools(self):
+        for project in ("ChapterTool.Infrastructure.Tests", "ChapterTool.Avalonia.Tests"):
+            with self.subTest(project=project):
+                options = ci.parser().parse_args(["--stage", "test-dotnet", "--test-project", project, "--step", "run-tests"])
+                with patch.object(ci.shutil, "which", side_effect=lambda name, **kwargs: "dotnet" if name == "dotnet" else None), \
+                        patch.object(ci.subprocess, "check_output", return_value="10.0.401"):
+                    with self.assertRaisesRegex(ValueError, "ffmpeg.*ffprobe.*mkvextract.*mkvmerge"):
+                        ci.preflight(options)
 
     def test_release_nuget_version_applies_to_build_and_pack(self):
         steps = ci.nuget_steps("23.3.2-rc.1")

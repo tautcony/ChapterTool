@@ -234,8 +234,9 @@ def preflight(options: argparse.Namespace) -> None:
         if not sdk.startswith("10."):
             raise ValueError(f"CI requires .NET SDK 10.x; found {sdk}.")
     required = commands.copy()
-    if any(step.key == "test-chaptertool-infrastructure-tests" or
-           (step.key == "run-tests" and options.test_project == "ChapterTool.Infrastructure.Tests") for step in steps):
+    if any(step.key in ("test-chaptertool-infrastructure-tests", "test-chaptertool-avalonia-tests") or
+           (step.key == "run-tests" and options.test_project in
+            ("ChapterTool.Infrastructure.Tests", "ChapterTool.Avalonia.Tests")) for step in steps):
         required.update(("ffmpeg", "ffprobe", "mkvextract", "mkvmerge"))
     environment = tool_environment()
     missing = sorted(name for name in required if not shutil.which(name, path=environment.get("PATH")))

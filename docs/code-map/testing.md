@@ -293,6 +293,7 @@ Pre-push CI entry point:
 - `scripts/check-ci.py` owns build, test, browser, and packaging commands. CI selects its stages and step keys. Each .NET matrix job restores, builds, and tests one solution test project. Each job uses a separate checkout. Local .NET checks run sequentially in separate processes.
 - `scripts/ci/plan-ci.py` reads solution membership and project references. It selects affected consumers from changed paths. Shared Core fixtures also select browser and Node checks. It verifies required job results for `CI ready`. `scripts/tests/test_plan_ci.py` verifies dependency routing, renames, documentation changes, and failure handling.
 - `scripts/tests/test_check_ci.py` verifies command execution, tool requirements, isolated test selection, browser coverage, and platform publish selection. `scripts/ci/check-powershell.ps1` reports publish script parse errors.
+- Infrastructure and Avalonia service test jobs install ffmpeg and mkvtoolnix. Avalonia runtime import tests use the real media readers.
 - `scripts/ci/verify-nuget.py` installs and runs packed Core and CLI consumers. `scripts/tests/test_verify_nuget.py` verifies package membership and version checks.
 - `scripts/ci/resolve-ci-run.py` requires a successful tag CI run for the exact release SHA. `scripts/tests/test_resolve_ci_run.py` verifies artifact provenance and failure handling.
 - `scripts/README.md` documents stage commands, scheduling, distribution, and platform limits. macOS DMG checks require macOS.

@@ -36,6 +36,11 @@ class PlanTests(unittest.TestCase):
         self.assertFalse(plan["jobs"]["pack-nodejs"])
         self.assertFalse(plan["jobs"]["wasm-browser-e2e"])
 
+    def test_media_consumers_receive_integration_tools(self):
+        _, plan = self.labels([], full=True)
+        media = {item["label"] for item in plan["tests"]["include"] if item["media"]}
+        self.assertEqual({"Infrastructure", "Avalonia"}, media)
+
     def test_test_change_runs_only_its_project(self):
         labels, plan = self.labels(["tests/ChapterTool.Core.Tests/Editing/ChangedTests.cs"])
         self.assertEqual({"Core"}, labels)

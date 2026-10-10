@@ -42,7 +42,7 @@ The script does not regenerate translations. Browser reports use `artifacts/wasm
 
 ### Prerequisites
 
-The full local gate requires Python 3.9+, .NET SDK 10.x, Node.js 22.x, uv, PowerShell 7, ffmpeg, and mkvtoolnix. These tools must be on `PATH`. Selected stages require only their own tools. Infrastructure tests require real media tools.
+The full local gate requires Python 3.9+, .NET SDK 10.x, Node.js 22.x, uv, PowerShell 7, ffmpeg, and mkvtoolnix. These tools must be on `PATH`. Selected stages require only their own tools. Infrastructure and Avalonia service tests require real media tools.
 
 On Windows, the script also finds MKVToolNix under `ProgramFiles`, `ProgramFiles(x86)`, and `LOCALAPPDATA`. It changes only the child-process `PATH`. Linux cross-publishing on Windows requires Git Bash. DMG creation requires macOS.
 

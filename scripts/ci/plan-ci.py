@@ -82,7 +82,7 @@ def select_jobs(root: Path, changed: list[str], full: bool = False, master: bool
         "tests": {"include": [{
             "project": Path(project).stem,
             "label": Path(project).stem.removeprefix("ChapterTool.").removesuffix(".Tests"),
-            "media": Path(project).stem == "ChapterTool.Infrastructure.Tests",
+            "media": Path(project).stem in ("ChapterTool.Infrastructure.Tests", "ChapterTool.Avalonia.Tests"),
         } for project in tests]},
     }
 
