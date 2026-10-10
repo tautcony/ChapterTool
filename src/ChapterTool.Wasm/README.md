@@ -86,8 +86,8 @@ The default configuration tests the prepared Release output at
 `http://127.0.0.1:5261/ChapterTool/`. Run `npm --prefix
 tests/ChapterTool.Wasm.E2E run test:e2e:dev` to use the local development
 server at `/`. Use `test:e2e:headed` or `test:e2e:ui` for interactive diagnosis.
-Run all installed engines with `test:e2e` and compare layout snapshots with
-`test:visual` in the fixed Linux CI environment.
+Run all installed engines with `test:e2e`. Layout tests verify bounds, focus,
+real clicks, and scrolling. Screenshots support failure diagnosis.
 
 Playwright writes reports, traces, screenshots, and downloaded files under
 `artifacts/wasm-e2e/`. Open the HTML report with

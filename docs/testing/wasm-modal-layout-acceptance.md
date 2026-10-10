@@ -2,6 +2,8 @@
 
 日期：2026-10-04。变更：[`fix-wasm-modal-layout`](../../openspec/changes/fix-wasm-modal-layout/proposal.md)。变更前基线：`90bb423`。本记录验证本地工作树的 Release 发布产物。
 
+本文保留首次验收证据。固定 Linux 像素基线与比较命令已移除。当前布局由 E2E 与 Avalonia Headless 行为断言验证。
+
 ## 实现结果
 
 - 历史、表达式编辑及预览、高级导出选项使用独立弹窗。
@@ -41,7 +43,7 @@ Firefox 的 DOMRect 可能将 44 CSS 像素表示为 43.999969。目标断言只
 
 共检查 32 张基线。五种主要尺寸分别覆盖闲置、历史、表达式有效结果、表达式错误、高级导出选项和设置。短屏和横屏另覆盖长表达式结果。
 
-基线在 `tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/`。供人工复核的副本和六张汇总图在 `artifacts/wasm-modal-layout/screenshots/`。逐组复核确认标题、输入框、错误列表和页脚没有相互覆盖。长正文需要滚动。截图本身不替代 M01–M08 的行为断言。
+记录中的 32 张像素基线已移除。`layout-behavior.spec.ts` 保留布局行为断言。供人工复核的副本和六张汇总图在 `artifacts/wasm-modal-layout/screenshots/`。逐组复核确认标题、输入框、错误列表和页脚没有相互覆盖。长正文需要滚动。截图本身不替代 M01–M08 的行为断言。
 
 代表性图片：
 

@@ -7,7 +7,6 @@ const baseURL = 'http://127.0.0.1:5261/';
 
 export default defineConfig({
   testDir: './specs',
-  testIgnore: '**/layout.spec.ts',
   outputDir: '../../artifacts/wasm-e2e/results-dev',
   fullyParallel: false,
   workers: 1,

@@ -76,7 +76,7 @@ If OpenSpec lists a change without valid artifacts, report it as an incomplete p
 - `src/ChapterTool.CommandLine`
   - standalone process entry point, DotMake.CommandLine commands, binding, console workflows, and `ChapterTool` NuGet Tool package
 - `.github/workflows/nuget-publish.yml`
-  - version-tag package build and publication
+  - publication of tested version-tag packages
 
 ## Use This Map
 

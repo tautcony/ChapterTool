@@ -52,7 +52,7 @@ test(`P10 FPS review is read-only and applies one exact conversion with Undo (${
   await page.locator('select.fps-box').selectOption('3');
   const open = async () => {
     await page.locator('select.fps-box').dispatchEvent('contextmenu', { button: 2 });
-    await page.getByRole('button', { name: 'Change FPS', exact: true }).click();
+    await page.locator('.context-menu').getByRole('button', { name: 'Change FPS', exact: true }).click();
   };
   await open();
   const dialog = page.getByRole('dialog', { name: 'Change FPS', exact: true });
@@ -199,7 +199,7 @@ test('P03 shortcuts save, conflict, fixed row commands, and settings discard', a
 
 test('P04 Lua files, highlighting, completion, diagnostics, and cancellation', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   await dialog.locator('#expression-script').setInputFiles({ name: 'scale.lua', mimeType: 'text/plain', buffer: Buffer.from('local factor = 2\nreturn t / factor') });
   const editor = dialog.getByLabel('Custom expression', { exact: true });
@@ -218,7 +218,7 @@ test('P04 Lua files, highlighting, completion, diagnostics, and cancellation', a
   await expect(dialog.locator('.lua-diagnostics')).toContainText('Position');
   await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await editor.press('Escape');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   await expect(editor).toHaveValue('t');
   await expect(dialog).not.toContainText('scale.lua');
 });
@@ -265,7 +265,7 @@ test('P06 all rows and changed tools remain reachable at supported sizes', async
   for (const size of sizes) {
     await page.setViewportSize(size);
     for (const title of ['Naming and numbering', 'Expression', 'Settings', 'Log']) {
-      const opener = title === 'Settings' ? page.getByTestId('settings-open') : page.getByRole('button', { name: title, exact: true });
+      const opener = title === 'Settings' ? page.getByTestId('settings-open') : page.getByRole('button', { name: title === 'Expression' ? 'Expression editor' : title, exact: true });
       await opener.click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();

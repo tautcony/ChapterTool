@@ -16,10 +16,14 @@ test('B19 history dialog navigates between retained sibling edits and redoes the
   await expect(name).toHaveValue('Second branch');
 
   await entries.nth(1).click();
+  await expect(name).toHaveValue('Second branch');
+  await history.getByRole('button', { name: 'Restore to this node', exact: true }).click();
   await expect(name).toHaveValue('First branch');
   await entries.nth(2).click();
+  await history.getByRole('button', { name: 'Restore to this node', exact: true }).click();
   await expect(name).toHaveValue('Second branch');
   await entries.nth(0).click();
+  await history.getByRole('button', { name: 'Restore to this node', exact: true }).click();
   await expect(name).toHaveValue('Opening');
   await history.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(name).toHaveValue('Second branch');
@@ -31,8 +35,8 @@ test('B20 expression preview is read-only until applied, then export and undo us
   const secondTime = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Time 2', exact: true });
   await expect(secondTime).toHaveValue('00:00:12.500');
 
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
-  const expression = page.getByLabel('Custom expression', { exact: true });
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
+  const expression = page.getByRole('dialog', { name: 'Expression', exact: true }).getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toContainText('00:00:12.500');
@@ -40,6 +44,7 @@ test('B20 expression preview is read-only until applied, then export and undo us
   await expect(secondTime).toHaveValue('00:00:12.500');
 
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(secondTime).toHaveValue('00:00:12.500');
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const previewDialog = page.getByRole('dialog', { name: 'Preview', exact: true });
   const uncommittedPreview = await previewDialog.locator('[data-testid="preview-content"]').textContent();
@@ -49,7 +54,7 @@ test('B20 expression preview is read-only until applied, then export and undo us
   const uncommittedDownload = await downloadText(page, testInfo);
   expect(uncommittedDownload.content.toString('utf8')).toBe(uncommittedPreview);
 
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   await expression.fill('t / 2');
   await expect(livePreview).toContainText('00:00:06.250');
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
@@ -76,8 +81,8 @@ test('B20 expression preview is read-only until applied, then export and undo us
 test('B21 expression diagnostics cannot be applied and cancel leaves committed rows unchanged', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const secondTime = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Time 2', exact: true });
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
-  const expression = page.getByLabel('Custom expression', { exact: true });
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
+  const expression = page.getByRole('dialog', { name: 'Expression', exact: true }).getByLabel('Custom expression', { exact: true });
   await expression.fill('return bad()');
 
   const livePreview = page.getByTestId('expression-preview');
@@ -92,8 +97,8 @@ test('B21 expression diagnostics cannot be applied and cancel leaves committed r
 test('B22 editing an applied chapter does not rerun its previous expression during export', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const secondTime = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Time 2', exact: true });
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
-  await page.getByLabel('Custom expression', { exact: true }).fill('t / 2');
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
+  await page.getByRole('dialog', { name: 'Expression', exact: true }).getByLabel('Custom expression', { exact: true }).fill('t / 2');
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toBeVisible();
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
@@ -109,8 +114,8 @@ test('B22 editing an applied chapter does not rerun its previous expression duri
 
 test('B23 rapid expression edits display diagnostics only for the latest draft', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
-  const expression = page.getByLabel('Custom expression', { exact: true });
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
+  const expression = page.getByRole('dialog', { name: 'Expression', exact: true }).getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
   await expression.fill('return bad()');
 
@@ -122,7 +127,7 @@ test('B23 rapid expression edits display diagnostics only for the latest draft',
 
 test('B24 expression review shows before and after values and keeps multiline preset edits', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   const editor = dialog.getByLabel('Custom expression', { exact: true });
   const preset = dialog.getByLabel('Preset', { exact: true });
@@ -140,7 +145,7 @@ test('B24 expression review shows before and after values and keeps multiline pr
 
 test('B25 input composition delays calculation until composition ends', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   const editor = dialog.getByLabel('Custom expression', { exact: true });
   await expect(editor).toHaveAttribute('data-composition-ready', 'true');

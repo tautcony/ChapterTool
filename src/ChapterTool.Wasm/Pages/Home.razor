@@ -321,32 +321,35 @@
                 <button type="button" class="secondary" aria-haspopup="dialog"
                         disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
                         @onclick="OpenExpressionDialog">@L.T("Tool.Expression.Title")</button>
-                @if (mainExpressionPreviewPending)
+                @if (activeDialog != DialogKind.Expression)
                 {
-                    <p role="status" aria-live="polite">@L.T("Expression.Preview.Pending")</p>
-                }
-                else if (Workspace.IsExpressionPreviewStale)
-                {
-                    <p role="status">@L.T("Expression.State.Stale")</p>
-                    <button type="button" class="secondary" @onclick="RefreshMainExpressionPreview">@L.T("Expression.Action.Refresh")</button>
-                    <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
-                }
-                else if (Workspace.ExpressionPreview is { IsValid: false } invalidExpressionPreview)
-                {
-                    <div role="alert" class="inline-expression-errors">
-                        @foreach (var error in invalidExpressionPreview.Errors) { <p>@error</p> }
-                    </div>
-                    <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
-                }
-                else if (Workspace.ExpressionPreviewProjection is { } expressionProjection && Workspace.ExpressionPreview is not null)
-                {
-                    <p role="status" aria-live="polite">@L.Format("Expression.Review.TimeSummary", expressionProjection.TimeChangedChapterCount, expressionProjection.ParticipatingChapterCount)</p>
-                    <p class="inline-expression-summary">@L.Format("Expression.Review.OtherSummary", expressionProjection.AffectedChapterCount, expressionProjection.FrameInformationChangedChapterCount, expressionProjection.Properties.Length)</p>
-                    @if (expressionProjection.HasChanges)
+                    @if (mainExpressionPreviewPending)
                     {
-                        <button type="button" class="primary" disabled="@Workspace.IsBusy" @onclick="ApplyMainExpressionPreviewAsync">@L.T("Expression.Action.Apply")</button>
+                        <p role="status" aria-live="polite">@L.T("Expression.Preview.Pending")</p>
                     }
-                    <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                    else if (Workspace.IsExpressionPreviewStale)
+                    {
+                        <p role="status">@L.T("Expression.State.Stale")</p>
+                        <button type="button" class="secondary" @onclick="RefreshMainExpressionPreview">@L.T("Expression.Action.Refresh")</button>
+                        <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                    }
+                    else if (Workspace.ExpressionPreview is { IsValid: false } invalidExpressionPreview)
+                    {
+                        <div role="alert" class="inline-expression-errors">
+                            @foreach (var error in invalidExpressionPreview.Errors) { <p>@error</p> }
+                        </div>
+                        <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                    }
+                    else if (Workspace.ExpressionPreviewProjection is { } expressionProjection && Workspace.ExpressionPreview is not null)
+                    {
+                        <p role="status" aria-live="polite">@L.Format("Expression.Review.TimeSummary", expressionProjection.TimeChangedChapterCount, expressionProjection.ParticipatingChapterCount)</p>
+                        <p class="inline-expression-summary">@L.Format("Expression.Review.OtherSummary", expressionProjection.AffectedChapterCount, expressionProjection.FrameInformationChangedChapterCount, expressionProjection.Properties.Length)</p>
+                        @if (expressionProjection.HasChanges)
+                        {
+                            <button type="button" class="primary" disabled="@Workspace.IsBusy" @onclick="ApplyMainExpressionPreviewAsync">@L.T("Expression.Action.Apply")</button>
+                        }
+                        <button type="button" class="secondary" @onclick="DiscardMainExpressionPreview">@L.T("Expression.Preview.Discard")</button>
+                    }
                 }
             </section>
         </div>
@@ -1171,7 +1174,8 @@
         Workspace.RefreshRows();
     }
 
-    private bool ShowMainExpressionCandidate => !mainExpressionPreviewPending
+    private bool ShowMainExpressionCandidate => activeDialog != DialogKind.Expression
+        && !mainExpressionPreviewPending
         && !Workspace.IsExpressionPreviewStale
         && Workspace.ExpressionPreview is { IsValid: true }
         && Workspace.ExpressionPreviewProjection is { HasChanges: true };

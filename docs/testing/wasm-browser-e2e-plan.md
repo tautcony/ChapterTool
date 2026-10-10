@@ -55,7 +55,6 @@ tests/ChapterTool.Wasm.E2E/                 # 新建；不加入 .NET solution
   tsconfig.json
   playwright.config.ts                    # 默认测试 Release 静态产物
   playwright.dev.config.ts                # 本地 Blazor DevServer
-  playwright.visual.config.ts             # 固定环境下的截图比较
   README.md                               # 安装、执行和故障定位
   scripts/
     prepare-site.mjs                      # 处理发布目录；不重新编译
@@ -80,7 +79,7 @@ tests/ChapterTool.Wasm.E2E/                 # 新建；不加入 .NET solution
 
 必须在 `Home.razor` 补充必要的可访问标签和少量稳定定位属性。必须在 `.github/workflows/dotnet-ci.yml` 接入独立 E2E 作业。必须在 `.github/workflows/github-pages.yml` 增加部署前验收。
 
-实施后必须更新 `docs/code-map/testing.md` 和 `src/ChapterTool.Wasm/README.md`，说明测试入口和命令。测试产物放在已忽略的 `artifacts/wasm-e2e/`。视觉基线放在测试目录并提交版本控制。
+实施后必须更新 `docs/code-map/testing.md` 和 `src/ChapterTool.Wasm/README.md`，说明测试入口和命令。测试产物放在已忽略的 `artifacts/wasm-e2e/`。截图只用于失败诊断或人工复核。
 
 不把 E2E 依赖加入 `packages/chaptertool`。该目录仍只负责 Node.js 包。业务解析和转换算法继续由现有 .NET 测试负责。
 
@@ -223,7 +222,7 @@ P0 是第一阶段必须完成的门禁。P1 在第二阶段补齐。每个用�
 | B15 | P1 | 预置损坏/旧版设置；模拟 localStorage 拒绝访问 | 不阻止启动；损坏设置回退；旧键按当前迁移契约处理；仍可导入和下载 |
 | B16 | P1 | 导入多片段 MPLS；切换、合并、恢复、Append；导入代表 IFO/XPL/CUE/FLAC/TAK | selector、章节数量和已知关键时间正确；附加仅接受 MPLS；不依赖桌面外部工具 |
 | B17 | P1 | 设置 UTF-8/UTF-16LE/UTF-16BE、BOM 后下载 | 直接核对字节序、BOM 和中文/日文内容；不能只比较解码后的字符串 |
-| B18 | P1 | 在默认、宽、窄视口编辑、打开设置、预览并保存 | 控件可点击且无遮挡；章节表允许内部滚动；页面外框无意外水平溢出；截图基线符合预期 |
+| B18 | P1 | 在默认、宽、窄视口编辑、打开设置、预览并保存 | 控件可点击且无遮挡；章节表允许内部滚动；页面外框无意外水平溢出；弹窗操作可达 |
 
 B11 的快捷键验证必须观察下载、表格和导航事件。仅测试快捷键判断函数不足以完成验收。模态窗口 Escape 测试必须设置明确的非编辑焦点，再验证关闭和焦点行为。
 
@@ -289,9 +288,9 @@ test('导入后编辑、撤销、重做并下载 @smoke', async ({ page }, testI
 
 ### 9.1 待实施的执行入口
 
-新增 npm scripts 必须包含 `prepare:site`、`typecheck`、`test:e2e`、`test:e2e:dev`、`test:e2e:headed`、`test:e2e:ui`、`test:visual` 和 `report`。开发命令使用开发配置。有界面命令使用 `--headed`。交互排错命令使用 `--ui`。报告命令使用 `playwright show-report`。脚本必须直接调用固定版本工具，不使用全局 Playwright。
+新增 npm scripts 必须包含 `prepare:site`、`typecheck`、`test:e2e`、`test:e2e:dev`、`test:e2e:headed`、`test:e2e:ui`和 `report`。开发命令使用开发配置。有界面命令使用 `--headed`。交互排错命令使用 `--ui`。报告命令使用 `playwright show-report`。脚本必须直接调用固定版本工具，不使用全局 Playwright。
 
-默认配置排除 `layout.spec.ts`。视觉配置继承默认配置，清除 `testIgnore`，仅选择 `layout.spec.ts` 和 Chromium 项目。`test:visual` 使用视觉配置。这样，Windows 本地行为测试不依赖 Linux 视觉基线。
+默认配置运行 `layout-behavior.spec.ts`。该文件验证页面边界、真实点击和长内容滚动。E2E 与 Avalonia Headless 必须通过行为断言验证布局。截图用于失败诊断或人工复核。流水线不生成或比较像素基线。
 
 实施完成后，在仓库根目录依次执行：
 
@@ -315,14 +314,14 @@ Playwright 转译 TypeScript 不代替类型检查。`typecheck` 必须执行 `t
 | --- | --- | --- | --- |
 | PR / push：WASM、Core、Contracts、测试或构建配置变化 | 本次提交的 Release 静态产物，挂载 `/ChapterTool/` | Chromium 全部已实现行为用例 | 必须通过 |
 | 定时运行或手动运行 | 同样的静态产物 | Chromium、Firefox、WebKit 完整行为集 | 记录兼容性回归；发布前必须通过 |
-| Pages 部署前 | 本次准备并即将上传的 Pages 目录 | Chromium `@smoke`；至少覆盖启动、导入、编辑和实际下载 | 失败停止上传与部署 |
-| 视觉回归 | 固定 Linux 环境、浏览器、字体和主题 | Chromium 专用 `@visual` 用例 | 基线必须人工审阅 |
+| Pages 部署前 | 已通过浏览器验收的 Pages 目录 | 复用 CI 站点制品 | `CI ready` 失败必须停止部署 |
+| 布局回归 | 本次提交的 Release 静态产物 | Chromium 与 WebKit 的布局行为断言；桌面使用 Headless | 必须通过 |
 
 E2E 作业使用 `ubuntu-24.04`、.NET 10 和 Node.js 22.x。运行顺序是 checkout、工具安装、依赖恢复、Release 发布、站点准备、类型检查、浏览器安装、测试、报告上传。
 
 必须将新 lockfile 加入 Node 缓存键。缓存 npm 和 NuGet 下载即可。首期不缓存 Playwright 浏览器，减少版本不匹配的排错成本。只在需要 AOT 时安装 `wasm-tools`，不得把 Node.js 包的构建要求直接套到普通 Blazor 发布上。
 
-必须补齐 workflow 的 paths：`src/ChapterTool.Wasm/**`、`src/ChapterTool.Core/**`、`src/ChapterTool.Contracts/**`、`tests/ChapterTool.Wasm.E2E/**`、相关 workflow、共享构建配置及本地化源。Pages 现有 paths 缺少 Contracts 和共享翻译源，接入时必须一并补齐相关依赖触发。
+调度必须读取项目引用关系。WASM、Core、Contracts、E2E、共享构建配置及本地化源变化必须触发相关消费者。`CI ready` 必须检查本次所需节点的结果。
 
 `actions/upload-artifact` 必须使用 `if: always()`，上传 `artifacts/wasm-e2e/` 下的报告、trace、失败截图、日志和下载文件。保留期建议 14 天。部署 smoke 失败必须阻断发布。不得使用 `continue-on-error` 把门禁变成提示。
 
@@ -335,17 +334,17 @@ E2E 作业与现有 .NET 测试保持独立进程和工作目录。不得并行�
 | A：可运行基础 | 新建独立项目、锁依赖、静态服务、Pages 处理、就绪与定位契约、自动诊断 | 一条命令执行 B01；Windows 本地和 Linux CI 均可运行 |
 | B：核心门禁 | 完成 B02–B09；加入 PR 和部署前 smoke | 所有 P0 在 Chromium 无重试通过；实际下载与预期内容一致 |
 | C：浏览器边界 | 完成 B10–B17；扩展 Firefox、WebKit | 完整行为集三引擎通过；不把兼容性失败长期标记为 skip |
-| D：视觉回归 | 完成 B18；固定字体、语言、视口和主题；审阅基线 | 默认 1280×800、宽 1920×1080、窄 390×844 均可完成主流程；几何断言与截图比较通过 |
+| D：布局回归 | 完成 B18 的工作流和几何断言 | 默认 1280×800、宽 1920×1080、窄 390×844 均可完成主流程；E2E 与 Headless 行为断言通过 |
 
 布局测试必须验证点击和工作流结果。几何断言可检查选项区与状态栏位置、关键控件可见范围和外框溢出。章节表内部水平滚动可以保留。截图保存本身不构成自动断言。
 
-使用 `toHaveScreenshot()` 比较已审阅的基线。必须等待字体就绪并屏蔽动态日志时间等非目标内容。不得通过大面积 mask 或放宽全局阈值隐藏布局变化。视觉基线在固定 Linux 环境生成；Windows 本地截图只用于诊断，不直接替换 Linux 基线。[视觉比较](https://playwright.dev/docs/test-snapshots)。
+布局检查必须验证控件边界、操作可达性、焦点和滚动结果。截图可以辅助诊断。流水线不生成或比较像素基线。
 
 实施者必须在首次验收报告中记录提交 SHA、依赖锁版本、浏览器版本、操作系统、完整命令、各项目通过/失败/跳过数量、耗时及 artifacts 路径。必须区分计划覆盖与已通过覆盖。
 
 首次稳定性验收必须执行 Chromium P0 用例 `--repeat-each=3 --retries=0`。三引擎至少完成一次无重试验收。重复运行只用于首次稳定性验证或调查失败。不得在常规修改中反复运行已成功且不受影响的测试。
 
-可以保留一次 CI 重试以收集诊断，但 `failOnFlakyTests` 必须使重试后通过的用例仍阻断门禁。失败时先看 trace、控制台和资源请求，再修复代码或同步条件。不得通过固定延迟、删除断言或自动更新视觉基线消除失败。[Trace Viewer](https://playwright.dev/docs/trace-viewer)。
+CI 必须禁用重试。失败时先看 trace、控制台和资源请求，再修复代码或同步条件。不得通过固定延迟或删除断言消除失败。[Trace Viewer](https://playwright.dev/docs/trace-viewer)。
 
 可测性改动涉及 Razor 或浏览器互操作时，必须顺序运行受影响的 .NET 测试项目，再运行 E2E。已有业务测试不能因新增 E2E 被删除。
 

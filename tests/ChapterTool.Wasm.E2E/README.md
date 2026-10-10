@@ -32,7 +32,7 @@ Run `npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e` to run all configured
 browser projects. Install all engines first with
 `npm --prefix tests/ChapterTool.Wasm.E2E exec -- playwright install`. Use
 `test:e2e:headed` or `test:e2e:ui` from this directory for interactive
-diagnosis. Run `npm run test:visual` only in the fixed Linux visual environment.
+diagnosis.
 
 ## Reports and failures
 
@@ -44,24 +44,18 @@ Each test starts in a fresh BrowserContext. The fixture records page errors,
 console errors, failed requests, and failed same-origin resources. On failure,
 open the attached trace first. Check the console and network requests next.
 Tests must wait for visible state changes. Do not add fixed delays to hide a
-race. A test that passes only after retry still fails the CI gate.
+race. Tests run without retries. CI stops after three failures or ten minutes per engine.
 
-`@smoke` marks startup, core import/edit/download flows, and short-screen modal closure. The Pages workflow
-runs these tests against the exact prepared directory it uploads. The
-`.NET 10 CI` workflow runs all implemented behavior tests in Chromium. The
-weekly and manually triggered WASM browser acceptance workflow runs Chromium,
-Firefox, and WebKit.
+`@smoke` marks startup, core import/edit/download flows, and short-screen modal closure. The `.NET 10 CI` workflow runs the behavior suite in Chromium. It runs targeted WebKit regressions for affected pull requests. Version tags, weekly checks, and manual CI runs use Chromium, Firefox, and WebKit. Pages deployment uploads the same prepared site after the required CI checks pass.
 
 The WASM acceptance workflow also runs targeted WebKit modal and editing checks on pull requests. Set `E2E_RUN_NAME=webkit` for a separate report and result directory. The default browser suite includes `modal-layout.spec.ts`. It asserts geometry, actual clicks, focus, cancellation, background isolation, and long-content scrolling. It checks 320-pixel width and both sides of the 520- and 760-pixel breakpoints.
 
-## Visual checks
+## Layout checks
 
-`specs/layout.spec.ts` checks idle, history, expression, diagnostics, advanced export, and settings states at 1280×800, 1920×1080, 390×844, 390×640, and 844×390. Visual checks run on pull requests. Results use `results-visual`, `report-visual`, and `junit-visual.xml`. Create
-or update baselines only in the fixed Linux environment. Review each image
-change before committing it.
+`specs/layout-behavior.spec.ts` checks page bounds, dialog actions, expression diagnostics, downloads, and long-content footer access. It covers 1280×800, 1920×1080, 390×844, 390×640, and 844×390. Each viewport uses a separate test context. Chromium and targeted WebKit checks include these assertions.
 
-Run `python scripts/check-ci.py --stage visual-review` from the repository root to review these workflows on Windows, macOS, or Linux. Prepare the Release site first. This stage uses `playwright.review.config.ts` and disables retries. It writes host images to `artifacts/wasm-e2e/review-snapshots/`. It keeps the committed Linux baselines unchanged. The direct test command is `npm --prefix tests/ChapterTool.Wasm.E2E run test:visual:review`.
+Browser E2E verifies the WASM interface. Avalonia Headless verifies the desktop interface. Screenshots support failure diagnosis and manual review. There are no committed screenshot baselines or pixel comparison commands.
 
-Run `WASM browser acceptance` manually with `update_visual_snapshots` to generate Linux baselines. Download the `wasm-linux-baselines` artifact. Run `python scripts/ci/review-wasm-baselines.py <downloaded-zip>` to extract the images and list changes. Review the images, then run the same command with `--apply`. Normal CI must compare the committed baselines. See `scripts/README.md` for the complete review workflow.
+The expression preview test checks English and Chinese layout in the normal suite. Set `E2E_CAPTURE_REVIEW=1` to also capture default, wide, and narrow images under `artifacts/expression-preview/`.
 
 Physical iPhone browser chrome and keyboard behavior require a device check. Mobile viewports and WebKit emulation do not establish that result.

@@ -1,5 +1,7 @@
 # WASM browser E2E acceptance
 
+This document records the first acceptance run. Its Linux visual commands are historical. Current verification uses browser E2E and Avalonia Headless behavior assertions. See `scripts/README.md`.
+
 ## First acceptance run
 
 - Date: 2026-10-04 (Asia/Shanghai).
@@ -58,4 +60,4 @@ The first command created the reviewed baselines. The second command passed with
 - B16–B17 cover MPLS and XPL input, MPLS append, and UTF-8/UTF-16 downloads with BOM byte checks.
 - B18 covers layout interactions and geometry at the three recorded viewport sizes.
 
-The HTML report, JUnit report, traces, screenshots, videos, browser logs, and downloaded files are under `artifacts/wasm-e2e/`. Screenshot baselines are under `tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/`.
+The HTML report, JUnit report, traces, screenshots, videos, browser logs, and downloaded files are under `artifacts/wasm-e2e/`. The recorded screenshot baselines have been removed. `specs/layout-behavior.spec.ts` retains their behavior assertions.

@@ -26,6 +26,7 @@ jobs:
         )
       }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: npm
     permissions:
       id-token: write
@@ -46,7 +47,7 @@ jobs:
       - name: Checkout release source
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
 
       - name: Install Node.js
         uses: actions/setup-node@v7
@@ -57,39 +58,12 @@ jobs:
       - name: Install npm Trusted Publishing client
         run: npm install --global --ignore-scripts npm@11.5.1
 
-      - name: Resolve successful CI run
+      - name: Resolve tested CI run
         id: ci-run
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
-            echo "run-id=${{ github.event.workflow_run.id }}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          run_id="$({
-            gh run list \
-              --repo "$GITHUB_REPOSITORY" \
-              --workflow dotnet-ci.yml \
-              --limit 100 \
-              --json databaseId,headBranch,event,status,conclusion,createdAt
-          } | jq -r --arg tag "$RELEASE_TAG" '
-              [.[]
-                | select(.headBranch == $tag)
-                | select(.event == "push")
-                | select(.status == "completed" and .conclusion == "success")
-              ]
-              | sort_by(.createdAt)
-              | last
-              | .databaseId // empty
-            ')
-
-          if [[ -z "$run_id" ]]; then
-            echo "No successful .NET CI run found for $RELEASE_TAG" >&2
-            exit 1
-          fi
-          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 scripts/ci/resolve-ci-run.py --tag "$RELEASE_TAG"
 
       - name: Download tested npm artifact
         env:
@@ -102,8 +76,9 @@ jobs:
             --name ChapterTool-node-package \
             --dir artifacts/npm
 
+          shopt -s nullglob
           archives=(artifacts/npm/*.tgz)
-          if [[ ! -f "${archives[0]}" || "${archives[1]}" != "" ]]; then
+          if (( ${#archives[@]} != 1 )); then
             echo "Expected exactly one npm tarball in the CI artifact" >&2
             exit 1
           fi

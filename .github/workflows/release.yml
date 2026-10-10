@@ -30,6 +30,7 @@ jobs:
         )
       }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     env:
       TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
 
@@ -48,47 +49,14 @@ jobs:
       - name: Checkout release source
         uses: actions/checkout@v7
         with:
-          ref: ${{ env.TAG }}
+          ref: refs/tags/${{ env.TAG }}
 
-      - name: Locate successful CI run
+      - name: Resolve tested CI run
         id: ci-run
-        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ env.TAG }}
           TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
-        run: |
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
-            echo "run-id=$TRIGGER_RUN_ID" >> "$GITHUB_OUTPUT"
-            echo "Using triggering CI run $TRIGGER_RUN_ID for $TAG"
-            exit 0
-          fi
-
-          run_id="$(
-            gh run list \
-              --repo "$GITHUB_REPOSITORY" \
-              --workflow dotnet-ci.yml \
-              --limit 100 \
-              --json databaseId,headBranch,event,status,conclusion,createdAt \
-            | jq -r --arg tag "$TAG" '
-                [.[]
-                  | select(.headBranch == $tag)
-                  | select(.event == "push")
-                  | select(.status == "completed" and .conclusion == "success")
-                ]
-                | sort_by(.createdAt)
-                | last
-                | .databaseId // empty
-              '
-          )"
-
-          if [[ -z "$run_id" ]]; then
-            echo "No successful dotnet-ci.yml run found for $TAG" >&2
-            exit 1
-          fi
-
-          echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
-          echo "Using CI run $run_id for $TAG"
+        run: python3 scripts/ci/resolve-ci-run.py --tag "$TAG"
 
       - name: Download CI artifacts
         env:
@@ -97,19 +65,15 @@ jobs:
         run: |
           mkdir -p release-assets/publish release-assets/staging
 
-          artifact_names=()
-          while IFS= read -r artifact_name; do
-            [[ -n "$artifact_name" ]] && artifact_names+=("$artifact_name")
-          done < <(
-            gh api --paginate \
-              "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?per_page=100" \
-            | jq -r '.artifacts[] | select(.expired == false) | .name'
+          # Only distribution artifacts can become release attachments.
+          artifact_names=(
+            ChapterTool-Core-nuget
+            ChapterTool-Cli-nuget
+            ChapterTool-node-package
+            ChapterTool-Avalonia-win-x64
+            ChapterTool-Avalonia-linux-x64
+            ChapterTool-Avalonia-osx-arm64
           )
-
-          if (( ${#artifact_names[@]} == 0 )); then
-            echo "No non-expired artifacts found for CI run $RUN_ID" >&2
-            exit 1
-          fi
 
           for artifact_name in "${artifact_names[@]}"; do
             staging_dir="release-assets/staging/$artifact_name"

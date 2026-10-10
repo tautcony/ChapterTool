@@ -2,23 +2,17 @@ name: WASM browser acceptance
 
 on:
   workflow_call:
-  schedule:
-    - cron: "23 5 * * 1"
-  workflow_dispatch:
     inputs:
-      update_visual_snapshots:
-        description: Generate Linux screenshot baselines for review
-        type: boolean
-        default: false
-
-concurrency:
-  group: wasm-browser-acceptance-${{ github.ref }}-${{ inputs.update_visual_snapshots && 'baselines' || 'checks' }}
-  cancel-in-progress: true
+      suite:
+        description: Browser suite to run
+        type: string
+        default: pr
 
 jobs:
   prepare-site:
     name: Publish and prepare WASM site
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -51,19 +45,19 @@ jobs:
           name: wasm-prepared-site
           path: artifacts/wasm-e2e/site/
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 14
 
   browser-acceptance:
-    name: Browser acceptance (${{ matrix.engine }})
-    if: github.event_name != 'workflow_dispatch' || !inputs.update_visual_snapshots
+    name: Browser workflows (${{ matrix.engine }})
     needs: prepare-site
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        engine: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["chromium","firefox","webkit"]' || '["chromium","webkit"]') }}
+        engine: ${{ fromJSON((inputs.suite == 'full') && '["chromium","firefox","webkit"]' || '["chromium","webkit"]') }}
     env:
-      BROWSER_SUITE: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'full' || 'pr' }}
+      BROWSER_SUITE: ${{ (inputs.suite == 'full') && 'full' || 'pr' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -89,7 +83,7 @@ jobs:
         if: env.BROWSER_SUITE == 'pr' && matrix.engine == 'webkit'
         run: python3 scripts/check-ci.py --stage browser --browser-engine webkit --step run-webkit-regressions
       - name: Run full ${{ matrix.engine }} acceptance without retries
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: inputs.suite == 'full'
         run: python3 scripts/check-ci.py --stage browser --browser-suite full --browser-engine ${{ matrix.engine }} --step run-full-browser-acceptance
 
       - name: Upload browser diagnostics
@@ -97,54 +91,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: wasm-browser-acceptance-${{ matrix.engine }}
-          path: |
-            artifacts/wasm-e2e/report*/
-            artifacts/wasm-e2e/results*/
-            artifacts/wasm-e2e/*.xml
-          if-no-files-found: warn
-          retention-days: 14
-
-  visual-acceptance:
-    name: Linux screenshot baselines
-    needs: prepare-site
-    runs-on: ubuntu-24.04
-    # Preserve the existing Debian screenshot environment and image digest.
-    container: node:22-slim@sha256:7af03b14a13c8cdd38e45058fd957bf00a72bbe17feac43b1c15a689c029c732
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-      - name: Install Python
-        run: |
-          apt-get update
-          apt-get install -y python3
-      - name: Download prepared site
-        uses: actions/download-artifact@v8
-        with:
-          name: wasm-prepared-site
-          path: artifacts/wasm-e2e/site/
-      - name: Install visual test dependencies
-        run: python3 scripts/check-ci.py --stage visual --step install-visual-test-dependencies
-      - name: Install Chromium and system dependencies
-        run: python3 scripts/check-ci.py --stage visual --install-browser-deps --step install-chromium
-      - name: Compare Linux screenshot baselines
-        if: ${{ !inputs.update_visual_snapshots }}
-        run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines
-      - name: Generate Linux screenshot baselines
-        if: inputs.update_visual_snapshots
-        run: python3 scripts/check-ci.py --stage visual --step compare-linux-screenshot-baselines --update-visual-snapshots
-      - name: Upload generated Linux baselines for review
-        if: inputs.update_visual_snapshots
-        uses: actions/upload-artifact@v7
-        with:
-          name: wasm-linux-baselines
-          path: tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/*.png
-          if-no-files-found: error
-          retention-days: 14
-      - name: Upload visual diagnostics
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: wasm-visual-acceptance
           path: |
             artifacts/wasm-e2e/report*/
             artifacts/wasm-e2e/results*/

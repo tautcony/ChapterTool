@@ -8,114 +8,114 @@ The tables below show what each script helps you do and what it needs to run.
 
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
-| `check-ci.py` | Python 3.9+; cross-platform | Python standard library; see prerequisites below | Run the checks shared with GitHub Actions. |
-| `ci/review-wasm-baselines.py` | Python 3.9+; cross-platform | Python standard library | Extract a Linux baseline ZIP for review. Apply reviewed changes with `--apply`. |
-| `test-coverage.py` | Python 3; cross-platform | Python standard library, `defusedxml` (uv-managed), .NET SDK; optional `reportgenerator` | Build test projects, run their assemblies through VSTest, and collect coverage. |
-| `report-analyzers.py` | Python 3; cross-platform | Python standard library, .NET SDK | Build the solution and summarize compiler and analyzer diagnostics. |
-| `publish.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate Linux, macOS, or Windows runtime artifacts. macOS bundles require a macOS host. |
-| `publish.ps1` | PowerShell 7; Windows | .NET SDK | Publish and validate Windows runtime artifacts. |
+| `check-ci.py` | Python 3.9+; cross-platform | See prerequisites below | Run the checks shared with GitHub Actions. |
+| `ci/plan-ci.py` | Python 3.9+; cross-platform | Git; Python standard library | Select affected project consumers. Verify required CI job results. |
+| `ci/verify-nuget.py` | Python 3.9+; cross-platform | .NET SDK | Install and run packed Core and CLI consumers. Verify release package versions. |
+| `ci/resolve-ci-run.py` | Python 3.9+; cross-platform | Git; GitHub CLI | Resolve a successful tag CI run for the checked-out commit. |
+| `test-coverage.py` | Python 3; cross-platform | .NET SDK; uv dependencies; optional `reportgenerator` | Collect test coverage. |
+| `report-analyzers.py` | Python 3; cross-platform | .NET SDK | Build the solution and summarize analyzer diagnostics. |
+| `publish.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate desktop artifacts. macOS bundles require macOS. |
+| `publish.ps1` | PowerShell 7; Windows | .NET SDK | Publish and validate Windows artifacts. |
 
-The CI workflows call `check-ci.py` for build, test, browser, and packaging checks. The script calls `axaml-to-json.py --check` and the publish scripts. Release jobs use the same publish entry point. `publish.ps1` remains the Windows-native publish entry point.
+`check-ci.py` owns build, test, browser, and packaging commands. CI workflows must select its stages and step keys. Publish jobs use the tested CI artifacts.
 
 ### Check a change before pushing
 
-Run this cross-platform script from the repository root:
+Run from the repository root:
 
 ```powershell
 python scripts/check-ci.py
 ```
 
-The script runs directly on Windows, macOS, or Linux. It shares build, test, browser, and packaging commands with `.github/workflows/dotnet-ci.yml` and `.github/workflows/wasm-browser-e2e.yml`. It uses `CI=true`, Release output, and locked Python and npm dependencies.
+The script uses `CI=true`, Release output, and locked Python and npm dependencies. Local checks run sequentially. The script stops at the first failed check and returns a nonzero exit code.
 
 The default checks run in this order:
 
-1. Check generated translations and Python lint. Run CI runner tests.
-2. Validate PowerShell publish syntax. Restore and build `ChapterTool.slnx` in Release. Pack both NuGet packages. Run all .NET test projects sequentially in separate processes.
-3. Build the Node.js WASM package. Run Node.js type checks and built-package tests.
-4. Publish browser WASM in Release. Prepare the `/ChapterTool/` site. Run browser type checks, Chromium workflows, and WebKit modal and editing regressions.
+1. Check generated translations and Python lint. Run CI script tests. Validate PowerShell publish syntax.
+2. Restore and build `ChapterTool.slnx`. Pack both NuGet packages. Install and run isolated package consumers. Run all .NET test projects in separate processes.
+3. Build the Node.js WASM package. Run type checks and built-package tests.
+4. Publish browser WASM. Prepare the `/ChapterTool/` site. Run Chromium workflows and WebKit modal, editing, and layout regressions.
 5. Pack the npm tarball. Install it in a temporary consumer and run its Core API.
-6. Publish and validate desktop artifacts. Windows and Linux hosts cover `win-x64` and `linux-x64`. Windows uses Git Bash for Linux cross-publishing. macOS hosts cover the `osx-arm64` DMG.
+6. Publish and validate desktop artifacts for the current host.
 
-The script stops at the first failed check and returns a nonzero exit code. The default checks do not regenerate translations or screenshot baselines. Browser reports remain under `artifacts/wasm-e2e/`. Packages use the existing `artifacts/nuget/`, `artifacts/cli-nuget/`, `artifacts/npm/`, and `artifacts/publish/` directories.
+The script does not regenerate translations. Browser reports use `artifacts/wasm-e2e/`. Packages use `artifacts/nuget/`, `artifacts/cli-nuget/`, `artifacts/npm/`, and `artifacts/publish/`.
 
 ### Prerequisites
 
-Install Python 3.9+, .NET SDK 10.x, Node.js 22.x, uv, PowerShell 7, ffmpeg, and mkvtoolnix. These tools must be on `PATH`. On Windows, the script also finds MKVToolNix under `ProgramFiles`, `ProgramFiles(x86)`, and `LOCALAPPDATA`. It adds the discovered directory to child-process `PATH`. It does not change the user or system environment. Linux and macOS publish checks need Bash. Windows Linux cross-publishing needs Git for Windows with Git Bash.
+The full local gate requires Python 3.9+, .NET SDK 10.x, Node.js 22.x, uv, PowerShell 7, ffmpeg, and mkvtoolnix. These tools must be on `PATH`. Selected stages require only their own tools. Infrastructure tests require real media tools.
 
-Install the native WASM build workload once:
+On Windows, the script also finds MKVToolNix under `ProgramFiles`, `ProgramFiles(x86)`, and `LOCALAPPDATA`. It changes only the child-process `PATH`. Linux cross-publishing on Windows requires Git Bash. DMG creation requires macOS.
+
+The full solution and Node package builds require the native WASM workload:
 
 ```powershell
 dotnet workload install wasm-tools
 ```
 
-The script installs locked Python and npm dependencies and the selected Playwright engines. Linux hosts may use `--install-browser-deps` to install Playwright system packages. Missing tools fail the gate before the build. They do not silently reduce test coverage.
-
-The Python sync uses `--locked --no-build --no-install-project`. The checks need the dependencies but do not need the repository's editable Python package. This avoids a clean-environment failure with `--no-build`.
+Isolated .NET test projects and browser publishing do not require this workload. The Python sync uses `--locked --no-build --no-install-project`. Linux browser checks may use `--install-browser-deps` to install system packages. Missing tools fail the selected check.
 
 ### Run selected checks
 
 ```powershell
-# Inspect commands without running them.
+# Print commands without running them.
 python scripts/check-ci.py --plan
 
-# Run only the build, resource, unit test, and NuGet gates.
-python scripts/check-ci.py --stage build-test
+# Restore, build, and test one solution test project.
+python scripts/check-ci.py --stage test-dotnet --test-project ChapterTool.Core.Tests
 
-# Run one gate. Its dependencies must already be prepared.
-python scripts/check-ci.py --stage dotnet --step test-chaptertool-core-tests
+# Run one prepared check.
+python scripts/check-ci.py --stage test-dotnet --test-project ChapterTool.Core.Tests --step run-tests
 
-# Check resource generation and script behavior.
+# Build packages and run installed consumers.
+python scripts/check-ci.py --stage pack-nuget
+
+# Build packages with one release version.
+python scripts/check-ci.py --stage pack-nuget --package-version 23.3.2-rc.1
+
 python scripts/check-ci.py --stage resources
-
-# Build and test the Node.js package independently.
 python scripts/check-ci.py --stage node
-
-# Publish and test browser workflows.
 python scripts/check-ci.py --stage browser
-
-# Review visual workflows on the current host after preparing the browser site.
-python scripts/check-ci.py --stage visual-review
-
-# Include the weekly three-engine acceptance suite.
-python scripts/check-ci.py --browser-suite full
-
-# Verify one desktop runtime.
+python scripts/check-ci.py --stage browser --browser-suite full --browser-engine webkit
 python scripts/check-ci.py --stage pack-desktop --runtime win-x64
 ```
 
-`--plan` prints the step key, name, directory, and command. `--step <key>` runs only that check. The option can be repeated. It does not run prerequisite steps. Unknown keys return a nonzero exit code. CI calls individual keys so each failure has a named Actions step and an error annotation.
-
-`--stage pack-node` requires the `dist` output from `node` or `build-test`. The Node.js CI job builds this output once, tests it, and packs it in the same job. `--stage visual` requires the prepared site from `browser` and the matching Linux screenshot environment.
+`--step` runs only the selected keys. It does not run prerequisites. Unknown keys fail before execution. `--stage pack-node` requires the `dist` output from `node` or `build-test`.
 
 ### CI scheduling
 
-The `.NET 10 CI` workflow starts resource checks, .NET build and tests, Node.js build and packaging, the desktop runtime matrix, and the reusable browser workflow independently. Desktop packaging does not consume unit-test output. Each job uses a separate checkout. The release workflows still require a successful CI workflow, including browser checks, before they publish its artifacts.
+`.NET 10 CI` starts for every push and pull request. It also supports a weekly schedule and manual dispatch. The planning job reads `ChapterTool.slnx` and project references. It maps changed paths to test and host consumers. Shared Core fixtures also select the browser and Node consumers. Renames include both paths. Unknown inputs, CI scripts, and shared build configuration select all checks.
 
-The `WASM browser acceptance` workflow publishes and prepares one Release site. It uploads the site for the browser matrix and screenshot job. `.NET 10 CI` calls this workflow for pushes and pull requests. Chromium and WebKit run in parallel. Scheduled and manual runs use Chromium, Firefox, and WebKit in separate jobs. Full acceptance disables retries. The screenshot job runs alongside the browser matrix in the existing pinned Debian baseline environment. The reusable workflow avoids duplicate Chromium runs while keeping browser checks in the release gate.
+| Event or change | Checks |
+| --- | --- |
+| Documentation only | Planning and `CI ready`. |
+| Pull request or feature branch | Affected tests, resources, browser, Node, and NuGet checks. |
+| Desktop dependency project files or shared publish configuration | Desktop runtime matrix. |
+| Non-documentation push to `master` | All consumers and distribution artifacts. |
+| Version tag, weekly schedule, or manual dispatch | Full solution build, all consumers, all artifacts, and three browser engines. |
 
-Local checks run sequentially. Shared .NET project outputs must not be built or tested concurrently in one checkout. Browser jobs select one engine with `--browser-engine`. They share the commands used by the local browser suite.
+Each .NET matrix job restores and builds one test project. Headless uses its own process and checkout. A failure does not cancel the other test projects. Only the Infrastructure job installs media tools. Native WASM tools belong to the Node and full solution jobs.
 
-The .NET solution check builds all projects in `ChapterTool.slnx`, including Node. It requires `wasm-tools`. The Node project keeps its native compilation and invariant globalization settings. Node.js packaging and browser publishing run in separate jobs with their own output checks.
+`CI ready` runs after the selected jobs. It must reject failed, canceled, missing, or unexpectedly skipped required checks. Branch protection can require this fixed check name.
 
-Browser publishing uses the SDK prebuilt WASM runtime, as the original browser CI did without `wasm-tools`. The shared publish command sets `WasmBuildNative=false` and `WasmRunWasmOpt=false`. Installing the Node build workload on a local host must not change the browser artifact under test. These properties apply only to the browser publish command.
+The reusable browser workflow publishes one Release site. Chromium runs the behavior suite. WebKit runs modal, editing, and layout regressions. Full acceptance adds Firefox and runs the complete suite in each engine. Tests use zero retries. CI stops after three failures or ten minutes per browser suite. Each engine uploads its diagnostics.
 
-The browser publish step removes its generated publish directory first. Old hashed runtime files must not affect a local check. Browser reports and other artifact directories remain available.
+Browser publishing sets `WasmBuildNative=false` and `WasmRunWasmOpt=false`. A locally installed native workload must not change the browser artifact. The publish step clears its own output directory before building.
 
-### Review intentional screenshot changes
+### Distribution and deployment
 
-Run `WASM browser acceptance` manually with `update_visual_snapshots` enabled after an intentional layout change. This run prepares the Release site and generates baselines in the pinned Linux screenshot environment. It uploads `wasm-linux-baselines`. It does not run the browser acceptance matrix. The visual tests must still pass their workflow and geometry assertions. This mode disables retries.
+The NuGet job builds and packs both packages with the same tag version. It installs Core in a temporary .NET consumer. It installs the CLI tool and runs `--help`. Package source mapping and a fresh package cache ensure these consumers use the local artifacts.
 
-Download the artifact. Run `python scripts/ci/review-wasm-baselines.py <downloaded-zip>` to extract its images into `artifacts/wasm-e2e/baseline-review/` and list the changes. Review each changed image. Run the same command with `--apply` to copy reviewed changes into `tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts-snapshots/`. The tool must reject missing or duplicate baseline names before it writes committed images. Commit the reviewed images. The subsequent push must pass normal screenshot comparison. Push, pull request, and scheduled checks never regenerate baselines.
+The NuGet and npm publishers resolve a successful tag push for the exact checked-out SHA. They download its artifacts. They do not rebuild packages. GitHub Release downloads only the six named distribution artifacts. Browser reports and test diagnostics are not release attachments.
 
-On a matching Linux host, the equivalent command is `python3 scripts/check-ci.py --stage visual --update-visual-snapshots`. Windows and macOS cannot generate the Linux baseline images. A baseline must not hide an unintended layout change or a host difference.
+Pages deployment runs after `CI ready` on `master` pushes and manual CI runs. It uploads the same `wasm-prepared-site` tested by the browser jobs. To deploy manually, dispatch `.NET 10 CI` on `master`.
 
-`python scripts/check-ci.py --stage visual-review` runs the same visual workflow assertions on Windows, macOS, or Linux. It requires the prepared site from `--stage browser`. It writes host review images under `artifacts/wasm-e2e/review-snapshots/`. It does not change or compare the committed Linux baselines. It disables retries. The Playwright configuration is `tests/ChapterTool.Wasm.E2E/playwright.review.config.ts`.
+### Layout verification and platform limits
 
-### Platform limits
+Browser E2E and Avalonia Headless tests verify layout and interaction behavior. E2E checks include responsive geometry, focus, real clicks, and long-content scrolling. Screenshots support failure diagnosis or manual review. No pixel baseline generation or comparison is maintained.
 
-The default command runs all shared host checks. It prints the remaining platform checks after success. Windows and macOS cannot compare Linux screenshot baselines. Linux filename and path behavior still require a Linux test run. DMG creation requires macOS. GitHub credentials, artifact uploads, and deployment permissions remain CI checks.
+`specs/expression-preview-screenshots.spec.ts` always checks English and Chinese layout behavior. Set `E2E_CAPTURE_REVIEW=1` when manual review images are needed. The images use `artifacts/expression-preview/`.
 
-Browser behavior tests include responsive geometry, focus, real clicks, and modal workflows on each host. Fixed screenshot comparisons remain in the existing CI baseline environment. Run `python3 scripts/check-ci.py --stage visual` only in a matching Linux environment. Do not update baselines to hide a host difference.
+Local checks cannot establish GitHub upload or deployment permissions. Linux filename behavior requires Linux. DMG creation requires macOS. Physical mobile keyboard behavior requires a device check.
 
 ### Evidence from recent failures
 

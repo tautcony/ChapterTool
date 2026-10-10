@@ -7,6 +7,11 @@ on:
     types:
       - completed
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag whose successful CI packages should be published
+        required: true
+        type: string
 
 jobs:
   publish-nuget:
@@ -21,81 +26,62 @@ jobs:
         )
       }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment: nuget
     env:
-      RELEASE_TAG: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || github.ref_name }}
+      RELEASE_TAG: ${{ inputs.tag || github.event.workflow_run.head_branch }}
     permissions:
       id-token: write
       contents: read
+      actions: read
       packages: write
-
     steps:
-      - name: Checkout
+      - name: Checkout release source
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
-
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+      - name: Resolve tested CI run
+        id: ci-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: python3 scripts/ci/resolve-ci-run.py --tag "$RELEASE_TAG"
+      - name: Download tested Core package
+        uses: actions/download-artifact@v8
+        with:
+          name: ChapterTool-Core-nuget
+          run-id: ${{ steps.ci-run.outputs.run-id }}
+          github-token: ${{ github.token }}
+          path: artifacts/nuget
+      - name: Download tested CLI package
+        uses: actions/download-artifact@v8
+        with:
+          name: ChapterTool-Cli-nuget
+          run-id: ${{ steps.ci-run.outputs.run-id }}
+          github-token: ${{ github.token }}
+          path: artifacts/cli-nuget
+      - name: Verify release package versions
+        run: python3 scripts/ci/verify-nuget.py --metadata-only --expected-version "${RELEASE_TAG#v}"
       - name: Install .NET 10
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-
-      - name: Restore
-        run: |
-          dotnet restore tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj
-          dotnet restore src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj
-
-      - name: Resolve package version
-        id: version
-        shell: bash
-        run: |
-          if [[ "$RELEASE_TAG" =~ ^v(.+)$ ]]; then
-            echo "package-version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
-          else
-            echo "package-version=" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build
-        run: |
-          dotnet build src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-restore
-          dotnet build tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj --configuration Release --no-restore
-          dotnet build src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj --configuration Release --no-restore
-
-      - name: Test Core
-        run: dotnet test tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj --configuration Release --no-build
-
-      - name: Pack
-        shell: bash
-        run: |
-          projects=(
-            src/ChapterTool.Core/ChapterTool.Core.csproj
-            src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj
-          )
-          for project in "${projects[@]}"; do
-            args=(
-              "$project"
-              --configuration Release
-              --no-build
-              --no-restore
-              --output artifacts/nuget
-              /p:ContinuousIntegrationBuild=true
-            )
-            if [[ -n "${{ steps.version.outputs.package-version }}" ]]; then
-              args+=(/p:PackageVersion=${{ steps.version.outputs.package-version }})
-            fi
-            dotnet pack "${args[@]}"
-          done
-
       - name: NuGet login (OIDC)
         id: login
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ vars.NUGET_USER }}
-
-      - name: Push package and symbols to NuGet.org
-        run: dotnet nuget push artifacts/nuget/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-
-      - name: Push package to GitHub Packages
+      - name: Push tested packages and symbols to NuGet.org
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          for package in artifacts/nuget/*.nupkg artifacts/cli-nuget/*.nupkg; do
+            dotnet nuget push "$package" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
+      - name: Push tested packages to GitHub Packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: dotnet nuget push artifacts/nuget/*.nupkg --api-key "$GITHUB_TOKEN" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
+        run: |
+          for package in artifacts/nuget/*.nupkg artifacts/cli-nuget/*.nupkg; do
+            dotnet nuget push "$package" --api-key "$GITHUB_TOKEN" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
+          done

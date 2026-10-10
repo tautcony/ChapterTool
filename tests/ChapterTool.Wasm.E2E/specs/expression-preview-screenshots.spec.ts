@@ -6,9 +6,9 @@ import { loadFixture } from '../support/chapter-workspace';
 test('captures expression review at default, wide, and narrow viewports', async ({ readyPage: page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium', 'Capture one browser set for visual review.');
   const directory = resolve(process.cwd(), '../../artifacts/expression-preview');
-  await mkdir(directory, { recursive: true });
+  if (process.env.E2E_CAPTURE_REVIEW) await mkdir(directory, { recursive: true });
   await loadFixture(page, 'minimal-ogm.txt');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
   await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:06.250');
@@ -26,7 +26,7 @@ test('captures expression review at default, wide, and narrow viewports', async 
     expect(valueBox).not.toBeNull();
     expect(footerBox).not.toBeNull();
     expect(valueBox!.y + valueBox!.height).toBeLessThanOrEqual(footerBox!.y);
-    await page.screenshot({ path: resolve(directory, name), fullPage: false });
+    if (process.env.E2E_CAPTURE_REVIEW) await page.screenshot({ path: resolve(directory, name), fullPage: false });
   }
 
   await dialog.getByText('Other changes', { exact: true }).click();
@@ -54,6 +54,6 @@ test('captures expression review at default, wide, and narrow viewports', async 
     const valueBox = await value.boundingBox();
     const footerBox = await chineseDialog.locator('.expression-footer').boundingBox();
     expect(valueBox!.y + valueBox!.height).toBeLessThanOrEqual(footerBox!.y);
-    await page.screenshot({ path: resolve(directory, name), fullPage: false });
+    if (process.env.E2E_CAPTURE_REVIEW) await page.screenshot({ path: resolve(directory, name), fullPage: false });
   }
 });

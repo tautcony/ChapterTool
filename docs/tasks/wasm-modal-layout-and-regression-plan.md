@@ -10,7 +10,7 @@
 
 必须复用现有 Playwright 套件。布局行为断言必须进入常规 PR 测试。截图比较必须覆盖工具打开、错误和长内容状态。
 
-初次分析只运行了临时布局采集脚本。采集成功不表示布局通过验收。后续实现必须使用正式浏览器断言和视觉比较验证。
+初次分析只运行了临时布局采集脚本。采集成功不表示布局通过验收。后续实现必须使用正式 E2E 与 Headless 行为断言验证。
 
 分析日期：2026-10-04。源码基线：`90bb423`。运行环境：Windows、本地当前源码、Blazor 开发服务器、Playwright 1.63.0、Chromium 和 WebKit。公开部署站点和真实 iPhone Safari 尚未验证。
 
@@ -79,7 +79,7 @@
 | 同文件 B20–B23 | 表达式只读预览、提交、取消、错误和最新草稿 | 没有短视口及历史同时打开的布局状态。内嵌面板本身满足这些用例 |
 | [`layout.spec.ts`](../../tests/ChapterTool.Wasm.E2E/specs/layout.spec.ts) B18 | 普通页面、设置、导出预览和下载；默认、宽、390×844 截图 | 没有历史弹窗、表达式有效/无效预览、长差异、短视口或横屏 |
 | [`playwright.config.ts`](../../tests/ChapterTool.Wasm.E2E/playwright.config.ts) | 常规行为测试 | `testIgnore: '**/layout.spec.ts'` 排除了现有布局用例 |
-| [`wasm-browser-e2e.yml`](../../.github/workflows/wasm-browser-e2e.yml) | PR 的 Chromium 行为测试；定时和手动的三引擎与视觉测试 | fixed-Linux 视觉步骤仅在定时和手动运行。PR 不执行它 |
+| [`wasm-browser-e2e.yml`](../../.github/workflows/wasm-browser-e2e.yml) | PR 的 Chromium 行为测试和 WebKit 回归；版本标签、定时和手动的三引擎验收 | 布局由 E2E 和 Headless 行为断言验证 |
 | [`WasmWorkspaceTests.cs`](../../tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs) | 工作区、候选、历史与导出契约 | 不渲染 DOM，不能检出 CSS 覆盖 |
 
 `toBeVisible()` 不能证明控件有足够宽度、未被遮挡或在可见视口内。无参数的 `toBeInViewport()` 也不能保证控件完全可见。测试必须结合区域关系、完整可见性和真实点击。[可操作性检查](https://playwright.dev/docs/actionability)、[视口断言](https://playwright.dev/docs/api/class-locatorassertions#locator-assertions-to-be-in-viewport)。
@@ -190,13 +190,13 @@ Undo/Redo 可以在历史弹窗中提供同语义操作。主界面按钮在模�
 
 ## 7. 必须补齐的测试
 
-### 7.1 分离布局契约与像素基线
+### 7.1 验证布局行为
 
-新增 `modal-layout.spec.ts`，放入默认 `test:e2e` 范围。它验证弹窗行为、区域关系和可操作性，不调用 `toHaveScreenshot()`。因此 Windows 本地和 Linux PR 都能运行，不依赖操作系统像素基线。
+`modal-layout.spec.ts` 与 `layout-behavior.spec.ts` 必须进入默认 `test:e2e` 范围。它们验证弹窗行为、区域关系和可操作性。Windows 本地和 Linux PR 必须运行相同的行为断言。
 
-扩展现有 `layout.spec.ts` 或新增专用视觉文件，并修改视觉配置的匹配规则。截图用例在固定 Linux 环境运行。它们必须覆盖打开状态和诊断状态，不只截图普通页面。
+E2E 必须覆盖弹窗打开状态和诊断状态。桌面布局必须通过 Avalonia Headless 验证。截图用于失败诊断或人工复核。
 
-不得为了让布局契约进入 PR，直接把 Linux 像素基线加入所有 Windows 行为测试。也不得继续把行为布局断言全部排除在默认配置之外。
+行为布局断言必须属于日常 CI。流水线不生成或比较像素基线。
 
 ### 7.2 回归用例
 
@@ -211,7 +211,7 @@ Undo/Redo 可以在历史弹窗中提供同语义操作。主界面按钮在模�
 | L07 | 历史、表达式、设置、导出预览依次开关 | 始终只有一个模态面；不残留遮罩或焦点约束；已关闭任务不再占据主布局 |
 | L08 | 导出选项 Apply/Cancel 与默认设置 | 本次参数正确生效；取消恢复原值且不写设置；Apply 的持久化结果符合当前契约 |
 | L09 | 390×640、844×390 和尺寸动态切换 | 各弹窗的关闭与提交按钮在可见区域；内部滚动可以到达内容；表格不遮挡其他区域 |
-| L10 | en-US、zh-CN、ja-JP，长字段和明暗主题 | 标签、输入、诊断与按钮不重叠；主流程可完成；对应视觉状态有基线 |
+| L10 | en-US、zh-CN、ja-JP，长字段和明暗主题 | 标签、输入、诊断与按钮不重叠；主流程可完成；E2E 与 Headless 行为断言通过 |
 | L11 | 真机 iPhone Safari：工具栏变化、键盘、文字缩放、旋转 | 输入与页脚可达；关闭不会误触背景；无截图中的控件窄条；主页面状态和滚动恢复 |
 
 L01、L03、L04、L06、L07、L09 是本次 P0。必须在 Chromium 和 WebKit 的目标视口执行。首次完整验收再执行 Firefox。L11 属于人工补充验收，必须记录设备、系统、浏览器、实际 CSS 视口、部署 SHA 和截图。
@@ -254,7 +254,7 @@ npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e -- modal-layout.spec.ts --p
 npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e
 ```
 
-`npm run test:visual` 必须在现有 fixed-Linux 环境运行。依赖或项目资产变化时先恢复依赖。修改共享翻译时，必须修改 AXAML 源并运行生成和检查命令，不得手工修改生成的 WASM JSON。
+布局回归必须通过 E2E 和 Headless 行为断言验证。依赖或项目资产变化时先恢复依赖。修改共享翻译时，必须修改 AXAML 源并运行生成和检查命令，不得手工修改生成的 WASM JSON。
 
 ## 9. 本次分析验证与最终验收
 
@@ -268,7 +268,7 @@ npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e
 npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e -- modal-layout.spec.ts --project=chromium --project=webkit
 ```
 
-临时采集脚本不作为仓库维护工具保留。该回归命令检查当前弹窗流程。`python scripts/check-ci.py --stage visual-review` 在当前主机采集视觉复核图片。Linux 基线的生成、复核和导入步骤见 `scripts/README.md`。
+临时采集脚本不作为仓库维护工具保留。该回归命令检查当前弹窗流程。`layout-behavior.spec.ts` 验证响应式边界与操作可达性。截图只用于失败诊断或人工复核。
 
 调整完成后，必须同时满足以下条件：
 

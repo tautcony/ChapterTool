@@ -37,8 +37,8 @@ test('B12 fixed frame rate and an expression update chapter projection', async (
   await loadFixture(page, 'minimal-ogm.txt');
   await page.locator('select.fps-box').selectOption('2');
   await expect(chapters(page).getByLabel('Frames 2', { exact: true })).toHaveValue('300');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
-  const expression = page.getByLabel('Custom expression', { exact: true });
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
+  const expression = page.getByRole('dialog', { name: 'Expression', exact: true }).getByLabel('Custom expression', { exact: true });
   await expression.fill('t / 2');
   const livePreview = page.getByTestId('expression-preview');
   await expect(livePreview).toContainText('00:00:06.250');
@@ -47,7 +47,7 @@ test('B12 fixed frame rate and an expression update chapter projection', async (
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:06.250');
   const committed = await secondTime.inputValue();
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   await expression.fill('t + (');
   await expect(page.getByTestId('expression-preview')).toContainText('unexpected symbol');
   await expect(page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();

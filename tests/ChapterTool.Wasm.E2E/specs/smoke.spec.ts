@@ -34,5 +34,5 @@ test('B02–B04 @smoke imports, edits, undoes, redoes, previews, and downloads a
   const downloaded = await downloadText(page, testInfo);
   expect(downloaded.filename).toMatch(/\.txt$/i);
   const expected = await readFile(new URL('../fixtures/expected/edited-ogm.txt', import.meta.url));
-  expect(downloaded.content.toString('utf8').replace(/\r\n/g, '\n')).toBe(expected.toString('utf8'));
+  expect(downloaded.content.toString('utf8').replace(/\r\n/g, '\n')).toBe(expected.toString('utf8').replace(/\r\n/g, '\n'));
 });

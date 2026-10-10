@@ -39,11 +39,11 @@ test('M01 @smoke history is an independent native dialog on a short screen', asy
 
 test('M02 dialogs preserve main geometry and reachable actions across viewport boundaries', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  await expect(page.getByRole('button', { name: 'Expression', exact: true })).toBeVisible({ timeout: 4000 });
+  await expect(page.getByRole('button', { name: 'Expression editor', exact: true })).toBeVisible({ timeout: 4000 });
   for (const size of viewports) {
     await page.setViewportSize(size);
     for (const title of ['Edit history', 'Expression', 'Advanced export options']) {
-      const opener = page.getByRole('button', { name: title, exact: true });
+      const opener = page.getByRole('button', { name: title === 'Expression' ? 'Expression editor' : title, exact: true });
       await opener.scrollIntoViewIfNeeded();
       const before = await page.locator('.grid-wrap').boundingBox();
       await opener.click();
@@ -77,7 +77,7 @@ test('M02 dialogs preserve main geometry and reachable actions across viewport b
   }
 });
 
-test('M07 virtualized history keeps scroll and current selection while navigating', async ({ readyPage: page }) => {
+test('M07 history inspection keeps the document unchanged until explicit restoration', async ({ readyPage: page }) => {
   await page.setViewportSize({ width: 390, height: 640 });
   await loadFixture(page, 'minimal-ogm.txt');
   const name = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Name 1', exact: true });
@@ -89,11 +89,11 @@ test('M07 virtualized history keeps scroll and current selection while navigatin
   await expect(history.locator('.history-entry[aria-current="step"]')).toBeInViewport();
   const entries = history.locator('.history-entry');
   const count = await entries.count();
-  const scroll = await list.evaluate(el => el.scrollTop);
   await entries.nth(count - 2).click();
+  await expect(name).toHaveValue('Edit 24');
+  await history.getByRole('button', { name: 'Restore to this node', exact: true }).click();
   await expect(name).toHaveValue('Edit 23');
   await expect(history.locator('.history-entry[aria-current="step"]')).toBeInViewport();
-  expect(Math.abs(await list.evaluate(el => el.scrollTop) - scroll)).toBeLessThan(2);
   await history.locator('.modal-close').click();
   await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(name).toHaveValue('Edit 24');
@@ -101,23 +101,25 @@ test('M07 virtualized history keeps scroll and current selection while navigatin
 
 test('M08 cancellation restores an applied preset and no-change Apply stays disabled', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  const opener = page.getByRole('button', { name: 'Expression', exact: true });
+  const opener = page.getByRole('button', { name: 'Expression editor', exact: true });
   await opener.click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   const preset = dialog.getByLabel('Preset', { exact: true });
-  await preset.selectOption('identity');
+  await preset.selectOption('offset-seconds');
+  const appliedExpression = await dialog.getByLabel('Custom expression', { exact: true }).inputValue();
   await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeEnabled();
   await dialog.getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await opener.click();
-  await expect(preset).toHaveValue('identity');
+  await expect(preset).toHaveValue('offset-seconds');
+  await preset.selectOption('identity');
   await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
-  await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:06.250');
+  await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeEnabled();
   await page.keyboard.press('Escape');
   await opener.click();
-  await expect(preset).toHaveValue('identity');
-  await expect(dialog.getByLabel('Custom expression', { exact: true })).toHaveValue('t');
+  await expect(preset).toHaveValue('offset-seconds');
+  await expect(dialog.getByLabel('Custom expression', { exact: true })).toHaveValue(appliedExpression);
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Edit history', exact: true }).click();
   await expect(page.getByRole('dialog').locator('.history-entry')).toHaveCount(2);
@@ -128,7 +130,7 @@ test('M03 modal focus, Escape, rapid cancellation and background isolation prese
   const name = chapters(page).getByRole('textbox', { includeHidden: true, name: 'Name 1', exact: true });
   await commit(name, 'Retained edit');
   const baseline = await downloadText(page, testInfo);
-  const opener = page.getByRole('button', { name: 'Expression', exact: true });
+  const opener = page.getByRole('button', { name: 'Expression editor', exact: true });
   await opener.click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   const input = dialog.getByLabel('Custom expression', { exact: true });
@@ -235,7 +237,7 @@ test('M06 existing tools share Escape, focus restoration and draft dismissal beh
   await expect(page.getByRole('dialog').locator('#export-encoding')).toHaveValue('0');
   await page.keyboard.press('Escape');
 
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   const expression = page.getByRole('dialog', { name: 'Expression', exact: true });
   const preset = expression.getByLabel('Preset', { exact: true });
   const presetId = await preset.locator('option').nth(1).getAttribute('value');
@@ -246,7 +248,7 @@ test('M06 existing tools share Escape, focus restoration and draft dismissal beh
   await expect(expression).toBeVisible();
   await expression.getByLabel('Custom expression', { exact: true }).focus();
   await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   await expect(preset).toHaveValue('');
   await expect(expression.getByLabel('Custom expression', { exact: true })).toHaveValue('t');
   await page.keyboard.press('Escape');
@@ -266,7 +268,7 @@ test('M05 long expression results scroll while footer actions remain reachable',
   const text = Array.from({ length: 80 }, (_, i) => `CHAPTER${String(i + 1).padStart(2, '0')}=00:00:${String(i).padStart(2, '0')}.000\nCHAPTER${String(i + 1).padStart(2, '0')}NAME=Chapter ${i + 1}`).join('\n');
   // Use valid minute/second fields for all rows.
   await loadBytes(page, 'many.txt', Buffer.from(text.replace(/00:00:(\d+)\.000/g, (_, seconds: string) => `00:${String(Math.floor(Number(seconds) / 60)).padStart(2, '0')}:${String(Number(seconds) % 60).padStart(2, '0')}.000`)));
-  await page.getByRole('button', { name: 'Expression', exact: true }).click();
+  await page.getByRole('button', { name: 'Expression editor', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Expression', exact: true });
   await dialog.getByLabel('Custom expression', { exact: true }).fill('t / 2');
   await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:39.500');

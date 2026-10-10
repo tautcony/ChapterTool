@@ -144,11 +144,11 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(["tests/One.Tests/One.Tests.csproj", "tests/Two.Tests/Two.Tests.csproj"], [step.args[2] for step in tests])
         self.assertTrue(all("--no-build" in step.args and "--no-restore" in step.args for step in tests))
 
-    def test_full_acceptance_disables_retries(self):
+    def test_full_acceptance_installs_all_engines(self):
         steps = ci.browser_steps("full", True)
         install = next(step for step in steps if step.name == "Install browser engines")
         self.assertEqual(["--with-deps", "chromium", "firefox", "webkit"], install.args[-4:])
-        self.assertEqual({"E2E_NO_RETRY": "1"}, steps[-1].env)
+        self.assertEqual({}, steps[-1].env)
 
     def test_engine_selection_keeps_full_coverage_in_isolated_jobs(self):
         for engine in ("chromium", "firefox", "webkit"):
@@ -157,51 +157,50 @@ class RunnerTests(unittest.TestCase):
                 install = next(step for step in steps if step.key == "install-browser-engines")
                 self.assertEqual(["--with-deps", engine], install.args[-2:])
                 self.assertEqual(["npm", "run", "test:e2e", "--", f"--project={engine}"], steps[-1].args)
-                self.assertEqual({"E2E_NO_RETRY": "1", "E2E_RUN_NAME": engine}, steps[-1].env)
+                self.assertEqual({"E2E_RUN_NAME": engine}, steps[-1].env)
 
     def test_pr_webkit_selection_does_not_run_chromium(self):
         steps = ci.browser_steps("pr", False, "webkit")
         tests = [step for step in steps if "test:e2e" in step.args]
         self.assertEqual(1, len(tests))
         self.assertEqual("run-webkit-regressions", tests[0].key)
-        self.assertEqual(["modal-layout.spec.ts", "unified-editing.spec.ts"], tests[0].args[-2:])
+        self.assertEqual(["modal-layout.spec.ts", "unified-editing.spec.ts", "layout-behavior.spec.ts"], tests[0].args[-3:])
+        self.assertEqual("webkit", tests[0].env["E2E_RUN_NAME"])
+
+    def test_isolated_project_build_needs_no_native_workload(self):
+        options = ci.parser().parse_args(["--stage", "test-dotnet", "--test-project", "ChapterTool.Core.Tests"])
+        steps = ci.plan(options, ci.ROOT)
+        self.assertEqual(["restore-test-project", "build-test-project", "run-tests"], [step.key for step in steps])
+        self.assertTrue(all(step.args[2].endswith("ChapterTool.Core.Tests.csproj") for step in steps))
+        with patch.object(ci.shutil, "which", return_value="dotnet"), \
+                patch.object(ci.subprocess, "check_output", return_value="10.0.401") as check:
+            ci.preflight(options)
+        check.assert_called_once_with(["dotnet", "--version"], text=True, timeout=30)
+
+    def test_unknown_test_project_fails_before_running_commands(self):
+        with patch.object(ci, "run_step") as run, contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(1, ci.main(["--stage", "test-dotnet", "--test-project", "../Other"]))
+        run.assert_not_called()
+
+    def test_isolated_infrastructure_requires_real_tools(self):
+        options = ci.parser().parse_args(["--stage", "test-dotnet", "--test-project", "ChapterTool.Infrastructure.Tests", "--step", "run-tests"])
+        with patch.object(ci.shutil, "which", side_effect=lambda name, **kwargs: "dotnet" if name == "dotnet" else None), \
+                patch.object(ci.subprocess, "check_output", return_value="10.0.401"):
+            with self.assertRaisesRegex(ValueError, "ffmpeg.*ffprobe.*mkvextract.*mkvmerge"):
+                ci.preflight(options)
+
+    def test_release_nuget_version_applies_to_build_and_pack(self):
+        steps = ci.nuget_steps("23.3.2-rc.1")
+        versioned = [step for step in steps if step.args[:2] in (["dotnet", "build"], ["dotnet", "pack"])]
+        self.assertEqual(4, len(versioned))
+        self.assertTrue(all("-p:Version=23.3.2-rc.1" in step.args and "-p:PackageVersion=23.3.2-rc.1" in step.args for step in versioned))
+        self.assertEqual("verify-nuget-consumers", steps[-1].key)
+        with self.assertRaisesRegex(ValueError, "Invalid NuGet"):
+            ci.nuget_steps("--invalid")
 
     def test_invalid_engine_for_suite_fails_before_commands(self):
         with self.assertRaisesRegex(ValueError, "not part of"):
             ci.browser_steps("pr", False, "firefox")
-
-    def test_visual_comparison_does_not_update_baselines_by_default(self):
-        with patch.object(ci, "preflight"), patch.object(ci.subprocess, "run") as run, \
-                contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(0, ci.main(["--stage", "visual", "--step", "compare-linux-screenshot-baselines"]))
-        self.assertEqual(["run", "test:visual"], run.call_args.args[0][1:])
-
-    def test_visual_update_is_explicit_and_keeps_behavior_assertions_without_retries(self):
-        with patch.object(ci, "preflight"), patch.object(ci.subprocess, "run") as run, \
-                contextlib.redirect_stdout(io.StringIO()):
-            self.assertEqual(0, ci.main(["--stage", "visual", "--step", "compare-linux-screenshot-baselines", "--update-visual-snapshots"]))
-        self.assertEqual(["run", "test:visual", "--", "--update-snapshots", "--retries=0"], run.call_args.args[0][1:])
-        self.assertTrue(run.call_args.kwargs["check"])
-
-    def test_visual_update_cannot_change_other_stage_checks(self):
-        with patch.object(ci, "preflight") as preflight, patch.object(ci.subprocess, "run") as run, \
-                contextlib.redirect_stderr(io.StringIO()):
-            self.assertEqual(1, ci.main(["--stage", "browser", "--update-visual-snapshots"]))
-        preflight.assert_not_called()
-        run.assert_not_called()
-
-    def test_visual_review_can_run_on_windows_with_a_prepared_site(self):
-        options = ci.parser().parse_args(["--stage", "visual-review", "--step", "review-visual-workflows"])
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            site = root / "artifacts/wasm-e2e/site/ChapterTool/index.html"
-            site.parent.mkdir(parents=True)
-            site.touch()
-            with patch.object(ci, "ROOT", root), patch.object(ci.platform, "system", return_value="Windows"), \
-                    patch.object(ci.shutil, "which", return_value="npm"), \
-                    patch.object(ci.subprocess, "check_output", return_value="v22.16.0"):
-                ci.preflight(options)
-        self.assertEqual(["npm", "run", "test:visual:review"], ci.plan(options, ci.ROOT)[0].args)
 
     def test_unsupported_macos_packaging_fails_before_commands_run(self):
         with patch.object(ci.platform, "system", return_value="Windows"):

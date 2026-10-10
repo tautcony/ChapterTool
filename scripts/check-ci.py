@@ -18,7 +18,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parent.parent
 NODE = "packages/chaptertool"
 E2E = "tests/ChapterTool.Wasm.E2E"
-STAGES = ("resources", "dotnet", "node", "build-test", "browser", "pack-node", "pack-desktop", "visual", "visual-review")
+STAGES = ("resources", "dotnet", "test-dotnet", "pack-nuget", "node", "build-test", "browser", "pack-node", "pack-desktop")
 DEFAULT_STAGES = ("resources", "dotnet", "node", "browser", "pack-node", "pack-desktop")
 
 
@@ -58,8 +58,37 @@ def dotnet_steps(root: Path) -> list[Step]:
     ]
     for project, output in (("ChapterTool.Core", "nuget"), ("ChapterTool.CommandLine", "cli-nuget")):
         steps.append(Step(f"Pack {project}", ["dotnet", "pack", f"src/{project}/{project}.csproj", "--configuration", "Release", "--no-build", "--no-restore", "--output", f"artifacts/{output}", "/p:ContinuousIntegrationBuild=true"]))
+    steps.append(Step("Verify NuGet consumers", [sys.executable, "scripts/ci/verify-nuget.py"]))
     for project in dotnet_tests(root):
         steps.append(Step(f"Test {Path(project).stem}", ["dotnet", "test", project, "--configuration", "Release", "--no-build", "--no-restore", "--timeout", "10m"]))
+    return steps
+
+
+def test_dotnet_steps(root: Path, project: str | None) -> list[Step]:
+    projects = {Path(path).stem: path for path in dotnet_tests(root)}
+    if project not in projects:
+        raise ValueError("--stage test-dotnet requires --test-project from ChapterTool.slnx.")
+    path = projects[project]
+    return [
+        Step("Restore test project", ["dotnet", "restore", path]),
+        Step("Build test project", ["dotnet", "build", path, "--configuration", "Release", "--no-restore"]),
+        Step("Run tests", ["dotnet", "test", path, "--configuration", "Release", "--no-build", "--no-restore", "--timeout", "10m"]),
+    ]
+
+
+def nuget_steps(version: str | None) -> list[Step]:
+    if version and not re.fullmatch(r"\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?", version):
+        raise ValueError("Invalid NuGet package version.")
+    properties = [f"-p:Version={version}", f"-p:PackageVersion={version}"] if version else []
+    steps = []
+    for project, output in (("ChapterTool.Core", "nuget"), ("ChapterTool.CommandLine", "cli-nuget")):
+        path = f"src/{project}/{project}.csproj"
+        steps.extend([
+            Step(f"Restore {project}", ["dotnet", "restore", path]),
+            Step(f"Build {project}", ["dotnet", "build", path, "--configuration", "Release", "--no-restore", *properties]),
+            Step(f"Pack {project}", ["dotnet", "pack", path, "--configuration", "Release", "--no-build", "--no-restore", "--output", f"artifacts/{output}", *properties, "/p:ContinuousIntegrationBuild=true"]),
+        ])
+    steps.append(Step("Verify NuGet consumers", [sys.executable, "scripts/ci/verify-nuget.py"]))
     return steps
 
 
@@ -95,11 +124,11 @@ def browser_steps(suite: str, install_deps: bool, engine: str | None = None) -> 
     steps.append(Step("Install browser engines", ["npm", "exec", "--", "playwright", "install", *(["--with-deps"] if install_deps else []), *engines], E2E))
     args = ["npm", "run", "test:e2e", "--"]
     if suite == "full":
-        steps.append(Step("Run full browser acceptance", [*args, *([f"--project={engine}"] if engine else [])], E2E, {"E2E_NO_RETRY": "1", **({"E2E_RUN_NAME": engine} if engine else {})}))
+        steps.append(Step("Run full browser acceptance", [*args, *([f"--project={engine}"] if engine else [])], E2E, {"E2E_RUN_NAME": engine} if engine else {}))
     elif "chromium" in engines:
         steps.append(Step("Run Chromium E2E", [*args, "--project=chromium"], E2E))
     if suite == "pr" and "webkit" in engines:
-        steps.append(Step("Run WebKit regressions", [*args, "--project=webkit", "modal-layout.spec.ts", "unified-editing.spec.ts"], E2E, {"E2E_RUN_NAME": "webkit"}))
+        steps.append(Step("Run WebKit regressions", [*args, "--project=webkit", "modal-layout.spec.ts", "unified-editing.spec.ts", "layout-behavior.spec.ts"], E2E, {"E2E_RUN_NAME": "webkit"}))
     return steps
 
 
@@ -128,8 +157,6 @@ def desktop_steps(runtimes: list[str]) -> list[Step]:
 
 
 def plan(options: argparse.Namespace, root: Path) -> list[Step]:
-    if options.update_visual_snapshots and options.stage != "visual":
-        raise ValueError("Screenshot updates require --stage visual in the matching Linux environment.")
     stages = DEFAULT_STAGES if options.stage == "all" else (options.stage,)
     steps = []
     for stage in stages:
@@ -137,6 +164,10 @@ def plan(options: argparse.Namespace, root: Path) -> list[Step]:
             steps.extend(resource_steps())
         elif stage == "dotnet":
             steps.extend(dotnet_steps(root))
+        elif stage == "test-dotnet":
+            steps.extend(test_dotnet_steps(root, options.test_project))
+        elif stage == "pack-nuget":
+            steps.extend(nuget_steps(options.package_version))
         elif stage == "node":
             steps.extend(node_steps())
         elif stage == "build-test":
@@ -148,17 +179,6 @@ def plan(options: argparse.Namespace, root: Path) -> list[Step]:
         elif stage == "pack-desktop":
             runtimes = options.runtime or (["osx-arm64"] if platform.system() == "Darwin" else ["win-x64", "linux-x64"])
             steps.extend(desktop_steps(runtimes))
-        elif stage in ("visual", "visual-review"):
-            steps.extend([
-                Step("Install visual test dependencies", ["npm", "ci"], E2E),
-                Step("Install Chromium", ["npm", "exec", "--", "playwright", "install", *(["--with-deps"] if options.install_browser_deps else []), "chromium"], E2E),
-            ])
-            if stage == "visual-review":
-                steps.append(Step("Review visual workflows", ["npm", "run", "test:visual:review"], E2E))
-            else:
-                steps.append(
-                    Step("Compare Linux screenshot baselines", ["npm", "run", "test:visual",
-                         *(["--", "--update-snapshots", "--retries=0"] if options.update_visual_snapshots else [])], E2E))
     if options.step:
         unknown = set(options.step) - {step.key for step in steps}
         if unknown:
@@ -191,6 +211,11 @@ def run_step(step: Step, root: Path, dry_run: bool = False) -> None:
             raise ValueError("WASM publish output must stay in the workspace artifact directory.")
         if output.exists():
             shutil.rmtree(output)
+    if step.key in ("pack-chaptertool-core", "pack-chaptertool-commandline"):
+        directory = root / ("artifacts/nuget" if step.key == "pack-chaptertool-core" else "artifacts/cli-nuget")
+        for pattern in ("*.nupkg", "*.snupkg"):
+            for package in directory.glob(pattern):
+                package.unlink()
     args = step.args.copy()
     args[0] = shutil.which(args[0]) or args[0]
     environment = {**tool_environment(), "CI": "true", "BINARYEN_CORES": "1", **step.env}
@@ -209,7 +234,8 @@ def preflight(options: argparse.Namespace) -> None:
         if not sdk.startswith("10."):
             raise ValueError(f"CI requires .NET SDK 10.x; found {sdk}.")
     required = commands.copy()
-    if any(step.key == "test-chaptertool-infrastructure-tests" for step in steps):
+    if any(step.key == "test-chaptertool-infrastructure-tests" or
+           (step.key == "run-tests" and options.test_project == "ChapterTool.Infrastructure.Tests") for step in steps):
         required.update(("ffmpeg", "ffprobe", "mkvextract", "mkvmerge"))
     environment = tool_environment()
     missing = sorted(name for name in required if not shutil.which(name, path=environment.get("PATH")))
@@ -221,22 +247,18 @@ def preflight(options: argparse.Namespace) -> None:
             raise ValueError("CI requires wasm-tools. Run 'dotnet workload install wasm-tools' once, then retry.")
     if options.stage == "pack-node" and not (ROOT / NODE / "dist/index.mjs").is_file():
         raise ValueError("pack-node needs the dist output from --stage node or --stage build-test.")
-    if options.stage in ("visual", "visual-review"):
-        if options.stage == "visual" and platform.system() != "Linux":
-            raise ValueError("The screenshot baselines require the CI Linux environment. Use --stage browser for cross-platform layout behavior checks.")
-        if not (ROOT / "artifacts/wasm-e2e/site/ChapterTool/index.html").is_file():
-            raise ValueError(f"{options.stage} needs the prepared Release site from --stage browser.")
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--stage", choices=("all", *STAGES), default="all")
     result.add_argument("--step", action="append", help="Run a step key from --plan. Dependencies must already be prepared. May be repeated.")
+    result.add_argument("--test-project", help="Select one solution test project by name for --stage test-dotnet.")
+    result.add_argument("--package-version", help="Version to build and pack for --stage pack-nuget.")
     result.add_argument("--browser-suite", choices=("chromium", "pr", "full"), default="pr")
     result.add_argument("--browser-engine", choices=("chromium", "firefox", "webkit"), help="Select one engine from the browser suite for an isolated CI job.")
     result.add_argument("--runtime", action="append", choices=("win-x64", "linux-x64", "osx-arm64"))
     result.add_argument("--install-browser-deps", action="store_true", help="Install Playwright system packages on Linux.")
-    result.add_argument("--update-visual-snapshots", action="store_true", help="Generate screenshot baselines for review. Requires --stage visual on matching Linux.")
     result.add_argument("--plan", action="store_true", help="Print commands without running checks.")
     return result
 
@@ -259,8 +281,6 @@ def main(arguments: list[str] | None = None) -> int:
             print(f"::error title=CI check {current_step}::{message}", flush=True)
         return 1
     print(f"\n{'Plan printed' if options.plan else 'Selected host CI checks passed'} ({time.monotonic() - started:.1f}s).", flush=True)
-    if options.stage == "all":
-        print("Linux screenshot baselines require the matching Linux environment and --stage visual.")
     if options.stage in ("all", "pack-desktop") and platform.system() != "Darwin":
         print("macOS DMG must still be verified on a macOS host.")
     return 0

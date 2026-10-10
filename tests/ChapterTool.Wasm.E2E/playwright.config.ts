@@ -8,14 +8,15 @@ const runSuffix = process.env.E2E_RUN_NAME ? `-${process.env.E2E_RUN_NAME}` : ''
 
 export default defineConfig({
   testDir: './specs',
-  testIgnore: '**/layout.spec.ts',
   outputDir: `../../artifacts/wasm-e2e/results${runSuffix}`,
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.E2E_NO_RETRY ? 0 : process.env.CI ? 1 : 0,
+  retries: 0,
   failOnFlakyTests: Boolean(process.env.CI),
   timeout: 90_000,
+  globalTimeout: process.env.CI ? 10 * 60_000 : undefined,
+  maxFailures: process.env.CI ? 3 : 0,
   expect: { timeout: 15_000 },
   reporter: [
     ['list'],
