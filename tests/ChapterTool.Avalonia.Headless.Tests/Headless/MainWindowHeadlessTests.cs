@@ -937,11 +937,28 @@ public sealed class MainWindowHeadlessTests
             Assert.DoesNotContain(" ", string.Concat(runs.Select(static run => run.Text)));
         }
 
-        var frameArrows = renderedRow.GetVisualDescendants().OfType<Control>()
+        var frameCell = frameValues[0].GetVisualAncestors().OfType<DataGridCell>().First();
+        var frameArrows = frameCell.GetVisualDescendants().OfType<Control>()
             .Where(control => control.GetType().Name == "Icon" && control.IsVisible && control.Width >= 14)
             .ToArray();
         Assert.NotEmpty(frameArrows);
         Assert.All(frameArrows, frameArrow => Assert.True(frameArrow.Width >= 14));
+
+        if (row.IsNarrowPreviewLayout)
+        {
+            var narrowPreview = frameCell.GetVisualDescendants().OfType<Grid>()
+                .Where(grid => grid.RowDefinitions.Count > 1)
+                .Single(grid => grid.GetVisualDescendants().OfType<TextBlock>()
+                    .Count(static block => block.Classes.Contains("framePreview")) == 2);
+            Assert.Equal(2, narrowPreview.RowDefinitions.Count);
+            var narrowValues = narrowPreview.GetVisualDescendants().OfType<TextBlock>()
+                .Where(static block => block.Classes.Contains("framePreview"))
+                .ToArray();
+            var candidate = Assert.Single(narrowValues, static value => Grid.GetRow(value) == 1);
+            var narrowArrow = Assert.Single(narrowPreview.GetVisualDescendants().OfType<Control>(),
+                control => control.GetType().Name == "Icon" && control.IsVisible && control.Width >= 14);
+            Assert.Equal(Grid.GetRow(candidate), Grid.GetRow(narrowArrow));
+        }
     }
 
     private static void AssertFramePreviewColor(

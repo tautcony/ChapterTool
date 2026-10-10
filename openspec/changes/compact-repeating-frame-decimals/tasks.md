@@ -66,3 +66,11 @@
 ## 11. Full-precision frame editor round trips
 
 - [x] 11.1 Preserve the chapter ticks and full-precision frame text when an unchanged decimal frame value is committed with exact rational or decimal frame rates.
+
+## 12. Narrow frame preview layout
+
+- [x] 12.1 Keep the before and candidate frame values on two rows and align the arrow with the candidate value. Cover the layout with an Avalonia Headless assertion.
+
+## 13. Settings-driven frame presentation startup
+
+- [x] 13.1 Initialize the non-persistent main-window rounding control from the saved frame display mode. Keep main-window toggles session-only and ensure rounding suppresses cycle notation.

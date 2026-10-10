@@ -40,6 +40,18 @@ public sealed class FrameValueFormatterTests
     }
 
     [Fact]
+    public void Integer_rounding_takes_precedence_over_repeating_decimal_display()
+    {
+        var parts = FrameValueFormatter.Format(
+            Exact(520_940_000, new ChapterFrameRate(24000, 1001)),
+            new FramePresentationPolicy(true, true, -1));
+
+        Assert.Equal("1249", parts.PlainNumericText);
+        Assert.Empty(parts.NonRepeatingDigits);
+        Assert.Empty(parts.RepeatingDigits);
+    }
+
+    [Fact]
     public void Finite_decimal_uses_ordinary_decimal_places()
     {
         var parts = FrameValueFormatter.Format(Exact(TimeSpan.FromSeconds(0.02).Ticks, new ChapterFrameRate(25, 1)), Compact);

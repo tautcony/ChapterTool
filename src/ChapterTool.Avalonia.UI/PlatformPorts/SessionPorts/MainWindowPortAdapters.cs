@@ -189,13 +189,14 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
 
         owner.FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
         owner.ShowRepeatingFrameDecimals = settings.ShowRepeatingFrameDecimals;
+        var frameDisplayMode = (Core.Editing.FrameDisplayMode)FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode);
         owner.ApplyEditingOptions(new ChapterEditingOptions(
             DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve
                 ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve
                 : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize,
-            (Core.Editing.FrameDisplayMode)FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode),
+            frameDisplayMode,
             FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces)));
-        owner.RoundFrames = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round;
+        owner.RoundFrames = frameDisplayMode == Core.Editing.FrameDisplayMode.Round;
         owner.XmlLanguage = string.IsNullOrWhiteSpace(settings.DefaultXmlLanguage) ? "und" : settings.DefaultXmlLanguage;
         owner.EmitBom = settings.EmitBom;
         owner.OutputTextEncoding = OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding);

@@ -416,7 +416,7 @@
                     </Grid>
                     <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
                           AutomationProperties.Name="{Binding PreviewFramesAccessibleName}"
-                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4" RowSpacing="1"
+                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="1"
                           IsVisible="{Binding ShowNarrowFramesPreview}">
                       <TextBlock Grid.Row="0" Grid.Column="1" Classes="frameText framePreview"
                                  Classes.frameAccurate="{Binding IsPreviewBeforeFrameAccurate}"
@@ -424,7 +424,7 @@
                                  Classes.frameNeutral="{Binding IsPreviewBeforeFrameNeutral}"
                                  HorizontalAlignment="Stretch" TextAlignment="Center" TextWrapping="NoWrap"><Run Text="{Binding PreviewBeforeFramePresentation.SignedIntegerDigits}" /><Run Text="{Binding PreviewBeforeFramePresentation.DecimalPoint}" /><Run Text="{Binding PreviewBeforeFramePresentation.NonRepeatingDigits}" /><Run Text="{Binding PreviewBeforeFramePresentation.RepeatingDigits}" TextDecorations="{x:Static media:TextDecorations.Overline}" /></TextBlock>
                       <i:Icon Grid.Row="1" Grid.Column="0" Value="fa-solid fa-arrow-right" Width="14" Height="14" Margin="2,0" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Row="2" Grid.Column="1" Classes="frameText framePreview"
+                      <TextBlock Grid.Row="1" Grid.Column="1" Classes="frameText framePreview"
                                  Classes.frameAccurate="{Binding IsPreviewCandidateFrameAccurate}"
                                  Classes.frameInexact="{Binding IsPreviewCandidateFrameInexact}"
                                  Classes.frameNeutral="{Binding IsPreviewCandidateFrameNeutral}"

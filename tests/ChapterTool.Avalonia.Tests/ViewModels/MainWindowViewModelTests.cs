@@ -33,6 +33,50 @@ public sealed class MainWindowViewModelTests
         Assert.False(vm.SaveCommand.CanExecute());
     }
 
+    [Theory]
+    [InlineData("round", ChapterTool.Core.Editing.FrameDisplayMode.Round, true)]
+    [InlineData("decimal-places", ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces, false)]
+    [InlineData("full-precision", ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, false)]
+    public async Task Startup_initializes_frame_display_from_saved_preference(
+        string savedMode,
+        ChapterTool.Core.Editing.FrameDisplayMode expectedMode,
+        bool expectedRoundFrames)
+    {
+        var store = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: savedMode,
+            FrameDecimalPlaces: 6,
+            ShowRepeatingFrameDecimals: true));
+        var vm = CreateViewModel(settingsStore: store);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+
+        Assert.Equal(expectedRoundFrames, vm.RoundFrames);
+        Assert.Equal(expectedMode, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(6, vm.EditingOptions.FrameDecimalPlaces);
+        Assert.True(vm.ShowRepeatingFrameDecimals);
+        Assert.Equal(savedMode, store.Current.Application.FrameDisplayMode);
+    }
+
+    [Fact]
+    public async Task Main_window_rounding_toggle_is_session_only()
+    {
+        var store = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            FrameDecimalPlaces: 6));
+        var vm = CreateViewModel(settingsStore: store);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+        vm.RoundFrames = true;
+
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.Round, vm.EditingOptions.FrameDisplay);
+        Assert.Equal("full-precision", store.Current.Application.FrameDisplayMode);
+
+        vm.RoundFrames = false;
+
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
+        Assert.Equal("full-precision", store.Current.Application.FrameDisplayMode);
+    }
+
     [Fact]
     public void ConstructsDocumentedCommands()
     {
