@@ -1104,6 +1104,28 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task ChangeFpsCommandUsesSelectedRateWhenSourceRateIsMissing()
+    {
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt",
+            new Chapter(1, TimeSpan.FromSeconds(10), "A")) with { FramesPerSecond = 0 };
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), saveService: save);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var targetIndex = new FrameRateService().Options.Single(option => option.Value == 25).LegacyMplsCode;
+        vm.SetFrameOptions(targetIndex, roundFrames: true);
+        await vm.ChangeFpsCommand.ExecuteAsync();
+
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.True(vm.CanApplyContentPreview, vm.ExpressionPreviewText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+        await vm.SaveCommand.ExecuteAsync("out");
+
+        Assert.Equal(25, save.LastInfo!.FramesPerSecond);
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+    }
+
+    [Fact]
     public async Task ChangeFpsCommandLogsSourceAndSelectedTargetFrameRates()
     {
         var log = new ApplicationLogPanelProvider();

@@ -217,7 +217,7 @@ public sealed partial class MainWindowViewModel
             {
                 "Apply expression" => PrepareExpressionOperation(Expression),
                 "Change chapter frame rate" => PrepareFrameRateOperation(
-                    configuredFrameRate ?? (decimal)(CurrentInfo?.FramesPerSecond ?? 0),
+                    ResolveSourceFrameRate(),
                     selectedFrameRateOption.Value),
                 _ => PrepareContentOptionsOperation()
             };

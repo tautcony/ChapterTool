@@ -4,6 +4,7 @@ using ChapterTool.Core.Session;
 
 namespace ChapterTool.Wasm.Services;
 
+/// <summary>Provides chapter-content preview and editing operations for the browser workspace.</summary>
 public sealed partial class WasmWorkspace
 {
     private static readonly IReadOnlyDictionary<string, System.Globalization.CultureInfo> LanguageCultures =
@@ -16,11 +17,14 @@ public sealed partial class WasmWorkspace
     private ChapterTrackId? contentPreviewTrackId;
     private object? contentPreviewDraft;
 
+    /// <summary>Gets the current chapter-content preview, if one is prepared.</summary>
     public ChapterContentPreview? ContentPreview => contentPreview;
 
+    /// <summary>Gets the projected changes and diagnostics for the current preview.</summary>
     public ExpressionPreviewProjection? ContentPreviewProjection => contentPreview is { } preview
         ? ExpressionPreviewProjector.Build(preview, contentPreviewTrackId) : null;
 
+    /// <summary>Gets whether the current preview no longer matches the workspace state.</summary>
     public bool IsContentPreviewStale => contentPreview is { } preview
         && (session.ContentSession?.Snapshot.BaseToken != preview.BaseToken
             || CurrentTrackId != contentPreviewTrackId
@@ -37,12 +41,15 @@ public sealed partial class WasmWorkspace
     private ChapterTrackId? CurrentTrackId => session.ContentSession?.Snapshot.Document.Tracks
         .ElementAtOrDefault(session.CurrentTrackIndex)?.Id;
 
+    /// <summary>Prepares a preview of the current chapter naming and ordering options.</summary>
     public ChapterContentPreview? PrepareNamingPreview() => PrepareContentPreview("Apply chapter options", document =>
         OrderShift is < 0 or > 1000
             ? new(false, document, [], [localizer.T("Parity.InvalidNumber")])
             : candidateBuilder.ApplyOutputOptions(document, AutoGenerateNames, UseTemplateNames,
                 ChapterNameTemplateText ?? string.Empty, OrderShift, false, "t"));
 
+    /// <summary>Prepares a preview that shifts chapter frames by the specified amount.</summary>
+    /// <param name="frames">The signed number of frames to shift.</param>
     public ChapterContentPreview? PrepareFrameShiftPreview(int frames) => PrepareContentPreview("Shift chapter frames", document =>
         frames is < -1000000 or > 1000000
             ? new(false, document, [], [localizer.T("Parity.InvalidShift")])
@@ -50,6 +57,7 @@ public sealed partial class WasmWorkspace
                 document.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator)
                     .Select(chapter => chapter.Id).ToHashSet(), frames, (decimal)FramesPerSecond));
 
+    /// <summary>Prepares a preview that changes the chapter frame rate to the selected rate.</summary>
     public ChapterContentPreview? PrepareFrameRatePreview() => PrepareContentPreview("Change chapter frame rate", document =>
         candidateBuilder.ChangeFrameRate(document, (decimal)(BaseChapterSet?.FramesPerSecond ?? 0),
             ResolveSelectedFrameRateOption().Value));
@@ -76,6 +84,9 @@ public sealed partial class WasmWorkspace
         return contentPreview;
     }
 
+    /// <summary>Applies the current valid preview as a content-session transaction.</summary>
+    /// <param name="cancellationToken">A token that can cancel the operation.</param>
+    /// <returns><see langword="true"/> if the preview was committed or made no changes.</returns>
     public async ValueTask<bool> ApplyContentPreviewAsync(CancellationToken cancellationToken = default)
     {
         if (contentPreview is not { IsValid: true } preview || IsBusy || IsContentPreviewStale
@@ -101,6 +112,7 @@ public sealed partial class WasmWorkspace
         return true;
     }
 
+    /// <summary>Discards the current chapter-content preview.</summary>
     public void CancelContentPreview()
     {
         contentPreview = null;
@@ -109,6 +121,10 @@ public sealed partial class WasmWorkspace
         Notify();
     }
 
+    /// <summary>Begins editing a chapter cell and captures the current session version.</summary>
+    /// <param name="index">The chapter row index.</param>
+    /// <param name="field">The cell field to edit.</param>
+    /// <returns>A draft for the cell, or <see langword="null"/> if editing cannot begin.</returns>
     public WasmCellDraft? BeginCellEdit(int index, ChapterCellField field)
     {
         if (IsBusy || session.ContentSession is not { } content
@@ -127,6 +143,10 @@ public sealed partial class WasmWorkspace
         return new(chapter.Id, trackId, content.Snapshot.BaseToken, field, original);
     }
 
+    /// <summary>Validates and commits an edited chapter cell.</summary>
+    /// <param name="draft">The draft created when editing began.</param>
+    /// <param name="value">The proposed cell value.</param>
+    /// <returns>A localized validation error, or <see langword="null"/> when the edit succeeds.</returns>
     public async ValueTask<string?> CommitCellEditAsync(WasmCellDraft draft, string value)
     {
         ArgumentNullException.ThrowIfNull(draft);
@@ -161,6 +181,8 @@ public sealed partial class WasmWorkspace
         return null;
     }
 
+    /// <summary>Selects the next or previous clip option in the requested direction.</summary>
+    /// <param name="direction">A positive value selects forward; a negative value selects backward.</param>
     public void SelectAdjacentClip(int direction)
     {
         if (IsBusy || ClipOptions.Count == 0)
@@ -175,6 +197,11 @@ public sealed partial class WasmWorkspace
         }
     }
 
+    /// <summary>Restores a saved naming draft and clears any prepared preview.</summary>
+    /// <param name="mode">The naming mode index.</param>
+    /// <param name="shift">The chapter ordering shift.</param>
+    /// <param name="template">The chapter naming template.</param>
+    /// <param name="status">The template validation status.</param>
     public void RestoreNamingDraft(int mode, int shift, string template, string status)
     {
         ChapterNameModeIndex = mode;
@@ -184,6 +211,8 @@ public sealed partial class WasmWorkspace
         CancelContentPreview();
     }
 
+    /// <summary>Returns a language code with its localized display name when available.</summary>
+    /// <param name="code">The language code to resolve.</param>
     public string XmlLanguageName(string code)
     {
         var resource = code switch
@@ -222,5 +251,11 @@ public sealed partial class WasmWorkspace
     }
 }
 
+/// <summary>Captures the chapter cell and session version being edited.</summary>
+/// <param name="ChapterId">The identifier of the edited chapter.</param>
+/// <param name="TrackId">The identifier of the track containing the chapter.</param>
+/// <param name="BaseToken">The session version captured when editing began.</param>
+/// <param name="Field">The chapter cell field being edited.</param>
+/// <param name="OriginalValue">The cell value captured when editing began.</param>
 public sealed record WasmCellDraft(ChapterId ChapterId, ChapterTrackId TrackId,
     SessionBaseToken BaseToken, ChapterCellField Field, string OriginalValue);

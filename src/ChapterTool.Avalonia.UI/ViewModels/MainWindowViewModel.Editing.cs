@@ -435,7 +435,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        var sourceFps = configuredFrameRate ?? (decimal)CurrentInfo.FramesPerSecond;
+        var sourceFps = ResolveSourceFrameRate();
         var targetOption = selectedFrameRateOption;
         var targetFps = targetOption.Value;
         pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
@@ -448,6 +448,23 @@ public sealed partial class MainWindowViewModel
             : "Expression.State.Invalid");
         ApplyContentPreviewCommand.RaiseCanExecuteChanged();
         CancelContentPreviewCommand.RaiseCanExecuteChanged();
+    }
+
+    private decimal ResolveSourceFrameRate()
+    {
+        if (configuredFrameRate is > 0)
+        {
+            return configuredFrameRate.Value;
+        }
+
+        if (CurrentInfo is { FramesPerSecond: > 0 } currentInfo)
+        {
+            return (decimal)currentInfo.FramesPerSecond;
+        }
+
+        // When the imported source has no FPS metadata, its frame values are already
+        // displayed using the selected rate. Use that rate as the source baseline.
+        return selectedFrameRateOption.Value;
     }
 
     /// <summary>
