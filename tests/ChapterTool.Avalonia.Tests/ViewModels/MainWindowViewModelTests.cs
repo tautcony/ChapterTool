@@ -1558,6 +1558,29 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task OrderShiftImmediatelyPreviewsRenumberedChaptersBeforeApplying()
+    {
+        var load = new FakeLoadService(ImportResult(
+            "movie.txt",
+            Info(ChapterImportFormat.Ogm, "movie.txt",
+                new Chapter(1, TimeSpan.Zero, "A"),
+                new Chapter(2, TimeSpan.FromSeconds(1), "B"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        vm.OrderShift = 2;
+
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Equal([1, 2], vm.Rows.Select(static row => row.Number).ToArray());
+        Assert.Equal(["3", "4"], vm.Rows.Select(static row => row.PreviewNumber).ToArray());
+
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal([3, 4], vm.Rows.Select(static row => row.Number).ToArray());
+    }
+
+    [Fact]
     public async Task ZeroOrderShiftUsesFirstChapterNumber()
     {
         var vm = CreateViewModel();

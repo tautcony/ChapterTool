@@ -217,6 +217,27 @@ public sealed partial class MainWindowViewModel
                 new HistoryOperationParameter("expression", Workspace.OperationDrafts.Expression)
             ]));
 
+    private void RefreshContentOptionsPreview()
+    {
+        if (CurrentInfo is null)
+        {
+            return;
+        }
+
+        pendingContentPreview = PrepareContentOptionsOperation();
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        StatusText = Localizer.GetString(pendingContentPreview.IsValid
+            ? "Expression.State.Ready"
+            : "Expression.State.Invalid");
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
     internal ChapterContentPreview PrepareFrameRateOperation(decimal sourceFps, decimal targetFps) =>
         ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
             ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(document, sourceFps, targetFps),

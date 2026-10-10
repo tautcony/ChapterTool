@@ -145,18 +145,7 @@ public sealed partial class MainWindowViewModel
         }, _ => CanEditRows);
         PreviewContentOptionsCommand = new UiCommand((_, _) =>
         {
-            pendingContentPreview = PrepareContentOptionsOperation();
-            OnPropertyChanged(nameof(IsContentPreviewPending));
-            OnPropertyChanged(nameof(CanPreviewContentOptions));
-            OnPropertyChanged(nameof(CanApplyContentPreview));
-            OnPropertyChanged(nameof(CanRefreshContentPreview));
-            var preview = pendingContentPreview;
-            ExpressionPreviewText = BuildExpressionPreviewText(preview, Localizer);
-            StatusText = Localizer.GetString(preview.IsValid
-                ? "Expression.State.Ready"
-                : "Expression.State.Invalid");
-            ApplyContentPreviewCommand.RaiseCanExecuteChanged();
-            CancelContentPreviewCommand.RaiseCanExecuteChanged();
+            RefreshContentOptionsPreview();
             return ValueTask.CompletedTask;
         }, _ => CurrentInfo is not null);
         ApplyContentPreviewCommand = new UiCommand(async (_, token) =>

@@ -584,6 +584,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
                 InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 RefreshRows();
+                RefreshContentOptionsPreview();
             }
         }
     }
