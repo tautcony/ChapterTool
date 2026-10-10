@@ -143,7 +143,7 @@ public sealed class ChapterGridCaretHeadlessTests
         }
 
         var caret = Assert.Single(drawing.Children.OfType<GeometryDrawing>(), child =>
-            child.Pen?.Brush == Brushes.Magenta);
+            Equals(child.Pen?.Brush, Brushes.Magenta));
         Assert.NotNull(caret.Geometry);
         var renderedCaretX = caret.Geometry.Bounds.X;
         var textPosition = presenter.TextLayout.HitTestTextPosition(editor.CaretIndex);
