@@ -406,6 +406,40 @@
   <x:String x:Key="History.Redo" xml:space="preserve">重做</x:String>
   <x:String x:Key="History.Close" xml:space="preserve">关闭</x:String>
   <x:String x:Key="History.Current" xml:space="preserve">当前历史位置</x:String>
+  <x:String x:Key="History.Restore" xml:space="preserve">恢复到此节点</x:String>
+  <x:String x:Key="History.Retry" xml:space="preserve">重试</x:String>
+  <x:String x:Key="History.Loading" xml:space="preserve">正在加载详细信息…</x:String>
+  <x:String x:Key="History.RootOverview" xml:space="preserve">初始文档概览</x:String>
+  <x:String x:Key="History.PendingPreviewNotice" xml:space="preserve">历史导航会丢弃待处理的预览。</x:String>
+  <x:String x:Key="History.Added" xml:space="preserve">新增</x:String>
+  <x:String x:Key="History.Removed" xml:space="preserve">删除</x:String>
+  <x:String x:Key="History.Modified" xml:space="preserve">修改</x:String>
+  <x:String x:Key="History.DetailResourceFailure" xml:space="preserve">资源不足，无法加载详细信息。</x:String>
+  <x:String x:Key="History.DetailNotFound" xml:space="preserve">此历史节点已不可用。</x:String>
+  <x:String x:Key="History.DetailEnded" xml:space="preserve">此文档会话已结束。</x:String>
+  <x:String x:Key="History.DetailFailed" xml:space="preserve">无法加载历史详细信息。</x:String>
+  <x:String x:Key="History.RestoreApplied" xml:space="preserve">已恢复到所选节点。</x:String>
+  <x:String x:Key="History.LocateCurrent" xml:space="preserve">定位当前节点</x:String>
+  <x:String x:Key="History.CurrentHidden" xml:space="preserve">当前节点隐藏在此分支下</x:String>
+  <x:String x:Key="History.PreferredRedo" xml:space="preserve">首选重做分支</x:String>
+  <x:String x:Key="History.RedoChoices" xml:space="preserve">重做分支选项</x:String>
+  <x:String x:Key="History.RedoChoice" xml:space="preserve">重做所选分支</x:String>
+  <x:String x:Key="History.Summary" xml:space="preserve">摘要</x:String>
+  <x:String x:Key="History.Changes" xml:space="preserve">变更</x:String>
+  <x:String x:Key="History.Parameters" xml:space="preserve">参数</x:String>
+  <x:String x:Key="History.Operation.Generic" xml:space="preserve">编辑</x:String>
+  <x:String x:Key="History.Operation.Load" xml:space="preserve">初始文档</x:String>
+  <x:String x:Key="History.Operation.Edit" xml:space="preserve">编辑章节</x:String>
+  <x:String x:Key="History.Operation.Delete" xml:space="preserve">删除章节</x:String>
+  <x:String x:Key="History.Operation.Insert" xml:space="preserve">插入章节</x:String>
+  <x:String x:Key="History.Operation.FrameShift" xml:space="preserve">偏移章节</x:String>
+  <x:String x:Key="History.Operation.FrameRateChange" xml:space="preserve">更改帧率</x:String>
+  <x:String x:Key="History.Operation.Expression" xml:space="preserve">应用表达式</x:String>
+  <x:String x:Key="History.Operation.Template" xml:space="preserve">应用模板名称</x:String>
+  <x:String x:Key="History.Operation.Options" xml:space="preserve">应用章节选项</x:String>
+  <x:String x:Key="History.Operation.Merge" xml:space="preserve">合并轨道</x:String>
+  <x:String x:Key="History.Operation.Split" xml:space="preserve">拆分轨道</x:String>
+  <x:String x:Key="History.Operation.Append" xml:space="preserve">追加片段</x:String>
   <x:String x:Key="History.UndoApplied" xml:space="preserve">已撤销编辑</x:String>
   <x:String x:Key="History.RedoApplied" xml:space="preserve">已重做编辑</x:String>
   <x:String x:Key="History.NavigationFailed" xml:space="preserve">无法切换历史记录。</x:String>
@@ -559,4 +593,107 @@
   <x:String x:Key="XmlLanguage.French">法语</x:String>
   <x:String x:Key="XmlLanguage.Italian">意大利语</x:String>
   <x:String x:Key="XmlLanguage.Spanish">西班牙语</x:String>
+  <x:String x:Key="History.HistoryPage" xml:space="preserve">历史</x:String>
+  <x:String x:Key="History.DetailsPage" xml:space="preserve">详情</x:String>
+  <x:String x:Key="History.Filter.All" xml:space="preserve">所有更改</x:String>
+  <x:String x:Key="History.NoFilteredChanges" xml:space="preserve">没有符合此筛选条件的更改。</x:String>
+  <x:String x:Key="History.Filter.Added" xml:space="preserve">新增</x:String>
+  <x:String x:Key="History.Filter.Removed" xml:space="preserve">移除</x:String>
+  <x:String x:Key="History.Filter.Modified" xml:space="preserve">修改</x:String>
+  <x:String x:Key="History.FieldHeader" xml:space="preserve">字段</x:String>
+  <x:String x:Key="History.BeforeHeader" xml:space="preserve">更改前</x:String>
+  <x:String x:Key="History.AfterHeader" xml:space="preserve">更改后</x:String>
+  <x:String x:Key="History.DeltaHeader" xml:space="preserve">差值</x:String>
+  <x:String x:Key="History.DeltaTicks" xml:space="preserve">{0} 个刻度</x:String>
+  <x:String x:Key="History.Presence.Absent" xml:space="preserve">不存在</x:String>
+  <x:String x:Key="History.Presence.Null" xml:space="preserve">空值</x:String>
+  <x:String x:Key="History.Presence.Empty" xml:space="preserve">空文本</x:String>
+  <x:String x:Key="History.Parameter.field" xml:space="preserve">字段</x:String>
+  <x:String x:Key="History.Parameter.chapterId" xml:space="preserve">章节</x:String>
+  <x:String x:Key="History.Parameter.chapterIds" xml:space="preserve">章节</x:String>
+  <x:String x:Key="History.Parameter.value" xml:space="preserve">值</x:String>
+  <x:String x:Key="History.Parameter.displayFps" xml:space="preserve">显示帧率</x:String>
+  <x:String x:Key="History.Parameter.frames" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="History.Parameter.beforeChapterId" xml:space="preserve">前置章节</x:String>
+  <x:String x:Key="History.Parameter.sourcePath" xml:space="preserve">来源</x:String>
+  <x:String x:Key="History.Parameter.script" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="History.Parameter.expression" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="History.Parameter.autoGenerateNames" xml:space="preserve">生成名称</x:String>
+  <x:String x:Key="History.Parameter.useTemplateNames" xml:space="preserve">使用模板名称</x:String>
+  <x:String x:Key="History.Parameter.template" xml:space="preserve">模板</x:String>
+  <x:String x:Key="History.Parameter.orderShift" xml:space="preserve">顺序偏移</x:String>
+  <x:String x:Key="History.Parameter.sourceFps" xml:space="preserve">源帧率</x:String>
+  <x:String x:Key="History.Parameter.targetFps" xml:space="preserve">目标帧率</x:String>
+  <x:String x:Key="History.Field.Title" xml:space="preserve">标题</x:String>
+  <x:String x:Key="History.Field.SourceName" xml:space="preserve">来源名称</x:String>
+  <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">导入格式</x:String>
+  <x:String x:Key="History.Field.Duration" xml:space="preserve">时长</x:String>
+  <x:String x:Key="History.Field.FrameRate" xml:space="preserve">帧率</x:String>
+  <x:String x:Key="History.Field.TrackOrder" xml:space="preserve">轨道顺序</x:String>
+  <x:String x:Key="History.Field.Presence" xml:space="preserve">存在状态</x:String>
+  <x:String x:Key="History.Field.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="History.Field.ChapterOrder" xml:space="preserve">章节顺序</x:String>
+  <x:String x:Key="History.Field.SegmentOrder" xml:space="preserve">片段顺序</x:String>
+  <x:String x:Key="History.Field.Track" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Field.Position" xml:space="preserve">位置</x:String>
+  <x:String x:Key="History.Field.DisplayNumber" xml:space="preserve">章节编号</x:String>
+  <x:String x:Key="History.Field.StartTicks" xml:space="preserve">开始时间</x:String>
+  <x:String x:Key="History.Field.EndTicks" xml:space="preserve">结束时间</x:String>
+  <x:String x:Key="History.Field.FramesInfo" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="History.Field.FrameAccuracy" xml:space="preserve">帧精度</x:String>
+  <x:String x:Key="History.Field.Kind" xml:space="preserve">类型</x:String>
+  <x:String x:Key="History.Field.SourceTrackId" xml:space="preserve">来源轨道</x:String>
+  <x:String x:Key="History.Field.SourceEntryId" xml:space="preserve">来源条目</x:String>
+  <x:String x:Key="History.Field.ReferencedMediaFiles" xml:space="preserve">媒体文件</x:String>
+  <x:String x:Key="History.Field.MediaTracks" xml:space="preserve">媒体轨道</x:String>
+  <x:String x:Key="History.Field.ChapterCount" xml:space="preserve">章节数</x:String>
+  <x:String x:Key="History.Field.ImportDisplayName" xml:space="preserve">导入名称</x:String>
+  <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">光盘标题</x:String>
+  <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">源帧率</x:String>
+  <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">源章节数</x:String>
+  <x:String x:Key="History.Parameter.targetScope" xml:space="preserve">范围</x:String>
+  <x:String x:Key="History.Parameter.trackId" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Parameter.trackIds" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Parameter.trackCount" xml:space="preserve">轨道数</x:String>
+  <x:String x:Key="History.Parameter.deleteTiming" xml:space="preserve">删除时间处理</x:String>
+  <x:String x:Key="History.Parameter.frameDisplay" xml:space="preserve">帧显示</x:String>
+  <x:String x:Key="History.Parameter.frameDecimalPlaces" xml:space="preserve">帧小数位</x:String>
+  <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">开始时间</x:String>
+  <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">帧</x:String>
+  <x:String x:Key="History.Presence.Unknown" xml:space="preserve">未知</x:String>
+  <x:String x:Key="History.Unit.Fps" xml:space="preserve">帧/秒</x:String>
+  <x:String x:Key="History.FrameRateContext" xml:space="preserve">帧率 {Before} → {After}</x:String>
+  <x:String x:Key="History.Track.Unknown" xml:space="preserve">不可用的轨道</x:String>
+  <x:String x:Key="History.ChapterContext" xml:space="preserve">{Track} · 章节位置 {Position}</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Unknown" xml:space="preserve">未知</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Ogm" xml:space="preserve">OGM</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.MatroskaXml" xml:space="preserve">Matroska XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.WebVtt" xml:space="preserve">WebVTT</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Cue" xml:space="preserve">CUE</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.PremiereMarkers" xml:space="preserve">Premiere 标记</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Mpls" xml:space="preserve">蓝光播放列表 (MPLS)</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.DvdIfo" xml:space="preserve">DVD IFO</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.HdDvdXpl" xml:space="preserve">HD-DVD XPL</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Media" xml:space="preserve">媒体容器</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Bdmv" xml:space="preserve">蓝光光盘</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Text" xml:space="preserve">文本</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Xml" xml:space="preserve">XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Json" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Marker" xml:space="preserve">标记</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Separator" xml:space="preserve">分隔符</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">标准</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">偏早</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">偏晚</x:String>
+  <x:String x:Key="History.Parameter.trackName" xml:space="preserve">轨道名称</x:String>
+  <x:String x:Key="History.ChangedTracks" xml:space="preserve">变更轨道</x:String>
+  <x:String x:Key="History.ChangedSegments" xml:space="preserve">变更片段</x:String>
+  <x:String x:Key="History.ComparisonNotice" xml:space="preserve">以下更改将此节点与其父节点进行比较。</x:String>
+  <x:String x:Key="History.CurrentStateNote" xml:space="preserve">查看历史记录不会移动当前保存状态。</x:String>
+  <x:String x:Key="History.Boolean.True" xml:space="preserve">是</x:String>
+  <x:String x:Key="History.Boolean.False" xml:space="preserve">否</x:String>
+  <x:String x:Key="History.Enum.deleteTiming.Preserve" xml:space="preserve">保留时间戳</x:String>
+  <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">规范剩余时间</x:String>
+  <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">整数帧</x:String>
+  <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">小数帧</x:String>
 </ResourceDictionary>

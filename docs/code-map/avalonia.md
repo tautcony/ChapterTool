@@ -65,7 +65,11 @@ Avalonia owns only host ports:
 
 `MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Operation parameters remain drafts until an explicit candidate is applied. Row materialization reads committed workspace content. It derives frame text and accuracy from the current display preferences. Display refresh must not create content history. Frame edits and signed shifts use the displayed FPS. Expression preparation can supply detected FPS to the selected track when source FPS is absent. Preview and save serialize committed content. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load and append commits use workspace revision rules. Replacement and close confirm session loss, then end the old session and cancel its work.
 
-`MainWindowViewModel` projects the Core history tree into `HistoryEntryViewModel` rows. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `HistoryToolView` renders these rows in a virtualized modal dialog. `IHistorySessionPort` gives the tool access to the current workspace history.
+`MainWindowViewModel` exposes the Core history tree through `IHistorySessionPort`. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `HistoryToolView` renders the hierarchy with the native Avalonia `TreeView` in a modal dialog.
+
+`HistoryToolViewModel` keeps inspection selection separate from the saved history cursor. It requests details through `IHistorySessionPort.InspectAsync`. Selection changes cancel the previous query. Request generation and root identity checks ignore stale results. `SessionState.InspectHistoryNodeAsync` captures one immutable session version and reconstructs the selected node without publishing it. `HistoryNodeDetailsProjector` compares the selected node with its parent by stable identity. Root inspection exposes ordered chapter rows. The view virtualizes root rows and field changes. Wide windows show a split view. Narrow windows show History and Details pages. The inspector hides empty sections and shows meaningful parameters and before/after values.
+
+`HistoryEntryViewModel` builds stable parent and child models for the native Avalonia `TreeView`. It preserves node instances by ID and exposes mutable expansion state. `HistoryToolViewModel` owns current and inspected node state, detail query lifetime, explicit restore, and direct-child redo choices. `HistoryToolView` binds both wide and narrow TreeViews and keeps Restore in the narrow page footer. `ChapterContentPreview` carries the immutable operation descriptor through candidate application.
 
 `MainView.axaml` gives the chapter grid one central workspace. Its empty state overlays that workspace. Content previews compare changed values inside the original chapter cells. Arrow icons and semantic colors mark candidate values. Each row keeps the visible frame value captured before preview. The option row keeps apply and discard actions. Its apply tooltip lists changed non-chapter metadata. Expression diagnostics show invalid and stale states. The grid stays read-only while a candidate is valid.
 
@@ -103,6 +107,10 @@ Window-bound file picker, settings picker, and clipboard services use host-owned
 `src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs` owns `ToolId`, typed auxiliary-tool requests and results, host service groups, catalog descriptors, and the embedded presenter contract. `EmbeddedAuxiliaryToolHost.cs` provides the single-content host implementation. `UnavailableHostAdapters.cs` provides explicit no-op adapters for unavailable capabilities.
 
 `HistoryToolViewModel` reads history through `IHistorySessionPort`. The desktop catalog registers it as a modal tool. The embedded host supplies a tool-close callback.
+
+`AvaloniaWindowService` disposes tool state and detaches window content on close. It returns focus to the previously focused main-window control when that control remains available.
+
+`AuxiliaryToolRequest.HostWindow` can supply the owning window. The desktop host uses the application main window when the request omits an owner.
 
 `BrowserPortableAdapters.cs` remains in the shared assembly because it contains no browser API implementation. It defines the bounded source-read behavior and the `IBrowserFileAccess` host port. A browser host owns the `IBrowserFileAccess` implementation.
 

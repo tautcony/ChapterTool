@@ -1,4 +1,7 @@
+using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
@@ -74,7 +77,9 @@ public sealed class AvaloniaWindowServiceHeadlessTests
             await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, $"Long history value {index} {new string('x', 180)}"));
         }
         using var service = CreateService(host, new FakeSettingsCloseConfirmationService(SettingsCloseAction.Cancel));
-        var request = new AuxiliaryToolRequest(host.ViewModel.ToolSession, host.Localizer, Capabilities: host.ViewModel.Capabilities);
+        var request = new AuxiliaryToolRequest(host.ViewModel.ToolSession, host.Localizer, Capabilities: host.ViewModel.Capabilities, HostWindow: host.Window);
+        var returnFocus = Assert.IsType<Button>(host.MainView.FindControl<Button>("HistoryButton"));
+        Assert.True(returnFocus.Focus());
 
         var opened = await service.OpenAsync(ToolIds.History, request, TestContext.Current.CancellationToken);
         var window = FindWindow(service, ToolIds.History.Value);
@@ -82,27 +87,119 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         var viewModel = Assert.IsType<HistoryToolViewModel>(Assert.IsAssignableFrom<Control>(window.Content).DataContext);
         var view = Assert.IsType<HistoryToolView>(window.Content);
         await DrainUiAsync();
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
 
         Assert.Equal(AuxiliaryToolResultKind.Opened, opened.Kind);
         Assert.Equal(AuxiliaryToolResultKind.Activated, activated.Kind);
         Assert.Same(window, FindWindow(service, ToolIds.History.Value));
+        Assert.Equal(520, window.MinWidth);
+        Assert.Equal(420, window.MinHeight);
         var currentNode = Assert.Single(viewModel.Entries, entry => entry.IsCurrent);
         Assert.NotEqual(firstNode.Id, currentNode.Id);
-        Assert.Contains(viewModel.Entries, entry => entry.Depth > 0 && entry.BranchPrefix == "↳");
-        var historyList = view.FindControl<ListBox>("HistoryEntries");
+        Assert.Contains(viewModel.Entries, entry => entry.ParentId is not null);
+        var originalEntry = viewModel.Entries.SingleOrDefault(entry => entry.Id == firstNode.Id)
+            ?? throw new InvalidOperationException($"Missing first branch {firstNode.Id}; visible={string.Join(";", viewModel.Entries.Select(entry => $"{entry.Id}:{entry.Description}"))}");
+        var rootId = viewModel.Entries.Single(entry => entry.ParentId is null).Id;
+        var alternateEntry = viewModel.Entries.Single(entry => entry.ParentId == rootId && entry.Id != firstNode.Id);
+        Assert.Contains(viewModel.TreeRoots, root => root.Children.Any(child => child.Id == firstNode.Id)
+            && root.Children.Any(child => child.Id == alternateEntry.Id));
+        var historyList = view.FindControl<TreeView>("HistoryEntries");
         Assert.NotNull(historyList);
-        var realizedRows = historyList.GetVisualDescendants().OfType<ListBoxItem>().Count();
-        Assert.True(realizedRows < viewModel.Entries.Count,
-            $"Expected virtualized history rows, but realized {realizedRows} of {viewModel.Entries.Count}.");
+        Assert.True(historyList.IsVisible && historyList.IsEnabled);
+        Assert.True(historyList.Bounds.Width > 0 && historyList.Bounds.Height > 0);
+
+        foreach (var entry in viewModel.Entries)
+        {
+            entry.IsExpanded = true;
+        }
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+        var wideScroll = Assert.Single(historyList.GetVisualDescendants().OfType<ScrollViewer>());
+        wideScroll.Offset = new Vector(wideScroll.Offset.X, 320);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+        Assert.True(wideScroll.Offset.Y > 0);
+        var wideScrollAnchor = wideScroll.Offset.Y;
+        var retainedSelectionId = viewModel.SelectedEntry!.Id;
+
+        window.Width = 520;
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+        Assert.True(viewModel.IsNarrowLayout);
+        var narrowHistory = Assert.IsType<TreeView>(view.FindControl<TreeView>("NarrowHistoryEntries"));
+        Assert.True(narrowHistory.IsVisible);
+        Assert.Equal(retainedSelectionId, Assert.IsType<HistoryEntryViewModel>(narrowHistory.SelectedItem).Id);
+        var narrowCurrentRow = Assert.Single(narrowHistory.GetVisualDescendants().OfType<TreeViewItem>(), item =>
+            item.DataContext is HistoryEntryViewModel entry && entry.Id == retainedSelectionId);
+        var narrowCurrentOrigin = narrowCurrentRow.TranslatePoint(new Point(0, 0), narrowHistory);
+        Assert.NotNull(narrowCurrentOrigin);
+        Assert.InRange(narrowCurrentOrigin.Value.Y, 0, narrowHistory.Bounds.Height);
+        Assert.True(narrowCurrentOrigin.Value.Y + narrowCurrentRow.Bounds.Height <= narrowHistory.Bounds.Height + 2,
+            $"Selected row origin={narrowCurrentOrigin.Value}, row={narrowCurrentRow.Bounds}, viewport={narrowHistory.Bounds}, scroll={Assert.Single(narrowHistory.GetVisualDescendants().OfType<ScrollViewer>()).Offset}.");
+
+        window.Width = 1000;
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+        Assert.False(viewModel.IsNarrowLayout);
+        Assert.Equal(wideScrollAnchor, wideScroll.Offset.Y);
+        Assert.Equal(retainedSelectionId, Assert.IsType<HistoryEntryViewModel>(historyList.SelectedItem).Id);
+
+        var rootContainer = Assert.IsType<TreeViewItem>(historyList.ContainerFromIndex(0));
+        var alternateIndex = viewModel.TreeRoots[0].Children.IndexOf(alternateEntry);
+        var alternateContainer = Assert.IsType<TreeViewItem>(rootContainer.ContainerFromIndex(alternateIndex));
+        var initialSelectedId = viewModel.SelectedEntry!.Id;
+        var currentContainer = Assert.Single(historyList.GetVisualDescendants().OfType<TreeViewItem>(), item => item.DataContext is HistoryEntryViewModel entry && entry.Id == currentNode.Id);
+        Assert.Contains(currentContainer.GetVisualDescendants().OfType<Control>(), control =>
+            AutomationProperties.GetName(control) == viewModel.Entries.Single(entry => entry.Id == currentNode.Id).Title);
+        Assert.True(currentContainer.Focus());
+        window.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, string.Empty);
+        await DrainUiAsync();
+        Assert.NotEqual(initialSelectedId, viewModel.SelectedEntry!.Id);
+        historyList.SelectedItem = alternateEntry;
+        await DrainUiAsync();
+        await viewModel.RetryDetailsAsync();
+        Assert.True(alternateEntry.Id == viewModel.SelectedEntry!.Id, $"selected={viewModel.SelectedEntry.Id} ({viewModel.SelectedEntry.Description}) expected={alternateEntry.Id} ({alternateEntry.Description}) tree={historyList.SelectedItem}");
+        Assert.False(viewModel.SelectedEntry.IsCurrent);
+        Assert.Equal(alternateEntry.Id, viewModel.Details!.NodeId);
+        rootContainer.IsExpanded = false;
+        await DrainUiAsync();
+        Assert.Equal(alternateEntry.Id, Assert.IsType<HistoryEntryViewModel>(historyList.SelectedItem).Id);
+        Assert.Equal(alternateEntry.Id, viewModel.Details!.NodeId);
+        rootContainer.IsExpanded = true;
+        await DrainUiAsync();
+        Assert.Equal(currentNode.Id, viewModel.Entries.Single(entry => entry.IsCurrent).Id);
 
         host.ViewModel.Expression = "t + 1";
         host.ViewModel.RefreshExpressionPreviewNow();
         Assert.True(host.ViewModel.CanApplyContentPreview);
-        await viewModel.NavigateCommand.ExecuteAsync(firstNode.Id);
+        Assert.Equal(alternateEntry.Id, Assert.IsType<HistoryEntryViewModel>(historyList.SelectedItem).Id);
+        Assert.Equal(alternateEntry.Id, viewModel.Details!.NodeId);
+        rootContainer.IsExpanded = false;
+        await DrainUiAsync();
+        Assert.Equal(alternateEntry.Id, Assert.IsType<HistoryEntryViewModel>(historyList.SelectedItem).Id);
+        Assert.Equal(alternateEntry.Id, viewModel.Details!.NodeId);
+        rootContainer.IsExpanded = true;
+        await DrainUiAsync();
+        var beforeInspection = host.ViewModel.Rows[0].Name;
+        viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == firstNode.Id);
+        await viewModel.RetryDetailsAsync();
+        await DrainUiAsync();
+        Assert.Equal(beforeInspection, host.ViewModel.Rows[0].Name);
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.NotNull(viewModel.Details);
+        await viewModel.RestoreCommand.ExecuteAsync(firstNode.Id);
         await DrainUiAsync();
         Assert.Equal("First branch", host.ViewModel.Rows[0].Name);
         Assert.False(host.ViewModel.CanApplyContentPreview);
         Assert.Contains(viewModel.Entries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
+
+        var restoredContainer = Assert.Single(historyList.GetVisualDescendants().OfType<TreeViewItem>(), item => item.DataContext is HistoryEntryViewModel entry && entry.Id == firstNode.Id);
+        Assert.True(restoredContainer.Focus());
+        Assert.True(historyList.IsKeyboardFocusWithin);
+        historyList.RaiseEvent(new KeyEventArgs
+        {
+            RoutedEvent = InputElement.KeyDownEvent,
+            Key = Key.Enter,
+            Source = historyList
+        });
+        await DrainUiAsync();
+        Assert.True(view.FindControl<Control>("HistoryDetails")!.IsKeyboardFocusWithin);
 
         view.RaiseEvent(new KeyEventArgs
         {
@@ -112,6 +209,7 @@ public sealed class AvaloniaWindowServiceHeadlessTests
         });
         await DrainUiAsync();
         Assert.Null(window.Content);
+        Assert.Same(returnFocus, TopLevel.GetTopLevel(host.Window)?.FocusManager.GetFocusedElement());
         Assert.Contains(host.ViewModel.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
         await service.OpenAsync(ToolIds.History, request, TestContext.Current.CancellationToken);
         var reopenedWindow = FindWindow(service, ToolIds.History.Value);

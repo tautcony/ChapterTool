@@ -406,6 +406,40 @@
   <x:String x:Key="History.Redo" xml:space="preserve">Redo</x:String>
   <x:String x:Key="History.Close" xml:space="preserve">Close</x:String>
   <x:String x:Key="History.Current" xml:space="preserve">Current history position</x:String>
+  <x:String x:Key="History.Restore" xml:space="preserve">Restore to this node</x:String>
+  <x:String x:Key="History.Retry" xml:space="preserve">Retry</x:String>
+  <x:String x:Key="History.Loading" xml:space="preserve">Loading details…</x:String>
+  <x:String x:Key="History.RootOverview" xml:space="preserve">Initial document overview</x:String>
+  <x:String x:Key="History.PendingPreviewNotice" xml:space="preserve">History navigation will discard the pending preview.</x:String>
+  <x:String x:Key="History.Added" xml:space="preserve">Added</x:String>
+  <x:String x:Key="History.Removed" xml:space="preserve">Removed</x:String>
+  <x:String x:Key="History.Modified" xml:space="preserve">Modified</x:String>
+  <x:String x:Key="History.DetailResourceFailure" xml:space="preserve">Details could not be loaded because resources are low.</x:String>
+  <x:String x:Key="History.DetailNotFound" xml:space="preserve">This history node is no longer available.</x:String>
+  <x:String x:Key="History.DetailEnded" xml:space="preserve">This document session has ended.</x:String>
+  <x:String x:Key="History.DetailFailed" xml:space="preserve">History details could not be loaded.</x:String>
+  <x:String x:Key="History.RestoreApplied" xml:space="preserve">Document restored to the selected node.</x:String>
+  <x:String x:Key="History.LocateCurrent" xml:space="preserve">Locate current</x:String>
+  <x:String x:Key="History.CurrentHidden" xml:space="preserve">Current node is hidden below this branch</x:String>
+  <x:String x:Key="History.PreferredRedo" xml:space="preserve">Preferred redo branch</x:String>
+  <x:String x:Key="History.RedoChoices" xml:space="preserve">Redo branch choices</x:String>
+  <x:String x:Key="History.RedoChoice" xml:space="preserve">Redo selected branch</x:String>
+  <x:String x:Key="History.Summary" xml:space="preserve">Summary</x:String>
+  <x:String x:Key="History.Changes" xml:space="preserve">Changes</x:String>
+  <x:String x:Key="History.Parameters" xml:space="preserve">Parameters</x:String>
+  <x:String x:Key="History.Operation.Generic" xml:space="preserve">Edit</x:String>
+  <x:String x:Key="History.Operation.Load" xml:space="preserve">Initial document</x:String>
+  <x:String x:Key="History.Operation.Edit" xml:space="preserve">Edit chapter</x:String>
+  <x:String x:Key="History.Operation.Delete" xml:space="preserve">Delete chapters</x:String>
+  <x:String x:Key="History.Operation.Insert" xml:space="preserve">Insert chapter</x:String>
+  <x:String x:Key="History.Operation.FrameShift" xml:space="preserve">Shift chapters</x:String>
+  <x:String x:Key="History.Operation.FrameRateChange" xml:space="preserve">Change frame rate</x:String>
+  <x:String x:Key="History.Operation.Expression" xml:space="preserve">Apply expression</x:String>
+  <x:String x:Key="History.Operation.Template" xml:space="preserve">Apply template names</x:String>
+  <x:String x:Key="History.Operation.Options" xml:space="preserve">Apply chapter options</x:String>
+  <x:String x:Key="History.Operation.Merge" xml:space="preserve">Merge tracks</x:String>
+  <x:String x:Key="History.Operation.Split" xml:space="preserve">Split tracks</x:String>
+  <x:String x:Key="History.Operation.Append" xml:space="preserve">Append clips</x:String>
   <x:String x:Key="History.UndoApplied" xml:space="preserve">Edit undone</x:String>
   <x:String x:Key="History.RedoApplied" xml:space="preserve">Edit redone</x:String>
   <x:String x:Key="History.NavigationFailed" xml:space="preserve">History navigation failed.</x:String>
@@ -559,4 +593,107 @@
   <x:String x:Key="XmlLanguage.French">French</x:String>
   <x:String x:Key="XmlLanguage.Italian">Italian</x:String>
   <x:String x:Key="XmlLanguage.Spanish">Spanish</x:String>
+  <x:String x:Key="History.HistoryPage" xml:space="preserve">History</x:String>
+  <x:String x:Key="History.DetailsPage" xml:space="preserve">Details</x:String>
+  <x:String x:Key="History.Filter.All" xml:space="preserve">All changes</x:String>
+  <x:String x:Key="History.NoFilteredChanges" xml:space="preserve">No changes match this filter.</x:String>
+  <x:String x:Key="History.Filter.Added" xml:space="preserve">Added</x:String>
+  <x:String x:Key="History.Filter.Removed" xml:space="preserve">Removed</x:String>
+  <x:String x:Key="History.Filter.Modified" xml:space="preserve">Modified</x:String>
+  <x:String x:Key="History.FieldHeader" xml:space="preserve">Field</x:String>
+  <x:String x:Key="History.BeforeHeader" xml:space="preserve">Before</x:String>
+  <x:String x:Key="History.AfterHeader" xml:space="preserve">After</x:String>
+  <x:String x:Key="History.DeltaHeader" xml:space="preserve">Delta</x:String>
+  <x:String x:Key="History.DeltaTicks" xml:space="preserve">{0} ticks</x:String>
+  <x:String x:Key="History.Presence.Absent" xml:space="preserve">Not present</x:String>
+  <x:String x:Key="History.Presence.Null" xml:space="preserve">Null</x:String>
+  <x:String x:Key="History.Presence.Empty" xml:space="preserve">Empty</x:String>
+  <x:String x:Key="History.Parameter.field" xml:space="preserve">Field</x:String>
+  <x:String x:Key="History.Parameter.chapterId" xml:space="preserve">Chapter</x:String>
+  <x:String x:Key="History.Parameter.chapterIds" xml:space="preserve">Chapters</x:String>
+  <x:String x:Key="History.Parameter.value" xml:space="preserve">Value</x:String>
+  <x:String x:Key="History.Parameter.displayFps" xml:space="preserve">Display frame rate</x:String>
+  <x:String x:Key="History.Parameter.frames" xml:space="preserve">Frames</x:String>
+  <x:String x:Key="History.Parameter.beforeChapterId" xml:space="preserve">Before chapter</x:String>
+  <x:String x:Key="History.Parameter.sourcePath" xml:space="preserve">Source</x:String>
+  <x:String x:Key="History.Parameter.script" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="History.Parameter.expression" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="History.Parameter.autoGenerateNames" xml:space="preserve">Generate names</x:String>
+  <x:String x:Key="History.Parameter.useTemplateNames" xml:space="preserve">Use template names</x:String>
+  <x:String x:Key="History.Parameter.template" xml:space="preserve">Template</x:String>
+  <x:String x:Key="History.Parameter.orderShift" xml:space="preserve">Order shift</x:String>
+  <x:String x:Key="History.Parameter.sourceFps" xml:space="preserve">Source frame rate</x:String>
+  <x:String x:Key="History.Parameter.targetFps" xml:space="preserve">Target frame rate</x:String>
+  <x:String x:Key="History.Field.Title" xml:space="preserve">Title</x:String>
+  <x:String x:Key="History.Field.SourceName" xml:space="preserve">Source name</x:String>
+  <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">Import format</x:String>
+  <x:String x:Key="History.Field.Duration" xml:space="preserve">Duration</x:String>
+  <x:String x:Key="History.Field.FrameRate" xml:space="preserve">Frame rate</x:String>
+  <x:String x:Key="History.Field.TrackOrder" xml:space="preserve">Track order</x:String>
+  <x:String x:Key="History.Field.Presence" xml:space="preserve">Presence</x:String>
+  <x:String x:Key="History.Field.Name" xml:space="preserve">Name</x:String>
+  <x:String x:Key="History.Field.ChapterOrder" xml:space="preserve">Chapter order</x:String>
+  <x:String x:Key="History.Field.SegmentOrder" xml:space="preserve">Segment order</x:String>
+  <x:String x:Key="History.Field.Track" xml:space="preserve">Track</x:String>
+  <x:String x:Key="History.Field.Position" xml:space="preserve">Position</x:String>
+  <x:String x:Key="History.Field.DisplayNumber" xml:space="preserve">Chapter number</x:String>
+  <x:String x:Key="History.Field.StartTicks" xml:space="preserve">Start time</x:String>
+  <x:String x:Key="History.Field.EndTicks" xml:space="preserve">End time</x:String>
+  <x:String x:Key="History.Field.FramesInfo" xml:space="preserve">Frames</x:String>
+  <x:String x:Key="History.Field.FrameAccuracy" xml:space="preserve">Frame accuracy</x:String>
+  <x:String x:Key="History.Field.Kind" xml:space="preserve">Type</x:String>
+  <x:String x:Key="History.Field.SourceTrackId" xml:space="preserve">Source track</x:String>
+  <x:String x:Key="History.Field.SourceEntryId" xml:space="preserve">Source entry</x:String>
+  <x:String x:Key="History.Field.ReferencedMediaFiles" xml:space="preserve">Media files</x:String>
+  <x:String x:Key="History.Field.MediaTracks" xml:space="preserve">Media tracks</x:String>
+  <x:String x:Key="History.Field.ChapterCount" xml:space="preserve">Chapter count</x:String>
+  <x:String x:Key="History.Field.ImportDisplayName" xml:space="preserve">Import name</x:String>
+  <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">Disc title</x:String>
+  <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">Source frame rate</x:String>
+  <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">Source chapter count</x:String>
+  <x:String x:Key="History.Parameter.targetScope" xml:space="preserve">Scope</x:String>
+  <x:String x:Key="History.Parameter.trackId" xml:space="preserve">Track</x:String>
+  <x:String x:Key="History.Parameter.trackIds" xml:space="preserve">Tracks</x:String>
+  <x:String x:Key="History.Parameter.trackCount" xml:space="preserve">Track count</x:String>
+  <x:String x:Key="History.Parameter.deleteTiming" xml:space="preserve">Delete timing</x:String>
+  <x:String x:Key="History.Parameter.frameDisplay" xml:space="preserve">Frame display</x:String>
+  <x:String x:Key="History.Parameter.frameDecimalPlaces" xml:space="preserve">Frame decimals</x:String>
+  <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">Name</x:String>
+  <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">Start time</x:String>
+  <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">Frame</x:String>
+  <x:String x:Key="History.Presence.Unknown" xml:space="preserve">Unknown</x:String>
+  <x:String x:Key="History.Unit.Fps" xml:space="preserve">fps</x:String>
+  <x:String x:Key="History.FrameRateContext" xml:space="preserve">frame rate {Before} → {After}</x:String>
+  <x:String x:Key="History.Track.Unknown" xml:space="preserve">Unavailable track</x:String>
+  <x:String x:Key="History.ChapterContext" xml:space="preserve">{Track} · chapter position {Position}</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Unknown" xml:space="preserve">Unknown</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Ogm" xml:space="preserve">OGM</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.MatroskaXml" xml:space="preserve">Matroska XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.WebVtt" xml:space="preserve">WebVTT</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Cue" xml:space="preserve">CUE</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.PremiereMarkers" xml:space="preserve">Premiere markers</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Mpls" xml:space="preserve">Blu-ray playlist (MPLS)</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.DvdIfo" xml:space="preserve">DVD IFO</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.HdDvdXpl" xml:space="preserve">HD-DVD XPL</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Media" xml:space="preserve">Media container</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Bdmv" xml:space="preserve">Blu-ray disc</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Text" xml:space="preserve">Text</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Xml" xml:space="preserve">XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Json" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Marker" xml:space="preserve">Marker</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Separator" xml:space="preserve">Separator</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">Neutral</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">Early</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">Late</x:String>
+  <x:String x:Key="History.Parameter.trackName" xml:space="preserve">Track name</x:String>
+  <x:String x:Key="History.ChangedTracks" xml:space="preserve">Changed tracks</x:String>
+  <x:String x:Key="History.ChangedSegments" xml:space="preserve">Changed segments</x:String>
+  <x:String x:Key="History.ComparisonNotice" xml:space="preserve">Changes below compare this node with its parent.</x:String>
+  <x:String x:Key="History.CurrentStateNote" xml:space="preserve">Inspecting history does not move the current saved state.</x:String>
+  <x:String x:Key="History.Boolean.True" xml:space="preserve">Yes</x:String>
+  <x:String x:Key="History.Boolean.False" xml:space="preserve">No</x:String>
+  <x:String x:Key="History.Enum.deleteTiming.Preserve" xml:space="preserve">Preserve timestamps</x:String>
+  <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">Normalize remaining times</x:String>
+  <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">Whole frames</x:String>
+  <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">Decimal frames</x:String>
 </ResourceDictionary>

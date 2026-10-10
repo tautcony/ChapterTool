@@ -128,7 +128,7 @@ public static class StandardToolCatalogFactory
             new ToolDescriptor(
                 ToolIds.History,
                 "History.Title",
-                new ToolSizeConstraints(520, 560, 420, 320),
+                new ToolSizeConstraints(1000, 700, 520, 420),
                 ToolRefreshPolicy.Reuse,
                 context => new HistoryToolView
                 {

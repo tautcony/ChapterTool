@@ -1112,7 +1112,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private void RefreshHistoryEntries()
     {
         historySnapshot = Workspace.ContentSession?.GetHistorySnapshot();
-        HistoryEntries = HistoryEntryViewModel.Create(historySnapshot);
+        HistoryEntries = HistoryEntryViewModel.CreateTree(historySnapshot, new Dictionary<Guid, HistoryEntryViewModel>(),
+            new HashSet<Guid>(), static node => node.Description).All;
         OnPropertyChanged(nameof(HasHistory));
         OnPropertyChanged(nameof(CanOpenHistory));
         HistoryCommand?.RaiseCanExecuteChanged();

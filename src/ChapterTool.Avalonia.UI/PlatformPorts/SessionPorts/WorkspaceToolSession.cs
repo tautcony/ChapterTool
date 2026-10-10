@@ -1,5 +1,6 @@
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Contracts.PlatformPorts;
+using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 
@@ -47,6 +48,16 @@ public interface IHistorySessionPort
     UiCommand RedoCommand { get; }
 
     UiCommand NavigateCommand { get; }
+
+    SessionHistorySnapshot? Snapshot { get; }
+
+    bool HasPendingPreview { get; }
+
+    bool IsEnded { get; }
+
+    string NavigationStatus { get; }
+
+    ValueTask<HistoryInspectionOutcome> InspectAsync(Guid nodeId, CancellationToken cancellationToken);
 
     event EventHandler? StateChanged;
 }
@@ -126,6 +137,18 @@ internal sealed class MainWindowHistorySessionPort : IHistorySessionPort, IDispo
     public UiCommand RedoCommand => owner.RedoCommand;
 
     public UiCommand NavigateCommand => owner.NavigateHistoryCommand;
+
+    public SessionHistorySnapshot? Snapshot => owner.Workspace.ContentSession?.GetHistorySnapshot();
+
+    public bool HasPendingPreview => owner.IsContentPreviewPending;
+
+    public bool IsEnded => owner.Workspace.ContentSession?.IsEnded ?? true;
+
+    public string NavigationStatus => owner.StatusText;
+
+    public ValueTask<HistoryInspectionOutcome> InspectAsync(Guid nodeId, CancellationToken cancellationToken) =>
+        owner.Workspace.ContentSession?.InspectHistoryNodeAsync(nodeId, cancellationToken)
+        ?? ValueTask.FromResult(new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.Ended, null, []));
 
     public event EventHandler? StateChanged;
 

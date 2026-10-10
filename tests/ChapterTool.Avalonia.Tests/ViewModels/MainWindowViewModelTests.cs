@@ -176,6 +176,70 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Applied_expression_keeps_its_captured_script_and_publication_time_through_undo_redo()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var candidate = vm.ToolSession.ContentOperations.PrepareExpression("t + 1");
+
+        vm.Expression = "t + 9";
+        var applied = await vm.ToolSession.ContentOperations.ApplyAsync(candidate);
+
+        Assert.Equal(TransactionOutcomeKind.Committed, applied.Kind);
+        Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
+        var (committedNode, committedDetails) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("expression.apply", committedNode.Operation!.Kind);
+        Assert.Equal("t + 1", Assert.Single(committedNode.Operation.Parameters, parameter => parameter.Name == "script").Value);
+        Assert.NotNull(committedNode.PublishedAt);
+        Assert.Equal(committedNode.PublishedAt, committedDetails.PublishedAt);
+
+        var retainedNodeCount = vm.ToolSession.History.Snapshot!.Nodes.Length;
+        await vm.UndoCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        vm.Expression = "(";
+        await vm.RedoCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
+        var (redoneNode, redoneDetails) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal(committedNode.Id, redoneNode.Id);
+        Assert.Equal(committedNode.PublishedAt, redoneNode.PublishedAt);
+        Assert.Equal(committedNode.PublishedAt, redoneDetails.PublishedAt);
+        Assert.Equal("expression.apply", redoneNode.Operation!.Kind);
+        Assert.Equal("t + 1", Assert.Single(redoneNode.Operation.Parameters, parameter => parameter.Name == "script").Value);
+        Assert.Equal(retainedNodeCount, vm.ToolSession.History.Snapshot!.Nodes.Length);
+    }
+
+    [Fact]
+    public async Task Workspace_merge_split_and_append_commands_publish_structured_history_metadata()
+    {
+        var load = new FakeLoadService(
+            ImportResult("base.mpls",
+                InfoWithDuration(ChapterImportFormat.Mpls, "00001", TimeSpan.FromSeconds(2), new Chapter(1, TimeSpan.Zero, "A")),
+                InfoWithDuration(ChapterImportFormat.Mpls, "00002", TimeSpan.FromSeconds(2), new Chapter(1, TimeSpan.FromSeconds(1), "B"))),
+            ImportResult("append.mpls", InfoWithDuration(ChapterImportFormat.Mpls, "append", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "Append"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("base.mpls");
+
+        await vm.CombineCommand.ExecuteAsync();
+        var (merge, _) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("workspace.merge", merge.Operation!.Kind);
+        Assert.Equal("2", Assert.Single(merge.Operation.Parameters, parameter => parameter.Name == "trackCount").Value);
+        Assert.NotNull(merge.PublishedAt);
+
+        await vm.CombineCommand.ExecuteAsync();
+        var (split, _) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("workspace.split", split.Operation!.Kind);
+        Assert.Equal("1", Assert.Single(split.Operation.Parameters, parameter => parameter.Name == "trackCount").Value);
+        Assert.NotNull(split.PublishedAt);
+
+        await vm.AppendMplsCommand.ExecuteAsync("append.mpls");
+        var (append, _) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("workspace.append", append.Operation!.Kind);
+        Assert.Equal("append.mpls", Assert.Single(append.Operation.Parameters, parameter => parameter.Name == "sourcePath").Value);
+        Assert.NotNull(append.PublishedAt);
+    }
+
+    [Fact]
     public async Task SingleMplsOptionStillShowsClipSelection()
     {
         var load = new FakeLoadService(ImportResult(
@@ -1808,6 +1872,18 @@ public sealed class MainWindowViewModelTests
             entry.Operation == "Lua expression script"
             && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
             && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+    }
+
+    private static async Task<(SessionHistoryNodeSnapshot Node, HistoryNodeDetails Details)> CurrentHistoryDetailsAsync(
+        MainWindowViewModel viewModel)
+    {
+        var history = viewModel.ToolSession.History;
+        var snapshot = Assert.IsType<SessionHistorySnapshot>(history.Snapshot);
+        var node = Assert.Single(snapshot.Nodes, entry => entry.Id == snapshot.CursorId);
+        var outcome = await history.InspectAsync(node.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(HistoryInspectionOutcomeKind.Available, outcome.Kind);
+        Assert.NotNull(outcome.Details);
+        return (node, outcome.Details!);
     }
 
     private static MainWindowViewModel CreateViewModel(

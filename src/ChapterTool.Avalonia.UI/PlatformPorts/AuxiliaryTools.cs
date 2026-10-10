@@ -77,10 +77,10 @@ public sealed record AuxiliaryToolRequest(
     IWorkspaceToolSession Session,
     IAppLocalizer Localizer,
     IRuntimeCapabilities Capabilities,
-    Window? HostWindow = null,
     IFilePickerService? FilePicker = null,
     IClipboardService? Clipboard = null,
-    Action? CloseTool = null);
+    Action? CloseTool = null,
+    Window? HostWindow = null);
 
 public interface IAuxiliaryToolHost : IDisposable
 {

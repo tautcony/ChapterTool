@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -106,6 +107,11 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Activated, toolId));
         }
 
+        var focusOwner = request.HostWindow
+            ?? (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow }
+                ? mainWindow
+                : null);
+        var returnFocus = focusOwner?.FocusManager.GetFocusedElement() as Control;
         var window = new Window
         {
             Title = localizer.GetString(descriptor.TitleResourceKey),
@@ -122,10 +128,24 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             DisposeContentDataContext(window);
             window.Content = null;
             windows.Remove(toolId.Value);
+            if (focusOwner is not null)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (!focusOwner.IsVisible || !focusOwner.IsEnabled)
+                    {
+                        return;
+                    }
+                    focusOwner.Activate();
+                    if (returnFocus is { IsEffectivelyVisible: true, IsEffectivelyEnabled: true })
+                    {
+                        returnFocus.Focus();
+                    }
+                });
+            }
         };
         windows[toolId.Value] = window;
-        if (descriptor.IsModal
-            && Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } owner })
+        if (descriptor.IsModal && focusOwner is { } owner)
         {
             _ = window.ShowDialog(owner);
         }

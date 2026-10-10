@@ -136,6 +136,9 @@ public sealed partial class MainWindowViewModel
     {
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
+            // Cell editors bind directly to the row. Rebuild it after a rejected edit so
+            // invalid draft text cannot remain visible as if it had been committed.
+            RefreshRows();
             StatusText = outcome.Errors.FirstOrDefault() ?? outcome.Kind.ToString();
             Log(LogLevel.Warning, $"{action} rejected: {StatusText}", "Edit", ("action", action), ("outcome", outcome.Kind.ToString()));
             NotifyStateChanged();
@@ -159,7 +162,16 @@ public sealed partial class MainWindowViewModel
         ClipEditingCoordinator.PrepareCandidate("Apply expression", document =>
             ClipEditingCoordinator.CandidateBuilder.ApplyExpression(
                 EditableChapterDocumentAdapter.WithFallbackFrameRate(document, DisplayFrameRate),
-                string.IsNullOrWhiteSpace(expression) ? "t" : expression));
+                string.IsNullOrWhiteSpace(expression) ? "t" : expression),
+            new HistoryOperationDescriptor("expression.apply",
+            [
+                new HistoryOperationParameter("script", string.IsNullOrWhiteSpace(expression) ? "t" : expression),
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackId", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Id.ToString()),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("displayFps", DisplayFrameRate.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+            ]));
 
     internal ChapterContentPreview PrepareTemplateNamesOperation(bool autoGenerateNames, bool useTemplateNames) =>
         ClipEditingCoordinator.PrepareCandidate("Apply template names", document =>
@@ -170,7 +182,17 @@ public sealed partial class MainWindowViewModel
                 Workspace.OperationDrafts.ChapterNameTemplateText,
                 orderShift: 0,
                 applyExpression: false,
-                expression: "t"));
+                expression: "t"),
+            new HistoryOperationDescriptor("template.apply",
+            [
+                new HistoryOperationParameter("autoGenerateNames", autoGenerateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("useTemplateNames", useTemplateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackId", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Id.ToString()),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("template", Workspace.OperationDrafts.ChapterNameTemplateText)
+            ]));
 
     internal ChapterContentPreview PrepareContentOptionsOperation() =>
         ClipEditingCoordinator.PrepareCandidate("Apply chapter options", document =>
@@ -181,11 +203,37 @@ public sealed partial class MainWindowViewModel
                 Workspace.OperationDrafts.ChapterNameTemplateText,
                 Workspace.OperationDrafts.OrderShift,
                 applyExpression: false,
-                Workspace.OperationDrafts.Expression));
+                Workspace.OperationDrafts.Expression),
+            new HistoryOperationDescriptor("chapter.options-apply",
+            [
+                new HistoryOperationParameter("autoGenerateNames", Workspace.OperationDrafts.AutoGenerateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("useTemplateNames", Workspace.OperationDrafts.UseTemplateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackId", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Id.ToString()),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("template", Workspace.OperationDrafts.ChapterNameTemplateText),
+                new HistoryOperationParameter("orderShift", Workspace.OperationDrafts.OrderShift.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
+                new HistoryOperationParameter("expression", Workspace.OperationDrafts.Expression)
+            ]));
 
     internal ChapterContentPreview PrepareFrameRateOperation(decimal sourceFps, decimal targetFps) =>
         ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
-            ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(document, sourceFps, targetFps));
+            ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(document, sourceFps, targetFps),
+            new HistoryOperationDescriptor("chapter.frame-rate-change",
+            [
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("sourceFps", sourceFps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+                new HistoryOperationParameter("targetFps", targetFps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+            ]));
+
+    private string CaptureCurrentTrackChapterIds()
+    {
+        var track = Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex);
+        return track is null ? string.Empty : string.Join(",", track.Chapters.Select(static chapter => chapter.Id.ToString()));
+    }
 
     internal async ValueTask<TransactionOutcome> ApplyContentPreviewAsync(
         ChapterContentPreview preview,

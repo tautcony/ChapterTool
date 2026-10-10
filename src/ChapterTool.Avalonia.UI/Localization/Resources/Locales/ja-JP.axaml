@@ -406,6 +406,40 @@
   <x:String x:Key="History.Redo" xml:space="preserve">やり直す</x:String>
   <x:String x:Key="History.Close" xml:space="preserve">閉じる</x:String>
   <x:String x:Key="History.Current" xml:space="preserve">現在の履歴位置</x:String>
+  <x:String x:Key="History.Restore" xml:space="preserve">このノードに復元</x:String>
+  <x:String x:Key="History.Retry" xml:space="preserve">再試行</x:String>
+  <x:String x:Key="History.Loading" xml:space="preserve">詳細を読み込み中…</x:String>
+  <x:String x:Key="History.RootOverview" xml:space="preserve">初期ドキュメントの概要</x:String>
+  <x:String x:Key="History.PendingPreviewNotice" xml:space="preserve">履歴を移動すると保留中のプレビューは破棄されます。</x:String>
+  <x:String x:Key="History.Added" xml:space="preserve">追加</x:String>
+  <x:String x:Key="History.Removed" xml:space="preserve">削除</x:String>
+  <x:String x:Key="History.Modified" xml:space="preserve">変更</x:String>
+  <x:String x:Key="History.DetailResourceFailure" xml:space="preserve">リソース不足のため詳細を読み込めません。</x:String>
+  <x:String x:Key="History.DetailNotFound" xml:space="preserve">この履歴ノードは利用できません。</x:String>
+  <x:String x:Key="History.DetailEnded" xml:space="preserve">ドキュメントセッションは終了しました。</x:String>
+  <x:String x:Key="History.DetailFailed" xml:space="preserve">履歴の詳細を読み込めませんでした。</x:String>
+  <x:String x:Key="History.RestoreApplied" xml:space="preserve">選択したノードに復元しました。</x:String>
+  <x:String x:Key="History.LocateCurrent" xml:space="preserve">現在の位置を表示</x:String>
+  <x:String x:Key="History.CurrentHidden" xml:space="preserve">現在のノードはこの分岐の下にあります</x:String>
+  <x:String x:Key="History.PreferredRedo" xml:space="preserve">優先するやり直し分岐</x:String>
+  <x:String x:Key="History.RedoChoices" xml:space="preserve">やり直し分岐の選択肢</x:String>
+  <x:String x:Key="History.RedoChoice" xml:space="preserve">選択した分岐をやり直す</x:String>
+  <x:String x:Key="History.Summary" xml:space="preserve">概要</x:String>
+  <x:String x:Key="History.Changes" xml:space="preserve">変更</x:String>
+  <x:String x:Key="History.Parameters" xml:space="preserve">パラメーター</x:String>
+  <x:String x:Key="History.Operation.Generic" xml:space="preserve">編集</x:String>
+  <x:String x:Key="History.Operation.Load" xml:space="preserve">初期ドキュメント</x:String>
+  <x:String x:Key="History.Operation.Edit" xml:space="preserve">チャプターを編集</x:String>
+  <x:String x:Key="History.Operation.Delete" xml:space="preserve">チャプターを削除</x:String>
+  <x:String x:Key="History.Operation.Insert" xml:space="preserve">チャプターを挿入</x:String>
+  <x:String x:Key="History.Operation.FrameShift" xml:space="preserve">チャプターを移動</x:String>
+  <x:String x:Key="History.Operation.FrameRateChange" xml:space="preserve">フレームレートを変更</x:String>
+  <x:String x:Key="History.Operation.Expression" xml:space="preserve">式を適用</x:String>
+  <x:String x:Key="History.Operation.Template" xml:space="preserve">テンプレート名を適用</x:String>
+  <x:String x:Key="History.Operation.Options" xml:space="preserve">チャプター設定を適用</x:String>
+  <x:String x:Key="History.Operation.Merge" xml:space="preserve">トラックを結合</x:String>
+  <x:String x:Key="History.Operation.Split" xml:space="preserve">トラックを分割</x:String>
+  <x:String x:Key="History.Operation.Append" xml:space="preserve">クリップを追加</x:String>
   <x:String x:Key="History.UndoApplied" xml:space="preserve">編集を元に戻しました</x:String>
   <x:String x:Key="History.RedoApplied" xml:space="preserve">編集をやり直しました</x:String>
   <x:String x:Key="History.NavigationFailed" xml:space="preserve">履歴を移動できませんでした。</x:String>
@@ -559,4 +593,107 @@
   <x:String x:Key="XmlLanguage.French">フランス語</x:String>
   <x:String x:Key="XmlLanguage.Italian">イタリア語</x:String>
   <x:String x:Key="XmlLanguage.Spanish">スペイン語</x:String>
+  <x:String x:Key="History.HistoryPage" xml:space="preserve">履歴</x:String>
+  <x:String x:Key="History.DetailsPage" xml:space="preserve">詳細</x:String>
+  <x:String x:Key="History.Filter.All" xml:space="preserve">すべての変更</x:String>
+  <x:String x:Key="History.NoFilteredChanges" xml:space="preserve">この条件に一致する変更はありません。</x:String>
+  <x:String x:Key="History.Filter.Added" xml:space="preserve">追加</x:String>
+  <x:String x:Key="History.Filter.Removed" xml:space="preserve">削除</x:String>
+  <x:String x:Key="History.Filter.Modified" xml:space="preserve">変更</x:String>
+  <x:String x:Key="History.FieldHeader" xml:space="preserve">フィールド</x:String>
+  <x:String x:Key="History.BeforeHeader" xml:space="preserve">変更前</x:String>
+  <x:String x:Key="History.AfterHeader" xml:space="preserve">変更後</x:String>
+  <x:String x:Key="History.DeltaHeader" xml:space="preserve">差分</x:String>
+  <x:String x:Key="History.DeltaTicks" xml:space="preserve">{0} ティック</x:String>
+  <x:String x:Key="History.Presence.Absent" xml:space="preserve">存在しない</x:String>
+  <x:String x:Key="History.Presence.Null" xml:space="preserve">Null</x:String>
+  <x:String x:Key="History.Presence.Empty" xml:space="preserve">空のテキスト</x:String>
+  <x:String x:Key="History.Parameter.field" xml:space="preserve">フィールド</x:String>
+  <x:String x:Key="History.Parameter.chapterId" xml:space="preserve">チャプター</x:String>
+  <x:String x:Key="History.Parameter.chapterIds" xml:space="preserve">チャプター</x:String>
+  <x:String x:Key="History.Parameter.value" xml:space="preserve">値</x:String>
+  <x:String x:Key="History.Parameter.displayFps" xml:space="preserve">表示フレームレート</x:String>
+  <x:String x:Key="History.Parameter.frames" xml:space="preserve">フレーム数</x:String>
+  <x:String x:Key="History.Parameter.beforeChapterId" xml:space="preserve">前のチャプター</x:String>
+  <x:String x:Key="History.Parameter.sourcePath" xml:space="preserve">ソース</x:String>
+  <x:String x:Key="History.Parameter.script" xml:space="preserve">式</x:String>
+  <x:String x:Key="History.Parameter.expression" xml:space="preserve">式</x:String>
+  <x:String x:Key="History.Parameter.autoGenerateNames" xml:space="preserve">名前を生成</x:String>
+  <x:String x:Key="History.Parameter.useTemplateNames" xml:space="preserve">テンプレート名を使用</x:String>
+  <x:String x:Key="History.Parameter.template" xml:space="preserve">テンプレート</x:String>
+  <x:String x:Key="History.Parameter.orderShift" xml:space="preserve">順序の移動</x:String>
+  <x:String x:Key="History.Parameter.sourceFps" xml:space="preserve">ソースフレームレート</x:String>
+  <x:String x:Key="History.Parameter.targetFps" xml:space="preserve">目標フレームレート</x:String>
+  <x:String x:Key="History.Field.Title" xml:space="preserve">タイトル</x:String>
+  <x:String x:Key="History.Field.SourceName" xml:space="preserve">ソース名</x:String>
+  <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">インポート形式</x:String>
+  <x:String x:Key="History.Field.Duration" xml:space="preserve">時間</x:String>
+  <x:String x:Key="History.Field.FrameRate" xml:space="preserve">フレームレート</x:String>
+  <x:String x:Key="History.Field.TrackOrder" xml:space="preserve">トラック順</x:String>
+  <x:String x:Key="History.Field.Presence" xml:space="preserve">有無</x:String>
+  <x:String x:Key="History.Field.Name" xml:space="preserve">名前</x:String>
+  <x:String x:Key="History.Field.ChapterOrder" xml:space="preserve">チャプター順</x:String>
+  <x:String x:Key="History.Field.SegmentOrder" xml:space="preserve">セグメント順</x:String>
+  <x:String x:Key="History.Field.Track" xml:space="preserve">トラック</x:String>
+  <x:String x:Key="History.Field.Position" xml:space="preserve">位置</x:String>
+  <x:String x:Key="History.Field.DisplayNumber" xml:space="preserve">チャプター番号</x:String>
+  <x:String x:Key="History.Field.StartTicks" xml:space="preserve">開始時間</x:String>
+  <x:String x:Key="History.Field.EndTicks" xml:space="preserve">終了時間</x:String>
+  <x:String x:Key="History.Field.FramesInfo" xml:space="preserve">フレーム</x:String>
+  <x:String x:Key="History.Field.FrameAccuracy" xml:space="preserve">フレーム精度</x:String>
+  <x:String x:Key="History.Field.Kind" xml:space="preserve">種類</x:String>
+  <x:String x:Key="History.Field.SourceTrackId" xml:space="preserve">ソーストラック</x:String>
+  <x:String x:Key="History.Field.SourceEntryId" xml:space="preserve">ソース項目</x:String>
+  <x:String x:Key="History.Field.ReferencedMediaFiles" xml:space="preserve">メディアファイル</x:String>
+  <x:String x:Key="History.Field.MediaTracks" xml:space="preserve">メディアトラック</x:String>
+  <x:String x:Key="History.Field.ChapterCount" xml:space="preserve">チャプター数</x:String>
+  <x:String x:Key="History.Field.ImportDisplayName" xml:space="preserve">インポート名</x:String>
+  <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">ディスクタイトル</x:String>
+  <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">ソースフレームレート</x:String>
+  <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">ソースチャプター数</x:String>
+  <x:String x:Key="History.Parameter.targetScope" xml:space="preserve">範囲</x:String>
+  <x:String x:Key="History.Parameter.trackId" xml:space="preserve">トラック</x:String>
+  <x:String x:Key="History.Parameter.trackIds" xml:space="preserve">トラック</x:String>
+  <x:String x:Key="History.Parameter.trackCount" xml:space="preserve">トラック数</x:String>
+  <x:String x:Key="History.Parameter.deleteTiming" xml:space="preserve">削除タイミング</x:String>
+  <x:String x:Key="History.Parameter.frameDisplay" xml:space="preserve">フレーム表示</x:String>
+  <x:String x:Key="History.Parameter.frameDecimalPlaces" xml:space="preserve">フレーム小数位</x:String>
+  <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">名前</x:String>
+  <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">開始時間</x:String>
+  <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">フレーム</x:String>
+  <x:String x:Key="History.Presence.Unknown" xml:space="preserve">不明</x:String>
+  <x:String x:Key="History.Unit.Fps" xml:space="preserve">fps</x:String>
+  <x:String x:Key="History.FrameRateContext" xml:space="preserve">フレームレート {Before} → {After}</x:String>
+  <x:String x:Key="History.Track.Unknown" xml:space="preserve">利用できないトラック</x:String>
+  <x:String x:Key="History.ChapterContext" xml:space="preserve">{Track} · チャプター位置 {Position}</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Unknown" xml:space="preserve">不明</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Ogm" xml:space="preserve">OGM</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.MatroskaXml" xml:space="preserve">Matroska XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.WebVtt" xml:space="preserve">WebVTT</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Cue" xml:space="preserve">CUE</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.PremiereMarkers" xml:space="preserve">Premiere マーカー</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Mpls" xml:space="preserve">Blu-ray プレイリスト (MPLS)</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.DvdIfo" xml:space="preserve">DVD IFO</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.HdDvdXpl" xml:space="preserve">HD-DVD XPL</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Media" xml:space="preserve">メディアコンテナー</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Bdmv" xml:space="preserve">Blu-ray ディスク</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Text" xml:space="preserve">テキスト</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Xml" xml:space="preserve">XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Json" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Marker" xml:space="preserve">マーカー</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Separator" xml:space="preserve">区切り</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">標準</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">早め</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">遅め</x:String>
+  <x:String x:Key="History.Parameter.trackName" xml:space="preserve">トラック名</x:String>
+  <x:String x:Key="History.ChangedTracks" xml:space="preserve">変更されたトラック</x:String>
+  <x:String x:Key="History.ChangedSegments" xml:space="preserve">変更されたセグメント</x:String>
+  <x:String x:Key="History.ComparisonNotice" xml:space="preserve">以下の変更はこのノードと親ノードを比較します。</x:String>
+  <x:String x:Key="History.CurrentStateNote" xml:space="preserve">履歴を確認しても現在の保存状態は移動しません。</x:String>
+  <x:String x:Key="History.Boolean.True" xml:space="preserve">はい</x:String>
+  <x:String x:Key="History.Boolean.False" xml:space="preserve">いいえ</x:String>
+  <x:String x:Key="History.Enum.deleteTiming.Preserve" xml:space="preserve">タイムスタンプを保持</x:String>
+  <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">残りの時間を正規化</x:String>
+  <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">整数フレーム</x:String>
+  <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">小数フレーム</x:String>
 </ResourceDictionary>
