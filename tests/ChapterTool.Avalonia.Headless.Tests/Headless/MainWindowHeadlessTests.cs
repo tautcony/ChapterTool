@@ -1,7 +1,9 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ChapterTool.Core.Importing;
@@ -827,23 +829,151 @@ public sealed class MainWindowHeadlessTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task Repeating_frame_layout_screenshots_cover_themes_widths_and_large_text()
+    {
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
+            24000d / 1001d, TimeSpan.FromTicks(520_942_000),
+            [
+                new Chapter(1, TimeSpan.FromTicks(520_940_000), "Original frame value"),
+                new Chapter(2, TimeSpan.FromTicks(520_942_000), "Candidate frame value")
+            ]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+        host.ViewModel.Expression = "t + 0.0002";
+        host.ViewModel.RefreshExpressionPreviewNow();
+
+        var sizes = new (string Name, double Width, double Height)[]
+        {
+            ("default", 760, 600),
+            ("wide", 1280, 800),
+            ("narrow", 760, 520)
+        };
+        var application = global::Avalonia.Application.Current!;
+        var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
+        var originalTheme = application.RequestedThemeVariant;
+        var fontKeys = new[] { "ChapterTool.FontSize.Small", "ChapterTool.FontSize.Default", "ChapterTool.FontSize.Large" };
+        var originalFonts = fontKeys.ToDictionary(key => key, key => application.Resources[key]);
+        try
+        {
+            var row = host.ViewModel.Rows[0];
+            foreach (var (themeName, theme) in new[]
+                     {
+                         ("light", ChapterTool.Contracts.Configuration.ThemeSettings.Default),
+                         ("dark", new ChapterTool.Contracts.Configuration.ThemeSettings("ayu-dark"))
+                     })
+            {
+                themeService.Apply(theme);
+                foreach (var (name, width, height) in sizes)
+                {
+                    await host.LayoutAsync(width, height);
+                    Assert.Equal("006993", row.PreviewBeforeFramePresentation?.RepeatingDigits);
+                    Assert.Equal("117882", row.PreviewCandidateFramePresentation?.RepeatingDigits);
+                    AssertFrameDigitsAreContinuous(host, row);
+                    MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                        $"artifacts/compact-repeating-frame-decimals/{themeName}-{name}.png");
+                }
+            }
+
+            themeService.Apply(ChapterTool.Contracts.Configuration.ThemeSettings.Default);
+            application.Resources["ChapterTool.FontSize.Small"] = 18d;
+            application.Resources["ChapterTool.FontSize.Default"] = 20d;
+            application.Resources["ChapterTool.FontSize.Large"] = 22d;
+            foreach (var (name, width, height) in sizes)
+            {
+                await host.LayoutAsync(width, height);
+                MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                    $"artifacts/compact-repeating-frame-decimals/large-text-{name}.png");
+            }
+
+            var roundFramesBox = host.RequiredControl<CheckBox>("RoundFramesBox");
+            var previewText = host.ViewModel.ExpressionPreviewText;
+            Assert.False(host.ViewModel.RoundFrames);
+            Assert.True(host.ViewModel.CanApplyContentPreview);
+            roundFramesBox.IsChecked = true;
+            await host.LayoutAsync();
+
+            Assert.True(host.ViewModel.RoundFrames);
+            Assert.True(host.ViewModel.IsContentPreviewPending);
+            Assert.True(host.ViewModel.IsInlineCandidateVisible);
+            Assert.True(host.ViewModel.CanApplyContentPreview, host.ViewModel.ExpressionPreviewText);
+            Assert.Equal(previewText, host.ViewModel.ExpressionPreviewText);
+            Assert.True(row.HasPreviewFramesChange);
+        }
+        finally
+        {
+            foreach (var (key, value) in originalFonts)
+            {
+                application.Resources[key] = value;
+            }
+
+            application.RequestedThemeVariant = originalTheme;
+        }
+    }
+
+    private static void AssertFrameDigitsAreContinuous(
+        MainWindowHeadlessTestHost host,
+        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
+    {
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var frameValues = renderedRow.GetVisualDescendants()
+            .OfType<TextBlock>()
+            .Where(block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && block.Classes.Contains("framePreview"))
+            .ToArray();
+
+        Assert.NotEmpty(frameValues);
+        foreach (var frameValue in frameValues)
+        {
+            Assert.Equal(HorizontalAlignment.Stretch, frameValue.HorizontalAlignment);
+            Assert.Equal(TextAlignment.Center, frameValue.TextAlignment);
+            var runs = frameValue.Inlines!.OfType<Run>().ToArray();
+            Assert.Equal(4, runs.Length);
+            Assert.DoesNotContain(" ", string.Concat(runs.Select(static run => run.Text)));
+        }
+
+        var frameArrows = renderedRow.GetVisualDescendants().OfType<Control>()
+            .Where(control => control.GetType().Name == "Icon" && control.IsVisible && control.Width >= 14)
+            .ToArray();
+        Assert.NotEmpty(frameArrows);
+        Assert.All(frameArrows, frameArrow => Assert.True(frameArrow.Width >= 14));
+    }
+
     private static void AssertFramePreviewColor(
         MainWindowHeadlessTestHost host,
         ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row,
         string text,
         string brushKey)
     {
+        Assert.Contains(text, new[] { row.PreviewBeforeFrames, row.PreviewFrames });
         var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
             .GetVisualDescendants()
             .OfType<DataGridRow>()
             .Single(item => ReferenceEquals(item.DataContext, row));
-        var frameText = Assert.Single(renderedRow.GetVisualDescendants().OfType<TextBlock>(),
+        var accuracyClass = brushKey switch
+        {
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey => "frameAccurate",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey => "frameInexact",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey => "frameNeutral",
+            _ => throw new ArgumentOutOfRangeException(nameof(brushKey))
+        };
+        var frameTexts = renderedRow.GetVisualDescendants().OfType<TextBlock>()
+            .Where(
             block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
-                     && block.Text == text && block.Classes.Contains("framePreview")
-                     && (row.IsNarrowPreviewLayout ? block.Parent is Grid : block.Parent is StackPanel));
+                     && block.Classes.Contains("framePreview") && block.Classes.Contains(accuracyClass))
+            .ToArray();
+        Assert.NotEmpty(frameTexts);
         var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
-        var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
-        Assert.Equal(expectedBrush.Color, actualBrush.Color);
+        Assert.All(frameTexts, frameText =>
+        {
+            var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
+            Assert.Equal(expectedBrush.Color, actualBrush.Color);
+        });
     }
 
     private static void AssertNormalFrameColor(
@@ -852,16 +982,35 @@ public sealed class MainWindowHeadlessTests
         string text,
         string brushKey)
     {
+        Assert.Equal(row.FramesInfo, text);
         var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
             .GetVisualDescendants()
             .OfType<DataGridRow>()
             .Single(item => ReferenceEquals(item.DataContext, row));
-        var frameText = Assert.Single(renderedRow.GetVisualDescendants().OfType<TextBlock>(),
-            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } } && block.Text == text
-                && block.Classes.Contains("frameText") && !block.Classes.Contains("framePreview"));
+        var accuracyClass = brushKey switch
+        {
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey => "frameAccurate",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey => "frameInexact",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey => "frameNeutral",
+            _ => throw new ArgumentOutOfRangeException(nameof(brushKey))
+        };
+        var frameTexts = renderedRow.GetVisualDescendants().OfType<TextBlock>()
+            .Where(block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && block.Classes.Contains("frameText") && !block.Classes.Contains("framePreview")
+                && block.Classes.Contains(accuracyClass))
+            .ToArray();
+        Assert.NotEmpty(frameTexts);
+        Assert.All(frameTexts, frameText =>
+        {
+            Assert.Equal(HorizontalAlignment.Stretch, frameText.HorizontalAlignment);
+            Assert.Equal(TextAlignment.Center, frameText.TextAlignment);
+        });
         var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
-        var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
-        Assert.Equal(expectedBrush.Color, actualBrush.Color);
+        Assert.All(frameTexts, frameText =>
+        {
+            var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
+            Assert.Equal(expectedBrush.Color, actualBrush.Color);
+        });
     }
 
     private static void AssertBottomInputAlignment(MainWindowHeadlessTestHost host)

@@ -29,6 +29,10 @@ public sealed class ChapterRowViewModel(
     private FrameAccuracy previewCandidateFrameAccuracy = FrameAccuracy.Neutral;
     private decimal previewBeforeFramesPerSecond;
     private bool isNarrowPreviewLayout;
+    private FramePresentationInput? framePresentationInput;
+    private FramePresentationInput? previewBeforeFramePresentationInput;
+    private FramePresentationInput? previewCandidateFramePresentationInput;
+    private FramePresentationPolicy framePresentationPolicy = new(false, true, 3);
 
     public Chapter Chapter { get; } = chapter;
 
@@ -39,6 +43,12 @@ public sealed class ChapterRowViewModel(
     public string Name { get; set; } = name ?? chapter.Name;
 
     public string FramesInfo { get; set; } = chapter.FramesInfo;
+
+    public FramePresentationParts? FramePresentation { get; private set; }
+
+    public FramePresentationParts? PreviewBeforeFramePresentation { get; private set; }
+
+    public FramePresentationParts? PreviewCandidateFramePresentation { get; private set; }
 
     public bool IsFrameAccurate { get; } = chapter.FrameAccuracy == FrameAccuracy.Accurate;
 
@@ -172,6 +182,45 @@ public sealed class ChapterRowViewModel(
         }
 
         PreviewComparison = comparison;
+    }
+
+    internal void SetFramePresentationInput(FramePresentationInput input, FramePresentationPolicy policy)
+    {
+        framePresentationInput = input;
+        framePresentationPolicy = policy;
+        RefreshFramePresentation();
+    }
+
+    internal void SetPreviewFramePresentationInputs(
+        FramePresentationInput? before,
+        FramePresentationInput? candidate,
+        FramePresentationPolicy policy)
+    {
+        previewBeforeFramePresentationInput = before;
+        previewCandidateFramePresentationInput = candidate;
+        framePresentationPolicy = policy;
+        RefreshFramePresentation();
+    }
+
+    internal void RefreshFramePresentation(FramePresentationPolicy? policy = null)
+    {
+        if (policy is not null)
+        {
+            framePresentationPolicy = policy;
+        }
+
+        FramePresentation = framePresentationInput is { } input
+            ? FrameValueFormatter.Format(input, framePresentationPolicy)
+            : null;
+        OnPropertyChanged(nameof(FramePresentation));
+        PreviewBeforeFramePresentation = previewBeforeFramePresentationInput is { } before
+            ? FrameValueFormatter.Format(before, framePresentationPolicy)
+            : null;
+        OnPropertyChanged(nameof(PreviewBeforeFramePresentation));
+        PreviewCandidateFramePresentation = previewCandidateFramePresentationInput is { } candidate
+            ? FrameValueFormatter.Format(candidate, framePresentationPolicy)
+            : null;
+        OnPropertyChanged(nameof(PreviewCandidateFramePresentation));
     }
 
     private void NotifyBeforeFrameAccuracy()

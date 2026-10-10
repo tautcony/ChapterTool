@@ -39,7 +39,7 @@ public sealed class UiDesignSystemHeadlessTests
                 && block.Bounds.Width > 0
                 && block.Bounds.Height > 0)
             .ToArray();
-        Assert.Equal(2, frameTexts.Length);
+        Assert.True(frameTexts.Length >= 2);
         Assert.All(frameTexts, block => Assert.Null(block.Effect));
 
         var accurate = Assert.Single(frameTexts, block => block.Classes.Contains("frameAccurate"));

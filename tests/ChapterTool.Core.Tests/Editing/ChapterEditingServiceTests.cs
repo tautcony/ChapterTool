@@ -37,6 +37,56 @@ public sealed class ChapterEditingServiceTests
         Assert.Equal(100_100_000, result.ChapterSet.Chapters[1].StartTime.Ticks);
     }
 
+    [Fact]
+    public void EditFrame_preserves_ticks_when_unrounded_decimal_frame_text_is_committed_unchanged()
+    {
+        const string frameText = "4495.000000999000999000999001";
+        var sample = Sample();
+        var source = sample with
+        {
+            Chapters = sample.Chapters.Select((chapter, index) => index == 1
+                ? chapter with
+                {
+                    StartTime = TimeSpan.FromTicks(1_499_833_334),
+                    FramesInfo = frameText,
+                    FrameAccuracy = FrameAccuracy.Neutral
+                }
+                : chapter).ToArray()
+        };
+
+        var result = service.EditFrame(source, 1, frameText, new ChapterFrameRate(30_000, 1_001));
+
+        Assert.Same(source, result.ChapterSet);
+        Assert.Equal(1_499_833_334, result.ChapterSet.Chapters[1].StartTime.Ticks);
+        Assert.Equal(frameText, result.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
+    public void EditFrame_with_decimal_rate_preserves_ticks_when_decimal_text_is_committed_unchanged()
+    {
+        const string frameText = "4495.000000999000999000999001";
+        var sample = Sample();
+        var source = sample with
+        {
+            Chapters = sample.Chapters.Select((chapter, index) => index == 1
+                ? chapter with
+                {
+                    StartTime = TimeSpan.FromTicks(1_499_833_334),
+                    FramesInfo = frameText,
+                    FrameAccuracy = FrameAccuracy.Neutral
+                }
+                : chapter).ToArray()
+        };
+
+        var result = service.EditFrame(source, 1, frameText, 30000m / 1001m);
+
+        Assert.Same(source, result.ChapterSet);
+        Assert.Equal(1_499_833_334, result.ChapterSet.Chapters[1].StartTime.Ticks);
+        Assert.Equal(frameText, result.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Empty(result.Diagnostics);
+    }
+
     [Theory]
     [InlineData("999999999999999999999999999999999999999 frames", 24)]
     [InlineData("99999999999999999999999999999 frames", 0.000000001)]

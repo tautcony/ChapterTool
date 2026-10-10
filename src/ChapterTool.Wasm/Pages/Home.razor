@@ -8,7 +8,9 @@
 @using FrameDisplayModes = ChapterTool.Contracts.Configuration.FrameDisplayModes
 @using ContractFrameDisplayMode = ChapterTool.Contracts.Configuration.FrameDisplayMode
 @using ChapterTool.Core.Editing
+@using ChapterTool.Core.Models
 @using ChapterTool.Core.Session
+@using ChapterTool.Core.Transform
 @using ChapterTool.Contracts.Shortcuts
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
@@ -219,7 +221,7 @@
                                     else if (showExpressionCandidate && expressionComparison is { Before: not null, Candidate: not null } timeChange
                                         && (timeChange.Changes & ExpressionChapterChangeKind.Time) != 0)
                                     {
-                                        <span class="expression-cell-preview"><span>@Workspace.FormatExpressionTimeTicks(timeChange.Before.StartTicks)</span><span aria-hidden="true"> → </span><strong>@Workspace.FormatExpressionTimeTicks(timeChange.Candidate.StartTicks)</strong><span class="expression-delta">(@FormatExpressionDelta(timeChange.DeltaTicks))</span></span>
+                                        <span class="expression-cell-preview time-expression-preview"><span>@Workspace.FormatExpressionTimeTicks(timeChange.Before.StartTicks)</span><span aria-hidden="true"> → </span><strong>@Workspace.FormatExpressionTimeTicks(timeChange.Candidate.StartTicks)</strong><span class="expression-delta">(@FormatExpressionDelta(timeChange.DeltaTicks))</span></span>
                                     }
                                     else
                                     {
@@ -238,8 +240,33 @@
                                         @if (showExpressionCandidate && expressionComparison is { CandidateFrames: not null } framesChange
                                             && (framesChange.Changes & ExpressionChapterChangeKind.FrameInformation) != 0
                                             && !string.Equals(framesChange.BeforeFrames?.Text, framesChange.CandidateFrames.Text, StringComparison.Ordinal))
-                                        { <span class="expression-cell-preview frame-text"><span>@framesChange.BeforeFrames?.Text</span><span aria-hidden="true"> → </span><strong>@framesChange.CandidateFrames.Text</strong></span> }
-                                        else { <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo" Label="@($"{L.T("Grid.Frames")} {index + 1}")" CssClass="@($"frame-text {(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")}")" Disabled="@(Workspace.IsBusy || showExpressionCandidate)" /> }
+                                        {
+                                            var beforeParts = Workspace.FormatFramePresentation(
+                                                framesChange.Before?.StartTicks ?? 0,
+                                                framesChange.BeforeFrames?.FrameRate,
+                                                framesChange.BeforeFrames?.Text ?? L.T("Expression.Value.NotCalculated"),
+                                                showRepeatingFrameDecimals);
+                                            var candidateParts = Workspace.FormatFramePresentation(
+                                                framesChange.Candidate?.StartTicks ?? 0,
+                                                framesChange.CandidateFrames.FrameRate,
+                                                framesChange.CandidateFrames.Text,
+                                                showRepeatingFrameDecimals);
+                                            <span class="expression-cell-preview frame-text frame-expression-preview">
+                                                <FrameValueView Value="beforeParts" CssClass="@($"frame-text {(framesChange.BeforeFrames?.Accuracy == FrameAccuracy.Accurate ? "accurate" : framesChange.BeforeFrames?.Accuracy == FrameAccuracy.Inexact ? "inexact" : "neutral")}")"
+                                                                AccessibleName="@FrameAccessibleName(L.T("Expression.Preview.BeforeFrames"), beforeParts)" />
+                                                <span aria-hidden="true">→</span>
+                                                <FrameValueView Value="candidateParts" CssClass="@($"frame-text {(framesChange.CandidateFrames.Accuracy == FrameAccuracy.Accurate ? "accurate" : framesChange.CandidateFrames.Accuracy == FrameAccuracy.Inexact ? "inexact" : "neutral")}")"
+                                                                AccessibleName="@FrameAccessibleName(L.T("Expression.Preview.CandidateFrames"), candidateParts)" />
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <ChapterCellEditor Index="@index" Field="ChapterCellField.Frame" Value="@row.FramesInfo"
+                                                               Label="@($"{L.T("Grid.Frames")} {index + 1}")"
+                                                               CssClass="@($"frame-text {(row.IsFrameAccurate ? "accurate" : row.IsFrameInexact ? "inexact" : "neutral")}")"
+                                                               DisplayPresentation="@Workspace.FormatRowFramePresentation(index, row.FramesInfo, showRepeatingFrameDecimals)"
+                                                               Disabled="@(Workspace.IsBusy || showExpressionCandidate)" />
+                                        }
                                     }
                                     else { <span class="frame-text">—</span> }
                                 </td>
@@ -540,12 +567,19 @@
                         <div class="range-setting"><input id="settings-tolerance" type="range" min="0.01" max="0.30" step="0.01" @bind="draftFrameAccuracyTolerance" /><output>@draftFrameAccuracyTolerance.ToString("0.##")</output></div>
                         <label for="settings-frame-display">@L.T("Settings.FrameDisplay")</label>
                         <div class="settings-inline">
-                            <select id="settings-frame-display" @bind="draftFrameDisplayModeIndex"><option value="0">@L.T("Settings.FrameDisplayRound")</option><option value="1">@L.T("Settings.FrameDisplayDecimalPlaces")</option></select>
+                            <select id="settings-frame-display" @bind="draftFrameDisplayModeIndex"><option value="0">@L.T("Settings.FrameDisplayRound")</option><option value="1">@L.T("Settings.FrameDisplayDecimalPlaces")</option><option value="2">@L.T("Settings.FrameDisplayFullPrecision")</option></select>
                             @if (draftFrameDisplayModeIndex == 1)
                             {
                                 <label for="settings-frame-decimals">@L.T("Settings.FrameDecimalPlaces")</label>
                                 <input id="settings-frame-decimals" type="number" min="1" max="6" step="1" @bind="draftFrameDecimalPlaces" @bind:event="oninput" aria-invalid="@(!SettingsDraftValid ? "true" : "false")" />
                             }
+                        </div>
+                        <label for="settings-repeating-frame-decimals">@L.T("Settings.ShowRepeatingFrameDecimals")</label>
+                        <div>
+                            <label class="settings-check">
+                                <input id="settings-repeating-frame-decimals" type="checkbox" data-testid="settings-repeating-frame-decimals" @bind="draftShowRepeatingFrameDecimals" disabled="@(draftFrameDisplayModeIndex != 2)" />
+                            </label>
+                            <small>@L.T("Settings.ShowRepeatingFrameDecimals.Help")</small>
                         </div>
                         <label for="settings-delete-timing">@L.T("Settings.DeleteRowsTiming")</label>
                         <select id="settings-delete-timing" @bind="draftDeleteRowsTimingModeIndex">
@@ -710,6 +744,8 @@
     private decimal draftFrameAccuracyTolerance = 0.15m;
     private int draftFrameDisplayModeIndex;
     private string draftFrameDecimalPlaces = "3";
+    private bool draftShowRepeatingFrameDecimals = true;
+    private bool showRepeatingFrameDecimals = true;
     private int draftDeleteRowsTimingModeIndex;
     private string draftThemePresetId = "avalonia-default";
     private string draftUiFontFamily = "system-ui";
@@ -1154,6 +1190,9 @@
         return ticks > 0 ? "+" + value : ticks < 0 ? "−" + value : value;
     }
 
+    private string FrameAccessibleName(string label, FramePresentationParts parts) =>
+        $"{label}: {parts.AccessibleDescription}";
+
     private async Task OnMainExpressionInput(ChangeEventArgs args)
     {
         mainExpressionPreviewCancellation?.Cancel();
@@ -1292,8 +1331,9 @@
         draftOutputTextEncodingIndex = outputTextEncodingIndex;
         draftEmitBom = emitBom;
         draftFrameAccuracyTolerance = frameAccuracyTolerance;
-        draftFrameDisplayModeIndex = Workspace.EditingOptions.FrameDisplay == FrameDisplayMode.Round ? 0 : 1;
+        draftFrameDisplayModeIndex = (int)Workspace.EditingOptions.FrameDisplay;
         draftFrameDecimalPlaces = Workspace.EditingOptions.FrameDecimalPlaces.ToString(CultureInfo.InvariantCulture);
+        draftShowRepeatingFrameDecimals = showRepeatingFrameDecimals;
         draftDeleteRowsTimingModeIndex = Workspace.EditingOptions.DeleteRowsTiming == DeleteRowsTimingMode.Preserve ? 0 : 1;
         draftThemePresetId = themePresetId;
         draftUiFontFamily = uiFontFamily;
@@ -1331,6 +1371,7 @@
         draftFrameAccuracyTolerance = 0.15m;
         draftFrameDisplayModeIndex = 0;
         draftFrameDecimalPlaces = "3";
+        draftShowRepeatingFrameDecimals = true;
         draftDeleteRowsTimingModeIndex = 0;
         draftThemePresetId = "avalonia-default";
         draftUiFontFamily = "system-ui";
@@ -1342,7 +1383,7 @@
         && draftFrameAccuracyTolerance is >= 0.01m and <= 0.30m
         && draftSaveFormatIndex >= 0 && draftSaveFormatIndex < Workspace.SaveFormats.Count
         && draftOutputTextEncodingIndex >= 0 && draftOutputTextEncodingIndex < OutputTextEncodings.All.Count
-        && draftFrameDisplayModeIndex is 0 or 1 && draftDeleteRowsTimingModeIndex is 0 or 1
+        && draftFrameDisplayModeIndex is 0 or 1 or 2 && draftDeleteRowsTimingModeIndex is 0 or 1
         && UiLanguages.Any(language => language.Code == draftUiLanguage)
         && Workspace.XmlLanguages.Contains(draftXmlLanguage, StringComparer.OrdinalIgnoreCase)
         && ThemeOptions.Any(option => option.Id == draftThemePresetId);
@@ -1400,10 +1441,11 @@
         outputTextEncodingIndex = Math.Max(0, OutputTextEncodings.All.ToList().IndexOf(OutputTextEncodings.ParseOrDefault(application.OutputTextEncoding)));
         emitBom = application.EmitBom;
         frameAccuracyTolerance = Math.Clamp(application.FrameAccuracyTolerance <= 0 ? 0.15m : application.FrameAccuracyTolerance, 0.01m, 0.30m);
-        draftFrameDisplayModeIndex = FrameDisplayModes.ParseOrDefault(application.FrameDisplayMode) == ContractFrameDisplayMode.Round ? 0 : 1;
+        showRepeatingFrameDecimals = application.ShowRepeatingFrameDecimals;
+        draftFrameDisplayModeIndex = (int)FrameDisplayModes.ParseOrDefault(application.FrameDisplayMode);
         draftFrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(application.FrameDecimalPlaces).ToString(CultureInfo.InvariantCulture);
         draftDeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(application.DeleteRowsTimingMode) == ContractDeleteRowsTimingMode.Preserve ? 0 : 1;
-        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize, draftFrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces, FrameDisplayModes.NormalizeDecimalPlaces(application.FrameDecimalPlaces));
+        Workspace.EditingOptions = new ChapterEditingOptions(draftDeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize, (FrameDisplayMode)draftFrameDisplayModeIndex, FrameDisplayModes.NormalizeDecimalPlaces(application.FrameDecimalPlaces));
         roundFrames = Workspace.RoundFrames = draftFrameDisplayModeIndex == 0;
         themePresetId = ThemeOptions.Any(option => string.Equals(option.Id, theme.PresetId, StringComparison.OrdinalIgnoreCase))
             ? theme.PresetId
@@ -1433,8 +1475,9 @@
                 EmitBom: draftEmitBom,
                 FrameAccuracyTolerance: draftFrameAccuracyTolerance,
                 DeleteRowsTimingMode: draftDeleteRowsTimingModeIndex == 0 ? "preserve" : "normalize",
-                FrameDisplayMode: draftFrameDisplayModeIndex == 0 ? "round" : "decimal-places",
-                FrameDecimalPlaces: int.TryParse(draftFrameDecimalPlaces, NumberStyles.Integer, CultureInfo.InvariantCulture, out var decimals) ? decimals : 0),
+                FrameDisplayMode: FrameDisplayModes.Id((ContractFrameDisplayMode)draftFrameDisplayModeIndex),
+                FrameDecimalPlaces: int.TryParse(draftFrameDecimalPlaces, NumberStyles.Integer, CultureInfo.InvariantCulture, out var decimals) ? decimals : 0,
+                ShowRepeatingFrameDecimals: draftShowRepeatingFrameDecimals),
             Theme: new WasmThemeSettings(draftThemePresetId),
             Font: new WasmFontSettings(
                 UiFontFamily: draftUiFontFamily.Trim() == "system-ui" ? string.Empty : draftUiFontFamily.Trim(),
@@ -1452,8 +1495,9 @@
                 EmitBom: emitBom,
                 FrameAccuracyTolerance: frameAccuracyTolerance,
                 DeleteRowsTimingMode: Workspace.EditingOptions.DeleteRowsTiming == DeleteRowsTimingMode.Preserve ? "preserve" : "normalize",
-                FrameDisplayMode: Workspace.EditingOptions.FrameDisplay == FrameDisplayMode.Round ? "round" : "decimal-places",
-                FrameDecimalPlaces: Workspace.EditingOptions.FrameDecimalPlaces),
+                FrameDisplayMode: FrameDisplayModes.Id((ContractFrameDisplayMode)Workspace.EditingOptions.FrameDisplay),
+                FrameDecimalPlaces: Workspace.EditingOptions.FrameDecimalPlaces,
+                ShowRepeatingFrameDecimals: showRepeatingFrameDecimals),
             Theme: new WasmThemeSettings(themePresetId),
             Font: new WasmFontSettings(
                 UiFontFamily: uiFontFamily == "system-ui" ? string.Empty : uiFontFamily,

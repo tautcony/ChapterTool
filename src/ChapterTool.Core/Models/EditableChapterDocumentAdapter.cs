@@ -253,7 +253,9 @@ public static class EditableChapterDocumentAdapter
         EditableChapterDocument source,
         ChapterSet result,
         decimal sourceFps,
-        decimal targetFps)
+        decimal targetFps,
+        ChapterFrameRate? sourceExactRate = null,
+        ChapterFrameRate? targetExactRate = null)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(result);
@@ -265,20 +267,23 @@ public static class EditableChapterDocumentAdapter
         var updated = ApplyLegacyChapterSetResult(source, result);
         var track = updated.Tracks[0];
         var sourceSegments = source.Tracks[0].Segments.ToDictionary(static segment => segment.Id);
+        long Convert(long ticks) => sourceExactRate is { } exactSource && targetExactRate is { } exactTarget
+            ? ChapterFpsTransformService.ConvertTicks(ticks, exactSource, exactTarget)
+            : ChapterFpsTransformService.ConvertTicks(ticks, sourceFps, targetFps);
         var segments = track.Segments.Select(segment => segment with
         {
-            StartTicks = ChapterFpsTransformService.ConvertTicks(segment.StartTicks, sourceFps, targetFps),
+            StartTicks = Convert(segment.StartTicks),
             Duration = segment.Duration.IsKnown
-                ? ChapterDuration.FromTicks(ChapterFpsTransformService.ConvertTicks(checked(segment.StartTicks + segment.Duration.Ticks), sourceFps, targetFps)
-                    - ChapterFpsTransformService.ConvertTicks(segment.StartTicks, sourceFps, targetFps))
+                ? ChapterDuration.FromTicks(Convert(checked(segment.StartTicks + segment.Duration.Ticks))
+                    - Convert(segment.StartTicks))
                 : ChapterDuration.Unknown,
-            FrameRate = FromLegacyFrameRate((double)targetFps),
+            FrameRate = targetExactRate ?? FromLegacyFrameRate((double)targetFps),
             SourceFrameRate = sourceSegments.TryGetValue(segment.Id, out var original)
                 ? original.SourceFrameRate ?? original.FrameRate
                 : segment.SourceFrameRate ?? segment.FrameRate
         }).ToImmutableArray();
         return new EditableChapterDocument(updated.Id, updated.Title, updated.SourceName, updated.ImportFormat,
-            updated.Duration, FromLegacyFrameRate((double)targetFps),
+            updated.Duration, targetExactRate ?? FromLegacyFrameRate((double)targetFps),
             [new EditableChapterTrack(track.Id, track.Name, track.Chapters, segments)]);
     }
 

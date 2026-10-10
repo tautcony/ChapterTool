@@ -151,6 +151,9 @@ Frame/time and expression logic:
 
 - `src/ChapterTool.Core/Transform/IFrameRateService.cs`
 - `src/ChapterTool.Core/Transform/FrameRateService.cs`
+- `src/ChapterTool.Core/Transform/ExactFrameMath.cs`: exact tick and frame-rate arithmetic
+- `src/ChapterTool.Core/Transform/FrameValueFormatter.cs`: structured formatting for exact frame values
+- `src/ChapterTool.Core/Transform/FramePresentationInput.cs`: tick, rate provenance, and numeric fallback
 - `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs`
 - `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
 - `src/ChapterTool.Core/Transform/Expressions/ChapterExpressionEngine.cs`
@@ -158,6 +161,8 @@ Frame/time and expression logic:
 - `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
 - `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 - `src/ChapterTool.Core/Transform/ChapterRounding.cs`
+
+`FrameRateService` keeps supported frame rates as rationals. It calculates frame values from timestamp ticks. `ExactFrameMath` handles rounding and accuracy comparisons without decimal seconds. `FrameValueFormatter` formats committed and candidate values. Unknown or approximate rates keep their numeric fallback.
 
 `ChapterExpressionService` evaluates only non-separator chapters. Each expression context contains the ordered non-separator chapter snapshot. The Lua engine exposes this snapshot as the one-based `chapters` array. The `chapter` value equals `chapters[index]`.
 

@@ -25,6 +25,7 @@ public sealed class SettingsMigrationTests
         Assert.Equal(ChapterToolSettings.CurrentSchemaVersion, settings.SchemaVersion);
         Assert.Equal("zh-CN", settings.Application.Language);
         Assert.Equal("utf8", settings.Application.OutputTextEncoding);
+        Assert.True(settings.Application.ShowRepeatingFrameDecimals);
         Assert.Equal(@"C:\Tools\ffprobe.exe", settings.Application.FfprobePath);
         Assert.Equal("solarized-dark", settings.Theme.PresetId);
         Assert.Equal(new FontSettings("Noto Sans", "JetBrains Mono"), settings.Font);
@@ -168,7 +169,54 @@ public sealed class SettingsMigrationTests
 
         Assert.Equal(ThemeSettings.Default, settings.Theme);
         Assert.Equal(new FontSettings("Inter", string.Empty), settings.Font);
+        Assert.True(settings.Application.ShowRepeatingFrameDecimals);
         Assert.Equal(originalWriteTime, File.GetLastWriteTimeUtc(path));
+    }
+
+    [Fact]
+    public async Task Explicitly_disabled_repeating_frame_preference_round_trips_without_changing_other_sections()
+    {
+        var root = CreateTempDirectory();
+        var store = new ChapterToolSettingsStore(root);
+        await store.SaveAsync(
+            new ChapterToolSettings
+            {
+                Application = new AppSettings(Language: "ja-JP", ShowRepeatingFrameDecimals: false),
+                Theme = new ThemeSettings("solarized-dark"),
+                Font = new FontSettings("Noto Sans", "JetBrains Mono"),
+            },
+            TestContext.Current.CancellationToken);
+
+        var loaded = await new ChapterToolSettingsStore(root).LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.False(loaded.Application.ShowRepeatingFrameDecimals);
+        Assert.Equal("ja-JP", loaded.Application.Language);
+        Assert.Equal(new ThemeSettings("solarized-dark"), loaded.Theme);
+        Assert.Equal(new FontSettings("Noto Sans", "JetBrains Mono"), loaded.Font);
+        using var json = await ReadDocumentAsync(root);
+        Assert.Equal(1, json.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.False(json.RootElement.GetProperty("application").GetProperty("showRepeatingFrameDecimals").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Full_precision_frame_display_mode_round_trips_in_the_existing_settings_version()
+    {
+        var root = CreateTempDirectory();
+        var store = new ChapterToolSettingsStore(root);
+        await store.SaveAsync(
+            new ChapterToolSettings
+            {
+                Application = new AppSettings(FrameDisplayMode: "FULL-PRECISION", FrameDecimalPlaces: 5)
+            },
+            TestContext.Current.CancellationToken);
+
+        var loaded = await new ChapterToolSettingsStore(root).LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("full-precision", loaded.Application.FrameDisplayMode);
+        Assert.Equal(5, loaded.Application.FrameDecimalPlaces);
+        using var json = await ReadDocumentAsync(root);
+        Assert.Equal(1, json.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal("full-precision", json.RootElement.GetProperty("application").GetProperty("frameDisplayMode").GetString());
     }
 
     [Theory]

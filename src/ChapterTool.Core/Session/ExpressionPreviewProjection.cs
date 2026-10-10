@@ -28,9 +28,10 @@ public sealed record ExpressionFrameValue(
     string Text,
     long? FrameCount,
     ChapterFrameRate? FrameRate,
-    FrameAccuracy Accuracy)
+    FrameAccuracy Accuracy,
+    bool SourceWasMissing = false)
 {
-    public bool IsMissing => string.IsNullOrWhiteSpace(Text);
+    public bool IsMissing => SourceWasMissing || string.IsNullOrWhiteSpace(Text);
 }
 
 public sealed record ExpressionChapterComparison(
@@ -85,7 +86,8 @@ public static class ExpressionPreviewProjector
         ChapterContentPreview preview,
         ChapterTrackId? scopeTrackId = null,
         decimal? displayFrameRate = null,
-        int frameDecimalPlaces = -1)
+        int frameDecimalPlaces = -1,
+        ChapterFrameRate? exactDisplayFrameRate = null)
     {
         ArgumentNullException.ThrowIfNull(preview);
         var targetIds = preview.TargetIds;
@@ -137,8 +139,8 @@ public static class ExpressionPreviewProjector
                 track.Name,
                 before,
                 candidate,
-                ToFrameValue(before, beforeTrack, preview.Before.FrameRate, displayFrameRate, frameDecimalPlaces),
-                ToFrameValue(candidate, candidateTrack, preview.Candidate.FrameRate, displayFrameRate, frameDecimalPlaces),
+                ToFrameValue(before, beforeTrack, preview.Before.FrameRate, displayFrameRate, frameDecimalPlaces, exactDisplayFrameRate),
+                ToFrameValue(candidate, candidateTrack, preview.Candidate.FrameRate, displayFrameRate, frameDecimalPlaces, exactDisplayFrameRate),
                 changes));
         }
 
@@ -249,7 +251,8 @@ public static class ExpressionPreviewProjector
         EditableChapterTrack? track,
         ChapterFrameRate? documentRate,
         decimal? displayFrameRate,
-        int frameDecimalPlaces)
+        int frameDecimalPlaces,
+        ChapterFrameRate? exactDisplayFrameRate)
     {
         if (chapter is null)
         {
@@ -259,23 +262,33 @@ public static class ExpressionPreviewProjector
         var rate = track?.Segments.FirstOrDefault()?.FrameRate ?? documentRate;
         if (displayFrameRate is > 0)
         {
-            var frames = (decimal)chapter.StartTicks / TimeSpan.TicksPerSecond * displayFrameRate.Value;
+            var frames = exactDisplayFrameRate is { } exactRate
+                ? ExactFrameMath.FromTicks(chapter.StartTicks, exactRate)
+                : ExactFrameMath.FromTicks(chapter.StartTicks, displayFrameRate.Value);
             var text = frameDecimalPlaces == 0
-                ? ChapterRounding.RoundToInt64(frames).ToString(CultureInfo.InvariantCulture)
+                ? frames.RoundAwayFromZero().ToString(CultureInfo.InvariantCulture)
                 : frameDecimalPlaces > 0
-                    ? frames.ToString($"F{Math.Clamp(frameDecimalPlaces, 1, 6)}", CultureInfo.InvariantCulture)
-                    : frames.ToString(CultureInfo.InvariantCulture);
+                    ? frames.FormatFixed(Math.Clamp(frameDecimalPlaces, 1, 6))
+                    : FormatRawFrames(frames);
             var formattedAccuracy = frameDecimalPlaces == 0 ? chapter.FrameAccuracy : FrameAccuracy.Neutral;
             long? formattedCount = long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
                 ? parsed
                 : null;
-            return new ExpressionFrameValue(text, formattedCount, rate, formattedAccuracy);
+            return new ExpressionFrameValue(text, formattedCount, rate, formattedAccuracy,
+                string.IsNullOrWhiteSpace(chapter.FramesInfo));
         }
 
         long? frameCount = long.TryParse(chapter.FramesInfo, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedFrames)
             ? parsedFrames
             : null;
-        return new ExpressionFrameValue(chapter.FramesInfo, frameCount, rate, chapter.FrameAccuracy);
+        return new ExpressionFrameValue(chapter.FramesInfo, frameCount, rate, chapter.FrameAccuracy,
+            string.IsNullOrWhiteSpace(chapter.FramesInfo));
+    }
+
+    private static string FormatRawFrames(ExactFrameMath frames)
+    {
+        var text = frames.ToDecimal().ToString("G29", CultureInfo.InvariantCulture);
+        return text.Contains('.', StringComparison.Ordinal) ? text : text + ".0";
     }
 
     private static void AddChapterProperties(

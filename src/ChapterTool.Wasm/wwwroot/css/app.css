@@ -305,7 +305,7 @@ button.secondary {
 
 .chapter-grid {
   width: 100%;
-  min-width: 34rem;
+  min-width: 52rem;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: 0.9rem;
@@ -342,8 +342,8 @@ button.secondary {
 }
 
 .col-num { width: 3.5rem; }
-.col-time { width: 8.5rem; }
-.col-frames { width: 7.5rem; }
+.col-time { width: 21rem; min-width: 21rem; white-space: nowrap; }
+.col-frames { width: 16rem; }
 .col-name { width: auto; }
 
 .cell-edit {
@@ -360,6 +360,58 @@ button.secondary {
   outline: 1px solid #6aa1ff;
   background: #f8fbff;
 }
+
+.frame-editor {
+  position: relative;
+  min-height: 1.8rem;
+}
+
+.frame-editor .cell-edit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 1;
+}
+
+.frame-editor .frame-edit-idle {
+  opacity: 0;
+}
+
+.frame-editor:focus-within .frame-display {
+  visibility: hidden;
+}
+
+.frame-display {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  min-height: 1.8rem;
+  align-items: center;
+  font-family: var(--monospace-font, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.frame-integer, .frame-decimal-point, .frame-fraction, .frame-repetend { flex: none; }
+.frame-repetend { text-decoration: overline; text-decoration-thickness: from-font; }
+
+.frame-expression-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--monospace-font, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.frame-expression-preview .frame-display {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.frame-expression-preview strong { font-weight: 600; }
 
 .frame-text.accurate { color: var(--accent-frame-ok); }
 .frame-text.inexact { color: var(--accent-frame-bad); }
@@ -444,6 +496,11 @@ tr.separator {
   gap: 0.25rem;
   max-width: 100%;
   overflow-wrap: anywhere;
+}
+
+.time-expression-preview {
+  white-space: nowrap;
+  overflow-wrap: normal;
 }
 
 .expression-cell-preview strong {

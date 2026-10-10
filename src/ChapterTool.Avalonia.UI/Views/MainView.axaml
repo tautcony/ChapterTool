@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:i="https://github.com/projektanker/icons.avalonia"
         xmlns:svg="clr-namespace:Avalonia.Svg;assembly=Svg.Controls.Avalonia"
+        xmlns:media="using:Avalonia.Media"
         xmlns:controls="using:ChapterTool.Avalonia.UI.Views.Controls"
         xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
         x:Class="ChapterTool.Avalonia.UI.Views.MainView"
@@ -317,24 +318,24 @@
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <Grid>
                     <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Center"
-                               IsVisible="{Binding ShowNormalTime}" Text="{Binding TimeText}" />
+                               TextWrapping="NoWrap" IsVisible="{Binding ShowNormalTime}" Text="{Binding TimeText}" />
                     <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
                                 AutomationProperties.Name="{Binding PreviewTimeAccessibleName}"
                                 Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
                                 IsVisible="{Binding ShowWideTimePreview}">
-                      <TextBlock Text="{Binding PreviewBeforeTimeText}" Opacity="0.65" />
+                      <TextBlock Text="{Binding PreviewBeforeTimeText}" TextWrapping="NoWrap" Opacity="0.65" />
                       <i:Icon Value="fa-solid fa-arrow-right" Width="10" Height="10" Foreground="{DynamicResource Brush.Accent}" />
-                      <TextBlock Classes="previewTarget" Text="{Binding PreviewTimeText}" />
-                      <TextBlock Text="{Binding PreviewTimeDelta}" Opacity="0.8" />
+                      <TextBlock Classes="previewTarget" Text="{Binding PreviewTimeText}" TextWrapping="NoWrap" />
+                      <TextBlock Text="{Binding PreviewTimeDelta}" TextWrapping="NoWrap" Opacity="0.8" />
                     </StackPanel>
                     <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
                           AutomationProperties.Name="{Binding PreviewTimeAccessibleName}"
                           ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="1"
                           IsVisible="{Binding ShowNarrowTimePreview}">
-                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewBeforeTimeText}" Opacity="0.65" />
+                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding PreviewBeforeTimeText}" TextWrapping="NoWrap" Opacity="0.65" />
                       <i:Icon Grid.Row="1" Grid.Column="0" Value="fa-solid fa-arrow-right" Width="10" Height="10" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Row="1" Grid.Column="1" Classes="previewTarget" Text="{Binding PreviewTimeText}" />
-                      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding PreviewTimeDelta}" Opacity="0.8" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Classes="previewTarget" Text="{Binding PreviewTimeText}" TextWrapping="NoWrap" />
+                      <TextBlock Grid.Row="1" Grid.Column="2" Text="{Binding PreviewTimeDelta}" TextWrapping="NoWrap" Opacity="0.8" />
                     </Grid>
                   </Grid>
                 </DataTemplate>
@@ -383,53 +384,51 @@
             </DataGridTemplateColumn>
             <DataGridTemplateColumn Header="{DynamicResource Grid.Frames}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Frames}"
-                                     Width="160"
-                                     MinWidth="120">
+                                     Width="260"
+                                     MinWidth="220">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <Grid>
-                  <TextBlock Classes.frameText="True"
-                             Classes.frameAccurate="{Binding IsFrameAccurate}"
-                             Classes.frameInexact="{Binding IsFrameInexact}"
-                             Classes.frameNeutral="{Binding IsFrameNeutral}"
-                             HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             IsVisible="{Binding ShowNormalFrames}"
-                             Text="{Binding FramesInfo}" />
-                    <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
-                                AutomationProperties.Name="{Binding PreviewFramesAccessibleName}"
-                                Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
-                                IsVisible="{Binding ShowWideFramesPreview}">
-                      <TextBlock Classes="frameText framePreview"
-                                 Classes.frameAccurate="{Binding IsPreviewBeforeFrameAccurate}"
-                                 Classes.frameInexact="{Binding IsPreviewBeforeFrameInexact}"
-                                 Classes.frameNeutral="{Binding IsPreviewBeforeFrameNeutral}"
-                                 Text="{Binding PreviewBeforeFrames}" />
-                      <i:Icon Value="fa-solid fa-arrow-right" Width="10" Height="10" Foreground="{DynamicResource Brush.Accent}" />
-                      <TextBlock Classes="frameText framePreview"
-                                 Classes.frameAccurate="{Binding IsPreviewCandidateFrameAccurate}"
-                                 Classes.frameInexact="{Binding IsPreviewCandidateFrameInexact}"
-                                 Classes.frameNeutral="{Binding IsPreviewCandidateFrameNeutral}"
-                                 Text="{Binding PreviewFrames}" />
-                    </StackPanel>
+                    <TextBlock Classes="frameText"
+                               Classes.frameAccurate="{Binding IsFrameAccurate}"
+                               Classes.frameInexact="{Binding IsFrameInexact}"
+                               Classes.frameNeutral="{Binding IsFrameNeutral}"
+                               HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"
+                               AutomationProperties.Name="{Binding FramePresentation.AccessibleDescription}"
+                               IsVisible="{Binding ShowNormalFrames}"><Run Text="{Binding FramePresentation.SignedIntegerDigits}" /><Run Text="{Binding FramePresentation.DecimalPoint}" /><Run Text="{Binding FramePresentation.NonRepeatingDigits}" /><Run Text="{Binding FramePresentation.RepeatingDigits}" TextDecorations="{x:Static media:TextDecorations.Overline}" /></TextBlock>
                     <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
                           AutomationProperties.Name="{Binding PreviewFramesAccessibleName}"
-                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="1"
-                          IsVisible="{Binding ShowNarrowFramesPreview}">
-                      <TextBlock Grid.Row="0" Grid.Column="1"
-                                 Classes="frameText framePreview"
+                          ColumnDefinitions="*,26,*"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Center"
+                          IsVisible="{Binding ShowWideFramesPreview}">
+                      <TextBlock Grid.Column="0" Classes="frameText framePreview"
                                  Classes.frameAccurate="{Binding IsPreviewBeforeFrameAccurate}"
                                  Classes.frameInexact="{Binding IsPreviewBeforeFrameInexact}"
                                  Classes.frameNeutral="{Binding IsPreviewBeforeFrameNeutral}"
-                                 Text="{Binding PreviewBeforeFrames}" />
-                      <i:Icon Grid.Row="1" Grid.Column="0" Value="fa-solid fa-arrow-right" Width="10" Height="10" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
-                      <TextBlock Grid.Row="1" Grid.Column="1"
-                                 Classes="frameText framePreview"
+                                 HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"><Run Text="{Binding PreviewBeforeFramePresentation.SignedIntegerDigits}" /><Run Text="{Binding PreviewBeforeFramePresentation.DecimalPoint}" /><Run Text="{Binding PreviewBeforeFramePresentation.NonRepeatingDigits}" /><Run Text="{Binding PreviewBeforeFramePresentation.RepeatingDigits}" TextDecorations="{x:Static media:TextDecorations.Overline}" /></TextBlock>
+                      <i:Icon Grid.Column="1" Value="fa-solid fa-arrow-right" Width="14" Height="14" Margin="2,0" Foreground="{DynamicResource Brush.Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                      <TextBlock Grid.Column="2" Classes="frameText framePreview"
                                  Classes.frameAccurate="{Binding IsPreviewCandidateFrameAccurate}"
                                  Classes.frameInexact="{Binding IsPreviewCandidateFrameInexact}"
                                  Classes.frameNeutral="{Binding IsPreviewCandidateFrameNeutral}"
-                                 Text="{Binding PreviewFrames}" />
+                                 HorizontalAlignment="Stretch" TextAlignment="Center" VerticalAlignment="Center"><Run Text="{Binding PreviewCandidateFramePresentation.SignedIntegerDigits}" /><Run Text="{Binding PreviewCandidateFramePresentation.DecimalPoint}" /><Run Text="{Binding PreviewCandidateFramePresentation.NonRepeatingDigits}" /><Run Text="{Binding PreviewCandidateFramePresentation.RepeatingDigits}" TextDecorations="{x:Static media:TextDecorations.Overline}" /></TextBlock>
+                    </Grid>
+                    <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                          AutomationProperties.Name="{Binding PreviewFramesAccessibleName}"
+                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="4" RowSpacing="1"
+                          IsVisible="{Binding ShowNarrowFramesPreview}">
+                      <TextBlock Grid.Row="0" Grid.Column="1" Classes="frameText framePreview"
+                                 Classes.frameAccurate="{Binding IsPreviewBeforeFrameAccurate}"
+                                 Classes.frameInexact="{Binding IsPreviewBeforeFrameInexact}"
+                                 Classes.frameNeutral="{Binding IsPreviewBeforeFrameNeutral}"
+                                 HorizontalAlignment="Stretch" TextAlignment="Center" TextWrapping="NoWrap"><Run Text="{Binding PreviewBeforeFramePresentation.SignedIntegerDigits}" /><Run Text="{Binding PreviewBeforeFramePresentation.DecimalPoint}" /><Run Text="{Binding PreviewBeforeFramePresentation.NonRepeatingDigits}" /><Run Text="{Binding PreviewBeforeFramePresentation.RepeatingDigits}" TextDecorations="{x:Static media:TextDecorations.Overline}" /></TextBlock>
+                      <i:Icon Grid.Row="1" Grid.Column="0" Value="fa-solid fa-arrow-right" Width="14" Height="14" Margin="2,0" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Row="2" Grid.Column="1" Classes="frameText framePreview"
+                                 Classes.frameAccurate="{Binding IsPreviewCandidateFrameAccurate}"
+                                 Classes.frameInexact="{Binding IsPreviewCandidateFrameInexact}"
+                                 Classes.frameNeutral="{Binding IsPreviewCandidateFrameNeutral}"
+                                 HorizontalAlignment="Stretch" TextAlignment="Center" TextWrapping="NoWrap"><Run Text="{Binding PreviewCandidateFramePresentation.SignedIntegerDigits}" /><Run Text="{Binding PreviewCandidateFramePresentation.DecimalPoint}" /><Run Text="{Binding PreviewCandidateFramePresentation.NonRepeatingDigits}" /><Run Text="{Binding PreviewCandidateFramePresentation.RepeatingDigits}" TextDecorations="{x:Static media:TextDecorations.Overline}" /></TextBlock>
                     </Grid>
                   </Grid>
                 </DataTemplate>

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -262,7 +263,9 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             .GetVisualDescendants()
             .OfType<TextBlock>()
             .Where(static block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } })
-            .Select(static block => block.Text)
+            .Select(static block => !string.IsNullOrEmpty(block.Text)
+                ? block.Text
+                : string.Concat(block.Inlines?.OfType<Run>().Select(static run => run.Text) ?? Enumerable.Empty<string>()))
             .Where(static text => !string.IsNullOrWhiteSpace(text))
             .ToArray()!;
 

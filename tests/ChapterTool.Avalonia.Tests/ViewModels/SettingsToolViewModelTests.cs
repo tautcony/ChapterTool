@@ -216,6 +216,57 @@ public sealed class SettingsToolViewModelTests
     }
 
     [Fact]
+    public async Task RepeatingFramePreferenceSavesReloadsDiscardsResetsAndSurvivesIntegerMode()
+    {
+        var appStore = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: false));
+        var owner = CreateOwner(appStore);
+        var viewModel = CreateViewModel(owner, appStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.False(viewModel.ShowRepeatingFrameDecimals);
+        Assert.False(owner.ShowRepeatingFrameDecimals);
+        Assert.True(viewModel.IsRepeatingFrameDecimalsEnabled);
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, owner.EditingOptions.FrameDisplay);
+        Assert.Equal(3, viewModel.FrameDisplayOptions.Count);
+
+        viewModel.ShowRepeatingFrameDecimals = true;
+        Assert.True(owner.ShowRepeatingFrameDecimals);
+        viewModel.FrameDisplayModeIndex = 0;
+        Assert.False(viewModel.IsRepeatingFrameDecimalsEnabled);
+        Assert.True(viewModel.ShowRepeatingFrameDecimals);
+        viewModel.FrameDisplayModeIndex = 1;
+        Assert.False(viewModel.IsRepeatingFrameDecimalsEnabled);
+        Assert.True(viewModel.ShowRepeatingFrameDecimals);
+        viewModel.FrameDisplayModeIndex = 2;
+        Assert.True(viewModel.IsRepeatingFrameDecimalsEnabled);
+
+        viewModel.DiscardUnsavedChanges();
+        Assert.False(viewModel.ShowRepeatingFrameDecimals);
+        Assert.False(owner.ShowRepeatingFrameDecimals);
+
+        viewModel.ShowRepeatingFrameDecimals = true;
+        await viewModel.SaveCommand.ExecuteAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(appStore.Current.ShowRepeatingFrameDecimals);
+        Assert.Equal("full-precision", appStore.Current.FrameDisplayMode);
+        Assert.True(owner.ShowRepeatingFrameDecimals);
+
+        var reloadStore = new FakeSettingsStore(appStore.Current);
+        var reloadOwner = CreateOwner(reloadStore);
+        var reloaded = CreateViewModel(reloadOwner, reloadStore, new FakeThemeSettingsState(ThemeSettings.Default), new AppLocalizationManager("en-US"));
+        await reloaded.LoadAsync(TestContext.Current.CancellationToken);
+        Assert.True(reloaded.ShowRepeatingFrameDecimals);
+        Assert.Equal(2, reloaded.FrameDisplayModeIndex);
+
+        reloaded.ShowRepeatingFrameDecimals = false;
+        await reloaded.ResetCommand.ExecuteAsync(cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(reloaded.ShowRepeatingFrameDecimals);
+        Assert.True(reloadOwner.ShowRepeatingFrameDecimals);
+        Assert.Equal(0, reloadStore.Saves);
+    }
+
+    [Fact]
     public async Task FrameAccuracyToleranceIsNormalizedBeforeSave()
     {
         var appStore = new FakeSettingsStore(new AppSettings(FrameAccuracyTolerance: -1m));

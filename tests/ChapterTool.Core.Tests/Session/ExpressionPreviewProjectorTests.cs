@@ -100,6 +100,24 @@ public sealed class ExpressionPreviewProjectorTests
     }
 
     [Fact]
+    public void Projection_calculates_preview_frames_from_ticks_and_exact_display_rate()
+    {
+        var chapter = new EditableChapter(new ChapterId(Guid.NewGuid()), 1, 0, "One", string.Empty);
+        var before = CreateDocument([chapter], null);
+        var candidate = ReplaceChapters(before, [chapter with { StartTicks = 1 }]);
+        var session = new SessionState(before);
+        var preview = ChapterContentOperationSession.Prepare(session, "expression", _ =>
+            new ChapterCandidateBuildResult(true, candidate, [chapter.Id], []));
+
+        var projection = ExpressionPreviewProjector.Build(preview, displayFrameRate: 24000m / 1001m,
+            frameDecimalPlaces: 6, exactDisplayFrameRate: new ChapterFrameRate(24_000, 1_001));
+
+        Assert.Equal("0.000002", projection.Chapters.Single().CandidateFrames!.Text);
+        Assert.Equal("0.000000", projection.Chapters.Single().BeforeFrames!.Text);
+        Assert.True(projection.Chapters.Single().BeforeFrames!.IsMissing);
+    }
+
+    [Fact]
     public void Projection_keeps_all_one_thousand_candidate_comparisons_accessible()
     {
         var chapters = Enumerable.Range(0, 1_000)

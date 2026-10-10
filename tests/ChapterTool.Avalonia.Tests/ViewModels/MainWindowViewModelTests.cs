@@ -1058,11 +1058,41 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SetFrameOptions(frameRateIndex: 0, roundFrames: false);
-        await vm.RefreshCommand.ExecuteAsync();
 
         Assert.Equal(0, vm.SelectedFrameRateIndex);
         Assert.Contains("Detected 25000 / 1000", vm.StatusText, StringComparison.Ordinal);
         Assert.Contains("High", vm.StatusText, StringComparison.Ordinal);
+        Assert.Equal(25m, vm.DisplayFrameRate);
+        Assert.Equal(new ChapterFrameRate(25, 1), vm.EffectiveFrameRateOption.ExactRate);
+    }
+
+    [Fact]
+    public async Task AutoFrameRateUsesDetectedRationalForFramePresentationAndShift()
+    {
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt",
+            new Chapter(1, TimeSpan.Zero, "Opening"),
+            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later"));
+        Assert.Equal("Fps23976", new FrameRateService().DetectDetailed(info, 0.15m).Option.Code);
+        var settings = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true));
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), settingsStore: settings);
+        await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SetFrameOptions(frameRateIndex: 0, roundFrames: false);
+
+        Assert.Equal(0, vm.SelectedFrameRateIndex);
+        Assert.Equal(24000m / 1001m, vm.DisplayFrameRate);
+        Assert.Equal("Fps23976", vm.EffectiveFrameRateOption.Code);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
+
+        var before = vm.ToolSession.ContentOperations.PrepareContentOptions()!.Before.Tracks[0].Chapters[1].StartTicks;
+        var preview = vm.ToolSession.ContentOperations.PrepareFrameShift(-1);
+        Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
+        var candidate = preview.Candidate.Tracks[0].Chapters[1].StartTicks;
+        Assert.Equal(before + 417083, candidate);
     }
 
     [Fact]
@@ -1410,8 +1440,9 @@ public sealed class MainWindowViewModelTests
 
         var row = Assert.Single(vm.Rows);
         Assert.True(row.HasPreviewFramesChange);
-        Assert.Equal("0", row.PreviewBeforeFrames);
-        Assert.Equal("0.0096", row.PreviewFrames);
+        Assert.Equal("0.0", row.PreviewBeforeFrames);
+        Assert.Equal("0", row.PreviewBeforeFramePresentation?.PlainNumericText);
+        Assert.Equal("0.01", row.PreviewFrames);
     }
 
 

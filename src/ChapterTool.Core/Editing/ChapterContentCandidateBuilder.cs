@@ -20,7 +20,8 @@ public sealed partial class ChapterContentCandidateBuilder(
         ChapterId chapterId,
         ChapterCellField field,
         string value,
-        decimal framesPerSecond)
+        decimal framesPerSecond,
+        ChapterFrameRate? exactFrameRate = null)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(value);
@@ -35,7 +36,9 @@ public sealed partial class ChapterContentCandidateBuilder(
         {
             ChapterCellField.Name => editingService.Rename(legacy, location.Value.Index, value),
             ChapterCellField.StartTime => editingService.EditTime(legacy, location.Value.Index, value),
-            ChapterCellField.Frame => editingService.EditFrame(legacy, location.Value.Index, value, framesPerSecond),
+            ChapterCellField.Frame => exactFrameRate is { } rate
+                ? editingService.EditFrame(legacy, location.Value.Index, value, rate)
+                : editingService.EditFrame(legacy, location.Value.Index, value, framesPerSecond),
             _ => throw new ArgumentOutOfRangeException(nameof(field))
         };
         if (result.Diagnostics.Count != 0)
@@ -279,7 +282,8 @@ public sealed partial class ChapterContentCandidateBuilder(
         EditableChapterDocument source,
         IReadOnlySet<ChapterId> targetIds,
         int frames,
-        decimal framesPerSecond)
+        decimal framesPerSecond,
+        ChapterFrameRate? exactFrameRate = null)
     {
         if (framesPerSecond <= 0)
         {
@@ -288,7 +292,9 @@ public sealed partial class ChapterContentCandidateBuilder(
 
         try
         {
-            var ticks = ChapterRounding.RoundToInt64((decimal)frames * TimeSpan.TicksPerSecond / framesPerSecond);
+            var ticks = exactFrameRate is { } rate
+                ? ExactFrameMath.TicksFromFrames(frames, rate)
+                : ExactFrameMath.TicksFromFrames(frames, framesPerSecond);
             var shift = checked(-ticks);
             var trackResult = RequireSingleTrack(source);
             if (trackResult.Error is not null)
@@ -331,7 +337,12 @@ public sealed partial class ChapterContentCandidateBuilder(
     }
 
     /// <summary>Changes frame rate and scales chapter starts, explicit ends, and known duration.</summary>
-    public ChapterCandidateBuildResult ChangeFrameRate(EditableChapterDocument source, decimal sourceFps, decimal targetFps)
+    public ChapterCandidateBuildResult ChangeFrameRate(
+        EditableChapterDocument source,
+        decimal sourceFps,
+        decimal targetFps,
+        ChapterFrameRate? sourceExactRate = null,
+        ChapterFrameRate? targetExactRate = null)
     {
         if (sourceFps <= 0 || targetFps <= 0)
         {
@@ -341,13 +352,16 @@ public sealed partial class ChapterContentCandidateBuilder(
         try
         {
             var legacy = EditableChapterDocumentAdapter.ToChapterSet(source);
-            var result = ChapterFpsTransformService.ChangeFps(legacy, sourceFps, targetFps);
+            var result = sourceExactRate is { } exactSource && targetExactRate is { } exactTarget
+                ? ChapterFpsTransformService.ChangeFps(legacy, exactSource, exactTarget)
+                : ChapterFpsTransformService.ChangeFps(legacy, sourceFps, targetFps);
             if (!result.Success || result.Diagnostics.Count > 0)
             {
                 return Failure(source, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
             }
 
-            var updated = EditableChapterDocumentAdapter.ApplyFrameRateChangeResult(source, result.Info, sourceFps, targetFps);
+            var updated = EditableChapterDocumentAdapter.ApplyFrameRateChangeResult(
+                source, result.Info, sourceFps, targetFps, sourceExactRate, targetExactRate);
             return ValidateAndSucceed(updated, source.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id));
         }
         catch (Exception exception) when (exception is OverflowException or ArgumentOutOfRangeException)

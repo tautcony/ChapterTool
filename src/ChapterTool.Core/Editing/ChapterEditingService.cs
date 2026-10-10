@@ -59,6 +59,11 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
             return InvalidIndex(info, index);
         }
 
+        if (string.Equals(text, chapter.FramesInfo, StringComparison.Ordinal))
+        {
+            return new ChapterEditResult(info, []);
+        }
+
         var match = FirstIntegerRegex().Match(text);
         if (!match.Success
             || framesPerSecond <= 0
@@ -67,18 +72,59 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
             return InvalidFrameText(info);
         }
 
-        var seconds = frame / framesPerSecond;
-        if (seconds < 0 || seconds > (decimal)TimeSpan.MaxValue.TotalSeconds)
+        long ticks;
+        try
+        {
+            ticks = ExactFrameMath.TicksFromFrames(frame, framesPerSecond);
+        }
+        catch (OverflowException)
         {
             return InvalidFrameText(info);
         }
 
         chapters[index] = chapter with
         {
-            StartTime = TimeSpan.FromTicks(ChapterRounding.RoundToInt64(seconds * TimeSpan.TicksPerSecond)),
+            StartTime = TimeSpan.FromTicks(ticks),
             FramesInfo = frame.ToString("0", CultureInfo.InvariantCulture),
             FrameAccuracy = FrameAccuracy.Accurate
         };
+        return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
+    }
+
+    /// <summary>Edits a chapter start frame with exact rational frame-rate arithmetic.</summary>
+    public ChapterEditResult EditFrame(ChapterSet info, int index, string text, ChapterFrameRate framesPerSecond)
+    {
+        var chapters = info.Chapters.ToList();
+        if (!TryGetChapter(chapters, index, out var chapter))
+        {
+            return InvalidIndex(info, index);
+        }
+
+        if (string.Equals(text, chapter.FramesInfo, StringComparison.Ordinal))
+        {
+            return new ChapterEditResult(info, []);
+        }
+
+        var match = FirstIntegerRegex().Match(text);
+        if (!match.Success || !long.TryParse(match.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var frame))
+        {
+            return InvalidFrameText(info);
+        }
+
+        try
+        {
+            chapters[index] = chapter with
+            {
+                StartTime = TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(frame, framesPerSecond)),
+                FramesInfo = frame.ToString(CultureInfo.InvariantCulture),
+                FrameAccuracy = FrameAccuracy.Accurate
+            };
+        }
+        catch (OverflowException)
+        {
+            return InvalidFrameText(info);
+        }
+
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
 
@@ -204,11 +250,39 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
                 [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero.")]);
         }
 
-        var shift = ChapterRounding.SecondsToTimeSpan(frames / framesPerSecond);
+        TimeSpan shift;
+        try
+        {
+            shift = TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(frames, framesPerSecond));
+        }
+        catch (OverflowException)
+        {
+            return new ChapterEditResult(info, [new ChapterDiagnostic(DiagnosticSeverity.Error,
+                ChapterDiagnosticCode.InvalidFrameText, "The frame shift exceeds the supported time range.")]);
+        }
         var chapters = info.Chapters
             .Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })
             .Where(static chapter => chapter.IsSeparator || chapter.StartTime >= TimeSpan.Zero);
 
+        return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
+    }
+
+    /// <summary>Shifts chapter starts using an exact rational frame rate.</summary>
+    public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, ChapterFrameRate framesPerSecond)
+    {
+        TimeSpan shift;
+        try
+        {
+            shift = TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(frames, framesPerSecond));
+        }
+        catch (OverflowException)
+        {
+            return InvalidFrameText(info);
+        }
+
+        var chapters = info.Chapters
+            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })
+            .Where(static chapter => chapter.IsSeparator || chapter.StartTime >= TimeSpan.Zero);
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
     }
 
@@ -295,6 +369,6 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
 
     private static long ChapterFrame(Chapter chapter, decimal framesPerSecond)
     {
-        return ChapterRounding.RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond);
+        return checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, framesPerSecond).RoundAwayFromZero());
     }
 }

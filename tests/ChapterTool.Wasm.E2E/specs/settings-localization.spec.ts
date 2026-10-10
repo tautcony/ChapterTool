@@ -27,6 +27,43 @@ test('B08 settings save, persist across refresh, and discard canceled drafts', a
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
 });
 
+test('repeating frame preference stays in the settings draft until a successful save', async ({ readyPage: page }) => {
+  await expect(page.getByTestId('settings-repeating-frame-decimals')).toHaveCount(0);
+  await page.getByTestId('settings-open').click();
+  let dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
+  await dialog.getByRole('button', { name: 'Editing preferences', exact: true }).click();
+  let repeating = dialog.getByTestId('settings-repeating-frame-decimals');
+  await expect(repeating).toBeChecked();
+  await expect(repeating).toBeDisabled();
+  await dialog.locator('#settings-frame-display').selectOption('1');
+  await expect(repeating).toBeDisabled();
+  await dialog.locator('#settings-frame-display').selectOption('2');
+  await expect(repeating).toBeEnabled();
+  await repeating.uncheck();
+  await dialog.getByTestId('settings-cancel').click();
+
+  await page.getByTestId('settings-open').click();
+  dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
+  await dialog.getByRole('button', { name: 'Editing preferences', exact: true }).click();
+  repeating = dialog.getByTestId('settings-repeating-frame-decimals');
+  await expect(repeating).toBeChecked();
+  await dialog.locator('#settings-frame-display').selectOption('2');
+  await repeating.uncheck();
+  await dialog.getByTestId('settings-apply').click();
+  await expect(page.getByTestId('settings-repeating-frame-decimals')).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('chaptertool.wasm.settings') ?? '{}').application.showRepeatingFrameDecimals)).toBe(false);
+
+  await page.reload();
+  await expect(page.locator('#chaptertool-shell')).toHaveAttribute('data-app-ready', 'true');
+  await page.getByTestId('settings-open').click();
+  dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
+  await dialog.getByRole('button', { name: 'Editing preferences', exact: true }).click();
+  await dialog.locator('#settings-frame-display').selectOption('2');
+  await expect(dialog.getByTestId('settings-repeating-frame-decimals')).not.toBeChecked();
+  await dialog.getByTestId('settings-cancel').click();
+  await expect(page.getByTestId('settings-repeating-frame-decimals')).toHaveCount(0);
+});
+
 test('B09 switches English, Chinese, and Japanese in the app and preserves Unicode chapter text', async ({ readyPage: page }) => {
   await loadFixture(page, 'unicode-ogm.txt');
   await expect(chapters(page).locator('tbody tr')).toHaveCount(2);

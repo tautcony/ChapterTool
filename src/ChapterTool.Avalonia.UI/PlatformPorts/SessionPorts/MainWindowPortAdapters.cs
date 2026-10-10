@@ -151,6 +151,8 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
 
     public decimal FrameAccuracyTolerance => owner.FrameAccuracyTolerance;
 
+    public bool ShowRepeatingFrameDecimals => owner.ShowRepeatingFrameDecimals;
+
     public ChapterEditingOptions EditingOptions => owner.EditingOptions;
 
     public void ApplyLoadedSettings(AppSettings settings) => ApplyPreferences(settings, applyDefaultSaveFormat: true);
@@ -186,13 +188,12 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
         }
 
         owner.FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
+        owner.ShowRepeatingFrameDecimals = settings.ShowRepeatingFrameDecimals;
         owner.ApplyEditingOptions(new ChapterEditingOptions(
             DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve
                 ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve
                 : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize,
-            FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round
-                ? Core.Editing.FrameDisplayMode.Round
-                : Core.Editing.FrameDisplayMode.DecimalPlaces,
+            (Core.Editing.FrameDisplayMode)FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode),
             FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces)));
         owner.RoundFrames = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round;
         owner.XmlLanguage = string.IsNullOrWhiteSpace(settings.DefaultXmlLanguage) ? "und" : settings.DefaultXmlLanguage;
@@ -251,7 +252,7 @@ public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapter
             return;
         }
 
-        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.DisplayFrameRate);
+        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.DisplayFrameRate, owner.EffectiveFrameRateOption.ExactRate);
         var outcome = await owner.ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
         owner.ApplyContentOutcome(outcome, $"Shift frames forward: frames={frames}");
     }
@@ -268,7 +269,8 @@ public sealed class ChapterContentOperationPortAdapter(MainWindowViewModel owner
 
     public ChapterContentPreview PrepareContentOptions() => owner.PrepareContentOptionsOperation();
 
-    public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.DisplayFrameRate);
+    public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames,
+        owner.DisplayFrameRate, owner.EffectiveFrameRateOption.ExactRate);
 
     public ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps) => owner.PrepareFrameRateOperation(sourceFps, targetFps);
 

@@ -68,7 +68,8 @@ public sealed record WasmApplicationSettings(
     decimal FrameAccuracyTolerance = 0.15m,
     string DeleteRowsTimingMode = "preserve",
     string FrameDisplayMode = "round",
-    int FrameDecimalPlaces = 3);
+    int FrameDecimalPlaces = 3,
+    bool ShowRepeatingFrameDecimals = true);
 
 public sealed record WasmThemeSettings(string PresetId = "avalonia-default");
 

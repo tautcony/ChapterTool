@@ -37,6 +37,25 @@ public sealed class ChapterFpsTransformServiceTests
     }
 
     [Fact]
+    public void ChangeFps_uses_exact_rational_rates_and_timestamp_ticks()
+    {
+        var source = new ChapterFrameRate(24_000, 1_001);
+        var target = new ChapterFrameRate(30_000, 1_001);
+        var timestamp = TimeSpan.FromTicks(1_001_000_000);
+        var info = Sample() with
+        {
+            Duration = timestamp,
+            Chapters = [new Chapter(1, timestamp, "Late")]
+        };
+
+        var result = ChapterFpsTransformService.ChangeFps(info, source, target);
+
+        Assert.True(result.Success);
+        Assert.Equal(TimeSpan.FromTicks(800_800_000), result.Info.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.FromTicks(800_800_000), result.Info.Duration);
+    }
+
+    [Fact]
     public void ChangeFps_invalid_fps_returns_diagnostic_and_preserves_input()
     {
         var info = Sample();

@@ -31,6 +31,54 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task Auto_rate_keeps_exact_display_rate_and_frame_rounding_uses_one_setting()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("repeating.txt", [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Opening\nCHAPTER02=00:00:52.094\nCHAPTER02NAME=Later\n"u8
+        ]);
+
+        workspace.RoundFrames = false;
+        workspace.ApplyOptionsAndRefresh();
+        var parts = workspace.FormatRowFramePresentation(1, workspace.Rows[1].FramesInfo, showRepeatingDecimals: true);
+
+        Assert.Equal("006993", parts.RepeatingDigits);
+        Assert.False(workspace.RoundFrames);
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
+
+        workspace.EditingOptions = workspace.EditingOptions with
+        {
+            FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision
+        };
+        workspace.RoundFrames = false;
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
+
+        workspace.EditingOptions = workspace.EditingOptions with
+        {
+            FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.Round
+        };
+        Assert.True(workspace.RoundFrames);
+    }
+
+    [Fact]
+    public async Task Auto_rate_is_used_by_frame_shift_preview_and_commit()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("repeating.txt", [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Opening\nCHAPTER02=00:00:52.094\nCHAPTER02NAME=Later\n"u8
+        ]);
+
+        var beforeTicks = workspace.Rows[1].TimeText;
+        var preview = workspace.PrepareFrameShiftPreview(-1)!;
+        Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
+        Assert.Equal(417083, preview.Candidate.Tracks[0].Chapters[1].StartTicks
+            - preview.Before.Tracks[0].Chapters[1].StartTicks);
+
+        Assert.True(await workspace.ApplyContentPreviewAsync());
+        Assert.NotEqual(beforeTicks, workspace.Rows[1].TimeText);
+    }
+
+    [Fact]
     public async Task BrowserWorkspaceHistoryUndoRedoAndTabSessionsAreIndependent()
     {
         using var firstTab = CreateWorkspace();

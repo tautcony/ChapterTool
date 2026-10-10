@@ -30,6 +30,16 @@ public sealed class FrameRateServiceTests
         var actual = service.FindByValue(23.976023976m);
 
         Assert.Equal("Fps23976", actual.Code);
+        Assert.Null(actual.ExactRate);
+    }
+
+    [Fact]
+    public void FindByCode_exposes_authoritative_rational_rate_metadata()
+    {
+        var option = service.FindByCode("Fps23976");
+
+        Assert.Equal(new ChapterFrameRate(24000, 1001), option.ExactRate);
+        Assert.Null(service.FindByCode("Auto").ExactRate);
     }
 
     [Fact]
@@ -186,6 +196,23 @@ public sealed class FrameRateServiceTests
     }
 
     [Fact]
+    public void UpdateFrames_detects_auto_rate_when_full_precision_is_selected()
+    {
+        var info = NewInfo(0m,
+        [
+            new Chapter(1, TimeSpan.Zero, "Opening"),
+            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")
+        ]);
+
+        var actual = service.UpdateFrames(info, service.Options[0], decimalPlaces: -1, tolerance: 0.15m);
+
+        Assert.Equal("Fps23976", actual.SelectedOption.Code);
+        Assert.Equal(new ChapterFrameRate(24_000, 1_001), actual.SelectedOption.ExactRate);
+        Assert.Equal(24_000m / 1_001m, actual.FramesPerSecond);
+        Assert.StartsWith("1249.006993", actual.Chapters[1].FramesInfo, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void UpdateFrames_marks_rounded_frames_accurate_when_difference_is_less_than_tolerance()
     {
         var info = NewInfo(0m, [new Chapter(1, TimeSpan.FromSeconds(1.0004), "Chapter 1")]);
@@ -215,6 +242,31 @@ public sealed class FrameRateServiceTests
         var actual = service.UpdateFrames(info, service.Options[3], round: true, tolerance: 0.01m);
 
         Assert.Equal("13", actual.Chapters.Single().FramesInfo);
+        Assert.Equal(FrameAccuracy.Inexact, actual.Chapters.Single().FrameAccuracy);
+    }
+
+    [Fact]
+    public void UpdateFrames_uses_ticks_and_authoritative_rate_for_fixed_decimal_rounding()
+    {
+        var info = NewInfo(0m, [new Chapter(1, TimeSpan.FromTicks(1), "Chapter 1")]);
+
+        var actual = service.UpdateFrames(info, service.FindByCode("Fps23976"), 6, tolerance: 0.01m);
+
+        Assert.Equal("0.000002", actual.Chapters.Single().FramesInfo);
+        Assert.Equal(new ChapterFrameRate(24_000, 1_001), actual.SelectedOption.ExactRate);
+    }
+
+    [Fact]
+    public void UpdateFrames_uses_exact_fraction_at_rounding_and_accuracy_boundaries()
+    {
+        var rate = new FrameRateOption("fraction", "fraction", 1m / 3m, true, 1,
+            new ChapterFrameRate(1, 3));
+        var exactHalfFrame = new Chapter(1, TimeSpan.FromTicks(15_000_000), "Chapter 1");
+        var info = NewInfo(0m, [exactHalfFrame]);
+
+        var actual = service.UpdateFrames(info, rate, 0, tolerance: 0.5m);
+
+        Assert.Equal("1", actual.Chapters.Single().FramesInfo);
         Assert.Equal(FrameAccuracy.Inexact, actual.Chapters.Single().FrameAccuracy);
     }
 

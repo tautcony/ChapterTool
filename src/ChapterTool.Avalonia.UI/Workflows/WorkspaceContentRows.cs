@@ -13,7 +13,11 @@ internal sealed class WorkspaceContentRows(
 {
     public ChapterSet GetCurrentChapterSet() => workspace.CurrentChapterSet ?? EmptyChapterSet();
 
-    public void RefreshRows(ObservableCollection<ChapterRowViewModel> rows, ChapterSet? display = null)
+    public void RefreshRows(
+        ObservableCollection<ChapterRowViewModel> rows,
+        ChapterSet? display,
+        FrameRateOption frameRateOption,
+        FramePresentationPolicy policy)
     {
         rows.Clear();
         if ((display ?? workspace.CurrentChapterSet) is not { } current)
@@ -30,10 +34,18 @@ internal sealed class WorkspaceContentRows(
         {
             var chapter = current.Chapters[index];
             var row = new ChapterRowViewModel(chapter, formatter);
-            if (track is not null && index < track.Chapters.Length)
+            var typedChapter = track is not null && index < track.Chapters.Length
+                ? track.Chapters[index]
+                : null;
+            var startTicks = typedChapter?.StartTicks ?? chapter.StartTime.Ticks;
+            var input = frameRateOption.ExactRate is { } exactRate
+                ? FramePresentationInput.FromExactRate(startTicks, exactRate, chapter.FramesInfo)
+                : FramePresentationInput.FromApproximateRate(startTicks, frameRateOption.Value, chapter.FramesInfo);
+            row.SetFramePresentationInput(input, policy);
+            if (typedChapter is not null)
             {
-                row.TrackId = track.Id;
-                row.ChapterId = track.Chapters[index].Id;
+                row.TrackId = track!.Id;
+                row.ChapterId = typedChapter.Id;
             }
 
             rows.Add(row);

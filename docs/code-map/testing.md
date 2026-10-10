@@ -49,7 +49,7 @@ Use `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs
 
 Use `tests/ChapterTool.Wasm.Tests` when you change the Blazor browser workspace, bounded byte input, browser settings, or browser export paths. The primary file is `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs`. It covers browser history navigation, independent tab sessions, failed and canceled replacement, and export baselines. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the browser shortcut guard.
 
-Use `tests/ChapterTool.Wasm.E2E` for rendered Blazor workflows and browser boundaries. The default configuration tests the prepared Release site at `/ChapterTool/`. The development configuration supports local diagnosis. Publish the app and run `npm run prepare:site` first. Then run `npm run typecheck` and `npm run test:e2e` from that test directory.
+Use `tests/ChapterTool.Wasm.E2E` for rendered Blazor workflows and browser boundaries. `specs/repeating-frame-display.spec.ts` verifies exact repetends, plain numeric editing, settings, and responsive frame previews. The default configuration tests the prepared Release site at `/ChapterTool/`. The development configuration supports local diagnosis. Publish the app and run `npm run prepare:site` first. Then run `npm run typecheck` and `npm run test:e2e` from that test directory.
 
 `WasmContentParityTests` covers read-only candidates, cancellation, stale cell identities, repeated submission, and preference isolation. `WasmToolParityTests` covers shared shortcut defaults and filtered log export. `PortableUiParityTests` compares browser and Avalonia operation sequences through public APIs. `functional-parity.spec.ts` covers rendered cell drafts, shortcut settings, Lua authoring, filtered log actions, persistence failures, 1000-row editing, and five viewport sizes. Browser evidence is stored under `artifacts/wasm-e2e/`.
 
@@ -92,6 +92,7 @@ High-signal test files:
   - `tests/ChapterTool.Core.Tests/Importing/ChapterContentServiceTests.cs`
 - transform
   - `tests/ChapterTool.Core.Tests/Transform/FrameRateServiceTests.cs`
+  - `tests/ChapterTool.Core.Tests/Transform/FrameValueFormatterTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterFpsTransformServiceTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterTimeFormatterTests.cs`
   - `tests/ChapterTool.Core.Tests/Transform/ChapterRoundingTests.cs`

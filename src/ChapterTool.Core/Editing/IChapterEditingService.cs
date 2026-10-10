@@ -26,6 +26,9 @@ public interface IChapterEditingService
     /// <returns>The edit result.</returns>
     ChapterEditResult EditFrame(ChapterSet info, int index, string text, decimal framesPerSecond);
 
+    /// <summary>Edits a chapter start frame using an authoritative rational frame rate.</summary>
+    ChapterEditResult EditFrame(ChapterSet info, int index, string text, ChapterFrameRate framesPerSecond);
+
     /// <summary>
     /// Renames a chapter.
     /// </summary>
@@ -76,6 +79,9 @@ public interface IChapterEditingService
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The edit result.</returns>
     ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, decimal framesPerSecond);
+
+    /// <summary>Shifts chapter starts by frames using an authoritative rational frame rate.</summary>
+    ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, ChapterFrameRate framesPerSecond);
 
     /// <summary>
     /// Creates zone text from selected chapters.

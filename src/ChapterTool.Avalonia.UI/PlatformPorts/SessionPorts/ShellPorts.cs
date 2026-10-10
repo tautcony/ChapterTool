@@ -58,6 +58,8 @@ public interface IPreferenceSink
 
     decimal FrameAccuracyTolerance { get; }
 
+    bool ShowRepeatingFrameDecimals => true;
+
     ChapterEditingOptions EditingOptions => ChapterEditingOptions.Default;
 
     void ApplyLoadedSettings(AppSettings settings);

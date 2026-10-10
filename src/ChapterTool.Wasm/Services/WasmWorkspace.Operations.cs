@@ -54,12 +54,29 @@ public sealed partial class WasmWorkspace
             ? new(false, document, [], [localizer.T("Parity.InvalidShift")])
             : candidateBuilder.ShiftFrames(document,
                 document.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator)
-                    .Select(chapter => chapter.Id).ToHashSet(), frames, ExactFramesPerSecond));
+                    .Select(chapter => chapter.Id).ToHashSet(), frames, ExactFramesPerSecond,
+                EffectiveFrameRateOption.ExactRate));
 
     /// <summary>Prepares a preview that changes the chapter frame rate to the selected rate.</summary>
     public ChapterContentPreview? PrepareFrameRatePreview() => PrepareContentPreview("Change chapter frame rate", document =>
-        candidateBuilder.ChangeFrameRate(document, (decimal)(BaseChapterSet?.FramesPerSecond ?? 0),
+        candidateBuilder.ChangeFrameRate(document, ResolveSourceFrameRate(),
             ResolveSelectedFrameRateOption().Value));
+
+    private decimal ResolveSourceFrameRate()
+    {
+        if (selectedFrameRateIndex <= 0 && EffectiveFrameRateOption.IsValid)
+        {
+            return EffectiveFrameRateOption.Value;
+        }
+
+        if (BaseChapterSet is { FramesPerSecond: > 0 } chapterSet)
+        {
+            return (decimal)chapterSet.FramesPerSecond;
+        }
+
+        var selected = ResolveSelectedFrameRateOption();
+        return selected.IsValid ? selected.Value : EffectiveFrameRateOption.Value;
+    }
 
     private ChapterContentPreview? PrepareContentPreview(string operation,
         Func<EditableChapterDocument, ChapterCandidateBuildResult> build)

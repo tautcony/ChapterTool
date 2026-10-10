@@ -8,9 +8,11 @@ namespace ChapterTool.Core.Transform;
 /// <param name="Value">The frame rate value in frames per second.</param>
 /// <param name="IsValid">Whether the option can be used for frame calculations.</param>
 /// <param name="LegacyMplsCode">The Blu-ray MPLS frame rate code associated with the option.</param>
+/// <param name="ExactRate">The authoritative rational rate when selected by option code.</param>
 public sealed record FrameRateOption(
     string Code,
     string DisplayName,
     decimal Value,
     bool IsValid,
-    int LegacyMplsCode);
+    int LegacyMplsCode,
+    ChapterTool.Core.Models.ChapterFrameRate? ExactRate = null);

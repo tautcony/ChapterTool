@@ -42,6 +42,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private int deleteRowsTimingModeIndex;
     private int frameDisplayModeIndex;
     private int frameDecimalPlaces;
+    private bool showRepeatingFrameDecimals;
     private double frameAccuracyToleranceSliderValue;
     private bool isRefreshingLanguages;
 
@@ -91,8 +92,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, preferenceSink.OutputTextEncoding));
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(preferenceSink.FrameAccuracyTolerance);
         deleteRowsTimingModeIndex = preferenceSink.EditingOptions.DeleteRowsTiming == Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
-        frameDisplayModeIndex = preferenceSink.EditingOptions.FrameDisplay == Core.Editing.FrameDisplayMode.Round ? 0 : 1;
-        frameDecimalPlaces = preferenceSink.EditingOptions.EffectiveFrameDecimalPlaces;
+        frameDisplayModeIndex = (int)preferenceSink.EditingOptions.FrameDisplay;
+        frameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(preferenceSink.EditingOptions.FrameDecimalPlaces);
+        showRepeatingFrameDecimals = preferenceSink.ShowRepeatingFrameDecimals;
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
@@ -332,7 +334,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     public IReadOnlyList<string> FrameDisplayOptions =>
     [
         localizer.GetString("Settings.FrameDisplayRound"),
-        localizer.GetString("Settings.FrameDisplayDecimalPlaces")
+        localizer.GetString("Settings.FrameDisplayDecimalPlaces"),
+        localizer.GetString("Settings.FrameDisplayFullPrecision")
     ];
 
     public int FrameDisplayModeIndex
@@ -340,15 +343,33 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         get => frameDisplayModeIndex;
         set
         {
-            if (SetProperty(ref frameDisplayModeIndex, Math.Clamp(value, 0, 1)))
+            if (SetProperty(ref frameDisplayModeIndex, Math.Clamp(value, 0, 2)))
             {
                 OnPropertyChanged(nameof(IsDecimalFrameDisplayMode));
+                OnPropertyChanged(nameof(IsIntegerFrameDisplayMode));
+                OnPropertyChanged(nameof(IsRepeatingFrameDecimalsEnabled));
                 ApplyLiveSettings();
             }
         }
     }
 
     public bool IsDecimalFrameDisplayMode => FrameDisplayModeIndex == 1;
+
+    public bool IsIntegerFrameDisplayMode => FrameDisplayModeIndex == 0;
+
+    public bool IsRepeatingFrameDecimalsEnabled => FrameDisplayModeIndex == (int)FrameDisplayMode.FullPrecision;
+
+    public bool ShowRepeatingFrameDecimals
+    {
+        get => showRepeatingFrameDecimals;
+        set
+        {
+            if (SetProperty(ref showRepeatingFrameDecimals, value))
+            {
+                ApplyLiveSettings();
+            }
+        }
+    }
 
     public int FrameDecimalPlaces
     {
@@ -805,8 +826,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             EmitBom: EmitBom,
             FrameAccuracyTolerance: FrameAccuracyTolerance,
             DeleteRowsTimingMode: DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize),
-            FrameDisplayMode: FrameDisplayModes.Id(FrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces),
-            FrameDecimalPlaces: FrameDecimalPlaces);
+            FrameDisplayMode: FrameDisplayModes.Id((FrameDisplayMode)FrameDisplayModeIndex),
+            FrameDecimalPlaces: FrameDecimalPlaces,
+            ShowRepeatingFrameDecimals: ShowRepeatingFrameDecimals);
 
     private void ApplyAppSettingsToFields(AppSettings settings)
     {
@@ -820,8 +842,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         EmitBom = settings.EmitBom;
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
         DeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve ? 0 : 1;
-        FrameDisplayModeIndex = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == FrameDisplayMode.Round ? 0 : 1;
+        FrameDisplayModeIndex = (int)FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode);
         FrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces);
+        ShowRepeatingFrameDecimals = settings.ShowRepeatingFrameDecimals;
     }
 
     public IReadOnlyList<ShortcutRowViewModel> ShortcutRows => shortcutRows;

@@ -37,6 +37,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
     private FrameRateOption selectedFrameRateOption;
+    private FrameRateOption? appliedFrameRateOption;
     private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
     private bool isApplyingContentPreview;
@@ -313,8 +314,28 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         {
             if (SetProperty(ref field, value))
             {
-                InvalidatePendingContentPreview();
-                OnFrameOptionsChangedFromBinding();
+                if (value)
+                {
+                    EditingOptions = EditingOptions with { FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.Round };
+                }
+                else if (EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.Round)
+                {
+                    EditingOptions = EditingOptions with { FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision };
+                }
+                OnFrameOptionsChangedFromBinding(invalidatePendingPreview: false);
+            }
+        }
+    } = true;
+
+    public bool ShowRepeatingFrameDecimals
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                RefreshFramePresentations();
+                NotifyStateChanged();
             }
         }
     } = true;
@@ -335,7 +356,17 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public ChapterEditingOptions EditingOptions { get; private set; } = ChapterEditingOptions.Default;
 
-    internal void ApplyEditingOptions(ChapterEditingOptions? options) => EditingOptions = options ?? ChapterEditingOptions.Default;
+    internal void ApplyEditingOptions(ChapterEditingOptions? options)
+    {
+        var updatedOptions = options ?? ChapterEditingOptions.Default;
+        if (EditingOptions == updatedOptions)
+        {
+            return;
+        }
+
+        EditingOptions = updatedOptions;
+        RefreshFramePresentations();
+    }
 
     public int SelectedFrameRateIndex
     {
@@ -973,28 +1004,38 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             {
                 selectedFrameRateOption = entry;
                 SelectedFrameRateIndex = frameRateIndex;
-                return;
             }
-
-            selectedFrameRateOption = CurrentInfo is null
-                ? frameRateService.Options[0]
-                : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
-            SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+            else
+            {
+                selectedFrameRateOption = CurrentInfo is null
+                    ? frameRateService.Options[0]
+                    : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
+                SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+            }
         }
         finally
         {
             suppressFrameOptionsRefresh = false;
         }
+
+        if (CurrentInfo is not null)
+        {
+            InvalidatePendingContentPreview();
+            ApplyFrameInfo();
+        }
     }
 
-    private void OnFrameOptionsChangedFromBinding()
+    private void OnFrameOptionsChangedFromBinding(bool invalidatePendingPreview = true)
     {
         if (suppressFrameOptionsRefresh || CurrentInfo is null)
         {
             return;
         }
 
-        InvalidatePendingContentPreview();
+        if (invalidatePendingPreview)
+        {
+            InvalidatePendingContentPreview();
+        }
         ApplyFrameInfo();
     }
 

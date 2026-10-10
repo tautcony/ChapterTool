@@ -63,7 +63,7 @@ public sealed partial class MainWindowViewModel
             EditKind.Name => ChapterEditKind.Name,
             EditKind.Frame => ChapterEditKind.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
-        }, DisplayFrameRate);
+        }, DisplayFrameRate, EffectiveFrameRateOption.ExactRate);
         var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview);
         ApplyContentOutcome(outcome, $"Edit {kind.ToString().ToLowerInvariant()}: row={edit.Index}, value='{edit.Value}', previous='{previous}'");
     }
@@ -238,9 +238,17 @@ public sealed partial class MainWindowViewModel
         RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
     }
 
-    internal ChapterContentPreview PrepareFrameRateOperation(decimal sourceFps, decimal targetFps) =>
+    internal ChapterContentPreview PrepareFrameRateOperation(
+        decimal sourceFps,
+        decimal targetFps,
+        ChapterFrameRate? targetExactRate = null) =>
         ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
-            ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(document, sourceFps, targetFps),
+            ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(
+                document,
+                sourceFps,
+                targetFps,
+                document.FrameRate,
+                targetExactRate),
             new HistoryOperationDescriptor("chapter.frame-rate-change",
             [
                 new HistoryOperationParameter("targetScope", "track"),
@@ -406,16 +414,13 @@ public sealed partial class MainWindowViewModel
         var outcome = ClipEditingCoordinator.UpdateFrames(
             CurrentInfo,
             selectedFrameRateOption,
-            RoundFrames
-                ? 0
-                : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces
-                    ? EditingOptions.EffectiveFrameDecimalPlaces
-                    : -1,
+            EditingOptions.EffectiveFrameDecimalPlaces,
             FrameAccuracyTolerance,
             configuredFrameRate);
         var result = outcome.FrameResult;
         var detection = outcome.Detection;
         var appliedOption = outcome.AppliedOption;
+        appliedFrameRateOption = appliedOption;
         if (detection is not null)
         {
             selectedFrameRateOption = frameRateService.Options[0];
@@ -459,7 +464,7 @@ public sealed partial class MainWindowViewModel
         var sourceFps = ResolveSourceFrameRate();
         var targetOption = selectedFrameRateOption;
         var targetFps = targetOption.Value;
-        pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
+        pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps, targetOption.ExactRate);
         OnPropertyChanged(nameof(IsContentPreviewPending));
         OnPropertyChanged(nameof(CanPreviewContentOptions));
         OnPropertyChanged(nameof(CanApplyContentPreview));
@@ -473,6 +478,11 @@ public sealed partial class MainWindowViewModel
 
     private decimal ResolveSourceFrameRate()
     {
+        if (selectedFrameRateOption.LegacyMplsCode == 0 && EffectiveFrameRateOption.IsValid)
+        {
+            return EffectiveFrameRateOption.Value;
+        }
+
         if (configuredFrameRate is > 0)
         {
             return configuredFrameRate.Value;
@@ -483,9 +493,11 @@ public sealed partial class MainWindowViewModel
             return (decimal)currentInfo.FramesPerSecond;
         }
 
-        // When the imported source has no FPS metadata, its frame values are already
-        // displayed using the selected rate. Use that rate as the source baseline.
-        return selectedFrameRateOption.Value;
+        // A valid manual selection serves as the source baseline when the import has
+        // no FPS metadata. In Auto mode, use the detected effective rate instead.
+        return selectedFrameRateOption.IsValid
+            ? selectedFrameRateOption.Value
+            : EffectiveFrameRateOption.Value;
     }
 
     /// <summary>

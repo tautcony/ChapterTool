@@ -107,7 +107,7 @@ internal sealed class ClipEditingCoordinator(
         return workspace.ToggleClipStructure();
     }
 
-    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind, decimal displayFrameRate)
+    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind, decimal displayFrameRate, ChapterFrameRate? exactFrameRate = null)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var snapshot = session.Snapshot;
@@ -129,7 +129,7 @@ internal sealed class ClipEditingCoordinator(
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         return PrepareCandidate($"Edit {field}", document =>
-            CandidateBuilder.EditCell(document, chapter.Id, field, edit.Value, displayFrameRate),
+            CandidateBuilder.EditCell(document, chapter.Id, field, edit.Value, displayFrameRate, exactFrameRate),
             new HistoryOperationDescriptor("chapter.cell-edit",
             [
                 new HistoryOperationParameter("field", field.ToString()),
@@ -174,11 +174,11 @@ internal sealed class ClipEditingCoordinator(
             ]));
     }
 
-    public ChapterContentPreview ShiftFramesForward(int frames, decimal displayFrameRate)
+    public ChapterContentPreview ShiftFramesForward(int frames, decimal displayFrameRate, ChapterFrameRate? exactFrameRate = null)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Where(static chapter => chapter.Kind != ChapterKind.Separator).Select(static chapter => chapter.Id).ToHashSet();
-        return PrepareCandidate("Shift chapter frames", document => CandidateBuilder.ShiftFrames(document, targets, frames, displayFrameRate),
+        return PrepareCandidate("Shift chapter frames", document => CandidateBuilder.ShiftFrames(document, targets, frames, displayFrameRate, exactFrameRate),
             new HistoryOperationDescriptor("chapter.frame-shift",
             [
                 new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),

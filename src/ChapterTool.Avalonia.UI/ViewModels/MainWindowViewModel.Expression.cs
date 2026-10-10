@@ -4,6 +4,7 @@ using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
+using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
@@ -12,11 +13,13 @@ public sealed partial class MainWindowViewModel
 {
     private void RefreshRows()
     {
-        var display = CurrentInfo is null ? null : ClipEditingCoordinator.UpdateFrames(CurrentInfo,
-            selectedFrameRateOption, RoundFrames ? 0 : EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces ? EditingOptions.EffectiveFrameDecimalPlaces : -1,
-            FrameAccuracyTolerance, configuredFrameRate).FrameResult;
+        var frameUpdate = CurrentInfo is null ? null : ClipEditingCoordinator.UpdateFrames(CurrentInfo,
+            selectedFrameRateOption, EditingOptions.EffectiveFrameDecimalPlaces,
+            FrameAccuracyTolerance, configuredFrameRate);
+        appliedFrameRateOption = frameUpdate?.AppliedOption;
+        var display = frameUpdate?.FrameResult;
         DisplayFrameRate = display?.FramesPerSecond ?? 0m;
-        workspaceContentRows.RefreshRows(Rows, display?.Info);
+        workspaceContentRows.RefreshRows(Rows, display?.Info, EffectiveFrameRateOption, FramePresentationPolicy);
         SetNarrowPreviewLayout(isNarrowPreviewLayout);
         UpdateInlinePreviewProjection();
     }
@@ -26,7 +29,9 @@ public sealed partial class MainWindowViewModel
         var preview = pendingContentPreview;
         IReadOnlyDictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison> comparisons = preview is { IsValid: true }
             && Workspace.IsContentTokenCurrent(preview.BaseToken)
-            ? ExpressionPreviewProjector.Build(preview, displayFrameRate: DisplayFrameRate, frameDecimalPlaces: PreviewFrameDecimalPlaces)
+            ? ExpressionPreviewProjector.Build(preview, displayFrameRate: DisplayFrameRate,
+                frameDecimalPlaces: PreviewFrameDecimalPlaces,
+                exactDisplayFrameRate: EffectiveFrameRateOption.Value == DisplayFrameRate ? EffectiveFrameRateOption.ExactRate : null)
                 .Chapters.ToDictionary(item => (item.TrackId, item.Id))
             : new Dictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison>();
         foreach (var row in Rows)
@@ -69,6 +74,61 @@ public sealed partial class MainWindowViewModel
             row.PreviewFramesAccessibleName = row.HasPreviewFramesChange
                 ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Frames"), row.PreviewBeforeFrames, row.PreviewFrames)
                 : string.Empty;
+            var beforeInput = row.HasPreviewFramesChange && row.PreviewComparison is { Before: { } beforeChapter, BeforeFrames: { } beforeFrames }
+                ? CreateFramePresentationInput(beforeChapter.StartTicks, beforeFrames.FrameRate, row.PreviewBeforeFrames)
+                : null;
+            var candidateInput = row.HasPreviewFramesChange && row.PreviewComparison is { Candidate: { } candidateChapter, CandidateFrames: { } candidateFrames }
+                ? CreateFramePresentationInput(candidateChapter.StartTicks, candidateFrames.FrameRate, row.PreviewFrames)
+                : null;
+            row.SetPreviewFramePresentationInputs(beforeInput, candidateInput, FramePresentationPolicy);
+            if (row.HasPreviewFramesChange)
+            {
+                var beforeDescription = row.PreviewBeforeFramePresentation?.AccessibleDescription
+                    ?? row.PreviewBeforeFrames;
+                var candidateDescription = row.PreviewCandidateFramePresentation?.AccessibleDescription
+                    ?? row.PreviewFrames;
+                row.PreviewFramesAccessibleName = FormatPreviewAccessibleName(
+                    Localizer.GetString("Grid.Frames"),
+                    $"{Localizer.GetString("Expression.Preview.BeforeFrames")}: {beforeDescription}",
+                    $"{Localizer.GetString("Expression.Preview.CandidateFrames")}: {candidateDescription}");
+            }
+        }
+    }
+
+    private FramePresentationInput CreateFramePresentationInput(long startTicks, ChapterFrameRate? rate, string fallback)
+    {
+        if (rate is { } exactRate)
+        {
+            var sourceValue = (decimal)exactRate.Numerator / exactRate.Denominator;
+            if (EffectiveFrameRateOption.Value == DisplayFrameRate
+                && EffectiveFrameRateOption.ExactRate is { } selectedRate
+                && Math.Abs(sourceValue - EffectiveFrameRateOption.Value) < 0.000001m)
+            {
+                return FramePresentationInput.FromExactRate(startTicks, selectedRate, fallback);
+            }
+
+            return FramePresentationInput.FromExactRate(startTicks, exactRate, fallback);
+        }
+
+        if (EffectiveFrameRateOption.Value == DisplayFrameRate && EffectiveFrameRateOption.ExactRate is { } exactDisplayRate)
+        {
+            return FramePresentationInput.FromExactRate(startTicks, exactDisplayRate, fallback);
+        }
+
+        return FramePresentationInput.FromApproximateRate(startTicks, EffectiveFrameRateOption.Value, fallback);
+    }
+
+    internal FramePresentationPolicy FramePresentationPolicy => new(
+        RoundFrames,
+        ShowRepeatingFrameDecimals && EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision,
+        PreviewFrameDecimalPlaces);
+
+    internal void RefreshFramePresentations()
+    {
+        var policy = FramePresentationPolicy;
+        foreach (var row in Rows)
+        {
+            row.RefreshFramePresentation(policy);
         }
     }
 
@@ -91,11 +151,11 @@ public sealed partial class MainWindowViewModel
 
     internal decimal DisplayFrameRate { get; private set; }
 
-    private int PreviewFrameDecimalPlaces => RoundFrames
-        ? 0
-        : EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces
-            ? EditingOptions.EffectiveFrameDecimalPlaces
-            : -1;
+    internal FrameRateOption SelectedFrameRateOption => selectedFrameRateOption;
+
+    internal FrameRateOption EffectiveFrameRateOption => appliedFrameRateOption ?? selectedFrameRateOption;
+
+    private int PreviewFrameDecimalPlaces => EditingOptions.EffectiveFrameDecimalPlaces;
 
     internal void RefreshRowsFromPort() => RefreshRows();
 

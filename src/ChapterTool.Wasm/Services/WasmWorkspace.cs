@@ -41,6 +41,7 @@ public sealed partial class WasmWorkspace : IDisposable
     private List<ChapterRowModel> rows = [];
     private int selectedFrameRateIndex;
     private decimal exactFramesPerSecond;
+    private FrameRateOption? appliedFrameRateOption;
     private int selectionAnchor = -1;
     private LoadedSourceSnapshot? lastLoadedSource;
     private string chapterNameTemplateText = string.Empty;
@@ -86,7 +87,6 @@ public sealed partial class WasmWorkspace : IDisposable
             : wasmChapterService.XmlLanguages.FirstOrDefault() ?? "und";
         Expression = "t";
         ExpressionPresetId = string.Empty;
-        RoundFrames = true;
         TextEncoding = OutputTextEncoding.Utf8;
         EmitBom = false;
         FrameAccuracyTolerance = DefaultFrameAccuracyTolerance;
@@ -291,10 +291,21 @@ public sealed partial class WasmWorkspace : IDisposable
     /// <summary>Gets the read-only candidate prepared from the current committed document.</summary>
     public ChapterContentPreview? ExpressionPreview { get; private set; }
 
-    public ExpressionPreviewProjection? ExpressionPreviewProjection => ExpressionPreview is { } preview
-        ? ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId, ExactFramesPerSecond,
-            RoundFrames ? 0 : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces ? EditingOptions.EffectiveFrameDecimalPlaces : -1)
-        : null;
+    public ExpressionPreviewProjection? ExpressionPreviewProjection
+    {
+        get
+        {
+            if (ExpressionPreview is not { } preview)
+            {
+                return null;
+            }
+
+            var appliedRate = EffectiveFrameRateOption;
+            return ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId, ExactFramesPerSecond,
+                RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces,
+                appliedRate.Value == ExactFramesPerSecond ? appliedRate.ExactRate : null);
+        }
+    }
 
     public bool IsExpressionPreviewStale => expressionPreviewStale
         || (ExpressionPreview is { } preview
@@ -354,7 +365,21 @@ public sealed partial class WasmWorkspace : IDisposable
     /// <summary>Gets the selected expression preset id, or empty when the expression is free-form.</summary>
     public string ExpressionPresetId { get; private set; }
 
-    public bool RoundFrames { get; set; }
+    public bool RoundFrames
+    {
+        get => EditingOptions.FrameDisplay == FrameDisplayMode.Round;
+        set
+        {
+            if (value)
+            {
+                EditingOptions = EditingOptions with { FrameDisplay = FrameDisplayMode.Round };
+            }
+            else if (EditingOptions.FrameDisplay == FrameDisplayMode.Round)
+            {
+                EditingOptions = EditingOptions with { FrameDisplay = FrameDisplayMode.FullPrecision };
+            }
+        }
+    }
 
     public OutputTextEncoding TextEncoding { get; set; }
 
@@ -391,6 +416,45 @@ public sealed partial class WasmWorkspace : IDisposable
     public double FramesPerSecond { get; private set; }
 
     internal decimal ExactFramesPerSecond => exactFramesPerSecond;
+
+    public FramePresentationParts FormatFramePresentation(
+        long startTicks,
+        ChapterFrameRate? sourceRate,
+        string numericFallback,
+        bool showRepeatingDecimals)
+    {
+        var selected = EffectiveFrameRateOption;
+        ChapterFrameRate? exactRate = sourceRate;
+        if (selected.ExactRate is { } selectedExact
+            && selected.Value == exactFramesPerSecond
+            && (sourceRate is null
+                || Math.Abs((decimal)sourceRate.Value.Numerator / sourceRate.Value.Denominator - selected.Value) < 0.000001m))
+        {
+            exactRate = selectedExact;
+        }
+
+        var input = exactRate is { } rate
+            ? FramePresentationInput.FromExactRate(startTicks, rate, numericFallback)
+            : FramePresentationInput.FromApproximateRate(startTicks, exactFramesPerSecond, numericFallback);
+        var policy = new FramePresentationPolicy(RoundFrames,
+            showRepeatingDecimals && EditingOptions.FrameDisplay == FrameDisplayMode.FullPrecision,
+            EditingOptions.EffectiveFrameDecimalPlaces);
+        return FrameValueFormatter.Format(input, policy);
+    }
+
+    public FramePresentationParts FormatRowFramePresentation(int index, string numericFallback, bool showRepeatingDecimals)
+    {
+        if (BaseChapterSet is null || index < 0 || index >= BaseChapterSet.Chapters.Count)
+        {
+            return FrameValueFormatter.Format(FramePresentationInput.FromNumericText(numericFallback),
+                new FramePresentationPolicy(RoundFrames,
+                    showRepeatingDecimals && EditingOptions.FrameDisplay == FrameDisplayMode.FullPrecision,
+                    EditingOptions.EffectiveFrameDecimalPlaces));
+        }
+
+        return FormatFramePresentation(BaseChapterSet.Chapters[index].StartTime.Ticks, null,
+            numericFallback, showRepeatingDecimals);
+    }
 
     public string FramesPerSecondDisplay =>
         FramesPerSecond > 0
@@ -731,11 +795,10 @@ public sealed partial class WasmWorkspace : IDisposable
         }
 
         var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
-        var fps = BaseChapterSet.FramesPerSecond > 0
-            ? (decimal)BaseChapterSet.FramesPerSecond
-            : ResolveSelectedFrameRateOption().Value;
+        var fps = exactFramesPerSecond;
         var targets = track.Chapters.Select(static chapter => chapter.Id).ToHashSet();
-        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps));
+        var exactRate = EffectiveFrameRateOption.ExactRate;
+        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps, exactRate));
         CompleteCandidate(outcome, "Status.Shifted", frames);
     }
 
@@ -1475,6 +1538,7 @@ public sealed partial class WasmWorkspace : IDisposable
             rows = [];
             FramesPerSecond = 0;
             exactFramesPerSecond = 0;
+            appliedFrameRateOption = null;
             if (updateStatus && statusKey is not null)
             {
                 SetLocalizedStatus(statusKey, statusArgs);
@@ -1487,6 +1551,7 @@ public sealed partial class WasmWorkspace : IDisposable
         var selectedIds = selectedRowIndexes.Where(index => index >= 0 && index < rows.Count)
             .Select(index => rows[index].Id).ToHashSet();
         var framed = ApplyFrames(BaseChapterSet);
+        appliedFrameRateOption = framed.SelectedOption;
         exactFramesPerSecond = framed.FramesPerSecond;
         FramesPerSecond = (double)framed.FramesPerSecond;
         RebuildFrameRateChoices(BaseChapterSet);
@@ -1529,7 +1594,7 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             option = frameRateService.DetectDetailed(info, FrameAccuracyTolerance).Option;
         }
-        return frameRateService.UpdateFrames(info, option, RoundFrames ? 0 : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces ? EditingOptions.EffectiveFrameDecimalPlaces : -1, FrameAccuracyTolerance);
+        return frameRateService.UpdateFrames(info, option, EditingOptions.EffectiveFrameDecimalPlaces, FrameAccuracyTolerance);
     }
 
     private FrameRateOption ResolveSelectedFrameRateOption()
@@ -1542,6 +1607,8 @@ public sealed partial class WasmWorkspace : IDisposable
 
         return options[selectedFrameRateIndex];
     }
+
+    private FrameRateOption EffectiveFrameRateOption => appliedFrameRateOption ?? ResolveSelectedFrameRateOption();
 
     private void RebuildFrameRateChoices(ChapterSet info)
     {
