@@ -105,7 +105,7 @@ public sealed class WasmContentParityTests
     public async Task Cancelled_signed_shift_preserves_history_cursor_and_export()
     {
         using var workspace = new WasmWorkspace(new WasmChapterService());
-        var path = ChapterTool.TestSupport.TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00001_fch.mpls");
+        var path = TestSupport.TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00001_fch.mpls");
         await workspace.LoadAsync(path, await File.ReadAllBytesAsync(path));
         var before = workspace.Preview().Content;
         var cursor = Assert.Single(workspace.HistoryEntries).Id;
@@ -121,7 +121,7 @@ public sealed class WasmContentParityTests
     public async Task FrameConversionReviewAndCancellationPreserveCommittedContent()
     {
         using var workspace = new WasmWorkspace(new WasmChapterService());
-        var path = ChapterTool.TestSupport.TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00001_fch.mpls");
+        var path = TestSupport.TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00001_fch.mpls");
         await workspace.LoadAsync(path, await File.ReadAllBytesAsync(path));
         workspace.SelectedFrameRateIndex = 3;
         var before = workspace.Preview().Content;
@@ -150,7 +150,7 @@ public sealed class WasmContentParityTests
         using var workspace = new WasmWorkspace(new WasmChapterService());
         workspace.SelectAdjacentClip(1);
         Assert.Empty(workspace.ClipOptions);
-        var path = ChapterTool.TestSupport.TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00001_Hidan_no_Aria_AA.mpls");
+        var path = TestSupport.TestRepository.CoreFixture("Importing", "Disc", "Mpls", "00001_Hidan_no_Aria_AA.mpls");
         await workspace.LoadAsync(path, await File.ReadAllBytesAsync(path));
         var first = workspace.SelectedClipId;
         workspace.SelectAdjacentClip(-1);
