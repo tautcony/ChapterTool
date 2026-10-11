@@ -43,6 +43,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_unknown_step_fails_without_running_commands(self):
         with patch.object(ci, "preflight") as preflight, patch.object(ci, "run_step") as run, \
+                patch.dict(ci.os.environ, {"GITHUB_ACTIONS": "false"}), \
                 contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(1, ci.main(["--stage", "resources", "--step", "typo"]))
         preflight.assert_not_called()
@@ -178,7 +179,9 @@ class RunnerTests(unittest.TestCase):
         check.assert_called_once_with(["dotnet", "--version"], text=True, timeout=30)
 
     def test_unknown_test_project_fails_before_running_commands(self):
-        with patch.object(ci, "run_step") as run, contextlib.redirect_stderr(io.StringIO()):
+        with patch.object(ci, "run_step") as run, \
+                patch.dict(ci.os.environ, {"GITHUB_ACTIONS": "false"}), \
+                contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(1, ci.main(["--stage", "test-dotnet", "--test-project", "../Other"]))
         run.assert_not_called()
 
