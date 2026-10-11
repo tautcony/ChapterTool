@@ -243,6 +243,7 @@
                   SelectionMode="Extended"
                   GridLinesVisibility="All"
                   ItemsSource="{Binding Rows}"
+                  BeginningEdit="OnChapterGridBeginningEdit"
                   CellEditEnded="OnChapterGridCellEditEnded"
                   AutomationProperties.AutomationId="ChapterGrid">
           <DataGrid.ContextMenu>
@@ -608,6 +609,7 @@
                                      Text="{Binding Expression, Mode=TwoWay}"
                                      Localizer="{Binding Localizer}"
                                      AuthoringService="{Binding ExpressionAuthoringService}"
+                                     FrameRate="{Binding ExpressionFrameRate}"
                                      ToolTip.Tip="{Binding ExpressionPreviewText}"
                                      AutomationProperties.AutomationId="ExpressionText" />
           <Button x:Name="LoadExpressionButton"

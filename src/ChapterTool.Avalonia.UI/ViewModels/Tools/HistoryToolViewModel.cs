@@ -680,13 +680,13 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
             return $"{context} · {localizer.GetString("History.Parameter.displayFps")}: {FormatFrameRate(displayRate)}";
         }
 
-        if (change.BeforeFrameRate is null && change.AfterFrameRate is null)
+        if (!change.BeforeFrameRate.IsKnown && !change.AfterFrameRate.IsKnown)
         {
             return context;
         }
 
-        var oldRate = change.BeforeFrameRate is { } before ? FormatFrameRate(before) : localizer.GetString("History.Presence.Absent");
-        var newRate = change.AfterFrameRate is { } after ? FormatFrameRate(after) : localizer.GetString("History.Presence.Absent");
+        var oldRate = change.BeforeFrameRate.IsKnown ? FormatFrameRate(change.BeforeFrameRate) : localizer.GetString("History.Presence.Absent");
+        var newRate = change.AfterFrameRate.IsKnown ? FormatFrameRate(change.AfterFrameRate) : localizer.GetString("History.Presence.Absent");
         return $"{context} · {localizer.FormatPositional("History.FrameRateContext", oldRate, newRate)}";
     }
 
@@ -746,6 +746,9 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
         return string.Concat(frameRate.ToString("0.###", culture), " ", localizer.GetString("History.Unit.Fps"));
     }
+
+    private string FormatFrameRate(FrameRateValue frameRate) =>
+        string.Concat(frameRate.ToString(), " ", localizer.GetString("History.Unit.Fps"));
 
     private string FormatFrameRate(ChapterFrameRate frameRate)
     {

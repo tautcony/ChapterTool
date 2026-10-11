@@ -40,6 +40,7 @@
           <controls:ExpressionEditor IsMultilineExpandable="True" VerticalAlignment="Top" MaxHeight="160"
                                      IsEnabled="{Binding CanEditExpression}" Text="{Binding Expression}"
                                      Localizer="{Binding Localizer}" AuthoringService="{Binding ExpressionAuthoringService}"
+                                     FrameRate="{Binding ExpressionFrameRate}"
                                      AutomationProperties.Name="{DynamicResource Label.Expression}" />
           <Button Grid.Column="1" Classes="icon_button" Width="32" Height="32" VerticalAlignment="Top"
                   ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"

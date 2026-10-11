@@ -83,7 +83,7 @@ public sealed class ChapterConversionServiceTests
     }
 
     [Fact]
-    public void ChapterTextToQpfile_zero_fps_with_timecodes_succeeds()
+    public void ChapterTextToQpfile_unknown_rate_with_timecodes_succeeds_and_supplied_zero_fails()
     {
         const string text = "CHAPTER01=00:00:00.050";
         const string timecodes = """
@@ -93,10 +93,13 @@ public sealed class ChapterConversionServiceTests
             83.417
             """;
 
-        var result = service.ChapterTextToQpfile(text, 0m, timecodes);
+        var result = service.ChapterTextToQpfile(text, FrameRateValue.Unknown, timecodes);
 
         Assert.True(result.Success);
         Assert.Equal("2 I", result.Content);
+        var invalid = service.ChapterTextToQpfile(text, 0m, timecodes);
+        Assert.False(invalid.Success);
+        Assert.Contains(invalid.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
     }
 
     [Theory]
@@ -113,7 +116,7 @@ public sealed class ChapterConversionServiceTests
             83.417
             """;
 
-        var result = service.ChapterTextToQpfile(text, 0m, timecodes);
+        var result = service.ChapterTextToQpfile(text, FrameRateValue.Unknown, timecodes);
 
         Assert.True(result.Success);
         Assert.Equal(expected, result.Content);

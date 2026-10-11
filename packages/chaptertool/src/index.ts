@@ -2,6 +2,7 @@ import { dotnet } from "./runtime/_framework/dotnet.js";
 import { createRetryableLoader } from "./api-loader.js";
 import { applyMaxInputBytes, requireFileName, toBytes } from "./utils/input.js";
 import { encodeJson, invokeJson } from "./utils/json.js";
+import { ExactChapterTool } from "./exact.js";
 import {
   requireBoolean,
   requireIndex,
@@ -38,6 +39,7 @@ import type {
 } from "./types.js";
 
 export type * from "./types.js";
+export type * from "./exact-types.js";
 export { MAX_INPUT_BYTES } from "./utils/input.js";
 
 interface NodeApi {
@@ -72,6 +74,12 @@ interface ChapterToolAssembly {
  * ```
  */
 export class ChapterTool {
+  /** Lossless canonical rates and Int64 tick-string content operations. */
+  readonly exact = new ExactChapterTool(
+    <T>(operation: string, ...arguments_: unknown[]) => this.#invokeJson<T>(operation, ...arguments_),
+    async () => { await ChapterTool.#loadApi(); },
+  );
+
   /** Shared, retryable loader that resolves once the .NET runtime is ready. */
   static readonly #loadApi = createRetryableLoader(async (): Promise<NodeApi> => {
     const runtime = await dotnet

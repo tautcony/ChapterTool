@@ -82,7 +82,7 @@ public static partial class NodeApi
     [JSExport]
     public static string FindFrameRate(double framesPerSecond) =>
         JsonSerializer.Serialize(
-            ToFrameRateOption(FrameRateService.FindByValue((decimal)framesPerSecond)),
+            ToFrameRateOption(Core.Transform.FrameRateService.FindByValue((decimal)framesPerSecond)),
             NodeJsonContext.Default.NodeFrameRateOption);
 
     [JSExport]

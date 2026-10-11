@@ -24,13 +24,30 @@ public sealed record ChapterExportBaseline(
 
 internal static class ChapterExportFingerprint
 {
+    public static string Digest(ChapterSet content, EditableChapterTrack track, ChapterExportOptions options)
+    {
+        var builder = new StringBuilder(Digest(content, options));
+        Append(builder, track.FrameRate.Kind.ToString());
+        Append(builder, track.FrameRate.ToString());
+        foreach (var segment in track.Segments)
+        {
+            Append(builder, segment.FrameRate.Kind.ToString());
+            Append(builder, segment.FrameRate.ToString());
+            Append(builder, segment.SourceFrameRate.Kind.ToString());
+            Append(builder, segment.SourceFrameRate.ToString());
+        }
+
+        return Hash(builder.ToString());
+    }
+
     public static string Digest(ChapterSet content, ChapterExportOptions options)
     {
         var builder = new StringBuilder();
         Append(builder, content.Title);
         Append(builder, content.SourceName);
         Append(builder, content.ImportFormat.ToString());
-        Append(builder, content.FramesPerSecond.ToString("R", CultureInfo.InvariantCulture));
+        Append(builder, content.FrameRate.Kind.ToString());
+        Append(builder, content.FrameRate.ToString());
         Append(builder, content.Duration.Ticks.ToString(CultureInfo.InvariantCulture));
         foreach (var chapter in content.Chapters)
         {
@@ -68,6 +85,8 @@ internal static class ChapterExportFingerprint
         Append(builder, options.TextEncoding.ToString());
         Append(builder, options.EmitBom.ToString());
         Append(builder, options.ProjectOutput.ToString());
+        Append(builder, options.ComputationRate?.Kind.ToString());
+        Append(builder, options.ComputationRate?.ToString());
     }
 
     private static void Append(StringBuilder builder, string? value)

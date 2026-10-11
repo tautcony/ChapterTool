@@ -26,7 +26,7 @@ public sealed class IfoImporterTests
         foreach (var entry in Assert.Single(result.Groups).Entries)
         {
             var set = entry.ChapterSet;
-            var frames = service.UpdateFrames(set, service.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
+            var frames = service.UpdateFrames(set, FrameRateService.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
 
             Assert.Equal(FrameAccuracy.Accurate, frames.Chapters[0].FrameAccuracy);
             inexactCount += frames.Chapters.Count(chapter => chapter.FrameAccuracy == FrameAccuracy.Inexact);
@@ -48,6 +48,7 @@ public sealed class IfoImporterTests
         Assert.True(result.Success, Diagnostics(result));
         var info = result.Groups.Single().Entries.Select(static entry => entry.ChapterSet).First();
         Assert.Equal(ChapterImportFormat.DvdIfo, info.ImportFormat);
+        Assert.Equal(FrameRateValue.Rational(30000, 1001), info.FrameRate);
         Assert.Equal("VTS_05_1", info.SourceName);
         Assert.Equal(7, info.Chapters.Count);
         AssertNtscFrameStarts(info.Chapters.Select(static chapter => chapter.StartTime),
@@ -72,6 +73,7 @@ public sealed class IfoImporterTests
         Assert.Equal("VTS_33_1", info.SourceName);
         Assert.Equal(47, info.Chapters.Count);
         Assert.Equal(25, info.FramesPerSecond);
+        Assert.Equal(FrameRateValue.Rational(25, 1), info.FrameRate);
         Assert.Equal(TimeSpan.FromMilliseconds(1411200), info.Duration);
         Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);
         AssertTimesWithin(info.Chapters.Take(46).Select(static chapter => chapter.StartTime),

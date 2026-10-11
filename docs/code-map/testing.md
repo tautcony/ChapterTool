@@ -41,6 +41,16 @@ Desktop composition coverage:
 
 ## Core Test Map
 
+`Editing/ExactFrameRateWorkflowTests.cs` covers real MPLS and IFO imports through fractional frame editing, candidate review, history, conversion, and QPFile export. It checks 500 arithmetic and conversion cycles for each Rational/Approximate rate pair. Integer comparisons must keep the loss below one source frame. The timelines include ticks above the JavaScript safe-integer limit.
+
+`Headless/ExactFrameRateHeadlessTests.cs` in the Headless project covers the real desktop frame editor, unchanged ticks and history, candidate display refresh, and undo/redo. It captures default, wide, and narrow windows in three languages under `artifacts/exact-frame-rate-domain/`.
+
+`specs/exact-frame-rate-domain.spec.ts` in the browser E2E project covers real MPLS import, unchanged cell editing, fractional frames, candidate apply, keyboard history, and downloads. It verifies Unknown Auto behavior and explicit-rate editing. Real key events must preserve field undo and cancel browser defaults for document undo. The test captures review images under `artifacts/exact-frame-rate-domain/`.
+
+`packages/chaptertool/test/exact-api.test.ts` covers exact wire values and the installed `tool.exact` facade. `scripts/ci/consumers/core-frame-rate.cs` covers compiled canonical and retained Core APIs through the NuGet verification entry point.
+
+`tests/ChapterTool.Wasm.Tests/WasmFrameRateChoiceTests.cs` covers custom rate resolution and known authority under Auto. It checks localized selector labels, computation rates, ticks, and history during language changes. The custom values use the public Core rate service. The workspace language test uses its selectable catalog rate.
+
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
 Use `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs` and `ChapterClipCandidateBuilderTests.cs` for one-shot content candidates and clip operations. Use `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs` and `ChapterWorkspaceTests.cs` for selector metadata, selected-track commits, load/append ownership, ended-session collection, and per-track export baselines. `SessionStateTests.cs` covers mutations and history navigation after session end.

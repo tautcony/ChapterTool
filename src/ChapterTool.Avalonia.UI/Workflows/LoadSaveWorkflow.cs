@@ -109,11 +109,11 @@ internal sealed class LoadSaveWorkflow(
             return new AppendWorkflowResult(AppendWorkflowState.FailedLoad, result, null, null);
         }
 
-        var append = workspace.AppendClipSource(operationRevision, expectedSessionId, capturedContent, result.Groups[0], cancellationToken,
+        var append = workspace.AppendClipSource(operationRevision, expectedSessionId, capturedContent, result.Groups[0],
             new HistoryOperationDescriptor("workspace.append",
             [
                 new HistoryOperationParameter("sourcePath", result.Groups[0].SourcePath)
-            ]));
+            ]), cancellationToken);
         if (append.IsStale)
         {
             return AppendWorkflowResult.Stale;

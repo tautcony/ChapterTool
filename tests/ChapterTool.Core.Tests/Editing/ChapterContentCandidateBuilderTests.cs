@@ -12,7 +12,7 @@ public sealed class ChapterContentCandidateBuilderTests
     {
         var numbered = Builder().ApplyNumbering(CreateDocument(), 2).Candidate;
         var targets = numbered.Tracks[0].Chapters.Select(chapter => chapter.Id).ToHashSet();
-        var shifted = Builder().ShiftFrames(numbered, targets, 0, 25m);
+        var shifted = Builder().ShiftFrames(numbered, targets, 0, FrameRateValue.Approximate(25m));
         Assert.True(shifted.IsValid);
         AssertDocumentValues(numbered, shifted.Candidate);
     }
@@ -23,8 +23,8 @@ public sealed class ChapterContentCandidateBuilderTests
         var source = CreateDocument();
         var chapterId = source.Tracks[0].Chapters[1].Id;
 
-        var tooLong = Builder().EditCell(source, chapterId, ChapterCellField.StartTime, "25:00:00.000", 25m);
-        var invalid = Builder().EditCell(source, chapterId, ChapterCellField.StartTime, "not a time", 25m);
+        var tooLong = Builder().EditCell(source, chapterId, ChapterCellField.StartTime, "25:00:00.000", FrameRateValue.Approximate(25m));
+        var invalid = Builder().EditCell(source, chapterId, ChapterCellField.StartTime, "not a time", FrameRateValue.Approximate(25m));
 
         Assert.False(tooLong.IsValid);
         Assert.Equal(source, tooLong.Candidate);
@@ -43,10 +43,10 @@ public sealed class ChapterContentCandidateBuilderTests
         Assert.Equal([3, 0, 4], named.Candidate.Tracks[0].Chapters.Select(chapter => chapter.DisplayNumber));
         Assert.Equal(source.Tracks[0].Chapters[1], named.Candidate.Tracks[0].Chapters[1]);
         var targets = source.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator).Select(chapter => chapter.Id).ToHashSet();
-        var shifted = Builder().ShiftFrames(source, targets, -1, 24000m / 1001m);
+        var shifted = Builder().ShiftFrames(source, targets, -1, FrameRateValue.Approximate(24000m / 1001m));
         Assert.True(shifted.IsValid);
         Assert.Equal(source.Tracks[0].Chapters[1], shifted.Candidate.Tracks[0].Chapters[1]);
-        Assert.False(Builder().EditCell(source, source.Tracks[0].Chapters[0].Id, ChapterCellField.Frame, "240", 0).IsValid);
+        Assert.False(Builder().EditCell(source, source.Tracks[0].Chapters[0].Id, ChapterCellField.Frame, "240", FrameRateValue.Unknown).IsValid);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public sealed class ChapterContentCandidateBuilderTests
     [InlineData(50)]
     public void Rational_conversion_preserves_quantized_segment_bounds_and_source_metadata(decimal targetFps)
     {
-        var rate = new ChapterFrameRate(24000, 1001);
+        var rate = FrameRateValue.Rational(24000, 1001);
         var trackId = ChapterTrackId.New();
         var duration = ChapterDuration.FromTicks(TimeSpan.FromSeconds(30.123).Ticks);
         var boundary = TimeSpan.FromSeconds(10.123).Ticks;
@@ -65,8 +65,8 @@ public sealed class ChapterContentCandidateBuilderTests
             EditableChapterSegment.Create(trackId, "second", "Second", boundary, ChapterDuration.FromTicks(duration.Ticks - boundary), rate, ChapterImportFormat.Mpls, "second.mpls")
         };
         var source = new EditableChapterDocument(ChapterDocumentId.New(), "Title", "source.mpls", ChapterImportFormat.Mpls,
-            duration, rate, [new EditableChapterTrack(trackId, "Combined", chapters, segments)]);
-        var result = Builder().ChangeFrameRate(source, 24000m / 1001m, targetFps);
+            duration, [new EditableChapterTrack(trackId, "Combined", chapters, segments)]);
+        var result = Builder().ChangeFrameRate(source, FrameRateValue.Approximate(24000m / 1001m), FrameRateValue.Approximate(targetFps));
         Assert.True(result.IsValid, string.Join("; ", result.Errors));
         Assert.True(EditableChapterDocumentValidator.Validate(result.Candidate).IsValid);
         var converted = result.Candidate.Tracks[0].Segments;
@@ -145,9 +145,9 @@ public sealed class ChapterContentCandidateBuilderTests
     {
         var session = new SessionState(CreateDocument());
         var preview = ChapterContentOperationSession.Prepare(session, "rename", document =>
-            Builder().EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.Name, "changed", 25));
+            Builder().EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.Name, "changed", FrameRateValue.Approximate(25)));
         var intervening = ChapterContentOperationSession.Prepare(session, "other rename", document =>
-            Builder().EditCell(document, document.Tracks[0].Chapters[1].Id, ChapterCellField.Name, "other", 25));
+            Builder().EditCell(document, document.Tracks[0].Chapters[1].Id, ChapterCellField.Name, "other", FrameRateValue.Approximate(25)));
         _ = await ChapterContentOperationSession.ApplyAsync(session, intervening);
 
         var outcome = await ChapterContentOperationSession.ApplyAsync(session, preview);
@@ -186,9 +186,9 @@ public sealed class ChapterContentCandidateBuilderTests
     public static IEnumerable<object[]> OperationFamilies()
     {
         yield return ["edit name", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
-            builder.EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.Name, "Renamed", 25))];
+            builder.EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.Name, "Renamed", FrameRateValue.Approximate(25)))];
         yield return ["edit time", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
-            builder.EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.StartTime, "00:00:02.000", 25))];
+            builder.EditCell(document, document.Tracks[0].Chapters[0].Id, ChapterCellField.StartTime, "00:00:02.000", FrameRateValue.Approximate(25)))];
         yield return ["insert", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.InsertBefore(document, document.Tracks[0].Chapters[1].Id))];
         yield return ["delete", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
@@ -204,9 +204,9 @@ public sealed class ChapterContentCandidateBuilderTests
         yield return ["offset", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.Offset(document, document.Tracks[0].Chapters.Select(static chapter => chapter.Id).ToHashSet(), TimeSpan.FromSeconds(1)))];
         yield return ["frame offset", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
-            builder.ShiftFrames(document, new HashSet<ChapterId> { document.Tracks[0].Chapters[1].Id }, 2, 25))];
+            builder.ShiftFrames(document, new HashSet<ChapterId> { document.Tracks[0].Chapters[1].Id }, 2, FrameRateValue.Approximate(25)))];
         yield return ["frame rate", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
-            builder.ChangeFrameRate(document, 25, 50))];
+            builder.ChangeFrameRate(document, FrameRateValue.Approximate(25), FrameRateValue.Approximate(50)))];
         yield return ["expression", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
             builder.ApplyExpression(document, "t + 1"))];
         yield return ["metadata-title", (Func<ChapterContentCandidateBuilder, EditableChapterDocument, ChapterCandidateBuildResult>)((builder, document) =>
@@ -224,11 +224,11 @@ public sealed class ChapterContentCandidateBuilderTests
     {
         var document = CreateDocument();
         var targets = document.Tracks[0].Chapters.Select(chapter => chapter.Id).ToHashSet();
-        var result = Builder().ShiftFrames(document, targets, 1, 25);
+        var result = Builder().ShiftFrames(document, targets, 1, FrameRateValue.Approximate(25));
         Assert.False(result.IsValid);
         Assert.Equal(document, result.Candidate);
         Assert.Equal(2, result.Candidate.Tracks[0].Chapters.Length);
-        var backward = Builder().ShiftFrames(document, targets, -1, 25);
+        var backward = Builder().ShiftFrames(document, targets, -1, FrameRateValue.Approximate(25));
         Assert.True(backward.IsValid);
         Assert.Equal(document.Tracks[0].Chapters[0].StartTicks + 400000, backward.Candidate.Tracks[0].Chapters[0].StartTicks);
     }

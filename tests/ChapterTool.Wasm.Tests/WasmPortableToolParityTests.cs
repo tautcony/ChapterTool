@@ -84,6 +84,7 @@ public sealed class WasmPortableToolParityTests
         await workspace.LoadAsync("repeating.txt", [
             .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Opening\nCHAPTER02=00:00:52.094\nCHAPTER02NAME=Later\n"u8
         ]);
+        workspace.SelectedFrameRateIndex = 1;
         var originalRows = workspace.Rows.ToArray();
         var originalHistoryCount = workspace.HistoryEntries.Count;
 

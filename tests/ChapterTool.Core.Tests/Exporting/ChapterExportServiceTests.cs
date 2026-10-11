@@ -257,7 +257,7 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
-    public void Expression_export_normalizes_negative_times_to_zero()
+    public void Expression_export_rejects_negative_times_without_output_or_source_changes()
     {
         var info = Sample() with
         {
@@ -267,8 +267,9 @@ public sealed class ChapterExportServiceTests
             info,
             new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "t - 10000"));
 
-        Assert.Contains("CHAPTER01=00:00:00.000", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("-", result.Content, StringComparison.Ordinal);
+        Assert.False(result.Success);
+        Assert.Empty(result.Content);
+        Assert.Equal(TimeSpan.FromSeconds(10), info.Chapters[0].StartTime);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidExpressionTime);
     }
 
@@ -357,27 +358,12 @@ public sealed class ChapterExportServiceTests
     }
 
     [Theory]
-    [InlineData(ChapterExportFormat.Qpfile)]
-    [InlineData(ChapterExportFormat.Celltimes)]
-    public void Frame_based_exports_return_diagnostic_for_non_finite_frame_rate(ChapterExportFormat format)
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void Non_finite_frame_rate_is_rejected_before_export(double rate)
     {
-        var result = service.Export(
-            Sample() with { FramesPerSecond = double.NaN },
-            new ChapterExportOptions(format));
-
-        Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
-    }
-
-    [Fact]
-    public void Expression_projection_returns_diagnostic_for_non_finite_frame_rate()
-    {
-        var result = service.Export(
-            Sample() with { FramesPerSecond = double.PositiveInfinity },
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "t + 1"));
-
-        Assert.True(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
+        Assert.Throws<ArgumentOutOfRangeException>(() => Sample() with { FramesPerSecond = rate });
     }
 
     private static ChapterSet Sample(ChapterImportFormat sourceType = ChapterImportFormat.Ogm) =>

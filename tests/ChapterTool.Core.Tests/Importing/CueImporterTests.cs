@@ -49,6 +49,7 @@ public sealed class CueImporterTests
         Assert.True(result.Success);
         var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal(ChapterImportFormat.Cue, info.ImportFormat);
+        Assert.Equal(FrameRateValue.Unknown, info.FrameRate);
         Assert.Equal("ARCHIVES 2.flac", info.SourceName);
         Assert.Equal("とある科学の超電磁砲 ARCHIVES 2", info.Title);
         Assert.Equal(4, info.Chapters.Count);

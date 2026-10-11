@@ -37,6 +37,7 @@ public sealed partial class MainView : UserControl
     private bool windowCommandRefreshPending;
     private bool commandStateSubscribed;
     private bool? advancedOptionsNarrow;
+    private (ChapterRowViewModel Row, string? Column, string? Text)? activeCellEdit;
 
     public MainView()
     {
@@ -473,12 +474,36 @@ public sealed partial class MainView : UserControl
 
     private async ValueTask CommitCellEditAsync(DataGridCellEditEndedEventArgs args)
     {
+        var initial = activeCellEdit;
+        activeCellEdit = null;
+        if (initial is { } draft && ReferenceEquals(draft.Row, args.Row.DataContext)
+            && draft.Column == ColumnTagId(args.Column)
+            && draft.Text == CellText(draft.Row, draft.Column))
+        {
+            return;
+        }
+
         var edit = CreateCellEdit(args);
         if (edit is not null)
         {
             await edit();
         }
     }
+
+    private void OnChapterGridBeginningEdit(object? sender, DataGridBeginningEditEventArgs args)
+    {
+        activeCellEdit = args.Row.DataContext is ChapterRowViewModel row
+            ? (row, ColumnTagId(args.Column), CellText(row, ColumnTagId(args.Column)))
+            : null;
+    }
+
+    private static string? CellText(ChapterRowViewModel row, string? column) => column switch
+    {
+        ChapterGridColumnIds.Time => row.TimeText,
+        ChapterGridColumnIds.Name => row.Name,
+        ChapterGridColumnIds.Frames => row.FramesInfo,
+        _ => null
+    };
 
     private Func<ValueTask>? CreateCellEdit(DataGridCellEditEndedEventArgs args)
     {

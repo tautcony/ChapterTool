@@ -17,93 +17,69 @@ public sealed class ChapterFpsTransformService
     /// <returns>The operation result.</returns>
     public static ChangeFpsResult ChangeFps(ChapterSet info, decimal sourceFps, decimal targetFps)
     {
-        if (sourceFps <= 0 || targetFps <= 0)
+        ArgumentNullException.ThrowIfNull(info);
+        if (!FrameRateValue.TryFromDecimal(sourceFps, metadata: false, out var source, out var diagnostic)
+            || !FrameRateValue.TryFromDecimal(targetFps, metadata: false, out var target, out diagnostic))
         {
-            return new ChangeFpsResult(
-                false,
-                info,
-                [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidFrameRate, "Source and target frame rates must be greater than zero.")]);
+            return new ChangeFpsResult(false, info, [diagnostic!]);
         }
 
-        var chapters = info.Chapters.Select(chapter => TransformChapter(chapter, sourceFps, targetFps)).ToList();
-        var updated = info with
-        {
-            FramesPerSecond = (double)targetFps,
-            Duration = TimeSpan.FromTicks(ConvertTicks(info.Duration.Ticks, sourceFps, targetFps)),
-            Chapters = chapters
-        };
-
-        return new ChangeFpsResult(true, updated, []);
+        return ChangeFps(info, source, target);
     }
 
     /// <summary>Changes chapter timing using authoritative rational source and target rates.</summary>
     public static ChangeFpsResult ChangeFps(ChapterSet info, ChapterFrameRate sourceFps, ChapterFrameRate targetFps)
     {
         ArgumentNullException.ThrowIfNull(info);
-        var chapters = info.Chapters.Select(chapter => TransformChapter(chapter, sourceFps, targetFps)).ToList();
-        var updated = info with
+        if (!FrameRateValue.TryRational(sourceFps, out var source, out var diagnostic)
+            || !FrameRateValue.TryRational(targetFps, out var target, out diagnostic))
         {
-            FramesPerSecond = (double)targetFps.Numerator / targetFps.Denominator,
-            Duration = TimeSpan.FromTicks(ConvertTicks(info.Duration.Ticks, sourceFps, targetFps)),
-            Chapters = chapters
-        };
-        return new ChangeFpsResult(true, updated, []);
-    }
-
-    /// <summary>Converts an absolute boundary through the same frame quantization as chapter times.</summary>
-    internal static long ConvertTicks(long ticks, decimal sourceFps, decimal targetFps)
-    {
-        var source = ExactFrameMath.FromTicks(ticks, sourceFps).RoundAwayFromZero();
-        return ExactFrameMath.TicksFromFrames(checked((long)source), targetFps);
-    }
-
-    internal static long ConvertTicks(long ticks, ChapterFrameRate sourceFps, ChapterFrameRate targetFps)
-    {
-        var source = ExactFrameMath.FromTicks(ticks, sourceFps).RoundAwayFromZero();
-        return ExactFrameMath.TicksFromFrames(checked((long)source), targetFps);
-    }
-
-    private static Chapter TransformChapter(Chapter chapter, decimal sourceFps, decimal targetFps)
-    {
-        if (chapter.IsSeparator)
-        {
-            return chapter;
+            return new ChangeFpsResult(false, info, [diagnostic!]);
         }
 
-        var frame = checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, sourceFps).RoundAwayFromZero());
-        var time = TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(frame, targetFps));
-        TimeSpan? end = chapter.EndTime is null
-            ? null
-            : TransformEnd(chapter, chapter.EndTime.Value, sourceFps, targetFps, frame);
-        return chapter with { StartTime = time, EndTime = end };
+        return ChangeFps(info, source, target);
     }
 
-    private static Chapter TransformChapter(Chapter chapter, ChapterFrameRate sourceFps, ChapterFrameRate targetFps)
+    /// <summary>Changes timing with canonical rates and rejects the whole result on invalid bounds.</summary>
+    public static ChangeFpsResult ChangeFps(ChapterSet info, FrameRateValue sourceFps, FrameRateValue targetFps)
     {
-        if (chapter.IsSeparator)
+        ArgumentNullException.ThrowIfNull(info);
+        if (!sourceFps.IsKnown || !targetFps.IsKnown)
         {
-            return chapter;
+            return Failure(info, ChapterDiagnosticCode.InvalidFrameRate, "Known source and target computation rates are required.");
         }
 
-        var frame = checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, sourceFps).RoundAwayFromZero());
-        var time = TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(frame, targetFps));
-        TimeSpan? end = chapter.EndTime is null
-            ? null
-            : TransformEnd(chapter, chapter.EndTime.Value, sourceFps, targetFps, frame);
-        return chapter with { StartTime = time, EndTime = end };
+        if (info.Chapters.Any(static chapter => !chapter.IsSeparator
+            && (chapter.StartTime.Ticks < 0 || (chapter.EndTime is { } end && end < chapter.StartTime))))
+        {
+            return Failure(info, ChapterDiagnosticCode.InvalidStructure, "Chapter bounds are invalid.");
+        }
+
+        try
+        {
+            var chapters = info.Chapters.Select(chapter => chapter.IsSeparator ? chapter : chapter with
+            {
+                StartTime = TimeSpan.FromTicks(ConvertTicks(chapter.StartTime.Ticks, sourceFps, targetFps)),
+                EndTime = chapter.EndTime is { } end ? TimeSpan.FromTicks(ConvertTicks(end.Ticks, sourceFps, targetFps)) : null
+            }).ToList();
+            var updated = info with
+            {
+                FrameRate = targetFps,
+                Duration = TimeSpan.FromTicks(ConvertTicks(info.Duration.Ticks, sourceFps, targetFps)),
+                Chapters = chapters
+            };
+            return new ChangeFpsResult(true, updated, []);
+        }
+        catch (OverflowException)
+        {
+            return Failure(info, ChapterDiagnosticCode.InvalidStructure, "The converted time exceeds the supported Int64 range.");
+        }
     }
 
-    private static TimeSpan TransformEnd(Chapter chapter, TimeSpan end, decimal sourceFps, decimal targetFps, long startFrame)
-    {
-        var endFrame = checked((long)ExactFrameMath.FromTicks(end.Ticks, sourceFps).RoundAwayFromZero());
-        var frameSpan = Math.Max(0, endFrame - startFrame);
-        return TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(startFrame + frameSpan, targetFps));
-    }
+    internal static long ConvertTicks(long ticks, FrameRateValue sourceFps, FrameRateValue targetFps) =>
+        ExactFrameMath.TicksFromFrames(ExactFrameMath.FromTicks(ticks, sourceFps).RoundAwayFromZero(), targetFps);
 
-    private static TimeSpan TransformEnd(Chapter chapter, TimeSpan end, ChapterFrameRate sourceFps, ChapterFrameRate targetFps, long startFrame)
-    {
-        var endFrame = checked((long)ExactFrameMath.FromTicks(end.Ticks, sourceFps).RoundAwayFromZero());
-        var frameSpan = Math.Max(0, endFrame - startFrame);
-        return TimeSpan.FromTicks(ExactFrameMath.TicksFromFrames(startFrame + frameSpan, targetFps));
-    }
+    private static ChangeFpsResult Failure(ChapterSet info, ChapterDiagnosticCode code, string message) =>
+        new(false, info, [new ChapterDiagnostic(DiagnosticSeverity.Error, code, message)]);
+
 }

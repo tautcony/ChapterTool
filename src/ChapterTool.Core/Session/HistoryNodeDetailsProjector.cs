@@ -32,8 +32,8 @@ internal static class HistoryNodeDetailsProjector
                 new HistoryFieldValue(hasAfter, newValue?.Value),
                 template.Label,
                 template.Context,
-                before.FrameRate,
-                after.FrameRate));
+                oldValue?.Rate ?? FrameRateValue.Unknown,
+                newValue?.Rate ?? FrameRateValue.Unknown));
         }
 
         return changes.ToImmutable();
@@ -42,6 +42,7 @@ internal static class HistoryNodeDetailsProjector
     private static Dictionary<string, FieldValue> Flatten(EditableChapterDocument document, CancellationToken cancellationToken)
     {
         var values = new Dictionary<string, FieldValue>(StringComparer.Ordinal);
+        var rate = document.FrameRate;
         var documentId = document.Id.Value.ToString("D");
         Add("Document", documentId, "Title", document.Title, "Document");
         Add("Document", documentId, "SourceName", document.SourceName, "Document");
@@ -53,11 +54,13 @@ internal static class HistoryNodeDetailsProjector
 
         foreach (var track in document.Tracks)
         {
+            rate = track.FrameRate;
             cancellationToken.ThrowIfCancellationRequested();
             var trackId = track.Id.Value.ToString("D");
             var trackLabel = track.Name;
             Add("Track", trackId, "Presence", true, trackLabel);
             Add("Track", trackId, "Name", track.Name, trackLabel);
+            Add("Track", trackId, "FrameRate", track.FrameRate, trackLabel);
             Add("Track", trackId, "ChapterOrder", track.Chapters.Select((chapter, index) => new HistoryOrderItem(chapter.Id.ToString(), $"{index + 1}. {chapter.DisplayNumber} — {chapter.Name}")).ToImmutableArray(), trackLabel);
             Add("Track", trackId, "SegmentOrder", track.Segments.Select((segment, index) => new HistoryOrderItem(segment.Id.ToString(), $"{index + 1}. {segment.Name}")).ToImmutableArray(), trackLabel);
 
@@ -84,6 +87,7 @@ internal static class HistoryNodeDetailsProjector
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var segment = track.Segments[segmentIndex];
+                rate = segment.FrameRate;
                 var segmentId = segment.Id.ToString("D");
                 var segmentLabel = segment.Name;
                 Add("Segment", segmentId, "Presence", true, segmentLabel, trackLabel);
@@ -114,11 +118,11 @@ internal static class HistoryNodeDetailsProjector
 
         void Add(string group, string id, string field, object? value, string label, string? context = null)
         {
-            values[$"{group}|{id}|{field}"] = new FieldValue(group, id, field, value, label, context);
+            values[$"{group}|{id}|{field}"] = new FieldValue(group, id, field, value, label, context, rate);
         }
     }
 
-    private sealed record FieldValue(string Group, string Id, string Field, object? Value, string Label, string? Context);
+    private sealed record FieldValue(string Group, string Id, string Field, object? Value, string Label, string? Context, FrameRateValue Rate);
 
     private static bool ValuesEqual(object? left, object? right)
     {

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace ChapterTool.Core.Models;
 
 /// <summary>
@@ -25,6 +27,18 @@ public sealed record ChapterImportEntry(
     int? ChapterCount = null,
     int? SourceChapterCount = null)
 {
+    /// <summary>Gets immutable per-item placement and rate metadata for an aggregate import.</summary>
+    public ImmutableArray<ImportedChapterSegment> Segments { get; init; } = [];
+
     /// <inheritdoc />
     public override string ToString() => DisplayName;
 }
+
+/// <summary>Preserves source timing and video-rate authority for one aggregate play item.</summary>
+public sealed record ImportedChapterSegment(
+    string Id,
+    string Name,
+    long StartTicks,
+    ChapterDuration Duration,
+    FrameRateValue FrameRate,
+    ImmutableArray<ReferencedMediaFile> ReferencedMediaFiles);

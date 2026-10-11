@@ -44,7 +44,7 @@ public sealed class SessionStateTests
                 source.Cancel();
                 return ValueTask.FromResult(Rename(before.Document, "Changed"));
             },
-            source.Token);
+            cancellationToken: source.Token);
 
         Assert.Equal(TransactionOutcomeKind.Cancelled, outcome.Kind);
         Assert.Same(before.Document, session.Snapshot.Document);
@@ -260,7 +260,6 @@ public sealed class SessionStateTests
             document.SourceName,
             document.ImportFormat,
             document.Duration,
-            document.FrameRate,
             [new EditableChapterTrack(track.Id, track.Name, chapters)]);
     }
 }

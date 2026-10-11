@@ -336,5 +336,16 @@ public static partial class NodeApi
     [JsonSerializable(typeof(NodeXmlLanguage[]))]
     [JsonSerializable(typeof(NodeOutputEncoding[]))]
     [JsonSerializable(typeof(int[]))]
+    [JsonSerializable(typeof(ExactRate))]
+    [JsonSerializable(typeof(ExactChapterSet))]
+    [JsonSerializable(typeof(ExactImportGroup))]
+    [JsonSerializable(typeof(ExactImportResponse))]
+    [JsonSerializable(typeof(ExactContentResponse))]
+    [JsonSerializable(typeof(ExactProjectionResponse))]
+    [JsonSerializable(typeof(ExactEditOptions))]
+    [JsonSerializable(typeof(ExactOutputOptions))]
+    [JsonSerializable(typeof(ExactFrameOption[]))]
+    [JsonSerializable(typeof(ExactFrameResponse))]
+    [JsonSerializable(typeof(ExactDetectionResponse))]
     private sealed partial class NodeJsonContext : JsonSerializerContext;
 }

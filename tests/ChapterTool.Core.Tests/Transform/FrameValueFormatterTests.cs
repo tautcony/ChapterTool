@@ -105,7 +105,7 @@ public sealed class FrameValueFormatterTests
     [Fact]
     public void Unknown_rate_provenance_does_not_infer_a_cycle_from_numeric_text()
     {
-        var input = FramePresentationInput.FromApproximateRate(0, 23.976m, "1.333333333");
+        var input = new FramePresentationInput(0, FrameRateValue.Approximate(23.976m), "1.333333333");
 
         var parts = FrameValueFormatter.Format(input, Compact);
 
@@ -125,5 +125,5 @@ public sealed class FrameValueFormatterTests
     }
 
     private static FramePresentationInput Exact(long ticks, ChapterFrameRate rate) =>
-        FramePresentationInput.FromExactRate(ticks, rate, "0");
+        new(ticks, FrameRateValue.Rational(rate), "0");
 }

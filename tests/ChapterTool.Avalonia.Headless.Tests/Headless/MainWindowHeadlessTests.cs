@@ -367,7 +367,7 @@ public sealed class MainWindowHeadlessTests
                 : new ChapterTool.Core.Session.ExpressionFrameValue(
                     rows[0].PreviewFrames,
                     null,
-                    null,
+                    FrameRateValue.Unknown,
                     FrameAccuracy.Neutral);
             rows[0].UpdatePreviewComparison(
                 comparison with { CandidateFrames = neutralCandidateFrames },
@@ -616,7 +616,7 @@ public sealed class MainWindowHeadlessTests
         await host.LayoutAsync(1280, 800);
 
         var row = Assert.Single(host.ViewModel.Rows);
-        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.False(host.ViewModel.CanApplyContentPreview);
         Assert.False(row.HasPreviewFramesChange);
         Assert.True(row.PreviewComparison?.BeforeFrames?.IsMissing);
         Assert.Equal("0", row.FramesInfo);

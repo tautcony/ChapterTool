@@ -74,11 +74,41 @@ try {
     if (!result.success || result.groups[0]?.entries[0]?.chapterSet.chapters.length !== 1) {
       throw new Error("The installed npm package did not execute the Core import API.");
     }
+    const tool = new ChapterTool();
+    const exact = await tool.exact.import("CHAPTER01=00:00:00.000\\nCHAPTER01NAME=Exact\\n");
+    const content = exact.groups[0].entries[0].chapterSet;
+    content.chapters[0].startTicks = "9007199254740993";
+    content.frameRate = { kind: "rational", numerator: "48000", denominator: "2002" };
+    content.durationTicks = null;
+    const renamed = await tool.exact.rename(content, 0, "Packed");
+    if (!renamed.success || renamed.chapterSet.chapters[0].startTicks !== "9007199254740993"
+        || renamed.chapterSet.frameRate.numerator !== "24000" || renamed.chapterSet.durationTicks !== null) {
+      throw new Error("The installed exact facade lost ticks, authority, or duration availability.");
+    }
+    const converted = await tool.exact.changeFrameRate(renamed.chapterSet, renamed.chapterSet.frameRate,
+      { kind: "approximate", value: "25.0" });
+    const exported = await tool.exact.serialize(converted.chapterSet, { format: "qpf" });
+    if (!converted.success || converted.chapterSet.frameRate.kind !== "approximate" || !exported.success) {
+      throw new Error("The installed exact facade failed conversion and serialization.");
+    }
   `;
   execFileSync(process.execPath, ["--input-type=module", "--eval", checkScript], {
     cwd: consumerDirectory,
     stdio: "inherit",
   });
+  writeFileSync(join(consumerDirectory, "consumer.ts"), `
+    import { ChapterTool, type ExactChapterSet, type ExactFrameRate } from "@chaptertool/node";
+    const rate: ExactFrameRate = { kind: "rational", numerator: "24000", denominator: "1001" };
+    const content: ExactChapterSet = { title: "Types", sourceName: null, importFormat: "Ogm",
+      frameRate: rate, durationTicks: null, chapters: [{ displayNumber: 1, startTicks: "9007199254740993",
+      endTicks: null, name: "A", framesInfo: "", frameAccuracy: "Neutral", kind: "Marker" }] };
+    const result = await new ChapterTool().exact.editFrame(content, 0, "1.5", rate);
+    if (result.chapterSet) result.chapterSet.durationTicks satisfies string | null;
+  `);
+  execFileSync(process.execPath, [join(packageDirectory, "node_modules/typescript/bin/tsc"),
+    "--noEmit", "--strict", "--skipLibCheck", "--module", "NodeNext", "--moduleResolution", "NodeNext",
+    "--target", "ES2022", "--typeRoots", join(packageDirectory, "node_modules/@types"), "consumer.ts"],
+  { cwd: consumerDirectory, stdio: "inherit" });
 } finally {
   rmSync(consumerDirectory, { recursive: true, force: true });
 }

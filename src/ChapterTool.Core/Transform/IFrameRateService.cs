@@ -12,12 +12,8 @@ public interface IFrameRateService
     /// </summary>
     IReadOnlyList<FrameRateOption> Options { get; }
 
-    /// <summary>
-    /// Finds a frame rate option by numeric value.
-    /// </summary>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The matching frame rate option, or an invalid option when no exact match exists.</returns>
-    FrameRateOption FindByValue(decimal framesPerSecond);
+    /// <summary>Finds a rate without changing its provenance.</summary>
+    FrameRateOption FindByRate(FrameRateValue frameRate);
 
     /// <summary>
     /// Detects the most likely frame rate for chapter data.

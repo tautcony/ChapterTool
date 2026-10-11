@@ -61,7 +61,7 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task Auto_rate_is_used_by_frame_shift_preview_and_commit()
+    public async Task Auto_detection_is_display_only_and_explicit_rate_enables_frame_shift()
     {
         using var workspace = CreateWorkspace();
         await workspace.LoadAsync("repeating.txt", [
@@ -69,6 +69,11 @@ public sealed class WasmWorkspaceTests
         ]);
 
         var beforeTicks = workspace.Rows[1].TimeText;
+        var unresolved = workspace.PrepareFrameShiftPreview(-1)!;
+        Assert.False(unresolved.IsValid);
+        Assert.Equal(FrameRateValue.Unknown, unresolved.Before.FrameRate);
+        Assert.False(await workspace.ApplyContentPreviewAsync());
+        workspace.SelectedFrameRateIndex = 1;
         var preview = workspace.PrepareFrameShiftPreview(-1)!;
         Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
         Assert.Equal(417083, preview.Candidate.Tracks[0].Chapters[1].StartTicks
@@ -510,9 +515,9 @@ public sealed class WasmWorkspaceTests
 
         Assert.True(candidate.IsValid);
         Assert.True(projection.TimesUnchanged);
-        Assert.True(projection.HasChanges);
-        Assert.True(projection.FrameInformationChangedChapterCount > 0 || projection.Properties.Length > 0);
-        Assert.True(await workspace.ApplyExpressionPreviewAsync());
+        Assert.False(projection.HasChanges);
+        Assert.Equal(FrameRateValue.Unknown, candidate.Candidate.FrameRate);
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
     }
 
     [Fact]

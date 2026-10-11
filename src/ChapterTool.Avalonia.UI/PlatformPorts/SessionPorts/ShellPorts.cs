@@ -24,6 +24,8 @@ public interface IExpressionSessionPort
 
     string ExpressionSourceName { get; }
 
+    FrameRateValue ComputationFrameRate => FrameRateValue.Unknown;
+
     ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken);
 
     ChapterDiagnostic? ApplyLuaExpressionSettings(
@@ -104,7 +106,7 @@ public interface IChapterContentOperationPort
 
     ChapterContentPreview PrepareFrameShift(int frames);
 
-    ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps);
+    ChapterContentPreview PrepareFrameRateConversion(FrameRateValue sourceFps, FrameRateValue targetFps);
 
     ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default);
 

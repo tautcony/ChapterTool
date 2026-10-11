@@ -27,12 +27,26 @@ public sealed class ChapterSegmentService
         }
 
         var offset = TimeSpan.Zero;
+        var rates = group.Entries.SelectMany(entry => entry.Segments.IsEmpty
+            ? [entry.ChapterSet.FrameRate] : entry.Segments.Select(static segment => segment.FrameRate)).Distinct().ToArray();
+        if (rates.Length != 1)
+        {
+            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error,
+                ChapterDiagnosticCode.InvalidFrameRate, "A scalar chapter set cannot preserve mixed frame rates.")]);
+        }
+
         var chapters = new List<Chapter>();
         foreach (var entry in group.Entries)
         {
             foreach (var chapter in entry.ChapterSet.Chapters.Where(static chapter => !chapter.IsSeparator))
             {
-                chapters.Add(new Chapter(chapters.Count + 1, offset + chapter.StartTime, $"Chapter {chapters.Count + 1:D2}"));
+                chapters.Add(chapter with
+                {
+                    DisplayNumber = chapters.Count + 1,
+                    Name = $"Chapter {chapters.Count + 1:D2}",
+                    StartTime = offset + chapter.StartTime,
+                    EndTime = chapter.EndTime is { } end ? offset + end : null
+                });
             }
 
             offset += entry.ChapterSet.Duration;
@@ -41,7 +55,7 @@ public sealed class ChapterSegmentService
         var info = new ChapterSet(
             "FULL Chapter",
             null, sourceType,
-            group.Entries[0].ChapterSet.FramesPerSecond,
+            rates[0],
             offset,
             chapters);
         return new ChapterEditResult(info, []);
@@ -70,5 +84,5 @@ public sealed class ChapterSegmentService
     }
 
     private static ChapterSet Empty() =>
-        new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+        new(string.Empty, null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []);
 }

@@ -56,7 +56,7 @@ public static class ChapterClipCandidateBuilder
                     track.Name,
                     0,
                     ChapterDuration.FromTicks(duration.Value),
-                    source.FrameRate,
+                    track.FrameRate,
                     source.ImportFormat,
                     source.SourceName)]
                 : track.Segments;
@@ -93,9 +93,7 @@ public static class ChapterClipCandidateBuilder
             source.SourceName,
             source.ImportFormat,
             ChapterDuration.FromTicks(totalDuration),
-            rates.FirstOrDefaultNullable(source.FrameRate),
-            output,
-            source.ExactFrameRate);
+            output);
         return Succeed(source, candidate);
     }
 
@@ -164,9 +162,7 @@ public static class ChapterClipCandidateBuilder
             source.SourceName,
             source.ImportFormat,
             source.Duration,
-            source.FrameRate,
-            output,
-            source.ExactFrameRate));
+            output));
     }
 
     /// <summary>Appends imported content to a current single-track document with fresh chapter identities.</summary>
@@ -199,13 +195,6 @@ public static class ChapterClipCandidateBuilder
         }
 
         var currentTrack = current.Tracks[0];
-        var importedRates = imported.Tracks.SelectMany(track => EffectiveRates(imported, track)).Distinct().ToArray();
-        var currentRates = EffectiveRates(current, currentTrack).Distinct().ToArray();
-        if (currentRates.Concat(importedRates).Distinct().Count() > 1)
-        {
-            return Failure(original, "Documents with different effective frame rates cannot be appended.");
-        }
-
         var offset = current.Duration.Ticks;
         var chapters = currentTrack.Chapters.ToBuilder();
         var segments = currentTrack.Segments.ToBuilder();
@@ -256,7 +245,7 @@ public static class ChapterClipCandidateBuilder
                         track.Name,
                         0,
                         ChapterDuration.FromTicks(trackDuration.Value),
-                        imported.FrameRate,
+                        track.FrameRate,
                         imported.ImportFormat,
                         imported.SourceName)]
                 : track.Segments;
@@ -306,32 +295,12 @@ public static class ChapterClipCandidateBuilder
             current.SourceName,
             current.ImportFormat,
             ChapterDuration.FromTicks(duration),
-            current.FrameRate,
-            [combined],
-            current.ExactFrameRate);
+            [combined]);
         return Succeed(original, candidate);
     }
 
-    private static IEnumerable<ChapterFrameRate> EffectiveRates(EditableChapterDocument document, EditableChapterTrack track)
-    {
-        if (track.Segments.IsEmpty)
-        {
-            if (document.FrameRate is ChapterFrameRate rate)
-            {
-                yield return rate;
-            }
-
-            yield break;
-        }
-
-        foreach (var segment in track.Segments)
-        {
-            if ((segment.FrameRate ?? document.FrameRate) is ChapterFrameRate rate)
-            {
-                yield return rate;
-            }
-        }
-    }
+    private static IEnumerable<FrameRateValue> EffectiveRates(EditableChapterDocument document, EditableChapterTrack track) =>
+        track.Segments.IsEmpty ? [track.FrameRate] : track.Segments.Select(static segment => segment.FrameRate);
 
     private static long? TrackDuration(EditableChapterDocument document, EditableChapterTrack track)
     {
@@ -408,13 +377,4 @@ public static class ChapterClipCandidateBuilder
 
     private static ChapterCandidateBuildResult Failure(EditableChapterDocument source, IEnumerable<string> errors) =>
         new(false, source, [], errors.ToImmutableArray());
-}
-
-internal static class ChapterFrameRateEnumerableExtensions
-{
-    public static ChapterFrameRate? FirstOrDefaultNullable(this IEnumerable<ChapterFrameRate> rates, ChapterFrameRate? fallback)
-    {
-        using var enumerator = rates.GetEnumerator();
-        return enumerator.MoveNext() ? enumerator.Current : fallback;
-    }
 }

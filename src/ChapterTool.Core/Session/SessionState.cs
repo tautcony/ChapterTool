@@ -233,9 +233,9 @@ public sealed class SessionState
         Guid transactionId,
         string requestFingerprint,
         Func<EditableChapterDocument, CancellationToken, ValueTask<EditableChapterDocument>> createCandidate,
-        CancellationToken cancellationToken = default,
         string? operationDescription = null,
-        HistoryOperationDescriptor? operation = null)
+        HistoryOperationDescriptor? operation = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(requestFingerprint);
         ArgumentNullException.ThrowIfNull(createCandidate);

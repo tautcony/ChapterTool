@@ -162,6 +162,9 @@ test('B25 input composition delays calculation until composition ends', async ({
   await expect(dialog.getByText(/Finish text composition/)).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Apply changes', exact: true })).toBeDisabled();
   await editor.evaluate(element => element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+  // Unknown content no longer gets a synthetic frame-rate change on its unchanged first row.
+  await dialog.getByRole('checkbox', { name: 'All chapters', exact: true }).check();
+  await expect(dialog.locator('.expression-chapter')).toHaveCount(2);
   await expect(dialog.locator('.expression-chapter').nth(1)).toContainText('00:00:06.250');
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
 });

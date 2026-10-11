@@ -220,7 +220,7 @@
         originalExpression = expression = Workspace.Expression;
         originalPresetId = presetId = Workspace.ExpressionPresetId;
         originalSourceName = Workspace.ExpressionSourceName;
-        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length);
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, frameRate: Workspace.ComputationFrameRate);
         Workspace.PrepareExpressionPreview(expression);
     }
 
@@ -246,7 +246,7 @@
                 ? value.Length
                 : await compositionModule.InvokeAsync<int>("caret", expressionEditorElement);
             if (disposed || currentInput != inputRevision) return;
-            analysis = Workspace.AuthoringService.Analyze(value, caret, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+            analysis = Workspace.AuthoringService.Analyze(value, caret, frameRate: Workspace.ComputationFrameRate);
         }
         await ScheduleAsync(value, schedule: !composing);
         if (!disposed) await UpdateCompletionStateAsync();
@@ -262,7 +262,7 @@
             var value = await reader.ReadToEndAsync();
             if (disposed) return;
             if (string.IsNullOrWhiteSpace(value)) throw new IOException();
-            var result = Workspace.AuthoringService.Analyze(value, value.Length, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+            var result = Workspace.AuthoringService.Analyze(value, value.Length, frameRate: Workspace.ComputationFrameRate);
             if (result.Diagnostics.Count > 0) { scriptError = result.Diagnostics[0].Diagnostic.Message; return; }
             Workspace.ClearExpressionPresetSelection();
             Workspace.ExpressionSourceName = args.File.Name;
@@ -279,7 +279,7 @@
         if (disposed || composing || applying) return;
         if (key == "Complete")
         {
-            analysis = Workspace.AuthoringService.Analyze(expression, caret, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+            analysis = Workspace.AuthoringService.Analyze(expression, caret, frameRate: Workspace.ComputationFrameRate);
             completionIndex = 0;
             completionOpen = analysis.Completions.Count > 0;
         }
@@ -331,7 +331,7 @@
         else Workspace.ApplyExpressionPreset(selected);
         presetId = Workspace.ExpressionPresetId;
         expression = selected.Length == 0 ? expression : Workspace.Expression;
-        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, frameRate: Workspace.ComputationFrameRate);
         await ScheduleAsync(expression, schedule: !composing);
     }
 
@@ -347,7 +347,7 @@
     public Task CompositionEnded() => InvokeAsync(async () =>
     {
         composing = false;
-        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, framesPerSecond: (decimal)Math.Max(1, Workspace.FramesPerSecond));
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, frameRate: Workspace.ComputationFrameRate);
         await ScheduleAsync(expression, schedule: true);
     });
 
@@ -470,8 +470,8 @@
     private string FrameDescription(ExpressionFrameValue? value)
     {
         if (value is null || value.IsMissing) return L.T("Expression.Value.NotCalculated");
-        var rate = value.FrameRate is { } fps
-            ? $"{fps.Numerator}/{fps.Denominator} {L.T("Expression.Unit.FramesPerSecond")}"
+        var rate = value.FrameRate.IsKnown
+            ? $"{value.FrameRate} {L.T("Expression.Unit.FramesPerSecond")}"
             : L.T("Expression.Value.NotSet");
         return $"{value.Text} {L.T("Expression.Unit.FramesShort")} · {rate}";
     }

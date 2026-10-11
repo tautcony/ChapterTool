@@ -4,6 +4,7 @@ using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform.Expressions;
 using Microsoft.Extensions.Logging;
@@ -55,6 +56,8 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
     public string ExpressionPresetId => owner.Workspace.OperationDrafts.ExpressionPresetId;
 
     public string ExpressionSourceName => owner.Workspace.OperationDrafts.ExpressionSourceName;
+
+    public FrameRateValue ComputationFrameRate => owner.ComputationFrameRate;
 
     public async ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken)
     {
@@ -123,9 +126,10 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
 
     public ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics)
     {
-        var result = owner.ExpressionEngine.Evaluate(
+        var result = new ChapterTool.Core.Transform.ChapterExpressionService(owner.ExpressionEngine).Apply(
+            ChapterExpressionValidation.CreateInput(owner.CurrentChapterSet), true,
             string.IsNullOrWhiteSpace(scriptText) ? "t" : scriptText,
-            ChapterExpressionValidation.CreateContext(owner.CurrentChapterSet));
+            owner.ComputationFrameRate.IsKnown ? owner.ComputationFrameRate : null);
         if (logDiagnostics)
         {
             owner.LogDiagnostics("Lua expression script", result.Diagnostics);
@@ -253,7 +257,7 @@ public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapter
             return;
         }
 
-        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.DisplayFrameRate, owner.EffectiveFrameRateOption.ExactRate);
+        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.ComputationFrameRate);
         var outcome = await owner.ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
         owner.ApplyContentOutcome(outcome, $"Shift frames forward: frames={frames}");
     }
@@ -271,9 +275,9 @@ public sealed class ChapterContentOperationPortAdapter(MainWindowViewModel owner
     public ChapterContentPreview PrepareContentOptions() => owner.PrepareContentOptionsOperation();
 
     public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames,
-        owner.DisplayFrameRate, owner.EffectiveFrameRateOption.ExactRate);
+        owner.ComputationFrameRate);
 
-    public ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps) => owner.PrepareFrameRateOperation(sourceFps, targetFps);
+    public ChapterContentPreview PrepareFrameRateConversion(FrameRateValue sourceFps, FrameRateValue targetFps) => owner.PrepareFrameRateOperation(sourceFps, targetFps);
 
     public async ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default)
     {

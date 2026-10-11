@@ -7,26 +7,33 @@ namespace ChapterTool.Core.Transform;
 /// <summary>Performs frame calculations as reduced integer ratios.</summary>
 internal readonly record struct ExactFrameMath(BigInteger Numerator, BigInteger Denominator)
 {
-    public static ExactFrameMath FromTicks(long ticks, ChapterFrameRate rate) =>
-        Reduce(new BigInteger(ticks) * rate.Numerator,
-            new BigInteger(TimeSpan.TicksPerSecond) * rate.Denominator);
-
-    public static ExactFrameMath FromTicks(long ticks, decimal framesPerSecond)
+    public static ExactFrameMath FromTicks(long ticks, FrameRateValue rate)
     {
-        var bits = decimal.GetBits(framesPerSecond);
-        var scale = (bits[3] >> 16) & 0x7f;
-        var numerator = new BigInteger((uint)bits[0])
-            | (new BigInteger((uint)bits[1]) << 32)
-            | (new BigInteger((uint)bits[2]) << 64);
-        if ((bits[3] & int.MinValue) != 0)
-        {
-            numerator = -numerator;
-        }
-
-        var rateDenominator = BigInteger.Pow(10, scale);
-        return Reduce(new BigInteger(ticks) * numerator,
-            new BigInteger(TimeSpan.TicksPerSecond) * rateDenominator);
+        var ratio = RateRatio(rate);
+        return Reduce(new BigInteger(ticks) * ratio.Numerator,
+            new BigInteger(TimeSpan.TicksPerSecond) * ratio.Denominator);
     }
+
+    public static long TicksFromFrames(decimal frames, FrameRateValue rate) =>
+        TicksFromFrames(FromDecimal(frames), rate);
+
+    public static long TicksFromFrames(BigInteger frames, FrameRateValue rate) =>
+        TicksFromFrames(new ExactFrameMath(frames, BigInteger.One), rate);
+
+    private static long TicksFromFrames(ExactFrameMath frames, FrameRateValue rate)
+    {
+        var ratio = RateRatio(rate);
+        var ticks = Reduce(frames.Numerator * ratio.Denominator * TimeSpan.TicksPerSecond,
+            frames.Denominator * ratio.Numerator).RoundAwayFromZero();
+        return checked((long)ticks);
+    }
+
+    private static ExactFrameMath RateRatio(FrameRateValue rate) => rate.Kind switch
+    {
+        FrameRateKind.Rational => new ExactFrameMath(rate.RationalRate!.Value.Numerator, rate.RationalRate.Value.Denominator),
+        FrameRateKind.Approximate => FromDecimal(rate.ApproximateValue!.Value),
+        _ => throw new ArgumentOutOfRangeException(nameof(rate), "A known computation rate is required.")
+    };
 
     public static ExactFrameMath FromDecimal(decimal value)
     {
@@ -41,22 +48,6 @@ internal readonly record struct ExactFrameMath(BigInteger Numerator, BigInteger 
         }
 
         return Reduce(numerator, BigInteger.Pow(10, scale));
-    }
-
-    public static long TicksFromFrames(long frames, ChapterFrameRate rate)
-    {
-        var ticks = Reduce(new BigInteger(frames) * rate.Denominator * TimeSpan.TicksPerSecond,
-            rate.Numerator).RoundAwayFromZero();
-        return checked((long)ticks);
-    }
-
-    public static long TicksFromFrames(decimal frames, decimal framesPerSecond)
-    {
-        var frameCount = FromDecimal(frames);
-        var rate = FromDecimal(framesPerSecond);
-        var ticks = Reduce(frameCount.Numerator * rate.Denominator * TimeSpan.TicksPerSecond,
-            frameCount.Denominator * rate.Numerator).RoundAwayFromZero();
-        return checked((long)ticks);
     }
 
     public BigInteger RoundAwayFromZero()

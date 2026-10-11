@@ -58,7 +58,7 @@ public sealed class ChapterWorkspace
                 var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document, index);
                 var options = CreateExportOptions() with { SourceFileName = chapterSet.SourceName };
                 return !exportBaselines.TryGetValue(track.Id, out var baseline)
-                    || baseline.Digest != ChapterExportFingerprint.Digest(chapterSet, options)
+                    || baseline.Digest != ChapterExportFingerprint.Digest(chapterSet, track, options)
                     || baseline.FormatFingerprint != ChapterExportFingerprint.FormatFingerprint(options);
             }).Any(static unexported => unexported);
         }
@@ -88,7 +88,7 @@ public sealed class ChapterWorkspace
             snapshot.Document.Tracks[trackIndex].Id,
             copy,
             options,
-            ChapterExportFingerprint.Digest(copy, options),
+            ChapterExportFingerprint.Digest(copy, snapshot.Document.Tracks[trackIndex], options),
             ChapterExportFingerprint.FormatFingerprint(options));
     }
 
@@ -279,8 +279,8 @@ public sealed class ChapterWorkspace
         Guid expectedSessionId,
         SessionSnapshot capturedContent,
         ChapterImportSource appended,
-        CancellationToken cancellationToken = default,
-        HistoryOperationDescriptor? operationDescriptor = null)
+        HistoryOperationDescriptor? operationDescriptor = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(capturedContent);
         ArgumentNullException.ThrowIfNull(appended);
@@ -307,9 +307,9 @@ public sealed class ChapterWorkspace
                 Guid.NewGuid(),
                 $"append:{expectedSessionId:N}:{appended.SourcePath}",
                 (_, _) => ValueTask.FromResult(candidate.Candidate),
-                cancellationToken,
                 "Append clips",
-                operationDescriptor).AsTask().GetAwaiter().GetResult();
+                operationDescriptor,
+                cancellationToken).AsTask().GetAwaiter().GetResult();
             if (contentOutcome.Kind == TransactionOutcomeKind.Conflict)
             {
                 return ClipAppendCommitResult.Stale;
@@ -416,8 +416,8 @@ public sealed class ChapterWorkspace
     public TransactionOutcome ExecuteTrackCandidate(
         string operation,
         Func<EditableChapterDocument, ChapterCandidateBuildResult> buildCandidate,
-        CancellationToken cancellationToken = default,
-        HistoryOperationDescriptor? operationDescriptor = null)
+        HistoryOperationDescriptor? operationDescriptor = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
         ArgumentNullException.ThrowIfNull(buildCandidate);
@@ -499,7 +499,7 @@ public sealed class ChapterWorkspace
             ExpressionSourceName: OperationDrafts.ExpressionSourceName,
             TextEncoding: ExportPreferences.TextEncoding,
             EmitBom: ExportPreferences.EmitBom,
-            ProjectOutput: false);
+            ProjectOutput: false) { ComputationRate = ExportPreferences.ComputationRate };
 
     /// <summary>Publishes a document already committed to <see cref="ContentSession"/> into the active clip.</summary>
     public void PublishContentDocument(EditableChapterDocument document)
@@ -541,8 +541,7 @@ public sealed class ChapterWorkspace
         var segment = track.Segments.FirstOrDefault();
         return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
-            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), segment?.FrameRate ?? source.FrameRate, [track],
-            segment?.ExactFrameRate ?? source.ExactFrameRate);
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), [track]);
     }
 
     private static EditableChapterDocument ReplaceFocusedTrack(
@@ -552,7 +551,7 @@ public sealed class ChapterWorkspace
     {
         var tracks = source.Tracks.SetItem(trackIndex, focused.Tracks[0]);
         return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
-            source.Duration, source.FrameRate, tracks, source.ExactFrameRate);
+            source.Duration, tracks);
     }
 }
 

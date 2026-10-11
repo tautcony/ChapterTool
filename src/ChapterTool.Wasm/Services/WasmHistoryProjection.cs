@@ -120,10 +120,10 @@ public static class WasmHistoryProjection
             {
                 context += $" · {localizer.T("History.Parameter.displayFps")}: {FormatFrameRate(localizer, rate)}";
             }
-            else if (change.BeforeFrameRate is not null || change.AfterFrameRate is not null)
+            else if (change.BeforeFrameRate.IsKnown || change.AfterFrameRate.IsKnown)
             {
-                var beforeText = change.BeforeFrameRate is { } oldRate ? FormatFrameRate(localizer, oldRate) : localizer.T("History.Presence.Absent");
-                var afterText = change.AfterFrameRate is { } newRate ? FormatFrameRate(localizer, newRate) : localizer.T("History.Presence.Absent");
+                var beforeText = change.BeforeFrameRate.IsKnown ? FormatFrameRate(localizer, change.BeforeFrameRate) : localizer.T("History.Presence.Absent");
+                var afterText = change.AfterFrameRate.IsKnown ? FormatFrameRate(localizer, change.AfterFrameRate) : localizer.T("History.Presence.Absent");
                 context += $" · {localizer.Format("History.FrameRateContext", beforeText, afterText)}";
             }
         }
@@ -145,13 +145,13 @@ public static class WasmHistoryProjection
         {
             FramePresentationInput? input = null;
             var exactRate = before ? change.BeforeFrameRate : change.AfterFrameRate;
-            if (exactRate is { } rate)
+            if (exactRate.IsKnown)
             {
-                input = FramePresentationInput.FromExactRate(startTicks, rate, frameText);
+                input = new FramePresentationInput(startTicks, exactRate, frameText);
             }
             else if (decimal.TryParse(rateText, NumberStyles.Number, CultureInfo.InvariantCulture, out var displayRate) && displayRate > 0)
             {
-                input = FramePresentationInput.FromApproximateRate(startTicks, displayRate, frameText);
+                input = new FramePresentationInput(startTicks, FrameRateValue.Approximate(displayRate), frameText);
             }
             if (input is not null)
             {
@@ -284,6 +284,9 @@ public static class WasmHistoryProjection
         var culture = CultureInfo.GetCultureInfo(localizer.Culture);
         return $"{rate.ToString("0.###", culture)} {localizer.T("History.Unit.Fps")}";
     }
+
+    private static string FormatFrameRate(WasmLocalizer localizer, FrameRateValue rate) =>
+        $"{rate} {localizer.T("History.Unit.Fps")}";
 
     private static string FormatFrameRate(WasmLocalizer localizer, ChapterFrameRate rate)
     {

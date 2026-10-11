@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Numerics;
+using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Transform;
 
@@ -28,14 +29,14 @@ public static class FrameValueFormatter
             return FormatRounded(input);
         }
 
-        if (input.ExactRate is not { } rate)
+        if (!input.Rate.IsKnown ||
+            (input.Rate.Kind == FrameRateKind.Approximate && input.NumericFallback.Length > 0))
         {
             return FromPlainText(input.NumericFallback);
         }
 
-        var numerator = new BigInteger(input.StartTicks) * rate.Numerator;
-        var denominator = new BigInteger(TimeSpan.TicksPerSecond) * rate.Denominator;
-        var reduced = Reduce(numerator, denominator);
+        var frames = ExactFrameMath.FromTicks(input.StartTicks, input.Rate);
+        var reduced = Reduce(frames.Numerator, frames.Denominator);
         var ordinaryText = FormatOrdinary(reduced.Numerator, reduced.Denominator, policy.DecimalPlaces);
         var negative = reduced.Numerator.Sign < 0;
         var absoluteNumerator = BigInteger.Abs(reduced.Numerator);
@@ -100,11 +101,10 @@ public static class FrameValueFormatter
 
     private static FramePresentationParts FormatRounded(FramePresentationInput input)
     {
-        if (input.ExactRate is { } rate)
+        if (input.Rate.IsKnown)
         {
-            var ratio = Reduce(
-                new BigInteger(input.StartTicks) * rate.Numerator,
-                new BigInteger(TimeSpan.TicksPerSecond) * rate.Denominator);
+            var frames = ExactFrameMath.FromTicks(input.StartTicks, input.Rate);
+            var ratio = Reduce(frames.Numerator, frames.Denominator);
             var absolute = BigInteger.Abs(ratio.Numerator);
             var rounded = BigInteger.DivRem(absolute, ratio.Denominator, out var remainder);
             if (remainder * 2 >= ratio.Denominator)
@@ -134,7 +134,7 @@ public static class FrameValueFormatter
             return new FramePresentationParts(string.Empty, string.Empty, string.Empty, string.Empty, text, exactFraction, "missing");
         }
 
-        var sign = text.StartsWith("-", StringComparison.Ordinal) ? "-" : string.Empty;
+        var sign = text.StartsWith('-') ? "-" : string.Empty;
         var unsigned = sign.Length == 0 ? text : text[1..];
         var separator = unsigned.IndexOf('.');
         var integer = separator < 0 ? unsigned : unsigned[..separator];

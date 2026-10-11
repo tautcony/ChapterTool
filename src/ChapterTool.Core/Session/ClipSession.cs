@@ -268,7 +268,7 @@ public static class ClipSessionTransitions
                 Title = combinedInfo.Title,
                 SourceName = combinedInfo.SourceName,
                 ImportFormat = combinedInfo.ImportFormat,
-                FramesPerSecond = combinedInfo.FramesPerSecond,
+                FrameRate = combinedInfo.FrameRate,
                 Duration = combinedInfo.Duration
             },
             CanCombine: true,
@@ -284,7 +284,7 @@ public static class ClipSessionTransitions
             segment.Name.Length == 0 ? track.Name : segment.Name,
             segment.SourceName,
             segment.ImportFormat,
-            segment.FrameRate is ChapterFrameRate rate ? (double)rate.Numerator / rate.Denominator : 0,
+            segment.FrameRate,
             segment.Duration.IsKnown ? TimeSpan.FromTicks(segment.Duration.Ticks) : TimeSpan.Zero,
             []),
         CanCombine: true,

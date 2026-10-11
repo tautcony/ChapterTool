@@ -38,9 +38,7 @@ internal sealed class WorkspaceContentRows(
                 ? track.Chapters[index]
                 : null;
             var startTicks = typedChapter?.StartTicks ?? chapter.StartTime.Ticks;
-            var input = frameRateOption.ExactRate is { } exactRate
-                ? FramePresentationInput.FromExactRate(startTicks, exactRate, chapter.FramesInfo)
-                : FramePresentationInput.FromApproximateRate(startTicks, frameRateOption.Value, chapter.FramesInfo);
+            var input = new FramePresentationInput(startTicks, frameRateOption.Rate, chapter.FramesInfo);
             row.SetFramePresentationInput(input, policy);
             if (typedChapter is not null)
             {

@@ -34,6 +34,7 @@ public sealed partial class WasmWorkspace : IDisposable
     private readonly HashSet<int> selectedRowIndexes = [];
     private IReadOnlyList<DiagnosticView> diagnostics = [];
     private ChapterTrackId? expressionPreviewTrackId;
+    private FrameRateValue? expressionPreviewComputationRate;
     private bool expressionPreviewStale;
 
     private ChapterImportResult? importResult;
@@ -301,16 +302,16 @@ public sealed partial class WasmWorkspace : IDisposable
             }
 
             var appliedRate = EffectiveFrameRateOption;
-            return ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId, ExactFramesPerSecond,
-                RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces,
-                appliedRate.Value == ExactFramesPerSecond ? appliedRate.ExactRate : null);
+            return ExpressionPreviewProjector.Build(preview, expressionPreviewTrackId, appliedRate.Rate,
+                RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces);
         }
     }
 
     public bool IsExpressionPreviewStale => expressionPreviewStale
         || (ExpressionPreview is { } preview
             && (session.ContentSession?.Snapshot.BaseToken != preview.BaseToken
-                || CurrentTrackId != expressionPreviewTrackId));
+                || CurrentTrackId != expressionPreviewTrackId
+                || expressionPreviewComputationRate != SelectedComputationRate));
 
     public string FormatExpressionTimeTicks(long ticks)
     {
@@ -402,7 +403,7 @@ public sealed partial class WasmWorkspace : IDisposable
         get => selectedFrameRateIndex;
         set
         {
-            var clamped = Math.Clamp(value, 0, Math.Max(0, FrameRateChoices.Count - 1));
+            var clamped = FrameRateChoices.Any(choice => choice.Index == value) ? value : 0;
             if (selectedFrameRateIndex == clamped)
             {
                 return;
@@ -419,23 +420,22 @@ public sealed partial class WasmWorkspace : IDisposable
 
     public FramePresentationParts FormatFramePresentation(
         long startTicks,
-        ChapterFrameRate? sourceRate,
+        FrameRateValue? sourceRate,
         string numericFallback,
         bool showRepeatingDecimals)
     {
         var selected = EffectiveFrameRateOption;
-        ChapterFrameRate? exactRate = sourceRate;
-        if (selected.ExactRate is { } selectedExact
-            && selected.Value == exactFramesPerSecond
-            && (sourceRate is null
-                || Math.Abs((decimal)sourceRate.Value.Numerator / sourceRate.Value.Denominator - selected.Value) < 0.000001m))
+        var rate = sourceRate ?? BaseChapterSet?.FrameRate ?? FrameRateValue.Unknown;
+        if (ResolveSelectedFrameRateOption().IsValid && selected.ExactRate is { } selectedExact)
         {
-            exactRate = selectedExact;
+            rate = FrameRateValue.Rational(selectedExact);
+        }
+        else if (!rate.IsKnown && selected.ExactRate is { } suggestion)
+        {
+            rate = FrameRateValue.Rational(suggestion);
         }
 
-        var input = exactRate is { } rate
-            ? FramePresentationInput.FromExactRate(startTicks, rate, numericFallback)
-            : FramePresentationInput.FromApproximateRate(startTicks, exactFramesPerSecond, numericFallback);
+        var input = new FramePresentationInput(startTicks, rate, numericFallback);
         var policy = new FramePresentationPolicy(RoundFrames,
             showRepeatingDecimals && EditingOptions.FrameDisplay == FrameDisplayMode.FullPrecision,
             EditingOptions.EffectiveFrameDecimalPlaces);
@@ -684,7 +684,7 @@ public sealed partial class WasmWorkspace : IDisposable
                 inserted.Candidate.Tracks[0].Name, updated, inserted.Candidate.Tracks[0].Segments);
             return inserted with { Candidate = new EditableChapterDocument(inserted.Candidate.Id,
                 inserted.Candidate.Title, inserted.Candidate.SourceName, inserted.Candidate.ImportFormat,
-                inserted.Candidate.Duration, inserted.Candidate.FrameRate, [updatedTrack]) };
+                inserted.Candidate.Duration, [updatedTrack]) };
         });
         CompleteCandidate(outcome, "Status.Duplicated", index + 1);
         SelectRow(index + 1);
@@ -770,7 +770,7 @@ public sealed partial class WasmWorkspace : IDisposable
             return string.Empty;
         }
 
-        var result = editingService.CreateZones(BaseChapterSet, indexes, ExactFramesPerSecond);
+        var result = editingService.CreateZones(BaseChapterSet, indexes, ComputationFrameRate);
         RecordDiagnostics(result.Diagnostics);
         if (result.Zones.Length > 0)
         {
@@ -808,14 +808,13 @@ public sealed partial class WasmWorkspace : IDisposable
         }
 
         var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
-        var fps = exactFramesPerSecond;
+        var fps = ComputationFrameRate;
         var targets = track.Chapters.Select(static chapter => chapter.Id).ToHashSet();
-        var exactRate = EffectiveFrameRateOption.ExactRate;
-        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps, exactRate),
+        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps),
             operationDescriptor: new HistoryOperationDescriptor("chapter.frame-shift",
             [
                 new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
-                new HistoryOperationParameter("displayFps", fps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+                new HistoryOperationParameter("computationRate", fps.ToString(), fps.Kind.ToString()),
                 new HistoryOperationParameter("trackName", track.Name),
                 new HistoryOperationParameter("chapterIds", string.Join(",", targets))
             ]));
@@ -964,7 +963,8 @@ public sealed partial class WasmWorkspace : IDisposable
             }
 
             var appendedGroup = result.Groups[0];
-            var append = session.AppendClipSource(operationRevision, expectedSessionId, capturedContent, appendedGroup, cancellationToken);
+            var append = session.AppendClipSource(operationRevision, expectedSessionId, capturedContent, appendedGroup,
+                cancellationToken: cancellationToken);
             if (append.IsStale)
             {
                 return;
@@ -1107,14 +1107,14 @@ public sealed partial class WasmWorkspace : IDisposable
             return;
         }
 
-        var sourceFps = (decimal)BaseChapterSet.FramesPerSecond;
+        var sourceFps = ResolveSourceFrameRate();
         var target = ResolveSelectedFrameRateOption();
         var outcome = session.ExecuteTrackCandidate("Change chapter frame rate",
-            document => candidateBuilder.ChangeFrameRate(document, sourceFps, target.Value),
+            document => candidateBuilder.ChangeFrameRate(document, sourceFps, target.Rate),
             operationDescriptor: new HistoryOperationDescriptor("chapter.frame-rate-change",
             [
                 new HistoryOperationParameter("trackName", track.Name),
-                new HistoryOperationParameter("sourceFps", sourceFps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+                new HistoryOperationParameter("sourceFps", sourceFps.ToString(), sourceFps.Kind.ToString()),
                 new HistoryOperationParameter("targetFps", target.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
             ]));
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
@@ -1202,12 +1202,14 @@ public sealed partial class WasmWorkspace : IDisposable
             return null;
         }
         expressionPreviewTrackId = content.Snapshot.Document.Tracks[trackIndex].Id;
+        expressionPreviewComputationRate = SelectedComputationRate;
         var track = content.Snapshot.Document.Tracks[trackIndex];
         expressionPreviewStale = false;
         ExpressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
         {
-            var focused = AddDetectedFrameRate(FocusTrack(document, trackIndex));
-            var built = candidateBuilder.ApplyExpression(focused, Expression.Trim());
+            var focused = FocusTrack(document, trackIndex);
+            var selectedRate = ResolveSelectedFrameRateOption();
+            var built = candidateBuilder.ApplyExpression(focused, Expression.Trim(), selectedRate.IsValid ? selectedRate.Rate : null);
             return built.IsValid
                 ? built with { Candidate = ReplaceFocusedTrack(document, trackIndex, built.Candidate) }
                 : built with { Candidate = document };
@@ -1220,7 +1222,7 @@ public sealed partial class WasmWorkspace : IDisposable
             new HistoryOperationParameter("trackName", track.Name),
             new HistoryOperationParameter("targetChapterIds", string.Join(",", track.Chapters.Select(static chapter => chapter.Id))),
             new HistoryOperationParameter("displayFps", ExactFramesPerSecond.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
-        ]));
+        ]), expressionPreviewComputationRate);
         Notify();
         return ExpressionPreview;
     }
@@ -1243,7 +1245,7 @@ public sealed partial class WasmWorkspace : IDisposable
         var currentTrackId = currentTrackIndex >= 0 && currentTrackIndex < content.Snapshot.Document.Tracks.Length
             ? content.Snapshot.Document.Tracks[currentTrackIndex].Id
             : (ChapterTrackId?)null;
-        if (content.Snapshot.BaseToken != preview.BaseToken || currentTrackId != expressionPreviewTrackId)
+        if (content.Snapshot.BaseToken != preview.BaseToken || currentTrackId != expressionPreviewTrackId || IsExpressionPreviewStale)
         {
             expressionPreviewStale = true;
             Notify();
@@ -1295,13 +1297,7 @@ public sealed partial class WasmWorkspace : IDisposable
         var segment = track.Segments.FirstOrDefault();
         return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
-            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), segment?.FrameRate ?? source.FrameRate, [track]);
-    }
-
-    private EditableChapterDocument AddDetectedFrameRate(EditableChapterDocument source)
-    {
-        return EditableChapterDocumentAdapter.WithFallbackFrameRate(source,
-            BaseChapterSet is null ? 0m : ApplyFrames(BaseChapterSet).FramesPerSecond);
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), [track]);
     }
 
     private static EditableChapterDocument ReplaceFocusedTrack(
@@ -1310,10 +1306,8 @@ public sealed partial class WasmWorkspace : IDisposable
         EditableChapterDocument focused)
     {
         var tracks = source.Tracks.SetItem(trackIndex, focused.Tracks[0]);
-        var rates = tracks.SelectMany(track => track.Segments.Select(segment => segment.FrameRate))
-            .Where(rate => rate.HasValue).Select(rate => rate!.Value).Distinct().ToArray();
         return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
-            EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, focused), rates.Length == 1 ? rates[0] : rates.Length == 0 ? source.FrameRate : null, tracks);
+            EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, focused), tracks);
     }
 
     /// <summary>
@@ -1480,12 +1474,12 @@ public sealed partial class WasmWorkspace : IDisposable
             var candidate = new ChapterCandidateBuildResult(true, document, [chapterId], []);
             if (name is not null)
             {
-                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, ExactFramesPerSecond);
+                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, ComputationFrameRate);
             }
 
             if (candidate.IsValid && timeText is not null && track.Chapters[index].Kind != ChapterKind.Separator)
             {
-                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, ExactFramesPerSecond);
+                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, ComputationFrameRate);
             }
 
             return candidate;
@@ -1592,6 +1586,7 @@ public sealed partial class WasmWorkspace : IDisposable
 
     private void RefreshDisplay(bool updateStatus, string? statusKey, params object[] statusArgs)
     {
+        session.ExportPreferences.SetComputationRate(SelectedComputationRate);
         if (BaseChapterSet is null)
         {
             rows = [];
@@ -1649,22 +1644,18 @@ public sealed partial class WasmWorkspace : IDisposable
     {
         var option = ResolveSelectedFrameRateOption();
 
-        if (option.LegacyMplsCode == 0)
-        {
-            option = frameRateService.DetectDetailed(info, FrameAccuracyTolerance).Option;
-        }
         return frameRateService.UpdateFrames(info, option, EditingOptions.EffectiveFrameDecimalPlaces, FrameAccuracyTolerance);
     }
 
     private FrameRateOption ResolveSelectedFrameRateOption()
     {
         var options = frameRateService.Options;
-        if (selectedFrameRateIndex <= 0 || selectedFrameRateIndex >= options.Count)
+        if (selectedFrameRateIndex <= 0)
         {
             return options[0]; // Auto
         }
 
-        return options[selectedFrameRateIndex];
+        return FrameRateChoices.FirstOrDefault(choice => choice.Index == selectedFrameRateIndex)?.Option ?? options[0];
     }
 
     private FrameRateOption EffectiveFrameRateOption => appliedFrameRateOption ?? ResolveSelectedFrameRateOption();
@@ -1678,7 +1669,7 @@ public sealed partial class WasmWorkspace : IDisposable
             var option = options[i];
             if (i == 0)
             {
-                choices.Add(new FrameRateChoice(i, "Auto", option));
+                choices.Add(new FrameRateChoice(i, localizer.T("Main.AutoFrameRate"), option));
                 continue;
             }
 
@@ -1689,6 +1680,12 @@ public sealed partial class WasmWorkspace : IDisposable
             }
 
             choices.Add(new FrameRateChoice(i, option.DisplayName, option));
+        }
+
+        if (info.FrameRate.IsKnown && options.All(option => option.Rate != info.FrameRate))
+        {
+            var custom = frameRateService.FindByRate(info.FrameRate);
+            choices.Add(new FrameRateChoice(options.Count, custom.DisplayName, custom));
         }
 
         FrameRateChoices = choices;
@@ -1718,7 +1715,7 @@ public sealed partial class WasmWorkspace : IDisposable
             ExpressionSourceName: string.Empty,
             TextEncoding: TextEncoding,
             EmitBom: EmitBom,
-            ProjectOutput: false);
+            ProjectOutput: false) { ComputationRate = SelectedComputationRate };
 
     private void ClearSession(bool keepPath = false, bool keepReload = false)
     {
@@ -1817,6 +1814,13 @@ public sealed partial class WasmWorkspace : IDisposable
 
     private void OnCultureChanged()
     {
+        FrameRateChoices =
+        [
+            .. FrameRateChoices.Select(choice => choice.Index == 0
+                ? choice with { DisplayName = localizer.T("Main.AutoFrameRate") }
+                : choice)
+        ];
+
         if (ClipSessionState is not null)
         {
             ClipOptions = importResult is { Groups.Count: > 1 } && !ClipSessionState.IsCombined

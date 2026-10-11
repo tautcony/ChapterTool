@@ -140,7 +140,7 @@ public sealed partial class OgmChapterImporter(IChapterTimeFormatter timeFormatt
             "OGM Chapters",
             Path.GetFileName(path),
             ChapterImportFormat.Ogm,
-            0,
+            FrameRateValue.Unknown,
             chapters[^1].StartTime,
             chapters);
         var entry = new ChapterImportEntry("default", "OGM Chapters", info);

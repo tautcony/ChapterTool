@@ -169,7 +169,7 @@ public sealed class MediaChapterImporter(
             .DefaultIfEmpty(TimeSpan.Zero)
             .Max();
 
-        return new ChapterSet(title, sourceName, ChapterImportFormat.Media, 0, duration, modelChapters);
+        return new ChapterSet(title, sourceName, ChapterImportFormat.Media, FrameRateValue.Unknown, duration, modelChapters);
     }
 
     private static List<NormalizedMediaChapter> NormalizeEntries(

@@ -92,7 +92,8 @@ public sealed class BdmvImporter : IChapterImporter
                 CanCombine: true,
                 ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles,
                 MediaTracks: MplsMediaTrackProjection.ForPlayItems(candidate.Projection.Playlist.PlayList.PlayItems, clpiByClip),
-                ImportDisplayName: DisplayName(candidate)));
+                ImportDisplayName: DisplayName(candidate)) { Segments = candidate.Projection.Segments });
+            diagnostics.AddRange(candidate.Projection.Diagnostics);
         }
 
         if (entries.Count == 0)

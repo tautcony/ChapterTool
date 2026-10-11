@@ -72,7 +72,7 @@ public sealed class ChapterOutputProjectionServiceTests
     }
 
     [Fact]
-    public void Projection_normalizes_lua_time_and_reports_diagnostic()
+    public void Projection_rejects_negative_lua_time_and_reports_diagnostic()
     {
         var result = service.Project(
             Sample(),
@@ -80,7 +80,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         Assert.Equal(3, result.Diagnostics.Count);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionTime, diagnostic.Code));
-        Assert.All(result.OutputChapters, chapter => Assert.Equal(TimeSpan.Zero, chapter.StartTime));
+        Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
     }
 
     private static ChapterSet Sample() =>

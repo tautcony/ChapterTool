@@ -177,10 +177,56 @@ The adapter can provide decimal-second or time-base timestamps. Read failures ar
 `IChapterExpressionEngine` is the standard interface for chapter time expression evaluation.
 `LuaExpressionScriptService` is the built-in Lua implementation under `ChapterTool.Core.Transform.Expressions.Lua`. Simple arithmetic can be entered without `return`, while full scripts may use `return` or define `transform(chapter)`.
 
-- **Globals**: `t` (time in seconds), `fps` (frames per second), `index`, `count`, and `chapter`
+- **Globals**: `t` (time in seconds), `fps` (numeric computation rate or nil), `index`, `count`, and `chapter`
+- **Rate authority**: `fpsRateKind` is `Rational`, `Approximate`, or `Unknown`. Rational rates expose reduced `fpsNumeratorText` and `fpsDenominatorText` strings. `fpsNumerator` and `fpsDenominator` are numeric only when both components are at most `9007199254740991`. Other states expose nil components.
+- **Unknown rate**: Time-only scripts can run with nil `fps` and `chapter.fps`. Frame-dependent presets need an explicit computation rate. A script can handle nil explicitly.
+- **Precision**: Lua arithmetic uses floating point. A script that returns its unchanged numeric input preserves the original ticks. Changed results use one validated tick conversion. Frame metadata is calculated from the resulting ticks and canonical rate.
 - **Libraries**: safe Lua `math`, `string`, and `table` libraries
 - **Aliases**: common math helpers such as `floor`, `ceil`, `round`, `sin`, `sqrt`, and `sign`
 - **Presets**: identity, time offset, frame rounding, and half-frame shift
+
+## Canonical Frame Rates
+
+Use `ChapterSet.FrameRate` and `FrameRateValue` to preserve authority.
+`Rational(24000, 1001)` stores a reduced positive Int64 ratio.
+`Approximate(23.976m)` stores a positive decimal without rational authority.
+The default value is Unknown.
+Equal numeric displays with different kinds remain different values.
+
+```csharp
+var rate = FrameRateValue.Rational(24000, 1001);
+var canonical = chapterSet with { FrameRate = rate };
+var output = exportService.Serialize(canonical,
+    new ChapterSerializationOptions(ChapterExportFormat.Qpfile) { ComputationRate = rate });
+```
+
+Established numeric constructors, properties, concrete service adapters, and extension contracts
+remain supported through major version 23.
+A separate versioned change must precede removal.
+Positive legacy numeric FPS becomes Approximate; zero metadata becomes Unknown.
+Invalid `ChapterSet` numeric construction or assignment throws an argument exception immediately.
+This is an intentional compatibility exception.
+Other operation boundaries return diagnostics for invalid computation rates.
+Numeric seconds and FPS round-trips can lose precision and rate authority.
+
+Editable tracks and segments retain current rates and original source rates separately.
+Uniform resolution requires every contributing rate to have the same kind and payload.
+Missing or conflicting rates resolve to Unknown.
+Scalar combination must reject conflicting rates.
+Auto uses known content authority.
+Detection is a display suggestion for Unknown or mixed content.
+FPS-dependent operations require an explicit known rate in that case.
+Time-only operations remain available.
+Serialization computation overrides do not mutate content or source metadata.
+
+Frame arithmetic uses timestamp ticks and integer rational or decimal coefficients.
+Fractional frame edits round once to ticks, with midpoints away from zero.
+FPS conversion quantizes to an integer source frame and then rounds to target ticks.
+Same-rate conversion can therefore change off-grid timestamps.
+Undo restores the original ticks.
+QPFile, Celltimes, and zones round once to integer frames.
+Display rounding must not change content or history.
+Lua changed-result arithmetic uses floating-point seconds as described above.
 
 ## Diagnostic System
 

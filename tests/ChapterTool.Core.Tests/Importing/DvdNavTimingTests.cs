@@ -28,11 +28,12 @@ public sealed class DvdNavTimingTests
         var set = Assert.Single(Assert.Single(result.Groups).Entries).ChapterSet;
         Assert.Equal([TimeSpan.Zero, TimeSpan.FromTicks(20_020_000)], set.Chapters.Select(chapter => chapter.StartTime));
         Assert.Equal(TimeSpan.FromTicks(30_030_000), set.Duration);
+        Assert.Equal(FrameRateValue.Rational(30000, 1001), set.FrameRate);
         var diagnostic = Assert.Single(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.IfoTimingFromNav);
         Assert.Equal("VTS_05_0.IFO (VTS_05_1)", diagnostic.Arguments!["source"]);
         Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.IfoTimingEstimated);
         var service = new FrameRateService();
-        var display = service.UpdateFrames(set, service.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
+        var display = service.UpdateFrames(set, FrameRateService.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
         Assert.Equal(["0", "60"], display.Chapters.Select(chapter => chapter.FramesInfo));
         Assert.All(display.Chapters, chapter => Assert.Equal(FrameAccuracy.Accurate, chapter.FrameAccuracy));
     }
@@ -58,11 +59,12 @@ public sealed class DvdNavTimingTests
         var set = Assert.Single(Assert.Single(result.Groups).Entries).ChapterSet;
         Assert.Equal([TimeSpan.Zero, TimeSpan.FromTicks(30_030_000)], set.Chapters.Select(chapter => chapter.StartTime));
         Assert.Equal(TimeSpan.FromTicks(40_040_000), set.Duration);
+        Assert.Equal(FrameRateValue.Rational(30000, 1001), set.FrameRate);
         var diagnostic = Assert.Single(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.IfoTimingEstimated);
         Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
         Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.IfoTimingFromNav);
         var service = new FrameRateService();
-        var display = service.UpdateFrames(set, service.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
+        var display = service.UpdateFrames(set, FrameRateService.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
         Assert.Equal(FrameAccuracy.Accurate, display.Chapters[1].FrameAccuracy);
     }
 
@@ -79,9 +81,10 @@ public sealed class DvdNavTimingTests
         Assert.True(result.Success);
         var set = Assert.Single(result.Groups.Single().Entries).ChapterSet;
         Assert.Equal(expectedTicks, set.Chapters[1].StartTime.Ticks);
+        Assert.Equal(FrameRateValue.Rational(30000, 1001), set.FrameRate);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.IfoTimingFromNav);
         var service = new FrameRateService();
-        var display = service.UpdateFrames(set, service.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
+        var display = service.UpdateFrames(set, FrameRateService.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
         Assert.Equal(accuracy, display.Chapters[1].FrameAccuracy);
     }
 

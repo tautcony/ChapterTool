@@ -29,9 +29,10 @@ test('captures expression review at default, wide, and narrow viewports', async 
     if (process.env.E2E_CAPTURE_REVIEW) await page.screenshot({ path: resolve(directory, name), fullPage: false });
   }
 
-  await dialog.getByText('Other changes', { exact: true }).click();
-  await expect(dialog.locator('.expression-properties')).toContainText('Frame rate');
-  await expect(dialog.locator('.expression-properties')).toContainText('24/1 fps');
+  // Text imports have Unknown authority. A time-only preview must not synthesize 24/1.
+  await expect(dialog.getByText('Other changes', { exact: true })).toHaveCount(0);
+  await dialog.getByLabel('Custom expression', { exact: true }).fill('fps == nil and t / 2 or nil');
+  await expect(dialog.getByTestId('expression-preview')).toContainText('00:00:06.250');
 
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
 

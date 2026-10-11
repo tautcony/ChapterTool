@@ -27,7 +27,7 @@ public sealed class FrameRateServiceTests
     [Fact]
     public void FindByValue_matches_valid_frame_rate_with_legacy_tolerance()
     {
-        var actual = service.FindByValue(23.976023976m);
+        var actual = FrameRateService.FindByValue(23.976023976m);
 
         Assert.Equal("Fps23976", actual.Code);
         Assert.Null(actual.ExactRate);
@@ -281,15 +281,43 @@ public sealed class FrameRateServiceTests
         Assert.Equal(FrameAccuracy.Neutral, actual.Chapters.Single().FrameAccuracy);
     }
 
+    [Fact]
+    public void Auto_projects_content_rate_and_never_changes_unknown_or_known_metadata()
+    {
+        var unknown = NewInfo(0, [new Chapter(1, TimeSpan.FromTicks(400_000), "A")]);
+        var detected = service.UpdateFrames(unknown, service.Options[0], 0, 0.01m);
+        Assert.Equal(FrameRateValue.Unknown, detected.Info.FrameRate);
+        Assert.Equal(unknown.Chapters[0].StartTime, detected.Info.Chapters[0].StartTime);
+
+        var approximate = unknown with { FrameRate = FrameRateValue.Approximate(24.000001m) };
+        var displayed = service.UpdateFrames(approximate, service.Options[0], 6, 0.01m);
+        Assert.Equal(approximate.FrameRate, displayed.SelectedOption.Rate);
+        Assert.Equal(approximate.FrameRate, displayed.Info.FrameRate);
+        Assert.StartsWith("Custom:", displayed.SelectedOption.Code, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Canonical_lookup_preserves_custom_rate_and_kind_at_equal_numeric_values()
+    {
+        var rational = FrameRateValue.Rational(48, 2);
+        var approximate = FrameRateValue.Approximate(24m);
+        Assert.Equal("Fps24", service.FindByRate(rational).Code);
+        Assert.NotEqual(service.FindByRate(rational), service.FindByRate(approximate));
+        Assert.Equal(approximate, service.FindByRate(approximate).Rate);
+        var custom = FrameRateValue.Rational(12345, 678);
+        Assert.Equal(custom, service.FindByRate(custom).Rate);
+        Assert.Equal(service.FindByRate(custom), service.FindByRate(FrameRateValue.Rational(24690, 1356)));
+    }
+
     private static ChapterSet NewInfo(decimal fps, IReadOnlyList<Chapter> chapters)
     {
         return new ChapterSet(
-            Title: "Title",
-            SourceName: null,
-            ImportFormat: ChapterImportFormat.Ogm,
-            FramesPerSecond: (double)fps,
-            Duration: TimeSpan.Zero,
-            Chapters: chapters);
+            title: "Title",
+            sourceName: null,
+            importFormat: ChapterImportFormat.Ogm,
+            framesPerSecond: (double)fps,
+            duration: TimeSpan.Zero,
+            chapters: chapters);
     }
 
     private static void AssertFrameRate(

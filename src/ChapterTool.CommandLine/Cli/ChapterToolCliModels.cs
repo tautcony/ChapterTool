@@ -15,7 +15,7 @@ public sealed record CliConvertRequest(
     string? EntryId,
     string? XmlLanguage,
     string? SourceFileName,
-    double? FrameRate,
+    FrameRateValue? FrameRate,
     string? Expression = null,
     string? ExpressionPreset = null,
     bool Force = false,

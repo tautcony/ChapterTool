@@ -28,6 +28,12 @@ Canonical data contracts shared across the pipeline:
 Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState`.
 `ChapterWorkspace.CurrentChapterSet` is a transient selected-track view. It is not editable workspace storage.
 
+Internal editing, conversion, transform, and expression call chains use `FrameRateValue` directly.
+The decimal and numeric overloads remain only at retained Core and Node compatibility boundaries.
+Those adapters normalize once to `Approximate` and do not provide source-rate authority.
+Catalog selectors pass their canonical rational through `FrameRateOption.Rate`.
+The retained `FramesPerSecond`, `ExactFrameRate`, and positional deconstruction members are projections for established consumers.
+
 `EditableChapterDocumentAdapter.TrackDuration` covers every segment in a selected track. `ReplacedTrackDuration` updates document bounds after a reviewed track conversion. `WithFallbackFrameRate` supplies detected FPS to expression preparation when source FPS is absent. `ChapterFpsTransformService` uses one frame quantization rule for chapter times, document duration, and absolute segment boundaries. Source FPS metadata remains unchanged.
 
 MPLS frame-rate codes provide an authoritative rational rate. `MplsFrameRateCatalog` stores that rate on the imported `ChapterSet`; the editable document and selected-track projection preserve the provenance for exact frame presentation.
@@ -164,7 +170,7 @@ Frame/time and expression logic:
 - `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 - `src/ChapterTool.Core/Transform/ChapterRounding.cs`
 
-`FrameRateService` keeps supported frame rates as rationals. It calculates frame values from timestamp ticks. `ExactFrameMath` handles rounding and accuracy comparisons without decimal seconds. `FrameValueFormatter` formats committed and candidate values. Unknown or approximate rates keep their numeric fallback.
+`FrameRateService` keeps supported frame rates as canonical rationals. `FrameRateValue` retains Rational, Approximate, or Unknown authority. `ExactFrameMath` calculates frames from timestamp ticks and integer rate coefficients. `FrameValueFormatter` formats committed and candidate values. Approximate display uses plain decimals. Unknown display may use a detection suggestion without changing computation authority.
 
 `ChapterExpressionService` evaluates only non-separator chapters. Each expression context contains the ordered non-separator chapter snapshot. The Lua engine exposes this snapshot as the one-based `chapters` array. The `chapter` value equals `chapters[index]`.
 

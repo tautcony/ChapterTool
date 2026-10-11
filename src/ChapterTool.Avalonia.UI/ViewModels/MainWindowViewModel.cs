@@ -38,7 +38,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     private FrameRateOption selectedFrameRateOption;
     private FrameRateOption? appliedFrameRateOption;
-    private decimal? configuredFrameRate;
     private bool isRefreshingChapterNameModeOptions;
     private bool isApplyingContentPreview;
     private bool isNarrowPreviewLayout;
@@ -995,6 +994,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public void SetFrameOptions(int frameRateIndex, bool roundFrames)
     {
+        var priorComputationRate = ComputationFrameRate;
         suppressFrameOptionsRefresh = true;
         try
         {
@@ -1009,7 +1009,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             {
                 selectedFrameRateOption = CurrentInfo is null
                     ? frameRateService.Options[0]
-                    : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
+                    : frameRateService.FindByRate(CurrentInfo.FrameRate);
                 SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
             }
         }
@@ -1020,7 +1020,12 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
         if (CurrentInfo is not null)
         {
-            InvalidatePendingContentPreview();
+            if (priorComputationRate != ComputationFrameRate)
+            {
+                InvalidatePendingContentPreview();
+            }
+
+            OnPropertyChanged(nameof(ExpressionFrameRate));
             ApplyFrameInfo();
         }
     }
@@ -1035,6 +1040,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         if (invalidatePendingPreview)
         {
             InvalidatePendingContentPreview();
+            OnPropertyChanged(nameof(ExpressionFrameRate));
         }
         ApplyFrameInfo();
     }
@@ -1046,6 +1052,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         try
         {
             SelectedFrameRateIndex = index;
+            OnPropertyChanged(nameof(SelectedFrameRateIndex));
         }
         finally
         {
@@ -1096,7 +1103,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         var indexes = SelectedRowIndexes.Count == 0
             ? [.. Enumerable.Range(0, CurrentInfo.Chapters.Count)]
             : SelectedRowIndexes;
-        var result = editingService.CreateZones(CurrentInfo, indexes, (decimal)CurrentInfo.FramesPerSecond);
+        var result = editingService.CreateZones(CurrentInfo, indexes, ComputationFrameRate);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
         var zoneCount = string.IsNullOrEmpty(result.Zones) ? 0 : result.Zones.Split('/').Length - 1;
         Log(LogLevel.Information,
@@ -1119,6 +1126,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     internal void NotifyStateChanged()
     {
         RefreshHistoryEntries();
+        OnPropertyChanged(nameof(ExpressionFrameRate));
         OnPropertyChanged(nameof(IsClipSelectionVisible));
         OnPropertyChanged(nameof(IsClipCombineChecked));
         OnPropertyChanged(nameof(ClipStructureActionText));

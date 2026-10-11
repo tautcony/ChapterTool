@@ -45,6 +45,83 @@ versioned change is required before removal.
 
 The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input and supports the portable import and export formats listed below.
 
+## Exact Ticks And Frame Rates
+
+Use `tool.exact` when timestamps or frame-rate authority must survive a round-trip.
+The legacy numeric facade remains supported through major version 23.
+A separate versioned change must precede its removal.
+Legacy seconds use JavaScript numbers and can lose tick precision.
+Legacy positive numeric FPS becomes Approximate, even when its display matches a standard ratio.
+Legacy zero metadata becomes Unknown.
+
+```ts
+const imported = await tool.exact.import(await readFile("input.mpls"), {
+  fileName: "input.mpls"
+});
+const source = imported.groups[0].entries[0].chapterSet;
+const rate = { kind: "rational", numerator: "24000", denominator: "1001" } as const;
+const edited = await tool.exact.editFrame(source, 0, "1.5", rate);
+if (!edited.success || !edited.chapterSet) throw new Error("Frame edit failed");
+const output = await tool.exact.serialize(edited.chapterSet, { format: "qpf" });
+```
+
+Exact wire values use these shapes:
+
+```json
+{
+  "title": "Example",
+  "sourceName": null,
+  "importFormat": "Ogm",
+  "frameRate": { "kind": "rational", "numerator": "24000", "denominator": "1001" },
+  "durationTicks": null,
+  "chapters": [{ "displayNumber": 1, "name": "Opening", "startTicks": "9007199254740993", "endTicks": null, "framesInfo": "", "frameAccuracy": "Neutral", "kind": "Marker" }]
+}
+```
+
+`startTicks` and `endTicks` use signed Int64 decimal strings.
+One tick is 100 ns.
+An absent end uses `null`.
+`durationTicks: null` means Unknown; `"0"` means a known zero duration.
+Rational components must be positive Int64 strings and are reduced on output.
+Approximate uses `{ "kind": "approximate", "value": "23.976" }`.
+Its value must be a positive invariant decimal string within the .NET decimal range.
+Unknown uses `{ "kind": "unknown" }` with no payload.
+Conflicting payload fields, non-finite values, exponents, and invalid components return diagnostics.
+Parse failures return `chapterSet: null`.
+Operation failures preserve input content where available.
+
+Optional `segments` preserve `id`, `name`, `startTicks`, nullable `durationTicks`, `frameRate`, and `sourceFrameRate`.
+Current rates can change during conversion; source rates retain their original authority.
+Scalar combination must reject conflicting segment rates.
+A known rate plus Unknown, different rates, or Rational plus Approximate resolves to Unknown.
+The same numeric display does not make different kinds equal.
+
+Auto uses known content authority for computation.
+Detection supplies display suggestions only when authority is missing or mixed.
+Frame edits, shifts, zones, and frame exports then require an explicit computation rate.
+Time-only edits and exports remain available.
+Pass `computationRate` in exact output options to export mixed content at an explicit rate.
+This override must not change the supplied content or source metadata.
+
+Exact methods cover import, cell edits, rename, insert, delete, shifts, zones, combine, append,
+frame-rate detection, frame projection, conversion, expressions, projection, serialization,
+one-shot export, Celltimes, and Chapter-to-QPFile conversion.
+`updateFrames` refreshes display metadata and must not assign a detected content rate.
+`project` applies output options once and returns the reviewed snapshot.
+`serialize` writes that snapshot without replaying an expression.
+`export` applies options once and then serializes.
+
+Frame arithmetic retains ticks and integer rate coefficients until its rounding boundary.
+Fractional frame edits round once to ticks, with midpoints away from zero.
+FPS conversion rounds to an integer source frame, then rounds once to target ticks.
+Frame exports round once to an integer frame, with midpoints away from zero.
+Display rounding must not change content.
+Lua uses floating-point seconds; changed arithmetic results are not exact rational arithmetic.
+An unchanged Lua time result retains the original ticks.
+Unknown FPS is `nil` in Lua.
+`fpsRateKind` exposes authority, and rational component text preserves large integers.
+Numeric ratio components are available only when both are at most `9007199254740991`.
+
 ## Build From Source
 
 Run the following command from this directory:

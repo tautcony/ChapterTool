@@ -12,7 +12,7 @@ public sealed class ExpressionPreviewProjectorTests
     {
         var before = CreateDocument([
             new EditableChapter(new ChapterId(Guid.NewGuid()), 1, 0, "One", "100", FrameAccuracy: FrameAccuracy.Neutral)
-        ], new ChapterFrameRate(24_000, 1_001));
+        ], FrameRateValue.Rational(24_000, 1_001));
         var old = before.Tracks[0].Chapters[0];
         var candidate = ReplaceChapters(before, [
             old with { StartTicks = TimeSpan.FromSeconds(1).Ticks, FramesInfo = "101", FrameAccuracy = FrameAccuracy.Accurate }
@@ -27,7 +27,7 @@ public sealed class ExpressionPreviewProjectorTests
         Assert.Equal(1, projection.FrameInformationChangedChapterCount);
         Assert.Equal(TimeSpan.FromSeconds(1).Ticks, projection.Chapters[0].DeltaTicks);
         Assert.Equal(1, projection.Chapters[0].DeltaFrames);
-        Assert.Equal(new ChapterFrameRate(24_000, 1_001), projection.Chapters[0].BeforeFrames!.FrameRate);
+        Assert.Equal(FrameRateValue.Rational(24_000, 1_001), projection.Chapters[0].BeforeFrames!.FrameRate);
     }
 
     [Fact]
@@ -48,8 +48,7 @@ public sealed class ExpressionPreviewProjectorTests
         Assert.Equal(0, frameProjection.Chapters[0].CandidateFrames!.FrameCount);
 
         var propertyCandidate = new EditableChapterDocument(
-            before.Id, before.Title, before.SourceName, before.ImportFormat, before.Duration,
-            new ChapterFrameRate(25, 1), before.Tracks);
+            before.Id, before.Title, before.SourceName, before.ImportFormat, before.Duration, before.Tracks.Select(track => new EditableChapterTrack(track.Id, track.Name, track.Chapters, frameRate: FrameRateValue.Rational(25, 1))));
         var propertyProjection = Project(before, propertyCandidate);
 
         Assert.True(propertyProjection.HasChanges);
@@ -63,23 +62,23 @@ public sealed class ExpressionPreviewProjectorTests
     {
         var before = CreateDocument([
             new EditableChapter(new ChapterId(Guid.NewGuid()), 1, 0, "One", "24", FrameAccuracy: FrameAccuracy.Neutral)
-        ], new ChapterFrameRate(24, 1));
+        ], FrameRateValue.Rational(24, 1));
         var old = before.Tracks[0].Chapters[0];
         var candidate = ReplaceChapters(before, [old with { FramesInfo = "25" }]);
         candidate = new EditableChapterDocument(candidate.Id, candidate.Title, candidate.SourceName,
-            candidate.ImportFormat, candidate.Duration, new ChapterFrameRate(25, 1), candidate.Tracks);
+            candidate.ImportFormat, candidate.Duration, candidate.Tracks.Select(track => new EditableChapterTrack(track.Id, track.Name, track.Chapters, frameRate: FrameRateValue.Rational(25, 1))));
 
         var projection = Project(before, candidate);
 
         Assert.Null(projection.Chapters[0].DeltaFrames);
-        Assert.Equal(new ChapterFrameRate(24, 1), projection.Chapters[0].BeforeFrames!.FrameRate);
-        Assert.Equal(new ChapterFrameRate(25, 1), projection.Chapters[0].CandidateFrames!.FrameRate);
+        Assert.Equal(FrameRateValue.Rational(24, 1), projection.Chapters[0].BeforeFrames!.FrameRate);
+        Assert.Equal(FrameRateValue.Rational(25, 1), projection.Chapters[0].CandidateFrames!.FrameRate);
 
         var missingRate = CreateDocument([
             new EditableChapter(new ChapterId(Guid.NewGuid()), 1, 0, "One", "0", FrameAccuracy: FrameAccuracy.Neutral)
         ], null);
         var missingProjection = Project(missingRate, missingRate);
-        Assert.Null(missingProjection.Chapters[0].BeforeFrames!.FrameRate);
+        Assert.Equal(FrameRateValue.Unknown, missingProjection.Chapters[0].BeforeFrames!.FrameRate);
         Assert.Equal(0, missingProjection.Chapters[0].BeforeFrames!.FrameCount);
     }
 
@@ -88,7 +87,7 @@ public sealed class ExpressionPreviewProjectorTests
     {
         var chapter = new EditableChapter(new ChapterId(Guid.NewGuid()), 1, 1, "One");
         var separator = new EditableChapter(new ChapterId(Guid.NewGuid()), 0, 0, "Section", Kind: ChapterKind.Separator);
-        var before = CreateDocument([chapter, separator], new ChapterFrameRate(25, 1));
+        var before = CreateDocument([chapter, separator], FrameRateValue.Rational(25, 1));
         var candidate = ReplaceChapters(before, [chapter with { StartTicks = 2 }, separator]);
 
         var projection = Project(before, candidate);
@@ -109,8 +108,8 @@ public sealed class ExpressionPreviewProjectorTests
         var preview = ChapterContentOperationSession.Prepare(session, "expression", _ =>
             new ChapterCandidateBuildResult(true, candidate, [chapter.Id], []));
 
-        var projection = ExpressionPreviewProjector.Build(preview, displayFrameRate: 24000m / 1001m,
-            frameDecimalPlaces: 6, exactDisplayFrameRate: new ChapterFrameRate(24_000, 1_001));
+        var projection = ExpressionPreviewProjector.Build(preview, displayFrameRate: FrameRateValue.Rational(24_000, 1_001),
+            frameDecimalPlaces: 6);
 
         Assert.Equal("0.000002", projection.Chapters.Single().CandidateFrames!.Text);
         Assert.Equal("0.000000", projection.Chapters.Single().BeforeFrames!.Text);
@@ -123,7 +122,7 @@ public sealed class ExpressionPreviewProjectorTests
         var chapters = Enumerable.Range(0, 1_000)
             .Select(index => new EditableChapter(new ChapterId(Guid.NewGuid()), index + 1, index, $"Chapter {index + 1}"))
             .ToArray();
-        var before = CreateDocument(chapters, new ChapterFrameRate(25, 1));
+        var before = CreateDocument(chapters, FrameRateValue.Rational(25, 1));
         var candidate = ReplaceChapters(before,
             [.. chapters.Select(static chapter => chapter with { StartTicks = chapter.StartTicks + 1 })]);
 
@@ -144,7 +143,7 @@ public sealed class ExpressionPreviewProjectorTests
             new EditableChapter(new ChapterId(Guid.NewGuid()), 1, 0, "One")
         ], null);
         var withMetadata = new EditableChapterDocument(before.Id, before.Title, before.SourceName,
-            before.ImportFormat, ChapterDuration.FromTicks(10), before.FrameRate, before.Tracks);
+            before.ImportFormat, ChapterDuration.FromTicks(10), before.Tracks);
 
         Assert.False(ExpressionPreviewProjector.DocumentsEqual(before, withMetadata));
         Assert.True(ExpressionPreviewProjector.DocumentsEqual(before, CreateDocumentCopy(before)));
@@ -159,19 +158,17 @@ public sealed class ExpressionPreviewProjectorTests
         return ExpressionPreviewProjector.Build(preview);
     }
 
-    private static EditableChapterDocument CreateDocument(IEnumerable<EditableChapter> chapters, ChapterFrameRate? rate) =>
+    private static EditableChapterDocument CreateDocument(IEnumerable<EditableChapter> chapters, FrameRateValue? rate) =>
         new(ChapterDocumentId.New(), "Title", "source.mkv", ChapterImportFormat.Ogm,
-            ChapterDuration.Unknown, rate,
-            [new EditableChapterTrack(ChapterTrackId.New(), "Main", chapters)]);
+            ChapterDuration.Unknown,
+            [new EditableChapterTrack(ChapterTrackId.New(), "Main", chapters, frameRate: rate ?? FrameRateValue.Unknown)]);
 
     private static EditableChapterDocument ReplaceChapters(EditableChapterDocument document, IEnumerable<EditableChapter> chapters) =>
         new(document.Id, document.Title, document.SourceName, document.ImportFormat, document.Duration,
-            document.FrameRate,
-            [new EditableChapterTrack(document.Tracks[0].Id, document.Tracks[0].Name, chapters, document.Tracks[0].Segments)]);
+            [new EditableChapterTrack(document.Tracks[0].Id, document.Tracks[0].Name, chapters, document.Tracks[0].Segments, document.Tracks[0].FrameRate)]);
 
     private static EditableChapterDocument CreateDocumentCopy(EditableChapterDocument document) =>
         new(document.Id, document.Title, document.SourceName, document.ImportFormat, document.Duration,
-            document.FrameRate,
             document.Tracks.Select(static track => new EditableChapterTrack(
                 track.Id,
                 track.Name,
@@ -182,7 +179,7 @@ public sealed class ExpressionPreviewProjectorTests
                     MediaTracks = [.. segment.MediaTracks]
                 }))));
 
-    private static EditableChapterDocument CreateDocumentWithMetadataSegment(IEnumerable<EditableChapter> chapters, ChapterFrameRate? rate)
+    private static EditableChapterDocument CreateDocumentWithMetadataSegment(IEnumerable<EditableChapter> chapters, FrameRateValue? rate)
     {
         var document = CreateDocument(chapters, rate);
         var track = document.Tracks[0];
@@ -192,7 +189,7 @@ public sealed class ExpressionPreviewProjectorTests
             "Segment one",
             0,
             ChapterDuration.Unknown,
-            rate,
+            rate ?? FrameRateValue.Unknown,
             ChapterImportFormat.Ogm,
             "source.mkv",
             [new ReferencedMediaFile("source.mkv", "source.mkv")],
@@ -203,7 +200,6 @@ public sealed class ExpressionPreviewProjectorTests
             document.SourceName,
             document.ImportFormat,
             document.Duration,
-            document.FrameRate,
             [new EditableChapterTrack(track.Id, track.Name, track.Chapters, [segment])]);
     }
 }

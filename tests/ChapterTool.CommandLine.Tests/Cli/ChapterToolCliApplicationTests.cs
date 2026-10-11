@@ -322,7 +322,7 @@ public sealed class ChapterToolCliApplicationTests
                 EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
-                FrameRate: 24,
+                FrameRate: FrameRateValue.Approximate(24m),
                 Expression: "t + 1"),
             TestContext.Current.CancellationToken);
 
@@ -347,7 +347,7 @@ public sealed class ChapterToolCliApplicationTests
                 EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
-                FrameRate: 24,
+                FrameRate: FrameRateValue.Approximate(24m),
                 ExpressionPreset: "offset-seconds"),
             TestContext.Current.CancellationToken);
 
@@ -647,21 +647,51 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
-    public async Task ConvertRejectsNonFiniteFrameRate()
+    public void ConvertRejectsNonFiniteFrameRate()
     {
-        var console = new RecordingCliConsole();
-        var app = new ChapterToolCliApplication(console: console);
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", XmlFixture(), "--format", "qpf", "--stdout", "--frame-rate", "NaN"]));
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", XmlFixture(), "--format", "qpf", "--stdout", "--frame-rate", "Infinity"]));
+    }
 
-        var nan = await app.ConvertAsync(
-            new CliConvertRequest(XmlFixture(), "qpf", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: double.NaN),
-            TestContext.Current.CancellationToken);
-        var infinity = await app.ConvertAsync(
-            new CliConvertRequest(XmlFixture(), "qpf", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: double.PositiveInfinity),
-            TestContext.Current.CancellationToken);
+    [Theory]
+    [InlineData("0/1")]
+    [InlineData("24/0")]
+    [InlineData("-24/1")]
+    [InlineData("24.0/1")]
+    [InlineData("24/1/1")]
+    [InlineData("9223372036854775808/1")]
+    public void Ratio_binding_rejects_invalid_components_before_import(string ratio)
+    {
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", "missing.xml", "--frame-rate-ratio", ratio]));
+    }
 
-        Assert.Equal(1, nan);
-        Assert.Equal(1, infinity);
-        Assert.Contains("finite number greater than zero", console.Stderr, StringComparison.Ordinal);
+    [Theory]
+    [InlineData("1e-100")]
+    [InlineData("1e100")]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void Numeric_binding_rejects_unrepresentable_or_invalid_rates(string value)
+    {
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", "missing.xml", "--frame-rate", value]));
+    }
+
+    [Fact]
+    public void Ratio_binding_reduces_and_preserves_provenance_and_detects_conflict()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ChapterTool-ratio-{Guid.NewGuid():N}.qpf");
+        try
+        {
+            Assert.Equal(1, ChapterToolCliHost.Run(["convert", "missing.xml", "--frame-rate", "24", "--frame-rate-ratio", "24/1"]));
+            Assert.Equal(0, ChapterToolCliHost.Run(["convert", XmlFixture(), "--format", "qpf", "--output", path,
+                "--group-index", "0", "--entry-index", "0", "--frame-rate-ratio", "48000/2002", "--expression",
+                "fpsNumerator == 24000 and fpsDenominator == 1001 and (t + fpsDenominator / fpsNumerator) or nil"]));
+            var content = File.ReadAllText(path, Encoding.UTF8);
+            Assert.StartsWith("1 I", content, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]

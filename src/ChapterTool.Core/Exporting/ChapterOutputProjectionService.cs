@@ -36,7 +36,7 @@ public sealed class ChapterOutputProjectionService
         }
 
         var diagnostics = new List<ChapterDiagnostic>();
-        var expressionResult = new ChapterExpressionService(expressionEngine).Apply(info, options.ApplyExpression, options.Expression);
+        var expressionResult = new ChapterExpressionService(expressionEngine).Apply(info, options.ApplyExpression, options.Expression, options.ComputationRate);
         diagnostics.AddRange(expressionResult.Diagnostics);
 
         var effectiveShift = NormalizeOrderShift(options.OrderShift, diagnostics);

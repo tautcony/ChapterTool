@@ -2,6 +2,7 @@ using ChapterTool.Core.Session;
 
 namespace ChapterTool.Wasm.Services;
 
+/// <summary>Provides retained history inspection and navigation for the browser workspace.</summary>
 public sealed partial class WasmWorkspace
 {
     private Guid? selectedHistoryRedoBranchId;

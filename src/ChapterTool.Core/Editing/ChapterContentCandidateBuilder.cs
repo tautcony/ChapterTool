@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
@@ -14,14 +15,9 @@ public sealed partial class ChapterContentCandidateBuilder(
 {
     private readonly ChapterExpressionService expressionService = expressionService ?? new ChapterExpressionService();
 
-    /// <summary>Builds a candidate for a chapter name or start-time cell edit.</summary>
+    /// <summary>Builds a cell edit with a canonical computation rate.</summary>
     public ChapterCandidateBuildResult EditCell(
-        EditableChapterDocument source,
-        ChapterId chapterId,
-        ChapterCellField field,
-        string value,
-        decimal framesPerSecond,
-        ChapterFrameRate? exactFrameRate = null)
+        EditableChapterDocument source, ChapterId chapterId, ChapterCellField field, string value, FrameRateValue frameRate)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(value);
@@ -31,22 +27,21 @@ public sealed partial class ChapterContentCandidateBuilder(
             return Failure(source, "The target chapter no longer exists.", chapterId);
         }
 
-        var legacy = EditableChapterDocumentAdapter.ToChapterSet(source);
+        var trackIndex = source.Tracks.IndexOf(location.Value.Track);
+        var legacy = EditableChapterDocumentAdapter.ToChapterSet(source, trackIndex);
         var result = field switch
         {
             ChapterCellField.Name => editingService.Rename(legacy, location.Value.Index, value),
             ChapterCellField.StartTime => editingService.EditTime(legacy, location.Value.Index, value),
-            ChapterCellField.Frame => exactFrameRate is { } rate
-                ? editingService.EditFrame(legacy, location.Value.Index, value, rate)
-                : editingService.EditFrame(legacy, location.Value.Index, value, framesPerSecond),
+            ChapterCellField.Frame => editingService.EditFrame(legacy, location.Value.Index, value, frameRate),
             _ => throw new ArgumentOutOfRangeException(nameof(field))
         };
         if (result.Diagnostics.Count != 0)
         {
-            return Failure(source, result.Diagnostics.Select(static diagnostic => diagnostic.Message), [chapterId]);
+            return Failure(source, result.Diagnostics, [chapterId]);
         }
 
-        return Success(EditableChapterDocumentAdapter.ApplyNonStructuralChapterSetResult(source, result.ChapterSet), [chapterId]);
+        return ValidateAndSucceed(source, EditableChapterDocumentAdapter.ApplyTrackChapterSetResult(source, trackIndex, result.ChapterSet), [chapterId]);
     }
 
     /// <summary>Builds an insertion candidate before the specified chapter, or at the end when the ID is null.</summary>
@@ -113,7 +108,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             }).ToImmutableArray();
         }
 
-        return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), chapterIds);
+        return ValidateAndSucceed(source, WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments, track.FrameRate)), chapterIds);
     }
 
     /// <summary>Builds a candidate whose chapter order exactly matches the captured ID sequence.</summary>
@@ -135,7 +130,7 @@ public sealed partial class ChapterContentCandidateBuilder(
 
         var byId = track.Chapters.ToDictionary(static chapter => chapter.Id);
         var chapters = Renumber(orderedIds.Select(id => byId[id]).ToImmutableArray());
-        return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), orderedIds);
+        return ValidateAndSucceed(source, WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments, track.FrameRate)), orderedIds);
     }
 
     /// <summary>Applies display numbering to every chapter as a one-shot content edit.</summary>
@@ -156,7 +151,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             chapters[index] = chapter with { DisplayNumber = chapter.Kind == ChapterKind.Separator ? 0 : checked(++number + shift) };
         }
 
-        return ValidateAndSucceed(WithTrack(source, WithChapters(trackResult.Track, chapters.ToImmutable())), trackResult.Track.Chapters.Select(static chapter => chapter.Id));
+        return ValidateAndSucceed(source, WithTrack(source, WithChapters(trackResult.Track, chapters.ToImmutable())), trackResult.Track.Chapters.Select(static chapter => chapter.Id));
     }
 
     /// <summary>Applies template names to captured chapter identities.</summary>
@@ -198,7 +193,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             templateIndex++;
         }
 
-        return ValidateAndSucceed(WithTrack(source, WithChapters(track, chapters.ToImmutable())), targets);
+        return ValidateAndSucceed(source, WithTrack(source, WithChapters(track, chapters.ToImmutable())), targets);
     }
 
     /// <summary>Applies a regular-expression replacement to chapter names as one candidate.</summary>
@@ -229,7 +224,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             var chapters = track.Chapters.Select(chapter => targets.Contains(chapter.Id)
                 ? chapter with { Name = regex.Replace(chapter.Name, replacement) }
                 : chapter).ToImmutableArray();
-            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), targets);
+            return ValidateAndSucceed(source, WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments, track.FrameRate)), targets);
         }
         catch (ArgumentException exception)
         {
@@ -269,7 +264,7 @@ public sealed partial class ChapterContentCandidateBuilder(
                     StartTicks = checked(chapter.StartTicks + offset.Ticks),
                     EndTicks = chapter.EndTicks is long end ? checked(end + offset.Ticks) : null
                 }).ToImmutableArray();
-            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), targetIds);
+            return ValidateAndSucceed(source, WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments, track.FrameRate)), targetIds);
         }
         catch (OverflowException)
         {
@@ -277,24 +272,18 @@ public sealed partial class ChapterContentCandidateBuilder(
         }
     }
 
-    /// <summary>Shifts selected chapter starts and explicit ends by a frame count.</summary>
+    /// <summary>Builds a signed frame shift with a canonical computation rate.</summary>
     public ChapterCandidateBuildResult ShiftFrames(
-        EditableChapterDocument source,
-        IReadOnlySet<ChapterId> targetIds,
-        int frames,
-        decimal framesPerSecond,
-        ChapterFrameRate? exactFrameRate = null)
+        EditableChapterDocument source, IReadOnlySet<ChapterId> targetIds, int frames, FrameRateValue frameRate)
     {
-        if (framesPerSecond <= 0)
+        if (!frameRate.IsKnown)
         {
-            return Failure(source, "Frame rate must be greater than zero.", targetIds);
+            return Failure(source, [FrameRateValidation.InvalidFrameRate()], targetIds);
         }
 
         try
         {
-            var ticks = exactFrameRate is { } rate
-                ? ExactFrameMath.TicksFromFrames(frames, rate)
-                : ExactFrameMath.TicksFromFrames(frames, framesPerSecond);
+            var ticks = ExactFrameMath.TicksFromFrames((decimal)frames, frameRate);
             var shift = checked(-ticks);
             var trackResult = RequireSingleTrack(source);
             if (trackResult.Error is not null)
@@ -310,7 +299,7 @@ public sealed partial class ChapterContentCandidateBuilder(
 
             if (frames == 0)
             {
-                return ValidateAndSucceed(source, targetIds);
+                return ValidateAndSucceed(source, source, targetIds);
             }
 
             if (track.Chapters.Any(chapter => targetIds.Contains(chapter.Id) && checked(chapter.StartTicks + shift) < 0))
@@ -328,7 +317,7 @@ public sealed partial class ChapterContentCandidateBuilder(
                     })
                 .ToImmutableArray();
             chapters = Renumber(chapters);
-            return ValidateAndSucceed(WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)), targetIds);
+            return ValidateAndSucceed(source, WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments, track.FrameRate)), targetIds);
         }
         catch (Exception exception) when (exception is OverflowException or ArgumentOutOfRangeException)
         {
@@ -336,33 +325,27 @@ public sealed partial class ChapterContentCandidateBuilder(
         }
     }
 
-    /// <summary>Changes frame rate and scales chapter starts, explicit ends, and known duration.</summary>
+    /// <summary>Quantizes source frames and converts all absolute boundaries with canonical rates.</summary>
     public ChapterCandidateBuildResult ChangeFrameRate(
-        EditableChapterDocument source,
-        decimal sourceFps,
-        decimal targetFps,
-        ChapterFrameRate? sourceExactRate = null,
-        ChapterFrameRate? targetExactRate = null)
+        EditableChapterDocument source, FrameRateValue sourceRate, FrameRateValue targetRate)
     {
-        if (sourceFps <= 0 || targetFps <= 0)
+        if (!sourceRate.IsKnown || !targetRate.IsKnown)
         {
-            return Failure(source, "Source and target frame rates must be greater than zero.");
+            return Failure(source, [FrameRateValidation.InvalidFrameRate()]);
         }
 
         try
         {
             var legacy = EditableChapterDocumentAdapter.ToChapterSet(source);
-            var result = sourceExactRate is { } exactSource && targetExactRate is { } exactTarget
-                ? ChapterFpsTransformService.ChangeFps(legacy, exactSource, exactTarget)
-                : ChapterFpsTransformService.ChangeFps(legacy, sourceFps, targetFps);
+            var result = ChapterFpsTransformService.ChangeFps(legacy, sourceRate, targetRate);
             if (!result.Success || result.Diagnostics.Count > 0)
             {
-                return Failure(source, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
+                return Failure(source, result.Diagnostics);
             }
 
             var updated = EditableChapterDocumentAdapter.ApplyFrameRateChangeResult(
-                source, result.Info, sourceFps, targetFps, sourceExactRate, targetExactRate);
-            return ValidateAndSucceed(updated, source.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id));
+                source, result.Info, sourceRate, targetRate);
+            return ValidateAndSucceed(source, updated, source.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id));
         }
         catch (Exception exception) when (exception is OverflowException or ArgumentOutOfRangeException)
         {
@@ -371,16 +354,16 @@ public sealed partial class ChapterContentCandidateBuilder(
     }
 
     /// <summary>Applies a chapter expression to every non-separator chapter and rejects any row diagnostic.</summary>
-    public ChapterCandidateBuildResult ApplyExpression(EditableChapterDocument source, string expression)
+    public ChapterCandidateBuildResult ApplyExpression(EditableChapterDocument source, string expression, FrameRateValue? computationRate = null)
     {
         ArgumentNullException.ThrowIfNull(expression);
-        var result = expressionService.Apply(EditableChapterDocumentAdapter.ToChapterSet(source), true, expression);
+        var result = expressionService.Apply(EditableChapterDocumentAdapter.ToChapterSet(source), true, expression, computationRate);
         if (result.Diagnostics.Count > 0)
         {
-            return Failure(source, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
+            return Failure(source, result.Diagnostics);
         }
 
-        return ValidateAndSucceed(
+        return ValidateAndSucceed(source,
             EditableChapterDocumentAdapter.ApplyNonStructuralChapterSetResult(source, result.Info),
             source.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id));
     }
@@ -393,13 +376,14 @@ public sealed partial class ChapterContentCandidateBuilder(
         string templateText,
         int orderShift,
         bool applyExpression,
-        string expression)
+        string expression,
+        FrameRateValue? computationRate = null)
     {
         var candidate = source;
         var targetIds = source.Tracks.SelectMany(static track => track.Chapters).Select(static chapter => chapter.Id).ToHashSet();
         if (applyExpression)
         {
-            var expressionResult = ApplyExpression(candidate, expression);
+            var expressionResult = ApplyExpression(candidate, expression, computationRate);
             if (!expressionResult.IsValid)
             {
                 return Failure(source, expressionResult.Errors, targetIds);
@@ -433,7 +417,7 @@ public sealed partial class ChapterContentCandidateBuilder(
             candidate = numbering.Candidate;
         }
 
-        return ValidateAndSucceed(candidate, targetIds);
+        return ValidateAndSucceed(source, candidate, targetIds);
     }
 
     /// <summary>Changes title and source metadata in one candidate.</summary>
@@ -456,35 +440,41 @@ public sealed partial class ChapterContentCandidateBuilder(
             first.Id,
             updateTrackName ? trackName ?? string.Empty : first.Name,
             first.Chapters,
-            first.Segments));
+            first.Segments, first.FrameRate));
         var candidate = new EditableChapterDocument(
             source.Id,
             updateTitle ? title ?? string.Empty : source.Title,
             updateSourceName ? sourceName : source.SourceName,
             source.ImportFormat,
             source.Duration,
-            source.FrameRate,
-            tracks,
-            source.ExactFrameRate);
-        return ValidateAndSucceed(candidate, []);
+            tracks);
+        return ValidateAndSucceed(source, candidate, []);
     }
 
-    private static ChapterCandidateBuildResult ValidateAndSucceed(EditableChapterDocument candidate, IEnumerable<ChapterId> targets)
+    private static ChapterCandidateBuildResult ValidateAndSucceed(EditableChapterDocument source, EditableChapterDocument candidate, IEnumerable<ChapterId> targets)
     {
         var validation = EditableChapterDocumentValidator.Validate(candidate);
         return validation.IsValid
             ? Success(candidate, targets)
-            : Failure(candidate, validation.Errors, targets);
+            : Failure(source, validation.Errors, targets);
     }
 
     private static ChapterCandidateBuildResult Success(EditableChapterDocument candidate, IEnumerable<ChapterId> targets) =>
         new(true, candidate, targets.ToImmutableHashSet(), []);
 
     private static ChapterCandidateBuildResult Failure(EditableChapterDocument source, string error, object? target = null) =>
-        new(false, source, target is ChapterId chapterId ? ImmutableHashSet.Create(chapterId) : [], [error]);
+        Failure(source, [error], target is ChapterId chapterId ? [chapterId] : []);
 
     private static ChapterCandidateBuildResult Failure(EditableChapterDocument source, IEnumerable<string> errors, IEnumerable<ChapterId>? targets = null) =>
-        new(false, source, targets?.ToImmutableHashSet() ?? [], errors.ToImmutableArray());
+        Failure(source, errors.Select(static error => new ChapterDiagnostic(DiagnosticSeverity.Error,
+            ChapterDiagnosticCode.InvalidStructure, error)), targets);
+
+    private static ChapterCandidateBuildResult Failure(EditableChapterDocument source, IEnumerable<ChapterDiagnostic> diagnostics, IEnumerable<ChapterId>? targets = null)
+    {
+        var captured = diagnostics.ToImmutableArray();
+        return new ChapterCandidateBuildResult(false, source, targets?.ToImmutableHashSet() ?? [],
+            captured.Select(static diagnostic => diagnostic.Message).ToImmutableArray()) { Diagnostics = captured };
+    }
 
     private static (EditableChapterTrack? Track, string? Error) RequireSingleTrack(EditableChapterDocument source) => source.Tracks.Length == 1
         ? (source.Tracks[0], null)
@@ -519,7 +509,7 @@ public sealed partial class ChapterContentCandidateBuilder(
     }
 
     private static EditableChapterDocument WithTrack(EditableChapterDocument source, EditableChapterTrack track) =>
-        new(source.Id, source.Title, source.SourceName, source.ImportFormat, source.Duration, source.FrameRate, [track]);
+        new(source.Id, source.Title, source.SourceName, source.ImportFormat, source.Duration, [track]);
 
     private static EditableChapter FromLegacy(ChapterId id, Chapter chapter) => new(
         id,
@@ -556,7 +546,7 @@ public sealed partial class ChapterContentCandidateBuilder(
         .ToArray();
 
     private static EditableChapterTrack WithChapters(EditableChapterTrack track, ImmutableArray<EditableChapter> chapters) =>
-        new(track.Id, track.Name, chapters, track.Segments);
+        new(track.Id, track.Name, chapters, track.Segments, track.FrameRate);
 }
 
 /// <summary>Identifies a cell value that can be edited by a chapter candidate.</summary>
@@ -575,4 +565,8 @@ public sealed record ChapterCandidateBuildResult(
     bool IsValid,
     EditableChapterDocument Candidate,
     ImmutableHashSet<ChapterId> TargetIds,
-    ImmutableArray<string> Errors);
+    ImmutableArray<string> Errors)
+{
+    /// <summary>Gets structured validation failures captured with the candidate.</summary>
+    public ImmutableArray<ChapterDiagnostic> Diagnostics { get; init; } = [];
+}

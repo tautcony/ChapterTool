@@ -415,9 +415,9 @@ button.secondary {
 .frame-integer, .frame-decimal-point, .frame-fraction, .frame-repetend { flex: none; }
 .frame-repetend { text-decoration: overline; text-decoration-thickness: from-font; }
 
-.frame-expression-preview {
+.expression-cell-preview.frame-expression-preview {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 1rem minmax(0, 1fr);
+  grid-template-columns: 1rem minmax(0, 1fr);
   align-items: center;
   gap: 0.15rem;
   font-family: var(--monospace-font, ui-monospace, monospace);
@@ -426,8 +426,11 @@ button.secondary {
 
 .frame-expression-preview .frame-display {
   min-width: 0;
-  overflow: hidden;
 }
+
+.frame-expression-preview > .frame-display { grid-column: 2; }
+.frame-expression-preview > .frame-display:last-child { grid-row: 2; }
+.frame-expression-preview > span:not(.frame-display) { grid-column: 1; grid-row: 2; }
 
 .frame-expression-preview strong { font-weight: 600; }
 
@@ -570,8 +573,34 @@ tr.separator {
 }
 
 .time-expression-preview {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--monospace-font, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.time-expression-preview > span:first-child {
+  grid-column: 2;
+  grid-row: 1;
   white-space: nowrap;
-  overflow-wrap: normal;
+}
+
+.time-expression-preview > span[aria-hidden="true"] {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.time-expression-preview > strong {
+  grid-column: 2;
+  grid-row: 2;
+  white-space: nowrap;
+}
+
+.time-expression-preview > .expression-delta {
+  grid-column: 2;
+  grid-row: 3;
 }
 
 .expression-cell-preview strong {

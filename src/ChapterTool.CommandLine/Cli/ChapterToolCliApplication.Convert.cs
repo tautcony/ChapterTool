@@ -78,7 +78,7 @@ public sealed partial class ChapterToolCliApplication
         string expressionPresetId,
         string expressionSourceName)
     {
-        var projected = info with { FramesPerSecond = request.FrameRate ?? info.FramesPerSecond };
+        var projected = request.FrameRate is { } rate ? info with { FrameRate = rate } : info;
         var options = new ChapterExportOptions(
             format.Format,
             XmlLanguage: request.XmlLanguage,
@@ -88,6 +88,10 @@ public sealed partial class ChapterToolCliApplication
             ExpressionSourceName: expressionSourceName,
             ProjectOutput: true);
         var projection = new ChapterOutputProjectionService(expressionEngine).Project(projected, options);
+        if (projection.Diagnostics.Count > 0)
+        {
+            return new ChapterExportResult(false, string.Empty, format.Format.ToString(), projection.Diagnostics);
+        }
         var output = format.Format == ChapterExportFormat.Json
             ? projection.Info
             : projection.Info with { Chapters = projection.OutputChapters };
@@ -118,7 +122,7 @@ public sealed partial class ChapterToolCliApplication
 
     private bool ValidateOutputTarget(CliConvertRequest request) => !(request.Stdout && !string.IsNullOrWhiteSpace(request.OutputPath)) || WriteValidationError("Cli.Error.StdoutOutputConflict");
 
-    private bool ValidateFrameRate(CliConvertRequest request) => request.FrameRate is not { } frameRate || (double.IsFinite(frameRate) && frameRate > 0) || WriteValidationError("Cli.Error.FrameRatePositive");
+    private bool ValidateFrameRate(CliConvertRequest request) => request.FrameRate is not { } frameRate || frameRate.IsKnown || WriteValidationError("Cli.Error.FrameRatePositive");
 
     private bool ValidateEncoding(CliConvertRequest request) => string.IsNullOrWhiteSpace(request.TextEncoding) || OutputTextEncodings.TryParse(request.TextEncoding, out _) || WriteValidationMessage(localizer.Format("Cli.Error.UnsupportedEncoding", new Dictionary<string, object?> { ["encoding"] = request.TextEncoding }));
 

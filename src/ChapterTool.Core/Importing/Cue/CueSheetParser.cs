@@ -48,7 +48,7 @@ public static partial class CueSheetParser
             state.Title,
             state.SourceName.Length == 0 ? Path.GetFileName(path) : state.SourceName,
             ChapterImportFormat.Cue,
-            0,
+            FrameRateValue.Unknown,
             ordered[^1].StartTime,
             ordered);
         var entry = new ChapterImportEntry("default", "CUE Chapters", info);

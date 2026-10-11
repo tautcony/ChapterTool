@@ -56,7 +56,7 @@ public sealed class IfoChapterImporter : IChapterImporter
                 ? DvdNavTimingReader.Open(resolvedPath, cancellationToken)
                 : null;
             var entries = string.Equals(signature, "DVDVIDEO-VMG", StringComparison.Ordinal)
-                ? await GetVmgEntriesAsync(resolvedRequest, stream, cancellationToken, diagnostics)
+                ? await GetVmgEntriesAsync(resolvedRequest, stream, diagnostics, cancellationToken)
                 : GetStreams(request.Path, stream, navTiming, diagnostics, cancellationToken)
                     .Select((info, index) => CreateImportEntry(
                         request.Path,
@@ -152,8 +152,8 @@ public sealed class IfoChapterImporter : IChapterImporter
     private static async ValueTask<List<ChapterImportEntry>> GetVmgEntriesAsync(
         ChapterImportRequest request,
         Stream stream,
-        CancellationToken cancellationToken,
-        List<ChapterDiagnostic> diagnostics)
+        List<ChapterDiagnostic> diagnostics,
+        CancellationToken cancellationToken)
     {
         if (request.Content is not null)
         {
@@ -361,7 +361,7 @@ public sealed class IfoChapterImporter : IChapterImporter
             sourceName,
             sourceName,
             ChapterImportFormat.DvdIfo,
-            playback.IsNtsc ? 30000d / 1001d : 25d,
+            playback.IsNtsc ? FrameRateValue.Rational(30000, 1001) : FrameRateValue.Rational(25, 1),
             Convert(playback.NavDurationPts ?? playback.DurationFrames),
             chapters);
         TimeSpan Convert(long value) => playback.UsesNavTiming ? FromPts(value) : FromDvdFrames(value, playback.IsNtsc);
@@ -505,7 +505,7 @@ public sealed class IfoChapterImporter : IChapterImporter
             sourceName,
             sourceName,
             ChapterImportFormat.DvdIfo,
-            titleChapters[0].Pgc.IsNtsc ? 30000d / 1001d : 25d,
+            titleChapters[0].Pgc.IsNtsc ? FrameRateValue.Rational(30000, 1001) : FrameRateValue.Rational(25, 1),
             Convert(duration),
             chapters);
 

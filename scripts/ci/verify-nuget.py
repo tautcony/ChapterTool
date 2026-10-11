@@ -60,10 +60,7 @@ def verify(root: Path, expected_version: str | None = None, metadata_only: bool 
             f'<PackageReference Include="ChapterTool.Core" Version="[{version}]" />'
             '</ItemGroup></Project>', encoding="utf-8")
         (consumer / "Program.cs").write_text(
-            'using ChapterTool.Core.Transform;\n'
-            'var formatter = new ChapterTimeFormatter();\n'
-            'if (formatter.Format(formatter.ParseOrZero("00:00:12.500")) != "00:00:12.500")'
-            ' throw new Exception("Installed Core package failed.");\n', encoding="utf-8")
+            (ROOT / "scripts/ci/consumers/core-frame-rate.cs").read_text(encoding="utf-8"), encoding="utf-8")
         commands = [
             ["dotnet", "restore", "Consumer.csproj", "--configfile", str(config)],
             ["dotnet", "run", "--project", "Consumer.csproj", "--configuration", "Release", "--no-restore"],

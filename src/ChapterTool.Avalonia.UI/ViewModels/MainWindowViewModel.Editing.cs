@@ -31,7 +31,6 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        configuredFrameRate = (decimal)CurrentInfo.FramesPerSecond;
         if (logSelection)
         {
             var label = ClipOptions[index].DisplayName;
@@ -44,10 +43,8 @@ public sealed partial class MainWindowViewModel
                 ("chapters", CurrentInfo.Chapters.Count), ("fps", fps));
         }
 
-        selectedFrameRateOption = CurrentInfo.ExactFrameRate is { } exactRate
-            ? frameRateService.Options.FirstOrDefault(option => option.ExactRate == exactRate)
-                ?? frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond)
-            : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
+        selectedFrameRateOption = frameRateService.FindByRate(CurrentInfo.FrameRate);
+        displayOptionCoordinator.SetContentRate(CurrentInfo.FrameRate, FrameRateDisplayOptions);
         SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
         ApplyFrameInfo(logSelection);
     }
@@ -66,7 +63,7 @@ public sealed partial class MainWindowViewModel
             EditKind.Name => ChapterEditKind.Name,
             EditKind.Frame => ChapterEditKind.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
-        }, DisplayFrameRate, EffectiveFrameRateOption.ExactRate);
+        }, ComputationFrameRate);
         var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview);
         ApplyContentOutcome(outcome, $"Edit {kind.ToString().ToLowerInvariant()}: row={edit.Index}, value='{edit.Value}', previous='{previous}'");
     }
@@ -153,7 +150,6 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        configuredFrameRate = CurrentInfo.FramesPerSecond > 0 ? (decimal)CurrentInfo.FramesPerSecond : null;
         SetStatus("Status.Updated");
         Log($"{action}: chapters={CurrentInfo.Chapters.Count}, outcome={outcome.Kind}", "Edit",
             ("action", action), ("chapters", CurrentInfo.Chapters.Count), ("outcome", outcome.Kind));
@@ -164,8 +160,9 @@ public sealed partial class MainWindowViewModel
     internal ChapterContentPreview PrepareExpressionOperation(string expression) =>
         ClipEditingCoordinator.PrepareCandidate("Apply expression", document =>
             ClipEditingCoordinator.CandidateBuilder.ApplyExpression(
-                EditableChapterDocumentAdapter.WithFallbackFrameRate(document, DisplayFrameRate),
-                string.IsNullOrWhiteSpace(expression) ? "t" : expression),
+                document,
+                string.IsNullOrWhiteSpace(expression) ? "t" : expression,
+                selectedFrameRateOption.IsValid ? selectedFrameRateOption.Rate : null),
             new HistoryOperationDescriptor("expression.apply",
             [
                 new HistoryOperationParameter("script", string.IsNullOrWhiteSpace(expression) ? "t" : expression),
@@ -242,23 +239,20 @@ public sealed partial class MainWindowViewModel
     }
 
     internal ChapterContentPreview PrepareFrameRateOperation(
-        decimal sourceFps,
-        decimal targetFps,
-        ChapterFrameRate? targetExactRate = null) =>
+        FrameRateValue sourceFps,
+        FrameRateValue targetFps) =>
         ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
             ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(
                 document,
                 sourceFps,
-                targetFps,
-                document.FrameRate,
-                targetExactRate),
+                targetFps),
             new HistoryOperationDescriptor("chapter.frame-rate-change",
             [
                 new HistoryOperationParameter("targetScope", "track"),
                 new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
                 new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
-                new HistoryOperationParameter("sourceFps", sourceFps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
-                new HistoryOperationParameter("targetFps", targetFps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+                new HistoryOperationParameter("sourceFps", sourceFps.ToString(), sourceFps.Kind.ToString()),
+                new HistoryOperationParameter("targetFps", targetFps.ToString(), targetFps.Kind.ToString())
             ]));
 
     private string CaptureCurrentTrackChapterIds()
@@ -299,16 +293,12 @@ public sealed partial class MainWindowViewModel
             && preview.Operation == "Change chapter frame rate"
             && CurrentInfo is { } currentInfo)
         {
-            configuredFrameRate = (decimal)currentInfo.FramesPerSecond;
-            selectedFrameRateOption = frameRateService.FindByValue(configuredFrameRate.Value);
+            selectedFrameRateOption = frameRateService.FindByRate(currentInfo.FrameRate);
+            displayOptionCoordinator.SetContentRate(currentInfo.FrameRate, FrameRateDisplayOptions);
             SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
             ApplyFrameInfo(logResult: false);
-            var sourceFps = preview.Before.FrameRate is { } sourceRate
-                ? (decimal)sourceRate.Numerator / sourceRate.Denominator
-                : 0m;
-            var targetFps = preview.Candidate.FrameRate is { } targetRate
-                ? (decimal)targetRate.Numerator / targetRate.Denominator
-                : configuredFrameRate.Value;
+            var sourceFps = preview.Before.FrameRate.ToDouble();
+            var targetFps = preview.Candidate.FrameRate.ToDouble();
             var optionName = selectedFrameRateOption.DisplayName;
             Log($"Convert to current FPS: option='{optionName}', source={sourceFps:0.###}, target={targetFps:0.###}, chapters {preview.Before.Tracks.Sum(static track => track.Chapters.Length)} -> {currentInfo.Chapters.Count}",
                 "Edit",
@@ -408,6 +398,7 @@ public sealed partial class MainWindowViewModel
 
     private void ApplyFrameInfo(bool logResult = true)
     {
+        Workspace.ExportPreferences.SetComputationRate(selectedFrameRateOption.IsValid ? selectedFrameRateOption.Rate : null);
         if (CurrentInfo is null)
         {
             RefreshRows();
@@ -418,8 +409,7 @@ public sealed partial class MainWindowViewModel
             CurrentInfo,
             selectedFrameRateOption,
             EditingOptions.EffectiveFrameDecimalPlaces,
-            FrameAccuracyTolerance,
-            configuredFrameRate);
+            FrameAccuracyTolerance);
         var result = outcome.FrameResult;
         var detection = outcome.Detection;
         var appliedOption = outcome.AppliedOption;
@@ -429,7 +419,7 @@ public sealed partial class MainWindowViewModel
             selectedFrameRateOption = frameRateService.Options[0];
             SetStatus("Status.DetectedFrameRate", ("displayName", detection.Option.DisplayName), ("confidence", detection.Confidence));
         }
-        else
+        else if (selectedFrameRateOption.Code != "Auto")
         {
             selectedFrameRateOption = result.SelectedOption;
         }
@@ -466,8 +456,8 @@ public sealed partial class MainWindowViewModel
 
         var sourceFps = ResolveSourceFrameRate();
         var targetOption = selectedFrameRateOption;
-        var targetFps = targetOption.Value;
-        pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps, targetOption.ExactRate);
+        var targetFps = targetOption.Rate;
+        pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
         OnPropertyChanged(nameof(IsContentPreviewPending));
         OnPropertyChanged(nameof(CanPreviewContentOptions));
         OnPropertyChanged(nameof(CanApplyContentPreview));
@@ -479,29 +469,11 @@ public sealed partial class MainWindowViewModel
         CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
-    private decimal ResolveSourceFrameRate()
-    {
-        if (selectedFrameRateOption.LegacyMplsCode == 0 && EffectiveFrameRateOption.IsValid)
-        {
-            return EffectiveFrameRateOption.Value;
-        }
+    private FrameRateValue ResolveSourceFrameRate() => CurrentInfo?.FrameRate is { IsKnown: true } rate
+        ? rate : selectedFrameRateOption.IsValid ? selectedFrameRateOption.Rate : FrameRateValue.Unknown;
 
-        if (configuredFrameRate is > 0)
-        {
-            return configuredFrameRate.Value;
-        }
-
-        if (CurrentInfo is { FramesPerSecond: > 0 } currentInfo)
-        {
-            return (decimal)currentInfo.FramesPerSecond;
-        }
-
-        // A valid manual selection serves as the source baseline when the import has
-        // no FPS metadata. In Auto mode, use the detected effective rate instead.
-        return selectedFrameRateOption.IsValid
-            ? selectedFrameRateOption.Value
-            : EffectiveFrameRateOption.Value;
-    }
+    internal FrameRateValue ComputationFrameRate => selectedFrameRateOption.IsValid
+        ? selectedFrameRateOption.Rate : CurrentInfo?.FrameRate ?? FrameRateValue.Unknown;
 
     /// <summary>
     /// Rebuilds bindable clip options / selection after the workspace session was already updated.
@@ -566,8 +538,8 @@ public sealed partial class MainWindowViewModel
     private void SyncClipDisplayOptions(NotifyCollectionChangedEventArgs args)
         => displayOptionCoordinator.SyncClipDisplayOptions(args, ClipOptions, ClipDisplayOptions);
 
-    private static int ComboIndexFor(FrameRateOption entry)
-        => DisplayOptionCoordinator.ComboIndexFor(entry);
+    private int ComboIndexFor(FrameRateOption entry)
+        => displayOptionCoordinator.ComboIndexFor(entry);
 
     private FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
         => displayOptionCoordinator.FrameRateOptionForComboIndex(frameRateIndex);

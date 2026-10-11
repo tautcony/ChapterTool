@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -121,7 +121,7 @@ public sealed class MainWindowViewModelTests
         Assert.Single(vm.Rows);
         Assert.Equal("0", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
-        Assert.Equal(2, vm.SelectedFrameRateIndex);
+        Assert.Equal(8, vm.SelectedFrameRateIndex);
         Assert.Equal("Loaded 1 chapter", vm.StatusText);
         Assert.Equal(1, vm.Progress);
     }
@@ -1096,7 +1096,7 @@ public sealed class MainWindowViewModelTests
             "movie.txt",
             new Chapter(1, TimeSpan.Zero, "A"),
             new Chapter(2, TimeSpan.FromMilliseconds(40), "B"),
-            new Chapter(3, TimeSpan.FromMilliseconds(80), "C"));
+            new Chapter(3, TimeSpan.FromMilliseconds(80), "C")) with { FrameRate = FrameRateValue.Unknown };
         var load = new FakeLoadService(ImportResult("movie.txt", info));
         var vm = CreateViewModel(load);
 
@@ -1117,7 +1117,7 @@ public sealed class MainWindowViewModelTests
             new Chapter(1, TimeSpan.Zero, "Opening"),
             new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")) with
         {
-            FramesPerSecond = (double)(24000m / 1001m)
+            FrameRate = FrameRateValue.Unknown
         };
         Assert.Equal("Fps23976", new FrameRateService().DetectDetailed(info, 0.15m).Option.Code);
         var settings = new FakeSettingsStore(new AppSettings(
@@ -1134,6 +1134,11 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("Fps23976", vm.EffectiveFrameRateOption.Code);
         Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.ExactRate);
         Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
+
+        var detectedOnly = vm.ToolSession.ContentOperations.PrepareFrameShift(-1);
+        Assert.False(detectedOnly.IsValid);
+        Assert.Equal(FrameRateValue.Unknown, detectedOnly.Before.FrameRate);
+        vm.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
 
         var before = vm.ToolSession.ContentOperations.PrepareContentOptions()!.Before.Tracks[0].Chapters[1].StartTicks;
         var preview = vm.ToolSession.ContentOperations.PrepareFrameShift(-1);
@@ -1565,7 +1570,6 @@ public sealed class MainWindowViewModelTests
             snapshot.Document.SourceName,
             snapshot.Document.ImportFormat,
             snapshot.Document.Duration,
-            snapshot.Document.FrameRate,
             snapshot.Document.Tracks.SetItem(0, candidateTrack));
         var externalOutcome = await session.ExecuteAsync(
             snapshot.BaseToken,
@@ -1613,7 +1617,6 @@ public sealed class MainWindowViewModelTests
                 document.SourceName,
                 document.ImportFormat,
                 document.Duration,
-                document.FrameRate,
                 document.Tracks)),
             operationDescription: "External edit");
         Assert.Equal(TransactionOutcomeKind.Committed, externalOutcome.Kind);

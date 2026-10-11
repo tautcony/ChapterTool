@@ -101,7 +101,7 @@ public sealed class ClipSessionTests
     [Fact]
     public void FromDocument_assigns_boundary_marker_to_next_segment_and_keeps_source_count_separate()
     {
-        var sourceRate = new ChapterFrameRate(24, 1);
+        var sourceRate = FrameRateValue.Rational(24, 1);
         var firstTrackId = ChapterTrackId.New();
         var secondTrackId = ChapterTrackId.New();
         var first = EditableChapterSegment.Create(firstTrackId, "first", "First", 0,
@@ -113,7 +113,7 @@ public sealed class ClipSessionTests
         var chapters = Enumerable.Range(0, 6).Select(index => new EditableChapter(
             ChapterId.New(), index + 1, TimeSpan.FromSeconds(index).Ticks, $"C{index + 1}")).ToArray();
         var document = new EditableChapterDocument(ChapterDocumentId.New(), "Merged", "movie.mpls", ChapterImportFormat.Mpls,
-            ChapterDuration.FromTicks(TimeSpan.FromSeconds(15).Ticks), sourceRate,
+            ChapterDuration.FromTicks(TimeSpan.FromSeconds(15).Ticks),
             [new EditableChapterTrack(ChapterTrackId.New(), "Merged", chapters, [first, second])]);
         var basis = ClipSessionTransitions.FromLoad(MultiMplsGroup());
 

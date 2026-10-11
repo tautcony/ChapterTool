@@ -7,6 +7,8 @@
   "Cli.Error.ExpressionConflict": "Options --expression and --expression-preset cannot be used together.",
   "Cli.Error.FormatsHint": "Run `formats` to see the supported CLI conversion targets.",
   "Cli.Error.FrameRatePositive": "Frame rate must be a finite number greater than zero when --frame-rate is specified.",
+  "Cli.Error.FrameRateConflict": "Use only one of --frame-rate and --frame-rate-ratio.",
+  "Cli.Error.FrameRateRatio": "Frame rate ratio must be N/D with positive Int64 components.",
   "Cli.Error.GroupIndex": "Group index {group} is outside the available range.",
   "Cli.Error.OutputExists": "Output file '{path}' already exists. Use --force to overwrite.",
   "Cli.Error.UnsupportedEncoding": "Unsupported text encoding '{encoding}'.",

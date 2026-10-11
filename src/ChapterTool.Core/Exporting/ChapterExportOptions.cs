@@ -38,4 +38,8 @@ public sealed record ChapterExportOptions(
     string ExpressionSourceName = "",
     OutputTextEncoding TextEncoding = OutputTextEncoding.Utf8,
     bool EmitBom = false,
-    bool ProjectOutput = true);
+    bool ProjectOutput = true)
+{
+    /// <summary>Gets an explicit computation rate captured for one-shot projection and serialization.</summary>
+    public Models.FrameRateValue? ComputationRate { get; init; }
+}

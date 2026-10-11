@@ -252,12 +252,12 @@
         return sign + Workspace.FormatExpressionTimeTicks(Math.Abs(ticks));
     }
 
-    private ChapterFrameRate? ScopeFrameRate(EditableChapterDocument document) =>
+    private ChapterTool.Core.Models.FrameRateValue ScopeFrameRate(EditableChapterDocument document) =>
         document.Tracks.FirstOrDefault(track => track.Id == Workspace.ContentPreviewProjection?.ScopeTrackId)
-            ?.Segments.FirstOrDefault()?.FrameRate ?? document.FrameRate;
+            ?.FrameRate ?? document.FrameRate;
 
-    private string FrameRateValue(ChapterFrameRate? rate) => rate is { } value
-        ? $"{value.Numerator}/{value.Denominator} {L.T("Expression.Unit.FramesPerSecond")}"
+    private string FrameRateValue(ChapterTool.Core.Models.FrameRateValue rate) => rate.IsKnown
+        ? $"{rate} {L.T("Expression.Unit.FramesPerSecond")}"
         : L.T("Expression.Value.NotSet");
 
     private string PropertyValue(string property, object? value)

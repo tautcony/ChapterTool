@@ -9,14 +9,14 @@ public sealed class FrameRateService : IFrameRateService
 {
     private static readonly FrameRateOption[] FrameRateOptions =
     [
-        new("Auto", "Auto", 0m, false, 0),
-        new("Fps23976", "24000 / 1001", 24000m / 1001m, true, 1, new ChapterFrameRate(24000, 1001)),
-        new("Fps24", "24000 / 1000", 24m, true, 2, new ChapterFrameRate(24, 1)),
-        new("Fps25", "25000 / 1000", 25m, true, 3, new ChapterFrameRate(25, 1)),
-        new("Fps2997", "30000 / 1001", 30000m / 1001m, true, 4, new ChapterFrameRate(30000, 1001)),
-        new("Reserved", "RESER / VED", 0m, false, 5),
-        new("Fps50", "50000 / 1000", 50m, true, 6, new ChapterFrameRate(50, 1)),
-        new("Fps5994", "60000 / 1001", 60000m / 1001m, true, 7, new ChapterFrameRate(60000, 1001))
+        new("Auto", "Auto", FrameRateValue.Unknown, false, 0),
+        new("Fps23976", "24000 / 1001", FrameRateValue.Rational(24000, 1001), true, 1),
+        new("Fps24", "24000 / 1000", FrameRateValue.Rational(24, 1), true, 2),
+        new("Fps25", "25000 / 1000", FrameRateValue.Rational(25, 1), true, 3),
+        new("Fps2997", "30000 / 1001", FrameRateValue.Rational(30000, 1001), true, 4),
+        new("Reserved", "RESER / VED", FrameRateValue.Unknown, false, 5),
+        new("Fps50", "50000 / 1000", FrameRateValue.Rational(50, 1), true, 6),
+        new("Fps5994", "60000 / 1001", FrameRateValue.Rational(60000, 1001), true, 7)
     ];
 
     /// <summary>
@@ -29,15 +29,21 @@ public sealed class FrameRateService : IFrameRateService
     /// </summary>
     /// <param name="framesPerSecond">The frame rate in frames per second.</param>
     /// <returns>The operation result.</returns>
-    public FrameRateOption FindByValue(decimal framesPerSecond)
+    public static FrameRateOption FindByValue(decimal framesPerSecond)
     {
         var match = FrameRateOptions.FirstOrDefault(entry =>
             entry.IsValid && Math.Abs(entry.Value - framesPerSecond) < 0.00001m)
             ?? FrameRateOptions[0];
 
         // A tolerant numeric match does not prove which rational rate the caller intended.
-        return match with { ExactRate = null };
+        return match with { Rate = framesPerSecond > 0 ? FrameRateValue.Approximate(framesPerSecond) : FrameRateValue.Unknown };
     }
+
+    /// <summary>Returns a catalog entry or a stable custom entry for the canonical rate.</summary>
+    public FrameRateOption FindByRate(FrameRateValue frameRate) =>
+        !frameRate.IsKnown ? FrameRateOptions[0]
+            : FrameRateOptions.FirstOrDefault(entry => entry.IsValid && entry.Rate == frameRate)
+                ?? new FrameRateOption($"Custom:{frameRate.Kind}:{frameRate}", frameRate.ToString(), frameRate, true, -1);
 
     /// <summary>Finds a supported frame rate by its stable code and retains its exact rational rate.</summary>
     public FrameRateOption FindByCode(string code) =>
@@ -147,8 +153,8 @@ public sealed class FrameRateService : IFrameRateService
         int decimalPlaces,
         decimal tolerance)
     {
-        var selectedOption = option.LegacyMplsCode == 0
-            ? Detect(info, tolerance)
+        var selectedOption = option.Code == "Auto"
+            ? info.FrameRate.IsKnown ? FindByRate(info.FrameRate) : Detect(info, tolerance)
             : option;
 
         if (!selectedOption.IsValid)
@@ -169,11 +175,10 @@ public sealed class FrameRateService : IFrameRateService
 
         var updatedInfo = info with
         {
-            FramesPerSecond = (double)selectedOption.Value,
             Chapters = chapters
         };
 
-        return new FrameInfoResult(updatedInfo, chapters, selectedOption, selectedOption.Value,
+        return new FrameInfoResult(updatedInfo, chapters, selectedOption,
             [.. frameDisplays.Select(static display => display.Accuracy)]);
     }
 
@@ -198,9 +203,7 @@ public sealed class FrameRateService : IFrameRateService
     }
 
     private static ExactFrameMath CalculateFrames(Chapter chapter, FrameRateOption option) =>
-        option.ExactRate is { } rate
-            ? ExactFrameMath.FromTicks(chapter.StartTime.Ticks, rate)
-            : ExactFrameMath.FromTicks(chapter.StartTime.Ticks, option.Value);
+        ExactFrameMath.FromTicks(chapter.StartTime.Ticks, option.Rate);
 
     private sealed record FrameDisplay(string Text, FrameAccuracy Accuracy);
 }

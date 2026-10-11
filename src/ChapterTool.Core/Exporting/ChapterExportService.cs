@@ -56,11 +56,17 @@ public sealed partial class ChapterExportService
         var projection = options.ProjectOutput
             ? new ChapterOutputProjectionService(expressionEngine).Project(info, options)
             : new ChapterOutputProjectionResult(info, []);
+        if (projection.Diagnostics.Any(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidExpressionTime
+            || diagnostic.Code == ChapterDiagnosticCode.FrameConversionOverflow))
+        {
+            return new ChapterExportResult(false, string.Empty, string.Empty, projection.Diagnostics);
+        }
+
         var output = options.Format == ChapterExportFormat.Json
             ? projection.Info
             : projection.Info with { Chapters = projection.OutputChapters };
         var result = Serialize(output, new ChapterSerializationOptions(
-            options.Format, options.XmlLanguage, options.SourceFileName, options.TextEncoding));
+            options.Format, options.XmlLanguage, options.SourceFileName, options.TextEncoding) { ComputationRate = options.ComputationRate });
 
         return result with
         {
@@ -98,20 +104,32 @@ public sealed partial class ChapterExportService
     {
         ArgumentNullException.ThrowIfNull(chapterSet);
         ArgumentNullException.ThrowIfNull(options);
-        return SerializeChapterSet(chapterSet, options);
+        if (options.ComputationRate is { IsKnown: false })
+        {
+            return Failure(FrameRateValidation.InvalidFrameRate());
+        }
+
+        try
+        {
+            return SerializeChapterSet(chapterSet, options);
+        }
+        catch (OverflowException)
+        {
+            return Failure(ChapterDiagnosticCode.FrameConversionOverflow, "The exported frame number exceeds the supported Int64 range.");
+        }
     }
 
     private ChapterExportResult SerializeChapterSet(ChapterSet info, ChapterSerializationOptions options) => options.Format switch
     {
         ChapterExportFormat.Txt => Text(info),
         ChapterExportFormat.Xml => Xml(info, options),
-        ChapterExportFormat.Qpfile => Qpfile(info),
+        ChapterExportFormat.Qpfile => Qpfile(info, options.ComputationRate ?? info.FrameRate),
         ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", info.Chapters.Select(FormatTime)),
         ChapterExportFormat.TsMuxerMeta => TsMuxer(info),
         ChapterExportFormat.Cue => Cue(info, options),
         ChapterExportFormat.Json => Json(info),
         ChapterExportFormat.WebVtt => WebVtt(info),
-        ChapterExportFormat.Celltimes => Celltimes(info),
+        ChapterExportFormat.Celltimes => Celltimes(info, options.ComputationRate ?? info.FrameRate),
         _ => Failure(ChapterDiagnosticCode.UnsupportedExportFormat, "Unsupported export format.")
     };
 
@@ -164,30 +182,24 @@ public sealed partial class ChapterExportService
         return Success($"--custom-{Environment.NewLine}chapters={string.Join(';', chapters)}", ".TsMuxeR_Meta.txt");
     }
 
-    private static ChapterExportResult Qpfile(ChapterSet info)
+    private static ChapterExportResult Qpfile(ChapterSet info, FrameRateValue rate)
     {
-        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
+        if (!rate.IsKnown)
         {
-            return Failure(diagnostic!);
+            return Failure(FrameRateValidation.InvalidFrameRate());
         }
 
         return Lines(
             ".qpf",
             info.Chapters
                 .Where(NotSeparator)
-                .Select(chapter => ChapterRounding
-                    .RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond)
+                .Select(chapter => checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, rate).RoundAwayFromZero())
                     .ToString(CultureInfo.InvariantCulture) + " I"));
     }
 
-    private static ChapterExportResult Celltimes(ChapterSet info)
+    private static ChapterExportResult Celltimes(ChapterSet info, FrameRateValue rate)
     {
-        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
-        {
-            return Failure(diagnostic!);
-        }
-
-        var conversion = ChapterConversionService.ToCelltimes(info, framesPerSecond);
+        var conversion = ChapterConversionService.ToCelltimes(info, rate);
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 

@@ -71,6 +71,13 @@ public sealed class PortableUiParityTests
         AssertRows(desktop, web);
 
         var zeroShift = desktop.ToolSession.ContentOperations.PrepareFrameShift(0);
+        if (!zeroShift.Before.FrameRate.IsKnown)
+        {
+            Assert.False(zeroShift.IsValid);
+            desktop.SetFrameOptions(frameRateIndex: 3, roundFrames: true);
+            web.SelectedFrameRateIndex = 3;
+            zeroShift = desktop.ToolSession.ContentOperations.PrepareFrameShift(0);
+        }
         Assert.True(zeroShift.IsValid);
         Assert.Empty(zeroShift.Differences);
         web.PrepareFrameShiftPreview(0);
@@ -117,8 +124,8 @@ public sealed class PortableUiParityTests
 
         var conversionBefore = web.PrepareNamingPreview()!.Before;
         var sourceRate = desktop.ToolSession.ContentOperations.PrepareContentOptions().Before.FrameRate;
-        var fps = sourceRate is { } rate ? (decimal)rate.Numerator / rate.Denominator : 24000m / 1001m;
-        var desktopConversion = desktop.ToolSession.ContentOperations.PrepareFrameRateConversion(fps, 25m);
+        var baseline = sourceRate.IsKnown ? sourceRate : FrameRateValue.Rational(25, 1);
+        var desktopConversion = desktop.ToolSession.ContentOperations.PrepareFrameRateConversion(baseline, FrameRateValue.Rational(25, 1));
         web.SelectedFrameRateIndex = 3;
         var webConversion = web.PrepareFrameRatePreview()!;
         Assert.True(desktopConversion.IsValid, string.Join("; ", desktopConversion.Errors));

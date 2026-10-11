@@ -400,7 +400,7 @@ public sealed class HistoryInspectionViewModelTests
         var chapters = names.Select((name, index) => new EditableChapter(
             ChapterId.New(), index + 1, index * TimeSpan.TicksPerSecond, name)).ToArray();
         return new EditableChapterDocument(ChapterDocumentId.New(), "Title", "source.txt", ChapterImportFormat.Ogm,
-            ChapterDuration.Unknown, new ChapterFrameRate(24, 1), [new EditableChapterTrack(ChapterTrackId.New(), "Track", chapters)]);
+            ChapterDuration.Unknown, [new EditableChapterTrack(ChapterTrackId.New(), "Track", chapters)]);
     }
 
     private static (SessionHistorySnapshot Snapshot, Guid Root, Guid Left, Guid Right, Guid Current) ForkedTree()

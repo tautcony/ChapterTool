@@ -207,8 +207,7 @@ public sealed partial class MainWindowViewModel
                 "Apply expression" => PrepareExpressionOperation(Expression),
                 "Change chapter frame rate" => PrepareFrameRateOperation(
                     ResolveSourceFrameRate(),
-                    selectedFrameRateOption.Value,
-                    selectedFrameRateOption.ExactRate),
+                    selectedFrameRateOption.Rate),
                 _ => PrepareContentOptionsOperation()
             };
             ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);

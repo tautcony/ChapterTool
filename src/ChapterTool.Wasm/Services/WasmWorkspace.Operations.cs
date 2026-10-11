@@ -21,23 +21,32 @@ public sealed partial class WasmWorkspace
 
     /// <summary>Gets the projected changes and diagnostics for the current preview.</summary>
     public ExpressionPreviewProjection? ContentPreviewProjection => ContentPreview is { } preview
-        ? ExpressionPreviewProjector.Build(preview, contentPreviewTrackId, ExactFramesPerSecond,
-            RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces,
-            EffectiveFrameRateOption.Value == ExactFramesPerSecond ? EffectiveFrameRateOption.ExactRate : null) : null;
+        ? ExpressionPreviewProjector.Build(preview, contentPreviewTrackId, EffectiveFrameRateOption.Rate,
+            RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces) : null;
 
     /// <summary>Gets whether the current preview no longer matches the workspace state.</summary>
     public bool IsContentPreviewStale => ContentPreview is { } preview
         && (session.ContentSession?.Snapshot.BaseToken != preview.BaseToken
             || CurrentTrackId != contentPreviewTrackId
-            || !Equals(contentPreviewDraft, CaptureContentDraft(preview.Operation)));
+            || !Equals(contentPreviewDraft, CaptureContentDraft(preview.Operation))
+            || preview.ComputationRate != CaptureComputationRate(preview.Operation));
 
     private object CaptureContentDraft(string operation) => operation switch
     {
         "Apply chapter options" => (ChapterNameModeIndex, OrderShift, ChapterNameTemplateText),
-        MainOptionsOperation => (ChapterNameModeIndex, OrderShift, ChapterNameTemplateText, Expression),
-        "Shift chapter frames" => (SelectedFrameRateIndex, ExactFramesPerSecond),
-        "Change chapter frame rate" => SelectedFrameRateIndex,
+        MainOptionsOperation => (ChapterNameModeIndex, OrderShift, ChapterNameTemplateText, Expression, SelectedComputationRate),
+        "Shift chapter frames" => ComputationFrameRate,
+        "Change chapter frame rate" => (ResolveSourceFrameRate(), ResolveSelectedFrameRateOption().Rate),
         _ => operation
+    };
+
+    private FrameRateValue? CaptureComputationRate(string operation) => operation switch
+    {
+        "Shift chapter frames" => ComputationFrameRate,
+        "Change chapter frame rate" => ResolveSelectedFrameRateOption().Rate,
+        "Update chapter content" => ComputationFrameRate,
+        MainOptionsOperation => SelectedComputationRate,
+        _ => null
     };
 
     private ChapterTrackId? CurrentTrackId => session.ContentSession?.Snapshot.Document.Tracks
@@ -64,8 +73,7 @@ public sealed partial class WasmWorkspace
             ? new(false, document, [], [localizer.T("Parity.InvalidShift")])
             : candidateBuilder.ShiftFrames(document,
                 document.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator)
-                    .Select(chapter => chapter.Id).ToHashSet(), frames, ExactFramesPerSecond,
-                EffectiveFrameRateOption.ExactRate),
+                    .Select(chapter => chapter.Id).ToHashSet(), frames, ComputationFrameRate),
         new HistoryOperationDescriptor("chapter.frame-shift",
         [
             new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
@@ -76,30 +84,24 @@ public sealed partial class WasmWorkspace
     /// <summary>Prepares a preview that changes the chapter frame rate to the selected rate.</summary>
     public ChapterContentPreview? PrepareFrameRatePreview() => PrepareContentPreview("Change chapter frame rate", document =>
         candidateBuilder.ChangeFrameRate(document, ResolveSourceFrameRate(),
-            ResolveSelectedFrameRateOption().Value),
+            ResolveSelectedFrameRateOption().Rate),
         new HistoryOperationDescriptor("chapter.frame-rate-change",
         [
             new HistoryOperationParameter("targetScope", "track"),
             new HistoryOperationParameter("trackName", session.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(session.CurrentTrackIndex)?.Name),
-            new HistoryOperationParameter("sourceFps", ResolveSourceFrameRate().ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
-            new HistoryOperationParameter("targetFps", ResolveSelectedFrameRateOption().Value.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+            new HistoryOperationParameter("sourceFps", ResolveSourceFrameRate().ToString(), ResolveSourceFrameRate().Kind.ToString()),
+            new HistoryOperationParameter("targetFps", ResolveSelectedFrameRateOption().Rate.ToString(), ResolveSelectedFrameRateOption().Rate.Kind.ToString())
         ]));
 
-    private decimal ResolveSourceFrameRate()
-    {
-        if (selectedFrameRateIndex <= 0 && EffectiveFrameRateOption.IsValid)
-        {
-            return EffectiveFrameRateOption.Value;
-        }
+    private FrameRateValue ResolveSourceFrameRate() => BaseChapterSet?.FrameRate is { IsKnown: true } rate
+        ? rate : ResolveSelectedFrameRateOption().IsValid ? ResolveSelectedFrameRateOption().Rate : FrameRateValue.Unknown;
 
-        if (BaseChapterSet is { FramesPerSecond: > 0 } chapterSet)
-        {
-            return (decimal)chapterSet.FramesPerSecond;
-        }
+    /// <summary>Gets a rate from explicit selection or uniform content. Detection is display-only.</summary>
+    public FrameRateValue ComputationFrameRate => ResolveSelectedFrameRateOption().IsValid
+        ? ResolveSelectedFrameRateOption().Rate : BaseChapterSet?.FrameRate ?? FrameRateValue.Unknown;
 
-        var selected = ResolveSelectedFrameRateOption();
-        return selected.IsValid ? selected.Value : EffectiveFrameRateOption.Value;
-    }
+    private FrameRateValue? SelectedComputationRate => ResolveSelectedFrameRateOption().IsValid
+        ? ResolveSelectedFrameRateOption().Rate : null;
 
     private ChapterContentPreview? PrepareContentPreview(string operation,
         Func<EditableChapterDocument, ChapterCandidateBuildResult> build,
@@ -119,7 +121,7 @@ public sealed partial class WasmWorkspace
             var built = build(focused);
             return built with { Candidate = built.IsValid
                 ? ReplaceFocusedTrack(document, trackIndex, built.Candidate) : document };
-        }, operationDescriptor);
+        }, operationDescriptor, CaptureComputationRate(operation));
         Notify();
         return ContentPreview;
     }
@@ -203,8 +205,7 @@ public sealed partial class WasmWorkspace
         var preview = ChapterContentOperationSession.Prepare(content, "Update chapter content", document =>
         {
             var focused = FocusTrack(document, trackIndex);
-            var built = candidateBuilder.EditCell(focused, draft.ChapterId, draft.Field, value, ExactFramesPerSecond,
-                EffectiveFrameRateOption.ExactRate);
+            var built = candidateBuilder.EditCell(focused, draft.ChapterId, draft.Field, value, ComputationFrameRate);
             return built with { Candidate = built.IsValid ? ReplaceFocusedTrack(document, trackIndex, built.Candidate) : document };
         }, new HistoryOperationDescriptor("chapter.cell-edit",
         [

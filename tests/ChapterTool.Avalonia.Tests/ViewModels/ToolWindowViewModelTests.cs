@@ -432,7 +432,7 @@ public sealed class ToolWindowViewModelTests
 
         public ChapterContentPreview PrepareFrameShift(int frames) => inner.PrepareFrameShift(frames);
 
-        public ChapterContentPreview PrepareFrameRateConversion(decimal sourceFps, decimal targetFps) =>
+        public ChapterContentPreview PrepareFrameRateConversion(FrameRateValue sourceFps, FrameRateValue targetFps) =>
             inner.PrepareFrameRateConversion(sourceFps, targetFps);
 
         public ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default) =>

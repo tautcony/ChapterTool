@@ -15,7 +15,8 @@ public sealed record ChapterContentPreview(
     ImmutableHashSet<ChapterId> TargetIds,
     ImmutableArray<ChapterContentDifference> Differences,
     ImmutableArray<string> Errors,
-    HistoryOperationDescriptor? OperationDescriptor = null)
+    HistoryOperationDescriptor? OperationDescriptor = null,
+    FrameRateValue? ComputationRate = null)
 {
     /// <summary>Gets a value indicating whether the candidate can be applied.</summary>
     public bool IsValid => Errors.IsEmpty;
@@ -36,7 +37,8 @@ public static class ChapterContentOperationSession
         SessionState session,
         string operation,
         Func<EditableChapterDocument, ChapterCandidateBuildResult> buildCandidate,
-        HistoryOperationDescriptor? operationDescriptor = null)
+        HistoryOperationDescriptor? operationDescriptor = null,
+        FrameRateValue? computationRate = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
@@ -65,7 +67,8 @@ public static class ChapterContentOperationSession
             result.TargetIds,
             Diff(snapshot.Document, candidate),
             errors,
-            operationDescriptor);
+            operationDescriptor,
+            computationRate);
     }
 
     /// <summary>Applies a valid preview only when its captured base is still current.</summary>
@@ -90,9 +93,9 @@ public static class ChapterContentOperationSession
             preview.PreviewId,
             Fingerprint(preview),
             (_, _) => ValueTask.FromResult(preview.Candidate),
-            cancellationToken,
             preview.Operation,
-            preview.OperationDescriptor);
+            preview.OperationDescriptor,
+            cancellationToken);
     }
 
     private static ImmutableArray<ChapterContentDifference> Diff(
@@ -177,5 +180,5 @@ public static class ChapterContentOperationSession
         string.Join(",", document.Tracks.Select(static track => track.Id.Value.ToString("N")));
 
     private static string Fingerprint(ChapterContentPreview preview) =>
-        $"{preview.Operation}:{preview.PreviewId:N}:{preview.BaseToken.StateIdentity:N}:{preview.TargetIds.Count}";
+        $"{preview.Operation}:{preview.PreviewId:N}:{preview.BaseToken.StateIdentity:N}:{preview.TargetIds.Count}:{preview.ComputationRate?.Kind}:{preview.ComputationRate}";
 }

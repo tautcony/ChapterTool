@@ -107,7 +107,7 @@ internal sealed class ClipEditingCoordinator(
         return workspace.ToggleClipStructure();
     }
 
-    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind, decimal displayFrameRate, ChapterFrameRate? exactFrameRate = null)
+    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind, FrameRateValue frameRate)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var snapshot = session.Snapshot;
@@ -129,7 +129,7 @@ internal sealed class ClipEditingCoordinator(
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
         return PrepareCandidate($"Edit {field}", document =>
-            CandidateBuilder.EditCell(document, chapter.Id, field, edit.Value, displayFrameRate, exactFrameRate),
+            CandidateBuilder.EditCell(document, chapter.Id, field, edit.Value, frameRate),
             new HistoryOperationDescriptor("chapter.cell-edit",
             [
                 new HistoryOperationParameter("field", field.ToString()),
@@ -137,7 +137,7 @@ internal sealed class ClipEditingCoordinator(
                 new HistoryOperationParameter("trackId", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < session.Snapshot.Document.Tracks.Length ? session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Id.ToString() : null),
                 new HistoryOperationParameter("trackName", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < session.Snapshot.Document.Tracks.Length ? session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Name : null),
                 new HistoryOperationParameter("value", edit.Value),
-                new HistoryOperationParameter("displayFps", displayFrameRate.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+                new HistoryOperationParameter("computationRate", frameRate.ToString(), frameRate.Kind.ToString())
             ]));
     }
 
@@ -174,15 +174,15 @@ internal sealed class ClipEditingCoordinator(
             ]));
     }
 
-    public ChapterContentPreview ShiftFramesForward(int frames, decimal displayFrameRate, ChapterFrameRate? exactFrameRate = null)
+    public ChapterContentPreview ShiftFramesForward(int frames, FrameRateValue frameRate)
     {
         var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
         var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Where(static chapter => chapter.Kind != ChapterKind.Separator).Select(static chapter => chapter.Id).ToHashSet();
-        return PrepareCandidate("Shift chapter frames", document => CandidateBuilder.ShiftFrames(document, targets, frames, displayFrameRate, exactFrameRate),
+        return PrepareCandidate("Shift chapter frames", document => CandidateBuilder.ShiftFrames(document, targets, frames, frameRate),
             new HistoryOperationDescriptor("chapter.frame-shift",
             [
                 new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
-                new HistoryOperationParameter("displayFps", displayFrameRate.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+                new HistoryOperationParameter("computationRate", frameRate.ToString(), frameRate.Kind.ToString()),
                 new HistoryOperationParameter("trackName", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < session.Snapshot.Document.Tracks.Length ? session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Name : null),
                 new HistoryOperationParameter("chapterIds", string.Join(",", targets))
             ]));
@@ -192,19 +192,18 @@ internal sealed class ClipEditingCoordinator(
         ChapterSet current,
         FrameRateOption requestedOption,
         int frameDecimalPlaces,
-        decimal tolerance,
-        decimal? configuredFrameRate)
+        decimal tolerance)
     {
         FrameRateDetectionResult? detection = null;
         var appliedOption = requestedOption;
-        if (requestedOption.LegacyMplsCode == 0)
+        if (requestedOption.Code == "Auto" && !current.FrameRate.IsKnown)
         {
             detection = frameRateService.DetectDetailed(current, tolerance);
             appliedOption = detection.Option;
         }
 
         var frameResult = frameRateService.UpdateFrames(current, appliedOption, frameDecimalPlaces, tolerance);
-        return new FrameUpdateOutcome(frameResult, detection, appliedOption, current);
+        return new FrameUpdateOutcome(frameResult, detection, frameResult.SelectedOption, current);
     }
 
     private static ChapterSet EmptyChapterSet() =>
@@ -225,9 +224,7 @@ internal sealed class ClipEditingCoordinator(
         var focused = new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
             EditableChapterDocumentAdapter.TrackDuration(source, trackIndex),
-            track.Segments.FirstOrDefault()?.FrameRate ?? source.FrameRate,
-            [track],
-            segment?.ExactFrameRate ?? source.ExactFrameRate);
+            [track]);
         var result = build(focused);
         if (!result.IsValid || result.Candidate.Tracks.Length != 1)
         {
@@ -235,17 +232,9 @@ internal sealed class ClipEditingCoordinator(
         }
 
         var tracks = source.Tracks.SetItem(trackIndex, result.Candidate.Tracks[0]);
-        var effectiveRates = tracks
-            .SelectMany(static candidateTrack => candidateTrack.Segments.Select(static segment => segment.FrameRate))
-            .Where(static rate => rate.HasValue)
-            .Select(static rate => rate!.Value)
-            .Distinct()
-            .ToArray();
         var candidate = new EditableChapterDocument(source.Id, source.Title, source.SourceName,
             source.ImportFormat, EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, result.Candidate),
-            effectiveRates.Length == 1 ? effectiveRates[0] : effectiveRates.Length == 0 ? source.FrameRate : null,
-            tracks,
-            source.ExactFrameRate);
+            tracks);
         return result with { Candidate = candidate };
     }
 }

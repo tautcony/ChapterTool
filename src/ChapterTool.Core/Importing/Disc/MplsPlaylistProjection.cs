@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Importing.Disc;
@@ -11,8 +13,9 @@ internal sealed record MplsPlaylistProjection(
     IReadOnlyList<ulong> PlayItemStartPts,
     IReadOnlyList<Chapter> Chapters,
     TimeSpan Duration,
-    double FramesPerSecond,
-    ChapterFrameRate? ExactFrameRate,
+    FrameRateValue FrameRate,
+    ImmutableArray<ImportedChapterSegment> Segments,
+    ImmutableArray<ChapterDiagnostic> Diagnostics,
     IReadOnlyList<ReferencedMediaFile> ReferencedMediaFiles,
     string? DiscRoot)
 {
@@ -44,10 +47,24 @@ internal sealed record MplsPlaylistProjection(
         }
 
         var chapters = BuildPlaylistChapters(playItems, marks, starts);
-        var frameRateCode = playItems
-            .SelectMany(static item => item.STNTable.PrimaryVideoStreamEntries)
-            .Select(static entry => entry.StreamAttributes.FrameRate)
-            .FirstOrDefault();
+        var diagnostics = ImmutableArray.CreateBuilder<ChapterDiagnostic>();
+        var segments = playItems.Select((item, index) =>
+        {
+            var rates = item.STNTable.PrimaryVideoStreamEntries
+                .Select(static entry => MplsFrameRateCatalog.FromCode(entry.StreamAttributes.FrameRate)).ToArray();
+            if (rates.Distinct().Count() > 1)
+            {
+                diagnostics.Add(new ChapterDiagnostic(DiagnosticSeverity.Warning, ChapterDiagnosticCode.InvalidFrameRate,
+                    "Primary video streams have conflicting frame rates.", $"play-item-{index}"));
+            }
+
+            var start = MplsChapterImporter.PtsToTime(checked((uint)Math.Min(starts[index], uint.MaxValue))).Ticks;
+            var endPts = starts[index] + (item.OUTTime >= item.INTime ? item.OUTTime - item.INTime : 0);
+            var end = MplsChapterImporter.PtsToTime(checked((uint)Math.Min(endPts, uint.MaxValue))).Ticks;
+            return new ImportedChapterSegment($"play-item-{index}", item.FullName, start,
+                ChapterDuration.FromTicks(end - start),
+                FrameRateValue.ResolveUniform(rates), BuildReferences([item], discRoot).ToImmutableArray());
+        }).ToImmutableArray();
         var references = BuildReferences(playItems, discRoot);
         return new MplsPlaylistProjection(
             playlist,
@@ -55,8 +72,9 @@ internal sealed record MplsPlaylistProjection(
             starts,
             chapters,
             MplsChapterImporter.PtsToTime(checked((uint)Math.Min(cursor, uint.MaxValue))),
-            MplsFrameRateCatalog.FromCode(frameRateCode),
-            MplsFrameRateCatalog.ExactRateFromCode(frameRateCode),
+            FrameRateValue.ResolveUniform(segments.Select(static segment => segment.FrameRate)),
+            segments,
+            diagnostics.ToImmutable(),
             references,
             discRoot);
     }
@@ -70,10 +88,9 @@ internal sealed record MplsPlaylistProjection(
             title,
             sourceName ?? string.Join("+", Playlist.PlayList.PlayItems.Select(static item => item.FullName)),
             sourceType,
-            FramesPerSecond,
+            FrameRate,
             duration ?? Duration,
-            Chapters,
-            ExactFrameRate);
+            Chapters);
 
     internal IReadOnlyList<Chapter> ChaptersForPlayItem(int playItemIndex)
     {
@@ -190,18 +207,14 @@ internal sealed record MplsPlaylistProjection(
 
 internal static class MplsFrameRateCatalog
 {
-    internal static double FromCode(byte? code) => ExactRateFromCode(code) is { } rate
-        ? (double)rate.Numerator / rate.Denominator
-        : 0;
-
-    internal static ChapterFrameRate? ExactRateFromCode(byte? code) => code switch
+    internal static FrameRateValue FromCode(byte? code) => code switch
     {
-        1 => new ChapterFrameRate(24000, 1001),
-        2 => new ChapterFrameRate(24, 1),
-        3 => new ChapterFrameRate(25, 1),
-        4 => new ChapterFrameRate(30000, 1001),
-        6 => new ChapterFrameRate(50, 1),
-        7 => new ChapterFrameRate(60000, 1001),
-        _ => null
+        1 => FrameRateValue.Rational(24000, 1001),
+        2 => FrameRateValue.Rational(24, 1),
+        3 => FrameRateValue.Rational(25, 1),
+        4 => FrameRateValue.Rational(30000, 1001),
+        6 => FrameRateValue.Rational(50, 1),
+        7 => FrameRateValue.Rational(60000, 1001),
+        _ => FrameRateValue.Unknown
     };
 }

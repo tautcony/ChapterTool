@@ -115,8 +115,8 @@ public sealed class ChapterClipCandidateBuilderTests
     public void Merge_rejects_incompatible_frame_rates()
     {
         var source = CreateDocument(
-            Segment("a", "A", 0, 10, new ChapterFrameRate(24, 1)),
-            Segment("b", "B", 0, 10, new ChapterFrameRate(25, 1)),
+            Segment("a", "A", 0, 10, FrameRateValue.Rational(24, 1)),
+            Segment("b", "B", 0, 10, FrameRateValue.Rational(25, 1)),
             TrackChapters([Chapter(1, "A")], [Chapter(1, "B")]));
 
         var result = ChapterClipCandidateBuilder.MergeTracks(source, source.Tracks.Select(static track => track.Id));
@@ -129,23 +129,23 @@ public sealed class ChapterClipCandidateBuilderTests
     public void Merged_fps_conversion_keeps_source_rates_and_uses_effective_rate_after_split()
     {
         var source = CreateDocument(
-            Segment("a", "A", 0, 10, new ChapterFrameRate(25, 1)),
-            Segment("b", "B", 0, 10, new ChapterFrameRate(25, 1)),
+            Segment("a", "A", 0, 10, FrameRateValue.Rational(25, 1)),
+            Segment("b", "B", 0, 10, FrameRateValue.Rational(25, 1)),
             TrackChapters([Chapter(5, "A")], [Chapter(2, "B")]));
         var merged = ChapterClipCandidateBuilder.MergeTracks(source, source.Tracks.Select(static track => track.Id));
         Assert.True(merged.IsValid, string.Join("; ", merged.Errors));
 
         var legacy = EditableChapterDocumentAdapter.ToChapterSet(merged.Candidate);
-        var changed = ChapterFpsTransformService.ChangeFps(legacy, 25m, 50m);
-        var converted = EditableChapterDocumentAdapter.ApplyFrameRateChangeResult(merged.Candidate, changed.Info, 25m, 50m);
+        var changed = ChapterFpsTransformService.ChangeFps(legacy, FrameRateValue.Rational(25, 1), FrameRateValue.Rational(50, 1));
+        var converted = EditableChapterDocumentAdapter.ApplyFrameRateChangeResult(merged.Candidate, changed.Info, FrameRateValue.Rational(25, 1), FrameRateValue.Rational(50, 1));
         var split = ChapterClipCandidateBuilder.SplitByBoundaries(converted, converted.Tracks[0].Id);
 
         Assert.True(split.IsValid, string.Join("; ", split.Errors));
         Assert.Equal(2, split.Candidate.Tracks.Length);
         Assert.All(split.Candidate.Tracks.SelectMany(static track => track.Segments), segment =>
         {
-            Assert.Equal(new ChapterFrameRate(50, 1), segment.FrameRate);
-            Assert.Equal(new ChapterFrameRate(25, 1), segment.SourceFrameRate);
+            Assert.Equal(FrameRateValue.Rational(50, 1), segment.FrameRate);
+            Assert.Equal(FrameRateValue.Rational(25, 1), segment.SourceFrameRate);
         });
         Assert.Equal(TimeSpan.FromSeconds(2.5).Ticks, split.Candidate.Tracks[0].Chapters[0].StartTicks);
         Assert.Equal(TimeSpan.FromSeconds(1).Ticks, split.Candidate.Tracks[1].Chapters[0].StartTicks);
@@ -169,6 +169,27 @@ public sealed class ChapterClipCandidateBuilderTests
         Assert.Equal(TimeSpan.FromSeconds(12).Ticks, track.Chapters[1].StartTicks);
         Assert.Equal(2, track.Segments.Length);
         Assert.Equal("imported.mpls", track.Segments[1].SourceName);
+    }
+
+    [Fact]
+    public void Append_preserves_unknown_source_rate_on_imported_segment()
+    {
+        var current = CreateDocument(SingleTrack("current", "Current", [Chapter(1, "Current")]), 10);
+        var importedSegment = Segment("unknown", "Unknown", 0, 5, FrameRateValue.Rational(25, 1)) with
+        {
+            SourceFrameRate = FrameRateValue.Unknown
+        };
+        var imported = CreateDocument(
+            TrackWithSegments("unknown", "Unknown", [importedSegment], [Chapter(2, "Imported")]),
+            5,
+            "unknown.mpls");
+
+        var result = ChapterClipCandidateBuilder.Append(current, imported);
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors));
+        var appended = result.Candidate.Tracks.Single().Segments.Single(segment => segment.SourceEntryId == "unknown");
+        Assert.Equal(FrameRateValue.Rational(25, 1), appended.FrameRate);
+        Assert.Equal(FrameRateValue.Unknown, appended.SourceFrameRate);
     }
 
     [Fact]
@@ -224,7 +245,7 @@ public sealed class ChapterClipCandidateBuilderTests
                 token.ThrowIfCancellationRequested();
                 return ValueTask.FromResult(beforeCancel.Document);
             },
-            cancellation.Token);
+            cancellationToken: cancellation.Token);
 
         Assert.Equal(TransactionOutcomeKind.Cancelled, outcome.Kind);
         Assert.Equal(beforeCancel.StateIdentity, session.Snapshot.StateIdentity);
@@ -235,13 +256,13 @@ public sealed class ChapterClipCandidateBuilderTests
     {
         var track = document.Tracks[0];
         var chapters = track.Chapters.SetItem(0, track.Chapters[0] with { Name = name });
-        return new EditableChapterDocument(document.Id, document.Title, document.SourceName, document.ImportFormat, document.Duration, document.FrameRate,
+        return new EditableChapterDocument(document.Id, document.Title, document.SourceName, document.ImportFormat, document.Duration,
             [new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments)]);
     }
 
-    private static EditableChapterSegment Segment(string id, string name, int startSeconds, int durationSeconds, ChapterFrameRate? rate = null) =>
+    private static EditableChapterSegment Segment(string id, string name, int startSeconds, int durationSeconds, FrameRateValue? rate = null) =>
         EditableChapterSegment.Create(ChapterTrackId.New(), id, name, TimeSpan.FromSeconds(startSeconds).Ticks,
-            ChapterDuration.FromTicks(TimeSpan.FromSeconds(durationSeconds).Ticks), rate ?? new ChapterFrameRate(25, 1),
+            ChapterDuration.FromTicks(TimeSpan.FromSeconds(durationSeconds).Ticks), rate ?? FrameRateValue.Rational(25, 1),
             ChapterImportFormat.Mpls, id + ".mpls", [new ReferencedMediaFile(id + ".m2ts", id + ".m2ts")]);
 
     private static EditableChapterTrack SingleTrack(string id, string name, EditableChapter[] chapters, int durationSeconds = 10) =>
@@ -265,7 +286,7 @@ public sealed class ChapterClipCandidateBuilderTests
 
     private static EditableChapterDocument CreateDocument(EditableChapterTrack[] tracks, int durationSeconds, string? sourceName = "movie.mpls") =>
         new(ChapterDocumentId.New(), "Movie", sourceName, ChapterImportFormat.Mpls,
-            ChapterDuration.FromTicks(TimeSpan.FromSeconds(durationSeconds).Ticks), new ChapterFrameRate(25, 1), tracks);
+            ChapterDuration.FromTicks(TimeSpan.FromSeconds(durationSeconds).Ticks), tracks);
 
     private static EditableChapter Chapter(int startSeconds, string name, int? endSeconds = null) =>
         new(ChapterId.New(), 1, TimeSpan.FromSeconds(startSeconds).Ticks, name,

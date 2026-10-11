@@ -29,7 +29,40 @@ public sealed record ChapterExpressionContext(
 public sealed record ChapterExpressionEvaluationResult(
     bool Success,
     decimal Value,
-    IReadOnlyList<ChapterDiagnostic> Diagnostics);
+    IReadOnlyList<ChapterDiagnostic> Diagnostics)
+{
+    /// <summary>Gets whether an engine returned the unchanged numeric time projection.</summary>
+    public bool TimeUnchanged { get; init; }
+}
+
+/// <summary>Provides ticks and a canonical computation rate to repository expression engines.</summary>
+public sealed record CanonicalChapterExpressionContext(
+    Chapter Chapter,
+    int Index,
+    int Count,
+    long StartTicks,
+    FrameRateValue FrameRate,
+    IReadOnlyList<Chapter> Chapters)
+{
+    /// <summary>Gets seconds only for the floating-point language boundary.</summary>
+    public decimal TimeSeconds => StartTicks / (decimal)TimeSpan.TicksPerSecond;
+}
+
+/// <summary>Defines the canonical engine contract used inside the repository.</summary>
+public interface ICanonicalChapterExpressionEngine
+{
+    /// <summary>Evaluates a script against canonical content and computation metadata.</summary>
+    ChapterExpressionEvaluationResult Evaluate(string sourceText, CanonicalChapterExpressionContext context);
+}
+
+internal static class ChapterExpressionEngineBoundary
+{
+    public static ChapterExpressionEvaluationResult Evaluate(IChapterExpressionEngine engine, string source,
+        CanonicalChapterExpressionContext context) => engine is ICanonicalChapterExpressionEngine canonical
+            ? canonical.Evaluate(source, context)
+            : engine.Evaluate(source, new ChapterExpressionContext(context.Chapter, context.Index, context.Count,
+                context.TimeSeconds, context.FrameRate.ToDecimal(), context.Chapters));
+}
 
 /// <summary>
 /// Describes a built-in expression preset.

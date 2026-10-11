@@ -7,6 +7,8 @@
   "Cli.Error.ExpressionConflict": "--expression と --expression-preset は同時に使用できません。",
   "Cli.Error.FormatsHint": "`formats` を実行して、対応する CLI 変換先を確認してください。",
   "Cli.Error.FrameRatePositive": "--frame-rate を指定する場合、フレームレートは 0 より大きい有限値でなければなりません。",
+  "Cli.Error.FrameRateConflict": "--frame-rate と --frame-rate-ratio は同時に指定できません。",
+  "Cli.Error.FrameRateRatio": "フレームレート比は N/D 形式で、両方の値は正の Int64 整数でなければなりません。",
   "Cli.Error.GroupIndex": "グループインデックス {group} は有効範囲外です。",
   "Cli.Error.OutputExists": "出力ファイル '{path}' は既に存在します。上書きするには --force を指定してください。",
   "Cli.Error.UnsupportedEncoding": "テキストエンコーディング '{encoding}' はサポートされていません。",

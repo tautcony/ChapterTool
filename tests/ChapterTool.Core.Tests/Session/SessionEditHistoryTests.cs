@@ -348,7 +348,6 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
             document.SourceName,
             document.ImportFormat,
             document.Duration,
-            new ChapterFrameRate(24, 1),
             [
                 new EditableChapterTrack(addedTrackId, "New track", [addedChapter]),
                 new EditableChapterTrack(document.Tracks[0].Id, "Reordered", [document.Tracks[0].Chapters[1], document.Tracks[0].Chapters[0]])
@@ -409,7 +408,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         var track = new EditableChapterTrack(ChapterTrackId.New(), "Track", chapters);
         return new EditableChapterDocument(
             ChapterDocumentId.New(), "Title", "source", ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, null, [track]);
+            ChapterDuration.Unknown, [track]);
     }
 
     private static EditableChapter CreateChapter(int number, string name) =>
@@ -420,7 +419,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         var track = document.Tracks[0];
         var chapters = track.Chapters.SetItem(index, track.Chapters[index] with { Name = name ?? track.Chapters[index].Name });
         return new EditableChapterDocument(document.Id, document.Title, document.SourceName, document.ImportFormat,
-            document.Duration, document.FrameRate, [new EditableChapterTrack(track.Id, track.Name, chapters)]);
+            document.Duration, [new EditableChapterTrack(track.Id, track.Name, chapters)]);
     }
 
     private static void AssertDocument(EditableChapterDocument expected, EditableChapterDocument actual)

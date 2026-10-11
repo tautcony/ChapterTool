@@ -1,4 +1,3 @@
-using System.Numerics;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 
@@ -10,26 +9,40 @@ public sealed record ChapterFrameConversionResult(bool Success, long Value, Chap
 /// <summary>Converts between frame numbers and 100-nanosecond ticks using deterministic integer arithmetic.</summary>
 public static class ChapterFrameTimeConverter
 {
-    private const long TicksPerSecond = TimeSpan.TicksPerSecond;
-
     /// <summary>Converts a signed frame count to ticks with midpoint-away-from-zero rounding.</summary>
     public static ChapterFrameConversionResult FramesToTicks(long frames, ChapterFrameRate frameRate) =>
-        Convert(frames, (BigInteger)TicksPerSecond * frameRate.Denominator, frameRate.Numerator);
+        FrameRateValue.TryRational(frameRate, out var rate, out var diagnostic)
+            ? FramesToTicks(frames, rate) : new(false, 0, diagnostic);
+
+    /// <summary>Converts a signed integer frame count with any canonical rate kind.</summary>
+    public static ChapterFrameConversionResult FramesToTicks(long frames, FrameRateValue frameRate) =>
+        Convert(frameRate, () => ExactFrameMath.TicksFromFrames((decimal)frames, frameRate));
 
     /// <summary>Converts signed ticks to a frame count with midpoint-away-from-zero rounding.</summary>
     public static ChapterFrameConversionResult TicksToFrames(long ticks, ChapterFrameRate frameRate) =>
-        Convert(ticks, frameRate.Numerator, (BigInteger)TicksPerSecond * frameRate.Denominator);
+        FrameRateValue.TryRational(frameRate, out var rate, out var diagnostic)
+            ? TicksToFrames(ticks, rate) : new(false, 0, diagnostic);
 
-    private static ChapterFrameConversionResult Convert(long value, BigInteger numerator, BigInteger denominator)
+    /// <summary>Converts a finite decimal frame count without changing rate authority.</summary>
+    public static ChapterFrameConversionResult FramesToTicks(decimal frames, FrameRateValue frameRate) =>
+        Convert(frameRate, () => ExactFrameMath.TicksFromFrames(frames, frameRate));
+
+    /// <summary>Converts signed ticks to an integer frame count with one rounding boundary.</summary>
+    public static ChapterFrameConversionResult TicksToFrames(long ticks, FrameRateValue frameRate) =>
+        Convert(frameRate, () => checked((long)ExactFrameMath.FromTicks(ticks, frameRate).RoundAwayFromZero()));
+
+    private static ChapterFrameConversionResult Convert(FrameRateValue rate, Func<long> calculate)
     {
-        var scaled = (BigInteger)value * numerator;
-        var quotient = BigInteger.DivRem(scaled, denominator, out var remainder);
-        if (BigInteger.Abs(remainder) * 2 >= denominator)
+        if (!rate.IsKnown)
         {
-            quotient += scaled.Sign >= 0 ? BigInteger.One : BigInteger.MinusOne;
+            return new(false, 0, FrameRateValidation.InvalidFrameRate());
         }
 
-        if (quotient < long.MinValue || quotient > long.MaxValue)
+        try
+        {
+            return new ChapterFrameConversionResult(true, calculate());
+        }
+        catch (OverflowException)
         {
             var diagnostic = new ChapterDiagnostic(
                 DiagnosticSeverity.Error,
@@ -38,6 +51,5 @@ public static class ChapterFrameTimeConverter
             return new ChapterFrameConversionResult(false, 0, diagnostic);
         }
 
-        return new ChapterFrameConversionResult(true, (long)quotient);
     }
 }

@@ -114,6 +114,8 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 
     public IExpressionAuthoringService? ExpressionAuthoringService { get; }
 
+    public ChapterTool.Core.Models.FrameRateValue ExpressionFrameRate => expressionSession.ComputationFrameRate;
+
     public IReadOnlyList<ExpressionPresetViewModel> Presets { get; }
 
     public ExpressionPresetViewModel? SelectedPreset =>
@@ -638,8 +640,8 @@ public sealed record ExpressionChapterRowViewModel
             return localizer.GetString("Expression.Value.NotCalculated");
         }
 
-        var rate = value.FrameRate is { } fps
-            ? $"{fps.Numerator}/{fps.Denominator} {localizer.GetString("Expression.Unit.FramesPerSecond")}"
+        var rate = value.FrameRate.IsKnown
+            ? $"{value.FrameRate} {localizer.GetString("Expression.Unit.FramesPerSecond")}"
             : localizer.GetString("Expression.Value.NotSet");
         return $"{value.Text} {localizer.GetString("Expression.Unit.FramesShort")} · {rate}";
     }

@@ -55,11 +55,11 @@ public sealed class SessionHistoryInspectionTests
         var retained = Chapter(3, "Retained");
         var added = Chapter(4, "Added") with { StartTicks = 0 };
         var before = new EditableChapterDocument(ChapterDocumentId.New(), "Title", "source", ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, null,
+            ChapterDuration.Unknown,
             [new EditableChapterTrack(sourceTrackId, "Source", [moved, removed, retained]), new EditableChapterTrack(destinationTrackId, "Destination", [])]);
         var session = new SessionState(before);
         var outcome = await CommitAsync(session, current => new EditableChapterDocument(current.Id, current.Title, current.SourceName,
-            current.ImportFormat, current.Duration, current.FrameRate,
+            current.ImportFormat, current.Duration,
             [new EditableChapterTrack(sourceTrackId, "Source", [retained]),
              new EditableChapterTrack(destinationTrackId, "Destination", [added with { DisplayNumber = 9 }, moved])]));
         Assert.Equal(TransactionOutcomeKind.Committed, outcome.Kind);
@@ -88,24 +88,24 @@ public sealed class SessionHistoryInspectionTests
         var trackId = ChapterTrackId.New();
         var chapter = new EditableChapter(id, 1, 1_234, "A");
         var original = new EditableChapterDocument(ChapterDocumentId.New(), "Title", null, ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, new ChapterFrameRate(24, 1),
-            [new EditableChapterTrack(trackId, "Track", [chapter])]);
+            ChapterDuration.Unknown,
+            [new EditableChapterTrack(trackId, "Track", [chapter], frameRate: FrameRateValue.Rational(24, 1))]);
         var session = new SessionState(original);
         var commit = await CommitAsync(session, current => new EditableChapterDocument(current.Id, current.Title,
-            current.SourceName, current.ImportFormat, current.Duration, new ChapterFrameRate(25, 1),
+            current.SourceName, current.ImportFormat, current.Duration,
             [new EditableChapterTrack(trackId, "Track",
-                [current.Tracks[0].Chapters[0] with { StartTicks = 2_345 }])]));
+                [current.Tracks[0].Chapters[0] with { StartTicks = 2_345 }], frameRate: FrameRateValue.Rational(25, 1))]));
         Assert.Equal(TransactionOutcomeKind.Committed, commit.Kind);
 
         var details = (await session.InspectHistoryNodeAsync(session.GetHistorySnapshot().CursorId)).Details!;
         var ticks = Assert.Single(details.Changes.Where(change => change.Group == "Chapter" && change.ObjectId == id.Value.ToString("D") && change.Field == "StartTicks"));
         Assert.Equal(1_234L, ticks.Before.Value);
         Assert.Equal(2_345L, ticks.After.Value);
-        Assert.Equal(new ChapterFrameRate(24, 1), ticks.BeforeFrameRate);
-        Assert.Equal(new ChapterFrameRate(25, 1), ticks.AfterFrameRate);
+        Assert.Equal(FrameRateValue.Rational(24, 1), ticks.BeforeFrameRate);
+        Assert.Equal(FrameRateValue.Rational(25, 1), ticks.AfterFrameRate);
         var frameRate = Assert.Single(details.Changes.Where(change => change.Group == "Document" && change.Field == "FrameRate"));
-        Assert.Equal(new ChapterFrameRate(24, 1), frameRate.Before.Value);
-        Assert.Equal(new ChapterFrameRate(25, 1), frameRate.After.Value);
+        Assert.Equal(FrameRateValue.Rational(24, 1), frameRate.Before.Value);
+        Assert.Equal(FrameRateValue.Rational(25, 1), frameRate.After.Value);
         Assert.Equal("Track", ticks.Context);
     }
 
@@ -150,11 +150,11 @@ public sealed class SessionHistoryInspectionTests
         var destinationId = ChapterTrackId.New();
         var chapter = Chapter(1, "Move");
         var document = new EditableChapterDocument(ChapterDocumentId.New(), "Title", null, ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, null,
+            ChapterDuration.Unknown,
             [new EditableChapterTrack(sourceId, "Same name", [chapter]), new EditableChapterTrack(destinationId, "Same name", [])]);
         var session = new SessionState(document);
         var outcome = await CommitAsync(session, current => new EditableChapterDocument(current.Id, current.Title,
-            current.SourceName, current.ImportFormat, current.Duration, current.FrameRate,
+            current.SourceName, current.ImportFormat, current.Duration,
             [new EditableChapterTrack(sourceId, "Same name", []),
              new EditableChapterTrack(destinationId, "Same name", [chapter])]));
         Assert.Equal(TransactionOutcomeKind.Committed, outcome.Kind);
@@ -177,14 +177,14 @@ public sealed class SessionHistoryInspectionTests
         var sourceId = ChapterTrackId.New();
         var destinationId = ChapterTrackId.New();
         var segment = EditableChapterSegment.Create(sourceId, "entry", "Clip", 0, ChapterDuration.FromTicks(100),
-            new ChapterFrameRate(24, 1), ChapterImportFormat.Unknown, "media");
+            FrameRateValue.Rational(24, 1), ChapterImportFormat.Unknown, "media");
         var document = new EditableChapterDocument(ChapterDocumentId.New(), "Title", null, ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, null,
+            ChapterDuration.Unknown,
             [new EditableChapterTrack(sourceId, "Source", [], [segment]), new EditableChapterTrack(destinationId, "Destination", [])]);
         var session = new SessionState(document);
 
         var renamed = await CommitAsync(session, current => new EditableChapterDocument(current.Id, current.Title,
-            current.SourceName, current.ImportFormat, current.Duration, current.FrameRate,
+            current.SourceName, current.ImportFormat, current.Duration,
             [new EditableChapterTrack(sourceId, "Renamed source", [], [current.Tracks[0].Segments[0]]), current.Tracks[1]]));
         Assert.Equal(TransactionOutcomeKind.Committed, renamed.Kind);
         var renameDetails = (await session.InspectHistoryNodeAsync(session.GetHistorySnapshot().CursorId)).Details!;
@@ -192,12 +192,12 @@ public sealed class SessionHistoryInspectionTests
         Assert.DoesNotContain(renameDetails.Changes, change => change.Group == "Segment" && change.ObjectId == segment.Id.ToString("D") && change.Field == "Track");
 
         var restoredName = await CommitAsync(session, current => new EditableChapterDocument(current.Id, current.Title,
-            current.SourceName, current.ImportFormat, current.Duration, current.FrameRate,
+            current.SourceName, current.ImportFormat, current.Duration,
             [new EditableChapterTrack(sourceId, "Same name", [], [current.Tracks[0].Segments[0]]), current.Tracks[1]]));
         Assert.Equal(TransactionOutcomeKind.Committed, restoredName.Kind);
 
         var moved = await CommitAsync(session, current => new EditableChapterDocument(current.Id, current.Title,
-            current.SourceName, current.ImportFormat, current.Duration, current.FrameRate,
+            current.SourceName, current.ImportFormat, current.Duration,
             [new EditableChapterTrack(sourceId, "Same name", [], []),
              new EditableChapterTrack(destinationId, "Same name", [], [current.Tracks[0].Segments[0]])]));
         Assert.Equal(TransactionOutcomeKind.Committed, moved.Kind);
@@ -214,12 +214,12 @@ public sealed class SessionHistoryInspectionTests
         var trackId = ChapterTrackId.New();
         var chapter = Chapter(1, "A");
         var segment = EditableChapterSegment.Create(trackId, "source-entry", "Clip", 0, ChapterDuration.FromTicks(100),
-            new ChapterFrameRate(24, 1), ChapterImportFormat.Unknown, "media");
+            FrameRateValue.Rational(24, 1), ChapterImportFormat.Unknown, "media");
         var original = new EditableChapterDocument(ChapterDocumentId.New(), "Title", null, ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, null, [new EditableChapterTrack(trackId, "Track", [chapter], [segment])]);
+            ChapterDuration.Unknown, [new EditableChapterTrack(trackId, "Track", [chapter], [segment])]);
         var session = new SessionState(original);
         var committed = await CommitAsync(session, current => new EditableChapterDocument(current.Id, "Renamed", string.Empty,
-            current.ImportFormat, current.Duration, current.FrameRate,
+            current.ImportFormat, current.Duration,
             [new EditableChapterTrack(trackId, "Renamed track", current.Tracks[0].Chapters,
                 [current.Tracks[0].Segments[0] with { SourceName = string.Empty, Name = "Renamed clip" }])]));
 
@@ -268,7 +268,7 @@ public sealed class SessionHistoryInspectionTests
     {
         var track = new EditableChapterTrack(ChapterTrackId.New(), "Track", [Chapter(1, "Start")]);
         return new EditableChapterDocument(ChapterDocumentId.New(), "Title", "source", ChapterImportFormat.Unknown,
-            ChapterDuration.Unknown, null, [track]);
+            ChapterDuration.Unknown, [track]);
     }
 
     private static EditableChapter Chapter(int number, string name) => new(ChapterId.New(), number, number * TimeSpan.TicksPerSecond, name);
@@ -277,7 +277,7 @@ public sealed class SessionHistoryInspectionTests
     {
         var track = document.Tracks[0];
         return new EditableChapterDocument(document.Id, document.Title, document.SourceName, document.ImportFormat,
-            document.Duration, document.FrameRate, [new EditableChapterTrack(track.Id, track.Name,
+            document.Duration, [new EditableChapterTrack(track.Id, track.Name,
                 [track.Chapters[0] with { Name = name }], track.Segments)]);
     }
 

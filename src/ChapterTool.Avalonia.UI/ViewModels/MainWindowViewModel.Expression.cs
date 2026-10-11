@@ -15,7 +15,7 @@ public sealed partial class MainWindowViewModel
     {
         var frameUpdate = CurrentInfo is null ? null : ClipEditingCoordinator.UpdateFrames(CurrentInfo,
             selectedFrameRateOption, EditingOptions.EffectiveFrameDecimalPlaces,
-            FrameAccuracyTolerance, configuredFrameRate);
+            FrameAccuracyTolerance);
         appliedFrameRateOption = frameUpdate?.AppliedOption;
         var display = frameUpdate?.FrameResult;
         DisplayFrameRate = display?.FramesPerSecond ?? 0m;
@@ -29,9 +29,8 @@ public sealed partial class MainWindowViewModel
         var preview = pendingContentPreview;
         IReadOnlyDictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison> comparisons = preview is { IsValid: true }
             && Workspace.IsContentTokenCurrent(preview.BaseToken)
-            ? ExpressionPreviewProjector.Build(preview, displayFrameRate: DisplayFrameRate,
-                frameDecimalPlaces: PreviewFrameDecimalPlaces,
-                exactDisplayFrameRate: EffectiveFrameRateOption.Value == DisplayFrameRate ? EffectiveFrameRateOption.ExactRate : null)
+            ? ExpressionPreviewProjector.Build(preview, displayFrameRate: EffectiveFrameRateOption.Rate,
+                frameDecimalPlaces: PreviewFrameDecimalPlaces)
                 .Chapters.ToDictionary(item => (item.TrackId, item.Id))
             : new Dictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison>();
         foreach (var row in Rows)
@@ -95,27 +94,21 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    private FramePresentationInput CreateFramePresentationInput(long startTicks, ChapterFrameRate? rate, string fallback)
+    private FramePresentationInput CreateFramePresentationInput(long startTicks, FrameRateValue rate, string fallback)
     {
-        if (rate is { } exactRate)
+        if (selectedFrameRateOption.IsValid && selectedFrameRateOption.ExactRate is { } selected)
         {
-            var sourceValue = (decimal)exactRate.Numerator / exactRate.Denominator;
-            if (EffectiveFrameRateOption.Value == DisplayFrameRate
-                && EffectiveFrameRateOption.ExactRate is { } selectedRate
-                && Math.Abs(sourceValue - EffectiveFrameRateOption.Value) < 0.000001m)
-            {
-                return FramePresentationInput.FromExactRate(startTicks, selectedRate, fallback);
-            }
-
-            return FramePresentationInput.FromExactRate(startTicks, exactRate, fallback);
+            return new FramePresentationInput(startTicks, FrameRateValue.Rational(selected), fallback);
         }
 
-        if (EffectiveFrameRateOption.Value == DisplayFrameRate && EffectiveFrameRateOption.ExactRate is { } exactDisplayRate)
+        if (rate.IsKnown)
         {
-            return FramePresentationInput.FromExactRate(startTicks, exactDisplayRate, fallback);
+            return new FramePresentationInput(startTicks, rate, fallback);
         }
 
-        return FramePresentationInput.FromApproximateRate(startTicks, EffectiveFrameRateOption.Value, fallback);
+        return EffectiveFrameRateOption.ExactRate is { } suggestion
+            ? new FramePresentationInput(startTicks, FrameRateValue.Rational(suggestion), fallback)
+            : FramePresentationInput.FromNumericText(fallback);
     }
 
     internal FramePresentationPolicy FramePresentationPolicy => new(
@@ -150,6 +143,8 @@ public sealed partial class MainWindowViewModel
     }
 
     internal decimal DisplayFrameRate { get; private set; }
+
+    public FrameRateValue ExpressionFrameRate => ComputationFrameRate;
 
     internal FrameRateOption SelectedFrameRateOption => selectedFrameRateOption;
 

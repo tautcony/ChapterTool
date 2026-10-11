@@ -1,18 +1,67 @@
+using ChapterTool.Core.Models;
+
 namespace ChapterTool.Core.Transform;
 
-/// <summary>
-/// Describes a supported frame rate option.
-/// </summary>
-/// <param name="Code">The stable frame rate option code.</param>
-/// <param name="DisplayName">The frame rate label shown to users.</param>
-/// <param name="Value">The frame rate value in frames per second.</param>
-/// <param name="IsValid">Whether the option can be used for frame calculations.</param>
-/// <param name="LegacyMplsCode">The Blu-ray MPLS frame rate code associated with the option.</param>
-/// <param name="ExactRate">The authoritative rational rate when selected by option code.</param>
-public sealed record FrameRateOption(
-    string Code,
-    string DisplayName,
-    decimal Value,
-    bool IsValid,
-    int LegacyMplsCode,
-    ChapterTool.Core.Models.ChapterFrameRate? ExactRate = null);
+/// <summary>Describes a selectable rate with its provenance.</summary>
+#pragma warning disable SA1313 // Preserve established named constructor arguments.
+public sealed record FrameRateOption
+{
+    /// <summary>Creates an option with a canonical rate.</summary>
+    public FrameRateOption(string code, string displayName, FrameRateValue rate, bool isValid, int legacyMplsCode)
+    {
+        this.Code = code;
+        this.DisplayName = displayName;
+        this.Rate = rate;
+        this.IsValid = isValid;
+        this.LegacyMplsCode = legacyMplsCode;
+    }
+
+    /// <summary>Adapts the retained numeric option constructor.</summary>
+    public FrameRateOption(string code, string displayName, decimal value, bool isValid, int legacyMplsCode,
+        ChapterFrameRate? exactRate = null)
+        : this(code, displayName, exactRate is { } ratio ? FrameRateValue.Rational(ratio) : Normalize(value), isValid, legacyMplsCode)
+    {
+    }
+
+    /// <summary>Gets the stable selection code.</summary>
+    public string Code { get; init; }
+
+    /// <summary>Gets the display label.</summary>
+    public string DisplayName { get; init; }
+
+    /// <summary>Gets the canonical rate.</summary>
+    public FrameRateValue Rate { get; init; }
+
+    /// <summary>Gets whether the option is available for computation.</summary>
+    public bool IsValid { get; init; }
+
+    /// <summary>Gets the MPLS code, or -1 for a custom rate.</summary>
+    public int LegacyMplsCode { get; init; }
+
+    /// <summary>Gets or initializes the retained numeric projection.</summary>
+    public decimal Value { get => Rate.ToDecimal(); init => Rate = Normalize(value); }
+
+    /// <summary>Gets or initializes the retained rational projection.</summary>
+    public ChapterFrameRate? ExactRate
+    {
+        get => Rate.RationalRate;
+        init => Rate = value is { } ratio ? FrameRateValue.Rational(ratio) : Normalize(Value);
+    }
+
+    /// <summary>Deconstructs the retained option fields.</summary>
+    public void Deconstruct(out string code, out string displayName, out decimal value, out bool isValid,
+        out int legacyMplsCode, out ChapterFrameRate? exactRate)
+    {
+        code = this.Code;
+        displayName = this.DisplayName;
+        value = this.Value;
+        isValid = this.IsValid;
+        legacyMplsCode = this.LegacyMplsCode;
+        exactRate = this.ExactRate;
+    }
+
+    private static FrameRateValue Normalize(decimal value) =>
+        FrameRateValue.TryFromDecimal(value, metadata: true, out var rate, out _)
+            ? rate : throw new ArgumentOutOfRangeException(nameof(value));
+}
+#pragma warning restore SA1313

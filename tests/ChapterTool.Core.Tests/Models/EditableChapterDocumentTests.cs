@@ -18,7 +18,7 @@ public sealed class EditableChapterDocumentTests
         Assert.Single(document.Tracks);
         Assert.Single(document.Tracks[0].Chapters);
         Assert.False(document.Duration.IsKnown);
-        Assert.Equal(new ChapterFrameRate(24, 1), document.FrameRate);
+        Assert.Equal(FrameRateValue.Approximate(24), document.FrameRate);
         Assert.True(EditableChapterDocumentValidator.Validate(document).IsValid);
         Assert.Equal(TimeSpan.Zero, EditableChapterDocumentAdapter.ToChapterSet(document).Duration);
     }
@@ -35,9 +35,9 @@ public sealed class EditableChapterDocumentTests
         var roundTrip = EditableChapterDocumentAdapter.ToChapterSet(document);
         var approximate = EditableChapterDocumentAdapter.FromChapterSet(imported with { ExactFrameRate = null });
 
-        Assert.Equal(exactRate, document.ExactFrameRate);
+        Assert.Equal(FrameRateValue.Rational(exactRate), document.FrameRate);
         Assert.Equal(exactRate, roundTrip.ExactFrameRate);
-        Assert.Null(approximate.ExactFrameRate);
+        Assert.Equal(FrameRateKind.Approximate, approximate.FrameRate.Kind);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public sealed class EditableChapterDocumentTests
             original.Tracks[0].Name,
             [sourceChapter with { Name = "B" }]);
         var candidate = new EditableChapterDocument(
-            original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration, original.FrameRate, [changedTrack]);
+            original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration, [changedTrack]);
 
         Assert.Equal("A", original.Tracks[0].Chapters[0].Name);
         Assert.Equal("B", candidate.Tracks[0].Chapters[0].Name);
@@ -66,7 +66,7 @@ public sealed class EditableChapterDocumentTests
             new ChapterSet("Title", null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
         var chapter = original.Tracks[0].Chapters[0] with { StartTicks = TimeSpan.FromDays(100).Ticks };
         var document = new EditableChapterDocument(
-            original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration, original.FrameRate,
+            original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration,
             [new EditableChapterTrack(original.Tracks[0].Id, "Track", [chapter])]);
 
         Assert.True(EditableChapterDocumentValidator.Validate(document).IsValid);
@@ -81,7 +81,6 @@ public sealed class EditableChapterDocumentTests
             null,
             ChapterImportFormat.Unknown,
             ChapterDuration.Unknown,
-            null,
             [
                 new EditableChapterTrack(ChapterTrackId.New(), "First", [new EditableChapter(ChapterId.New(), 1, 0, "A")]),
                 new EditableChapterTrack(ChapterTrackId.New(), "Second", [new EditableChapter(ChapterId.New(), 1, 0, "B")])

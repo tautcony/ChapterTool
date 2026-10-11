@@ -83,6 +83,25 @@ public sealed class ChapterSegmentServiceTests
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.UnsupportedAppendSource);
     }
 
+    [Fact]
+    public void CombineRejectsMixedCanonicalRatesInsteadOfUsingTheFirstRate()
+    {
+        var group = new ChapterImportSource(
+            "mixed-rates",
+            [
+                new ChapterImportEntry("a", "a", Info(ChapterImportFormat.Mpls, TimeSpan.FromSeconds(1), FrameRateValue.Rational(24, 1), new Chapter(1, TimeSpan.Zero, "A"))),
+                new ChapterImportEntry("b", "b", Info(ChapterImportFormat.Mpls, TimeSpan.FromSeconds(1), FrameRateValue.Unknown, new Chapter(1, TimeSpan.Zero, "B")))
+            ]);
+
+        var result = ChapterSegmentService.Combine(group);
+
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
+        Assert.Equal(FrameRateValue.Unknown, result.ChapterSet.FrameRate);
+    }
+
     private static ChapterSet Info(ChapterImportFormat sourceType, TimeSpan duration, params Chapter[] chapters) =>
-        new(ChapterImportFormats.DisplayName(sourceType), ChapterImportFormats.DisplayName(sourceType), sourceType, 24, duration, chapters);
+        Info(sourceType, duration, FrameRateValue.Approximate(24), chapters);
+
+    private static ChapterSet Info(ChapterImportFormat sourceType, TimeSpan duration, FrameRateValue rate, params Chapter[] chapters) =>
+        new(ChapterImportFormats.DisplayName(sourceType), ChapterImportFormats.DisplayName(sourceType), sourceType, rate, duration, chapters);
 }
