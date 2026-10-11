@@ -7,11 +7,11 @@ namespace ChapterTool.Core.Models;
 public sealed record ChapterSet
 {
     /// <summary>Constructs the retained numeric contract. Numeric input has approximate authority.</summary>
-    public ChapterSet(string title, string? sourceName, ChapterImportFormat importFormat,
-        double framesPerSecond, TimeSpan duration, IReadOnlyList<Chapter> chapters,
-        ChapterFrameRate? exactFrameRate = null)
-        : this(title, sourceName, importFormat,
-            exactFrameRate is { } exact ? FrameRateValue.Rational(exact) : Normalize(framesPerSecond), duration, chapters)
+    public ChapterSet(string Title, string? SourceName, ChapterImportFormat ImportFormat,
+        double FramesPerSecond, TimeSpan Duration, IReadOnlyList<Chapter> Chapters,
+        ChapterFrameRate? ExactFrameRate = null)
+        : this(Title, SourceName, ImportFormat,
+            ExactFrameRate is { } exact ? FrameRateValue.Rational(exact) : Normalize(FramesPerSecond), Duration, Chapters)
     {
     }
 

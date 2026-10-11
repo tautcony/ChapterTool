@@ -312,12 +312,12 @@ public sealed class FrameRateServiceTests
     private static ChapterSet NewInfo(decimal fps, IReadOnlyList<Chapter> chapters)
     {
         return new ChapterSet(
-            title: "Title",
-            sourceName: null,
-            importFormat: ChapterImportFormat.Ogm,
-            framesPerSecond: (double)fps,
-            duration: TimeSpan.Zero,
-            chapters: chapters);
+            Title: "Title",
+            SourceName: null,
+            ImportFormat: ChapterImportFormat.Ogm,
+            FramesPerSecond: (double)fps,
+            Duration: TimeSpan.Zero,
+            Chapters: chapters);
     }
 
     private static void AssertFrameRate(

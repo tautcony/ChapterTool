@@ -21,9 +21,9 @@ public sealed record FrameInfoResult(
 
 #pragma warning disable SA1313 // Preserve established named arguments.
     /// <summary>Adapts the retained numeric result constructor.</summary>
-    public FrameInfoResult(ChapterSet info, IReadOnlyList<Chapter> chapters, FrameRateOption selectedOption,
-        decimal framesPerSecond, IReadOnlyList<FrameAccuracy> accuracy)
-        : this(info, chapters, selectedOption with { Value = framesPerSecond }, accuracy)
+    public FrameInfoResult(ChapterSet Info, IReadOnlyList<Chapter> Chapters, FrameRateOption SelectedOption,
+        decimal FramesPerSecond, IReadOnlyList<FrameAccuracy> Accuracy)
+        : this(Info, Chapters, SelectedOption with { Value = FramesPerSecond }, Accuracy)
     {
     }
 

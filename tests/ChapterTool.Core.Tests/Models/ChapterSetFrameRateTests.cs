@@ -7,8 +7,8 @@ public sealed class ChapterSetFrameRateTests
     [Fact]
     public void RetainedNamedConstructionAndDeconstructionProjectCanonicalRate()
     {
-        var set = new ChapterSet(title: "Title", sourceName: null, importFormat: ChapterImportFormat.Unknown,
-            framesPerSecond: 23.976, duration: TimeSpan.Zero, chapters: [], exactFrameRate: new ChapterFrameRate(48000, 2002));
+        var set = new ChapterSet(Title: "Title", SourceName: null, ImportFormat: ChapterImportFormat.Unknown,
+            FramesPerSecond: 23.976, Duration: TimeSpan.Zero, Chapters: [], ExactFrameRate: new ChapterFrameRate(48000, 2002));
         var (title, source, format, fps, duration, chapters, exact) = set;
         Assert.Equal("Title", title);
         Assert.Null(source);

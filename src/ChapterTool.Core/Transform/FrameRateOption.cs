@@ -7,19 +7,19 @@ namespace ChapterTool.Core.Transform;
 public sealed record FrameRateOption
 {
     /// <summary>Creates an option with a canonical rate.</summary>
-    public FrameRateOption(string code, string displayName, FrameRateValue rate, bool isValid, int legacyMplsCode)
+    public FrameRateOption(string Code, string DisplayName, FrameRateValue Rate, bool IsValid, int LegacyMplsCode)
     {
-        this.Code = code;
-        this.DisplayName = displayName;
-        this.Rate = rate;
-        this.IsValid = isValid;
-        this.LegacyMplsCode = legacyMplsCode;
+        this.Code = Code;
+        this.DisplayName = DisplayName;
+        this.Rate = Rate;
+        this.IsValid = IsValid;
+        this.LegacyMplsCode = LegacyMplsCode;
     }
 
     /// <summary>Adapts the retained numeric option constructor.</summary>
-    public FrameRateOption(string code, string displayName, decimal value, bool isValid, int legacyMplsCode,
-        ChapterFrameRate? exactRate = null)
-        : this(code, displayName, exactRate is { } ratio ? FrameRateValue.Rational(ratio) : Normalize(value), isValid, legacyMplsCode)
+    public FrameRateOption(string Code, string DisplayName, decimal Value, bool IsValid, int LegacyMplsCode,
+        ChapterFrameRate? ExactRate = null)
+        : this(Code, DisplayName, ExactRate is { } ratio ? FrameRateValue.Rational(ratio) : Normalize(Value), IsValid, LegacyMplsCode)
     {
     }
 
