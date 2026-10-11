@@ -66,6 +66,18 @@ public sealed class MplsImporterTests
     }
 
     [Fact]
+    public async Task MplsImporterRetainsAuthoritativeRationalFrameRate()
+    {
+        var result = await new MplsChapterImporter().ImportAsync(
+            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls")),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        Assert.All(result.Groups.Single().Entries, entry =>
+            Assert.Equal(new ChapterFrameRate(24000, 1001), entry.ChapterSet.ExactFrameRate));
+    }
+
+    [Fact]
     public async Task InvalidExtensionDataAddressReturnsInvalidMplsDiagnostic()
     {
         var importer = new MplsChapterImporter();

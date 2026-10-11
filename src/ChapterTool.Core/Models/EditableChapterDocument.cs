@@ -133,7 +133,8 @@ public sealed record EditableChapterSegment(
     string? ImportDisplayName = null,
     int? DiscTitleNumber = null,
     ChapterFrameRate? SourceFrameRate = null,
-    int? SourceChapterCount = null)
+    int? SourceChapterCount = null,
+    ChapterFrameRate? ExactFrameRate = null)
 {
     /// <summary>Creates a segment with fresh structural identity and immutable media metadata.</summary>
     public static EditableChapterSegment Create(
@@ -151,10 +152,11 @@ public sealed record EditableChapterSegment(
         string? importDisplayName = null,
         int? discTitleNumber = null,
         ChapterFrameRate? sourceFrameRate = null,
-        int? sourceChapterCount = null) =>
+        int? sourceChapterCount = null,
+        ChapterFrameRate? exactFrameRate = null) =>
         new(Guid.NewGuid(), sourceTrackId, sourceEntryId, name, startTicks, duration, frameRate, importFormat, sourceName,
             referencedMediaFiles?.ToImmutableArray() ?? [], mediaTracks?.ToImmutableArray() ?? [], chapterCount, importDisplayName,
-            discTitleNumber, sourceFrameRate ?? frameRate, sourceChapterCount ?? chapterCount);
+            discTitleNumber, sourceFrameRate ?? frameRate, sourceChapterCount ?? chapterCount, exactFrameRate);
 }
 
 /// <summary>An immutable snapshot of editable chapter content and its metadata.</summary>
@@ -167,7 +169,8 @@ public sealed class EditableChapterDocument
         ChapterImportFormat importFormat,
         ChapterDuration duration,
         ChapterFrameRate? frameRate,
-        IEnumerable<EditableChapterTrack> tracks)
+        IEnumerable<EditableChapterTrack> tracks,
+        ChapterFrameRate? exactFrameRate = null)
     {
         Id = id;
         Title = title ?? throw new ArgumentNullException(nameof(title));
@@ -175,6 +178,7 @@ public sealed class EditableChapterDocument
         ImportFormat = importFormat;
         Duration = duration;
         FrameRate = frameRate;
+        ExactFrameRate = exactFrameRate;
         Tracks = tracks?.ToImmutableArray() ?? throw new ArgumentNullException(nameof(tracks));
     }
 
@@ -189,6 +193,9 @@ public sealed class EditableChapterDocument
     public ChapterDuration Duration { get; }
 
     public ChapterFrameRate? FrameRate { get; }
+
+    /// <summary>Gets the authoritative rational rate when the source provides it.</summary>
+    public ChapterFrameRate? ExactFrameRate { get; }
 
     public ImmutableArray<EditableChapterTrack> Tracks { get; }
 }

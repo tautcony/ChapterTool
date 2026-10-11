@@ -541,7 +541,8 @@ public sealed class ChapterWorkspace
         var segment = track.Segments.FirstOrDefault();
         return new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
-            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), segment?.FrameRate ?? source.FrameRate, [track]);
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex), segment?.FrameRate ?? source.FrameRate, [track],
+            segment?.ExactFrameRate ?? source.ExactFrameRate);
     }
 
     private static EditableChapterDocument ReplaceFocusedTrack(
@@ -551,7 +552,7 @@ public sealed class ChapterWorkspace
     {
         var tracks = source.Tracks.SetItem(trackIndex, focused.Tracks[0]);
         return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
-            source.Duration, source.FrameRate, tracks);
+            source.Duration, source.FrameRate, tracks, source.ExactFrameRate);
     }
 }
 

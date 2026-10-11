@@ -9,10 +9,12 @@ namespace ChapterTool.Core.Models;
 /// <param name="FramesPerSecond">The frame rate associated with frame-based chapter calculations.</param>
 /// <param name="Duration">The total duration covered by the chapter collection.</param>
 /// <param name="Chapters">The ordered chapter entries in the collection.</param>
+/// <param name="ExactFrameRate">The authoritative rational rate when the importer knows it.</param>
 public sealed record ChapterSet(
     string Title,
     string? SourceName,
     ChapterImportFormat ImportFormat,
     double FramesPerSecond,
     TimeSpan Duration,
-    IReadOnlyList<Chapter> Chapters);
+    IReadOnlyList<Chapter> Chapters,
+    ChapterFrameRate? ExactFrameRate = null);

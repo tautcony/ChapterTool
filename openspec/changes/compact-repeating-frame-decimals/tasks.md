@@ -54,6 +54,11 @@
 - [x] 8.2 Use the effective rational rate for frame display, editing, expression preview, and frame-shift operations while Auto remains selected. Detect Auto in all frame display modes.
 - [x] 8.3 Add Core, Avalonia, and Web regression coverage for repeating decimals and exact frame shifts in Auto mode.
 
+## 14. Preserve exact imported rate provenance
+
+- [x] 14.1 Preserve authoritative rational frame rates from MPLS import through editable document and selected-track projections without promoting approximate rates.
+- [x] 14.2 Reproduce and fix startup-settings-then-file-load behavior for full-precision cycle display. Cover MPLS import and document adapter round trips.
+
 ## 9. Preview comparison presentation regressions
 
 - [x] 9.1 Center frame values across their cells and provide an unclipped arrow area in wide and narrow comparisons.

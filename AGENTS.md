@@ -6,6 +6,7 @@
 - Use `ChapterTool.slnx` as the main solution.
 - Use `docs/code-map/` when you need to locate ownership, entry points, or tests. Read only pages relevant to the task. Small edits do not require a full documentation review.
 - `docs/README.md` indexes current documentation. Treat `docs/archive/` as historical reference.
+- External reference checkouts, such as `libbluray/`, must remain outside ChapterTool commits unless the user requests vendoring. Do not move or remove their Git metadata to stage them as ordinary files.
 - For an explicit WinForms-to-Avalonia migration, use `.agents/skills/README-winforms-to-avalonia.md` and the `winforms-to-avalonia` orchestrator skill.
 - Store user-facing Chinese strings as valid UTF-8.
 - Validate localization through behavior, rendered UI, or resource-level checks. Do not hard-code incidental mojibake examples.
@@ -60,6 +61,18 @@
 - After a hung run, stop its leftover Avalonia testhosts before retrying. Investigate UI-session isolation rather than deleting tests.
 - In Headless tests, use the runner's UI thread, `RunJobs`, and deterministic state. Verify user workflow outcomes. Avoid fixed delays and static-control-only assertions. Use `autoLoad: false` before explicit `SettingsToolViewModel.LoadAsync`.
 - Verify behavior through compiled tests, public APIs, runtime checks, or integration checks. Do not test source or configuration by reading files as text.
+- Bug fixes must reproduce the reported workflow before the fix and verify its outcome after the fix. Preserve behavior assertions unless the required behavior changes.
+- Desktop startup and import changes must verify a real window and the affected load, selection, edit, or save workflow. A successful build or a process that stays alive does not establish workflow completion.
+- When IDE and shell test results differ, check external-tool resolution, working directories, and fixture availability before classifying the failure as unrelated. This applies to ffmpeg, ffprobe, and mkvtoolnix consumers.
+
+## Editing And Precision
+
+- Time and frame calculations must use timestamp ticks and authoritative rational frame rates through transforms, previews, edits, and exports. Keep exact arithmetic until the required rounding boundary. Approximate or unknown rates must retain their provenance. Do not invent an exact rate from a display value.
+- Importers must not hide timing errors through automatic frame snapping or drift correction. Display rounding must not change committed chapter times. Explicit content transforms and export quantization follow their own contracts.
+- Entering and leaving a cell editor without a value change must preserve the chapter, its timestamp ticks, and its history position. Do not parse rounded display text back into unchanged content.
+- Expression previews must use the shared Core candidate model. Apply must commit the reviewed candidate atomically. Other content options must not replay an expression already applied on the active track and history branch. Display preference changes must preserve an active candidate and must not create content history.
+- Document history must remain in memory for the document session. Do not add SQLite, IndexedDB, history export, or restart recovery to this feature without a requested scope change.
+- Saved frame display settings must initialize the main-window display state. The main-window rounding toggle affects the current session only. Live settings changes must refresh existing rows even when the toggle value stays unchanged.
 
 ## Avalonia UI Guidelines
 
@@ -78,7 +91,10 @@
 - When verifying visual layout changes manually, capture screenshots at default, wide, and narrow sizes and store them under `artifacts/`. Do not treat screenshot generation by itself as an automated test assertion.
 - Verify stateful layouts in empty, valid, invalid, pending, and stale states. A screenshot of only a valid state does not establish layout parity.
 - Preserve accessible names, keyboard navigation, focus behavior, and localization boundaries when changing controls.
+- Shared editing, settings, and preview changes must cover Avalonia and Web consumers. Verify complete workflows in both hosts. Record intentional platform differences.
 - Web shortcut checks must use real key events to verify document actions, browser default cancellation, and field text undo.
+- Selector and localization changes must verify initial selection, reselection, and language switching. Check selected labels and existing rows in Chinese, English, and Japanese.
+- Time values must stay on one line. Frame decimals must read as one number. Verify normal, editor, and preview cells for clipping, alignment, and available width.
 
 ## Completion And Scope
 
@@ -87,6 +103,7 @@
 - Keep work within the requested scope. Preserve unrelated user and generated changes.
 - Update relevant `docs/code-map/` pages when module ownership, entry points, runtime wiring, or primary tests change.
 - Report the resulting behavior and primary verification commands. Include screenshot paths for UI changes when available.
+- When the task includes push and CI verification, check the required jobs for the pushed commit SHA. Continue fixing failures within the authorized scope until those jobs pass or a concrete blocker requires user input. Local checks and a successful push do not establish remote CI success.
 
 <!-- CODEGRAPH_START -->
 ## CodeGraph

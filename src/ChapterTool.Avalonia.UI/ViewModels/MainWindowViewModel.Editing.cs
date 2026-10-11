@@ -44,7 +44,10 @@ public sealed partial class MainWindowViewModel
                 ("chapters", CurrentInfo.Chapters.Count), ("fps", fps));
         }
 
-        selectedFrameRateOption = frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
+        selectedFrameRateOption = CurrentInfo.ExactFrameRate is { } exactRate
+            ? frameRateService.Options.FirstOrDefault(option => option.ExactRate == exactRate)
+                ?? frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond)
+            : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
         SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
         ApplyFrameInfo(logSelection);
     }

@@ -24,6 +24,23 @@ public sealed class EditableChapterDocumentTests
     }
 
     [Fact]
+    public void Adapter_preserves_authoritative_rate_provenance_without_promoting_approximate_rates()
+    {
+        var exactRate = new ChapterFrameRate(24000, 1001);
+        var imported = new ChapterSet("Title", "source", ChapterImportFormat.Mpls,
+            (double)exactRate.Numerator / exactRate.Denominator, TimeSpan.Zero,
+            [new Chapter(1, TimeSpan.FromMilliseconds(52094), "Later")], exactRate);
+
+        var document = EditableChapterDocumentAdapter.FromChapterSet(imported);
+        var roundTrip = EditableChapterDocumentAdapter.ToChapterSet(document);
+        var approximate = EditableChapterDocumentAdapter.FromChapterSet(imported with { ExactFrameRate = null });
+
+        Assert.Equal(exactRate, document.ExactFrameRate);
+        Assert.Equal(exactRate, roundTrip.ExactFrameRate);
+        Assert.Null(approximate.ExactFrameRate);
+    }
+
+    [Fact]
     public void Candidate_value_edit_preserves_identity_without_changing_published_snapshot()
     {
         var original = EditableChapterDocumentAdapter.FromChapterSet(

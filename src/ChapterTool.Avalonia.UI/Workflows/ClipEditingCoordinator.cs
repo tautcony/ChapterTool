@@ -226,7 +226,8 @@ internal sealed class ClipEditingCoordinator(
             segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
             EditableChapterDocumentAdapter.TrackDuration(source, trackIndex),
             track.Segments.FirstOrDefault()?.FrameRate ?? source.FrameRate,
-            [track]);
+            [track],
+            segment?.ExactFrameRate ?? source.ExactFrameRate);
         var result = build(focused);
         if (!result.IsValid || result.Candidate.Tracks.Length != 1)
         {
@@ -243,7 +244,8 @@ internal sealed class ClipEditingCoordinator(
         var candidate = new EditableChapterDocument(source.Id, source.Title, source.SourceName,
             source.ImportFormat, EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, result.Candidate),
             effectiveRates.Length == 1 ? effectiveRates[0] : effectiveRates.Length == 0 ? source.FrameRate : null,
-            tracks);
+            tracks,
+            source.ExactFrameRate);
         return result with { Candidate = candidate };
     }
 }

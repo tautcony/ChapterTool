@@ -1115,7 +1115,10 @@ public sealed class MainWindowViewModelTests
     {
         var info = Info(ChapterImportFormat.Ogm, "movie.txt",
             new Chapter(1, TimeSpan.Zero, "Opening"),
-            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later"));
+            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")) with
+        {
+            FramesPerSecond = (double)(24000m / 1001m)
+        };
         Assert.Equal("Fps23976", new FrameRateService().DetectDetailed(info, 0.15m).Option.Code);
         var settings = new FakeSettingsStore(new AppSettings(
             FrameDisplayMode: "full-precision",
@@ -1137,6 +1140,30 @@ public sealed class MainWindowViewModelTests
         Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
         var candidate = preview.Candidate.Tracks[0].Chapters[1].StartTicks;
         Assert.Equal(before + 417083, candidate);
+    }
+
+    [Fact]
+    public async Task Saved_full_precision_cycle_display_applies_when_file_loads_after_startup()
+    {
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt",
+            new Chapter(1, TimeSpan.Zero, "Opening"),
+            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")) with
+        {
+            FramesPerSecond = (double)(24000m / 1001m),
+            ExactFrameRate = new ChapterFrameRate(24000, 1001)
+        };
+        var settings = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true));
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), settingsStore: settings);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        Assert.False(vm.RoundFrames);
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
     }
 
     [Fact]

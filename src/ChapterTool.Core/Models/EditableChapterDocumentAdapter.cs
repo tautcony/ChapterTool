@@ -56,6 +56,7 @@ public static class EditableChapterDocumentAdapter
         var tracks = ImmutableArray.CreateBuilder<EditableChapterTrack>(source.Entries.Count);
         var durationTicks = 0L;
         var effectiveRates = new HashSet<ChapterFrameRate>();
+        var exactRates = new HashSet<ChapterFrameRate>();
         foreach (var entry in source.Entries)
         {
             var document = FromChapterSet(entry.ChapterSet);
@@ -69,6 +70,10 @@ public static class EditableChapterDocumentAdapter
             if (document.FrameRate is ChapterFrameRate rate)
             {
                 effectiveRates.Add(rate);
+            }
+            if (document.ExactFrameRate is ChapterFrameRate exactRate)
+            {
+                exactRates.Add(exactRate);
             }
 
             var segment = EditableChapterSegment.Create(
@@ -85,7 +90,8 @@ public static class EditableChapterDocumentAdapter
                 entry.ChapterCount ?? entry.ChapterSet.Chapters.Count,
                 entry.ImportDisplayName,
                 entry.DiscTitleNumber,
-                sourceChapterCount: entry.SourceChapterCount ?? entry.ChapterCount ?? entry.ChapterSet.Chapters.Count);
+                sourceChapterCount: entry.SourceChapterCount ?? entry.ChapterCount ?? entry.ChapterSet.Chapters.Count,
+                exactFrameRate: document.ExactFrameRate);
             tracks.Add(new EditableChapterTrack(importedTrack.Id, entry.DisplayName, importedTrack.Chapters, [segment]));
         }
 
@@ -97,7 +103,8 @@ public static class EditableChapterDocumentAdapter
             first.ImportFormat,
             durationTicks > 0 ? ChapterDuration.FromTicks(durationTicks) : ChapterDuration.Unknown,
             effectiveRates.Count == 1 ? effectiveRates.Single() : null,
-            tracks);
+            tracks,
+            exactRates.Count == 1 ? exactRates.Single() : null);
     }
 
     /// <summary>Projects one track in a multi-track document to the legacy chapter-set view.</summary>
@@ -112,6 +119,7 @@ public static class EditableChapterDocumentAdapter
         var track = document.Tracks[trackIndex];
         var segment = track.Segments.FirstOrDefault();
         var rate = segment?.FrameRate ?? document.FrameRate;
+        var exactRate = segment?.ExactFrameRate ?? document.ExactFrameRate;
         var duration = TrackDuration(document, trackIndex);
         var singleTrackDocument = new EditableChapterDocument(
             document.Id,
@@ -120,7 +128,8 @@ public static class EditableChapterDocumentAdapter
             segment?.ImportFormat ?? document.ImportFormat,
             duration,
             rate,
-            [track]);
+            [track],
+            exactRate);
         return ToChapterSet(singleTrackDocument);
     }
 
@@ -138,7 +147,7 @@ public static class EditableChapterDocumentAdapter
         }
 
         var sourceTrack = source.Tracks[trackIndex];
-        var frameRate = FromLegacyFrameRate(result.FramesPerSecond);
+        var frameRate = result.ExactFrameRate ?? FromLegacyFrameRate(result.FramesPerSecond);
         var chapters = result.Chapters.Select((chapter, index) => new EditableChapter(
             index < sourceTrack.Chapters.Length ? sourceTrack.Chapters[index].Id : ChapterId.New(),
             chapter.DisplayNumber,
@@ -149,7 +158,11 @@ public static class EditableChapterDocumentAdapter
             chapter.FrameAccuracy,
             chapter.Kind)).ToImmutableArray();
         var segments = sourceTrack.Segments
-            .Select(segment => segment with { FrameRate = frameRate })
+            .Select(segment => segment with
+            {
+                FrameRate = frameRate,
+                ExactFrameRate = result.ExactFrameRate ?? segment.ExactFrameRate
+            })
             .ToImmutableArray();
         var tracks = source.Tracks.SetItem(trackIndex,
             new EditableChapterTrack(sourceTrack.Id, sourceTrack.Name, chapters, segments));
@@ -163,7 +176,8 @@ public static class EditableChapterDocumentAdapter
             ? ChapterDuration.FromTicks(result.Duration.Ticks)
             : ChapterDuration.Unknown;
         return new EditableChapterDocument(source.Id, source.Title, source.SourceName, source.ImportFormat,
-            duration, effectiveRates.Length == 1 ? effectiveRates[0] : effectiveRates.Length == 0 ? null : source.FrameRate, tracks);
+            duration, effectiveRates.Length == 1 ? effectiveRates[0] : effectiveRates.Length == 0 ? null : source.FrameRate,
+            tracks, result.ExactFrameRate ?? source.ExactFrameRate);
     }
 
     /// <summary>Creates an immutable document snapshot from legacy chapter data.</summary>
@@ -182,7 +196,7 @@ public static class EditableChapterDocumentAdapter
         var duration = chapterSet.Duration.Ticks > 0
             ? ChapterDuration.FromTicks(chapterSet.Duration.Ticks)
             : ChapterDuration.Unknown;
-        var frameRate = FromLegacyFrameRate(chapterSet.FramesPerSecond);
+        var frameRate = chapterSet.ExactFrameRate ?? FromLegacyFrameRate(chapterSet.FramesPerSecond);
         return new EditableChapterDocument(
             ChapterDocumentId.New(),
             chapterSet.Title,
@@ -190,7 +204,8 @@ public static class EditableChapterDocumentAdapter
             chapterSet.ImportFormat,
             duration,
             frameRate,
-            [new EditableChapterTrack(ChapterTrackId.New(), chapterSet.Title, chapters)]);
+            [new EditableChapterTrack(ChapterTrackId.New(), chapterSet.Title, chapters)],
+            chapterSet.ExactFrameRate);
     }
 
     /// <summary>Creates a legacy chapter set from an immutable document snapshot.</summary>
@@ -220,7 +235,10 @@ public static class EditableChapterDocumentAdapter
             ? (double)rate.Numerator / rate.Denominator
             : 0d;
         var duration = document.Duration.IsKnown ? TimeSpan.FromTicks(document.Duration.Ticks) : TimeSpan.Zero;
-        return new ChapterSet(document.Title, document.SourceName, document.ImportFormat, framesPerSecond, duration, chapters.ToImmutable());
+        var exactFrameRate = document.ExactFrameRate
+            ?? (document.Tracks.Length == 1 ? document.Tracks[0].Segments.FirstOrDefault()?.ExactFrameRate : null);
+        return new ChapterSet(document.Title, document.SourceName, document.ImportFormat, framesPerSecond, duration,
+            chapters.ToImmutable(), exactFrameRate);
     }
 
     /// <summary>
@@ -278,13 +296,15 @@ public static class EditableChapterDocumentAdapter
                     - Convert(segment.StartTicks))
                 : ChapterDuration.Unknown,
             FrameRate = targetExactRate ?? FromLegacyFrameRate((double)targetFps),
+            ExactFrameRate = targetExactRate,
             SourceFrameRate = sourceSegments.TryGetValue(segment.Id, out var original)
                 ? original.SourceFrameRate ?? original.FrameRate
                 : segment.SourceFrameRate ?? segment.FrameRate
         }).ToImmutableArray();
         return new EditableChapterDocument(updated.Id, updated.Title, updated.SourceName, updated.ImportFormat,
             updated.Duration, targetExactRate ?? FromLegacyFrameRate((double)targetFps),
-            [new EditableChapterTrack(track.Id, track.Name, track.Chapters, segments)]);
+            [new EditableChapterTrack(track.Id, track.Name, track.Chapters, segments)],
+            targetExactRate);
     }
 
     /// <summary>Applies a legacy ChapterSet result while preserving positional identities when possible.</summary>
@@ -313,7 +333,7 @@ public static class EditableChapterDocumentAdapter
         var duration = result.Duration.Ticks > 0
             ? ChapterDuration.FromTicks(result.Duration.Ticks)
             : ChapterDuration.Unknown;
-        var frameRate = FromLegacyFrameRate(result.FramesPerSecond);
+        var frameRate = result.ExactFrameRate ?? FromLegacyFrameRate(result.FramesPerSecond);
         var segments = source.Tracks[0].Segments;
         return new EditableChapterDocument(
             source.Id,
@@ -322,7 +342,8 @@ public static class EditableChapterDocumentAdapter
             result.ImportFormat,
             duration,
             frameRate,
-            [new EditableChapterTrack(source.Tracks[0].Id, result.Title, chapters, segments)]);
+            [new EditableChapterTrack(source.Tracks[0].Id, result.Title, chapters, segments)],
+            result.ExactFrameRate ?? source.ExactFrameRate);
     }
 
     private static ChapterFrameRate? FromLegacyFrameRate(double framesPerSecond)

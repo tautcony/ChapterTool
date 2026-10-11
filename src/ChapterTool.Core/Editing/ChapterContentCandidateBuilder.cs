@@ -464,7 +464,8 @@ public sealed partial class ChapterContentCandidateBuilder(
             source.ImportFormat,
             source.Duration,
             source.FrameRate,
-            tracks);
+            tracks,
+            source.ExactFrameRate);
         return ValidateAndSucceed(candidate, []);
     }
 

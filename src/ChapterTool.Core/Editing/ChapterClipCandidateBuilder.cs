@@ -94,7 +94,8 @@ public static class ChapterClipCandidateBuilder
             source.ImportFormat,
             ChapterDuration.FromTicks(totalDuration),
             rates.FirstOrDefaultNullable(source.FrameRate),
-            output);
+            output,
+            source.ExactFrameRate);
         return Succeed(source, candidate);
     }
 
@@ -164,7 +165,8 @@ public static class ChapterClipCandidateBuilder
             source.ImportFormat,
             source.Duration,
             source.FrameRate,
-            output));
+            output,
+            source.ExactFrameRate));
     }
 
     /// <summary>Appends imported content to a current single-track document with fresh chapter identities.</summary>
@@ -305,7 +307,8 @@ public static class ChapterClipCandidateBuilder
             current.ImportFormat,
             ChapterDuration.FromTicks(duration),
             current.FrameRate,
-            [combined]);
+            [combined],
+            current.ExactFrameRate);
         return Succeed(original, candidate);
     }
 

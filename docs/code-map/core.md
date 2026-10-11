@@ -30,6 +30,8 @@ Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState
 
 `EditableChapterDocumentAdapter.TrackDuration` covers every segment in a selected track. `ReplacedTrackDuration` updates document bounds after a reviewed track conversion. `WithFallbackFrameRate` supplies detected FPS to expression preparation when source FPS is absent. `ChapterFpsTransformService` uses one frame quantization rule for chapter times, document duration, and absolute segment boundaries. Source FPS metadata remains unchanged.
 
+MPLS frame-rate codes provide an authoritative rational rate. `MplsFrameRateCatalog` stores that rate on the imported `ChapterSet`; the editable document and selected-track projection preserve the provenance for exact frame presentation.
+
 ### Diagnostics
 
 Shared diagnostic contracts:
@@ -86,7 +88,7 @@ Important format entry points:
 
 ### libbluray compatibility map
 
-`libbluray/` is a vendored C reference snapshot at libbluray 1.5.1 commit `a24f4fad`. ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
+This map uses libbluray 1.5.1 commit `a24f4fad` as a C reference. A local `libbluray/` checkout is optional. It is not part of ChapterTool commits or distribution. ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
 
 | libbluray reference | ChapterTool implementation | Boundary or difference |
 | --- | --- | --- |
@@ -198,11 +200,15 @@ Browser host:
 - `src/ChapterTool.Wasm` is the Blazor WebAssembly browser app. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
 - `src/ChapterTool.Wasm/Pages/Home.razor` is the browser workspace page.
 - `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, candidate commits, export orchestration, history commands, diagnostics, activity logs, and localized status strings. It navigates the shared Core `ChapterWorkspace.ContentSession`.
+- `Services/WasmWorkspace.MainOptions.cs` prepares one Core candidate for main-window naming, numbering, and Lua drafts. `Home.razor` renders its before and candidate values in the chapter grid.
+- Main-window options derive applied expression state from typed operations on the current history branch and track. Naming and numbering do not replay an applied expression.
+- `Services/WasmWorkspace.History.cs` owns deferred redo choices. `Services/WasmHistoryProjection.cs` formats history operations and field details. `Components/HistoryDialog.razor` owns read-only inspection and explicit restoration.
 - `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` blocks browser shortcut keys during text editing.
 - `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, and export services. `WasmWorkspaceProjection` maps content and diagnostics to browser view models.
 - Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
 - The JSON resources are generated from the Avalonia AXAML locales by `scripts/axaml-to-json.py`. Use its `--check` mode to detect drift.
 - Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. `WasmApplicationSettings` mirrors the Contracts `AppSettings` fields, including the delete-rows timing and frame display preferences. The host stores settings in browser storage through the workspace path.
+- `Home.razor` applies valid settings drafts to runtime preferences. Save persists one aggregate. Discard restores the runtime snapshot captured when the dialog opened. Saved output defaults do not replace active session output choices.
 - `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, export, independent tab sessions, and history navigation. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.
 - GitHub Pages deploys the app through `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 

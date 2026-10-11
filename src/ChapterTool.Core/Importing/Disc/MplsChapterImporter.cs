@@ -117,7 +117,8 @@ public sealed class MplsChapterImporter : IChapterImporter
             ChapterImportFormat.Mpls,
             MplsFrameRateCatalog.FromCode(playItem.STNTable.PrimaryVideoStreamEntries.FirstOrDefault()?.StreamAttributes.FrameRate),
             PtsToTime(playItem.OUTTime >= playItem.INTime ? playItem.OUTTime - playItem.INTime : 0),
-            chapters);
+            chapters,
+            MplsFrameRateCatalog.ExactRateFromCode(playItem.STNTable.PrimaryVideoStreamEntries.FirstOrDefault()?.StreamAttributes.FrameRate));
         var refs = projection.ReferencesForPlayItem(playItemIndex);
         var displayName = projection.ClipDisplayNameForPlayItem(playItemIndex);
         var mediaTracks = MplsMediaTrackProjection.ForPlayItem(playItem, clpiByClip);

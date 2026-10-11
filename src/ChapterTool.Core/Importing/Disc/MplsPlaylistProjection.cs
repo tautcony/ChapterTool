@@ -12,6 +12,7 @@ internal sealed record MplsPlaylistProjection(
     IReadOnlyList<Chapter> Chapters,
     TimeSpan Duration,
     double FramesPerSecond,
+    ChapterFrameRate? ExactFrameRate,
     IReadOnlyList<ReferencedMediaFile> ReferencedMediaFiles,
     string? DiscRoot)
 {
@@ -55,6 +56,7 @@ internal sealed record MplsPlaylistProjection(
             chapters,
             MplsChapterImporter.PtsToTime(checked((uint)Math.Min(cursor, uint.MaxValue))),
             MplsFrameRateCatalog.FromCode(frameRateCode),
+            MplsFrameRateCatalog.ExactRateFromCode(frameRateCode),
             references,
             discRoot);
     }
@@ -70,7 +72,8 @@ internal sealed record MplsPlaylistProjection(
             sourceType,
             FramesPerSecond,
             duration ?? Duration,
-            Chapters);
+            Chapters,
+            ExactFrameRate);
 
     internal IReadOnlyList<Chapter> ChaptersForPlayItem(int playItemIndex)
     {
@@ -187,14 +190,18 @@ internal sealed record MplsPlaylistProjection(
 
 internal static class MplsFrameRateCatalog
 {
-    internal static double FromCode(byte? code) => code switch
+    internal static double FromCode(byte? code) => ExactRateFromCode(code) is { } rate
+        ? (double)rate.Numerator / rate.Denominator
+        : 0;
+
+    internal static ChapterFrameRate? ExactRateFromCode(byte? code) => code switch
     {
-        1 => 24000d / 1001d,
-        2 => 24,
-        3 => 25,
-        4 => 30000d / 1001d,
-        6 => 50,
-        7 => 60000d / 1001d,
-        _ => 0
+        1 => new ChapterFrameRate(24000, 1001),
+        2 => new ChapterFrameRate(24, 1),
+        3 => new ChapterFrameRate(25, 1),
+        4 => new ChapterFrameRate(30000, 1001),
+        6 => new ChapterFrameRate(50, 1),
+        7 => new ChapterFrameRate(60000, 1001),
+        _ => null
     };
 }

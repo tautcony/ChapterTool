@@ -830,6 +830,33 @@ public sealed class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task Saved_cycle_display_is_active_when_the_window_loads_an_exact_rate_source()
+    {
+        var exactRate = new ChapterFrameRate(24000, 1001);
+        var info = new ChapterSet("movie.mpls", "movie.mpls", ChapterImportFormat.Mpls,
+            (double)exactRate.Numerator / exactRate.Denominator, TimeSpan.FromMilliseconds(52094),
+            [
+                new Chapter(1, TimeSpan.Zero, "Opening"),
+                new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")
+            ], exactRate);
+        var settings = new ChapterTool.Contracts.Configuration.AppSettings(
+            Language: "en-US",
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true);
+        using var host = new MainWindowHeadlessTestHost(
+            MainWindowHeadlessTestHost.ImportResult("movie.mpls", new ChapterImportEntry("movie.mpls", "movie.mpls", info)),
+            appSettings: settings);
+
+        await host.MainView.InitializeAsync();
+        await host.LoadAsync("movie.mpls");
+
+        Assert.False(host.RequiredControl<CheckBox>("RoundFramesBox").IsChecked);
+        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
+        Assert.Equal(exactRate, host.ViewModel.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal("006993", host.ViewModel.Rows[1].FramePresentation?.RepeatingDigits);
+    }
+
+    [AvaloniaFact]
     public async Task Repeating_frame_layout_screenshots_cover_themes_widths_and_large_text()
     {
         var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,

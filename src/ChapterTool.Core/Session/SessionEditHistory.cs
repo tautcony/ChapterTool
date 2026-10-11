@@ -358,7 +358,8 @@ internal sealed record DomainChangeSet(
             values.ImportFormat,
             values.Duration,
             values.FrameRate,
-            output.MoveToImmutable());
+            output.MoveToImmutable(),
+            values.ExactFrameRate);
     }
 }
 
@@ -415,8 +416,10 @@ internal sealed record DocumentValues(
     string? SourceName,
     ChapterImportFormat ImportFormat,
     ChapterDuration Duration,
-    ChapterFrameRate? FrameRate)
+    ChapterFrameRate? FrameRate,
+    ChapterFrameRate? ExactFrameRate)
 {
     public static DocumentValues From(EditableChapterDocument document) =>
-        new(document.Id, document.Title, document.SourceName, document.ImportFormat, document.Duration, document.FrameRate);
+        new(document.Id, document.Title, document.SourceName, document.ImportFormat, document.Duration, document.FrameRate,
+            document.ExactFrameRate);
 }
