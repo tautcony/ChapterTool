@@ -697,5 +697,9 @@
   "History.Enum.deleteTiming.Preserve": "Preserve timestamps",
   "History.Enum.deleteTiming.Normalize": "Normalize remaining times",
   "History.Enum.frameDisplay.Round": "Whole frames",
-  "History.Enum.frameDisplay.DecimalPlaces": "Decimal frames"
+  "History.Enum.frameDisplay.DecimalPlaces": "Decimal frames",
+  "History.ToggleBranch": "Toggle history branch",
+  "History.Empty": "No history entry is available.",
+  "Parity.ExportOptionsInvalid": "Choose valid export options.",
+  "Parity.SettingsApplyFailed": "Could not apply these settings. The draft is still available."
 }

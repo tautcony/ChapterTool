@@ -1,0 +1,128 @@
+.history-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+.history-toolbar,
+.history-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.history-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.history-note { margin: 0; color: var(--muted); }
+.history-redo-choice,
+.history-filter { display: grid; gap: 0.2rem; }
+.history-redo-choice select,
+.history-filter select { min-width: 10rem; }
+
+.history-pages { display: none; gap: 0.4rem; }
+.history-content {
+  display: grid;
+  grid-template-columns: minmax(15rem, 2fr) minmax(20rem, 3fr);
+  gap: 0.75rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.history-list,
+.history-details {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+}
+
+.history-list { padding: 0.25rem; }
+.history-row { display: flex; align-items: stretch; min-height: 2.5rem; }
+.history-toggle {
+  flex: 0 0 2rem;
+  width: 2rem;
+  min-height: 2.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--control-fg);
+}
+.history-entry {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--control-fg);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.history-entry.current { font-weight: 650; }
+.history-row.selected,
+.history-entry:focus-visible { background: var(--hover); }
+.history-current { color: var(--accent); }
+.history-hidden-current { color: var(--muted); }
+
+.history-details { padding: 0.8rem; overflow-wrap: anywhere; }
+.history-details h3 { margin-block: 0 0.5rem; }
+.history-details h4 { margin-block: 0.8rem 0.4rem; }
+.history-summary { margin: 0.4rem 0; }
+.history-parameters { display: grid; grid-template-columns: minmax(8rem, auto) minmax(0, 1fr); gap: 0.35rem 0.75rem; }
+.history-parameters dt { font-weight: 600; }
+.history-parameters dd { margin: 0; overflow-wrap: anywhere; }
+.history-filter { margin-block: 0.7rem; max-width: 22rem; }
+
+.history-change-table,
+.history-root-rows { min-width: 0; max-width: 100%; overflow: auto; border-top: 1px solid var(--border); }
+.history-change-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.15fr) minmax(7rem, 1fr) minmax(7rem, 1fr) minmax(5rem, auto);
+  gap: 0.45rem;
+  padding: 0.45rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.history-change-header,
+.history-root-header { font-weight: 600; }
+.history-change-context { grid-column: 1 / -1; }
+.history-root-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(3rem, auto) minmax(8rem, 1fr) minmax(8rem, auto) minmax(6rem, auto);
+  gap: 0.5rem;
+  min-width: 36rem;
+  padding: 0.35rem 0.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.history-root-row > *,
+.history-change-row > * { min-width: 0; }
+.history-footer { align-items: center; }
+.history-status { color: var(--muted); }
+
+@media (max-width: 760px) {
+  .history-body { gap: 0.45rem; }
+  .history-toolbar { flex-direction: column; }
+  .history-actions { justify-content: flex-start; width: 100%; }
+  .history-pages { display: flex; }
+  .history-pages button { flex: 1; min-height: 2.75rem; }
+  .history-pages [aria-selected="true"] { border-color: var(--accent); font-weight: 600; }
+  .history-content { display: block; min-height: 0; flex: 1; }
+  .history-list,
+  .history-details { height: 100%; }
+  .history-content[data-page="history"] .history-details,
+  .history-content[data-page="details"] .history-list { display: none; }
+  .history-content[data-page="history"] .history-list { display: block; }
+  .history-content[data-page="details"] .history-details { display: block; }
+  .history-footer button { min-height: 2.75rem; }
+  .history-change-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .history-change-header { display: none; }
+  .history-change-row > span:nth-of-type(1)::before { content: ""; }
+}

@@ -12,9 +12,9 @@ test('B16 imports an MPLS playlist and appends a second playlist from the Load m
   await expect(grid.locator('tbody tr').first()).toBeVisible();
   const initialCount = await grid.locator('tbody tr').count();
 
-  await page.getByRole('button', { name: 'Load', exact: true }).dispatchEvent('contextmenu', { button: 2 });
+  await page.getByTestId('load-menu-toggle').click();
   const appendChooser = page.waitForEvent('filechooser');
-  await page.getByRole('button', { name: /Append MPLS/ }).click();
+  await page.getByRole('menuitem', { name: /Append MPLS/ }).click();
   await (await appendChooser).setFiles(second);
   await expect.poll(() => grid.locator('tbody tr').count(), { timeout: 30_000 }).toBeGreaterThan(initialCount);
 });

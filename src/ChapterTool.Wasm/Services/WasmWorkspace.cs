@@ -633,7 +633,12 @@ public sealed partial class WasmWorkspace : IDisposable
         var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
         var insertIndex = Math.Clamp(index, 0, track.Chapters.Length);
         var beforeId = insertIndex < track.Chapters.Length ? track.Chapters[insertIndex].Id : (ChapterId?)null;
-        var outcome = session.ExecuteTrackCandidate("Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId));
+        var outcome = session.ExecuteTrackCandidate("Insert chapter", document => candidateBuilder.InsertBefore(document, beforeId),
+            operationDescriptor: new HistoryOperationDescriptor("chapter.insert",
+            [
+                new HistoryOperationParameter("beforeChapterId", beforeId?.ToString()),
+                new HistoryOperationParameter("trackName", track.Name)
+            ]));
         CompleteCandidate(outcome, "Status.Inserted");
         SelectRow(Math.Clamp(index, 0, Math.Max(0, rows.Count)));
     }
@@ -708,7 +713,15 @@ public sealed partial class WasmWorkspace : IDisposable
         selectedRowIndexes.Clear();
         SelectedRowIndex = -1;
         selectionAnchor = -1;
-        var outcome = session.ExecuteTrackCandidate("Delete chapters", document => candidateBuilder.Delete(document, targetIds, EditingOptions));
+        var outcome = session.ExecuteTrackCandidate("Delete chapters", document => candidateBuilder.Delete(document, targetIds, EditingOptions),
+            operationDescriptor: new HistoryOperationDescriptor("chapter.delete",
+            [
+                new HistoryOperationParameter("chapterIds", string.Join(",", targetIds)),
+                new HistoryOperationParameter("trackName", track.Name),
+                new HistoryOperationParameter("deleteTiming", EditingOptions.DeleteRowsTiming.ToString()),
+                new HistoryOperationParameter("frameDisplay", EditingOptions.FrameDisplay.ToString()),
+                new HistoryOperationParameter("frameDecimalPlaces", EditingOptions.EffectiveFrameDecimalPlaces.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer")
+            ]));
         CompleteCandidate(outcome, "Status.Deleted", indexes.Count);
     }
 
@@ -798,7 +811,14 @@ public sealed partial class WasmWorkspace : IDisposable
         var fps = exactFramesPerSecond;
         var targets = track.Chapters.Select(static chapter => chapter.Id).ToHashSet();
         var exactRate = EffectiveFrameRateOption.ExactRate;
-        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps, exactRate));
+        var outcome = session.ExecuteTrackCandidate("Shift chapter frames", document => candidateBuilder.ShiftFrames(document, targets, frames, fps, exactRate),
+            operationDescriptor: new HistoryOperationDescriptor("chapter.frame-shift",
+            [
+                new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
+                new HistoryOperationParameter("displayFps", fps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+                new HistoryOperationParameter("trackName", track.Name),
+                new HistoryOperationParameter("chapterIds", string.Join(",", targets))
+            ]));
         CompleteCandidate(outcome, "Status.Shifted", frames);
     }
 
@@ -1075,7 +1095,14 @@ public sealed partial class WasmWorkspace : IDisposable
 
     public void ChangeSelectedFrameRate()
     {
-        if (!CanChangeSelectedFrameRate || BaseChapterSet is null)
+        var content = session.ContentSession;
+        if (!CanChangeSelectedFrameRate || BaseChapterSet is null || content is null)
+        {
+            return;
+        }
+
+        var track = content.Snapshot.Document.Tracks.ElementAtOrDefault(session.CurrentTrackIndex);
+        if (track is null)
         {
             return;
         }
@@ -1083,7 +1110,13 @@ public sealed partial class WasmWorkspace : IDisposable
         var sourceFps = (decimal)BaseChapterSet.FramesPerSecond;
         var target = ResolveSelectedFrameRateOption();
         var outcome = session.ExecuteTrackCandidate("Change chapter frame rate",
-            document => candidateBuilder.ChangeFrameRate(document, sourceFps, target.Value));
+            document => candidateBuilder.ChangeFrameRate(document, sourceFps, target.Value),
+            operationDescriptor: new HistoryOperationDescriptor("chapter.frame-rate-change",
+            [
+                new HistoryOperationParameter("trackName", track.Name),
+                new HistoryOperationParameter("sourceFps", sourceFps.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+                new HistoryOperationParameter("targetFps", target.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+            ]));
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
             StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("Status.ChangeFpsFailed");
@@ -1169,6 +1202,7 @@ public sealed partial class WasmWorkspace : IDisposable
             return null;
         }
         expressionPreviewTrackId = content.Snapshot.Document.Tracks[trackIndex].Id;
+        var track = content.Snapshot.Document.Tracks[trackIndex];
         expressionPreviewStale = false;
         ExpressionPreview = ChapterContentOperationSession.Prepare(content, "Apply chapter expression", document =>
         {
@@ -1177,7 +1211,16 @@ public sealed partial class WasmWorkspace : IDisposable
             return built.IsValid
                 ? built with { Candidate = ReplaceFocusedTrack(document, trackIndex, built.Candidate) }
                 : built with { Candidate = document };
-        });
+        }, new HistoryOperationDescriptor("expression.apply",
+        [
+            new HistoryOperationParameter("script", Expression.Trim()),
+            new HistoryOperationParameter("trackId", expressionPreviewTrackId?.ToString()),
+            new HistoryOperationParameter("targetScope", "track"),
+            new HistoryOperationParameter("trackId", track.Id.ToString()),
+            new HistoryOperationParameter("trackName", track.Name),
+            new HistoryOperationParameter("targetChapterIds", string.Join(",", track.Chapters.Select(static chapter => chapter.Id))),
+            new HistoryOperationParameter("displayFps", ExactFramesPerSecond.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+        ]));
         Notify();
         return ExpressionPreview;
     }
@@ -1423,6 +1466,15 @@ public sealed partial class WasmWorkspace : IDisposable
 
         var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
         var chapterId = track.Chapters[index].Id;
+        var editedField = timeText is null && name is not null
+            ? ChapterCellField.Name
+            : name is null && timeText is not null ? ChapterCellField.StartTime : (ChapterCellField?)null;
+        var editedValue = editedField switch
+        {
+            ChapterCellField.Name => name,
+            ChapterCellField.StartTime => timeText,
+            _ => null
+        };
         var outcome = session.ExecuteTrackCandidate("Update chapter content", document =>
         {
             var candidate = new ChapterCandidateBuildResult(true, document, [chapterId], []);
@@ -1437,7 +1489,14 @@ public sealed partial class WasmWorkspace : IDisposable
             }
 
             return candidate;
-        });
+        }, operationDescriptor: new HistoryOperationDescriptor("chapter.cell-edit",
+        [
+            new HistoryOperationParameter("field", editedField?.ToString()),
+            new HistoryOperationParameter("chapterId", chapterId.ToString()),
+            new HistoryOperationParameter("trackName", track.Name),
+            new HistoryOperationParameter("value", editedValue),
+            new HistoryOperationParameter("displayFps", ExactFramesPerSecond.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+        ]));
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
             StatusText = outcome.Errors.FirstOrDefault() ?? "The chapter edit was rejected.";

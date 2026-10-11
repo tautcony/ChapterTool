@@ -13,7 +13,8 @@ test('B10 multi-selects rows, deletes only the selection, and restores it with U
   await expect(chapters(page).locator('tbody tr.selected')).toHaveCount(2);
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(rows).toHaveCount(0);
-  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await page.locator('#chaptertool-shell').focus();
+  await page.keyboard.press('Control+z');
   await expect(rows).toHaveCount(2);
 });
 

@@ -92,19 +92,22 @@ test('P11 settings validate the whole draft and rollback runtime failure', async
   }
   await settings.locator('#settings-frame-decimals').fill('4');
   await settings.getByRole('button', { name: 'Appearance', exact: true }).click();
-  await settings.locator('#settings-theme').selectOption('ayu-dark');
+  const stored = await page.evaluate(() => localStorage.getItem('chaptertool.wasm.settings'));
   await page.evaluate(() => {
-    const apply = window.chapterToolWasm.applyAppearance;
-    let fail = true;
-    window.chapterToolWasm.applyAppearance = (...args) => {
-      if (fail) { fail = false; throw new Error('Runtime unavailable'); }
-      apply(...args);
+    const style = document.documentElement.style;
+    const setProperty = style.setProperty.bind(style);
+    style.setProperty = (name, value, priority) => {
+      if (name === '--window-bg' && value === '#0B0E14') { throw new Error('Runtime unavailable'); }
+      setProperty(name, value, priority);
     };
   });
+  await settings.locator('#settings-theme').selectOption('ayu-dark');
+  await expect(settings.getByRole('alert')).toBeVisible();
   await settings.getByTestId('settings-apply').click();
   await expect(settings.getByRole('alert')).toBeVisible();
   await expect(settings.locator('#settings-theme')).toHaveValue('ayu-dark');
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--window-bg').trim().toLowerCase())).toBe(prior);
+  expect(await page.evaluate(() => localStorage.getItem('chaptertool.wasm.settings'))).toBe(stored);
   await settings.getByTestId('settings-cancel').click();
   await page.getByTestId('settings-open').click();
   await settings.getByRole('button', { name: 'Appearance', exact: true }).click();
@@ -169,7 +172,7 @@ test('P02 cells commit once, reject invalid input, cancel, and retain text undo'
 test('P03 shortcuts save, conflict, fixed row commands, and settings discard', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
   await page.getByTestId('settings-open').click();
-  const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+  const settings = page.getByRole('dialog');
   await settings.getByRole('button', { name: 'Shortcuts', exact: true }).click();
   await settings.locator('#shortcut-save').press('Control+o');
   await expect(settings.getByTestId('settings-apply')).toBeDisabled();
@@ -187,10 +190,10 @@ test('P03 shortcuts save, conflict, fixed row commands, and settings discard', a
   await settings.locator('#settings-ui-language').selectOption('ja-JP');
   await settings.locator('.modal-close').click();
   await expect(settings.getByRole('alertdialog')).toBeVisible();
-  await settings.getByRole('button', { name: 'Keep editing', exact: true }).click();
+  await settings.getByRole('button', { name: '編集を続ける', exact: true }).click();
   await expect(settings.locator('#settings-ui-language')).toHaveValue('ja-JP');
   await settings.locator('.modal-close').click();
-  await settings.getByRole('button', { name: 'Discard', exact: true }).click();
+  await settings.getByRole('button', { name: '破棄', exact: true }).click();
   await page.getByTestId('settings-open').click();
   await expect(settings.locator('#settings-ui-language')).toHaveValue('en-US');
   await settings.getByRole('button', { name: 'Shortcuts', exact: true }).click();
@@ -280,19 +283,22 @@ test('P06 all rows and changed tools remain reachable at supported sizes', async
   }
 });
 
-test('P07 storage failure preserves settings draft and active appearance', async ({ readyPage: page }) => {
+test('P07 storage failure preserves the live settings draft and cancel restores entry appearance', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  const prior = await page.evaluate(() => document.documentElement.style.getPropertyValue('--window-bg'));
+  const prior = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--window-bg').trim().toLowerCase());
   await page.getByTestId('settings-open').click();
   const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
   await settings.getByRole('button', { name: 'Appearance', exact: true }).click();
   await settings.locator('#settings-theme').selectOption('ayu-dark');
-  await page.evaluate(() => { window.chapterToolWasm.setLocalStorage = () => { throw new DOMException('Unavailable', 'QuotaExceededError'); }; });
+  const live = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--window-bg').trim().toLowerCase());
+  expect(live).not.toBe(prior);
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Unavailable', 'QuotaExceededError'); }; });
   await settings.getByTestId('settings-apply').click();
   await expect(settings.getByRole('alert')).toBeVisible();
   await expect(settings.locator('#settings-theme')).toHaveValue('ayu-dark');
-  expect(await page.evaluate(() => document.documentElement.style.getPropertyValue('--window-bg'))).toBe(prior);
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--window-bg').trim().toLowerCase())).toBe(live);
   await settings.getByTestId('settings-cancel').click();
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--window-bg').trim().toLowerCase())).toBe(prior);
   await page.getByTestId('settings-open').click();
   await settings.getByRole('button', { name: 'Appearance', exact: true }).click();
   await expect(settings.locator('#settings-theme')).toHaveValue('avalonia-default');
@@ -333,7 +339,7 @@ test('P09 log copy and export errors recover without stale inspection', async ({
   await dialog.getByRole('button', { name: 'Copy', exact: true }).click();
   await expect(dialog.getByRole('status').filter({ hasText: 'failed' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Back to logs', exact: true }).click();
-  await expect(dialog.locator('.log-entry').first()).toBeFocused();
+  await expect(dialog.locator('.log-entry').first().locator('.log-select')).toBeFocused();
   await dialog.getByText('Export logs', { exact: true }).click();
   await dialog.getByRole('button', { name: 'CSV', exact: true }).click();
   await expect(dialog.getByRole('status').filter({ hasText: 'failed' })).toBeVisible();

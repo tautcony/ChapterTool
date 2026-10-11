@@ -18,12 +18,15 @@ test('B02–B04 @smoke imports, edits, undoes, redoes, previews, and downloads a
 
   const name = await chapterName(page, 1);
   await commit(name, 'Revised opening');
-  const undo = page.getByRole('button', { name: 'Undo', exact: true });
-  const redo = page.getByRole('button', { name: 'Redo', exact: true });
-  await expect(undo).toBeEnabled();
-  await undo.click();
+  await page.getByRole('button', { name: 'Edit history', exact: true }).click();
+  const history = page.getByRole('dialog', { name: 'Edit history', exact: true });
+  await expect(history.getByRole('button', { name: 'Undo', exact: true })).toBeEnabled();
+  await expect(history.getByRole('button', { name: 'Redo', exact: true })).toBeDisabled();
+  await history.locator('.modal-close').click();
+  await page.locator('#chaptertool-shell').focus();
+  await page.keyboard.press('Control+z');
   await expect(name).toHaveValue('Opening');
-  await redo.click();
+  await page.keyboard.press('Control+y');
   await expect(name).toHaveValue('Revised opening');
 
   await page.getByRole('button', { name: 'Preview', exact: true }).click();

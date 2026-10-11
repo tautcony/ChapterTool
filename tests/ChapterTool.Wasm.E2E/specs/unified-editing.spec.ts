@@ -5,7 +5,8 @@ test('B19 history dialog navigates between retained sibling edits and redoes the
   await loadFixture(page, 'minimal-ogm.txt');
   const name = await chapterName(page, 1);
   await commit(name, 'First branch');
-  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await page.locator('#chaptertool-shell').focus();
+  await page.keyboard.press('Control+z');
   await expect(name).toHaveValue('Opening');
   await commit(name, 'Second branch');
 
@@ -67,7 +68,8 @@ test('B20 expression preview is read-only until applied, then export and undo us
   const committedDownload = await downloadText(page, testInfo);
   expect(committedDownload.content.toString('utf8')).toBe(committedPreview);
 
-  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await page.locator('#chaptertool-shell').focus();
+  await page.keyboard.press('Control+z');
   await expect(secondTime).toHaveValue('00:00:12.500');
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
   const undonePreview = await page.getByRole('dialog', { name: 'Preview', exact: true })

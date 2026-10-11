@@ -21,7 +21,9 @@ public sealed partial class WasmWorkspace
 
     /// <summary>Gets the projected changes and diagnostics for the current preview.</summary>
     public ExpressionPreviewProjection? ContentPreviewProjection => ContentPreview is { } preview
-        ? ExpressionPreviewProjector.Build(preview, contentPreviewTrackId) : null;
+        ? ExpressionPreviewProjector.Build(preview, contentPreviewTrackId, ExactFramesPerSecond,
+            RoundFrames ? 0 : EditingOptions.EffectiveFrameDecimalPlaces,
+            EffectiveFrameRateOption.Value == ExactFramesPerSecond ? EffectiveFrameRateOption.ExactRate : null) : null;
 
     /// <summary>Gets whether the current preview no longer matches the workspace state.</summary>
     public bool IsContentPreviewStale => ContentPreview is { } preview
@@ -32,6 +34,7 @@ public sealed partial class WasmWorkspace
     private object CaptureContentDraft(string operation) => operation switch
     {
         "Apply chapter options" => (ChapterNameModeIndex, OrderShift, ChapterNameTemplateText),
+        MainOptionsOperation => (ChapterNameModeIndex, OrderShift, ChapterNameTemplateText, Expression),
         "Shift chapter frames" => (SelectedFrameRateIndex, ExactFramesPerSecond),
         "Change chapter frame rate" => SelectedFrameRateIndex,
         _ => operation
@@ -45,7 +48,14 @@ public sealed partial class WasmWorkspace
         OrderShift is < 0 or > 1000
             ? new(false, document, [], [localizer.T("Parity.InvalidNumber")])
             : candidateBuilder.ApplyOutputOptions(document, AutoGenerateNames, UseTemplateNames,
-                ChapterNameTemplateText ?? string.Empty, OrderShift, false, "t"));
+                ChapterNameTemplateText ?? string.Empty, OrderShift, false, "t"),
+        new HistoryOperationDescriptor("template.apply",
+        [
+            new HistoryOperationParameter("autoGenerateNames", AutoGenerateNames.ToString(System.Globalization.CultureInfo.InvariantCulture), "boolean"),
+            new HistoryOperationParameter("useTemplateNames", UseTemplateNames.ToString(System.Globalization.CultureInfo.InvariantCulture), "boolean"),
+            new HistoryOperationParameter("template", ChapterNameTemplateText),
+            new HistoryOperationParameter("orderShift", OrderShift.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer")
+        ]));
 
     /// <summary>Prepares a preview that shifts chapter frames by the specified amount.</summary>
     /// <param name="frames">The signed number of frames to shift.</param>
@@ -55,12 +65,25 @@ public sealed partial class WasmWorkspace
             : candidateBuilder.ShiftFrames(document,
                 document.Tracks[0].Chapters.Where(chapter => chapter.Kind != ChapterKind.Separator)
                     .Select(chapter => chapter.Id).ToHashSet(), frames, ExactFramesPerSecond,
-                EffectiveFrameRateOption.ExactRate));
+                EffectiveFrameRateOption.ExactRate),
+        new HistoryOperationDescriptor("chapter.frame-shift",
+        [
+            new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
+            new HistoryOperationParameter("displayFps", ExactFramesPerSecond.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+            new HistoryOperationParameter("trackName", session.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(session.CurrentTrackIndex)?.Name)
+        ]));
 
     /// <summary>Prepares a preview that changes the chapter frame rate to the selected rate.</summary>
     public ChapterContentPreview? PrepareFrameRatePreview() => PrepareContentPreview("Change chapter frame rate", document =>
         candidateBuilder.ChangeFrameRate(document, ResolveSourceFrameRate(),
-            ResolveSelectedFrameRateOption().Value));
+            ResolveSelectedFrameRateOption().Value),
+        new HistoryOperationDescriptor("chapter.frame-rate-change",
+        [
+            new HistoryOperationParameter("targetScope", "track"),
+            new HistoryOperationParameter("trackName", session.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(session.CurrentTrackIndex)?.Name),
+            new HistoryOperationParameter("sourceFps", ResolveSourceFrameRate().ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal"),
+            new HistoryOperationParameter("targetFps", ResolveSelectedFrameRateOption().Value.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+        ]));
 
     private decimal ResolveSourceFrameRate()
     {
@@ -79,7 +102,8 @@ public sealed partial class WasmWorkspace
     }
 
     private ChapterContentPreview? PrepareContentPreview(string operation,
-        Func<EditableChapterDocument, ChapterCandidateBuildResult> build)
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> build,
+        HistoryOperationDescriptor? operationDescriptor = null)
     {
         var content = session.ContentSession;
         if (content is null || IsBusy)
@@ -95,7 +119,7 @@ public sealed partial class WasmWorkspace
             var built = build(focused);
             return built with { Candidate = built.IsValid
                 ? ReplaceFocusedTrack(document, trackIndex, built.Candidate) : document };
-        });
+        }, operationDescriptor);
         Notify();
         return ContentPreview;
     }
@@ -118,7 +142,7 @@ public sealed partial class WasmWorkspace
             return false;
         }
         session.PublishContentDocument(outcome.Snapshot.Document);
-        if (preview.Operation == "Apply chapter options")
+        if (preview.Operation is "Apply chapter options" or MainOptionsOperation)
         {
             ChapterNameModeIndex = 0;
             OrderShift = 0;
@@ -179,9 +203,15 @@ public sealed partial class WasmWorkspace
         var preview = ChapterContentOperationSession.Prepare(content, "Update chapter content", document =>
         {
             var focused = FocusTrack(document, trackIndex);
-            var built = candidateBuilder.EditCell(focused, draft.ChapterId, draft.Field, value, (decimal)FramesPerSecond);
+            var built = candidateBuilder.EditCell(focused, draft.ChapterId, draft.Field, value, ExactFramesPerSecond,
+                EffectiveFrameRateOption.ExactRate);
             return built with { Candidate = built.IsValid ? ReplaceFocusedTrack(document, trackIndex, built.Candidate) : document };
-        });
+        }, new HistoryOperationDescriptor("chapter.cell-edit",
+        [
+            new("field", draft.Field.ToString(), "enum"),
+            new("value", value),
+            new("displayFps", ExactFramesPerSecond.ToString(System.Globalization.CultureInfo.InvariantCulture), "number")
+        ]));
         var outcome = await ChapterContentOperationSession.ApplyAsync(content, preview);
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {

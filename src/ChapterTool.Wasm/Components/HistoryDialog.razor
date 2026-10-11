@@ -1,5 +1,6 @@
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
+@inject Microsoft.JSInterop.IJSRuntime JS
 @using ChapterTool.Core.Session
 @implements IDisposable
 
@@ -14,68 +15,166 @@
                 }
             </div>
             <div class="history-actions">
-                <button type="button" class="secondary" disabled="@(!Workspace.CanUndo)" @onclick="async () => await Workspace.UndoAsync()">@L.T("History.Undo")</button>
-                <button type="button" class="secondary" disabled="@(!Workspace.CanRedo)" @onclick="async () => await Workspace.RedoAsync()">@L.T("History.Redo")</button>
+                <button type="button" class="secondary" disabled="@(!Workspace.CanUndo)" @onclick="UndoAsync">@L.T("History.Undo")</button>
+                <button type="button" class="secondary" disabled="@(!Workspace.CanRedoHistoryBranch)" @onclick="RedoAsync">@L.T("History.Redo")</button>
+                @if (RedoChoices.Count > 1)
+                {
+                    <label class="history-redo-choice">
+                        <span>@L.T("History.RedoChoices")</span>
+                        <select aria-label="@L.T("History.RedoChoices")" value="@SelectedRedoId" @onchange="SelectRedoBranch">
+                            @foreach (var choice in RedoChoices)
+                            {
+                                <option value="@choice.Id">@(choice.IsPreferred ? "★ " : string.Empty)@choice.Title</option>
+                            }
+                        </select>
+                    </label>
+                }
                 <button type="button" class="secondary" @onclick="LocateCurrentAsync">@L.T("History.LocateCurrent")</button>
             </div>
         </header>
-        <div class="history-content">
-            <div class="history-list" role="list" aria-label="@L.T("History.Title")">
+        @if (Workspace.HasPendingContentPreview)
+        {
+            <p class="history-note">@L.T("History.CurrentStateNote")</p>
+        }
+        <nav class="history-pages" role="tablist" aria-label="@L.T("History.Title")" @onkeydown="OnHistoryPageKeyDown">
+            <button @ref="historyPageTab" type="button" role="tab" tabindex="@(narrowPage == 0 ? 0 : -1)"
+                    aria-controls="history-list" aria-selected="@(narrowPage == 0 ? "true" : "false")" @onclick="ShowHistoryPage">@L.T("History.HistoryPage")</button>
+            <button @ref="detailsPageTab" type="button" role="tab" tabindex="@(narrowPage == 1 ? 0 : -1)"
+                    aria-controls="history-details" aria-selected="@(narrowPage == 1 ? "true" : "false")" @onclick="ShowDetailsPage">@L.T("History.DetailsPage")</button>
+        </nav>
+        <div class="history-content" data-page="@(narrowPage == 1 ? "details" : "history")">
+            <section id="history-list" class="history-list" role="tabpanel" tabindex="-1" aria-label="@L.T("History.Title")">
                 @foreach (var entry in Entries)
                 {
                     <div @key="entry.Id" class="history-row @(selectedId == entry.Id ? "selected" : null)" role="listitem">
-                        <button type="button" class="history-toggle" style="margin-left:@(entry.Depth * 0.8)rem" disabled="@(!entry.HasChildren)"
-                                aria-label="@(L.T("History.Title") + ": " + entry.Description)" aria-expanded="@(entry.HasChildren ? expanded.Contains(entry.Id) : null)"
+                        <button type="button" class="history-toggle" style="margin-left:@(entry.Depth * 0.8)rem"
+                                disabled="@(!entry.HasChildren)" aria-label="@(L.T("History.ToggleBranch") + ": " + LocalizedDescription(entry))"
+                                aria-expanded="@(entry.HasChildren ? (expanded.Contains(entry.Id) ? "true" : "false") : null)"
                                 @onclick="() => Toggle(entry.Id)">@((MarkupString)(entry.HasChildren ? expanded.Contains(entry.Id) ? "▾" : "▸" : "·"))</button>
-                        <button type="button" class="history-entry @(entry.IsCurrent ? "current" : null) @(selectedId == entry.Id ? "selected" : null)" aria-current="@(entry.IsCurrent ? "step" : null)"
-                                title="@entry.Description" @onclick="() => SelectAsync(entry.Id)">
-                            @if (entry.IsCurrent) { <span class="history-current" aria-label="@L.T("History.Current")">● </span> }
-                            @if (entry.HasCurrentDescendant) { <span class="history-hidden-current" title="@L.T("History.CurrentHidden")">… </span> }
-                            @entry.Description
-                        </button>
+                        @if (entry.IsCurrent)
+                        {
+                            <button @ref="currentEntryElement" type="button"
+                                    class="history-entry current @(selectedId == entry.Id ? "selected" : null)" aria-current="step"
+                                    aria-label="@(L.T("History.Current") + ": " + LocalizedDescription(entry))"
+                                    title="@LocalizedDescription(entry)" @onclick="() => SelectAsync(entry.Id)">
+                                <span class="history-current" aria-hidden="true">● </span>@LocalizedDescription(entry)
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="history-entry @(selectedId == entry.Id ? "selected" : null)" title="@LocalizedDescription(entry)"
+                                    @onclick="() => SelectAsync(entry.Id)">
+                                @if (entry.HasCurrentDescendant) { <span class="history-hidden-current" title="@L.T("History.CurrentHidden")">… </span> }
+                                @LocalizedDescription(entry)
+                            </button>
+                        }
                     </div>
                 }
-            </div>
-            <section class="history-details" aria-live="polite">
+            </section>
+            <section @ref="detailsPanel" id="history-details" class="history-details" role="tabpanel" tabindex="-1" aria-live="polite" aria-label="@L.T("History.DetailsPage")">
                 @if (detailLoading)
                 {
-                    <p>@L.T("History.Loading")</p>
+                    <p role="status">@L.T("History.Loading")</p>
                 }
                 else if (detailError is not null)
                 {
-                    <p role="alert">@L.T("History.Detail" + detailError)</p>
-                    <button type="button" class="secondary" @onclick="() => SelectAsync(selectedId)">@L.T("History.Retry")</button>
+                    <p role="alert">@L.T(detailError switch
+                    {
+                        "ResourceFailure" => "History.DetailResourceFailure",
+                        "NotFound" => "History.DetailNotFound",
+                        "Ended" => "History.DetailEnded",
+                        _ => "History.DetailFailed"
+                    })</p>
+                    <button type="button" class="secondary" @onclick="RetryDetailsAsync">@L.T("History.Retry")</button>
                 }
-                else if (details is { } node)
+                else if (details is { } node && detailProjection is { } projection)
                 {
-                    <h3>@node.Description</h3>
-                    @if (node.RootDocument is { } root)
+                    <h3>@projection.OperationTitle</h3>
+                    @if (!string.IsNullOrWhiteSpace(projection.PublishedAtText))
+                    {
+                        <p class="history-note">@projection.PublishedAtText</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(projection.EffectSummary))
+                    {
+                        <p class="history-summary">@projection.EffectSummary</p>
+                    }
+                    @if (projection.RootTitle is { } title)
                     {
                         <p>@L.T("History.RootOverview")</p>
-                        <p>@root.Title · @root.Tracks.Length · @root.Tracks.Sum(track => track.Chapters.Length)</p>
+                        <p>@title · @projection.RootTrackCount · @projection.RootChapterCount</p>
+                        @if (projection.RootChapterRows.Count > 0)
+                        {
+                            <div class="history-root-rows" role="table" aria-label="@L.T("History.RootOverview")">
+                                <div class="history-root-row history-root-header" role="row">
+                                    <span role="columnheader">@L.T("History.Parameter.trackName")</span><span role="columnheader">@L.T("History.Field.DisplayNumber")</span>
+                                    <span role="columnheader">@L.T("History.Field.Name")</span><span role="columnheader">@L.T("History.Field.StartTicks")</span>
+                                    <span role="columnheader">@L.T("History.Field.FramesInfo")</span>
+                                </div>
+                                @foreach (var row in projection.RootChapterRows)
+                                {
+                                    <div class="history-root-row" role="row">
+                                        <span role="cell">@row.TrackName</span><span role="cell">@row.DisplayNumber</span>
+                                        <span role="cell">@row.Name</span><span role="cell">@row.StartTime</span><span role="cell">@row.FramesInfo</span>
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
-                    <div class="history-summary">
-                        <span>@L.T("History.Added"): @node.Summary.AddedChapters</span>
-                        <span>@L.T("History.Removed"): @node.Summary.RemovedChapters</span>
-                        <span>@L.T("History.Modified"): @node.Summary.ModifiedChapters</span>
-                    </div>
-                    @if (node.PublishedAt is { } published) { <p class="history-note">@published.ToLocalTime()</p> }
-                    @foreach (var change in node.Changes)
+                    @if (projection.Parameters.Count > 0)
                     {
-                        <article class="history-change" @key="(change.Group, change.ObjectId, change.Field)">
-                            <strong>@change.ObjectLabel</strong>
-                            <span>@change.Field</span>
-                            <span>@ValueText(change.Before)</span>
-                            <span>→</span>
-                            <span>@ValueText(change.After)</span>
-                        </article>
+                        <h4>@L.T("History.Parameters")</h4>
+                        <dl class="history-parameters">
+                            @foreach (var parameter in projection.Parameters)
+                            {
+                                <dt>@parameter.Name</dt><dd>@parameter.Value</dd>
+                            }
+                        </dl>
                     }
+                    @if (!string.IsNullOrWhiteSpace(projection.OperationTitle) && projection.Changes.Count > 0)
+                    {
+                        <label class="history-filter">
+                            <span>@L.T("History.Changes")</span>
+                            <select value="@selectedFilter" @onchange="OnFilterChanged">
+                                @foreach (var filter in ChangeFilters)
+                                {
+                                    <option value="@filter.Value">@filter.Label</option>
+                                }
+                            </select>
+                        </label>
+                        @if (VisibleChanges.Count == 0)
+                        {
+                            <p>@L.T("History.NoFilteredChanges")</p>
+                        }
+                        else
+                        {
+                            <div class="history-change-table" role="table" aria-label="@L.T("History.Changes")">
+                                <div class="history-change-row history-change-header" role="row">
+                                    <span role="columnheader">@L.T("History.FieldHeader")</span><span role="columnheader">@L.T("History.BeforeHeader")</span>
+                                    <span role="columnheader">@L.T("History.AfterHeader")</span><span role="columnheader">@L.T("History.DeltaHeader")</span>
+                                </div>
+                                @foreach (var change in VisibleChanges)
+                                {
+                                    <div @key="(change.Group, change.ObjectId, change.Field)" class="history-change-row" role="row">
+                                        <strong class="history-change-context" role="cell">@change.ObjectLabel</strong>
+                                        <span role="cell">@change.Field</span><span role="cell">@change.BeforeText</span>
+                                        <span role="cell">@change.AfterText</span><span role="cell">@change.DeltaText</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                }
+                else if (selectedId is null)
+                {
+                    <p>@L.T("History.Empty")</p>
                 }
             </section>
         </div>
     </div>
-    <footer class="modal-footer">
-        <button type="button" class="secondary" disabled="@(selectedId is null || selectedId == CurrentId || Workspace.IsHistoryEnded || Workspace.IsBusy)" @onclick="RestoreAsync">@L.T("History.Restore")</button>
+    <footer class="modal-footer history-footer">
+        @if (navigationStatus is not null) { <span class="history-status" role="status">@navigationStatus</span> }
+        <button type="button" class="primary" disabled="@(selectedId is null || selectedId == CurrentId || Workspace.IsHistoryEnded || Workspace.IsBusy)" @onclick="RestoreAsync">@L.T("History.Restore")</button>
         <span class="modal-spacer"></span>
         <button type="button" class="secondary" @onclick="OnClose">@L.T("Action.Close")</button>
     </footer>
@@ -86,33 +185,95 @@
     private readonly HashSet<Guid> expanded = [];
     private Guid? selectedId;
     private HistoryNodeDetails? details;
+    private WasmHistoryDetailsProjection? detailProjection;
     private string? detailError;
+    private string? navigationStatus;
     private bool detailLoading;
+    private bool focusCurrentAfterRender;
+    private bool focusDetailsAfterRender;
+    private bool focusPageTabAfterRender;
     private Guid? lastCurrentId;
+    private Guid? lastRootId;
     private long detailGeneration;
-    private Guid? CurrentId => Workspace.HistoryEntries.FirstOrDefault(entry => entry.IsCurrent)?.Id;
-    private ICollection<WasmHistoryEntry> Entries => Workspace.GetHistoryEntries(expanded);
+    private CancellationTokenSource? detailCancellation;
+    private int narrowPage;
+    private string selectedFilter = "All";
+    private string lastCulture = string.Empty;
+    private ElementReference currentEntryElement;
+    private ElementReference detailsPanel;
+    private ElementReference historyPageTab;
+    private ElementReference detailsPageTab;
 
-    protected override void OnInitialized() => Workspace.Changed += OnWorkspaceChanged;
+    private Guid? CurrentId => Workspace.CurrentHistoryId;
+    private IReadOnlyList<WasmHistoryEntry> Entries => Workspace.GetHistoryEntries(expanded).ToArray();
+    private IReadOnlyList<WasmHistoryRedoChoice> RedoChoices => Workspace.HistoryRedoChoices;
+    private string SelectedRedoId => Workspace.SelectedHistoryRedoBranchId?.ToString() ?? string.Empty;
+    private IReadOnlyList<(string Value, string Label)> ChangeFilters =>
+    [
+        ("All", L.T("History.Filter.All")),
+        ("Added", L.T("History.Filter.Added")),
+        ("Removed", L.T("History.Filter.Removed")),
+        ("Modified", L.T("History.Filter.Modified"))
+    ];
+    private IReadOnlyList<WasmHistoryChangeRow> VisibleChanges => detailProjection is null ? []
+        : WasmHistoryProjection.FilterChanges(detailProjection.Changes,
+            Enum.TryParse<WasmHistoryChangeFilter>(selectedFilter, out var filter) ? filter : WasmHistoryChangeFilter.All);
+
+    protected override void OnInitialized()
+    {
+        Workspace.Changed += OnWorkspaceChanged;
+        lastRootId = Workspace.HistoryRootId;
+        lastCulture = L.Culture;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
         SyncTree();
-        if (selectedId is null || Workspace.HistoryEntries.All(row => row.Id != selectedId))
+        if (selectedId is null || !Workspace.HistoryEntries.Any(row => row.Id == selectedId))
         {
             selectedId = CurrentId ?? Workspace.HistoryEntries.FirstOrDefault()?.Id;
             await LoadDetailsAsync(selectedId);
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusCurrentAfterRender)
+        {
+            focusCurrentAfterRender = false;
+            await currentEntryElement.FocusAsync();
+        }
+        if (focusDetailsAfterRender)
+        {
+            focusDetailsAfterRender = false;
+            await detailsPanel.FocusAsync(preventScroll: true);
+        }
+        if (focusPageTabAfterRender)
+        {
+            focusPageTabAfterRender = false;
+            await (narrowPage == 0 ? historyPageTab : detailsPageTab).FocusAsync(preventScroll: true);
+        }
+    }
+
     private void SyncTree()
     {
-        var rows = Workspace.HistoryEntries;
-        if (CurrentId is not { } currentId || currentId == lastCurrentId) return;
-        lastCurrentId = currentId;
-        var byId = rows.ToDictionary(row => row.Id);
-        var nodeId = currentId;
-        while (byId.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
+        var snapshot = Workspace.HistorySnapshot;
+        if (snapshot is null) return;
+        if (snapshot.RootId != lastRootId)
+        {
+            CancelDetailsRequest();
+            expanded.Clear();
+            selectedId = null;
+            details = null;
+            detailProjection = null;
+            lastRootId = snapshot.RootId;
+            lastCurrentId = null;
+        }
+        if (snapshot.CursorId == lastCurrentId) return;
+        lastCurrentId = snapshot.CursorId;
+        var nodes = snapshot.Nodes.ToDictionary(static node => node.Id);
+        var nodeId = snapshot.CursorId;
+        while (nodes.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
         {
             expanded.Add(parentId);
             nodeId = parentId;
@@ -121,17 +282,30 @@
 
     private void OnWorkspaceChanged() => _ = InvokeAsync(async () =>
     {
-        var currentChanged = CurrentId != lastCurrentId;
+        var oldRoot = lastRootId;
+        var oldCurrent = lastCurrentId;
+        var cultureChanged = !string.Equals(lastCulture, L.Culture, StringComparison.OrdinalIgnoreCase);
+        lastCulture = L.Culture;
         SyncTree();
-        if (currentChanged)
+        if (Workspace.HistoryRootId != oldRoot || CurrentId != oldCurrent)
         {
             selectedId = CurrentId;
             await LoadDetailsAsync(selectedId);
         }
+        else if (cultureChanged && details is { } selectedDetails)
+        {
+            detailProjection = WasmHistoryProjection.Project(L, selectedDetails);
+        }
         StateHasChanged();
     });
 
-    public void Dispose() => Workspace.Changed -= OnWorkspaceChanged;
+    public void Dispose()
+    {
+        Workspace.Changed -= OnWorkspaceChanged;
+        CancelDetailsRequest();
+    }
+
+    private string LocalizedDescription(WasmHistoryEntry entry) => Workspace.LocalizeHistoryEntry(entry);
 
     private async Task Toggle(Guid id)
     {
@@ -140,16 +314,15 @@
             expanded.Remove(id);
             if (selectedId is { } selected && IsDescendant(selected, id))
             {
-                selectedId = id;
-                await LoadDetailsAsync(selectedId);
+                await SelectAsync(id);
             }
         }
     }
 
     private bool IsDescendant(Guid nodeId, Guid ancestorId)
     {
-        var byId = Workspace.HistoryEntries.ToDictionary(row => row.Id);
-        while (byId.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
+        var nodes = Workspace.HistorySnapshot?.Nodes.ToDictionary(static node => node.Id);
+        while (nodes is not null && nodes.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
         {
             if (parentId == ancestorId) return true;
             nodeId = parentId;
@@ -161,57 +334,137 @@
     {
         var current = CurrentId;
         if (current is null) return;
+        expanded.Clear();
         lastCurrentId = null;
         SyncTree();
         selectedId = current;
+        narrowPage = 0;
         await LoadDetailsAsync(selectedId);
+        focusCurrentAfterRender = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task SelectAsync(Guid? id)
     {
         selectedId = id;
+        narrowPage = 1;
         await LoadDetailsAsync(id);
+        focusDetailsAfterRender = id is not null;
     }
 
     private async Task LoadDetailsAsync(Guid? id)
     {
+        CancelDetailsRequest();
         var generation = ++detailGeneration;
         details = null;
+        detailProjection = null;
         detailError = null;
         if (id is null)
         {
             detailLoading = false;
             return;
         }
+        var rootId = Workspace.HistoryRootId;
+        var request = detailCancellation = new CancellationTokenSource();
         detailLoading = true;
         try
         {
-            var result = await Workspace.InspectHistoryAsync(id.Value);
-            if (generation != detailGeneration || selectedId != id) return;
-            if (result.Kind == HistoryInspectionOutcomeKind.Available) details = result.Details;
+            var result = await Workspace.InspectHistoryAsync(id.Value, request.Token);
+            if (request.IsCancellationRequested || generation != detailGeneration || selectedId != id
+                || rootId is null || Workspace.HistoryRootId != rootId || Workspace.IsHistoryEnded) return;
+            if (result.Kind == HistoryInspectionOutcomeKind.Available && result.Details is { } available)
+            {
+                details = available;
+                detailProjection = WasmHistoryProjection.Project(L, available);
+            }
             else if (result.Kind is HistoryInspectionOutcomeKind.ResourceFailure or HistoryInspectionOutcomeKind.NotFound or HistoryInspectionOutcomeKind.Ended)
+            {
                 detailError = result.Kind.ToString();
-            else detailError = "Failed";
+            }
+            else if (result.Kind != HistoryInspectionOutcomeKind.Cancelled)
+            {
+                detailError = "Failed";
+            }
         }
+        catch (OperationCanceledException) when (request.IsCancellationRequested) { }
         catch (OutOfMemoryException)
         {
-            if (generation == detailGeneration && selectedId == id) detailError = "ResourceFailure";
+            if (generation == detailGeneration && selectedId == id && Workspace.HistoryRootId == rootId) detailError = "ResourceFailure";
         }
         catch (Exception)
         {
-            if (generation == detailGeneration && selectedId == id) detailError = "Failed";
+            if (generation == detailGeneration && selectedId == id && Workspace.HistoryRootId == rootId) detailError = "Failed";
         }
         finally
         {
-            if (generation == detailGeneration) detailLoading = false;
+            if (generation == detailGeneration)
+            {
+                detailLoading = false;
+                if (ReferenceEquals(detailCancellation, request)) detailCancellation = null;
+                request.Dispose();
+            }
         }
     }
 
-    private async Task RestoreAsync()
+    private void CancelDetailsRequest()
     {
-        if (selectedId is { } id) await Workspace.RestoreHistoryAsync(id);
+        detailGeneration++;
+        detailCancellation?.Cancel();
+        detailCancellation?.Dispose();
+        detailCancellation = null;
     }
 
-    private static string ValueText(HistoryFieldValue value) =>
-        value.IsPresent ? Convert.ToString(value.Value, System.Globalization.CultureInfo.CurrentCulture) ?? "" : "—";
+    private Task RetryDetailsAsync() => LoadDetailsAsync(selectedId);
+
+    private void OnFilterChanged(ChangeEventArgs args)
+    {
+        selectedFilter = args.Value?.ToString() ?? "All";
+    }
+
+    private void SelectRedoBranch(ChangeEventArgs args)
+    {
+        if (Guid.TryParse(args.Value?.ToString(), out var id)) Workspace.SelectHistoryRedoBranch(id);
+    }
+
+    private async Task UndoAsync() => await Workspace.UndoAsync();
+
+    private async Task RedoAsync() => await Workspace.RedoSelectedHistoryBranchAsync();
+
+    private async Task RestoreAsync()
+    {
+        if (selectedId is not { } id) return;
+        var oldCursor = CurrentId;
+        try
+        {
+            await Workspace.RestoreHistoryAsync(id);
+            navigationStatus = CurrentId != oldCursor ? L.T("History.RestoreApplied") : L.T("History.NavigationFailed");
+        }
+        catch (Exception)
+        {
+            navigationStatus = L.T("History.NavigationFailed");
+        }
+    }
+
+    private void ShowHistoryPage() => narrowPage = 0;
+
+    private void ShowDetailsPage() => narrowPage = 1;
+
+    private void OnHistoryPageKeyDown(KeyboardEventArgs args)
+    {
+        var nextPage = args.Key switch
+        {
+            "ArrowRight" => (narrowPage + 1) % 2,
+            "ArrowLeft" => (narrowPage + 1) % 2,
+            "Home" => 0,
+            "End" => 1,
+            _ => narrowPage
+        };
+        if (nextPage == narrowPage)
+        {
+            return;
+        }
+
+        narrowPage = nextPage;
+        focusPageTabAfterRender = true;
+    }
 }

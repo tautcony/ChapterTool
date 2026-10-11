@@ -699,4 +699,8 @@
   <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">残りの時間を正規化</x:String>
   <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">整数フレーム</x:String>
   <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">小数フレーム</x:String>
+  <x:String x:Key="History.ToggleBranch" xml:space="preserve">履歴分岐を展開または折りたたむ</x:String>
+  <x:String x:Key="History.Empty" xml:space="preserve">利用できる履歴項目はありません。</x:String>
+  <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">有効なエクスポート設定を選択してください。</x:String>
+  <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">設定を適用できませんでした。下書きは引き続き編集できます。</x:String>
 </ResourceDictionary>

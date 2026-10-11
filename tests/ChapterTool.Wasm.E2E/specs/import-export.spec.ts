@@ -17,9 +17,10 @@ test('B06 canceling replacement keeps the open document; confirming replaces it'
   const retainedName = await chapterName(page, 1);
   await expect(retainedName).toHaveValue('Kept edit');
   await expect(grid.locator('tbody tr')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await page.locator('#chaptertool-shell').focus();
+  await page.keyboard.press('Control+z');
   await expect(retainedName).toHaveValue('Opening');
-  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await page.keyboard.press('Control+y');
   await expect(retainedName).toHaveValue('Kept edit');
 
   page.once('dialog', dialog => dialog.accept());
@@ -27,7 +28,11 @@ test('B06 canceling replacement keeps the open document; confirming replaces it'
   await page.getByRole('button', { name: 'Load', exact: true }).click();
   await (await secondChooser).setFiles(fileURLToPath(new URL('../fixtures/unicode-ogm.txt', import.meta.url)));
   await expect(await chapterName(page, 1)).toHaveValue('開幕');
-  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Edit history', exact: true }).click();
+  const history = page.getByRole('dialog', { name: 'Edit history', exact: true });
+  await expect(history.locator('.history-entry')).toHaveCount(1);
+  await expect(history.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+  await history.locator('.modal-close').click();
 });
 
 test('B07 malformed XML reports an error and retains the current document', async ({ readyPage: page }) => {

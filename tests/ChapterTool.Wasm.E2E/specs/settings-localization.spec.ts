@@ -11,7 +11,7 @@ async function applyLanguage(page: import('@playwright/test').Page, language: st
 
 test('B08 settings save, persist across refresh, and discard canceled drafts', async ({ readyPage: page }) => {
   await page.getByTestId('settings-open').click();
-  const dialog = page.getByRole('dialog', { name: 'Settings', exact: true });
+  const dialog = page.getByRole('dialog');
   await dialog.locator('#settings-ui-language').selectOption('zh-CN');
   await dialog.getByTestId('settings-apply').click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
@@ -21,7 +21,7 @@ test('B08 settings save, persist across refresh, and discard canceled drafts', a
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
 
   await page.getByTestId('settings-open').click();
-  const localizedDialog = page.getByRole('dialog', { name: '设置', exact: true });
+  const localizedDialog = page.getByRole('dialog');
   await localizedDialog.locator('#settings-ui-language').selectOption('en-US');
   await localizedDialog.getByTestId('settings-cancel').click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');

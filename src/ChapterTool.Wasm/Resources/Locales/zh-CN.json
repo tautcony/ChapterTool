@@ -697,5 +697,9 @@
   "History.Enum.deleteTiming.Preserve": "保留时间戳",
   "History.Enum.deleteTiming.Normalize": "规范剩余时间",
   "History.Enum.frameDisplay.Round": "整数帧",
-  "History.Enum.frameDisplay.DecimalPlaces": "小数帧"
+  "History.Enum.frameDisplay.DecimalPlaces": "小数帧",
+  "History.ToggleBranch": "展开或折叠历史分支",
+  "History.Empty": "没有可用的历史记录。",
+  "Parity.ExportOptionsInvalid": "请选择有效的导出选项。",
+  "Parity.SettingsApplyFailed": "无法应用这些设置。草稿仍可继续编辑。"
 }

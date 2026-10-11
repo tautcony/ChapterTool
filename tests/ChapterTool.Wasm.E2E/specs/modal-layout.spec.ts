@@ -95,7 +95,8 @@ test('M07 history inspection keeps the document unchanged until explicit restora
   await expect(name).toHaveValue('Edit 23');
   await expect(history.locator('.history-entry[aria-current="step"]')).toBeInViewport();
   await history.locator('.modal-close').click();
-  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await page.locator('#chaptertool-shell').focus();
+  await page.keyboard.press('Control+y');
   await expect(name).toHaveValue('Edit 24');
 });
 

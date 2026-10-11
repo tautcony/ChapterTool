@@ -63,6 +63,13 @@ window.chapterToolWasm = {
       el.click();
     }
   },
+  getGridScrollTop: function () {
+    return document.querySelector('.grid-wrap')?.scrollTop || 0;
+  },
+  setGridScrollTop: function (scrollTop) {
+    const grid = document.querySelector('.grid-wrap');
+    if (grid) grid.scrollTop = scrollTop;
+  },
   copyText: async function (text) {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text || '');
@@ -154,6 +161,16 @@ window.chapterToolWasm = {
     }
   },
   focus: function (id) { document.getElementById(id)?.focus(); },
+  focusLoadMenuItem: function (direction) {
+    const items = Array.from(document.querySelectorAll('#load-menu [role="menuitem"]'))
+      .filter(item => !item.disabled && item.getClientRects().length);
+    if (items.length === 0) return;
+    const current = items.indexOf(document.activeElement);
+    const next = current < 0
+      ? (direction > 0 ? 0 : items.length - 1)
+      : (current + direction + items.length) % items.length;
+    items[next].focus();
+  },
   setShortcutBindings: function (gestures) { window.__chapterToolBindings = new Set(gestures); },
   shouldPreventBrowserShortcut: function (event) {
     return shouldPreventBrowserShortcut(event);

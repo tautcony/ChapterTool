@@ -699,4 +699,8 @@
   <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">规范剩余时间</x:String>
   <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">整数帧</x:String>
   <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">小数帧</x:String>
+  <x:String x:Key="History.ToggleBranch" xml:space="preserve">展开或折叠历史分支</x:String>
+  <x:String x:Key="History.Empty" xml:space="preserve">没有可用的历史记录。</x:String>
+  <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">请选择有效的导出选项。</x:String>
+  <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">无法应用这些设置。草稿仍可继续编辑。</x:String>
 </ResourceDictionary>

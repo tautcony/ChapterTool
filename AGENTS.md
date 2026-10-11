@@ -76,7 +76,9 @@
 - Buttons must center content horizontally and vertically.
 - Do not expose Windows registry-dependent actions, such as file association, as always-visible primary UI.
 - When verifying visual layout changes manually, capture screenshots at default, wide, and narrow sizes and store them under `artifacts/`. Do not treat screenshot generation by itself as an automated test assertion.
+- Verify stateful layouts in empty, valid, invalid, pending, and stale states. A screenshot of only a valid state does not establish layout parity.
 - Preserve accessible names, keyboard navigation, focus behavior, and localization boundaries when changing controls.
+- Web shortcut checks must use real key events to verify document actions, browser default cancellation, and field text undo.
 
 ## Completion And Scope
 

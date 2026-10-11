@@ -18,7 +18,7 @@ Use this document to compare the supported functions of every program form.
 
 Keep code identifiers, paths, commands, and user interface strings exact.
 
-Last reviewed: 2026-10-02
+Last reviewed: 2026-10-11
 
 ## 1. Program Forms
 
@@ -146,7 +146,8 @@ They do not describe product priority.
 | Insert and delete rows | Provides edit operations | Does not provide row commands | Provides insert and delete commands | Provides insert and delete actions | Core editing service plus host command layer `[Host variant]` |
 | Delete-rows timing preference | Provides `ChapterEditingOptions.DeleteRowsTiming` (`Preserve` or `Normalize`) | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; reaches Core through `ClipEditingCoordinator.Delete` | Drafts and applies through `Home.razor`; reaches Core through `WasmWorkspace.EditingOptions` | `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs` `[Host variant]` |
 | Frame display preference | Provides `ChapterEditingOptions.FrameDisplay` (`Round` or `DecimalPlaces`) and `EffectiveFrameDecimalPlaces` | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; drives frame-update precision in `MainWindowViewModel.Editing.cs` | Drafts and applies through `Home.razor`; drives `WasmWorkspace.EditingOptions` | `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs` `[Host variant]` |
-| Repeating-decimal preference | Uses `FramePresentationPolicy` to format exact frame ratios | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; refreshes frame presentation | Saves through the Web settings draft; formats rows with `FrameValueView` | `FramePresentationPolicy`, `FrameValueFormatter`, and each host's settings view `[Shared]` |
+| Repeating-decimal preference | Uses `FramePresentationPolicy` to format exact frame ratios | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; refreshes frame presentation | Applies valid settings drafts live; formats rows with `FrameValueView` | `FramePresentationPolicy`, `FrameValueFormatter`, and each host's settings view `[Shared]` |
+| History inspection and redo branches | Provides retained history and parent-relative field inspection | Does not retain an interactive session | Provides a tree, field details, and deferred redo choices | Provides a responsive tree, root rows, field filters, and deferred redo choices | `SessionState`, `HistoryInspectionViewModel`, `WasmHistoryProjection`, and `HistoryDialog.razor` `[Host variant]` |
 | Select multiple rows | Provides model collections only | Does not provide row selection | Uses DataGrid selection | Uses `WasmWorkspace.SelectRow` | `MainWindowViewModel` and `WasmWorkspace` `[Host variant]` |
 | Combine and restore clips | Provides `ChapterSegmentService` | Does not provide interactive clip state | Uses `ClipSession` | Uses `WasmWorkspace` clip state | `src/ChapterTool.Core/Editing/ChapterSegmentService.cs` `[Host variant]` |
 | Forward frame shift | Provides frame transform services | Provides frame-rate and export options only | Provides `ForwardShiftToolView` | Provides a browser forward-shift action | `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs` `[Host variant]` |
@@ -162,7 +163,7 @@ They do not describe product priority.
 | Automatic chapter names | Provides projection logic | Uses export projection | Provides an automatic-name option | Provides an automatic-name option | `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` `[Shared]` |
 | Template names | Provides template projection | Does not expose a template file option | Reads a local template file | Reads a browser text file | `ChapterNameTemplateReader` and `WasmWorkspace` `[Host variant]` |
 | Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides inline expression editing, candidate preview, and application | Provides inline expression editing, candidate preview, and application through `WasmWorkspace` | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
-| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Loads Lua files and renders highlighting, completion, and positioned diagnostics in the inline editor and advanced dialog | `Home.razor`, `ExpressionDialog.razor`, and `ExpressionAuthoringService` `[Host variant]` |
+| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Loads Lua files. The main editor has floating diagnostics. The advanced dialog provides highlighting and completion | `Home.razor`, `ExpressionDialog.razor`, and `ExpressionAuthoringService` `[Host variant]` |
 | Export formats | Provides all Core export formats | Lists and writes all CLI formats | Provides all desktop save formats | Provides all browser save formats | `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs` `[Shared]` |
 | XML language | Provides the language catalog | Supports `--xml-language` | Provides a localized language selector | Provides a language selector | `XmlChapterLanguageCatalog` `[Host variant]` |
 | Text encoding | Provides encoding options | Writes UTF-8 output without a BOM | Uses selected encoding and BOM options | Uses selected encoding and browser download bytes | `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs` `[Host variant]` |
@@ -275,8 +276,9 @@ Start with these paths for browser behavior:
 - Root components: `src/ChapterTool.Wasm/App.razor` and `src/ChapterTool.Wasm/Layout/MainLayout.razor`
 - Workspace page: `src/ChapterTool.Wasm/Pages/Home.razor`
 - Native dialog lifecycle: `src/ChapterTool.Wasm/Components/WasmDialog.razor` and `src/ChapterTool.Wasm/wwwroot/js/download.js`
-- History dialog: `src/ChapterTool.Wasm/Components/HistoryDialog.razor`
-- Inline expression draft and candidate workflow: `src/ChapterTool.Wasm/Pages/Home.razor` and `Services/WasmWorkspace.cs`
+- History tree, field inspection, and deferred redo choices: `src/ChapterTool.Wasm/Components/HistoryDialog.razor`, `Services/WasmWorkspace.History.cs`, and `Services/WasmHistoryProjection.cs`
+- Combined main-window naming, numbering, and expression candidates: `src/ChapterTool.Wasm/Pages/Home.razor` and `Services/WasmWorkspace.MainOptions.cs`
+- Live settings drafts, save, and runtime rollback: `src/ChapterTool.Wasm/Pages/Home.razor`
 - Advanced expression editor: `src/ChapterTool.Wasm/Components/ExpressionDialog.razor`
 - Advanced export draft: `src/ChapterTool.Wasm/Components/ExportOptionsDialog.razor`
 - Reviewed naming, numbering, frame shift, and conversion: `src/ChapterTool.Wasm/Components/ContentOperationDialog.razor` and `Services/WasmWorkspace.Operations.cs`

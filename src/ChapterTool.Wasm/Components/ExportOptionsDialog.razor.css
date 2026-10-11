@@ -1,0 +1,29 @@
+.export-options-grid {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(10rem, 2fr);
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+}
+
+.export-options-grid select {
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+}
+
+@media (max-width: 520px) {
+  .export-options-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.35rem;
+  }
+
+  .export-options-grid label:not(.settings-check) {
+    margin-block-start: 0.45rem;
+  }
+}

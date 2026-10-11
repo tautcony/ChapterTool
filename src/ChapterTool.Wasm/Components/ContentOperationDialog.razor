@@ -1,12 +1,15 @@
 @implements IDisposable
-@using System.Text
+@using System.Collections
 @using System.Globalization
+@using System.Text
+@using System.Text.Json
 @using ChapterTool.Core.Session
 @using ChapterTool.Core.Models
+@using ChapterTool.Core.Transform
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
 
-<WasmDialog Title="@Title" CssClass="expression-modal" OnClose="CancelAsync" DismissEnabled="@(!applying)">
+<WasmDialog Title="@Title" CssClass="expression-modal content-operation-modal" OnClose="CancelAsync" DismissEnabled="@(!applying)">
     <div class="modal-body">
         @if (Operation == "naming")
         {
@@ -30,8 +33,8 @@
         @if (Operation == "fps" && Workspace.ContentPreview is { } conversion)
         {
             <dl class="fps-review">
-                <dt>@L.T("Parity.SourceFps")</dt><dd data-testid="fps-source">@PropertyValue(ScopeFrameRate(conversion.Before))</dd>
-                <dt>@L.T("Parity.TargetFps")</dt><dd data-testid="fps-target">@PropertyValue(ScopeFrameRate(conversion.Candidate))</dd>
+                <dt>@L.T("Parity.SourceFps")</dt><dd data-testid="fps-source">@FrameRateValue(ScopeFrameRate(conversion.Before))</dd>
+                <dt>@L.T("Parity.TargetFps")</dt><dd data-testid="fps-target">@FrameRateValue(ScopeFrameRate(conversion.Candidate))</dd>
             </dl>
         }
         @if (error is not null) { <p role="alert">@error</p> }
@@ -49,20 +52,58 @@
             <p role="status">@L.Format("Expression.Preview.Scope", projection.ScopeTrackName, projection.ParticipatingChapterCount)</p>
             @if (projection.ExcludedSeparatorCount > 0) { <p>@L.Format("Expression.Preview.Separators", projection.ExcludedSeparatorCount)</p> }
             <p role="status">@(projection.HasChanges ? L.Format("Expression.Review.OtherSummary", projection.AffectedChapterCount, projection.FrameInformationChangedChapterCount, projection.Properties.Length) : L.T("Expression.State.Unchanged"))</p>
-            <div class="candidate-review" data-testid="content-review">
+            <div class="candidate-review" data-testid="content-review" aria-label="@L.T("Expression.Preview.ChangedOnly")">
                 @foreach (var row in projection.Chapters.Where(row => row.Changes != ExpressionChapterChangeKind.None))
                 {
-                    <article>
-                        <strong>@(row.Candidate?.Name ?? row.Before?.Name)</strong>
-                        <dl>
-                            <dt>@L.T("Expression.Preview.Before")</dt><dd>@Describe(row.Before)</dd>
-                            <dt>@L.T("Expression.Preview.After")</dt><dd>@Describe(row.Candidate)</dd>
-                        </dl>
+                    <article class="content-review-row" @key="row.Id">
+                        <h3>@ChapterLabel(row)</h3>
+                        <div class="content-review-sides">
+                            <section aria-label="@L.T("Expression.Preview.Before")">
+                                <h4>@L.T("Expression.Preview.Before")</h4>
+                                <dl>
+                                    <dt>@L.T("Grid.Number")</dt><dd>@ChapterNumber(row.Before)</dd>
+                                    <dt>@L.T("Grid.Name")</dt><dd>@ChapterName(row.Before)</dd>
+                                    <dt>@L.T("Grid.Time")</dt><dd class="review-time" data-testid="review-before-time">@ChapterTime(row.Before)</dd>
+                                    <dt>@L.T("Grid.Frames")</dt><dd data-testid="review-before-frames">@FrameValue(row, candidate: false)</dd>
+                                </dl>
+                            </section>
+                            <section aria-label="@L.T("Expression.Preview.After")">
+                                <h4>@L.T("Expression.Preview.After")</h4>
+                                <dl>
+                                    <dt>@L.T("Grid.Number")</dt><dd>@ChapterNumber(row.Candidate)</dd>
+                                    <dt>@L.T("Grid.Name")</dt><dd>@ChapterName(row.Candidate)</dd>
+                                    <dt>@L.T("Grid.Time")</dt><dd class="review-time" data-testid="review-candidate-time">@ChapterTime(row.Candidate)</dd>
+                                    <dt>@L.T("Grid.Frames")</dt><dd data-testid="review-candidate-frames">@FrameValue(row, candidate: true)</dd>
+                                </dl>
+                            </section>
+                        </div>
+                        @if (row.DeltaTicks is { } delta && delta != 0)
+                        {
+                            <p class="content-review-delta">@L.T("Expression.Preview.Delta"): @FormatDelta(delta)</p>
+                        }
+                        @if (row.DeltaFrames is { } frameDelta && frameDelta != 0)
+                        {
+                            <p class="content-review-delta">@L.T("Expression.Preview.Delta"): @L.Format("Expression.Preview.DeltaFrames", frameDelta)</p>
+                        }
                     </article>
                 }
-                @foreach (var property in projection.Properties)
+                @if (projection.Properties.Length > 0)
                 {
-                    <p>@Workspace.FormatExpressionPropertyName(property.Property): @PropertyValue(property.Before) → @PropertyValue(property.Candidate)</p>
+                    <details class="content-review-metadata">
+                        <summary>@L.Format("Expression.Review.OtherSummary", projection.AffectedChapterCount, projection.FrameInformationChangedChapterCount, projection.Properties.Length)</summary>
+                        <div class="metadata-list">
+                            @foreach (var property in projection.Properties)
+                            {
+                                <article @key="(property.OwnerKind, property.OwnerId, property.Property)">
+                                    <h4>@OwnerLabel(property.OwnerKind) · @property.OwnerName · @Workspace.FormatExpressionPropertyName(property.Property)</h4>
+                                    <dl>
+                                        <dt>@L.T("Expression.Preview.Before")</dt><dd>@PropertyValue(property.Property, property.Before)</dd>
+                                        <dt>@L.T("Expression.Preview.After")</dt><dd>@PropertyValue(property.Property, property.Candidate)</dd>
+                                    </dl>
+                                </article>
+                            }
+                        </div>
+                    </details>
                 }
             </div>
         }
@@ -158,21 +199,98 @@
 
     private Task CancelAsync() => applying ? Task.CompletedTask : OnClose.InvokeAsync();
 
-    private string Describe(EditableChapter? chapter) => chapter is null ? L.T("Expression.Value.Missing")
-        : $"{chapter.DisplayNumber} · {chapter.Name} · {Workspace.FormatExpressionTimeTicks(chapter.StartTicks)} · {chapter.FramesInfo}";
-
-    private string PropertyValue(object? value) => value switch
+    private string ChapterLabel(ExpressionChapterComparison row)
     {
-        ChapterFrameRate rate => $"{rate.Numerator}/{rate.Denominator} {L.T("Expression.Unit.FramesPerSecond")}",
-        ChapterDuration duration => duration.IsKnown ? Workspace.FormatExpressionTimeTicks(duration.Ticks) : L.T("Expression.Value.NotSet"),
-        string text => text,
-        null => L.T("Expression.Value.NotSet"),
-        _ => L.T("Expression.Property.ValueChanged")
+        var chapter = row.Candidate ?? row.Before;
+        return chapter is null ? L.T("Expression.Preview.Chapter") : $"{chapter.DisplayNumber} · {chapter.Name}";
+    }
+
+    private string ChapterNumber(EditableChapter? chapter) => chapter?.DisplayNumber.ToString(CultureInfo.InvariantCulture)
+        ?? L.T("Expression.Value.Missing");
+
+    private string ChapterName(EditableChapter? chapter) => chapter?.Name ?? L.T("Expression.Value.Missing");
+
+    private string ChapterTime(EditableChapter? chapter) => chapter is null
+        ? L.T("Expression.Value.Missing")
+        : Workspace.FormatExpressionTimeTicks(chapter.StartTicks);
+
+    private RenderFragment FrameValue(ExpressionChapterComparison row, bool candidate) => builder =>
+    {
+        var chapter = candidate ? row.Candidate : row.Before;
+        var frame = candidate ? row.CandidateFrames : row.BeforeFrames;
+        if (chapter is null || frame is null || frame.IsMissing)
+        {
+            builder.AddContent(0, L.T("Expression.Value.NotCalculated"));
+            return;
+        }
+
+        var value = Workspace.FormatPreviewFramePresentation(row, candidate, showRepeatingDecimals: true);
+        var accuracy = Workspace.GetPreviewFrameAccuracy(chapter.StartTicks);
+        var accuracyClass = accuracy switch
+        {
+            FrameAccuracy.Accurate => "accurate",
+            FrameAccuracy.Inexact => "inexact",
+            _ => "neutral"
+        };
+        var accuracyText = L.T(accuracy switch
+        {
+            FrameAccuracy.Accurate => "Expression.FrameAccuracy.Accurate",
+            FrameAccuracy.Inexact => "Expression.FrameAccuracy.Inexact",
+            _ => "Expression.FrameAccuracy.NotCalculated"
+        });
+        var accessibleName = $"{(candidate ? L.T("Expression.Preview.AfterFrames") : L.T("Expression.Preview.BeforeFrames"))}: {value.AccessibleDescription}, {accuracyText}";
+        builder.OpenComponent<FrameValueView>(0);
+        builder.AddAttribute(1, "Value", value);
+        builder.AddAttribute(2, "CssClass", $"frame-text {accuracyClass}");
+        builder.AddAttribute(3, "AccessibleName", accessibleName);
+        builder.CloseComponent();
     };
+
+    private string FormatDelta(long ticks)
+    {
+        var sign = ticks > 0 ? "+" : "−";
+        return sign + Workspace.FormatExpressionTimeTicks(Math.Abs(ticks));
+    }
 
     private ChapterFrameRate? ScopeFrameRate(EditableChapterDocument document) =>
         document.Tracks.FirstOrDefault(track => track.Id == Workspace.ContentPreviewProjection?.ScopeTrackId)
             ?.Segments.FirstOrDefault()?.FrameRate ?? document.FrameRate;
+
+    private string FrameRateValue(ChapterFrameRate? rate) => rate is { } value
+        ? $"{value.Numerator}/{value.Denominator} {L.T("Expression.Unit.FramesPerSecond")}"
+        : L.T("Expression.Value.NotSet");
+
+    private string PropertyValue(string property, object? value)
+    {
+        if (value is null) return L.T("Expression.Value.NotSet");
+        if (value is ChapterFrameRate rate) return $"{rate.Numerator}/{rate.Denominator} {L.T("Expression.Unit.FramesPerSecond")}";
+        if (value is ChapterDuration duration)
+        {
+            return duration.IsKnown ? Workspace.FormatExpressionTimeTicks(duration.Ticks) : L.T("Expression.Value.NotSet");
+        }
+        if (property.EndsWith("Ticks", StringComparison.Ordinal) && value is long ticks)
+        {
+            return Workspace.FormatExpressionTimeTicks(ticks);
+        }
+        if (value is string text) return text;
+        if (value is Enum enumeration) return enumeration.ToString();
+        if (value is Guid id) return id.ToString("D", CultureInfo.InvariantCulture);
+        if (value is IFormattable formatted) return formatted.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty;
+        if (value is IEnumerable)
+        {
+            try { return JsonSerializer.Serialize(value, value.GetType()); }
+            catch (NotSupportedException) { }
+        }
+        return value.ToString() ?? string.Empty;
+    }
+
+    private string OwnerLabel(ExpressionPropertyOwnerKind owner) => owner switch
+    {
+        ExpressionPropertyOwnerKind.Document => L.T("Expression.PropertyOwner.Document"),
+        ExpressionPropertyOwnerKind.Track => L.T("Expression.PropertyOwner.Track"),
+        ExpressionPropertyOwnerKind.Segment => L.T("Expression.PropertyOwner.Segment"),
+        _ => L.T("Expression.PropertyOwner.Chapter")
+    };
 
     public void Dispose()
     {

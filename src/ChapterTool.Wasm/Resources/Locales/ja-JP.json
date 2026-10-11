@@ -697,5 +697,9 @@
   "History.Enum.deleteTiming.Preserve": "タイムスタンプを保持",
   "History.Enum.deleteTiming.Normalize": "残りの時間を正規化",
   "History.Enum.frameDisplay.Round": "整数フレーム",
-  "History.Enum.frameDisplay.DecimalPlaces": "小数フレーム"
+  "History.Enum.frameDisplay.DecimalPlaces": "小数フレーム",
+  "History.ToggleBranch": "履歴分岐を展開または折りたたむ",
+  "History.Empty": "利用できる履歴項目はありません。",
+  "Parity.ExportOptionsInvalid": "有効なエクスポート設定を選択してください。",
+  "Parity.SettingsApplyFailed": "設定を適用できませんでした。下書きは引き続き編集できます。"
 }

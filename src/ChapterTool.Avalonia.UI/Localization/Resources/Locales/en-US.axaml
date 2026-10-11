@@ -699,4 +699,8 @@
   <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">Normalize remaining times</x:String>
   <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">Whole frames</x:String>
   <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">Decimal frames</x:String>
+  <x:String x:Key="History.ToggleBranch" xml:space="preserve">Toggle history branch</x:String>
+  <x:String x:Key="History.Empty" xml:space="preserve">No history entry is available.</x:String>
+  <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">Choose valid export options.</x:String>
+  <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">Could not apply these settings. The draft is still available.</x:String>
 </ResourceDictionary>

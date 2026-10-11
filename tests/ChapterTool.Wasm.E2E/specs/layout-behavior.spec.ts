@@ -18,7 +18,7 @@ async function verifyLayoutStates(page: Page, testInfo: TestInfo, viewport: View
   const grid = chapters(page);
   await expect(grid).toBeVisible();
   await expect(page.getByLabel('Format')).toBeVisible();
-  await expect(page.getByRole('status')).toBeVisible();
+  await expect(page.locator('.status-bar').getByRole('status')).toBeVisible();
   await page.getByTestId('settings-open').click();
   const settings = page.getByRole('dialog', { name: 'Settings' });
   await expect(settings).toBeVisible();

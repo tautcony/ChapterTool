@@ -53,11 +53,15 @@ Use `tests/ChapterTool.Wasm.E2E` for rendered Blazor workflows and browser bound
 
 `WasmContentParityTests` covers read-only candidates, cancellation, stale cell identities, repeated submission, and preference isolation. `WasmToolParityTests` covers shared shortcut defaults and filtered log export. `PortableUiParityTests` compares browser and Avalonia operation sequences through public APIs. `functional-parity.spec.ts` covers rendered cell drafts, shortcut settings, Lua authoring, filtered log actions, persistence failures, 1000-row editing, and five viewport sizes. Browser evidence is stored under `artifacts/wasm-e2e/`.
 
+`WasmMainOptionsParityTests` covers combined main-window candidates, display refresh, selection, stale drafts, atomic undo, and expression replay prevention on the current branch. `WasmHistoryParityTests` covers localized details, root rows, filters, and deferred direct-child redo choices. `WasmPortableToolParityTests` covers export validation, browser log records, and typed content comparisons. The matching browser workflows are in `main-window-parity.spec.ts`, `history-parity.spec.ts`, and `portable-tools-parity.spec.ts`. They also cover live settings rollback, dialog isolation, and 1000-row candidates.
+
 `specs/modal-layout.spec.ts` owns dialog geometry, focus, hit targets, draft cancellation, background isolation, and long-body scrolling. It includes viewport boundaries from 320 pixels through desktop widths. `specs/unified-editing.spec.ts` owns modal history branches, expression before/after review, composition, and commits.
 
 Expression dialog drafts must keep the background grid values and geometry unchanged. History entry selection inspects details. The restore action changes the document. Browser tests verify both boundaries through rendered workflows.
 
 `specs/layout-behavior.spec.ts` verifies page and dialog bounds at default, wide, narrow, short, and landscape sizes. It verifies visible actions, downloads, expression diagnostics, and long-content footer access. These assertions run in the browser behavior suite. Browser E2E and Avalonia Headless tests own layout verification. Screenshots support diagnosis and manual review. There is no pixel baseline gate.
+
+`specs/main-diagnostics-layout.spec.ts` verifies the single main toolbar history action and the expression syntax diagnostic layer. It checks workflow geometry in empty, valid, invalid, pending, and stale states. It checks keyboard access and accessible diagnostic text after language changes. Real keyboard events verify that document Undo and Redo cancel browser defaults while field-level text Undo remains available.
 
 `specs/expression-preview-screenshots.spec.ts` verifies that changed time values stay above the footer at default, wide, and narrow portrait sizes. It checks English and Chinese count text and expandable property values. It writes review images under `artifacts/expression-preview/` when `E2E_CAPTURE_REVIEW=1`. `ToolViewsHeadlessTests` verifies the desktop comparison reflow in English and Chinese and writes images to the same directory.
 
