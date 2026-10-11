@@ -145,10 +145,10 @@ fixed-width overflow, and clipped text are not valid responsive behavior.
 
 ### Requirement: Localization and accessibility are preserved
 
-User-facing labels, empty states, status text, tooltips, and automation names
-MUST resolve from the shared locale resources. Icon-only actions MUST have
-accessible names. Keyboard navigation MUST reach the row details action, the
-inspector close/back action, structured disclosures, and the filter surface.
+User-facing labels, empty states, status text, tooltips, and automation names MUST resolve from the shared locale resources.
+Icon-only actions MUST have accessible names.
+Keyboard navigation MUST reach the row details action, the inspector close/back action, structured disclosures, and the filter surface.
+
 #### Scenario: Locale changes while the tool is open
 
 - **WHEN** the active UI locale changes
