@@ -237,10 +237,15 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         try
         {
             var exactRoundTrip = number.ToString("R", CultureInfo.InvariantCulture);
+            var unchangedValue = (double)fallback;
             return new ChapterExpressionEvaluationResult(
                 true,
                 decimal.Parse(exactRoundTrip, NumberStyles.Float, CultureInfo.InvariantCulture),
-                []) { TimeUnchanged = number == (double)fallback };
+                [])
+            {
+                TimeUnchanged = number >= Math.BitDecrement(unchangedValue)
+                    && number <= Math.BitIncrement(unchangedValue)
+            };
         }
         catch (OverflowException exception)
         {

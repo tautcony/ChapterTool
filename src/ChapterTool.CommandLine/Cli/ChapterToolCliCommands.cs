@@ -86,7 +86,7 @@ public sealed class ConvertCliCommand
         var localizer = new CliLocalizationManager(Language);
         if (!TryResolveFrameRate(out var rate, out var errorKey))
         {
-            Console.Error.WriteLine(localizer.GetString(errorKey));
+            await Console.Error.WriteLineAsync(localizer.GetString(errorKey));
             return 1;
         }
 

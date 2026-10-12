@@ -116,10 +116,27 @@ public sealed class HistoryInspectionViewModelTests
         history.QueuePendingInspection();
         viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == tree.Right);
         var current = history.WaitForInspectionAsync(1);
+        var currentDetailsLoaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(viewModel.Details) && viewModel.Details?.NodeId == tree.Right)
+            {
+                currentDetailsLoaded.TrySetResult();
+            }
+        }
 
-        obsolete.SetResult(FakeHistoryPort.Available(tree.Root, tree.Left, "obsolete"));
-        current.SetResult(FakeHistoryPort.Available(tree.Root, tree.Right, "current"));
-        await WaitForAsync(() => viewModel.Details?.NodeId == tree.Right);
+        viewModel.PropertyChanged += OnPropertyChanged;
+
+        try
+        {
+            obsolete.SetResult(FakeHistoryPort.Available(tree.Root, tree.Left, "obsolete"));
+            current.SetResult(FakeHistoryPort.Available(tree.Root, tree.Right, "current"));
+            await currentDetailsLoaded.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        }
+        finally
+        {
+            viewModel.PropertyChanged -= OnPropertyChanged;
+        }
 
         Assert.Equal(tree.Right, viewModel.SelectedEntry!.Id);
         Assert.Equal(tree.Right, viewModel.Details!.NodeId);
@@ -385,15 +402,6 @@ public sealed class HistoryInspectionViewModelTests
 
     private static HistoryFieldChange Change(string field, HistoryFieldValue before, HistoryFieldValue after) =>
         new("Chapter", "chapter-1", field, before, after, "Chapter 1");
-
-    private static async Task WaitForAsync(Func<bool> condition)
-    {
-        for (var attempt = 0; attempt < 1000 && !condition(); attempt++)
-        {
-            await Task.Yield();
-        }
-        Assert.True(condition(), "The asynchronous ViewModel update did not complete.");
-    }
 
     private static EditableChapterDocument CreateDocument(params string[] names)
     {

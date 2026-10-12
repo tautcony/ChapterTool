@@ -257,7 +257,7 @@ public sealed class ChapterWorkspace
                 wasCombined, false);
         }
 
-        var outcome = ChapterContentOperationSession.ApplyAsync(ContentSession, preview).AsTask().GetAwaiter().GetResult();
+        var outcome = ChapterContentOperationSession.ApplyAsync(ContentSession, preview, ContentSession.LifetimeToken).AsTask().GetAwaiter().GetResult();
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
             return new ClipCombineTransitionResult(null,
@@ -403,7 +403,8 @@ public sealed class ChapterWorkspace
             $"{operation}:{snapshot.MutationRevision}",
             (_, _) => ValueTask.FromResult(candidate),
             operationDescription: operation,
-            operation: operationDescriptor).AsTask().GetAwaiter().GetResult();
+            operation: operationDescriptor,
+            cancellationToken: content.LifetimeToken).AsTask().GetAwaiter().GetResult();
         if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
         {
             PublishContentDocument(outcome.Snapshot.Document);

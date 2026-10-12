@@ -103,7 +103,7 @@ public static class WasmHistoryProjection
                 localizer.T($"History.Parameter.{parameter.Name}"),
                 FormatParameter(localizer, parameter),
                 parameter.ValueKind))
-            .ToArray() ?? [];
+            .ToArray();
     }
 
     private static WasmHistoryChangeRow ProjectChange(WasmLocalizer localizer, HistoryNodeDetails details,

@@ -451,10 +451,17 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var generation = ++detailGeneration;
         var rootId = currentSnapshot?.RootId;
         selectedRootId = rootId;
-        detailCancellation?.Cancel();
-        detailCancellation?.Dispose();
-        detailCancellation = new CancellationTokenSource();
-        var request = detailCancellation;
+        var previousCancellation = detailCancellation;
+        var request = detailCancellation = new CancellationTokenSource();
+        if (previousCancellation is not null)
+        {
+            await previousCancellation.CancelAsync();
+            previousCancellation.Dispose();
+        }
+        if (generation != detailGeneration || disposed)
+        {
+            return;
+        }
         Details = null;
         DetailError = null;
         if (nodeId is null)

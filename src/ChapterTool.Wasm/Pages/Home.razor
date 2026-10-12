@@ -1242,16 +1242,29 @@
 
     private async Task OnMainExpressionInput(ChangeEventArgs args)
     {
-        mainExpressionPreviewCancellation?.Cancel();
-        mainExpressionPreviewCancellation?.Dispose();
+        var previousCancellation = mainExpressionPreviewCancellation;
+        var cancellation = mainExpressionPreviewCancellation = new CancellationTokenSource();
         Workspace.Expression = args.Value?.ToString() ?? string.Empty;
+        if (previousCancellation is not null)
+        {
+            await previousCancellation.CancelAsync();
+            previousCancellation.Dispose();
+        }
+        if (!ReferenceEquals(mainExpressionPreviewCancellation, cancellation))
+        {
+            return;
+        }
         if (Workspace.IsChapterGridEmpty)
         {
             mainExpressionPreviewPending = false;
+            if (ReferenceEquals(mainExpressionPreviewCancellation, cancellation))
+            {
+                mainExpressionPreviewCancellation = null;
+                cancellation.Dispose();
+            }
             return;
         }
 
-        var cancellation = mainExpressionPreviewCancellation = new CancellationTokenSource();
         mainExpressionPreviewPending = true;
         try
         {

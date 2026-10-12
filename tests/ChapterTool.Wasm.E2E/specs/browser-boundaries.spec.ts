@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '../support/fixtures';
-import { chapterName, chapters, commit, loadFixture } from '../support/chapter-workspace';
+import { chapterName, chapters, loadFixture } from '../support/chapter-workspace';
 
 test('B10 multi-selects rows, deletes only the selection, and restores it with Undo', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
@@ -18,23 +18,34 @@ test('B10 multi-selects rows, deletes only the selection, and restores it with U
   await expect(rows).toHaveCount(2);
 });
 
-test('B11 Ctrl+S downloads through the app and Ctrl+Z inside a field stays an edit operation', async ({ readyPage: page }, testInfo) => {
+test('B11 Ctrl+S downloads through the app', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  const name = await chapterName(page, 1);
   const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
-  await commit(name, 'Keyboard edit');
-  await name.click();
-  await name.press(`${modifier}+a`);
-  await name.pressSequentially('Transient edit');
-  await name.press(`${modifier}+z`);
-  await name.press('Tab');
-  await expect(name).toHaveValue('Keyboard edit');
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#chaptertool-shell').focus();
   await page.keyboard.press(`${modifier}+s`);
   const download = await downloadPromise;
   expect(await download.failure()).toBeNull();
   await download.saveAs(testInfo.outputPath(download.suggestedFilename()));
+});
+
+test('B11 Ctrl+Z inside a field stays a text edit operation', async ({ readyPage: page }, testInfo) => {
+  test.skip(testInfo.project.name === 'webkit' && process.platform === 'darwin',
+    'Playwright WebKit on macOS does not apply Meta+Z to the native input undo stack; a plain input reproduces this behavior.');
+  await loadFixture(page, 'minimal-ogm.txt');
+  const name = await chapterName(page, 1);
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await name.click();
+  await name.press(`${modifier}+a`);
+  await name.pressSequentially('Keyboard edit');
+  await name.press('Tab');
+  await expect(name).toHaveValue('Keyboard edit');
+  await name.click();
+  await name.press(`${modifier}+a`);
+  await name.pressSequentially('Transient edit');
+  await name.press(`${modifier}+z`);
+  await name.press('Tab');
+  await expect(name).toHaveValue('Keyboard edit');
 });
 
 test('B12 fixed frame rate and an expression update chapter projection', async ({ readyPage: page }) => {

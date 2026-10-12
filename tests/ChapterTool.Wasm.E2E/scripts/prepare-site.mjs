@@ -44,7 +44,8 @@ for (const entryName of ['index.html', '404.html']) {
   const source = entryName === '404.html'
     ? await readFile(resolve(siteApp, 'index.html'), 'utf8')
     : await readFile(path, 'utf8');
-  const updated = source.replace(/(<base\s+href=["'])[^"']*(["']\s*\/?\s*>)/i, `$1${baseHref}$2`);
+  const updated = source.replace(/(<base\s+href=)(["'])[^"'<>]*\2(\s*\/?\s*>)/i,
+    (_match, prefix, quote, suffix) => `${prefix}${quote}${baseHref}${quote}${suffix}`);
   if (updated === source && !source.includes(`href="${baseHref}"`)) {
     throw new Error(`Could not set the base href in ${entryName}`);
   }

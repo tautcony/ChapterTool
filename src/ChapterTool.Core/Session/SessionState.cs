@@ -60,6 +60,7 @@ public sealed class SessionState
 {
     private readonly SemaphoreSlim commandQueue = new(1, 1);
     private readonly CancellationTokenSource lifetimeCancellation = new();
+    private readonly CancellationToken lifetimeToken;
     private readonly Action<SessionHistoryFailurePoint>? historyFailureInjector;
     private SessionVersion current;
     private int isEnded;
@@ -80,6 +81,7 @@ public sealed class SessionState
         }
 
         this.historyFailureInjector = historyFailureInjector;
+        lifetimeToken = lifetimeCancellation.Token;
         var history = SessionHistoryTree.Create(document);
         current = new SessionVersion(
             document,
@@ -100,7 +102,7 @@ public sealed class SessionState
     }
 
     /// <summary>Gets the token canceled when this document session ends.</summary>
-    public CancellationToken LifetimeToken => lifetimeCancellation.Token;
+    public CancellationToken LifetimeToken => lifetimeToken;
 
     /// <summary>Gets whether this session has ended.</summary>
     public bool IsEnded => Volatile.Read(ref isEnded) != 0;
@@ -110,7 +112,14 @@ public sealed class SessionState
     {
         if (Interlocked.Exchange(ref isEnded, 1) == 0)
         {
-            lifetimeCancellation.Cancel();
+            try
+            {
+                lifetimeCancellation.Cancel();
+            }
+            finally
+            {
+                lifetimeCancellation.Dispose();
+            }
         }
     }
 
@@ -120,7 +129,8 @@ public sealed class SessionState
     /// <summary>Inspects one retained node without changing the current document or history cursor.</summary>
     public ValueTask<HistoryInspectionOutcome> InspectHistoryNodeAsync(Guid nodeId, CancellationToken cancellationToken = default)
     {
-        return new ValueTask<HistoryInspectionOutcome>(Task.Run(() => InspectHistoryNode(nodeId, cancellationToken)));
+        return new ValueTask<HistoryInspectionOutcome>(Task.Run(
+            () => InspectHistoryNode(nodeId, cancellationToken), CancellationToken.None));
     }
 
     private HistoryInspectionOutcome InspectHistoryNode(Guid nodeId, CancellationToken callerToken)
@@ -359,7 +369,7 @@ public sealed class SessionState
         {
             // Wait for an atomic queue boundary so the cancellation result is also bound
             // to this transaction ID and cannot race a request with the same ID.
-            await commandQueue.WaitAsync().ConfigureAwait(false);
+            await commandQueue.WaitAsync(CancellationToken.None).ConfigureAwait(false);
             try
             {
                 var version = Volatile.Read(ref current);
@@ -483,7 +493,7 @@ public sealed class SessionState
             try
             {
                 historyFailureInjector?.Invoke(SessionHistoryFailurePoint.Reconstruction);
-                var document = Reconstruct(tree, version.Document, tree.CursorId, targetId.Value);
+                var document = Reconstruct(tree, version.Document, tree.CursorId, targetId.Value, cancellationToken);
                 var nextIdentity = Guid.NewGuid();
                 var nextRevision = version.MutationRevision + 1;
                 var nextTree = tree.MoveTo(targetId.Value);

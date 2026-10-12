@@ -49,7 +49,8 @@ public sealed partial class WasmWorkspace
         get
         {
             var choices = HistoryRedoChoices;
-            return choices.FirstOrDefault(choice => choice.IsPreferred)?.Id;
+            return choices.FirstOrDefault(choice => choice.Id == selectedHistoryRedoBranchId)?.Id
+                ?? choices.FirstOrDefault(static choice => choice.IsPreferred)?.Id;
         }
     }
 

@@ -379,8 +379,7 @@
 
     private async Task ScheduleAsync(string value, bool schedule)
     {
-        cancellation?.Cancel();
-        cancellation?.Dispose();
+        var previousCancellation = cancellation;
         var source = cancellation = new CancellationTokenSource();
         applyFailed = false;
         applyError = string.Empty;
@@ -390,6 +389,11 @@
         Workspace.Expression = value;
         presetId = Workspace.ExpressionPresetId;
         Workspace.CancelExpressionPreview();
+        if (previousCancellation is not null)
+        {
+            await previousCancellation.CancelAsync();
+            previousCancellation.Dispose();
+        }
         if (!schedule)
         {
             await InvokeAsync(StateHasChanged);

@@ -622,7 +622,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public bool ApplyExpression
     {
         get => false;
-        set => Workspace.OperationDrafts.SetApplyExpression(false);
+        set
+        {
+            _ = value;
+            Workspace.OperationDrafts.SetApplyExpression(false);
+        }
     }
 
     public string Expression

@@ -175,7 +175,7 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
     public bool ApplyExpression
     {
         get => false;
-        set { }
+        set => _ = value;
     }
 
     public string ExpressionSourceName
@@ -407,9 +407,9 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
                 pendingPreview = null;
                 StatusText = Localizer.Format(LocalizedMessage.Create(
                     "Expression.Preview.Applied",
-                    ("affected", Projection?.AffectedChapterCount ?? 0),
-                    ("times", Projection?.TimeChangedChapterCount ?? 0),
-                    ("frames", Projection?.FrameInformationChangedChapterCount ?? 0)));
+                    ("affected", appliedProjection.AffectedChapterCount),
+                    ("times", appliedProjection.TimeChangedChapterCount),
+                    ("frames", appliedProjection.FrameInformationChangedChapterCount)));
                 closeTool?.Invoke();
             }
             else
