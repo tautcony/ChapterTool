@@ -1,0 +1,19 @@
+tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs
+  s_ff88e11ce55fea::t_efa23480a6fa54 28,31,36,41,43-46
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a23b3b98d80326198085f0a8e9541d7e5b37c64e",
+  "prompts": {},
+  "sessions": {
+    "s_ff88e11ce55fea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12fab-c545-71d2-9d64-9349991ddefc",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
