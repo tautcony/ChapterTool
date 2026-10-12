@@ -21,14 +21,17 @@ test('B10 multi-selects rows, deletes only the selection, and restores it with U
 test('B11 Ctrl+S downloads through the app and Ctrl+Z inside a field stays an edit operation', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const name = await chapterName(page, 1);
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
   await commit(name, 'Keyboard edit');
-  await name.fill('Transient edit');
-  await page.keyboard.press('Control+z');
+  await name.click();
+  await name.press(`${modifier}+a`);
+  await name.pressSequentially('Transient edit');
+  await name.press(`${modifier}+z`);
   await name.press('Tab');
   await expect(name).toHaveValue('Keyboard edit');
   const downloadPromise = page.waitForEvent('download');
   await page.locator('#chaptertool-shell').focus();
-  await page.keyboard.press('Control+s');
+  await page.keyboard.press(`${modifier}+s`);
   const download = await downloadPromise;
   expect(await download.failure()).toBeNull();
   await download.saveAs(testInfo.outputPath(download.suggestedFilename()));

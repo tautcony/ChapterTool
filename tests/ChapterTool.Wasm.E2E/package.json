@@ -13,10 +13,12 @@
     "serve:published": "node scripts/serve-published.mjs"
   },
   "type": "module",
-  "engines": { "node": ">=22 <23" },
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
-    "@types/node": "26.6.4",
+    "@playwright/test": "1.64.0",
+    "@types/node": "26.6.5",
     "typescript": "7.0.2"
   }
 }

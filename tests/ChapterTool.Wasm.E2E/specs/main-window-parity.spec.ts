@@ -117,7 +117,9 @@ test('combined main options stay a draft until one apply and preserve grid state
 
   await secondRow.click();
   const lastRow = grid.locator('tbody tr').last();
-  await lastRow.click({ modifiers: ['Control'] });
+  const selectionModifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await lastRow.click({ modifiers: [selectionModifier] });
+  await expect(grid.locator('tbody tr.selected')).toHaveCount(2);
   const scrollContainer = page.locator('.grid-wrap');
   await scrollContainer.evaluate(element => { element.scrollTop = element.scrollHeight; });
   const scrollBeforeApply = await scrollContainer.evaluate(element => element.scrollTop);
@@ -135,7 +137,8 @@ test('combined main options stay a draft until one apply and preserve grid state
   await expect(lastRow).toHaveClass(/selected/);
 
   await page.locator('#chaptertool-shell').focus();
-  await page.keyboard.press('Control+z');
+  const undoModifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${undoModifier}+z`);
   await expect(secondRow.getByRole('textbox', { name: 'Name 2', exact: true })).toHaveValue('Original 02');
   await expect(secondRow.locator('.col-num')).toHaveText('2');
   await expect(secondRow.getByRole('textbox', { name: 'Time 2', exact: true })).toHaveValue('00:00:05.000');

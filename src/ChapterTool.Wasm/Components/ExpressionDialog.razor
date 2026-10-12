@@ -227,9 +227,35 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-        compositionModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/expression-composition.js");
-        compositionCallback = DotNetObjectReference.Create(this);
-        await compositionModule.InvokeVoidAsync("attach", expressionEditorElement, compositionCallback);
+        var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/expression-composition.js");
+        var callback = DotNetObjectReference.Create(this);
+        if (disposed)
+        {
+            callback.Dispose();
+            await DetachCompositionListenersAsync(module, expressionEditorElement);
+            return;
+        }
+
+        try
+        {
+            await module.InvokeVoidAsync("attach", expressionEditorElement, callback);
+        }
+        catch (JSException) when (disposed)
+        {
+            callback.Dispose();
+            await DetachCompositionListenersAsync(module, expressionEditorElement);
+            return;
+        }
+
+        if (disposed)
+        {
+            await DetachCompositionListenersAsync(module, expressionEditorElement);
+            callback.Dispose();
+            return;
+        }
+
+        compositionModule = module;
+        compositionCallback = callback;
     }
 
     private async Task OnInput(ChangeEventArgs args)
