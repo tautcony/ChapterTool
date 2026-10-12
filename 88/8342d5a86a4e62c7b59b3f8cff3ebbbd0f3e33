@@ -1,0 +1,25 @@
+tests/ChapterTool.Avalonia.Tests/Commands/UiCommandTests.cs
+  s_ff88e11ce55fea::t_efa23480a6fa54 28,31,36,41,43-46
+tests/ChapterTool.Avalonia.Tests/Services/ChapterImporterRegistryTests.cs
+  s_ff88e11ce55fea::t_e10964da114ad0 40-49,55,116,133,149
+tests/ChapterTool.Infrastructure.Tests/ChapterToolSettingsFontTests.cs
+  s_ff88e11ce55fea::t_6a3cd5cf4ff818 4,46,53
+tests/ChapterTool.Infrastructure.Tests/Importing/Mp4IntegrationTests.cs
+  s_ff88e11ce55fea::t_1d464947c37124 4,15,35,50,64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "888342d5a86a4e62c7b59b3f8cff3ebbbd0f3e33",
+  "prompts": {},
+  "sessions": {
+    "s_ff88e11ce55fea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12fab-c545-71d2-9d64-9349991ddefc",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
