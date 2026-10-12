@@ -1,0 +1,47 @@
+.github/workflows/wasm-browser-e2e.yml
+  s_f78882c4fda748::t_041aa9d73cb579 36-43
+CHANGELOG.md
+  s_f78882c4fda748::t_ea5a13ac7eb4fa 3-36
+CHANGELOG.zh-CN.md
+  s_f78882c4fda748::t_5f922ee004c964 3-36
+docs-site/.vitepress/config.ts
+  s_f78882c4fda748::t_4790524e3cbc5e 1-43
+docs-site/index.md
+  s_f78882c4fda748::t_d17b0f26958a44 1-23
+docs-site/package-lock.json
+  s_f78882c4fda748::t_694aa9a214593d 1-1987
+docs-site/package.json
+  s_f78882c4fda748::t_d3202b05188015 1-13
+docs/README.md
+  s_f78882c4fda748::t_61c82b7e88d926 8
+dotnet-tools.json
+  s_f78882c4fda748::t_050c8026468302 1-13
+scripts/README.md
+  s_f78882c4fda748::t_8a4fd4edb5df43 125
+scripts/ci/run.py
+  s_f78882c4fda748::t_177a56924279ad 108,113-116,180
+src/ChapterTool.Core/docfx.json
+  s_f78882c4fda748::t_53b28381590b9e 1-15
+src/ChapterTool.Wasm/README.md
+  s_f78882c4fda748::t_978c7e25c0b275 135-137
+tests/ChapterTool.Wasm.E2E/README.md
+  s_f78882c4fda748::t_e8d247b45cab53 23-36
+tests/ChapterTool.Wasm.E2E/scripts/prepare-site.mjs
+  s_f78882c4fda748::t_a5e0fc9df95174 16-17,20,36-39,48,69
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "732280cd5cc6ff57d135c23d3ddba3c7eeed88b1",
+  "prompts": {},
+  "sessions": {
+    "s_f78882c4fda748": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13059-4883-7892-b19a-7e9cbd2ae812",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
