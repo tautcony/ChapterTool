@@ -30,15 +30,15 @@ jobs:
           cache-dependency-path: tests/ChapterTool.Wasm.E2E/package-lock.json
 
       - name: Restore WASM
-        run: python3 scripts/check-ci.py --stage browser --step restore-wasm
+        run: python3 scripts/ci/run.py --stage browser --step restore-wasm
       - name: Publish Release WASM
-        run: python3 scripts/check-ci.py --stage browser --step publish-release-wasm
+        run: python3 scripts/ci/run.py --stage browser --step publish-release-wasm
       - name: Install browser test dependencies
-        run: python3 scripts/check-ci.py --stage browser --step install-browser-test-dependencies
+        run: python3 scripts/ci/run.py --stage browser --step install-browser-test-dependencies
       - name: Prepare Pages-shaped site
-        run: python3 scripts/check-ci.py --stage browser --step prepare-pages-shaped-site
+        run: python3 scripts/ci/run.py --stage browser --step prepare-pages-shaped-site
       - name: Type check browser tests
-        run: python3 scripts/check-ci.py --stage browser --step type-check-browser-tests
+        run: python3 scripts/ci/run.py --stage browser --step type-check-browser-tests
       - name: Upload prepared site
         uses: actions/upload-artifact@v7
         with:
@@ -73,18 +73,18 @@ jobs:
           name: wasm-prepared-site
           path: artifacts/wasm-e2e/site/
       - name: Install browser test dependencies
-        run: python3 scripts/check-ci.py --stage browser --step install-browser-test-dependencies
+        run: python3 scripts/ci/run.py --stage browser --step install-browser-test-dependencies
       - name: Install ${{ matrix.engine }}
-        run: python3 scripts/check-ci.py --stage browser --browser-suite "$BROWSER_SUITE" --browser-engine ${{ matrix.engine }} --install-browser-deps --step install-browser-engines
+        run: python3 scripts/ci/run.py --stage browser --browser-suite "$BROWSER_SUITE" --browser-engine ${{ matrix.engine }} --install-browser-deps --step install-browser-engines
       - name: Run Chromium workflows
         if: env.BROWSER_SUITE == 'pr' && matrix.engine == 'chromium'
-        run: python3 scripts/check-ci.py --stage browser --browser-engine chromium --step run-chromium-e2e
+        run: python3 scripts/ci/run.py --stage browser --browser-engine chromium --step run-chromium-e2e
       - name: Run WebKit modal and editing regressions
         if: env.BROWSER_SUITE == 'pr' && matrix.engine == 'webkit'
-        run: python3 scripts/check-ci.py --stage browser --browser-engine webkit --step run-webkit-regressions
+        run: python3 scripts/ci/run.py --stage browser --browser-engine webkit --step run-webkit-regressions
       - name: Run full ${{ matrix.engine }} acceptance without retries
         if: inputs.suite == 'full'
-        run: python3 scripts/check-ci.py --stage browser --browser-suite full --browser-engine ${{ matrix.engine }} --step run-full-browser-acceptance
+        run: python3 scripts/ci/run.py --stage browser --browser-suite full --browser-engine ${{ matrix.engine }} --step run-full-browser-acceptance
 
       - name: Upload browser diagnostics
         if: always()

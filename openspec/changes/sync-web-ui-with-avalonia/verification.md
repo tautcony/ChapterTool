@@ -50,7 +50,7 @@ dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --configuration Rele
 npm run prepare:site
 npm run typecheck
 node node_modules/@playwright/test/cli.js test --config=playwright.config.ts --project=chromium
-uv run --project scripts scripts/axaml-to-json.py --check
+uv run --project scripts scripts/localization/axaml-to-json.py --check
 openspec validate sync-web-ui-with-avalonia --strict
 ```
 

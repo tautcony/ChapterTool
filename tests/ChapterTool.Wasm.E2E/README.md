@@ -16,7 +16,7 @@ TypeScript. It is separate from the .NET solution and `packages/chaptertool`.
 Run from the repository root:
 
 ```bash
-python scripts/check-ci.py --stage browser --browser-suite chromium
+python scripts/ci/run.py --stage browser --browser-suite chromium
 ```
 
 The default Playwright configuration serves the prepared Release output at

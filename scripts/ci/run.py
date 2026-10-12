@@ -15,7 +15,7 @@ import time
 import xml.etree.ElementTree as ET
 
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 NODE = "packages/chaptertool"
 E2E = "tests/ChapterTool.Wasm.E2E"
 STAGES = ("resources", "dotnet", "test-dotnet", "pack-nuget", "node", "build-test", "browser", "pack-node", "pack-desktop")
@@ -44,10 +44,10 @@ def dotnet_tests(root: Path) -> list[str]:
 def resource_steps() -> list[Step]:
     return [
         Step("Sync locked Python tools", ["uv", "sync", "--locked", "--no-build", "--no-install-project", "--project", "scripts"]),
-        Step("Verify localization resources", ["uv", "run", "--no-sync", "--project", "scripts", "python", "scripts/axaml-to-json.py", "--check"]),
+        Step("Verify localization resources", ["uv", "run", "--no-sync", "--project", "scripts", "python", "scripts/localization/axaml-to-json.py", "--check"]),
         Step("Lint Python scripts", ["uv", "run", "--no-sync", "--project", "scripts", "ruff", "check", "scripts/"]),
-        Step("Test CI runner", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/tests", "-v"]),
-        Step("Validate PowerShell publish script", ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", "scripts/ci/check-powershell.ps1"]),
+        Step("Test CI runner", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/ci/tests", "-v"]),
+        Step("Validate PowerShell publish script", ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", "scripts/ci/validate-publish.ps1"]),
     ]
 
 
@@ -151,7 +151,7 @@ def desktop_steps(runtimes: list[str]) -> list[Step]:
         if runtime == "osx-arm64" and platform.system() != "Darwin":
             raise ValueError("macOS DMG packaging requires a macOS host.")
         steps.append(Step(f"Restore desktop {runtime}", ["dotnet", "restore", project, "--runtime", runtime]))
-        command = [bash_executable(), "scripts/publish.sh"] if os.name != "nt" or runtime != "win-x64" else ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", "scripts/publish.ps1"]
+        command = [bash_executable(), "scripts/packaging/publish-desktop.sh"] if os.name != "nt" or runtime != "win-x64" else ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", "scripts/packaging/publish-desktop.ps1"]
         steps.append(Step(f"Publish desktop {runtime}", [*command, "-Configuration", "Release", "-Runtime", runtime, "-NoRestore", "-PublishSingleFile"]))
     return steps
 

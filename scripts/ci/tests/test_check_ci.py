@@ -12,7 +12,7 @@ import unittest
 from unittest.mock import patch
 
 
-SPEC = importlib.util.spec_from_file_location("check_ci", Path(__file__).parents[1] / "check-ci.py")
+SPEC = importlib.util.spec_from_file_location("check_ci", Path(__file__).parents[1] / "run.py")
 ci = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = ci
 SPEC.loader.exec_module(ci)
@@ -215,7 +215,7 @@ class RunnerTests(unittest.TestCase):
     def test_windows_linux_publish_uses_git_bash(self):
         with patch.object(ci.os, "name", "nt"), patch.object(ci, "bash_executable", return_value="git-bash"):
             steps = ci.desktop_steps(["linux-x64"])
-        self.assertEqual(["git-bash", "scripts/publish.sh"], steps[-1].args[:2])
+        self.assertEqual(["git-bash", "scripts/packaging/publish-desktop.sh"], steps[-1].args[:2])
 
 
 if __name__ == "__main__":

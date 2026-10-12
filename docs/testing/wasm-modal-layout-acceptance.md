@@ -72,7 +72,7 @@ Firefox 的 DOMRect 可能将 44 CSS 像素表示为 43.999969。目标断言只
 ```text
 dotnet test tests/ChapterTool.Wasm.Tests/ChapterTool.Wasm.Tests.csproj --no-restore
 dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --configuration Release --no-restore --output artifacts/wasm-e2e/publish
-uv run --project scripts scripts/axaml-to-json.py --check
+uv run --project scripts scripts/localization/axaml-to-json.py --check
 ```
 
 在 `tests/ChapterTool.Wasm.E2E/` 执行：

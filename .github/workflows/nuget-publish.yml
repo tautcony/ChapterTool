@@ -45,7 +45,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
-        run: python3 scripts/ci/resolve-ci-run.py --tag "$RELEASE_TAG"
+        run: python3 scripts/ci/resolve-run.py --tag "$RELEASE_TAG"
       - name: Download tested Core package
         uses: actions/download-artifact@v8
         with:

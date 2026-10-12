@@ -4,7 +4,7 @@
 set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
+repo_root="$(cd "$script_dir/../.." && pwd)"
 svg="$repo_root/src/ChapterTool.Avalonia/Assets/Icons/app-icon.svg"
 icns="$repo_root/src/ChapterTool.Avalonia/Assets/Icons/app-icon.icns"
 ico="$repo_root/src/ChapterTool.Avalonia/Assets/Icons/app-icon.ico"

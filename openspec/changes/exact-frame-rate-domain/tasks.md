@@ -61,6 +61,6 @@
 - [x] 8.1 Add cross-layer regressions for MPLS/IFO exact import -> edit -> candidate -> history -> conversion -> export. Include fractional frames, large ticks, both exact/approximate conversion directions, and 500 reversible arithmetic/conversion cycles with loss below one frame.
 - [x] 8.2 Add external compiled Core consumers and packed Node consumers for legacy and typed contracts. Verify the NuGet consumer checks in `scripts/ci/verify-nuget.py` cover the retained surface.
 - [x] 8.3 Update Core, CLI, and Node API documentation with compatibility lifetime, exact migration examples, wire shapes, Auto policy, mixed-rate limits, Lua limits, and rounding boundaries.
-- [x] 8.4 Update relevant code-map ownership, entry points, and primary test references. If locales change, generate Wasm JSON with `uv run --project scripts scripts/axaml-to-json.py` and verify with `--check`.
+- [x] 8.4 Update relevant code-map ownership, entry points, and primary test references. If locales change, generate Wasm JSON with `uv run --project scripts scripts/localization/axaml-to-json.py` and verify with `--check`.
 - [x] 8.5 Run `dotnet test ChapterTool.slnx --no-restore` with test projects in separate sequential processes. Run affected browser, Node package/type/declaration, and packed NuGet checks through the maintained CI entry points.
-- [x] 8.6 Run `openspec validate exact-frame-rate-domain --strict` and validate all specs. Before any requested push, run `python scripts/check-ci.py` and verify required remote jobs for the pushed SHA.
+- [x] 8.6 Run `openspec validate exact-frame-rate-domain --strict` and validate all specs. Before any requested push, run `python scripts/ci/run.py` and verify required remote jobs for the pushed SHA.

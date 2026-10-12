@@ -275,13 +275,13 @@ The diagnosis, timing comparisons, affected tests, and repeatable triage procedu
 
 ## Analyzer Report
 
-`scripts/report-analyzers.py` collects compiler and analyzer diagnostics at build time. It does not run tests. It is faster than `scripts/test-coverage.py`, which runs every test assembly. It skips the browser-wasm projects because they add no C# metrics and their Emscripten builds are slow.
+`scripts/diagnostics/report-analyzers.py` collects compiler and analyzer diagnostics at build time. It does not run tests. It is faster than `scripts/testing/collect-coverage.py`, which runs every test assembly. It skips the browser-wasm projects because they add no C# metrics and their Emscripten builds are slow.
 
 Usage:
 
-- `python3 scripts/report-analyzers.py` prints all diagnostics from every project.
-- `python3 scripts/report-analyzers.py -Prefix SA` prints only StyleCop diagnostics.
-- `python3 scripts/report-analyzers.py -Rebuild -Prefix CA1502` prints cyclomatic complexity diagnostics above the threshold.
+- `python3 scripts/diagnostics/report-analyzers.py` prints all diagnostics from every project.
+- `python3 scripts/diagnostics/report-analyzers.py -Prefix SA` prints only StyleCop diagnostics.
+- `python3 scripts/diagnostics/report-analyzers.py -Rebuild -Prefix CA1502` prints cyclomatic complexity diagnostics above the threshold.
 
 The script requires Python 3 and the .NET SDK. It builds each project in dependency order. It writes one SARIF file per project per target framework under `artifacts/analyzers/raw`. It merges these files into `artifacts/analyzers/analyzers.sarif`.
 
@@ -303,22 +303,22 @@ Per-target-framework reports: `Directory.Build.targets` sets a separate `ErrorLo
 
 Pre-push CI entry point:
 
-- `python scripts/check-ci.py` runs the shared build, test, browser, npm package, and desktop publish checks on the current host. Browser reports use `artifacts/wasm-e2e/`. Published packages use their existing artifact directories.
-- `scripts/check-ci.py` owns build, test, browser, and packaging commands. CI selects its stages and step keys. Each .NET matrix job restores, builds, and tests one solution test project. Each job uses a separate checkout. Local .NET checks run sequentially in separate processes.
-- `scripts/ci/plan-ci.py` reads solution membership and project references. It selects affected consumers from changed paths. Shared Core fixtures also select browser and Node checks. It verifies required job results for `CI ready`. `scripts/tests/test_plan_ci.py` verifies dependency routing, renames, documentation changes, and failure handling.
-- `scripts/tests/test_check_ci.py` verifies command execution, tool requirements, isolated test selection, browser coverage, and platform publish selection. `scripts/ci/check-powershell.ps1` reports publish script parse errors.
+- `python scripts/ci/run.py` runs the shared build, test, browser, npm package, and desktop publish checks on the current host. Browser reports use `artifacts/wasm-e2e/`. Published packages use their existing artifact directories.
+- `scripts/ci/run.py` owns build, test, browser, and packaging commands. CI selects its stages and step keys. Each .NET matrix job restores, builds, and tests one solution test project. Each job uses a separate checkout. Local .NET checks run sequentially in separate processes.
+- `scripts/ci/plan.py` reads solution membership and project references. It selects affected consumers from changed paths. Shared Core fixtures also select browser and Node checks. It verifies required job results for `CI ready`. `scripts/ci/tests/test_plan_ci.py` verifies dependency routing, renames, documentation changes, and failure handling.
+- `scripts/ci/tests/test_check_ci.py` verifies command execution, tool requirements, isolated test selection, browser coverage, and platform publish selection. `scripts/ci/validate-publish.ps1` reports publish script parse errors.
 - Infrastructure and Avalonia service test jobs install ffmpeg and mkvtoolnix. Avalonia runtime import tests use the real media readers.
-- `scripts/ci/verify-nuget.py` installs and runs packed Core and CLI consumers. `scripts/tests/test_verify_nuget.py` verifies package membership and version checks.
-- `scripts/ci/resolve-ci-run.py` requires a successful tag CI run for the exact release SHA. `scripts/tests/test_resolve_ci_run.py` verifies artifact provenance and failure handling.
+- `scripts/ci/verify-nuget.py` installs and runs packed Core and CLI consumers. `scripts/ci/tests/test_verify_nuget.py` verifies package membership and version checks.
+- `scripts/ci/resolve-run.py` requires a successful tag CI run for the exact release SHA. `scripts/ci/tests/test_resolve_ci_run.py` verifies artifact provenance and failure handling.
 - `scripts/README.md` documents stage commands, scheduling, distribution, and platform limits. macOS DMG checks require macOS.
 
 Coverage entry point:
 
-- `scripts/test-coverage.py` builds the five test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
+- `scripts/testing/collect-coverage.py` builds the five test projects and runs their assemblies through VSTest in sequence. This keeps Coverlet collection compatible with the Microsoft.Testing.Platform SDK setting. `scripts/testing/coverage.runsettings` configures Coverlet collection. The script excludes generated `*.g.cs` files. It writes XML and HTML output under `artifacts/coverage`.
 
 - Maintained publish entry points:
-  - `scripts/publish.sh`
-  - `scripts/publish.ps1`
+  - `scripts/packaging/publish-desktop.sh`
+  - `scripts/packaging/publish-desktop.ps1`
   - `.github/workflows/dotnet-ci.yml`
   - `.github/workflows/nuget-publish.yml`
   - `.github/workflows/npm-publish.yml`

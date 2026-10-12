@@ -93,8 +93,8 @@
 
 ```bash
 uv sync --project scripts
-uv run --project scripts scripts/axaml-to-json.py
-uv run --project scripts scripts/axaml-to-json.py --check
+uv run --project scripts scripts/localization/axaml-to-json.py
+uv run --project scripts scripts/localization/axaml-to-json.py --check
 ```
 
 不要手工编辑生成的 Wasm JSON 文件。检查所有支持的语言是否具有相同的资源键，并确认长文本不会破坏按钮、标题和窄窗口布局。

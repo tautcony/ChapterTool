@@ -16,7 +16,7 @@
 
 - [x] 3.1 Add the Avalonia General settings checkbox beside existing frame preferences. Live-apply it, preserve it during rounding changes, disable its control in integer mode, and restore it on discard.
 - [x] 3.2 Add the equivalent Web settings draft control. Activate it only after successful Save. Preserve current reset, Cancel, error, and close behavior.
-- [x] 3.3 Add Chinese, English, and Japanese labels and helper text to the shared locale resources. Generate Web JSON with uv run --project scripts scripts/axaml-to-json.py and verify with --check.
+- [x] 3.3 Add Chinese, English, and Japanese labels and helper text to the shared locale resources. Generate Web JSON with uv run --project scripts scripts/localization/axaml-to-json.py and verify with --check.
 - [x] 3.4 Verify save, reload, reset, discard, integer-mode availability, and absence of recurring-decimal controls on the main workflow in settings ViewModel and Web tests.
 
 ## 4. Avalonia frame rendering

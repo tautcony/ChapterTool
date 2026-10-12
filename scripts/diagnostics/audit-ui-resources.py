@@ -22,7 +22,7 @@ NONE_LABEL = "  (none)"
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path)
-    root = (parser.parse_args().repo_root or Path(__file__).resolve().parents[1]).resolve()
+    root = (parser.parse_args().repo_root or Path(__file__).resolve().parents[2]).resolve()
     src = root / "src"
     definitions = [src / "ChapterTool.Avalonia.UI/Resources" / name for name in ("Themes.axaml", "SharedResources.axaml", "Styles.axaml")]
     service = src / "ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs"

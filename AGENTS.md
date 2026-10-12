@@ -10,7 +10,7 @@
 - For an explicit WinForms-to-Avalonia migration, use `.agents/skills/README-winforms-to-avalonia.md` and the `winforms-to-avalonia` orchestrator skill.
 - Store user-facing Chinese strings as valid UTF-8.
 - Validate localization through behavior, rendered UI, or resource-level checks. Do not hard-code incidental mojibake examples.
-- Treat `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/*.axaml` as the shared translation source. After changing a locale, run `uv run --project scripts scripts/axaml-to-json.py`, then `uv run --project scripts scripts/axaml-to-json.py --check`. Run `uv sync --project scripts` once when the scripts environment is not installed. Do not edit generated Wasm JSON files by hand. CLI JSON resources are separate.
+- Treat `src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/*.axaml` as the shared translation source. After changing a locale, run `uv run --project scripts scripts/localization/axaml-to-json.py`, then `uv run --project scripts scripts/localization/axaml-to-json.py --check`. Run `uv sync --project scripts` once when the scripts environment is not installed. Do not edit generated Wasm JSON files by hand. CLI JSON resources are separate.
 - Define, parse, and bind command-line interface (CLI) arguments through `DotMake.CommandLine`.
 - Do not write code in `Program.cs` or CLI support files that recognizes or dispatches raw `args`.
 - Keep this file focused on durable repository guidance. Do not add one-off implementation notes, completed change records, or transient archive paths here.
@@ -54,7 +54,7 @@
 - Select checks from the changed behavior and its consumers. Use `docs/code-map/testing.md` for test ownership, Headless lifecycle rules, and distribution checks. Documentation-only edits normally need no .NET build or test run.
 - Run affected tests with `dotnet test <test-project.csproj> --no-restore`. CLI tests are in `tests/ChapterTool.CommandLine.Tests`. Avalonia ViewModel and service tests are in `tests/ChapterTool.Avalonia.Tests`. XAML and UI workflow tests are in `tests/ChapterTool.Avalonia.Headless.Tests`.
 - Use `dotnet test ChapterTool.slnx --no-restore` for changes with broad impact across projects. Repeat successful checks only when a new change, failure, or unresolved concern warrants it.
-- Before pushing code or build changes, run `python scripts/check-ci.py` for the host checks shared with CI. Use `scripts/README.md` for prerequisites, stage options, and platform limits. Keep CI build, test, and packaging commands in `scripts/check-ci.py`.
+- Before pushing code or build changes, run `python scripts/ci/run.py` for the host checks shared with CI. Use `scripts/README.md` for prerequisites, stage options, and platform limits. Keep CI build, test, and packaging commands in `scripts/ci/run.py`.
 - Restore once when dependencies, target frameworks, or generated project assets change. Then use `--no-restore`. Build `src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj` when its project files change. CI is in `.github/workflows/dotnet-ci.yml`.
 - Run test projects sequentially to avoid shared `obj/` file locks. Avalonia Headless uses a process-wide UI session. Keep Headless and non-Headless tests in separate projects and processes. A test collection does not replace process isolation.
 - Keep `[AvaloniaFact]` and `[AvaloniaTheory]` in the Headless project, with classes in `AvaloniaHeadlessTestCollection`. Do not disable parallelization assembly-wide in the non-Headless project.

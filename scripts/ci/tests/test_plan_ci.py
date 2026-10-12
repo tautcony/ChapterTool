@@ -10,10 +10,10 @@ import unittest
 from unittest.mock import patch
 
 
-SPEC = importlib.util.spec_from_file_location("plan_ci", Path(__file__).parents[1] / "ci/plan-ci.py")
+SPEC = importlib.util.spec_from_file_location("plan_ci", Path(__file__).parents[1] / "plan.py")
 planner = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(planner)
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 
 
 class PlanTests(unittest.TestCase):
@@ -82,7 +82,7 @@ class PlanTests(unittest.TestCase):
                 self.assertEqual([], plan["required"])
 
     def test_global_unknown_and_ci_inputs_use_full_gate(self):
-        for path in ("Directory.Build.props", "ChapterTool.slnx", ".github/workflows/dotnet-ci.yml", "scripts/check-ci.py", "tests/TestFiles/minimal.txt", "new-build-input.json"):
+        for path in ("Directory.Build.props", "ChapterTool.slnx", ".github/workflows/dotnet-ci.yml", "scripts/ci/run.py", "tests/TestFiles/minimal.txt", "new-build-input.json"):
             with self.subTest(path=path):
                 _, plan = self.labels([path])
                 self.assertEqual(list(planner.JOBS), plan["required"])

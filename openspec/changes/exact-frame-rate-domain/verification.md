@@ -93,13 +93,13 @@ The final Web workspace project has 90 passing tests.
 
 The maintained CI entry point ran these checks:
 
-- `python scripts/check-ci.py --stage resources`: resource generation drift, Python lint, 47 runner tests, and PowerShell validation passed.
-- `python scripts/check-ci.py --stage node --step build-node-js-package`: optimized runtime and TypeScript declarations built.
-- `python scripts/check-ci.py --stage node --step type-check-node-js-package --step test-built-node-js-package`: types and 45 package tests passed after the build.
-- `python scripts/check-ci.py --stage pack-node`: installed tarball consumer passed.
-- `python scripts/check-ci.py --stage pack-nuget`: net8.0/net9.0/net10.0 Core packages and installed Core/CLI consumers passed.
-- Browser restore, Release publish, dependency installation, Pages preparation, and engine installation ran through `scripts/check-ci.py --stage browser` step selection.
-- `python scripts/check-ci.py --stage browser --browser-suite chromium --step type-check-browser-tests --step run-chromium-e2e`: browser types and all 76 Chromium tests passed against the final prepared site.
+- `python scripts/ci/run.py --stage resources`: resource generation drift, Python lint, 47 runner tests, and PowerShell validation passed.
+- `python scripts/ci/run.py --stage node --step build-node-js-package`: optimized runtime and TypeScript declarations built.
+- `python scripts/ci/run.py --stage node --step type-check-node-js-package --step test-built-node-js-package`: types and 45 package tests passed after the build.
+- `python scripts/ci/run.py --stage pack-node`: installed tarball consumer passed.
+- `python scripts/ci/run.py --stage pack-nuget`: net8.0/net9.0/net10.0 Core packages and installed Core/CLI consumers passed.
+- Browser restore, Release publish, dependency installation, Pages preparation, and engine installation ran through `scripts/ci/run.py --stage browser` step selection.
+- `python scripts/ci/run.py --stage browser --browser-suite chromium --step type-check-browser-tests --step run-chromium-e2e`: browser types and all 76 Chromium tests passed against the final prepared site.
 
 `openspec validate exact-frame-rate-domain --strict` passed.
 `openspec validate --all` passed all 45 items.

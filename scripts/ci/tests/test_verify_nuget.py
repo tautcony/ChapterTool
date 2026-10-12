@@ -8,7 +8,7 @@ from unittest.mock import patch
 import zipfile
 
 
-SPEC = importlib.util.spec_from_file_location("verify_nuget", Path(__file__).parents[1] / "ci/verify-nuget.py")
+SPEC = importlib.util.spec_from_file_location("verify_nuget", Path(__file__).parents[1] / "verify-nuget.py")
 verifier = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(verifier)
 

@@ -107,11 +107,11 @@ def main():
     parser.add_argument("-NoBuild", action="store_true")
     parser.add_argument("-SkipHtml", action="store_true")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     output = root / "artifacts/coverage"
     results = output / "test-results"
     report_dir = output / "html"
-    runsettings = root / "scripts/coverage.runsettings"
+    runsettings = root / "scripts/testing/coverage.runsettings"
     tests = [root / p for p in ("tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj", "tests/ChapterTool.Infrastructure.Tests/ChapterTool.Infrastructure.Tests.csproj", "tests/ChapterTool.CommandLine.Tests/ChapterTool.CommandLine.Tests.csproj", "tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj", "tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj")]
     builds = [root / p for p in ("src/ChapterTool.Core/ChapterTool.Core.csproj", "src/ChapterTool.Infrastructure/ChapterTool.Infrastructure.csproj", "src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj", "src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj")] + tests
     if shutil.which("dotnet") is None:

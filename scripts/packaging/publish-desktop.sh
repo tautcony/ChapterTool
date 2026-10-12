@@ -2,10 +2,10 @@
 # Publish ChapterTool.Avalonia from bash.
 # Tested on macOS (bash 3.2), Linux (bash 4+/5), and Git Bash on Windows.
 # Usage:
-#   ./scripts/publish.sh                                      # win-x64, framework-dependent
-#   ./scripts/publish.sh -Runtime osx-arm64
-#   ./scripts/publish.sh -Runtime linux-x64 -SelfContained
-#   ./scripts/publish.sh -Runtime osx-arm64 -NoRestore -PublishSingleFile  # creates .app and .dmg on macOS
+#   ./scripts/packaging/publish-desktop.sh                                      # win-x64, framework-dependent
+#   ./scripts/packaging/publish-desktop.sh -Runtime osx-arm64
+#   ./scripts/packaging/publish-desktop.sh -Runtime linux-x64 -SelfContained
+#   ./scripts/packaging/publish-desktop.sh -Runtime osx-arm64 -NoRestore -PublishSingleFile  # creates .app and .dmg on macOS
 set -euo pipefail
 
 # ---- defaults ----
@@ -74,7 +74,7 @@ fi
 
 # ---- paths ----
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-repo_root="$(cd "$script_dir/.." && pwd -P)"
+repo_root="$(cd "$script_dir/../.." && pwd -P)"
 project="$repo_root/src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj"
 
 if [[ "$SelfContained" == "true" ]]; then

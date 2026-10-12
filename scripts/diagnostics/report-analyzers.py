@@ -231,7 +231,7 @@ def main():
     parser.add_argument("-Output", default="")
     parser.add_argument("-Rebuild", action="store_true", help="force a full rebuild so diagnostics are regenerated even when sources are up to date")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     raw_dir = root / "artifacts/analyzers/raw"
     report = Path(args.Output) if args.Output else root / "artifacts/analyzers/analyzers.sarif"
     if shutil.which("dotnet") is None:

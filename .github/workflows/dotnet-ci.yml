@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0
       - name: Select consumers
         id: plan
-        run: python3 scripts/ci/plan-ci.py
+        run: python3 scripts/ci/plan.py
 
   wasm-browser-e2e:
     name: WASM acceptance
@@ -58,15 +58,15 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v10.3.0
       - name: Sync locked Python tools
-        run: python3 scripts/check-ci.py --stage resources --step sync-locked-python-tools
+        run: python3 scripts/ci/run.py --stage resources --step sync-locked-python-tools
       - name: Verify localization resources
-        run: python3 scripts/check-ci.py --stage resources --step verify-localization-resources
+        run: python3 scripts/ci/run.py --stage resources --step verify-localization-resources
       - name: Lint Python scripts
-        run: python3 scripts/check-ci.py --stage resources --step lint-python-scripts
+        run: python3 scripts/ci/run.py --stage resources --step lint-python-scripts
       - name: Test CI runner
-        run: python3 scripts/check-ci.py --stage resources --step test-ci-runner
+        run: python3 scripts/ci/run.py --stage resources --step test-ci-runner
       - name: Validate PowerShell publish script
-        run: python3 scripts/check-ci.py --stage resources --step validate-powershell-publish-script
+        run: python3 scripts/ci/run.py --stage resources --step validate-powershell-publish-script
 
   dotnet-tests:
     name: .NET tests — ${{ matrix.label }}
@@ -97,11 +97,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg mkvtoolnix
       - name: Restore test dependencies
-        run: python3 scripts/check-ci.py --stage test-dotnet --test-project ${{ matrix.project }} --step restore-test-project
+        run: python3 scripts/ci/run.py --stage test-dotnet --test-project ${{ matrix.project }} --step restore-test-project
       - name: Build test project
-        run: python3 scripts/check-ci.py --stage test-dotnet --test-project ${{ matrix.project }} --step build-test-project
+        run: python3 scripts/ci/run.py --stage test-dotnet --test-project ${{ matrix.project }} --step build-test-project
       - name: Run isolated test process
-        run: python3 scripts/check-ci.py --stage test-dotnet --test-project ${{ matrix.project }} --step run-tests
+        run: python3 scripts/ci/run.py --stage test-dotnet --test-project ${{ matrix.project }} --step run-tests
       - name: Upload test diagnostics
         if: always()
         uses: actions/upload-artifact@v7
@@ -136,9 +136,9 @@ jobs:
       - name: Install native WASM workload
         run: dotnet workload install wasm-tools
       - name: Restore solution
-        run: python3 scripts/check-ci.py --stage dotnet --step restore
+        run: python3 scripts/ci/run.py --stage dotnet --step restore
       - name: Build solution
-        run: python3 scripts/check-ci.py --stage dotnet --step build-release
+        run: python3 scripts/ci/run.py --stage dotnet --step build-release
 
   pack-nuget:
     name: NuGet packages
@@ -168,7 +168,7 @@ jobs:
           if [[ "$RELEASE_REF" == refs/tags/v* ]]; then
             args+=(--package-version "${RELEASE_REF#refs/tags/v}")
           fi
-          python3 scripts/check-ci.py "${args[@]}"
+          python3 scripts/ci/run.py "${args[@]}"
       - name: Upload Core package
         uses: actions/upload-artifact@v7
         with:
@@ -224,9 +224,9 @@ jobs:
             ${{ runner.os }}-nuget-
 
       - name: Restore desktop runtime
-        run: python3 scripts/check-ci.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step restore-desktop-${{ matrix.runtime }}
+        run: python3 scripts/ci/run.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step restore-desktop-${{ matrix.runtime }}
       - name: Publish and validate desktop artifact
-        run: python3 scripts/check-ci.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step publish-desktop-${{ matrix.runtime }}
+        run: python3 scripts/ci/run.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step publish-desktop-${{ matrix.runtime }}
 
       - name: Upload Avalonia artifact
         uses: actions/upload-artifact@v7
@@ -267,16 +267,16 @@ jobs:
       - name: Install .NET wasm-tools workload
         run: dotnet workload install wasm-tools
       - name: Install npm dependencies
-        run: python3 scripts/check-ci.py --stage node --step install-npm-dependencies
+        run: python3 scripts/ci/run.py --stage node --step install-npm-dependencies
       - name: Build Node.js package
-        run: python3 scripts/check-ci.py --stage node --step build-node-js-package
+        run: python3 scripts/ci/run.py --stage node --step build-node-js-package
       - name: Type check Node.js package
-        run: python3 scripts/check-ci.py --stage node --step type-check-node-js-package
+        run: python3 scripts/ci/run.py --stage node --step type-check-node-js-package
       - name: Test built Node.js package
-        run: python3 scripts/check-ci.py --stage node --step test-built-node-js-package
+        run: python3 scripts/ci/run.py --stage node --step test-built-node-js-package
 
       - name: Pack and verify npm tarball
-        run: python3 scripts/check-ci.py --stage pack-node
+        run: python3 scripts/ci/run.py --stage pack-node
 
       - name: Upload npm artifact
         uses: actions/upload-artifact@v7
@@ -298,7 +298,7 @@ jobs:
         env:
           CI_PLAN: ${{ needs.plan.outputs.plan }}
           CI_NEEDS: ${{ toJSON(needs) }}
-        run: python3 scripts/ci/plan-ci.py --verify
+        run: python3 scripts/ci/plan.py --verify
 
   deploy-pages:
     name: Deploy verified WASM

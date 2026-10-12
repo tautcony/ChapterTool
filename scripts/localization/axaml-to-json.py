@@ -45,7 +45,7 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="fail when generated files differ")
     args = parser.parse_args()
 
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     source_dir = (root / args.source_dir).resolve() if not args.source_dir.is_absolute() else args.source_dir
     output_dir = (root / args.output_dir).resolve() if not args.output_dir.is_absolute() else args.output_dir
 

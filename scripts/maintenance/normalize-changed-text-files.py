@@ -45,7 +45,7 @@ def main():
     parser.add_argument("-IncludeUntracked", "--include-untracked", dest="include_untracked", action="store_true")
     parser.add_argument("-WhatIf", "--what-if", dest="what_if", action="store_true")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     candidates = explicit_paths(root, args.paths)
     candidates.update(git_paths(root, "diff", "--name-only"))
     candidates.update(git_paths(root, "diff", "--cached", "--name-only"))

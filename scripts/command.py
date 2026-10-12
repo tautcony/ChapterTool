@@ -8,7 +8,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).parent
-SUBSET_SCRIPT = ROOT / "subset-shortcut-font.py"
+SUBSET_SCRIPT = ROOT / "maintenance" / "subset-shortcut-font.py"
 
 
 def _subset(arguments: list[str]) -> int:

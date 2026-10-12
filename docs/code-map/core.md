@@ -212,7 +212,7 @@ Browser host:
 - `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` blocks browser shortcut keys during text editing.
 - `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, and export services. `WasmWorkspaceProjection` maps content and diagnostics to browser view models.
 - Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
-- The JSON resources are generated from the Avalonia AXAML locales by `scripts/axaml-to-json.py`. Use its `--check` mode to detect drift.
+- The JSON resources are generated from the Avalonia AXAML locales by `scripts/localization/axaml-to-json.py`. Use its `--check` mode to detect drift.
 - Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. `WasmApplicationSettings` mirrors the Contracts `AppSettings` fields, including the delete-rows timing and frame display preferences. The host stores settings in browser storage through the workspace path.
 - `Home.razor` applies valid settings drafts to runtime preferences. Save persists one aggregate. Discard restores the runtime snapshot captured when the dialog opened. Saved output defaults do not replace active session output choices.
 - `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, export, independent tab sessions, and history navigation. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.

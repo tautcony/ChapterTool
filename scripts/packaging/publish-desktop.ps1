@@ -13,10 +13,10 @@ if ($Runtime -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
 }
 
 if (-not $Runtime.StartsWith("win-", [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "publish.ps1 only supports Windows runtime identifiers. Use scripts/publish.sh for '$Runtime'."
+    throw "publish-desktop.ps1 only supports Windows runtime identifiers. Use scripts/packaging/publish-desktop.sh for '$Runtime'."
 }
 
-$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$repoRoot = Resolve-Path (Join-Path $PSScriptRoot "../..")
 $project = Join-Path $repoRoot "src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj"
 $publishKind = if ($SelfContained) { "self-contained" } else { "framework-dependent" }
 $output = Join-Path $repoRoot "artifacts/publish/$publishKind/$Runtime"

@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 
-SPEC = importlib.util.spec_from_file_location("resolve_ci_run", Path(__file__).parents[1] / "ci/resolve-ci-run.py")
+SPEC = importlib.util.spec_from_file_location("resolve_ci_run", Path(__file__).parents[1] / "resolve-run.py")
 resolver = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(resolver)
 

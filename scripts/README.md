@@ -4,27 +4,42 @@ These scripts support the repository tasks that users and maintainers run around
 
 The tables below show what each script helps you do and what it needs to run.
 
+## Script Layout
+
+Script entry points use lowercase kebab-case names. Their parent directory identifies the task area.
+
+| Directory | Purpose | Main entry points |
+| --- | --- | --- |
+| `ci/` | Shared CI commands, planning, release checks, and their tests. | `run.py`, `plan.py`, `verify-nuget.py`, `resolve-run.py` |
+| `diagnostics/` | Build diagnostics and resource audits. | `report-analyzers.py`, `audit-ui-resources.py` |
+| `localization/` | Generate Wasm locale JSON from shared Avalonia locales. | `axaml-to-json.py` |
+| `maintenance/` | Manual repository and asset maintenance. | `normalize-changed-text-files.py`, `generate-app-icons-macos.sh`, `subset-shortcut-font.py` |
+| `packaging/` | Publish desktop artifacts. | `publish-desktop.sh`, `publish-desktop.ps1` |
+| `testing/` | Coverage collection and package compatibility checks. | `collect-coverage.py`, `check-headless-xunit.py` |
+
+Keep shared build, test, browser, and packaging commands in `ci/run.py`. GitHub Actions workflows select its stages and step keys. Other directories must not duplicate those commands.
+
 ## Verification And Release
 
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
-| `check-ci.py` | Python 3.9+; cross-platform | See prerequisites below | Run the checks shared with GitHub Actions. |
-| `ci/plan-ci.py` | Python 3.9+; cross-platform | Git; Python standard library | Select affected project consumers. Verify required CI job results. |
+| `ci/run.py` | Python 3.9+; cross-platform | See prerequisites below | Run the checks shared with GitHub Actions. |
+| `ci/plan.py` | Python 3.9+; cross-platform | Git; Python standard library | Select affected project consumers. Verify required CI job results. |
 | `ci/verify-nuget.py` | Python 3.9+; cross-platform | .NET SDK | Install and run packed Core and CLI consumers. Verify release package versions. |
-| `ci/resolve-ci-run.py` | Python 3.9+; cross-platform | Git; GitHub CLI | Resolve a successful tag CI run for the checked-out commit. |
-| `test-coverage.py` | Python 3; cross-platform | .NET SDK; uv dependencies; optional `reportgenerator` | Collect test coverage. |
-| `report-analyzers.py` | Python 3; cross-platform | .NET SDK | Build the solution and summarize analyzer diagnostics. |
-| `publish.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate desktop artifacts. macOS bundles require macOS. |
-| `publish.ps1` | PowerShell 7; Windows | .NET SDK | Publish and validate Windows artifacts. |
+| `ci/resolve-run.py` | Python 3.9+; cross-platform | Git; GitHub CLI | Resolve a successful tag CI run for the checked-out commit. |
+| `testing/collect-coverage.py` | Python 3; cross-platform | .NET SDK; uv dependencies; optional `reportgenerator` | Collect test coverage. |
+| `diagnostics/report-analyzers.py` | Python 3; cross-platform | .NET SDK | Build the solution and summarize analyzer diagnostics. |
+| `packaging/publish-desktop.sh` | Bash; Unix-like hosts or Git Bash | .NET SDK | Publish and validate desktop artifacts. macOS bundles require macOS. |
+| `packaging/publish-desktop.ps1` | PowerShell 7; Windows | .NET SDK | Publish and validate Windows artifacts. |
 
-`check-ci.py` owns build, test, browser, and packaging commands. CI workflows must select its stages and step keys. Publish jobs use the tested CI artifacts.
+`ci/run.py` owns build, test, browser, and packaging commands. CI workflows must select its stages and step keys. Publish jobs use the tested CI artifacts.
 
 ### Check a change before pushing
 
 Run from the repository root:
 
 ```powershell
-python scripts/check-ci.py
+python scripts/ci/run.py
 ```
 
 The script uses `CI=true`, Release output, and locked Python and npm dependencies. Local checks run sequentially. The script stops at the first failed check and returns a nonzero exit code.
@@ -58,25 +73,25 @@ Isolated .NET test projects and browser publishing do not require this workload.
 
 ```powershell
 # Print commands without running them.
-python scripts/check-ci.py --plan
+python scripts/ci/run.py --plan
 
 # Restore, build, and test one solution test project.
-python scripts/check-ci.py --stage test-dotnet --test-project ChapterTool.Core.Tests
+python scripts/ci/run.py --stage test-dotnet --test-project ChapterTool.Core.Tests
 
 # Run one prepared check.
-python scripts/check-ci.py --stage test-dotnet --test-project ChapterTool.Core.Tests --step run-tests
+python scripts/ci/run.py --stage test-dotnet --test-project ChapterTool.Core.Tests --step run-tests
 
 # Build packages and run installed consumers.
-python scripts/check-ci.py --stage pack-nuget
+python scripts/ci/run.py --stage pack-nuget
 
 # Build packages with one release version.
-python scripts/check-ci.py --stage pack-nuget --package-version 23.3.2-rc.1
+python scripts/ci/run.py --stage pack-nuget --package-version 23.3.2-rc.1
 
-python scripts/check-ci.py --stage resources
-python scripts/check-ci.py --stage node
-python scripts/check-ci.py --stage browser
-python scripts/check-ci.py --stage browser --browser-suite full --browser-engine webkit
-python scripts/check-ci.py --stage pack-desktop --runtime win-x64
+python scripts/ci/run.py --stage resources
+python scripts/ci/run.py --stage node
+python scripts/ci/run.py --stage browser
+python scripts/ci/run.py --stage browser --browser-suite full --browser-engine webkit
+python scripts/ci/run.py --stage pack-desktop --runtime win-x64
 ```
 
 `--step` runs only the selected keys. It does not run prerequisites. Unknown keys fail before execution. `--stage pack-node` requires the `dist` output from `node` or `build-test`.
@@ -124,17 +139,17 @@ Local checks cannot establish GitHub upload or deployment permissions. Linux fil
 - Run [37167108459](https://github.com/tautcony/ChapterTool/actions/runs/37167108459) failed the .NET test step. A successful test run for one project does not cover the full solution.
 - Commit `dc666da` corrected platform-specific newline expectations. Commits `5997fb3` and `1c58b1b` corrected filename extraction across platforms.
 
-The shared entry point checks resources and workflows before a push. Platform CI jobs also verify operating system behavior. Keep shared build, test, and packaging commands in `check-ci.py`. CI workflows must select those stages and step keys instead of duplicating commands.
+The shared entry point checks resources and workflows before a push. Platform CI jobs also verify operating system behavior. Keep shared build, test, and packaging commands in `ci/run.py`. CI workflows must select those stages and step keys instead of duplicating commands.
 
 ## Repository Maintenance
 
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
-| `axaml-to-json.py` | Python 3; cross-platform | Python standard library | Generate Wasm locale JSON files from Avalonia AXAML files. Use `--check` to detect drift without writing files. |
-| `audit-ui-resources.py` | Python 3; cross-platform | Python standard library | Audit Avalonia resource definitions and references. |
-| `normalize-changed-text-files.py` | Python 3; cross-platform | Python standard library, Git | Normalize line endings and UTF-8 BOMs in changed text files. Use `--what-if` for a read-only check. |
-| `generate-app-icons-macos.sh` | Bash; macOS only | ImageMagick, `iconutil` | Generate ICNS and ICO files from the SVG icon source. |
-| `subset-shortcut-font.py` | Python 3; cross-platform | FontTools (`pyftsubset`) | Keep only the ASCII gesture text and platform-neutral shortcut symbols in the bundled Avalonia font. |
+| `localization/axaml-to-json.py` | Python 3; cross-platform | Python standard library | Generate Wasm locale JSON files from Avalonia AXAML files. Use `--check` to detect drift without writing files. |
+| `diagnostics/audit-ui-resources.py` | Python 3; cross-platform | Python standard library | Audit Avalonia resource definitions and references. |
+| `maintenance/normalize-changed-text-files.py` | Python 3; cross-platform | Python standard library, Git | Normalize line endings and UTF-8 BOMs in changed text files. Use `--what-if` for a read-only check. |
+| `maintenance/generate-app-icons-macos.sh` | Bash; macOS only | ImageMagick, `iconutil` | Generate ICNS and ICO files from the SVG icon source. |
+| `maintenance/subset-shortcut-font.py` | Python 3; cross-platform | FontTools (`pyftsubset`) | Keep only the ASCII gesture text and platform-neutral shortcut symbols in the bundled Avalonia font. |
 
 Maintenance scripts are manual entry points. They do not run as hidden build steps.
 
@@ -161,15 +176,15 @@ check-shortcut-font` and `uv run --project scripts lint-scripts`.
 
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
-| `coverage.runsettings` | .NET test configuration | Coverlet | Configure coverage collection. |
+| `testing/coverage.runsettings` | .NET test configuration | Coverlet | Configure coverage collection. |
 
 The scripts under `packages/chaptertool/scripts/` belong to the npm package. They use Node.js modules and are invoked through the package scripts in `packages/chaptertool/package.json`.
 
 Run Python scripts with Python 3. Run Bash scripts with Bash. Run PowerShell scripts with PowerShell 7 (`pwsh`).
 
-`scripts/pyproject.toml` pins Python dependencies for scripts that need third-party packages (`test-coverage.py`, `axaml-to-json.py`). Install them once with `uv sync --project scripts`, then run the script through `uv run --project scripts scripts/<name>.py ...` so the virtual environment is used. CI installs `uv` and invokes `axaml-to-json.py` through `uv run`.
+`scripts/pyproject.toml` pins Python dependencies for scripts that need third-party packages (`testing/collect-coverage.py`, `localization/axaml-to-json.py`). Install them once with `uv sync --project scripts`, then run the script through `uv run --project scripts scripts/<area>/<name>.py ...` so the virtual environment is used. CI installs `uv` and invokes `localization/axaml-to-json.py` through `uv run`.
 
-Use `-SkipHtml` with `test-coverage.py` when you only need XML coverage output.
+Use `-SkipHtml` with `collect-coverage.py` when you only need XML coverage output.
 
 `ruff` is a dev dependency of the same environment. Run `uv run --project scripts ruff check scripts/` to lint the Python scripts. Rule `C901` keeps function cyclomatic complexity under 16. This matches the `CA1502: 16` threshold in `CodeMetricsConfig.txt`. Rules `E701` through `E703` require one statement per line. CI runs the same check.
 
@@ -179,7 +194,7 @@ Run this command to inspect the latest stable `Avalonia.Headless.XUnit` package
 and its declared xUnit extensibility dependency:
 
 ```bash
-python3 scripts/check-avalonia-headless-xunit.py \
+python3 scripts/testing/check-headless-xunit.py \
   --project tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
 ```
 

@@ -146,19 +146,19 @@ dotnet build ChapterTool.slnx --no-restore
 dotnet test ChapterTool.slnx --no-restore
 ```
 
-Run coverage with `uv run --project scripts scripts/test-coverage.py`. The script writes reports to `artifacts/coverage`. The `scripts/` project pins its Python dependencies through `uv`; run `uv sync --project scripts` once before the first invocation.
+Run coverage with `uv run --project scripts scripts/testing/collect-coverage.py`. The script writes reports to `artifacts/coverage`. The `scripts/` project pins its Python dependencies through `uv`; run `uv sync --project scripts` once before the first invocation.
 
-Inspect compiler and analyzer diagnostics with `python3 scripts/report-analyzers.py`. Use `-Prefix SA` to keep only StyleCop diagnostics.
+Inspect compiler and analyzer diagnostics with `python3 scripts/diagnostics/report-analyzers.py`. Use `-Prefix SA` to keep only StyleCop diagnostics.
 
 Publish a local desktop artifact:
 
 ```bash
-./scripts/publish.sh -Runtime linux-x64
-./scripts/publish.sh -Runtime osx-arm64
-./scripts/publish.sh -Runtime win-x64 -SelfContained
+./scripts/packaging/publish-desktop.sh -Runtime linux-x64
+./scripts/packaging/publish-desktop.sh -Runtime osx-arm64
+./scripts/packaging/publish-desktop.sh -Runtime win-x64 -SelfContained
 ```
 
-Use `scripts/publish.ps1` on Windows.
+Use `scripts/packaging/publish-desktop.ps1` on Windows.
 
 See [`scripts/README.md`](scripts/README.md) for the script platform and dependency matrix.
 
