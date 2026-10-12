@@ -1,0 +1,201 @@
+docs/code-map/avalonia.md
+  s_f78882c4fda748::t_b2eeff82e8a087 313
+docs/code-map/core.md
+  s_f78882c4fda748::t_f36662304353f7 27,32,34,178,181,184,188,262
+docs/code-map/program-form-capability-map.md
+  s_f78882c4fda748::t_0d485602fce39e 79,310
+docs/code-map/testing.md
+  s_f78882c4fda748::t_5100279041f496 50,82
+openspec/changes/exact-frame-rate-domain/api-inventory.md
+  s_f78882c4fda748::t_577f65ea5ca35d 1,3-5,7,9-20,22-24
+openspec/changes/exact-frame-rate-domain/design.md
+  s_f78882c4fda748::t_13f4a61d335224 3-6,11,32,44,112,114,121-123,125,131-134,138,140,159,181,194,197
+openspec/changes/exact-frame-rate-domain/proposal.md
+  s_f78882c4fda748::t_d70737650a945b 3-6,17-18,28
+openspec/changes/exact-frame-rate-domain/specs/public-frame-rate-contracts/spec.md
+  s_f78882c4fda748::t_c6f778bbf0a8fe 4,16-17,22,38-39,41-42,78,80-81,84-87
+openspec/changes/exact-frame-rate-domain/tasks.md
+  s_f78882c4fda748::t_d0fea00d0cd3c2 44,47-48,63
+openspec/changes/exact-frame-rate-domain/verification.md
+  s_f78882c4fda748::t_a6d9f544ed9403 76,78,112-126
+openspec/changes/remove-v23-compatibility-surfaces/.openspec.yaml
+  s_f78882c4fda748::t_c1834fbcd9a606 1-2
+openspec/changes/remove-v23-compatibility-surfaces/design.md
+  s_f78882c4fda748::t_3924cb005f3294 1-29
+openspec/changes/remove-v23-compatibility-surfaces/proposal.md
+  s_f78882c4fda748::t_8a44ad557f00c4 1-25
+openspec/changes/remove-v23-compatibility-surfaces/specs/one-shot-transform-compatibility/spec.md
+  s_f78882c4fda748::t_404111f22757bd 1-25
+openspec/changes/remove-v23-compatibility-surfaces/specs/public-frame-rate-contracts/spec.md
+  s_f78882c4fda748::t_a245087ad19e48 1-31
+openspec/changes/remove-v23-compatibility-surfaces/specs/wasm-settings-shortcuts/spec.md
+  s_f78882c4fda748::t_c4bcfc3030e3eb 1-14
+openspec/changes/remove-v23-compatibility-surfaces/tasks.md
+  s_f78882c4fda748::t_04423ef9b00161 1-17
+openspec/specs/one-shot-transform-compatibility/spec.md
+  s_f78882c4fda748::t_a0a2406f4be9d1 4-6,9-15,17-20,22-23,27-28,32-33
+openspec/specs/public-frame-rate-contracts/spec.md
+  s_f78882c4fda748::t_8a20b67b271f6a 1-31
+openspec/specs/wasm-settings-shortcuts/spec.md
+  s_f78882c4fda748::t_02bbc80b91a804 114-126
+packages/chaptertool/README.md
+  s_f78882c4fda748::t_1b43bcb72f01c1 22,33-34,37-38,42-43,49-50,53,58,60,102,104
+packages/chaptertool/src/exact-types.ts
+  s_f78882c4fda748::t_b7117853eced3c 1,10-11,14-17,40-42,44-47,50-51,53,56-58,60,70-74,93-98
+packages/chaptertool/src/exact.ts
+  s_f78882c4fda748::t_145ae87e087554 1,3-5,8,19-43
+packages/chaptertool/src/index.ts
+  s_f78882c4fda748::t_0b4e649b0f1b5b 3,5-6,8,10,13-14,22,26,29-32,39-47
+packages/chaptertool/src/types.ts
+  s_f78882c4fda748::t_c5420b355e90d0 1,10,18,24-25,27-28,32-33,35-38,40,44-47,50-51,56-57
+packages/chaptertool/test/chaptertool.test.ts
+  s_f78882c4fda748::t_5c09dc8a03ffb3 4,11,14,23,29,33,35-38,40,42,54,58-63,91,93,96,100,102-103,106,108-117
+packages/chaptertool/test/core-api.test.ts
+  s_f78882c4fda748::t_8126ddf6b36fc1 4,6-7,9-10,14-17,22-24,26-28,30-34
+packages/chaptertool/test/exact-api.test.ts
+  s_f78882c4fda748::t_074cf692a7958b 25,29,33-34,42,48,55,62,66,79,85,87,91-98,100,104-105,108,110-114,120,125-126
+scripts/ci/consumers/core-frame-rate.cs
+  s_f78882c4fda748::t_0d87f92dcc35b3 29
+src/ChapterTool.Avalonia.UI/PlatformPorts/IChapterSaveService.cs
+  s_f78882c4fda748::t_684b8524d116a6 10
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs
+  s_f78882c4fda748::t_c1ead2bb676046 39,429,437
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Expression.cs
+  s_f78882c4fda748::t_e8a7df7a183bae 21,99,101,109-110
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs
+  s_f78882c4fda748::t_a073d118afd964 161,164
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_f78882c4fda748::t_4117f4f3be2d47 721,1067,1070
+src/ChapterTool.Avalonia.UI/Views/Controls/ExpressionEditor.axaml
+  s_f78882c4fda748::t_32034e7c5d0b66 5,19
+src/ChapterTool.Avalonia.UI/Workflows/ClipEditingCoordinator.cs
+  s_f78882c4fda748::t_f217a3586edce4 210
+src/ChapterTool.Avalonia.UI/Workflows/DisplayOptionCoordinator.cs
+  s_f78882c4fda748::t_e221b1039176fd 101-102,115
+src/ChapterTool.Avalonia.UI/Workflows/LoadSaveWorkflow.cs
+  s_f78882c4fda748::t_f1205c3d58e598 143
+src/ChapterTool.Avalonia.UI/Workflows/StatusDiagnosticsPresenter.cs
+  s_f78882c4fda748::t_a90fb9ffd17bc6 153,155,195
+src/ChapterTool.Avalonia.UI/Workflows/WorkspaceContentRows.cs
+  s_f78882c4fda748::t_0316942f1678d9 54
+src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs
+  s_f78882c4fda748::t_54048bee402bb4 14,19
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Convert.cs
+  s_f78882c4fda748::t_41bf6b5949c1eb 82,85-86
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.Inspect.cs
+  s_f78882c4fda748::t_3148843b5583cc 71
+src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs
+  s_f78882c4fda748::t_03c46b322c10b5 60
+src/ChapterTool.Core/Exporting/ChapterExportService.cs
+  s_f78882c4fda748::t_dedd7aeda37979 25
+src/ChapterTool.Core/Exporting/ChapterOutputProjectionOptions.cs
+  s_f78882c4fda748::t_df6fe124769a9b 3-6,11
+src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs
+  s_f78882c4fda748::t_41baf7c84ba2e5 31
+src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs
+  s_f78882c4fda748::t_27d4cf03735dc2 10-11
+src/ChapterTool.Core/Models/ChapterSet.cs
+  s_f78882c4fda748::t_5c5785c833ed75 4-10
+src/ChapterTool.Core/Session/ChapterExportBaseline.cs
+  s_f78882c4fda748::t_58adbbce84177c 15,27,43,65,72
+src/ChapterTool.Core/Session/ChapterWorkspace.cs
+  s_f78882c4fda748::t_df6e2819ada59e 59,68,233,488,494-495
+src/ChapterTool.Core/Session/ClipSession.cs
+  s_f78882c4fda748::t_3f4fd2b2f51748 317
+src/ChapterTool.Core/Transform/FrameRateOption.cs
+  s_f78882c4fda748::t_277c1499f79f2e 6-11
+src/ChapterTool.Infrastructure/Importing/Runtime/ChapterToolRuntimeComposition.cs
+  s_f78882c4fda748::t_2181830bee4000 62-63
+src/ChapterTool.Node/NodeApi.cs
+  s_f78882c4fda748::t_8981f78650cd6b 6,10,14,17-21,24,27-30,33-35,38,41-43,45-49,51-54,69-73,75,77,79,81,83,85-86,92,94,100-102,115
+src/ChapterTool.Node/NodeExactApi.cs
+  s_f78882c4fda748::t_57563870093137 229
+src/ChapterTool.Node/NodeExactModels.cs
+  s_f78882c4fda748::t_c7a4d2a1ad37c6 60,72
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_f78882c4fda748::t_b2f3952b73d8a1 136,429,431,433,435,1118,1128,1134,1370-1371,1415,1417,1544,1583,1609-1610,1676,1703,1709
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs
+  s_f78882c4fda748::t_750fddd189603d 94,148,378,386
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs
+  s_f78882c4fda748::t_9127d9d67671c3 204,240,529,563,619,709,849,853,867,875,960,965
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/SettingsToolHeadlessTests.cs
+  s_f78882c4fda748::t_31d6d8eb3ca4c8 30
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs
+  s_f78882c4fda748::t_b37bec5cb88073 26
+tests/ChapterTool.Avalonia.Tests/Localization/LocalizationTests.cs
+  s_f78882c4fda748::t_c3c1a688e49c2f 251,259,265
+tests/ChapterTool.Avalonia.Tests/Services/ChapterImporterRegistryTests.cs
+  s_f78882c4fda748::t_788dc357578cbc 210
+tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterLoadServiceTests.cs
+  s_f78882c4fda748::t_cd6046401ea2a3 304
+tests/ChapterTool.Avalonia.Tests/Services/RuntimeChapterSaveServiceTests.cs
+  s_f78882c4fda748::t_989fb27e981cc1 20,27,49,61,66,87,96,103,136,145,171,178,194,201,218,228,251,260
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  s_f78882c4fda748::t_9ad5995cc32034 124,1110,1135,1157,1169,1199,1215,1220,1229,1241,1456,1477,1494,2123,2129,2132,2239,2245
+tests/ChapterTool.Avalonia.Tests/ViewModels/PortableUiParityTests.cs
+  s_f78882c4fda748::t_27abd035dca76e 39,191
+tests/ChapterTool.Avalonia.Tests/ViewModels/SettingsToolViewModelTests.cs
+  s_f78882c4fda748::t_3d3003299495f5 846,977,985
+tests/ChapterTool.Avalonia.Tests/ViewModels/ToolWindowViewModelTests.cs
+  s_f78882c4fda748::t_83d1552ee1a406 108,184,388,400,449
+tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs
+  s_f78882c4fda748::t_ee46a7da4e9811 111,127,132,135,1032
+tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs
+  s_f78882c4fda748::t_dd401b772887d7 39,240
+tests/ChapterTool.Core.Tests/Editing/ChapterEditingServiceTests.cs
+  s_f78882c4fda748::t_131ba975ad5523 25,35,57,82,97,175,195,206
+tests/ChapterTool.Core.Tests/Editing/SampleChapterNameTemplateTests.cs
+  s_f78882c4fda748::t_7b8a2b1f1eed54 34
+tests/ChapterTool.Core.Tests/Exporting/ChapterConversionServiceTests.cs
+  s_f78882c4fda748::t_ac1a603bee4683 15,29-30,40,46,62,79,86,100,137,149,160
+tests/ChapterTool.Core.Tests/Exporting/ChapterExportServiceTests.cs
+  s_f78882c4fda748::t_d2c24d3a276e52 18,27,44,62,70,79,98,114,124,138,140,144,162,173,190,204,212
+tests/ChapterTool.Core.Tests/Exporting/ChapterOutputProjectionServiceTests.cs
+  s_f78882c4fda748::t_74c80cb14a66fc 20,47,61,77,89
+tests/ChapterTool.Core.Tests/Exporting/ChapterSavePathTests.cs
+  s_f78882c4fda748::t_11d90a170a3709 11,21
+tests/ChapterTool.Core.Tests/Importing/ChapterContentServiceTests.cs
+  s_f78882c4fda748::t_330f01e28d0654 48
+tests/ChapterTool.Core.Tests/Importing/CueImporterTests.cs
+  s_f78882c4fda748::t_45303ab22bd5ef 322,331,349,358
+tests/ChapterTool.Core.Tests/Importing/DiscImporterTests.cs
+  s_f78882c4fda748::t_d720ea3bd3133a 139,164,181,755
+tests/ChapterTool.Core.Tests/Importing/DvdNavTimingTests.cs
+  s_f78882c4fda748::t_df2401ccf18a3b 36,67,87
+tests/ChapterTool.Core.Tests/Importing/IfoImporterTests.cs
+  s_f78882c4fda748::t_0a603fb10bcfc8 29,75
+tests/ChapterTool.Core.Tests/Importing/MediaChapterImporterTests.cs
+  s_f78882c4fda748::t_035cc747b75462 24
+tests/ChapterTool.Core.Tests/Importing/MplsImporterTests.cs
+  s_f78882c4fda748::t_9d83f68aa5091e 31,77
+tests/ChapterTool.Core.Tests/Models/EditableChapterDocumentTests.cs
+  s_f78882c4fda748::t_22488e5b74d01b 13,31-32,36,39,47,66
+tests/ChapterTool.Core.Tests/Session/ChapterWorkspaceTests.cs
+  s_f78882c4fda748::t_7c2da5c2371a99 128,145,150,152,165,352,363,382-383,432
+tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs
+  s_f78882c4fda748::t_48851c21a8d03b 157
+tests/ChapterTool.Core.Tests/Session/SessionStateTests.cs
+  s_f78882c4fda748::t_c4fc6ae8119200 201,231,241
+tests/ChapterTool.Core.Tests/Transform/ChapterExpressionServiceTests.cs
+  s_f78882c4fda748::t_93e81eac2c15bd 17,36
+tests/ChapterTool.Core.Tests/Transform/ChapterFpsTransformServiceTests.cs
+  s_f78882c4fda748::t_53c2bb9cd35a23 14,18,32,51,63,75,141
+tests/ChapterTool.Core.Tests/Transform/FrameRateServiceTests.cs
+  s_f78882c4fda748::t_7879bd4d7e7032 28,30-31,33-34,42-43,194,211-212,257,263,318,329,333,335
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "203df7016ebb471fb72c6932ee4da1bd2b941b88",
+  "prompts": {},
+  "sessions": {
+    "s_f78882c4fda748": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13059-4883-7892-b19a-7e9cbd2ae812",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
