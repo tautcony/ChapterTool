@@ -381,9 +381,10 @@
     {
         var previousCancellation = cancellation;
         var source = cancellation = new CancellationTokenSource();
+        var token = source.Token;
         applyFailed = false;
         applyError = string.Empty;
-        revision++;
+        var currentRevision = ++revision;
         pending = schedule;
         expression = value;
         Workspace.Expression = value;
@@ -394,22 +395,22 @@
             await previousCancellation.CancelAsync();
             previousCancellation.Dispose();
         }
+        if (disposed || currentRevision != revision || !ReferenceEquals(cancellation, source)) return;
         if (!schedule)
         {
             await InvokeAsync(StateHasChanged);
             return;
         }
 
-        var currentRevision = revision;
         try
         {
-            await Task.Delay(250, source.Token);
+            await Task.Delay(250, token);
             if (disposed || currentRevision != revision || composing) return;
             Workspace.PrepareExpressionPreview(value);
             pending = false;
             await InvokeAsync(StateHasChanged);
         }
-        catch (OperationCanceledException) when (source.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
     }
 
     private void RefreshPreview()
