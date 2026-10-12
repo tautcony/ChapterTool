@@ -13,28 +13,26 @@ internal static class Program
         var formatter = new ChapterTimeFormatter();
         Require(formatter.Format(formatter.ParseOrZero("00:00:12.500")) == "00:00:12.500");
         var chapter = new Chapter(1, TimeSpan.FromTicks(9007199254740993), "External");
-        var legacy = new ChapterSet(Title: "Legacy", SourceName: null, ImportFormat: ChapterImportFormat.Ogm,
-            FramesPerSecond: 24, Duration: TimeSpan.Zero, Chapters: [chapter]);
-        var (title, source, format, fps, duration, chapters, exactRate) = legacy;
-        Require(title == "Legacy" && source is null && format == ChapterImportFormat.Ogm && fps == 24
-            && duration == TimeSpan.Zero && chapters.Count == 1 && exactRate is null);
-        var rational = legacy with { ExactFrameRate = new ChapterFrameRate(48000, 2002) };
-        Require(rational.FrameRate == FrameRateValue.Rational(24000, 1001));
-        var assigned = rational with { FramesPerSecond = 25 };
-        Require(assigned.FrameRate == FrameRateValue.Approximate(25m) && assigned.ExactFrameRate is null);
+        var canonical = new ChapterSet("Canonical", null, ChapterImportFormat.Ogm,
+            FrameRateValue.Approximate(24m), TimeSpan.Zero, [chapter]);
+        Require(canonical.Title == "Canonical" && canonical.SourceName is null && canonical.ImportFormat == ChapterImportFormat.Ogm
+            && canonical.FrameRate == FrameRateValue.Approximate(24m) && canonical.Duration == TimeSpan.Zero && canonical.Chapters.Count == 1);
+        var rational = canonical with { FrameRate = FrameRateValue.Rational(24000, 1001) };
+        Require(rational.FrameRate.RationalRate == new ChapterFrameRate(24000, 1001));
+        var assigned = rational with { FrameRate = FrameRateValue.Approximate(25m) };
+        Require(assigned.FrameRate == FrameRateValue.Approximate(25m) && assigned.FrameRate.RationalRate is null);
         var editing = new ChapterEditingService(formatter);
-        Require(editing.EditFrame(legacy, index: 0, text: "24", framesPerSecond: 24m).Diagnostics.Count == 0);
-        Require(ChapterFpsTransformService.ChangeFps(legacy, sourceFps: 24m, targetFps: 25m).Success);
+        Require(editing.EditFrame(canonical, index: 0, text: "24", framesPerSecond: FrameRateValue.Approximate(24m)).Diagnostics.Count == 0);
+        Require(ChapterFpsTransformService.ChangeFps(canonical, sourceFps: FrameRateValue.Approximate(24m),
+            targetFps: FrameRateValue.Approximate(25m)).Success);
         var catalog = new FrameRateService();
-        var option = new FrameRateOption(Code: "external", DisplayName: "External", Value: 24m, IsValid: true, LegacyMplsCode: -1);
-        var (_, _, projectedFps, valid, code, projectedExact) = option;
-        Require(projectedFps == 24 && valid && code == -1 && projectedExact is null);
+        var option = new FrameRateOption("external", "External", FrameRateValue.Approximate(24m), true, -1);
+        Require(option.Code == "external" && option.Rate == FrameRateValue.Approximate(24m) && option.IsValid);
         var frameResult = catalog.UpdateFrames(rational, catalog.FindByCode("Auto"), true, 0.01m);
-        var (_, _, selected, resultFps, _) = frameResult;
-        Require(selected.Rate == rational.FrameRate && resultFps > 23);
-        var oldResult = new FrameInfoResult(Info: legacy, Chapters: legacy.Chapters, SelectedOption: option,
-            FramesPerSecond: 24m, Accuracy: [FrameAccuracy.Neutral]);
-        Require((oldResult with { FramesPerSecond = 25m }).FramesPerSecond == 25m);
+        Require(frameResult.SelectedOption.Rate == rational.FrameRate && frameResult.Rate == rational.FrameRate);
+        var updated = new FrameInfoResult(canonical, canonical.Chapters, option, [FrameAccuracy.Neutral]);
+        var changed = updated with { SelectedOption = option with { Rate = FrameRateValue.Approximate(25m) } };
+        Require(changed.Rate == FrameRateValue.Approximate(25m));
         var engine = new ExternalEngine();
         var context = new ChapterExpressionContext(Chapter: chapter, Index: 1, Count: 1,
             TimeSeconds: chapter.StartTime.Ticks / (decimal)TimeSpan.TicksPerSecond, FramesPerSecond: 24m, Chapters: [chapter]);
@@ -44,11 +42,11 @@ internal static class Program
         Require(expression.Diagnostics.Count == 0 && expression.Info.Chapters[0].StartTime.Ticks == chapter.StartTime.Ticks);
         Require(engine.LastFps == rational.FrameRate.ToDecimal());
         var serializer = new ChapterExportService(formatter);
-        var unknown = legacy with { FrameRate = FrameRateValue.Unknown };
+        var unknown = canonical with { FrameRate = FrameRateValue.Unknown };
         Require(serializer.Serialize(unknown, new ChapterSerializationOptions(ChapterExportFormat.Txt)).Success);
         Require(serializer.Serialize(unknown, new ChapterSerializationOptions(ChapterExportFormat.Qpfile)
             { ComputationRate = FrameRateValue.Rational(24, 1) }).Success);
-        Console.WriteLine("Installed canonical and retained Core contracts passed.");
+        Console.WriteLine("Installed canonical Core contracts passed.");
     }
 
     private static void Require(bool condition)
