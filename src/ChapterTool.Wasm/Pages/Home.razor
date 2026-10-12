@@ -701,13 +701,6 @@
 
 @code {
     private const string SettingsStorageKey = "chaptertool.wasm.settings";
-    private static readonly string[] LegacySettingsStorageKeys =
-    [
-        "chaptertool.core.wasm-demo.settings",
-        "chaptertool.core.wasm-demo.settings.v1",
-        "chaptertool.core.wasm-demo.settings.v2",
-        "chaptertool.core.wasm.settings"
-    ];
     private static readonly JsonSerializerOptions SettingsJsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true
@@ -822,25 +815,6 @@
             await Js.InvokeVoidAsync("chapterToolWasm.registerDropZone", "chaptertool-shell", dropZoneRef, WasmWorkspace.MaxLoadBytes);
 
             var json = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", SettingsStorageKey);
-            if (string.IsNullOrWhiteSpace(json))
-            {
-                foreach (var legacyKey in LegacySettingsStorageKeys)
-                {
-                    var legacyJson = await Js.InvokeAsync<string?>("chapterToolWasm.getLocalStorage", legacyKey);
-                    if (!string.IsNullOrWhiteSpace(legacyJson))
-                    {
-                        json = legacyJson;
-                        await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, legacyJson);
-                        break;
-                    }
-                }
-            }
-
-            foreach (var legacyKey in LegacySettingsStorageKeys)
-            {
-                await Js.InvokeVoidAsync("chapterToolWasm.removeLocalStorage", legacyKey);
-            }
-
             if (!string.IsNullOrWhiteSpace(json))
             {
                 try

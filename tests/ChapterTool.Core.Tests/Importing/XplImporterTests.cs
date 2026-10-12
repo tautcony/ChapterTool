@@ -28,7 +28,6 @@ public sealed class XplImporterTests
             Assert.Equal(expected.Title, actual.Title);
             Assert.Equal(expected.SourceName, actual.SourceName);
             Assert.Equal(FrameRateValue.Unknown, actual.FrameRate);
-            Assert.Equal(0, actual.FramesPerSecond);
             AssertTimeNear(expected.Duration, actual.Duration);
             Assert.Equal(expected.ChapterCount, actual.Chapters.Count);
             AssertTimeNear(expected.FirstTime, actual.Chapters[0].StartTime);

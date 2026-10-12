@@ -98,8 +98,8 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
     public void RefreshXmlLanguageDisplayOptions(ObservableCollection<SelectorDisplayOption> options) =>
         UpdateOptions(options, XmlLanguageDisplay.Options(localizer));
 
-    public int ComboIndexFor(FrameRateOption entry) => entry.LegacyMplsCode == -1
-        ? frameRateService.Options.Count : entry.LegacyMplsCode == 0 ? 0 : entry.IsValid ? entry.LegacyMplsCode : -1;
+    public int ComboIndexFor(FrameRateOption entry) => entry.MplsFrameRateCode == -1
+        ? frameRateService.Options.Count : entry.MplsFrameRateCode == 0 ? 0 : entry.IsValid ? entry.MplsFrameRateCode : -1;
 
     public FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
     {
@@ -112,7 +112,7 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
         {
             0 => frameRateService.Options[0],
             < 1 or 5 => null,
-            _ => frameRateService.Options.FirstOrDefault(entry => entry.LegacyMplsCode == frameRateIndex)
+            _ => frameRateService.Options.FirstOrDefault(entry => entry.MplsFrameRateCode == frameRateIndex)
         };
     }
 

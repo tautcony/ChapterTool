@@ -57,10 +57,7 @@ public static partial class NodeApi
 
     private sealed record ExactContentResponse(bool Success, ExactChapterSet? ChapterSet, IReadOnlyList<NodeDiagnostic> Diagnostics);
 
-    private sealed record ExactProjectionResponse(bool Success, ExactChapterSet? ChapterSet, IReadOnlyList<ExactChapter> OutputChapters,
-        IReadOnlyList<NodeDiagnostic> Diagnostics);
-
-    private sealed record ExactFrameOption(string Code, string DisplayName, ExactRate Rate, bool IsValid, int LegacyMplsCode);
+    private sealed record ExactFrameOption(string Code, string DisplayName, ExactRate Rate, bool IsValid, int MplsFrameRateCode);
 
     private sealed record ExactFrameResponse(bool Success, ExactChapterSet? ChapterSet, ExactFrameOption? SelectedOption,
         IReadOnlyList<string> Accuracy, IReadOnlyList<NodeDiagnostic> Diagnostics);
@@ -72,9 +69,7 @@ public static partial class NodeApi
         int Frames = 0, ExactRate? ComputationRate = null, string? Ticks = null);
 
     private sealed record ExactOutputOptions(string Format, string? XmlLanguage = null, string? SourceFileName = null,
-        string TextEncoding = "Utf8", ExactRate? ComputationRate = null, bool ApplyExpression = false,
-        string Expression = "t", bool AutoGenerateNames = false, bool UseTemplateNames = false,
-        string ChapterNameTemplateText = "", int OrderShift = 0);
+        string TextEncoding = "Utf8", ExactRate? ComputationRate = null, bool EmitBom = false);
 
     private sealed class ExactValidationException(ChapterDiagnosticCode code, string message) : ArgumentException(message)
     {

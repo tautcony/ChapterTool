@@ -73,9 +73,9 @@ The final run must use a stable prepared site.
 
 ## Public Documentation
 
-`src/ChapterTool.Core/README.md` documents canonical rates, retained major-version-23 boundaries, the invalid numeric assignment exception, Auto policy, mixed-rate limits, and rounding.
+`src/ChapterTool.Core/README.md` documents canonical rates, the removal of numeric compatibility boundaries, Auto policy, mixed-rate limits, and rounding.
 `src/ChapterTool.CommandLine/README.md` documents `--frame-rate-ratio`, mutual exclusion, diagnostics, imported authority, and Lua limits.
-`packages/chaptertool/README.md` documents `tool.exact`, complete wire examples, migration, nullable duration, segments, overrides, and rounding boundaries.
+`packages/chaptertool/README.md` documents the exact `ChapterTool` entry point, wire examples, nullable duration, segments, overrides, and rounding boundaries.
 `docs/code-map/core.md`, `docs/code-map/avalonia.md`, and `docs/code-map/testing.md` identify canonical ownership and primary regressions.
 
 ## Checks
@@ -109,3 +109,18 @@ It ran through `npm run test:e2e -- exact-frame-rate-domain.spec.ts` against the
 
 Full default host CI and remote job verification remain conditional on a future push request.
 This change has not been pushed or archived.
+
+## 23.x Compatibility Removal Follow-up
+
+The removal pass ran the .NET test projects in separate processes:
+
+- Core: 831 passed.
+- Avalonia: 296 passed.
+- Avalonia Headless: 148 passed.
+- CommandLine: 64 passed.
+- WASM workspace: 90 passed.
+- Infrastructure: 173 passed, 1 opt-in test skipped.
+
+`npm test` passed lint, TypeScript checks, package build, and 30 Vitest tests.
+`dotnet build ChapterTool.slnx --no-restore` passed with no warnings or errors.
+No browser E2E or packed NuGet verification ran for this follow-up.

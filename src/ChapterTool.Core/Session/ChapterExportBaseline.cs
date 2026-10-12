@@ -12,7 +12,7 @@ public sealed record ChapterExportSnapshot(
     SessionSnapshot Content,
     ChapterTrackId TrackId,
     ChapterSet ChapterSet,
-    ChapterExportOptions Options,
+    ChapterSerializationOptions Options,
     string Digest,
     string FormatFingerprint);
 
@@ -24,7 +24,7 @@ public sealed record ChapterExportBaseline(
 
 internal static class ChapterExportFingerprint
 {
-    public static string Digest(ChapterSet content, EditableChapterTrack track, ChapterExportOptions options)
+    public static string Digest(ChapterSet content, EditableChapterTrack track, ChapterSerializationOptions options)
     {
         var builder = new StringBuilder(Digest(content, options));
         Append(builder, track.FrameRate.Kind.ToString());
@@ -40,7 +40,7 @@ internal static class ChapterExportFingerprint
         return Hash(builder.ToString());
     }
 
-    public static string Digest(ChapterSet content, ChapterExportOptions options)
+    public static string Digest(ChapterSet content, ChapterSerializationOptions options)
     {
         var builder = new StringBuilder();
         Append(builder, content.Title);
@@ -62,29 +62,20 @@ internal static class ChapterExportFingerprint
         return Hash(builder.ToString());
     }
 
-    public static string FormatFingerprint(ChapterExportOptions options)
+    public static string FormatFingerprint(ChapterSerializationOptions options)
     {
         var builder = new StringBuilder();
         AppendOptions(builder, options);
         return Hash(builder.ToString());
     }
 
-    private static void AppendOptions(StringBuilder builder, ChapterExportOptions options)
+    private static void AppendOptions(StringBuilder builder, ChapterSerializationOptions options)
     {
         Append(builder, options.Format.ToString());
         Append(builder, options.XmlLanguage);
         Append(builder, options.SourceFileName);
-        Append(builder, options.AutoGenerateNames.ToString());
-        Append(builder, options.UseTemplateNames.ToString());
-        Append(builder, options.ChapterNameTemplateText);
-        Append(builder, options.OrderShift.ToString(CultureInfo.InvariantCulture));
-        Append(builder, options.ApplyExpression.ToString());
-        Append(builder, options.Expression);
-        Append(builder, options.ExpressionPresetId);
-        Append(builder, options.ExpressionSourceName);
         Append(builder, options.TextEncoding.ToString());
         Append(builder, options.EmitBom.ToString());
-        Append(builder, options.ProjectOutput.ToString());
         Append(builder, options.ComputationRate?.Kind.ToString());
         Append(builder, options.ComputationRate?.ToString());
     }

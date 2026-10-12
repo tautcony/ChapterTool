@@ -22,9 +22,6 @@ public sealed class ExpressionEditorExpansionChangedEventArgs(double heightDelta
 }
 
 
-// Compatibility name used by ExpressionEditor.axaml bindings.
-public sealed class ExpressionCompletionKindBrushConverter : Expression.ExpressionCompletionPresentation;
-
 /// <summary>Provides an expression editor with completion and diagnostic presentation.</summary>
 public sealed partial class ExpressionEditor : UserControl
 {

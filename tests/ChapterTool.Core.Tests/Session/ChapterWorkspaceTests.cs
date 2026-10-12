@@ -125,7 +125,7 @@ public sealed class ChapterWorkspaceTests
         var revision = workspace.BeginLoadOperation();
         var group = MultiMplsGroup();
         Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("movie.mpls"), group, ClipSessionTransitions.FromLoad(group)));
-        var options = workspace.CreateExportOptions();
+        var options = workspace.CreateSerializationOptions();
         var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, options, trackIndex: 0)!;
 
         Assert.True(workspace.RecordSuccessfulExport(captured));
@@ -142,14 +142,14 @@ public sealed class ChapterWorkspaceTests
         var editedCapture = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, options, trackIndex: 0)!;
         Assert.True(workspace.RecordSuccessfulExport(editedCapture));
         workspace.SelectClip(1);
-        var otherTrackOptions = workspace.CreateExportOptions();
+        var otherTrackOptions = workspace.CreateSerializationOptions();
         var otherTrackCapture = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, otherTrackOptions, trackIndex: 1)!;
         Assert.True(workspace.RecordSuccessfulExport(otherTrackCapture));
         Assert.Equal(workspace.GetExportBaseline(editedCapture.TrackId)!.Digest,
             workspace.CaptureExportSnapshot(EditableChapterDocumentAdapter.ToChapterSet(workspace.ContentSession!.Snapshot.Document, 0),
-                workspace.CreateExportOptions() with { SourceFileName = "00001" }, 0)!.Digest);
+                workspace.CreateSerializationOptions() with { SourceFileName = "00001" }, 0)!.Digest);
         Assert.Equal(workspace.GetExportBaseline(otherTrackCapture.TrackId)!.Digest,
-            workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptions(), 1)!.Digest);
+            workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateSerializationOptions(), 1)!.Digest);
         Assert.False(workspace.HasUnexportedChanges);
         Assert.Equal(editedCapture.Content.StateIdentity, workspace.GetExportBaseline(editedCapture.TrackId)!.StateIdentity);
         Assert.Equal(2, workspace.ContentSession!.GetHistorySnapshot().Nodes.Length);
@@ -162,7 +162,7 @@ public sealed class ChapterWorkspaceTests
         var revision = workspace.BeginLoadOperation();
         var group = SingleGroup("old.txt", "Old");
         Assert.True(CommitLoad(workspace, revision, new LocalPathChapterSource("old.txt"), group, ClipSessionTransitions.FromLoad(group)));
-        var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateExportOptions(), 0)!;
+        var captured = workspace.CaptureExportSnapshot(workspace.CurrentChapterSet!, workspace.CreateSerializationOptions(), 0)!;
 
         var replacementRevision = workspace.BeginLoadOperation();
         var replacement = SingleGroup("new.txt", "New");
@@ -349,7 +349,7 @@ public sealed class ChapterWorkspaceTests
     }
 
     [Fact]
-    public void CreateExportOptions_ReadsOwnedProjectionAndExportPreferences()
+    public void CreateSerializationOptions_ContainsOnlySerializationPreferences()
     {
         var workspace = new ChapterWorkspace();
         var revision = workspace.BeginLoadOperation();
@@ -360,30 +360,12 @@ public sealed class ChapterWorkspaceTests
         workspace.ExportPreferences.SetXmlLanguage("eng");
         workspace.ExportPreferences.SetTextEncoding(OutputTextEncoding.Utf8);
         workspace.ExportPreferences.SetEmitBom(false);
-        workspace.OperationDrafts.SetAutoGenerateNames(true);
-        workspace.OperationDrafts.SetOrderShift(2);
-        workspace.SetExpressionOperationDrafts("t+1", applyExpression: true, "preset", "script.lua");
-
-        var options = workspace.CreateExportOptions();
+        var options = workspace.CreateSerializationOptions();
 
         Assert.Equal(ChapterExportFormat.Xml, options.Format);
         Assert.Equal("eng", options.XmlLanguage);
         Assert.Equal("00001", options.SourceFileName);
-        Assert.False(options.AutoGenerateNames);
-        Assert.False(options.ApplyExpression);
-        Assert.Equal("t+1", options.Expression);
-        Assert.Equal("preset", options.ExpressionPresetId);
-        Assert.Equal("script.lua", options.ExpressionSourceName);
-        Assert.Equal(0, options.OrderShift);
         Assert.False(options.EmitBom);
-
-        Assert.False(options.ApplyExpression);
-        Assert.False(options.AutoGenerateNames);
-        Assert.False(options.UseTemplateNames);
-        Assert.Equal(0, options.OrderShift);
-        Assert.False(options.ProjectOutput);
-        Assert.Equal(ChapterExportFormat.Xml, options.Format);
-        Assert.Equal("eng", options.XmlLanguage);
     }
 
     [Fact]
@@ -397,9 +379,8 @@ public sealed class ChapterWorkspaceTests
         Assert.Equal("id-1", workspace.OperationDrafts.ExpressionPresetId);
         Assert.Equal("batch.lua", workspace.OperationDrafts.ExpressionSourceName);
 
-        var options = workspace.CreateExportOptions();
-        Assert.Equal("t*2", options.Expression);
-        Assert.False(options.ApplyExpression);
+        var options = workspace.CreateSerializationOptions();
+        Assert.Equal(ChapterExportFormat.Txt, options.Format);
     }
 
     [Fact]
@@ -448,7 +429,7 @@ public sealed class ChapterWorkspaceTests
             sourceName,
             sourceName,
             format,
-            24000d / 1001d,
+            FrameRateValue.Rational(24000, 1001),
             chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].StartTime + TimeSpan.FromSeconds(1),
             chapters);
 

@@ -105,7 +105,7 @@ public sealed class ToolWindowViewModelTests
         var owner = CreateOwner();
         await owner.LoadCommand.ExecuteAsync("movie.txt");
 
-        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, contentOperations: owner.ToolSession.ContentOperations) { Expression = "t + 1", ApplyExpression = true };
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, contentOperations: owner.ToolSession.ContentOperations) { Expression = "t + 1" };
         await expression.ApplyCommand.ExecuteAsync(expression);
         Assert.Equal(ExpressionPreviewReadiness.Ready, expression.PreviewReadiness);
         Assert.True(expression.CanApplyPreview);
@@ -126,7 +126,6 @@ public sealed class ToolWindowViewModelTests
         await forward.ConfirmApplyCommand.ExecuteAsync();
 
         Assert.Equal("t + 1", owner.Expression);
-        Assert.False(owner.ApplyExpression);
         Assert.False(owner.UseTemplateNames);
         Assert.False(owner.AutoGenerateNames);
         Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
@@ -182,7 +181,7 @@ public sealed class ToolWindowViewModelTests
         {
             var picker = new FakeFilePicker(scriptPath);
             var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker,
-                contentOperations: owner.ToolSession.ContentOperations, closeTool: () => closeCount++) { ApplyExpression = true };
+                contentOperations: owner.ToolSession.ContentOperations, closeTool: () => closeCount++);
 
             expression.SelectedPresetIndex = expression.Presets.ToList().FindIndex(preset => preset.Id == "round-to-frame");
 
@@ -198,7 +197,6 @@ public sealed class ToolWindowViewModelTests
             await expression.ConfirmApplyCommand.ExecuteAsync();
 
             Assert.Equal("t + 2", owner.Expression);
-            Assert.False(owner.ApplyExpression);
             Assert.Equal(string.Empty, owner.ExpressionPresetId);
             Assert.Equal(Path.GetFileName(scriptPath), owner.ExpressionSourceName);
             Assert.Equal("00:00:07.000", owner.Rows[0].TimeText);
@@ -387,7 +385,7 @@ public sealed class ToolWindowViewModelTests
         return new MainWindowViewModel(
             new FakeLoadService(new ChapterImportResult(
                 true,
-                [new ChapterImportSource("movie.txt", [new ChapterImportEntry("0", "movie", new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24, TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
+                [new ChapterImportSource("movie.txt", [new ChapterImportEntry("0", "movie", new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
                 [])),
             new FakeSaveService(),
             new ChapterEditingService(formatter),
@@ -399,7 +397,7 @@ public sealed class ToolWindowViewModelTests
             new FrameRateService(),
             localizer ?? new AppLocalizationManager("en-US"),
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine));
+            new ChapterExportService(formatter));
     }
 
     private sealed class DeferredContentOperationPort(
@@ -448,7 +446,7 @@ public sealed class ToolWindowViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterSerializationOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));
     }
 

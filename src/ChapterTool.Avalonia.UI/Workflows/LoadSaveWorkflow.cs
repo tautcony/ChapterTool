@@ -140,7 +140,7 @@ internal sealed class LoadSaveWorkflow(
 
     public ValueTask<ChapterExportResult> SaveAsync(
         ChapterSet chapterSet,
-        ChapterExportOptions options,
+        ChapterSerializationOptions options,
         string? directory,
         CancellationToken cancellationToken) =>
         saveService.SaveAsync(chapterSet, options, directory, cancellationToken, workspace.CurrentPath);

@@ -171,13 +171,6 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
         }
     }
 
-    // Compatibility for callers that used the former toggle. Expression drafts are never projections.
-    public bool ApplyExpression
-    {
-        get => false;
-        set => _ = value;
-    }
-
     public string ExpressionSourceName
     {
         get => expressionSourceName;

@@ -19,7 +19,7 @@ const imported = await tool.import(await readFile("chapters.txt"), {
   fileName: "chapters.txt"
 });
 const chapterSet = imported.groups[0].entries[0].chapterSet;
-const exported = await tool.export(chapterSet, { format: "xml" });
+const exported = await tool.serialize(chapterSet, { format: "xml" });
 
 if (!exported.success) {
   throw new Error(exported.diagnostics.map((item) => item.message).join("\n"));
@@ -30,39 +30,34 @@ console.log(exported.content);
 
 ## Transform And Serialize
 
-Use an explicit edit operation when the transformed chapter values must be reused or exported
-more than once. `serialize` writes the supplied snapshot as-is and never replays transforms.
+Use an explicit content operation when chapter values must change. `serialize` writes the
+supplied snapshot as-is and never replays transforms.
 
 ```js
-const transformed = await tool.applyExpression(chapterSet, "t + 1");
+const rate = { kind: "rational", numerator: "24000", denominator: "1001" };
+const transformed = await tool.applyExpression(chapterSet, true, "t + 1", rate);
 const output = await tool.serialize(transformed.chapterSet, { format: "xml" });
 ```
 
-`export` remains a one-shot compatibility wrapper. It accepts the legacy expression, naming,
-numbering, and projection options. It applies those options once, then serializes the resulting
-snapshot. This compatibility API remains supported through package major version 23. A separate
-versioned change is required before removal.
+The package exposes only exact chapter content contracts. Apply expressions, naming, numbering,
+and frame-rate changes through content operations before serialization.
 
 The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input and supports the portable import and export formats listed below.
 
 ## Exact Ticks And Frame Rates
 
-Use `tool.exact` when timestamps or frame-rate authority must survive a round-trip.
-The legacy numeric facade remains supported through major version 23.
-A separate versioned change must precede its removal.
-Legacy seconds use JavaScript numbers and can lose tick precision.
-Legacy positive numeric FPS becomes Approximate, even when its display matches a standard ratio.
-Legacy zero metadata becomes Unknown.
+The API uses tick strings and tagged frame-rate values. Rational components and approximate
+values remain strings so JavaScript numbers do not round them.
 
 ```ts
-const imported = await tool.exact.import(await readFile("input.mpls"), {
+const imported = await tool.import(await readFile("input.mpls"), {
   fileName: "input.mpls"
 });
 const source = imported.groups[0].entries[0].chapterSet;
 const rate = { kind: "rational", numerator: "24000", denominator: "1001" } as const;
-const edited = await tool.exact.editFrame(source, 0, "1.5", rate);
+const edited = await tool.editFrame(source, 0, "1.5", rate);
 if (!edited.success || !edited.chapterSet) throw new Error("Frame edit failed");
-const output = await tool.exact.serialize(edited.chapterSet, { format: "qpf" });
+const output = await tool.serialize(edited.chapterSet, { format: "qpf" });
 ```
 
 Exact wire values use these shapes:
@@ -104,12 +99,9 @@ Pass `computationRate` in exact output options to export mixed content at an exp
 This override must not change the supplied content or source metadata.
 
 Exact methods cover import, cell edits, rename, insert, delete, shifts, zones, combine, append,
-frame-rate detection, frame projection, conversion, expressions, projection, serialization,
-one-shot export, Celltimes, and Chapter-to-QPFile conversion.
+frame-rate detection, frame projection, conversion, expressions, and serialization.
 `updateFrames` refreshes display metadata and must not assign a detected content rate.
-`project` applies output options once and returns the reviewed snapshot.
-`serialize` writes that snapshot without replaying an expression.
-`export` applies options once and then serializes.
+`serialize` writes the supplied snapshot without replaying an expression.
 
 Frame arithmetic retains ticks and integer rate coefficients until its rounding boundary.
 Fractional frame edits round once to ticks, with midpoints away from zero.

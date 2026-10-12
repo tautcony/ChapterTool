@@ -36,7 +36,7 @@ public sealed class PortableUiParityTests
         using var desktop = new MainWindowViewModel(new Loader(imported), new Saver(),
             new ChapterEditingService(formatter), new ChapterSegmentService(), new Tools(), formatter, logs,
             TestApplicationLogger.Create<MainWindowViewModel>(logs), new FrameRateService(),
-            new AppLocalizationManager("en-US"), engine, new ChapterExportService(formatter, engine));
+            new AppLocalizationManager("en-US"), engine, new ChapterExportService(formatter));
         using var web = new WasmWorkspace(service);
         await desktop.LoadCommand.ExecuteAsync(path);
         await web.LoadAsync(path, bytes);
@@ -188,7 +188,7 @@ public sealed class PortableUiParityTests
 
     private sealed class Saver : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options,
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterSerializationOptions options,
             string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));
     }

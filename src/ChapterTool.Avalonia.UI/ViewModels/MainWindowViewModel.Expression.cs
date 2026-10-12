@@ -18,7 +18,7 @@ public sealed partial class MainWindowViewModel
             FrameAccuracyTolerance);
         appliedFrameRateOption = frameUpdate?.AppliedOption;
         var display = frameUpdate?.FrameResult;
-        DisplayFrameRate = display?.FramesPerSecond ?? 0m;
+        DisplayFrameRate = display?.Rate.ToDecimal() ?? 0m;
         workspaceContentRows.RefreshRows(Rows, display?.Info, EffectiveFrameRateOption, FramePresentationPolicy);
         SetNarrowPreviewLayout(isNarrowPreviewLayout);
         UpdateInlinePreviewProjection();
@@ -96,9 +96,9 @@ public sealed partial class MainWindowViewModel
 
     private FramePresentationInput CreateFramePresentationInput(long startTicks, FrameRateValue rate, string fallback)
     {
-        if (selectedFrameRateOption.IsValid && selectedFrameRateOption.ExactRate is { } selected)
+        if (selectedFrameRateOption.IsValid && selectedFrameRateOption.Rate.IsKnown)
         {
-            return new FramePresentationInput(startTicks, FrameRateValue.Rational(selected), fallback);
+            return new FramePresentationInput(startTicks, selectedFrameRateOption.Rate, fallback);
         }
 
         if (rate.IsKnown)
@@ -106,8 +106,8 @@ public sealed partial class MainWindowViewModel
             return new FramePresentationInput(startTicks, rate, fallback);
         }
 
-        return EffectiveFrameRateOption.ExactRate is { } suggestion
-            ? new FramePresentationInput(startTicks, FrameRateValue.Rational(suggestion), fallback)
+        return EffectiveFrameRateOption.Rate.IsKnown
+            ? new FramePresentationInput(startTicks, EffectiveFrameRateOption.Rate, fallback)
             : FramePresentationInput.FromNumericText(fallback);
     }
 
@@ -153,31 +153,5 @@ public sealed partial class MainWindowViewModel
     private int PreviewFrameDecimalPlaces => EditingOptions.EffectiveFrameDecimalPlaces;
 
     internal void RefreshRowsFromPort() => RefreshRows();
-
-    private void ReportProjectionExpressionDiagnostics(IReadOnlyList<ChapterDiagnostic> diagnostics)
-    {
-        if (!ApplyExpression)
-        {
-            lastExpressionDiagnosticSignature = null;
-            return;
-        }
-
-        var diagnostic = diagnostics.FirstOrDefault(ChapterExpressionValidation.IsLuaExpressionDiagnostic);
-        if (diagnostic is null)
-        {
-            lastExpressionDiagnosticSignature = null;
-            return;
-        }
-
-        SetStatus(null, diagnostic);
-        var signature = $"{Expression}\n{diagnostic.Code}\n{diagnostic.Message}";
-        if (string.Equals(signature, lastExpressionDiagnosticSignature, StringComparison.Ordinal))
-        {
-            return;
-        }
-
-        lastExpressionDiagnosticSignature = signature;
-        LogDiagnostics("Lua expression script", [diagnostic]);
-    }
 
 }

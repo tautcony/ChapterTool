@@ -18,8 +18,6 @@ public interface IExpressionSessionPort
 
     string Expression { get; }
 
-    bool ApplyExpression { get; }
-
     string ExpressionPresetId { get; }
 
     string ExpressionSourceName { get; }
@@ -27,12 +25,6 @@ public interface IExpressionSessionPort
     FrameRateValue ComputationFrameRate => FrameRateValue.Unknown;
 
     ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken);
-
-    ChapterDiagnostic? ApplyLuaExpressionSettings(
-        string expression,
-        bool applyExpression,
-        string expressionPresetId,
-        string expressionSourceName);
 
     void SaveAppliedExpressionPreview(
         string expression,

@@ -150,9 +150,9 @@ internal sealed partial class StatusDiagnosticsPresenter(
             {
                 lines.Add($"   - Format, {format}");
             }
-            if (entry.ChapterSet.FramesPerSecond > 0)
+            if (entry.ChapterSet.FrameRate.IsKnown)
             {
-                lines.Add($"   - FPS, {entry.ChapterSet.FramesPerSecond:0.###}");
+                lines.Add($"   - FPS, {entry.ChapterSet.FrameRate.ToDecimal():0.###}");
             }
         }
 
@@ -192,7 +192,7 @@ internal sealed partial class StatusDiagnosticsPresenter(
                     ["sourceType"] = ChapterImportFormats.DisplayName(info.ImportFormat),
                     ["chapters"] = info.Chapters.Count,
                     ["duration"] = timeFormatter.Format(info.Duration),
-                    ["fps"] = $"{info.FramesPerSecond:0.###}",
+                    ["fps"] = $"{info.FrameRate.ToDecimal():0.###}",
                     ["mediaTracks"] = entry.MediaTracks?.Select(static track => new Dictionary<string, object?>(StringComparer.Ordinal)
                     {
                         ["kind"] = track.Kind,

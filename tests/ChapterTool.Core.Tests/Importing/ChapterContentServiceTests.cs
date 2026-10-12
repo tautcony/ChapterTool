@@ -45,7 +45,7 @@ public sealed class ChapterContentServiceTests
         var imported = await service.ImportAsync("chapters.txt", content);
         var chapterSet = imported.Groups.Single().Entries.Single().ChapterSet;
 
-        var exported = service.Export(chapterSet, new ChapterExportOptions(ChapterExportFormat.Xml));
+        var exported = service.Serialize(chapterSet, new ChapterSerializationOptions(ChapterExportFormat.Xml));
 
         Assert.True(exported.Success);
         Assert.Equal(".xml", exported.FileExtension);

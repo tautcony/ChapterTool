@@ -91,7 +91,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             new FrameRateService(),
             Localizer,
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine),
+            new ChapterExportService(formatter),
             ShellService,
             SettingsStore);
         MainView = new MainView(ViewModel, _ => FilePickerService);
@@ -145,7 +145,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
                 .Select((name, index) => new Chapter(index + 1, TimeSpan.FromSeconds(index * 10), name))
                 .ToArray();
         var duration = chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].StartTime;
-        var info = new ChapterSet(sourceName, sourceName, sourceType, 24, duration, chapters);
+        var info = new ChapterSet(sourceName, sourceName, sourceType, FrameRateValue.Rational(24, 1), duration, chapters);
         return new ChapterImportEntry(sourceName, sourceName, info);
     }
 
@@ -375,7 +375,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     {
         public ChapterSet? LastInfo { get; private set; }
 
-        public ChapterExportOptions? LastOptions { get; private set; }
+        public ChapterSerializationOptions? LastOptions { get; private set; }
 
         public string? LastDirectory { get; private set; }
 
@@ -383,7 +383,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
         public ValueTask<ChapterExportResult> SaveAsync(
             ChapterSet info,
-            ChapterExportOptions options,
+            ChapterSerializationOptions options,
             string? directory,
             CancellationToken cancellationToken,
             string? sourcePath = null)

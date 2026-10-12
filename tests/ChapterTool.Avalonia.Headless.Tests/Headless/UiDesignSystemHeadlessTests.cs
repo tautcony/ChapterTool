@@ -23,7 +23,7 @@ public sealed class UiDesignSystemHeadlessTests
             new Chapter(1, TimeSpan.Zero, "Intro"),
             new Chapter(2, TimeSpan.FromMilliseconds(21), "Mid")
         };
-        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24, chapters[^1].StartTime, chapters);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Rational(24, 1), chapters[^1].StartTime, chapters);
         using var host = new MainWindowHeadlessTestHost(
             MainWindowHeadlessTestHost.ImportResult("movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)));
         await host.LoadAsync("movie.txt");

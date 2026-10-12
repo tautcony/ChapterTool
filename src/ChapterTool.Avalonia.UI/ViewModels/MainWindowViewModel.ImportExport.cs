@@ -158,17 +158,16 @@ public sealed partial class MainWindowViewModel
 
         var directory = ResolveSaveDirectory(directoryOverride);
         var chapterSet = workspaceContentRows.GetCurrentChapterSet();
-        var entries = Workspace.CreateExportOptions();
+        var entries = Workspace.CreateSerializationOptions();
         Log(LogLevel.Information,
             $"Saving chapters: format={entries.Format}, directory='{directory ?? string.Empty}', source='{CurrentInfo.SourceName ?? string.Empty}', " +
-            $"chapters={chapterSet.Chapters.Count}, applyExpression={ApplyExpression}, expression='{Expression}', " +
+            $"chapters={chapterSet.Chapters.Count}, expression='{Expression}', " +
             $"xmlLanguage='{entries.XmlLanguage ?? string.Empty}', encoding={entries.TextEncoding}, bom={entries.EmitBom}",
             "Save",
             ("format", entries.Format),
             ("directory", directory ?? string.Empty),
             ("source", CurrentInfo.SourceName ?? string.Empty),
             ("chapters", chapterSet.Chapters.Count),
-            ("applyExpression", ApplyExpression),
             ("expression", Expression),
             ("xmlLanguage", entries.XmlLanguage ?? string.Empty),
             ("encoding", entries.TextEncoding),

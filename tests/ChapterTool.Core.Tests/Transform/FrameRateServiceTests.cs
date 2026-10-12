@@ -25,12 +25,13 @@ public sealed class FrameRateServiceTests
     }
 
     [Fact]
-    public void FindByValue_matches_valid_frame_rate_with_legacy_tolerance()
+    public void FindByRate_preserves_approximate_frame_rate_without_promoting_it()
     {
-        var actual = FrameRateService.FindByValue(23.976023976m);
+        var rate = FrameRateValue.Approximate(23.976023976m);
+        var actual = service.FindByRate(rate);
 
-        Assert.Equal("Fps23976", actual.Code);
-        Assert.Null(actual.ExactRate);
+        Assert.Equal(rate, actual.Rate);
+        Assert.StartsWith("Custom:", actual.Code, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -38,8 +39,8 @@ public sealed class FrameRateServiceTests
     {
         var option = service.FindByCode("Fps23976");
 
-        Assert.Equal(new ChapterFrameRate(24000, 1001), option.ExactRate);
-        Assert.Null(service.FindByCode("Auto").ExactRate);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), option.Rate.RationalRate);
+        Assert.Equal(FrameRateValue.Unknown, service.FindByCode("Auto").Rate);
     }
 
     [Fact]
@@ -190,7 +191,7 @@ public sealed class FrameRateServiceTests
         var actual = service.UpdateFrames(info, service.Options[0], round: true, tolerance: 0.01m);
 
         Assert.Equal("Fps25", actual.SelectedOption.Code);
-        Assert.Equal(25m, actual.FramesPerSecond);
+        Assert.Equal(25m, actual.Rate.ToDecimal());
         Assert.Equal(["0", "7"], actual.Chapters.Select(chapter => chapter.FramesInfo));
         Assert.Equal([FrameAccuracy.Accurate, FrameAccuracy.Accurate], actual.Chapters.Select(chapter => chapter.FrameAccuracy));
     }
@@ -207,8 +208,8 @@ public sealed class FrameRateServiceTests
         var actual = service.UpdateFrames(info, service.Options[0], decimalPlaces: -1, tolerance: 0.15m);
 
         Assert.Equal("Fps23976", actual.SelectedOption.Code);
-        Assert.Equal(new ChapterFrameRate(24_000, 1_001), actual.SelectedOption.ExactRate);
-        Assert.Equal(24_000m / 1_001m, actual.FramesPerSecond);
+        Assert.Equal(new ChapterFrameRate(24_000, 1_001), actual.SelectedOption.Rate.RationalRate);
+        Assert.Equal(24_000m / 1_001m, actual.Rate.ToDecimal());
         Assert.StartsWith("1249.006993", actual.Chapters[1].FramesInfo, StringComparison.Ordinal);
     }
 
@@ -253,14 +254,13 @@ public sealed class FrameRateServiceTests
         var actual = service.UpdateFrames(info, service.FindByCode("Fps23976"), 6, tolerance: 0.01m);
 
         Assert.Equal("0.000002", actual.Chapters.Single().FramesInfo);
-        Assert.Equal(new ChapterFrameRate(24_000, 1_001), actual.SelectedOption.ExactRate);
+        Assert.Equal(new ChapterFrameRate(24_000, 1_001), actual.SelectedOption.Rate.RationalRate);
     }
 
     [Fact]
     public void UpdateFrames_uses_exact_fraction_at_rounding_and_accuracy_boundaries()
     {
-        var rate = new FrameRateOption("fraction", "fraction", 1m / 3m, true, 1,
-            new ChapterFrameRate(1, 3));
+        var rate = new FrameRateOption("fraction", "fraction", FrameRateValue.Rational(1, 3), true, 1);
         var exactHalfFrame = new Chapter(1, TimeSpan.FromTicks(15_000_000), "Chapter 1");
         var info = NewInfo(0m, [exactHalfFrame]);
 
@@ -315,7 +315,7 @@ public sealed class FrameRateServiceTests
             Title: "Title",
             SourceName: null,
             ImportFormat: ChapterImportFormat.Ogm,
-            FramesPerSecond: (double)fps,
+            FrameRate: fps > 0 ? FrameRateValue.Approximate(fps) : FrameRateValue.Unknown,
             Duration: TimeSpan.Zero,
             Chapters: chapters);
     }
@@ -326,12 +326,12 @@ public sealed class FrameRateServiceTests
         string displayName,
         decimal value,
         bool isValid,
-        int legacyMplsCode)
+        int mplsFrameRateCode)
     {
         Assert.Equal(code, entry.Code);
         Assert.Equal(displayName, entry.DisplayName);
-        Assert.Equal(value, entry.Value);
+        Assert.Equal(value, entry.Rate.ToDecimal());
         Assert.Equal(isValid, entry.IsValid);
-        Assert.Equal(legacyMplsCode, entry.LegacyMplsCode);
+        Assert.Equal(mplsFrameRateCode, entry.MplsFrameRateCode);
     }
 }

@@ -24,15 +24,14 @@ Canonical data contracts shared across the pipeline:
 
 `EditableChapterTrack.Segments` stores current boundaries and media placement. `ClipSession` stores selector metadata and does not keep editable chapter backups.
 
-`ChapterSet` is a stateless compatibility contract for importers, legacy services, and conversion APIs.
+`ChapterSet` is the import and conversion model for stateless workflows.
 Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState`.
 `ChapterWorkspace.CurrentChapterSet` is a transient selected-track view. It is not editable workspace storage.
 
 Internal editing, conversion, transform, and expression call chains use `FrameRateValue` directly.
-The decimal and numeric overloads remain only at retained Core and Node compatibility boundaries.
-Those adapters normalize once to `Approximate` and do not provide source-rate authority.
+Public content and transform APIs use `FrameRateValue` for frame-rate authority.
 Catalog selectors pass their canonical rational through `FrameRateOption.Rate`.
-The retained `FramesPerSecond`, `ExactFrameRate`, and positional deconstruction members are projections for established consumers.
+Hosts may format that value as a decimal for display.
 
 `EditableChapterDocumentAdapter.TrackDuration` covers every segment in a selected track. `ReplacedTrackDuration` updates document bounds after a reviewed track conversion. `WithFallbackFrameRate` supplies detected FPS to expression preparation when source FPS is absent. `ChapterFpsTransformService` uses one frame quantization rule for chapter times, document duration, and absolute segment boundaries. Source FPS metadata remains unchanged.
 
@@ -176,17 +175,17 @@ Frame/time and expression logic:
 
 ### Exporting
 
-Compatibility transforms and pure format serialization:
+Content projection and pure format serialization:
 
 - `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
-- `ChapterExportService.ExportCompatibility` adapts legacy transform options to one stateless conversion.
+- `ChapterOutputProjectionService` applies explicit one-shot CLI output projection options.
 - `ChapterExportService.Serialize` writes prepared content without transforms. Interactive hosts call it with committed document content.
 - `src/ChapterTool.Core/Exporting/SaveFormatOption.cs`: host-facing export format metadata
-- `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
+- `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs`
 - `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
-- `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` — compatibility conversion only; interactive tables and exports do not use it
+- `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` — one-shot content projection used by CLI conversion
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`
 - `src/ChapterTool.Core/Exporting/ChapterSavePath.cs` — deterministic output file names and non-colliding path allocation
@@ -260,10 +259,9 @@ Start with:
 
 Start with:
 
-- legacy option adaptation: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
+- explicit one-shot projection: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - format-specific serialization: `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
 - snapshot serialization options: `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
 - immutable snapshot entry point: `ChapterExportService.Serialize(EditableChapterDocument, ChapterSerializationOptions)`
-- compatibility conversion entry point: `ChapterExportService.ExportCompatibility(ChapterSet, ChapterExportOptions)`
 - supported file encodings, display names, BOM-aware encoders, and XML encoding names: `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
 - text-to-QP/celltimes conversion: `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`

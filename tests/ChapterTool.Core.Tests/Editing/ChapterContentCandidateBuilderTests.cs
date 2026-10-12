@@ -36,7 +36,7 @@ public sealed class ChapterContentCandidateBuilderTests
     public void Portable_naming_and_frame_candidates_preserve_separator_identity_and_reject_missing_FPS()
     {
         var source = EditableChapterDocumentAdapter.FromChapterSet(new ChapterSet("Title", "source.txt", ChapterImportFormat.Ogm,
-            24000d / 1001d, TimeSpan.FromSeconds(30),
+            FrameRateValue.Rational(24000, 1001), TimeSpan.FromSeconds(30),
             [new Chapter(1, TimeSpan.Zero, "章节"), Chapter.Separator("Boundary"), new Chapter(2, TimeSpan.FromSeconds(10), "日本語")]));
         var named = Builder().ApplyOutputOptions(source, true, false, string.Empty, 2, false, "t");
         Assert.True(named.IsValid);
@@ -237,7 +237,7 @@ public sealed class ChapterContentCandidateBuilderTests
         "Title",
         "source.mkv",
         ChapterImportFormat.Ogm,
-        25,
+        FrameRateValue.Approximate(25m),
         TimeSpan.FromSeconds(30),
         [
             new Chapter(1, TimeSpan.Zero, "Chapter One", EndTime: TimeSpan.FromSeconds(5)),

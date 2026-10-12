@@ -43,7 +43,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private bool isNarrowPreviewLayout;
     private string chapterNameTemplateStatus;
     private string statusText;
-    private string? lastExpressionDiagnosticSignature;
     private ChapterContentPreview? pendingContentPreview;
     private string expressionPreviewText = string.Empty;
     private IReadOnlyList<HistoryEntryViewModel> historyEntries = [];
@@ -619,16 +618,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         }
     }
 
-    public bool ApplyExpression
-    {
-        get => false;
-        set
-        {
-            _ = value;
-            Workspace.OperationDrafts.SetApplyExpression(false);
-        }
-    }
-
     public string Expression
     {
         get => Workspace.OperationDrafts.Expression;
@@ -729,7 +718,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
             var capture = Workspace.CaptureExportSnapshot(
                 workspaceContentRows.GetCurrentChapterSet(),
-                Workspace.CreateExportOptions(),
+                Workspace.CreateSerializationOptions(),
                 Workspace.CurrentTrackIndex);
             return !Workspace.IsExported(capture);
         }
@@ -1075,10 +1064,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         }
 
         var chapterSet = workspaceContentRows.GetCurrentChapterSet();
-        var entries = Workspace.CreateExportOptions();
+        var entries = Workspace.CreateSerializationOptions();
 
         // Use composition-injected export service (same path family as save), not ad-hoc construction.
-        var result = exportService.Export(chapterSet, entries);
+        var result = exportService.Serialize(chapterSet, entries);
         if (!result.Success)
         {
             return string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message));

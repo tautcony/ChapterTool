@@ -121,7 +121,7 @@ public sealed class MainWindowViewModelTests
         Assert.Single(vm.Rows);
         Assert.Equal("0", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
-        Assert.Equal(8, vm.SelectedFrameRateIndex);
+        Assert.Equal(2, vm.SelectedFrameRateIndex);
         Assert.Equal("Loaded 1 chapter", vm.StatusText);
         Assert.Equal(1, vm.Progress);
     }
@@ -1107,7 +1107,7 @@ public sealed class MainWindowViewModelTests
         Assert.Contains("Detected 25000 / 1000", vm.StatusText, StringComparison.Ordinal);
         Assert.Contains("High", vm.StatusText, StringComparison.Ordinal);
         Assert.Equal(25m, vm.DisplayFrameRate);
-        Assert.Equal(new ChapterFrameRate(25, 1), vm.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal(new ChapterFrameRate(25, 1), vm.EffectiveFrameRateOption.Rate.RationalRate);
     }
 
     [Fact]
@@ -1132,7 +1132,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(0, vm.SelectedFrameRateIndex);
         Assert.Equal(24000m / 1001m, vm.DisplayFrameRate);
         Assert.Equal("Fps23976", vm.EffectiveFrameRateOption.Code);
-        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.Rate.RationalRate);
         Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
 
         var detectedOnly = vm.ToolSession.ContentOperations.PrepareFrameShift(-1);
@@ -1154,8 +1154,7 @@ public sealed class MainWindowViewModelTests
             new Chapter(1, TimeSpan.Zero, "Opening"),
             new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")) with
         {
-            FramesPerSecond = (double)(24000m / 1001m),
-            ExactFrameRate = new ChapterFrameRate(24000, 1001)
+            FrameRate = FrameRateValue.Rational(24000, 1001)
         };
         var settings = new FakeSettingsStore(new AppSettings(
             FrameDisplayMode: "full-precision",
@@ -1167,7 +1166,7 @@ public sealed class MainWindowViewModelTests
 
         Assert.False(vm.RoundFrames);
         Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
-        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.Rate.RationalRate);
         Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
     }
 
@@ -1197,7 +1196,7 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps5994").LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps5994").MplsFrameRateCode;
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.ChangeFpsCommand.ExecuteAsync();
 
@@ -1213,12 +1212,12 @@ public sealed class MainWindowViewModelTests
     public async Task ChangeFpsCommandUsesSelectedRateWhenSourceRateIsMissing()
     {
         var info = Info(ChapterImportFormat.Ogm, "movie.txt",
-            new Chapter(1, TimeSpan.FromSeconds(10), "A")) with { FramesPerSecond = 0 };
+            new Chapter(1, TimeSpan.FromSeconds(10), "A")) with { FrameRate = FrameRateValue.Unknown };
         var save = new FakeSaveService();
         var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), saveService: save);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(option => option.Value == 25).LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(option => option.Rate.ToDecimal() == 25).MplsFrameRateCode;
         vm.SetFrameOptions(targetIndex, roundFrames: true);
         await vm.ChangeFpsCommand.ExecuteAsync();
 
@@ -1227,7 +1226,7 @@ public sealed class MainWindowViewModelTests
         await vm.ApplyContentPreviewCommand.ExecuteAsync();
         await vm.SaveCommand.ExecuteAsync("out");
 
-        Assert.Equal(25, save.LastInfo!.FramesPerSecond);
+        Assert.Equal(FrameRateValue.Rational(25, 1), save.LastInfo!.FrameRate);
         Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
     }
 
@@ -1239,7 +1238,7 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(load, logService: log);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps50").LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps50").MplsFrameRateCode;
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.RefreshCommand.ExecuteAsync();
         await vm.ChangeFpsCommand.ExecuteAsync();
@@ -1270,7 +1269,6 @@ public sealed class MainWindowViewModelTests
         vm.XmlLanguage = "eng";
         vm.ChapterNameModeIndex = 0;
         vm.OrderShift = 5;
-        vm.ApplyExpression = true;
         vm.Expression = "t + 2";
         vm.RoundFrames = true;
 
@@ -1288,7 +1286,6 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastOptions);
         Assert.Equal(ChapterExportFormat.Xml, save.LastOptions.Format);
         Assert.Equal("eng", save.LastOptions.XmlLanguage);
-        Assert.Equal("t + 2", save.LastOptions.Expression);
         Assert.Equal(TimeSpan.Zero, save.LastInfo!.Chapters[0].StartTime);
     }
 
@@ -1344,7 +1341,6 @@ public sealed class MainWindowViewModelTests
         vm.XmlLanguage = "jpn";
         vm.AutoGenerateNames = true;
         vm.OrderShift = 2;
-        vm.ApplyExpression = true;
         vm.Expression = "t + 1";
 
         await vm.PreviewContentOptionsCommand.ExecuteAsync();
@@ -1356,13 +1352,6 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastOptions);
         Assert.Equal(ChapterExportFormat.Cue, save.LastOptions.Format);
         Assert.Equal("jpn", save.LastOptions.XmlLanguage);
-        Assert.False(save.LastOptions.AutoGenerateNames);
-        Assert.False(save.LastOptions.UseTemplateNames);
-        Assert.Equal(0, save.LastOptions.OrderShift);
-        Assert.False(save.LastOptions.ApplyExpression);
-        Assert.Equal("t + 1", save.LastOptions.Expression);
-        Assert.Equal(string.Empty, save.LastOptions.ExpressionPresetId);
-        Assert.Equal(string.Empty, save.LastOptions.ExpressionSourceName);
         Assert.NotNull(save.LastInfo);
         Assert.Equal(3, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
@@ -1409,9 +1398,6 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("24", save.LastInfo.Chapters[0].FramesInfo);
         Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
         Assert.NotNull(save.LastOptions);
-        Assert.False(save.LastOptions.ApplyExpression);
-        Assert.Equal("t + 1", save.LastOptions.Expression);
-        Assert.Equal("inline", save.LastOptions.ExpressionSourceName);
     }
 
     [Fact]
@@ -1467,7 +1453,7 @@ public sealed class MainWindowViewModelTests
     public async Task Inline_time_preview_is_hidden_when_values_match_at_millisecond_precision()
     {
         var start = TimeSpan.FromTicks(1_000);
-        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24,
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(1), [new Chapter(1, start, "Submillisecond")]);
         var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
         await vm.LoadCommand.ExecuteAsync("movie.txt");
@@ -1488,7 +1474,7 @@ public sealed class MainWindowViewModelTests
     public async Task Inline_time_preview_uses_fixed_millisecond_precision()
     {
         var start = TimeSpan.FromTicks(1_000);
-        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24,
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(1), [new Chapter(1, start, "Submillisecond")]);
         var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
         await vm.LoadCommand.ExecuteAsync("movie.txt");
@@ -1505,7 +1491,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task Inline_frame_preview_preserves_unrounded_display_when_rounding_is_disabled()
     {
-        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24,
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(1), [new Chapter(1, TimeSpan.Zero, "Intro")]);
         var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
         await vm.LoadCommand.ExecuteAsync("movie.txt");
@@ -1688,7 +1674,6 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastInfo);
         Assert.Equal(1, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.NotNull(save.LastOptions);
-        Assert.Equal(0, save.LastOptions.OrderShift);
     }
 
     [Fact]
@@ -2098,22 +2083,6 @@ public sealed class MainWindowViewModelTests
         }
     }
 
-    [Fact]
-    public async Task ExplicitlyAppliedLuaExpressionReportsCompileDiagnosticToStatusAndLog()
-    {
-        var log = new ApplicationLogPanelProvider();
-        var vm = CreateViewModel(logService: log);
-        await vm.LoadCommand.ExecuteAsync("movie.txt");
-
-        vm.ToolSession.Expression.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
-
-        Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
-        Assert.Contains(log.Entries, static entry =>
-            entry.Operation == "Lua expression script"
-            && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
-            && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
-    }
-
     private static async Task<(SessionHistoryNodeSnapshot Node, HistoryNodeDetails Details)> CurrentHistoryDetailsAsync(
         MainWindowViewModel viewModel)
     {
@@ -2151,16 +2120,16 @@ public sealed class MainWindowViewModelTests
             new FrameRateService(),
             localizer ?? new AppLocalizationManager("en-US"),
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine),
+            new ChapterExportService(formatter),
             shellService,
             settingsStore);
     }
 
     private static ChapterSet Info(ChapterImportFormat sourceType, string sourceName, params Chapter[] chapters) =>
-        new(sourceName, sourceName, sourceType, 24, chapters.Last().StartTime, chapters);
+        new(sourceName, sourceName, sourceType, FrameRateValue.Rational(24, 1), chapters.Last().StartTime, chapters);
 
     private static ChapterSet InfoWithDuration(ChapterImportFormat sourceType, string sourceName, TimeSpan duration, params Chapter[] chapters) =>
-        new(sourceName, sourceName, sourceType, 24, duration, chapters);
+        new(sourceName, sourceName, sourceType, FrameRateValue.Rational(24, 1), duration, chapters);
 
     private static ChapterImportResult ImportResult(string path, params ChapterSet[] infos)
     {
@@ -2267,13 +2236,13 @@ public sealed class MainWindowViewModelTests
     {
         public ChapterSet? LastInfo { get; private set; }
 
-        public ChapterExportOptions? LastOptions { get; private set; }
+        public ChapterSerializationOptions? LastOptions { get; private set; }
 
         public string? LastDirectory { get; private set; }
 
         public ChapterExportResult Result { get; init; } = new(true, "ok", ".txt", []);
 
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null)
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterSerializationOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null)
         {
             LastInfo = info;
             LastOptions = options;

@@ -10,7 +10,7 @@ public sealed class EditableChapterDocumentTests
     public void Adapter_copies_chapters_into_an_immutable_snapshot_and_retains_unknown_duration()
     {
         var chapters = new List<Chapter> { new(1, TimeSpan.FromSeconds(10), "A") };
-        var legacy = new ChapterSet("Title", "source", ChapterImportFormat.Ogm, 24, TimeSpan.Zero, chapters);
+        var legacy = new ChapterSet("Title", "source", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.Zero, chapters);
 
         var document = EditableChapterDocumentAdapter.FromChapterSet(legacy);
         chapters.Add(new Chapter(2, TimeSpan.FromSeconds(20), "B"));
@@ -28,15 +28,15 @@ public sealed class EditableChapterDocumentTests
     {
         var exactRate = new ChapterFrameRate(24000, 1001);
         var imported = new ChapterSet("Title", "source", ChapterImportFormat.Mpls,
-            (double)exactRate.Numerator / exactRate.Denominator, TimeSpan.Zero,
-            [new Chapter(1, TimeSpan.FromMilliseconds(52094), "Later")], exactRate);
+            FrameRateValue.Rational(exactRate), TimeSpan.Zero,
+            [new Chapter(1, TimeSpan.FromMilliseconds(52094), "Later")]);
 
         var document = EditableChapterDocumentAdapter.FromChapterSet(imported);
         var roundTrip = EditableChapterDocumentAdapter.ToChapterSet(document);
-        var approximate = EditableChapterDocumentAdapter.FromChapterSet(imported with { ExactFrameRate = null });
+        var approximate = EditableChapterDocumentAdapter.FromChapterSet(imported with { FrameRate = FrameRateValue.Approximate(23.976m) });
 
         Assert.Equal(FrameRateValue.Rational(exactRate), document.FrameRate);
-        Assert.Equal(exactRate, roundTrip.ExactFrameRate);
+        Assert.Equal(exactRate, roundTrip.FrameRate.RationalRate);
         Assert.Equal(FrameRateKind.Approximate, approximate.FrameRate.Kind);
     }
 
@@ -44,7 +44,7 @@ public sealed class EditableChapterDocumentTests
     public void Candidate_value_edit_preserves_identity_without_changing_published_snapshot()
     {
         var original = EditableChapterDocumentAdapter.FromChapterSet(
-            new ChapterSet("Title", null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
+            new ChapterSet("Title", null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
         var sourceChapter = original.Tracks[0].Chapters[0];
         var changedTrack = new EditableChapterTrack(
             original.Tracks[0].Id,
@@ -63,7 +63,7 @@ public sealed class EditableChapterDocumentTests
     public void Unknown_duration_does_not_limit_chapter_start()
     {
         var original = EditableChapterDocumentAdapter.FromChapterSet(
-            new ChapterSet("Title", null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
+            new ChapterSet("Title", null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
         var chapter = original.Tracks[0].Chapters[0] with { StartTicks = TimeSpan.FromDays(100).Ticks };
         var document = new EditableChapterDocument(
             original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration,

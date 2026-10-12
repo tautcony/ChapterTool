@@ -198,7 +198,7 @@ public sealed class SessionStateTests
             "Title",
             "source.txt",
             ChapterImportFormat.Ogm,
-            25,
+            FrameRateValue.Approximate(25m),
             TimeSpan.FromSeconds(30),
             [new Chapter(1, TimeSpan.Zero, "A"), new Chapter(2, TimeSpan.FromSeconds(10), "B")]);
         var document = EditableChapterDocumentAdapter.FromChapterSet(legacy);
@@ -228,7 +228,7 @@ public sealed class SessionStateTests
     public void Legacy_non_structural_edit_adapter_rejects_row_count_changes()
     {
         var source = CreateDocument();
-        var changedCount = new ChapterSet("Title", null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+        var changedCount = new ChapterSet("Title", null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []);
 
         Assert.Throws<ArgumentException>(() => EditableChapterDocumentAdapter.ApplyNonStructuralChapterSetResult(source, changedCount));
     }
@@ -238,7 +238,7 @@ public sealed class SessionStateTests
             "Title",
             null,
             ChapterImportFormat.Unknown,
-            0,
+            FrameRateValue.Unknown,
             TimeSpan.Zero,
             [new Chapter(1, TimeSpan.Zero, "A")]));
 

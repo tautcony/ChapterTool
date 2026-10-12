@@ -127,27 +127,6 @@ public static partial class NodeApi
     }, diagnostics => new NodeExportResponse(false, string.Empty, string.Empty, diagnostics), NodeJsonContext.Default.NodeExportResponse);
 
     [JSExport]
-    public static string ExactProject(string chapterSetJson, string optionsJson) => ExactGuard(() =>
-        ProjectExact(ReadExactSet(chapterSetJson), ReadExactOutputOptions(optionsJson)),
-        diagnostics => new ExactProjectionResponse(false, null, [], diagnostics), NodeJsonContext.Default.ExactProjectionResponse);
-
-    [JSExport]
-    public static string ExactExport(string chapterSetJson, string optionsJson) => ExactGuard(() =>
-    {
-        var input = ReadExactSet(chapterSetJson);
-        var options = ReadExactOutputOptions(optionsJson);
-        var projected = ProjectExact(input, options);
-        if (!projected.Success)
-        {
-            return new NodeExportResponse(false, string.Empty, string.Empty, projected.Diagnostics);
-        }
-
-        var result = ChapterService.Serialize(FromExactSet(projected.ChapterSet!), ExactSerializationOptions(options));
-        var exported = ToExportResponse(result);
-        return exported with { Diagnostics = [.. exported.Diagnostics, .. projected.Diagnostics] };
-    }, diagnostics => new NodeExportResponse(false, string.Empty, string.Empty, diagnostics), NodeJsonContext.Default.NodeExportResponse);
-
-    [JSExport]
     public static string ExactCombine(string groupJson) => ExactCombineCore(groupJson, null);
 
     [JSExport]
@@ -212,22 +191,6 @@ public static partial class NodeApi
             Segments = FromExactSegments(entry.ChapterSet.Segments)
         })], group.DefaultEntryIndex);
 
-    private static ExactProjectionResponse ProjectExact(ExactChapterSet input, ExactOutputOptions options)
-    {
-        var rate = options.ComputationRate is null ? (FrameRateValue?)null : RequireExactComputationRate(options.ComputationRate);
-        var expression = ExpressionService.Apply(FromExactSet(input), options.ApplyExpression, options.Expression, rate);
-        if (expression.Diagnostics.Count > 0)
-        {
-            return new ExactProjectionResponse(false, input, [], [.. expression.Diagnostics.Select(ToDiagnostic)]);
-        }
-
-        var projected = ProjectionService.Project(expression.Info, new ChapterExportOptions(ParseExportFormat(options.Format),
-            AutoGenerateNames: options.AutoGenerateNames, UseTemplateNames: options.UseTemplateNames,
-            ChapterNameTemplateText: options.ChapterNameTemplateText, OrderShift: options.OrderShift, ProjectOutput: true));
-        return new ExactProjectionResponse(true, ToExactSet(projected.Info, input.DurationTicks, input.Segments),
-            [.. projected.OutputChapters.Select(ToExactChapter)], [.. projected.Diagnostics.Select(ToDiagnostic)]);
-    }
-
     private static ChapterEditResult EditExactTicks(ChapterSet set, int index, string? text)
     {
         if (index < 0 || index >= set.Chapters.Count)
@@ -263,7 +226,7 @@ public static partial class NodeApi
         };
 
     private static ExactFrameOption ToExactOption(FrameRateOption option) => new(option.Code, option.DisplayName,
-        ToExactRate(option.Rate), option.IsValid, option.LegacyMplsCode);
+        ToExactRate(option.Rate), option.IsValid, option.MplsFrameRateCode);
 
     private static string TickText(long ticks) => ticks.ToString(CultureInfo.InvariantCulture);
 

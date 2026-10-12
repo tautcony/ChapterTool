@@ -79,15 +79,11 @@ public sealed partial class ChapterToolCliApplication
         string expressionSourceName)
     {
         var projected = request.FrameRate is { } rate ? info with { FrameRate = rate } : info;
-        var options = new ChapterExportOptions(
-            format.Format,
-            XmlLanguage: request.XmlLanguage,
+        var projectionOptions = new ChapterOutputProjectionOptions(
             ApplyExpression: expression is not null,
             Expression: expression ?? "t",
-            ExpressionPresetId: expressionPresetId,
-            ExpressionSourceName: expressionSourceName,
-            ProjectOutput: true);
-        var projection = new ChapterOutputProjectionService(expressionEngine).Project(projected, options);
+            ComputationRate: projected.FrameRate);
+        var projection = new ChapterOutputProjectionService(expressionEngine).Project(projected, projectionOptions);
         if (projection.Diagnostics.Count > 0)
         {
             return new ChapterExportResult(false, string.Empty, format.Format.ToString(), projection.Diagnostics);

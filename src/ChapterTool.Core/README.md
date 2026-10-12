@@ -69,8 +69,7 @@ if (result.Success)
 
 `ChapterExportService.Serialize` writes the supplied snapshot as-is. It does not apply expressions,
 name templates, or numbering shifts. Apply a content operation before serialization when output
-values must change. `Export` and `ExportCompatibility` accept the legacy transform-bearing options.
-They remain supported through major version 23. Removal requires a separately versioned change.
+values must change.
 
 ### Edit Chapters
 
@@ -105,7 +104,8 @@ var fpsService = new FrameRateService();
 var detected = fpsService.Detect(info, tolerance: 0.001m);
 
 // Change frame rate
-var fpsResult = ChapterFpsTransformService.ChangeFps(info, sourceFps: 23.976m, targetFps: 25m);
+var fpsResult = ChapterFpsTransformService.ChangeFps(info,
+    sourceFps: FrameRateValue.Approximate(23.976m), targetFps: FrameRateValue.Rational(25, 1));
 
 IChapterExpressionEngine expressionEngine = new LuaExpressionScriptService();
 var context = new ChapterExpressionContext(chapter, Index: 1, Count: 10, TimeSeconds: 60m, FramesPerSecond: 23.976m);
@@ -200,14 +200,9 @@ var output = exportService.Serialize(canonical,
     new ChapterSerializationOptions(ChapterExportFormat.Qpfile) { ComputationRate = rate });
 ```
 
-Established numeric constructors, properties, concrete service adapters, and extension contracts
-remain supported through major version 23.
-A separate versioned change must precede removal.
-Positive legacy numeric FPS becomes Approximate; zero metadata becomes Unknown.
-Invalid `ChapterSet` numeric construction or assignment throws an argument exception immediately.
-This is an intentional compatibility exception.
-Other operation boundaries return diagnostics for invalid computation rates.
-Numeric seconds and FPS round-trips can lose precision and rate authority.
+Core APIs carry rates as `FrameRateValue` and timestamps as `TimeSpan` ticks.
+Use `FrameRateValue.Approximate` only when the source rate is approximate.
+Use `FrameRateValue.Rational` when the source provides an exact ratio.
 
 Editable tracks and segments retain current rates and original source rates separately.
 Uniform resolution requires every contributing rate to have the same kind and payload.

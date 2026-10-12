@@ -47,7 +47,7 @@ Desktop composition coverage:
 
 `specs/exact-frame-rate-domain.spec.ts` in the browser E2E project covers real MPLS import, unchanged cell editing, fractional frames, candidate apply, keyboard history, and downloads. It verifies Unknown Auto behavior and explicit-rate editing. Real key events must preserve field undo and cancel browser defaults for document undo. The test captures review images under `artifacts/exact-frame-rate-domain/`.
 
-`packages/chaptertool/test/exact-api.test.ts` covers exact wire values and the installed `tool.exact` facade. `scripts/ci/consumers/core-frame-rate.cs` covers compiled canonical and retained Core APIs through the NuGet verification entry point.
+`packages/chaptertool/test/exact-api.test.ts` covers exact wire values through the public `ChapterTool` entry point. It checks lossless tick/rate values, malformed rates, and explicit operations. `scripts/ci/consumers/core-frame-rate.cs` covers compiled canonical Core APIs through the NuGet verification entry point.
 
 `tests/ChapterTool.Wasm.Tests/WasmFrameRateChoiceTests.cs` covers custom rate resolution and known authority under Auto. It checks localized selector labels, computation rates, ticks, and history during language changes. The custom values use the public Core rate service. The workspace language test uses its selectable catalog rate.
 
@@ -79,7 +79,7 @@ CI runs Chromium and targeted WebKit regressions for affected pull requests. Ver
 
 Use `packages/chaptertool/test/chaptertool.test.ts` when you change the Node.js package entry point, TypeScript input conversion, or npm runtime packaging. Use `packages/chaptertool/test/api-loader.test.ts` when you change retryable .NET WebAssembly startup. Use `packages/chaptertool/test/core-api.test.ts` when you change the portable Core API mapping. Run `npm test` from `packages/chaptertool`. The command bundles the TypeScript source, checks its types, and generates `dist/` before Vitest runs the Node.js tests through the package export map. `packages/chaptertool/vitest.config.mjs` keeps the process-wide WebAssembly runtime in one test worker.
 
-`ChapterExportServiceTests.cs` compares compatibility conversion with explicit transform plus pure serialization. It covers every export format. `WasmWorkspaceTests.cs` verifies applied content is exported once and failed expressions do not create partial history. `core-api.test.ts` verifies Node.js serialization does not replay a transform. It also verifies repeated exports use unchanged input.
+`ChapterExportServiceTests.cs` covers pure serialization. `ChapterOutputProjectionServiceTests.cs` covers explicit content transforms before serialization. `WasmWorkspaceTests.cs` verifies applied content is exported once and failed expressions do not create partial history. `core-api.test.ts` verifies the Node.js package applies a transform explicitly and serialization does not replay it.
 
 `tests/ChapterTool.Core.Tests/Session/ExpressionPreviewProjectorTests.cs` verifies typed candidate comparison, chapter and property effects, track scope, frame bases, and complete document equality. `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers expression preview freshness, exact-candidate commit, status, and undo/redo.
 

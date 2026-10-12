@@ -310,7 +310,7 @@ Start with:
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
 - `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
 
-`RuntimeChapterSaveService` applies UI save-file concerns such as output directory selection, generated file path diagnostics, and the selected `ChapterExportOptions.TextEncoding` / `EmitBom` behavior around Core export content.
+`RuntimeChapterSaveService` applies UI save-file concerns such as output directory selection, generated file path diagnostics, and the selected `ChapterSerializationOptions.TextEncoding` / `EmitBom` behavior around Core export content.
 
 If the wiring looks wrong, inspect:
 

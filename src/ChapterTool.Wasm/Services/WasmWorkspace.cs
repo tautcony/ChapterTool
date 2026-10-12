@@ -133,7 +133,7 @@ public sealed partial class WasmWorkspace : IDisposable
                 return false;
             }
 
-            var snapshot = session.CaptureExportSnapshot(BaseChapterSet, CreateExportOptions(), session.CurrentTrackIndex);
+            var snapshot = session.CaptureExportSnapshot(BaseChapterSet, CreateSerializationOptions(), session.CurrentTrackIndex);
             return !session.IsExported(snapshot);
         }
     }
@@ -426,13 +426,13 @@ public sealed partial class WasmWorkspace : IDisposable
     {
         var selected = EffectiveFrameRateOption;
         var rate = sourceRate ?? BaseChapterSet?.FrameRate ?? FrameRateValue.Unknown;
-        if (ResolveSelectedFrameRateOption().IsValid && selected.ExactRate is { } selectedExact)
+        if (ResolveSelectedFrameRateOption().IsValid && selected.Rate.IsKnown)
         {
-            rate = FrameRateValue.Rational(selectedExact);
+            rate = selected.Rate;
         }
-        else if (!rate.IsKnown && selected.ExactRate is { } suggestion)
+        else if (!rate.IsKnown && selected.Rate.IsKnown)
         {
-            rate = FrameRateValue.Rational(suggestion);
+            rate = selected.Rate;
         }
 
         var input = new FramePresentationInput(startTicks, rate, numericFallback);
@@ -1115,7 +1115,7 @@ public sealed partial class WasmWorkspace : IDisposable
             [
                 new HistoryOperationParameter("trackName", track.Name),
                 new HistoryOperationParameter("sourceFps", sourceFps.ToString(), sourceFps.Kind.ToString()),
-                new HistoryOperationParameter("targetFps", target.Value.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+                new HistoryOperationParameter("targetFps", target.Rate.ToString(), target.Rate.Kind.ToString())
             ]));
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
@@ -1125,13 +1125,13 @@ public sealed partial class WasmWorkspace : IDisposable
         }
 
         PreferredFrameRateIndex = selectedFrameRateIndex;
-        AddLog("Info", localizer.Format("Status.ChangedFps", sourceFps, target.Value));
+        AddLog("Info", localizer.Format("Status.ChangedFps", sourceFps, target.Rate.ToDecimal()));
         RefreshDisplay(updateStatus: true, statusKey: "Status.ChangedFpsTo", statusArgs: [target.DisplayName]);
     }
 
     public bool CanChangeSelectedFrameRate =>
         BaseChapterSet is not null
-        && BaseChapterSet.FramesPerSecond > 0
+        && BaseChapterSet.FrameRate.IsKnown
         && selectedFrameRateIndex > 0
         && ResolveSelectedFrameRateOption().IsValid;
 
@@ -1367,8 +1367,8 @@ public sealed partial class WasmWorkspace : IDisposable
         try
         {
             var format = ChapterContentService.FormatAt(SaveFormatIndex);
-            var options = CreateExportOptions();
-            var export = wasmChapterService.Export(BaseChapterSet, options);
+            var options = CreateSerializationOptions();
+            var export = wasmChapterService.Serialize(BaseChapterSet, options);
             diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
             if (!export.Success)
             {
@@ -1412,9 +1412,9 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             // Ensure frames/FPS on the base set are current before export projection.
             var format = ChapterContentService.FormatAt(SaveFormatIndex);
-            var options = CreateExportOptions();
+            var options = CreateSerializationOptions();
             var exportSnapshot = session.CaptureExportSnapshot(BaseChapterSet, options, session.CurrentTrackIndex);
-            var export = wasmChapterService.Export(BaseChapterSet, options);
+            var export = wasmChapterService.Serialize(BaseChapterSet, options);
             diagnostics = WasmWorkspaceProjection.ToDiagnostics(export.Diagnostics);
             if (!export.Success)
             {
@@ -1541,7 +1541,7 @@ public sealed partial class WasmWorkspace : IDisposable
         ClearSelection();
         diagnostics = [];
         SyncUiFromClipSession(rebuildAllGroupOptions: true);
-        RebuildFrameRateChoices(BaseChapterSet ?? new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []));
+        RebuildFrameRateChoices(BaseChapterSet ?? new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []));
         RefreshDisplay(
             updateStatus: true,
             statusKey: "Status.Loaded",
@@ -1580,7 +1580,7 @@ public sealed partial class WasmWorkspace : IDisposable
 
         if (BaseChapterSet is not null)
         {
-            FramesPerSecond = BaseChapterSet.FramesPerSecond;
+            FramesPerSecond = BaseChapterSet.FrameRate.ToDouble();
         }
     }
 
@@ -1606,8 +1606,8 @@ public sealed partial class WasmWorkspace : IDisposable
             .Select(index => rows[index].Id).ToHashSet();
         var framed = ApplyFrames(BaseChapterSet);
         appliedFrameRateOption = framed.SelectedOption;
-        exactFramesPerSecond = framed.FramesPerSecond;
-        FramesPerSecond = (double)framed.FramesPerSecond;
+        exactFramesPerSecond = framed.Rate.ToDecimal();
+        FramesPerSecond = framed.Rate.ToDouble();
         RebuildFrameRateChoices(BaseChapterSet);
         var displayContent = framed.Info;
         rows =
@@ -1673,7 +1673,7 @@ public sealed partial class WasmWorkspace : IDisposable
                 continue;
             }
 
-            if (option is { IsValid: false, LegacyMplsCode: 5 })
+            if (option is { IsValid: false, MplsFrameRateCode: 5 })
             {
                 // Skip reserved placeholder (matches Avalonia combo useful entries).
                 continue;
@@ -1700,22 +1700,13 @@ public sealed partial class WasmWorkspace : IDisposable
         _ = info;
     }
 
-    private ChapterExportOptions CreateExportOptions() =>
+    private ChapterSerializationOptions CreateSerializationOptions() =>
         new(
             Format: ChapterContentService.FormatAt(SaveFormatIndex),
             XmlLanguage: XmlLanguage,
             SourceFileName: BaseChapterSet?.SourceName,
-            AutoGenerateNames: false,
-            UseTemplateNames: false,
-            ChapterNameTemplateText: string.Empty,
-            OrderShift: 0,
-            ApplyExpression: false,
-            Expression: "t",
-            ExpressionPresetId: string.Empty,
-            ExpressionSourceName: string.Empty,
             TextEncoding: TextEncoding,
-            EmitBom: EmitBom,
-            ProjectOutput: false) { ComputationRate = SelectedComputationRate };
+            EmitBom: EmitBom) { ComputationRate = SelectedComputationRate };
 
     private void ClearSession(bool keepPath = false, bool keepReload = false)
     {

@@ -41,11 +41,11 @@
 - [x] 5.5 Verify Chinese, English, and Japanese labels/rows, accessibility, and normal/editor/preview frame width. Cover empty, valid, invalid, pending, and stale states.
 - [x] 5.6 Add real-window Headless and browser workflow assertions. Capture default/wide/narrow screenshots under `artifacts/exact-frame-rate-domain/`; use real browser key events for changed editing shortcuts.
 
-## 6. Node exact facade and compatibility
+## 6. Node exact API
 
 - [x] 6.1 Add discriminated rate and Int64 tick-string DTOs with strict validation and canonical formatting. Register them in `NodeJsonContext`; test values above JavaScript safe-integer range.
-- [x] 6.2 Add `tool.exact` content APIs and typed JSExport bindings for import/edit/shift/zones, combine/append, detection/frame projection, conversion, expressions, serialization, one-shot export, and conversion tools. Adapt to typed snapshots; preserve null versus known-zero duration and reuse canonical Core services.
-- [x] 6.3 Preserve existing facade signatures and numeric DTO shapes. Verify callers can still mutate FPS/seconds fields; document the precision/provenance downgrade when using legacy numeric round-trips.
+- [x] 6.2 Expose typed content APIs through `ChapterTool` for import/edit/shift/zones, combine/append, detection/frame projection, conversion, expressions, and pure serialization. Preserve null versus known-zero duration and reuse canonical Core services.
+- [x] 6.3 Remove numeric chapter/rate DTOs and transform-bearing `project`/`export` facades in 23.x. Keep format, import, language, and encoding catalogs.
 - [x] 6.4 Update handwritten TypeScript types/wrappers and generate declarations through the package build. Add type and runtime coverage for exact inputs, outputs, nullable ends, Unknown, and malformed payloads.
 - [x] 6.5 Run packaged Node round-trips for exact/approximate import, edits, conversion, and output. Verify ticks, rate kind, reduction, invalid/default rates, scalar mixed-rate conflicts, and diagnostic behavior.
 
@@ -60,7 +60,7 @@
 
 - [x] 8.1 Add cross-layer regressions for MPLS/IFO exact import -> edit -> candidate -> history -> conversion -> export. Include fractional frames, large ticks, both exact/approximate conversion directions, and 500 reversible arithmetic/conversion cycles with loss below one frame.
 - [x] 8.2 Add external compiled Core consumers and packed Node consumers for legacy and typed contracts. Verify the NuGet consumer checks in `scripts/ci/verify-nuget.py` cover the retained surface.
-- [x] 8.3 Update Core, CLI, and Node API documentation with compatibility lifetime, exact migration examples, wire shapes, Auto policy, mixed-rate limits, Lua limits, and rounding boundaries.
+- [x] 8.3 Update Core, CLI, and Node API documentation with removed API surfaces, typed wire shapes, Auto policy, mixed-rate limits, Lua limits, and rounding boundaries.
 - [x] 8.4 Update relevant code-map ownership, entry points, and primary test references. If locales change, generate Wasm JSON with `uv run --project scripts scripts/localization/axaml-to-json.py` and verify with `--check`.
 - [x] 8.5 Run `dotnet test ChapterTool.slnx --no-restore` with test projects in separate sequential processes. Run affected browser, Node package/type/declaration, and packed NuGet checks through the maintained CI entry points.
 - [x] 8.6 Run `openspec validate exact-frame-rate-domain --strict` and validate all specs. Before any requested push, run `python scripts/ci/run.py` and verify required remote jobs for the pushed SHA.

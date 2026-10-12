@@ -136,7 +136,7 @@ public sealed class DiscImporterTests
         var info = entry.ChapterSet;
         Assert.Equal(ChapterImportFormat.Mpls, info.ImportFormat);
         Assert.Equal("00002", info.SourceName);
-        Assert.Equal(24, info.FramesPerSecond);
+        Assert.Equal(24, info.FrameRate.ToDouble());
         Assert.Equal(46, info.Chapters.Count);
         Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);
         Assert.Equal(TimeSpan.FromMilliseconds(14417), info.Chapters[1].StartTime);
@@ -161,7 +161,7 @@ public sealed class DiscImporterTests
         Assert.True(result.Success, string.Join(Environment.NewLine, result.Diagnostics.Select(diagnostic => $"{diagnostic.Code}: {diagnostic.Message}")));
         var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal("00001", info.SourceName);
-        Assert.Equal(24000d / 1001d, info.FramesPerSecond);
+        Assert.Equal(24000d / 1001d, info.FrameRate.ToDouble());
         Assert.Equal(MplsChapterImporter.PtsToTime(163027149 - 90000), info.Duration);
         Assert.Equal(MplsTimes(0, 41963170, 96516418, 96831733, 98138038, 102186457, 131841081, 158573411, 162621830), info.Chapters.Select(chapter => chapter.StartTime));
     }
@@ -178,7 +178,7 @@ public sealed class DiscImporterTests
         var infos = result.Groups.Single().Entries.Select(entry => entry.ChapterSet).ToArray();
         Assert.Equal(9, infos.Length);
         Assert.Equal(["00005", "00006&00007", "00008", "00009&00010", "00011", "00012", "00013&00014", "00015", "00016"], infos.Select(info => info.SourceName));
-        Assert.All(infos, info => Assert.Equal(24000d / 1001d, info.FramesPerSecond));
+        Assert.All(infos, info => Assert.Equal(24000d / 1001d, info.FrameRate.ToDouble()));
         Assert.Equal(TimeSpan.Zero, infos[1].Chapters.Single().StartTime);
         Assert.Equal(MplsTimes(0, 20609964), infos[2].Chapters.Select(chapter => chapter.StartTime));
         Assert.Equal(MplsTimes(0, 4185431, 8233850, 23263865), infos[5].Chapters.Select(chapter => chapter.StartTime));
@@ -752,7 +752,7 @@ public sealed class DiscImporterTests
         Assert.NotNull(chapterSet);
         Assert.Equal("00001", chapterSet.SourceName);
         Assert.Equal(ChapterImportFormat.Mpls, chapterSet.ImportFormat);
-        Assert.Equal(24000d / 1001d, chapterSet.FramesPerSecond, 3);
+        Assert.Equal(24000d / 1001d, chapterSet.FrameRate.ToDouble(), 3);
         Assert.Equal(9, chapterSet.Chapters.Count);
     }
 

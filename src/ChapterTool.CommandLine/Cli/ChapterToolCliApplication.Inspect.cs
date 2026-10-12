@@ -68,7 +68,7 @@ public sealed partial class ChapterToolCliApplication
             var defaultMarker = entryIndex == group.DefaultEntryIndex ? " default" : string.Empty;
             yield return string.Create(
                 CultureInfo.InvariantCulture,
-                $"  ({entryIndex}) id={entry.Id} name=\"{entry.DisplayName}\" chapters={entry.ChapterSet.Chapters.Count(static chapter => !chapter.IsSeparator)} fps={entry.ChapterSet.FramesPerSecond:0.###} rateKind={entry.ChapterSet.FrameRate.Kind} rate={entry.ChapterSet.FrameRate}{defaultMarker}");
+                $"  ({entryIndex}) id={entry.Id} name=\"{entry.DisplayName}\" chapters={entry.ChapterSet.Chapters.Count(static chapter => !chapter.IsSeparator)} fps={entry.ChapterSet.FrameRate.ToDecimal():0.###} rateKind={entry.ChapterSet.FrameRate.Kind} rate={entry.ChapterSet.FrameRate}{defaultMarker}");
         }
     }
 }

@@ -31,7 +31,7 @@ public sealed class SampleChapterNameTemplateTests
             "Title",
             "source",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(6),
             [
                 .. Enumerable.Range(1, 6)

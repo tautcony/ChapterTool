@@ -36,7 +36,7 @@ public sealed partial class MainWindowViewModel
             var label = ClipOptions[index].DisplayName;
             var source = CurrentInfo.SourceName ?? string.Empty;
             var sourceType = ChapterImportFormats.DisplayName(CurrentInfo.ImportFormat);
-            var fps = $"{CurrentInfo.FramesPerSecond:0.###}";
+            var fps = $"{CurrentInfo.FrameRate.ToDecimal():0.###}";
             Log($"Selected source option: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={CurrentInfo.Chapters.Count}, fps={fps}",
                 "Edit",
                 ("index", index), ("label", label), ("source", source), ("sourceType", sourceType),
@@ -281,7 +281,6 @@ public sealed partial class MainWindowViewModel
             OnPropertyChanged(nameof(AutoGenerateNames));
             OnPropertyChanged(nameof(UseTemplateNames));
             OnPropertyChanged(nameof(OrderShift));
-            OnPropertyChanged(nameof(ApplyExpression));
         }
 
         if (preview.Operation == "Apply expression" && outcome.Kind == TransactionOutcomeKind.Conflict)
@@ -427,7 +426,7 @@ public sealed partial class MainWindowViewModel
         SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
         if (logResult)
         {
-            var message = $"Frame info updated: option={appliedOption.DisplayName}, fps={result.FramesPerSecond:0.###}, round={RoundFrames}, chapters={CurrentInfo.Chapters.Count}";
+            var message = $"Frame info updated: option={appliedOption.DisplayName}, fps={result.Rate.ToDecimal():0.###}, round={RoundFrames}, chapters={CurrentInfo.Chapters.Count}";
             if (detection is not null)
             {
                 message += $", autoDetected=true, confidence={detection.Confidence}";
@@ -435,7 +434,7 @@ public sealed partial class MainWindowViewModel
 
             Log(message, "Edit",
                 ("option", appliedOption.DisplayName),
-                ("fps", $"{result.FramesPerSecond:0.###}"),
+                ("fps", $"{result.Rate.ToDecimal():0.###}"),
                 ("round", RoundFrames),
                 ("chapters", CurrentInfo.Chapters.Count),
                 ("autoDetected", detection is not null),

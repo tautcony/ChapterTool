@@ -24,21 +24,6 @@ public sealed class FrameRateService : IFrameRateService
     /// </summary>
     public IReadOnlyList<FrameRateOption> Options => FrameRateOptions;
 
-    /// <summary>
-    /// Executes the FindByValue operation.
-    /// </summary>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public static FrameRateOption FindByValue(decimal framesPerSecond)
-    {
-        var match = FrameRateOptions.FirstOrDefault(entry =>
-            entry.IsValid && Math.Abs(entry.Value - framesPerSecond) < 0.00001m)
-            ?? FrameRateOptions[0];
-
-        // A tolerant numeric match does not prove which rational rate the caller intended.
-        return match with { Rate = framesPerSecond > 0 ? FrameRateValue.Approximate(framesPerSecond) : FrameRateValue.Unknown };
-    }
-
     /// <summary>Returns a catalog entry or a stable custom entry for the canonical rate.</summary>
     public FrameRateOption FindByRate(FrameRateValue frameRate) =>
         !frameRate.IsKnown ? FrameRateOptions[0]

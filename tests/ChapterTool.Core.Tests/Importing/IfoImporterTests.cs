@@ -26,7 +26,7 @@ public sealed class IfoImporterTests
         foreach (var entry in Assert.Single(result.Groups).Entries)
         {
             var set = entry.ChapterSet;
-            var frames = service.UpdateFrames(set, FrameRateService.FindByValue((decimal)set.FramesPerSecond), round: true, tolerance: 0.01m);
+            var frames = service.UpdateFrames(set, service.FindByRate(set.FrameRate), round: true, tolerance: 0.01m);
 
             Assert.Equal(FrameAccuracy.Accurate, frames.Chapters[0].FrameAccuracy);
             inexactCount += frames.Chapters.Count(chapter => chapter.FrameAccuracy == FrameAccuracy.Inexact);
@@ -72,7 +72,7 @@ public sealed class IfoImporterTests
         var info = Assert.Single(infos);
         Assert.Equal("VTS_33_1", info.SourceName);
         Assert.Equal(47, info.Chapters.Count);
-        Assert.Equal(25, info.FramesPerSecond);
+        Assert.Equal(25, info.FrameRate.ToDouble());
         Assert.Equal(FrameRateValue.Rational(25, 1), info.FrameRate);
         Assert.Equal(TimeSpan.FromMilliseconds(1411200), info.Duration);
         Assert.Equal(TimeSpan.Zero, info.Chapters[0].StartTime);

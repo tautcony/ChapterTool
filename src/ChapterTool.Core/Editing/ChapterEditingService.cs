@@ -42,16 +42,6 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, diagnostics);
     }
 
-    /// <summary>Adapts retained decimal input to a canonical approximate rate.</summary>
-    public ChapterEditResult EditFrame(ChapterSet info, int index, string text, decimal framesPerSecond) =>
-        FrameRateValue.TryFromDecimal(framesPerSecond, metadata: false, out var rate, out var diagnostic)
-            ? EditFrame(info, index, text, rate) : new ChapterEditResult(info, [diagnostic!]);
-
-    /// <summary>Adapts retained authoritative rational input without a numeric round-trip.</summary>
-    public ChapterEditResult EditFrame(ChapterSet info, int index, string text, ChapterFrameRate framesPerSecond) =>
-        FrameRateValue.TryRational(framesPerSecond, out var rate, out var diagnostic)
-            ? EditFrame(info, index, text, rate) : new ChapterEditResult(info, [diagnostic!]);
-
     /// <summary>Edits a finite decimal frame count at the nearest-tick boundary.</summary>
     public ChapterEditResult EditFrame(ChapterSet info, int index, string text, FrameRateValue framesPerSecond)
     {
@@ -204,16 +194,6 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
         return new ChapterEditResult(info with { Chapters = chapters }, []);
     }
 
-    /// <summary>Adapts retained decimal frame-shift input.</summary>
-    public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, decimal framesPerSecond) =>
-        FrameRateValue.TryFromDecimal(framesPerSecond, metadata: false, out var rate, out var diagnostic)
-            ? ShiftFramesForward(info, frames, rate) : new ChapterEditResult(info, [diagnostic!]);
-
-    /// <summary>Adapts retained rational frame-shift input.</summary>
-    public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, ChapterFrameRate framesPerSecond) =>
-        FrameRateValue.TryRational(framesPerSecond, out var rate, out var diagnostic)
-            ? ShiftFramesForward(info, frames, rate) : new ChapterEditResult(info, [diagnostic!]);
-
     /// <summary>Shifts starts on a canonical frame grid using the retained scalar negative-row policy.</summary>
     public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, FrameRateValue framesPerSecond)
     {
@@ -239,17 +219,6 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
                 ChapterDiagnosticCode.FrameConversionOverflow, "The frame shift exceeds the supported time range.")]);
         }
     }
-
-    /// <summary>
-    /// Executes the CreateZones operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="indexes">The zero-based chapter indexes.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, decimal framesPerSecond) =>
-        FrameRateValue.TryFromDecimal(framesPerSecond, metadata: false, out var rate, out var diagnostic)
-            ? CreateZones(info, indexes, rate) : new ChapterZonesResult(string.Empty, [diagnostic!]);
 
     /// <summary>Creates zones from ticks on an explicitly resolved canonical frame grid.</summary>
     public ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, FrameRateValue framesPerSecond)

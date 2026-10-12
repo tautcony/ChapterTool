@@ -28,13 +28,8 @@ public sealed class ChapterOutputProjectionService
     /// <param name="info">The chapter data to process.</param>
     /// <param name="options">The export options.</param>
     /// <returns>The operation result.</returns>
-    public ChapterOutputProjectionResult Project(ChapterSet info, ChapterExportOptions options)
+    public ChapterOutputProjectionResult Project(ChapterSet info, ChapterOutputProjectionOptions options)
     {
-        if (!options.ProjectOutput)
-        {
-            return new ChapterOutputProjectionResult(info, [.. info.Chapters.Where(static chapter => !chapter.IsSeparator)], []);
-        }
-
         var diagnostics = new List<ChapterDiagnostic>();
         var expressionResult = new ChapterExpressionService(expressionEngine).Apply(info, options.ApplyExpression, options.Expression, options.ComputationRate);
         diagnostics.AddRange(expressionResult.Diagnostics);

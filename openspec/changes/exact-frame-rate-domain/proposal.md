@@ -1,5 +1,9 @@
 ## Why
 
+**Current contract:** `remove-v23-compatibility-surfaces` supersedes the compatibility
+and Node facade decisions below. The selected numeric Core/Node APIs and transform
+export options are removed in 23.x. See its design and API inventory.
+
 Frame rates pass through `double`, `decimal`, and optional rational fields. Adapters can create a rational from a rounded numeric FPS value. Exact source rates can then become approximate during editing or export. The current proposal also removes public result fields without a compatibility path and leaves exact API inputs undefined.
 
 Core needs one canonical rate value. Hosts and external callers need explicit rules for source metadata, computation choices, detection suggestions, and output precision.
@@ -10,7 +14,8 @@ Core needs one canonical rate value. Hosts and external callers need explicit ru
 - Preserve rate kind and payload through import, documents, segments, candidates, history, transforms, and export snapshots.
 - Use timestamp ticks and exact integer arithmetic until a declared rounding boundary. A decimal coefficient can participate in integer arithmetic without becoming an authoritative source rational.
 - Replace internal models, service signatures, host state, and catalog selections directly with the canonical type. Keep compatibility only for manual numeric input and established external API signatures/result fields.
-- Keep the current Node facade and JSON shapes. Add `tool.exact` for typed rate inputs and results with lossless tick strings. Both facades must share Core behavior.
+- Make the typed Node API the package entry point. Use lossless tick and rate strings.
+- Keep non-rate catalogs and shared utility metadata available through the package.
 - Add CLI `--frame-rate-ratio N/D`. Keep `--frame-rate` as approximate numeric input. The options must be mutually exclusive and bound through DotMake.CommandLine.
 - Keep Auto detection available for suggested display. Unknown or mixed-rate frame operations must require an explicit computation rate. Time-only operations must remain available.
 - Preserve original source rates separately from current rates after an explicit FPS conversion. Recompute aggregate rates across all participating segments.
@@ -20,7 +25,7 @@ Core needs one canonical rate value. Hosts and external callers need explicit ru
 
 ### New Capabilities
 
-- `public-frame-rate-contracts`: Define typed public rate inputs, lossless Node wire data, legacy compatibility, and error contracts.
+- `public-frame-rate-contracts`: Define canonical public rate inputs, lossless Node wire data, and error contracts.
 
 ### Modified Capabilities
 

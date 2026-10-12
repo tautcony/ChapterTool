@@ -59,8 +59,8 @@ public static class ChapterToolRuntimeComposition
             toolLocator ?? new ExternalToolLocator(settingsStore, [.. PathSearchDirectories()]),
             processRunner ?? new ProcessRunner());
 
-    public static ChapterExportService CreateExportService(IChapterExpressionEngine? expressionEngine = null) =>
-        new(new ChapterTimeFormatter(), expressionEngine ?? new LuaExpressionScriptService());
+    public static ChapterExportService CreateExportService() =>
+        new(new ChapterTimeFormatter());
 
     public static IMediaChapterReader CreateMp4ChapterReader() => new AtlMp4ChapterReader();
 

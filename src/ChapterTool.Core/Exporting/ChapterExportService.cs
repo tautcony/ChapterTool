@@ -8,8 +8,6 @@ using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
-using ChapterTool.Core.Transform.Expressions;
-using LuaExpressionScriptService = ChapterTool.Core.Transform.Expressions.Lua.LuaExpressionScriptService;
 
 namespace ChapterTool.Core.Exporting;
 
@@ -19,59 +17,14 @@ namespace ChapterTool.Core.Exporting;
 public sealed partial class ChapterExportService
 {
     private readonly IChapterTimeFormatter timeFormatter;
-    private readonly IChapterExpressionEngine expressionEngine;
 
     /// <summary>
     /// Exports ChapterTool chapter data to supported chapter formats.
     /// </summary>
     /// <param name="timeFormatter">The chapter time formatter.</param>
-    /// <param name="expressionEngine">The chapter expression engine.</param>
-    public ChapterExportService(IChapterTimeFormatter timeFormatter, IChapterExpressionEngine? expressionEngine = null)
+    public ChapterExportService(IChapterTimeFormatter timeFormatter)
     {
         this.timeFormatter = timeFormatter;
-        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
-    }
-
-    /// <summary>Exports chapter data through the legacy transform-options compatibility adapter.</summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="options">The export options.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterExportResult Export(ChapterSet info, ChapterExportOptions options) => ExportCompatibility(info, options);
-
-    /// <summary>
-    /// Applies the legacy output projection once, then serializes that snapshot.
-    /// Prefer an explicit content operation followed by
-    /// <see cref="Serialize(ChapterTool.Core.Models.EditableChapterDocument, ChapterSerializationOptions)"/>
-    /// when the transformed content must be retained or serialized more than once. This adapter
-    /// entry point remains supported throughout package major version 23; removal requires a
-    /// separately versioned change.
-    /// </summary>
-    /// <param name="info">The source chapter data.</param>
-    /// <param name="options">Legacy transform and serialization options.</param>
-    /// <returns>The serialized content and any diagnostics.</returns>
-    public ChapterExportResult ExportCompatibility(ChapterSet info, ChapterExportOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(info);
-        ArgumentNullException.ThrowIfNull(options);
-        var projection = options.ProjectOutput
-            ? new ChapterOutputProjectionService(expressionEngine).Project(info, options)
-            : new ChapterOutputProjectionResult(info, []);
-        if (projection.Diagnostics.Any(static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidExpressionTime
-            || diagnostic.Code == ChapterDiagnosticCode.FrameConversionOverflow))
-        {
-            return new ChapterExportResult(false, string.Empty, string.Empty, projection.Diagnostics);
-        }
-
-        var output = options.Format == ChapterExportFormat.Json
-            ? projection.Info
-            : projection.Info with { Chapters = projection.OutputChapters };
-        var result = Serialize(output, new ChapterSerializationOptions(
-            options.Format, options.XmlLanguage, options.SourceFileName, options.TextEncoding) { ComputationRate = options.ComputationRate });
-
-        return result with
-        {
-            Diagnostics = [.. result.Diagnostics, .. projection.Diagnostics]
-        };
     }
 
     /// <summary>Serializes the supplied immutable document snapshot without applying transforms.</summary>

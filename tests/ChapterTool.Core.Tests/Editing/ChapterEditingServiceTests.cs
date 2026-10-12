@@ -22,7 +22,7 @@ public sealed class ChapterEditingServiceTests
     [Fact]
     public void EditFrame_uses_current_fps()
     {
-        var result = service.EditFrame(Sample(), 1, "240 frames", 24);
+        var result = service.EditFrame(Sample(), 1, "240 frames", FrameRateValue.Rational(24, 1));
 
         Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].StartTime);
         Assert.Equal("240", result.ChapterSet.Chapters[1].FramesInfo);
@@ -32,7 +32,7 @@ public sealed class ChapterEditingServiceTests
     [Fact]
     public void EditFrame_uses_decimal_tick_conversion_for_fractional_frame_rates()
     {
-        var result = service.EditFrame(Sample(), 1, "240 frames", 24000m / 1001m);
+        var result = service.EditFrame(Sample(), 1, "240 frames", FrameRateValue.Rational(24000, 1001));
 
         Assert.Equal(100_100_000, result.ChapterSet.Chapters[1].StartTime.Ticks);
     }
@@ -54,7 +54,7 @@ public sealed class ChapterEditingServiceTests
                 : chapter).ToArray()
         };
 
-        var result = service.EditFrame(source, 1, frameText, new ChapterFrameRate(30_000, 1_001));
+        var result = service.EditFrame(source, 1, frameText, FrameRateValue.Rational(30_000, 1_001));
 
         Assert.Same(source, result.ChapterSet);
         Assert.Equal(1_499_833_334, result.ChapterSet.Chapters[1].StartTime.Ticks);
@@ -79,7 +79,7 @@ public sealed class ChapterEditingServiceTests
                 : chapter).ToArray()
         };
 
-        var result = service.EditFrame(source, 1, frameText, 30000m / 1001m);
+        var result = service.EditFrame(source, 1, frameText, FrameRateValue.Approximate(30000m / 1001m));
 
         Assert.Same(source, result.ChapterSet);
         Assert.Equal(1_499_833_334, result.ChapterSet.Chapters[1].StartTime.Ticks);
@@ -94,7 +94,7 @@ public sealed class ChapterEditingServiceTests
     {
         var sample = Sample();
 
-        var result = service.EditFrame(sample, 1, text, framesPerSecond);
+        var result = service.EditFrame(sample, 1, text, FrameRateValue.Approximate(framesPerSecond));
 
         Assert.Equal(sample.Chapters[1].StartTime, result.ChapterSet.Chapters[1].StartTime);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameText);
@@ -172,7 +172,7 @@ public sealed class ChapterEditingServiceTests
     [Fact]
     public void ShiftFramesForward_subtracts_shift_and_removes_negative_chapters()
     {
-        var result = service.ShiftFramesForward(Sample(), 240, 24);
+        var result = service.ShiftFramesForward(Sample(), 240, FrameRateValue.Rational(24, 1));
 
         Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[0].StartTime);
         Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].StartTime);
@@ -192,7 +192,7 @@ public sealed class ChapterEditingServiceTests
             ]
         };
 
-        var result = service.CreateZones(info, new HashSet<int> { 0, 1 }, 24);
+        var result = service.CreateZones(info, new HashSet<int> { 0, 1 }, FrameRateValue.Rational(24, 1));
 
         Assert.Equal("--zones 0,239,/240,479,", result.Zones);
         Assert.Empty(result.Diagnostics);
@@ -203,7 +203,7 @@ public sealed class ChapterEditingServiceTests
             "Title",
             "source",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(30),
             [
                 new Chapter(1, TimeSpan.FromSeconds(5), "Intro"),

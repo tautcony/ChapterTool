@@ -108,7 +108,7 @@ public sealed class ChapterToolCliApplicationTests
     {
         var store = new ChapterToolSettingsStore(Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
         var registry = ChapterToolRuntimeComposition.CreateImporterRegistry(store);
-        var export = ChapterToolRuntimeComposition.CreateExportService(expressionEngine: null);
+        var export = ChapterToolRuntimeComposition.CreateExportService();
 
         Assert.NotNull(registry);
         Assert.NotNull(export);
@@ -124,15 +124,15 @@ public sealed class ChapterToolCliApplicationTests
     public void SharedExportFactory_without_expression_matches_cli_scope()
     {
         var export = ChapterToolRuntimeComposition.CreateExportService();
-        var result = export.Export(
+        var result = export.Serialize(
             new ChapterSet(
                 "t",
                 "s",
                 ChapterImportFormat.Ogm,
-                24,
+                FrameRateValue.Approximate(24m),
                 TimeSpan.FromSeconds(1),
                 [new Chapter(1, TimeSpan.Zero, "Intro")]),
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: false));
+            new ChapterSerializationOptions(ChapterExportFormat.Txt));
         Assert.True(result.Success);
     }
 
@@ -1029,7 +1029,7 @@ public sealed class ChapterToolCliApplicationTests
         new(source, entries);
 
     private static ChapterImportEntry Entry(string id, string name) =>
-        new(id, name, new ChapterSet(name, name, ChapterImportFormat.Ogm, 24, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, name)]));
+        new(id, name, new ChapterSet(name, name, ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, name)]));
 
     private sealed class ThrowingCancellationImporter : IChapterImporter
     {

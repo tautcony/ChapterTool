@@ -8,38 +8,6 @@ namespace ChapterTool.Core.Transform;
 /// </summary>
 public sealed class ChapterFpsTransformService
 {
-    /// <summary>
-    /// Executes the ChangeFps operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="sourceFps">The source frame rate.</param>
-    /// <param name="targetFps">The target frame rate.</param>
-    /// <returns>The operation result.</returns>
-    public static ChangeFpsResult ChangeFps(ChapterSet info, decimal sourceFps, decimal targetFps)
-    {
-        ArgumentNullException.ThrowIfNull(info);
-        if (!FrameRateValue.TryFromDecimal(sourceFps, metadata: false, out var source, out var diagnostic)
-            || !FrameRateValue.TryFromDecimal(targetFps, metadata: false, out var target, out diagnostic))
-        {
-            return new ChangeFpsResult(false, info, [diagnostic!]);
-        }
-
-        return ChangeFps(info, source, target);
-    }
-
-    /// <summary>Changes chapter timing using authoritative rational source and target rates.</summary>
-    public static ChangeFpsResult ChangeFps(ChapterSet info, ChapterFrameRate sourceFps, ChapterFrameRate targetFps)
-    {
-        ArgumentNullException.ThrowIfNull(info);
-        if (!FrameRateValue.TryRational(sourceFps, out var source, out var diagnostic)
-            || !FrameRateValue.TryRational(targetFps, out var target, out diagnostic))
-        {
-            return new ChangeFpsResult(false, info, [diagnostic!]);
-        }
-
-        return ChangeFps(info, source, target);
-    }
-
     /// <summary>Changes timing with canonical rates and rejects the whole result on invalid bounds.</summary>
     public static ChangeFpsResult ChangeFps(ChapterSet info, FrameRateValue sourceFps, FrameRateValue targetFps)
     {

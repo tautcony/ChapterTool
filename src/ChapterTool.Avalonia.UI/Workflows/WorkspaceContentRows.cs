@@ -51,5 +51,5 @@ internal sealed class WorkspaceContentRows(
     }
 
     private static ChapterSet EmptyChapterSet() =>
-        new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+        new(string.Empty, null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []);
 }

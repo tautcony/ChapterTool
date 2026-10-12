@@ -7,7 +7,8 @@ public sealed record ChapterSerializationOptions(
     ChapterExportFormat Format,
     string? XmlLanguage = null,
     string? SourceFileName = null,
-    OutputTextEncoding TextEncoding = OutputTextEncoding.Utf8)
+    OutputTextEncoding TextEncoding = OutputTextEncoding.Utf8,
+    bool EmitBom = false)
 {
     /// <summary>Gets an optional captured computation rate for frame-number serialization.</summary>
     public FrameRateValue? ComputationRate { get; init; }

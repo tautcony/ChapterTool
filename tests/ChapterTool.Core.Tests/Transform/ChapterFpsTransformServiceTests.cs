@@ -11,11 +11,11 @@ public sealed class ChapterFpsTransformServiceTests
     {
         var info = Sample();
 
-        var result = ChapterFpsTransformService.ChangeFps(info, 24m, 48m);
+        var result = ChapterFpsTransformService.ChangeFps(info, FrameRateValue.Approximate(24m), FrameRateValue.Approximate(48m));
 
         Assert.True(result.Success);
         Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[1].StartTime);
-        Assert.Equal(48, result.Info.FramesPerSecond);
+        Assert.Equal(FrameRateValue.Approximate(48m), result.Info.FrameRate);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class ChapterFpsTransformServiceTests
             ]
         };
 
-        var result = ChapterFpsTransformService.ChangeFps(info, 24m, 48m);
+        var result = ChapterFpsTransformService.ChangeFps(info, FrameRateValue.Approximate(24m), FrameRateValue.Approximate(48m));
 
         Assert.True(result.Success);
         Assert.Equal(TimeSpan.FromSeconds(5), result.Info.Chapters[0].StartTime);
@@ -48,7 +48,7 @@ public sealed class ChapterFpsTransformServiceTests
             Chapters = [new Chapter(1, timestamp, "Late")]
         };
 
-        var result = ChapterFpsTransformService.ChangeFps(info, source, target);
+        var result = ChapterFpsTransformService.ChangeFps(info, FrameRateValue.Rational(source), FrameRateValue.Rational(target));
 
         Assert.True(result.Success);
         Assert.Equal(TimeSpan.FromTicks(800_800_000), result.Info.Chapters[0].StartTime);
@@ -60,7 +60,7 @@ public sealed class ChapterFpsTransformServiceTests
     {
         var info = Sample();
 
-        var result = ChapterFpsTransformService.ChangeFps(info, 0, 24m);
+        var result = ChapterFpsTransformService.ChangeFps(info, FrameRateValue.Unknown, FrameRateValue.Approximate(24m));
 
         Assert.False(result.Success);
         Assert.Same(info, result.Info);
@@ -72,7 +72,7 @@ public sealed class ChapterFpsTransformServiceTests
             "Title",
             "source",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(20),
             [
                 new Chapter(1, TimeSpan.Zero, "Intro"),
@@ -138,7 +138,7 @@ public sealed class ChapterFpsTransformServiceTests
     public void Default_rational_and_unknown_computation_rates_return_diagnostics()
     {
         var input = Sample();
-        var result = ChapterFpsTransformService.ChangeFps(input, default(ChapterFrameRate), new ChapterFrameRate(24, 1));
+        var result = ChapterFpsTransformService.ChangeFps(input, FrameRateValue.Unknown, FrameRateValue.Rational(24, 1));
         Assert.False(result.Success);
         Assert.Same(input, result.Info);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);

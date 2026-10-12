@@ -26,7 +26,7 @@ internal static class Program
         Require(editing.EditFrame(legacy, index: 0, text: "24", framesPerSecond: 24m).Diagnostics.Count == 0);
         Require(ChapterFpsTransformService.ChangeFps(legacy, sourceFps: 24m, targetFps: 25m).Success);
         var catalog = new FrameRateService();
-        var option = new FrameRateOption(Code: "external", DisplayName: "External", Value: 24m, IsValid: true, LegacyMplsCode: -1);
+        var option = new FrameRateOption(Code: "external", DisplayName: "External", Value: 24m, IsValid: true, MplsFrameRateCode: -1);
         var (_, _, projectedFps, valid, code, projectedExact) = option;
         Require(projectedFps == 24 && valid && code == -1 && projectedExact is null);
         var frameResult = catalog.UpdateFrames(rational, catalog.FindByCode("Auto"), true, 0.01m);

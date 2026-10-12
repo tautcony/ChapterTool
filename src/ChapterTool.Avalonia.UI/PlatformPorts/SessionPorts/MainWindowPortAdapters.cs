@@ -51,8 +51,6 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
 
     public string Expression => owner.Workspace.OperationDrafts.Expression;
 
-    public bool ApplyExpression => false;
-
     public string ExpressionPresetId => owner.Workspace.OperationDrafts.ExpressionPresetId;
 
     public string ExpressionSourceName => owner.Workspace.OperationDrafts.ExpressionSourceName;
@@ -69,7 +67,6 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         var text = await File.ReadAllTextAsync(path, cancellationToken);
         var script = string.IsNullOrWhiteSpace(text) ? "t" : text;
         owner.Expression = script;
-        owner.ApplyExpression = false;
         owner.ExpressionPresetId = string.Empty;
         owner.ExpressionSourceName = Path.GetFileName(path);
         notifications.RefreshExpressionFields();
@@ -82,29 +79,6 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
                 ("path", ExpressionSourceName));
         }
 
-        return diagnostic;
-    }
-
-    public ChapterDiagnostic? ApplyLuaExpressionSettings(
-        string expression,
-        bool applyExpression,
-        string expressionPresetId,
-        string expressionSourceName)
-    {
-        owner.Workspace.SetExpressionOperationDrafts(expression, applyExpression: false, expressionPresetId, expressionSourceName);
-        notifications.RefreshExpressionFields();
-
-        var diagnostic = ValidateLuaExpressionScript(Expression, logDiagnostics: true);
-        if (diagnostic is null)
-        {
-            owner.SetStatus("Status.Updated");
-        }
-        else
-        {
-            owner.SetStatus(null, diagnostic);
-        }
-
-        notifications.RefreshStatus();
         return diagnostic;
     }
 
@@ -293,7 +267,6 @@ public sealed class MainShellNotificationPort(MainWindowViewModel owner) : IMain
     public void RefreshExpressionFields()
     {
         owner.NotifyPropertyChanged(nameof(MainWindowViewModel.Expression));
-        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ApplyExpression));
         owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionPresetId));
         owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionSourceName));
     }

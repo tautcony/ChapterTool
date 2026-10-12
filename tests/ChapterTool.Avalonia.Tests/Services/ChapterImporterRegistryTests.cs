@@ -207,7 +207,7 @@ public sealed class ChapterImporterRegistryTests
         public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
         {
             LastRequest = request;
-            var info = new ChapterSet("title", request.Path, ChapterImportFormat.Unknown, 24, TimeSpan.Zero, []);
+            var info = new ChapterSet("title", request.Path, ChapterImportFormat.Unknown, FrameRateValue.Approximate(24m), TimeSpan.Zero, []);
             var entry = new ChapterImportEntry("0", "test", info);
             return ValueTask.FromResult(new ChapterImportResult(true, [new ChapterImportSource(request.Path, [entry])], []));
         }

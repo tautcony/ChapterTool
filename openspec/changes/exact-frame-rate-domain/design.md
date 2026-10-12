@@ -1,10 +1,14 @@
 ## Context
 
+**Current contract:** This design records the original migration plan. The follow-up
+`remove-v23-compatibility-surfaces` change supersedes its selected numeric API and
+transform-export compatibility decisions. Its API inventory is authoritative for 23.x.
+
 `ChapterSet` stores `double FramesPerSecond` and optional `ExactFrameRate`. Editable documents and segments also have parallel rate fields. `EditableChapterDocumentAdapter.FromLegacyFrameRate` scales a double to an integer ratio. `WithFallbackFrameRate` can turn a detected rate into document metadata.
 
 `ExactFrameMath` already calculates with integer ratios for rational and decimal inputs. Some exporters and compatibility services still calculate from `TimeSpan.TotalSeconds`. Node DTOs expose FPS and times as JavaScript numbers. Existing Node consumers change those returned fields directly. `packages/chaptertool/src/types.ts` contains handwritten contracts; the package build emits declarations from those sources.
 
-The user confirmed gradual compatibility only for manual numeric input and established external APIs. Internal types and call chains must change directly. Catalog selections must carry rationals. The user also confirmed exact CLI ratio input, explicit computation-rate selection for unknown or mixed rates, and a separate `tool.exact` Node facade.
+The user confirmed gradual compatibility only for manual numeric input and established external APIs during the original plan. The follow-up removes the selected Core/Node numeric facades in 23.x. Canonical internal rates, exact CLI ratio input, and explicit computation-rate selection remain current.
 
 ## Goals / Non-Goals
 
@@ -25,7 +29,7 @@ The user confirmed gradual compatibility only for manual numeric input and estab
 - Extract new FPS metadata from ffprobe or change the supported catalog.
 - Change established timestamp text formats, CUE's 75-unit time base, or MPLS PTS-to-time import quantization.
 - Add Node session/history APIs or change the existing JSON chapter export file schema.
-- Remove compatibility APIs in this change. Removal needs a separately versioned change.
+- The original implementation retained documented adapters. The follow-up `remove-v23-compatibility-surfaces` change removes them within the current 23.x line, as directed by the maintainer.
 
 ## Decisions
 
@@ -37,7 +41,7 @@ Add immutable `FrameRateValue`. Its states are `Rational(ChapterFrameRate)`, `Ap
 
 Equality and hashing must include kind and normalized payload. `48000/2002` equals `24000/1001`. Approximate `24.0` equals approximate `24`, but differs from rational `24/1`. Labels and tolerant catalog matching must not determine equality.
 
-Internal frame-rate options must carry a canonical rate directly. Catalog selection must pass its rational value, without numeric matching or parsing a label. Numeric catalog values can remain computed projections only on retained external contracts. Auto and Reserved have no usable computation rate. Numeric lookup and timestamp detection return suggestions, not source authority.
+Internal frame-rate options must carry a canonical rate directly. Catalog selection must pass its rational value, without numeric matching or parsing a label. Core and Node frame-rate APIs do not expose numeric FPS projections. Hosts can format values for display. Auto and Reserved have no usable computation rate. Detection returns suggestions, not source authority.
 
 An alternative that stores numeric FPS plus an optional exact value leaves conflicting states possible. It is rejected.
 
@@ -105,37 +109,35 @@ Capture operation rates with the candidate. Apply must commit the reviewed candi
 
 Undo, redo, branch restoration, merge, split, and append must preserve current and source rates separately. Unknown source rates must remain Unknown through repeated conversions. Export preview and save must use the same captured ticks, typed override, and rounding policy. Display preferences and Auto suggestions must not enter the content fingerprint.
 
-### 6. External-only compatibility and numeric normalization
+### 6. Numeric normalization and removed compatibility surfaces
 
-Compatibility is an input/output boundary, not an internal migration layer.
+Compatibility is an input boundary, not an internal migration layer. The follow-up removes the selected numeric Core/Node facades and transform-bearing export contract in 23.x.
 
 | Consumer | Migration policy |
 | --- | --- |
 | Core documents, segments, calculations, history, host state, and internal service interfaces | Replace numeric and parallel-rate contracts directly. Do not retain old overloads for repository callers. |
 | UI catalog and operation selectors | Pass canonical rationals directly. No double or decimal compatibility path is needed for selection. |
 | User-entered numeric FPS and existing numeric CLI options | Accept the existing input form once and classify it as Approximate. |
-| Established external Core/Node inputs and returned data | Retain large disruptive signatures/shapes as deprecated boundary adapters or projections. New exact interfaces use canonical values. |
+| Core/Node frame-rate model and service APIs | Use `FrameRateValue`. Remove numeric getters, constructors, lookup overloads, and operation overloads. |
+| Core/Node export APIs | Serialize prepared content with format settings. Apply content changes through explicit operations before serialization. |
+| Node `ChapterTool` | Expose the typed API as the package entry point. Remove numeric chapter DTOs and the `.exact`, `.project`, and `.export` facades. Keep non-rate catalogs. |
 
-Inventory the documented and distributed external API surface before editing. A C# `public` modifier alone does not establish a compatibility obligation. Preserve established numeric API signatures and result fields through major version 23. Public model construction/deconstruction/with usage needs preservation only where it belongs to that external surface. Remove internal-only legacy adapters, parallel source/exact fields, and numeric overloads.
+Inventory the documented and distributed external API surface before editing. A C# `public` modifier alone does not establish a compatibility obligation. Preserve only contracts that the current specs and API inventory identify. Remove parallel source/exact fields and numeric FPS overloads.
 
 Legacy positive numeric input means Approximate even for `24`, `23.976`, or `24000d/1001d`. Normalize doubles once from invariant shortest round-trip text. Accept only a positive decimal representation without clamping, underflow-to-zero, or additional decimal rounding. Decimal inputs retain their exact coefficient and scale subject to normalization.
 
 Legacy metadata FPS `0` represents Unknown. Zero supplied to a required computation-rate parameter is invalid. Negative, non-finite, out-of-range, or malformed supplied values fail. Explicit rational metadata and catalog selection must be preserved directly.
 
-The user confirmed one compatibility exception during implementation: invalid numeric
-`ChapterSet` construction or `FramesPerSecond` init assignment throws an argument
-exception immediately. It no longer creates an invalid model for a later export or
-expression diagnostic. Try factories and operation request boundaries must still
-return structured diagnostics. A valid canonical model must not carry deferred
-numeric errors or an invalid rate state.
-
-Retained external `FramesPerSecond` getters derive a numeric projection from canonical data; Unknown projects to the old zero sentinel. A retained numeric init/update is an explicit Approximate assignment and must clear stale exact authority. Canonical construction must bypass numeric adapters. Retained `ExactFrameRate` aliases derive from the current rational, not immutable source metadata. Test ordering only for retained external construction paths.
+No numeric FPS property or constructor remains on `ChapterSet`. Import boundaries
+interpret absent metadata as Unknown. CLI numeric FPS input must be positive and
+becomes Approximate. A valid canonical model must not carry deferred numeric errors
+or an invalid rate state.
 
 Migrate expression contexts and internal interfaces directly. If the API inventory proves an established external expression-engine extension contract, keep its adapter at the external boundary. Do not retain every internal interface or context signature speculatively.
 
-### 7. Node exact facade and wire schema
+### 7. Node exact wire schema
 
-Keep existing external `ChapterTool` methods, DTO field names, numeric seconds/FPS, and legacy object mutation behavior. Internal JSExport bindings can change with their wrappers. Do not add higher-priority canonical fields to old DTOs. Add `tool.exact` and typed wire bindings for import, chapter edits, shifts, zones, combine/append, detection/frame projection, FPS conversion, expressions, pure serialization, one-shot export, and conversion tools. Non-content catalogs can reuse shared endpoints. Both facades must call the same canonical Core services.
+Expose typed wire bindings directly through `ChapterTool` for import, chapter edits, shifts, zones, combine/append, detection/frame projection, FPS conversion, expressions, pure serialization, and conversion tools. Do not expose numeric chapter/rate DTOs or a second `.exact` facade. Keep non-rate format and import catalogs. Serialization must not apply content transforms.
 
 The exact rate wire union is:
 
@@ -154,7 +156,7 @@ Adapt exact requests to typed single-track document snapshots without creating a
 
 Stateless scalar exact combine/append must reject mixed-rate flattening. They do not introduce a document/session API. App document paths retain segment metadata separately.
 
-The existing Node facade remains an intentionally lossy compatibility boundary. Reimporting its numeric output cannot promise authoritative provenance or full tick precision. Document that limitation and show exact-facade migration examples. JavaScript number components were rejected because Int64 values can exceed the safe-integer range.
+The old Node numeric facade is removed. Tick and rate values use invariant strings so JavaScript cannot round values above its safe-integer range.
 
 Update `NodeJsonContext` source-generation registrations, handwritten `types.ts`, `index.ts`, emitted `dist/index.d.ts` through the package build, and actual packaged-runtime tests together. Do not edit generated declarations by hand.
 
@@ -176,7 +178,7 @@ Construct seconds from ticks before the Lua projection. If Lua returns the same 
 
 ## Risks / Trade-offs
 
-- [Legacy API remains lossy] -> Keep its shape stable and document the exact migration path. Typed APIs carry the precision guarantee.
+- [Callers used numeric Node DTOs] -> The 23.x migration removes these DTOs. Document the typed API and its wire values.
 - [Established external records have more surface than FPS parameters] -> Inventory real contract usage and compile/run those consumers. Do not preserve unrelated internal signatures.
 - [Mixed timelines lack one global frame grid] -> Preserve segment data in documents and require explicit scalar computation rates. Reject unsupported scalar flattening.
 - [Auto no longer authorizes unknown-rate edits] -> Keep suggested display and localized feedback. Make manual rate selection available in both hosts.
@@ -189,10 +191,10 @@ Construct seconds from ticks before the Lua projection. If Lua returns the same 
 2. Add necessary external adapters and directly replace internal signatures and models.
 3. Migrate import, segment/document adaptation, comparison/history, and fingerprints.
 4. Migrate calculations, expressions, serializers, and complete host workflows.
-5. Add the exact Node facade and CLI ratio input. Keep existing entry points.
+5. Make the exact Node API primary and add CLI ratio input.
 6. Verify installed/packed consumers and publish migration examples.
 
-No persisted document-history format needs migration. Rollback can remove the additive exact facade and CLI option while retaining the prior public surface. Do not persist new rate selections in settings without a separate requirement.
+No persisted document-history format needs migration. Do not persist new rate selections in settings without a separate requirement.
 
 ## Precision Regression Evidence
 

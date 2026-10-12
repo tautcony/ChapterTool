@@ -1,9 +1,11 @@
-import { requireFileName, toBytes } from "./utils/input.js";
+import { requireFileName, toBytes, MAX_INPUT_BYTES } from "./utils/input.js";
 import { encodeJson } from "./utils/json.js";
-import type { ChapterConversionResult, ChapterExportResult, ChapterInput, ChapterZonesResult } from "./types.js";
+import { requireString } from "./utils/validation.js";
+import type { ChapterConversionResult, ChapterExportResult, ChapterInput, ChapterFormat, ChapterImportFormat,
+  ChapterOutputEncoding, ChapterXmlLanguage, ChapterZonesResult } from "./types.js";
 import type {
   ExactChapterSet, ExactContentResult, ExactDetectionResult, ExactFrameInfoResult, ExactFrameRate,
-  ExactFrameRateOption, ExactImportGroup, ExactImportResult, ExactOutputOptions, ExactProjectionResult,
+  ExactFrameRateOption, ExactImportGroup, ExactImportResult, ExactOutputOptions,
 } from "./exact-types.js";
 
 type ExactInvoker = <T>(operation: string, ...arguments_: unknown[]) => Promise<T>;
@@ -13,6 +15,31 @@ const rateJson = (rate?: ExactFrameRate): string | null => rate === undefined ? 
 /** Lossless content API. Rates and timestamps are validated by the canonical Core boundary. */
 export class ExactChapterTool {
   constructor(private readonly invoke: ExactInvoker, private readonly load: () => Promise<void>) {}
+
+  async maxInputBytes(): Promise<number> {
+    await this.load();
+    return MAX_INPUT_BYTES;
+  }
+
+  formats(): Promise<ChapterFormat[]> {
+    return this.invoke("GetFormats");
+  }
+
+  importFormats(): Promise<ChapterImportFormat[]> {
+    return this.invoke("GetImportFormats");
+  }
+
+  isBinaryExtension(extension: string): Promise<boolean> {
+    return this.invoke("IsBinaryExtension", requireString(extension, "extension"));
+  }
+
+  xmlLanguages(): Promise<ChapterXmlLanguage[]> {
+    return this.invoke("GetXmlLanguages");
+  }
+
+  outputEncodings(): Promise<ChapterOutputEncoding[]> {
+    return this.invoke("GetOutputEncodings");
+  }
 
   async import(content: ChapterInput, options: { fileName?: string } = {}): Promise<ExactImportResult> {
     await this.load();
@@ -91,16 +118,8 @@ export class ExactChapterTool {
     return this.invoke("ExactApplyExpression", json(set), enabled, expression, rateJson(computationRate));
   }
 
-  project(set: ExactChapterSet, options: ExactOutputOptions): Promise<ExactProjectionResult> {
-    return this.invoke("ExactProject", json(set), json(options));
-  }
-
   serialize(set: ExactChapterSet, options: ExactOutputOptions): Promise<ChapterExportResult> {
     return this.invoke("ExactSerialize", json(set), json(options));
-  }
-
-  export(set: ExactChapterSet, options: ExactOutputOptions): Promise<ChapterExportResult> {
-    return this.invoke("ExactExport", json(set), json(options));
   }
 
   toCelltimes(set: ExactChapterSet, computationRate?: ExactFrameRate): Promise<ChapterConversionResult> {

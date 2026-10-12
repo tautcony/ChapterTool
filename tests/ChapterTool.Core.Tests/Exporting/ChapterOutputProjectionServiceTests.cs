@@ -17,8 +17,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         var result = service.Project(
             source,
-            new ChapterExportOptions(
-                ChapterExportFormat.Txt,
+            new ChapterOutputProjectionOptions(
                 AutoGenerateNames: true,
                 OrderShift: 2,
                 ApplyExpression: true,
@@ -45,7 +44,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         var result = service.Project(
             info,
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "index"));
+            new ChapterOutputProjectionOptions(ApplyExpression: true, Expression: "index"));
 
         Assert.Equal(3, result.Info.Chapters.Count);
         Assert.True(result.Info.Chapters[1].IsSeparator);
@@ -59,8 +58,7 @@ public sealed class ChapterOutputProjectionServiceTests
     {
         var result = service.Project(
             Sample(),
-            new ChapterExportOptions(
-                ChapterExportFormat.Txt,
+            new ChapterOutputProjectionOptions(
                 AutoGenerateNames: true,
                 ApplyExpression: true,
                 Expression: "return bad()"));
@@ -76,7 +74,7 @@ public sealed class ChapterOutputProjectionServiceTests
     {
         var result = service.Project(
             Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "-1"));
+            new ChapterOutputProjectionOptions(ApplyExpression: true, Expression: "-1"));
 
         Assert.Equal(3, result.Diagnostics.Count);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionTime, diagnostic.Code));
@@ -88,7 +86,7 @@ public sealed class ChapterOutputProjectionServiceTests
             "Movie",
             "movie.mkv",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [
                 new Chapter(1, TimeSpan.FromSeconds(10), "Intro"),

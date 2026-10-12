@@ -314,7 +314,7 @@ public static class ClipSessionTransitions
     }
 
     private static ChapterSet EmptyChapterSet() =>
-        new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+        new(string.Empty, null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []);
 
     /// <summary>Removes chapter values from selector metadata so the document stays the only editable source.</summary>
     public static ChapterImportSource MetadataOnly(ChapterImportSource source) => source with

@@ -135,17 +135,6 @@ public class ChapterContentService
         return await ResolveImporter(extension).ImportAsync(request, cancellationToken);
     }
 
-    /// <summary>Exports with legacy transform-bearing options for compatibility.</summary>
-    /// <param name="chapterSet">The chapter set to export.</param>
-    /// <param name="options">The export options.</param>
-    /// <returns>The export result.</returns>
-    public ChapterExportResult Export(ChapterSet chapterSet, ChapterExportOptions options) =>
-        ExportCompatibility(chapterSet, options);
-
-    /// <summary>Applies legacy output transforms once, then serializes the resulting snapshot.</summary>
-    public ChapterExportResult ExportCompatibility(ChapterSet chapterSet, ChapterExportOptions options) =>
-        exportService.ExportCompatibility(chapterSet, options);
-
     /// <summary>Serializes an already transformed immutable snapshot without replaying transforms.</summary>
     public ChapterExportResult Serialize(EditableChapterDocument document, ChapterSerializationOptions options) =>
         exportService.Serialize(document, options);

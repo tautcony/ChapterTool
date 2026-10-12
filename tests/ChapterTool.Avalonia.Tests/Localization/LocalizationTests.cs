@@ -248,7 +248,7 @@ public sealed partial class LocalizationTests
             new FrameRateService(),
             localizer,
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine));
+            new ChapterExportService(formatter));
     }
 
     private sealed class FakeLoadService : IChapterLoadService
@@ -256,13 +256,13 @@ public sealed partial class LocalizationTests
         public ValueTask<ChapterImportResult> LoadAsync(string path, CancellationToken cancellationToken) =>
             ValueTask.FromResult(new ChapterImportResult(
                 true,
-                [new ChapterImportSource(path, [new ChapterImportEntry("default", "default", new ChapterSet(path, path, ChapterImportFormat.Ogm, 24, TimeSpan.Zero, []))])],
+                [new ChapterImportSource(path, [new ChapterImportEntry("default", "default", new ChapterSet(path, path, ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.Zero, []))])],
                 []));
     }
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterSerializationOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
             ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
     }
 

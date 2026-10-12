@@ -301,7 +301,7 @@ public sealed class RuntimeChapterLoadServiceTests
 
     private static ChapterImportResult SuccessfulImport(string path, ChapterImportFormat sourceType)
     {
-        var info = new ChapterSet(Path.GetFileNameWithoutExtension(path), Path.GetFileName(path), sourceType, 0, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "Intro")]);
+        var info = new ChapterSet(Path.GetFileNameWithoutExtension(path), Path.GetFileName(path), sourceType, FrameRateValue.Unknown, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "Intro")]);
         return new ChapterImportResult(true, [new ChapterImportSource(path, [new ChapterImportEntry("default", ChapterImportFormats.DisplayName(sourceType), info)])], []);
     }
 

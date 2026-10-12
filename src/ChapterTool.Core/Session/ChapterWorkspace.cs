@@ -56,7 +56,7 @@ public sealed class ChapterWorkspace
             return document.Tracks.Select((track, index) =>
             {
                 var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document, index);
-                var options = CreateExportOptions() with { SourceFileName = chapterSet.SourceName };
+                var options = CreateSerializationOptions() with { SourceFileName = chapterSet.SourceName };
                 return !exportBaselines.TryGetValue(track.Id, out var baseline)
                     || baseline.Digest != ChapterExportFingerprint.Digest(chapterSet, track, options)
                     || baseline.FormatFingerprint != ChapterExportFingerprint.FormatFingerprint(options);
@@ -65,7 +65,7 @@ public sealed class ChapterWorkspace
     }
 
     /// <summary>Captures one track and its format options without retaining the history owner.</summary>
-    public ChapterExportSnapshot? CaptureExportSnapshot(ChapterSet chapterSet, ChapterExportOptions options, int trackIndex)
+    public ChapterExportSnapshot? CaptureExportSnapshot(ChapterSet chapterSet, ChapterSerializationOptions options, int trackIndex)
     {
         ArgumentNullException.ThrowIfNull(chapterSet);
         ArgumentNullException.ThrowIfNull(options);
@@ -230,7 +230,7 @@ public sealed class ChapterWorkspace
         if (ClipSession is null || ContentSession is null)
         {
             return new ClipCombineTransitionResult(null,
-                new ChapterEditResult(new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []), []),
+                new ChapterEditResult(new ChapterSet(string.Empty, null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []), []),
                 false, false);
         }
 
@@ -485,22 +485,14 @@ public sealed class ChapterWorkspace
     /// <summary>
     /// Builds export options for committed content and current export preferences.
     /// </summary>
-    public ChapterExportOptions CreateExportOptions() =>
+    public ChapterSerializationOptions CreateSerializationOptions() =>
         new(
             Format: ExportPreferences.Format,
             XmlLanguage: ExportPreferences.XmlLanguage,
             SourceFileName: CurrentChapterSet?.SourceName,
-            AutoGenerateNames: false,
-            UseTemplateNames: false,
-            ChapterNameTemplateText: string.Empty,
-            OrderShift: 0,
-            ApplyExpression: false,
-            Expression: OperationDrafts.Expression,
-            ExpressionPresetId: OperationDrafts.ExpressionPresetId,
-            ExpressionSourceName: OperationDrafts.ExpressionSourceName,
             TextEncoding: ExportPreferences.TextEncoding,
-            EmitBom: ExportPreferences.EmitBom,
-            ProjectOutput: false) { ComputationRate = ExportPreferences.ComputationRate };
+            EmitBom: ExportPreferences.EmitBom)
+        { ComputationRate = ExportPreferences.ComputationRate };
 
     /// <summary>Publishes a document already committed to <see cref="ContentSession"/> into the active clip.</summary>
     public void PublishContentDocument(EditableChapterDocument document)

@@ -201,7 +201,7 @@ public sealed class MainWindowHeadlessTests
             "movie.txt",
             "movie.txt",
             ChapterImportFormat.Ogm,
-            24000d / 1001d,
+            FrameRateValue.Approximate(24000m / 1001m),
             TimeSpan.Zero,
             [
                 new Chapter(1, TimeSpan.Zero, "Opening"),
@@ -237,7 +237,7 @@ public sealed class MainWindowHeadlessTests
             "movie.txt",
             "movie.txt",
             ChapterImportFormat.Ogm,
-            24000d / 1001d,
+            FrameRateValue.Approximate(24000m / 1001m),
             TimeSpan.Zero,
             [
                 new Chapter(1, TimeSpan.Zero, "Accurate before"),
@@ -526,7 +526,7 @@ public sealed class MainWindowHeadlessTests
             "movie.txt",
             "movie.txt",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.Zero,
             [new Chapter(1, TimeSpan.Zero, "Opening")]);
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
@@ -560,7 +560,7 @@ public sealed class MainWindowHeadlessTests
             "movie.txt",
             "movie.txt",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Rational(24, 1),
             start,
             [new Chapter(1, start, "Submillisecond")]);
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
@@ -616,7 +616,7 @@ public sealed class MainWindowHeadlessTests
             "movie.txt",
             "movie.txt",
             ChapterImportFormat.Ogm,
-            0,
+            FrameRateValue.Unknown,
             TimeSpan.Zero,
             [new Chapter(1, TimeSpan.Zero, "Opening")]);
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
@@ -706,7 +706,7 @@ public sealed class MainWindowHeadlessTests
                     "movie.txt",
                     "movie.txt",
                     ChapterImportFormat.Ogm,
-                    24000d / 1001d,
+                    FrameRateValue.Approximate(24000m / 1001m),
                     TimeSpan.Zero,
                     [
                         .. Enumerable.Range(0, 20)
@@ -846,11 +846,11 @@ public sealed class MainWindowHeadlessTests
     {
         var exactRate = new ChapterFrameRate(24000, 1001);
         var info = new ChapterSet("movie.mpls", "movie.mpls", ChapterImportFormat.Mpls,
-            (double)exactRate.Numerator / exactRate.Denominator, TimeSpan.FromMilliseconds(52094),
+            FrameRateValue.Rational(exactRate), TimeSpan.FromMilliseconds(52094),
             [
                 new Chapter(1, TimeSpan.Zero, "Opening"),
                 new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")
-            ], exactRate);
+            ]);
         var settings = new ChapterTool.Contracts.Configuration.AppSettings(
             Language: "en-US",
             FrameDisplayMode: "full-precision",
@@ -864,7 +864,7 @@ public sealed class MainWindowHeadlessTests
 
         Assert.False(host.RequiredControl<CheckBox>("RoundFramesBox").IsChecked);
         Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
-        Assert.Equal(exactRate, host.ViewModel.EffectiveFrameRateOption.ExactRate);
+        Assert.Equal(exactRate, host.ViewModel.EffectiveFrameRateOption.Rate.RationalRate);
         Assert.Equal("006993", host.ViewModel.Rows[1].FramePresentation?.RepeatingDigits);
     }
 
@@ -872,7 +872,7 @@ public sealed class MainWindowHeadlessTests
     public async Task Repeating_frame_layout_screenshots_cover_themes_widths_and_large_text()
     {
         var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
-            24000d / 1001d, TimeSpan.FromTicks(520_942_000),
+            FrameRateValue.Approximate(24000m / 1001m), TimeSpan.FromTicks(520_942_000),
             [
                 new Chapter(1, TimeSpan.FromTicks(520_940_000), "Original frame value"),
                 new Chapter(2, TimeSpan.FromTicks(520_942_000), "Candidate frame value")
@@ -957,12 +957,12 @@ public sealed class MainWindowHeadlessTests
     {
         var exactRate = new ChapterFrameRate(24000, 1001);
         var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
-            24000d / 1001d, TimeSpan.FromTicks(2_900_400_000),
+            FrameRateValue.Rational(exactRate), TimeSpan.FromTicks(2_900_400_000),
             [
                 new Chapter(1, TimeSpan.Zero, "Opening"),
                 new Chapter(2, TimeSpan.FromTicks(1_999_910_000), "First division"),
                 new Chapter(3, TimeSpan.FromTicks(2_900_400_000), "Second division")
-            ], exactRate);
+            ]);
         var settings = new ChapterTool.Contracts.Configuration.AppSettings(
             Language: "en-US",
             FrameDisplayMode: "full-precision",

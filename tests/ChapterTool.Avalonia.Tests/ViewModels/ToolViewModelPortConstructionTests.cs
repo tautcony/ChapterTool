@@ -69,15 +69,11 @@ public sealed class ToolViewModelPortConstructionTests
 
         public string Expression => "t";
 
-        public bool ApplyExpression => false;
-
         public string ExpressionPresetId => string.Empty;
 
         public string ExpressionSourceName => string.Empty;
 
         public ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken) => ValueTask.FromResult<ChapterDiagnostic?>(null);
-
-        public ChapterDiagnostic? ApplyLuaExpressionSettings(string expression, bool applyExpression, string expressionPresetId, string expressionSourceName) => null;
 
         public void SaveAppliedExpressionPreview(string expression, string expressionPresetId, string expressionSourceName, ExpressionPreviewProjection projection)
         {

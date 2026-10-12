@@ -76,7 +76,7 @@ packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 | Standalone CLI | `src/ChapterTool.CommandLine/Program.cs` | `src/ChapterTool.CommandLine/ChapterToolCliHost.cs` | `ChapterToolCliApplication.ImportAsync` | `ChapterToolCliApplication.ConvertAsync` | `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs` |
 | Avalonia desktop | `src/ChapterTool.Avalonia/Program.cs` | `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs` | `tests/ChapterTool.Avalonia.Tests` and `tests/ChapterTool.Avalonia.Headless.Tests` |
 | Blazor WebAssembly browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Pages/Home.razor` and `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` | `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` and `wwwroot/js/download.js` | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` |
-| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.ts` and `core-api.test.ts` |
+| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeExactApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeExactApi.cs` | `packages/chaptertool/test/exact-api.test.ts` |
 
 ### 2.1 Host Defaults
 
@@ -307,7 +307,7 @@ The Node.js package owns JavaScript input conversion, .NET WebAssembly startup, 
 Start with these paths for Node.js package behavior:
 
 - WebAssembly host: `src/ChapterTool.Node/NodeApi.cs`
-- Core operation exports: `src/ChapterTool.Node/NodeCoreApi.cs`
+- Exact Core operation exports: `src/ChapterTool.Node/NodeExactApi.cs`
 - TypeScript API source and `ChapterTool` class: `packages/chaptertool/src/index.ts`
 - TypeScript type model: `packages/chaptertool/src/types.ts`
 - TypeScript initialization helper: `packages/chaptertool/src/api-loader.ts`

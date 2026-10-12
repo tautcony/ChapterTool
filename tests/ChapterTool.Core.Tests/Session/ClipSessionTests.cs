@@ -154,7 +154,7 @@ public sealed class ClipSessionTests
         sourceName,
         sourceName,
         format,
-        24000d / 1001d,
+        FrameRateValue.Rational(24000, 1001),
         chapters.Length == 0 ? TimeSpan.FromSeconds(15) : chapters[^1].StartTime + TimeSpan.FromSeconds(1),
         chapters);
 }

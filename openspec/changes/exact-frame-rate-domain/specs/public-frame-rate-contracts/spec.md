@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Compatibility is confined to established external boundaries
-Internal domain models, calculations, host state, and selector/service contracts SHALL migrate directly to canonical rates. Manual numeric inputs and established external API signatures and result fields SHALL retain compatible boundary adapters or projections through major version 23.
+Internal domain models, calculations, host state, and selector/service contracts SHALL use canonical rates. The selected numeric Core/Node APIs and transform-bearing export contract SHALL be removed in 23.x. Manual CLI frame-rate input SHALL remain a supported Approximate input.
 
 #### Scenario: Internal selector supplies a catalog option
 - **WHEN** a host selects a catalog option
@@ -13,29 +13,13 @@ Internal domain models, calculations, host state, and selector/service contracts
 - **THEN** its signature SHALL migrate directly
 - **AND** compatibility overloads SHALL NOT be retained solely because it is public
 
-#### Scenario: Existing numeric caller uses an external API
-- **WHEN** an established caller supplies positive numeric FPS through a retained signature
+#### Scenario: CLI caller supplies a numeric FPS
+- **WHEN** a caller supplies positive numeric FPS through `--frame-rate`
 - **THEN** the boundary SHALL normalize it once to Approximate
 - **AND** internal services SHALL receive only the canonical value
 
-#### Scenario: Legacy external metadata reports no FPS
-- **WHEN** a retained metadata contract supplies its established zero FPS sentinel
-- **THEN** adaptation SHALL create Unknown
-- **AND** zero supplied as a required operation rate SHALL fail validation
-
-#### Scenario: Retained C# numeric metadata is changed
-- **WHEN** a retained external constructor or record update assigns numeric FPS to previously rational content
-- **THEN** the new canonical current rate SHALL be Approximate
-- **AND** stale exact metadata SHALL NOT remain independently active
-
-#### Scenario: Deprecated output is read
-- **WHEN** an established external result exposes its numeric FPS member
-- **THEN** that member SHALL be computed from the canonical value
-- **AND** it SHALL be documented as a compatibility projection
-- **AND** internal operations SHALL NOT use it as a calculation source
-
 ### Requirement: Exact inputs are available to external callers
-C# typed APIs and the exact Node facade SHALL accept canonical rational and approximate values. Numeric inputs SHALL NOT be silently interpreted as catalog rationals.
+C# typed APIs and the Node package SHALL accept canonical rational and approximate values. Numeric inputs SHALL NOT be silently interpreted as catalog rationals.
 
 #### Scenario: Explicit rational input
 - **WHEN** a caller supplies 48000/2002 explicitly
@@ -51,29 +35,13 @@ C# typed APIs and the exact Node facade SHALL accept canonical rational and appr
 - **THEN** it SHALL preserve the established argument/validation failure category
 - **AND** it SHALL NOT call Core with a clamped, zero, or substituted rate
 
-#### Scenario: Invalid numeric model construction or update
-- **WHEN** a retained `ChapterSet` constructor or numeric `FramesPerSecond` init assignment receives an invalid rate
-- **THEN** it SHALL throw an argument exception at assignment
-- **AND** this confirmed compatibility exception SHALL replace deferred export or expression validation of that invalid model
-- **AND** Try factories and operation request boundaries SHALL still return structured diagnostics
+### Requirement: Node exposes one exact content facade
+The package `ChapterTool` entry point SHALL expose typed content operations with lossless rate/tick data. Numeric chapter DTOs and the `.exact`, `.project`, and `.export` compatibility methods SHALL NOT be exposed.
 
-### Requirement: Node has separate legacy and exact facades
-The existing Node facade SHALL retain its signatures and numeric DTO shapes. The additive tool.exact facade SHALL expose typed content operations with lossless rate/tick data. Both facades SHALL share canonical Core behavior.
-
-#### Scenario: Existing caller changes returned numbers
-- **WHEN** a legacy caller changes a returned chapterSet.framesPerSecond or chapter.startTimeSeconds value before resubmitting it
-- **THEN** the legacy facade SHALL honor that numeric change
-- **AND** it SHALL NOT ignore it because of newly added higher-priority canonical fields
-
-#### Scenario: Exact caller completes a content workflow
-- **WHEN** a caller imports, edits, projects frames, converts FPS, and serializes through tool.exact
+#### Scenario: Caller completes a content workflow
+- **WHEN** a caller imports, edits, projects frames, converts FPS, and serializes through `ChapterTool`
 - **THEN** each returned content value SHALL preserve canonical rate kind and ticks
 - **AND** expressions, shifts, zones, combine/append, and conversion tools SHALL have corresponding typed entry points
-
-#### Scenario: Legacy response is reused
-- **WHEN** a numeric legacy result is submitted as input
-- **THEN** its rate SHALL be Approximate or Unknown according to legacy metadata
-- **AND** documentation SHALL state that legacy round-trips do not guarantee source authority or full tick precision
 
 #### Scenario: Exact scalar combine would discard mixed rates
 - **WHEN** an exact scalar chapter-set combine or append cannot represent its contributors' different rates
@@ -107,13 +75,13 @@ The exact rate DTO SHALL be a discriminated union: rational with numerator/denom
 - **AND** it SHALL NOT reconstruct them from seconds numbers
 
 ### Requirement: Distributed declarations match runtime contracts
-Node C# JSON registrations, handwritten TypeScript types, wrapper methods, and emitted package declarations SHALL describe the same legacy and exact contracts. Public migration documentation SHALL state rounding, authority, and compatibility limits.
+Node C# JSON registrations, handwritten TypeScript types, wrapper methods, and emitted package declarations SHALL describe the same exact contract. Public documentation SHALL state rounding and rate authority.
 
-#### Scenario: Package consumer uses exact input
-- **WHEN** an installed package consumer compiles and runs an exact-facade call
+#### Scenario: Package consumer uses typed input
+- **WHEN** an installed package consumer compiles and runs a `ChapterTool` call
 - **THEN** emitted declarations and the packaged Wasm runtime SHALL accept the documented DTO and return the documented rate/tick shape
 
-#### Scenario: Established Core consumer is compiled and run
-- **WHEN** verification compiles a consumer of retained external signatures
-- **THEN** those boundary contracts SHALL remain usable
-- **AND** new internal signatures SHALL NOT require repository compatibility scaffolding
+#### Scenario: Core consumer uses canonical input
+- **WHEN** verification compiles a consumer of the public Core API
+- **THEN** it SHALL use canonical rate and timestamp values
+- **AND** it SHALL NOT require numeric compatibility scaffolding

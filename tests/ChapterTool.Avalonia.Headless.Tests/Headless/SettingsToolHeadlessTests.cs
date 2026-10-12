@@ -27,7 +27,7 @@ public sealed class SettingsToolHeadlessTests
     public async Task Frame_display_mode_changes_refresh_existing_rows_without_clearing_repeating_preference()
     {
         var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
-            24000d / 1001d, TimeSpan.FromTicks(520_942_000),
+            FrameRateValue.Approximate(24000m / 1001m), TimeSpan.FromTicks(520_942_000),
             [new Chapter(1, TimeSpan.FromTicks(520_942_000), "Fractional frame value")]);
         using var host = new MainWindowHeadlessTestHost(
             MainWindowHeadlessTestHost.ImportResult(

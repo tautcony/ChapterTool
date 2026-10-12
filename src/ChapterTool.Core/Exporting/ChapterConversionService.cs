@@ -11,19 +11,6 @@ namespace ChapterTool.Core.Exporting;
 /// <param name="timeFormatter">The chapter time formatter.</param>
 public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter)
 {
-    /// <summary>
-    /// Executes the ToCelltimes operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public static ChapterConversionResult ToCelltimes(ChapterSet info, decimal framesPerSecond)
-    {
-        ArgumentNullException.ThrowIfNull(info);
-        return FrameRateValue.TryFromDecimal(framesPerSecond, metadata: false, out var rate, out var diagnostic)
-            ? ToCelltimes(info, rate) : new ChapterConversionResult(false, string.Empty, string.Empty, [diagnostic!]);
-    }
-
     /// <summary>Serializes integer frames from ticks and a canonical rate.</summary>
     public static ChapterConversionResult ToCelltimes(ChapterSet info, FrameRateValue framesPerSecond)
     {
@@ -44,20 +31,6 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
         {
             return Failure(ChapterDiagnosticCode.FrameConversionOverflow, "The frame number exceeds the supported Int64 range.");
         }
-    }
-
-    /// <summary>
-    /// Executes the ChapterTextToQpfile operation.
-    /// </summary>
-    /// <param name="chapterText">The OGM-style chapter text to convert.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <param name="timecodeText">Optional v2 timecode text used to map chapter times to frames.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterConversionResult ChapterTextToQpfile(string chapterText, decimal framesPerSecond, string? timecodeText = null)
-    {
-        return FrameRateValue.TryFromDecimal(framesPerSecond, metadata: false, out var rate, out var diagnostic)
-            ? ChapterTextToQpfile(chapterText, rate, timecodeText)
-            : new ChapterConversionResult(false, string.Empty, string.Empty, [diagnostic!]);
     }
 
     /// <summary>Uses canonical constant FPS, or an explicit v2 map when constant FPS is Unknown.</summary>

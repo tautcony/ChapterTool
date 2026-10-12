@@ -28,7 +28,6 @@ public sealed class MainWindowInteractionHeadlessTests
         // Bound options are authoritative for save/preview paths.
         host.ViewModel.SaveFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         host.ViewModel.OrderShift = 1;
-        host.ViewModel.ApplyExpression = false;
         host.ViewModel.SourcePath = "movie.txt";
 
         var formatBox = host.RequiredControl<ComboBox>("FormatBox");
