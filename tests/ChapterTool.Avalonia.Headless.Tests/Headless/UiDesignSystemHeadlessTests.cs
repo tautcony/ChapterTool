@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -32,15 +33,15 @@ public sealed class UiDesignSystemHeadlessTests
 
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
         var frameTexts = grid.GetVisualDescendants()
-            .OfType<TextBlock>()
-            .Where(block => block.Classes.Contains("frameText")
-                && !block.Classes.Contains("framePreview")
-                && block.IsVisible
-                && block.Bounds.Width > 0
-                && block.Bounds.Height > 0)
+            .OfType<FramePresentationView>()
+            .Where(view => view.Classes.Contains("frameText")
+                && !view.Classes.Contains("framePreview")
+                && view.IsVisible
+                && view.Bounds.Width > 0
+                && view.Bounds.Height > 0)
             .ToArray();
         Assert.True(frameTexts.Length >= 2);
-        Assert.All(frameTexts, block => Assert.Null(block.Effect));
+        Assert.All(frameTexts, view => Assert.Null(view.Effect));
 
         var accurate = Assert.Single(frameTexts, block => block.Classes.Contains("frameAccurate"));
         var inexact = Assert.Single(frameTexts, block => block.Classes.Contains("frameInexact"));

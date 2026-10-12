@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ChapterTool.Avalonia.UI.Views.Controls.FramePresentationView"
+             x:Name="Root"
+             ClipToBounds="False"
+             x:CompileBindings="False">
+  <StackPanel x:Name="FrameParts"
+              Orientation="Horizontal"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+    <TextBlock Foreground="{Binding Foreground, ElementName=Root}"
+               Text="{Binding Presentation.SignedIntegerDigits, ElementName=Root}" />
+    <TextBlock Foreground="{Binding Foreground, ElementName=Root}"
+               Text="{Binding Presentation.DecimalPoint, ElementName=Root}" />
+    <TextBlock Foreground="{Binding Foreground, ElementName=Root}"
+               Text="{Binding Presentation.NonRepeatingDigits, ElementName=Root}" />
+    <Grid x:Name="RepeatingDigitsGroup"
+          VerticalAlignment="Center"
+          IsVisible="{Binding Presentation.HasRepeatingDigits, ElementName=Root}">
+      <Border x:Name="RepeatingDigitsOverline"
+              Height="1.5"
+              VerticalAlignment="Top"
+              Background="{Binding Foreground, ElementName=Root}">
+        <Border.RenderTransform>
+          <TranslateTransform Y="-2" />
+        </Border.RenderTransform>
+      </Border>
+      <TextBlock x:Name="RepeatingDigitsText"
+                 Foreground="{Binding Foreground, ElementName=Root}"
+                 Text="{Binding Presentation.RepeatingDigits, ElementName=Root}" />
+    </Grid>
+  </StackPanel>
+</UserControl>

@@ -11,7 +11,8 @@
         xmlns:ae="using:AvaloniaEdit"
 xmlns:aee="using:AvaloniaEdit.Editing"
 xmlns:aes="using:AvaloniaEdit.Search"
-xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels">
+xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
+xmlns:controls="using:ChapterTool.Avalonia.UI.Views.Controls">
   <Design.PreviewWith>
     <StackPanel Orientation="Vertical">
     </StackPanel>
@@ -1597,21 +1598,21 @@ xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels">
     <Setter Property="VerticalContentAlignment" Value="Center" />
   </Style>
 
-  <Style Selector="TextBlock.frameText">
+  <Style Selector="controls|FramePresentationView.frameText">
     <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameNeutralBrush}" />
   </Style>
 
-  <Style Selector="TextBlock.frameText.frameAccurate">
+  <Style Selector="controls|FramePresentationView.frameText.frameAccurate">
     <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameAccurateBrush}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
-  <Style Selector="TextBlock.frameText.frameInexact">
+  <Style Selector="controls|FramePresentationView.frameText.frameInexact">
     <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameInexactBrush}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
 
-  <Style Selector="TextBlock.frameText.frameNeutral">
+  <Style Selector="controls|FramePresentationView.frameText.frameNeutral">
     <Setter Property="Foreground" Value="{DynamicResource ChapterTool.FrameNeutralBrush}" />
   </Style>
 

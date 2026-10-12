@@ -6,6 +6,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
@@ -271,6 +272,7 @@ public sealed class MainWindowHeadlessTests
             host.ViewModel.Expression = "t + 1";
             host.ViewModel.RefreshExpressionPreviewNow();
             await host.LayoutAsync(1280, 800);
+            AssertWideTimeAndFramePreviewGroups(host, rows[0]);
 
             Assert.Equal(FrameAccuracy.Accurate, rows[0].Chapter.FrameAccuracy);
             Assert.Equal(FrameAccuracy.Inexact, rows[1].Chapter.FrameAccuracy);
@@ -289,6 +291,11 @@ public sealed class MainWindowHeadlessTests
                     ? ChapterTool.Contracts.Configuration.ThemeSettings.Default
                     : new ChapterTool.Contracts.Configuration.ThemeSettings(theme));
                 await host.LayoutAsync(1280, 800);
+                if (theme == "default")
+                {
+                    MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                        "artifacts/compact-content-preview-review/time-frame-alignment-wide.png");
+                }
 
                 AssertFramePreviewColor(host, rows[0], rows[0].PreviewBeforeFrames,
                     ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey);
@@ -303,6 +310,9 @@ public sealed class MainWindowHeadlessTests
             }
 
             await host.LayoutAsync(760, 520);
+            AssertTimeAndFramePreviewRowsAligned(host, rows[0]);
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                "artifacts/compact-content-preview-review/time-frame-alignment-narrow.png");
             AssertFramePreviewColor(host, rows[0], rows[0].PreviewBeforeFrames,
                 ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey);
             AssertFramePreviewColor(host, rows[0], rows[0].PreviewFrames,
@@ -575,7 +585,9 @@ public sealed class MainWindowHeadlessTests
             && cell.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == row.PreviewBeforeTimeText));
         MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
             "artifacts/compact-content-preview-review/preview-submillisecond.png");
-        foreach (var text in new[] { row.PreviewBeforeTimeText, row.PreviewTimeText, row.PreviewTimeDelta })
+        Assert.DoesNotContain(timeCell.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.IsVisible && string.Equals(block.Text, row.PreviewTimeDelta, StringComparison.Ordinal));
+        foreach (var text in new[] { row.PreviewBeforeTimeText, row.PreviewTimeText })
         {
             var textBlocks = timeCell.GetVisualDescendants().OfType<TextBlock>()
                 .Where(block => block.IsVisible
@@ -940,6 +952,40 @@ public sealed class MainWindowHeadlessTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task Division_expression_keeps_repeating_frame_marks_inside_both_preview_rows()
+    {
+        var exactRate = new ChapterFrameRate(24000, 1001);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
+            24000d / 1001d, TimeSpan.FromTicks(2_900_400_000),
+            [
+                new Chapter(1, TimeSpan.Zero, "Opening"),
+                new Chapter(2, TimeSpan.FromTicks(1_999_910_000), "First division"),
+                new Chapter(3, TimeSpan.FromTicks(2_900_400_000), "Second division")
+            ], exactRate);
+        var settings = new ChapterTool.Contracts.Configuration.AppSettings(
+            Language: "en-US",
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true);
+        using var host = new MainWindowHeadlessTestHost(
+            MainWindowHeadlessTestHost.ImportResult("movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)),
+            appSettings: settings);
+
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+        host.ViewModel.Expression = "t / 3";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.LayoutAsync(760, 520);
+
+        var row = host.ViewModel.Rows[1];
+        Assert.Equal("989010", row.PreviewBeforeFramePresentation?.RepeatingDigits);
+        Assert.Equal("3296", row.PreviewCandidateFramePresentation?.NonRepeatingDigits);
+        Assert.Equal("711288", row.PreviewCandidateFramePresentation?.RepeatingDigits);
+        AssertFrameDigitsAreContinuous(host, row);
+        MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+            "artifacts/compact-repeating-frame-decimals/expression-t-divided-by-three.png");
+    }
+
     private static void AssertFrameDigitsAreContinuous(
         MainWindowHeadlessTestHost host,
         ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
@@ -949,19 +995,32 @@ public sealed class MainWindowHeadlessTests
             .OfType<DataGridRow>()
             .Single(item => ReferenceEquals(item.DataContext, row));
         var frameValues = renderedRow.GetVisualDescendants()
-            .OfType<TextBlock>()
-            .Where(block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
-                && block.Classes.Contains("framePreview"))
+            .OfType<FramePresentationView>()
+            .Where(view => view is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && view.Classes.Contains("framePreview"))
             .ToArray();
 
         Assert.NotEmpty(frameValues);
         foreach (var frameValue in frameValues)
         {
-            Assert.Equal(HorizontalAlignment.Stretch, frameValue.HorizontalAlignment);
-            Assert.Equal(TextAlignment.Center, frameValue.TextAlignment);
-            var runs = frameValue.Inlines!.OfType<Run>().ToArray();
-            Assert.Equal(4, runs.Length);
-            Assert.DoesNotContain(" ", string.Concat(runs.Select(static run => run.Text)));
+            Assert.Contains(frameValue.HorizontalAlignment,
+                new[] { HorizontalAlignment.Center, HorizontalAlignment.Stretch });
+            var frameParts = frameValue.FindControl<StackPanel>("FrameParts")!;
+            Assert.Equal(HorizontalAlignment.Center, frameParts.HorizontalAlignment);
+            Assert.Equal(frameParts.Bounds.Height, frameValue.Bounds.Height);
+            var presentation = Assert.IsType<FramePresentationParts>(frameValue.Presentation);
+            Assert.DoesNotContain(" ", presentation.SignedIntegerDigits + presentation.DecimalPoint
+                + presentation.NonRepeatingDigits + presentation.RepeatingDigits);
+            var repeatingGroup = frameValue.FindControl<Grid>("RepeatingDigitsGroup")!;
+            Assert.True(repeatingGroup.IsVisible);
+            var overline = frameValue.FindControl<Border>("RepeatingDigitsOverline")!;
+            var repeatingDigits = frameValue.FindControl<TextBlock>("RepeatingDigitsText")!;
+            Assert.True(overline.Bounds.Width > 0);
+            Assert.True(overline.Bounds.Height > 0);
+            Assert.Equal(0, overline.Bounds.Top);
+            Assert.True(overline.Bounds.Bottom <= repeatingGroup.Bounds.Height);
+            Assert.True(repeatingDigits.Bounds.Top >= 0);
+            Assert.Equal(-2, Assert.IsType<TranslateTransform>(overline.RenderTransform).Y);
         }
 
         var frameCell = frameValues[0].GetVisualAncestors().OfType<DataGridCell>().First();
@@ -975,17 +1034,138 @@ public sealed class MainWindowHeadlessTests
         {
             var narrowPreview = frameCell.GetVisualDescendants().OfType<Grid>()
                 .Where(grid => grid.RowDefinitions.Count > 1)
-                .Single(grid => grid.GetVisualDescendants().OfType<TextBlock>()
-                    .Count(static block => block.Classes.Contains("framePreview")) == 2);
+                .Single(grid => grid.GetVisualDescendants().OfType<FramePresentationView>()
+                    .Count(static view => view.Classes.Contains("framePreview")) == 2);
             Assert.Equal(2, narrowPreview.RowDefinitions.Count);
-            var narrowValues = narrowPreview.GetVisualDescendants().OfType<TextBlock>()
-                .Where(static block => block.Classes.Contains("framePreview"))
+            var narrowValues = narrowPreview.GetVisualDescendants().OfType<FramePresentationView>()
+                .Where(static view => view.Classes.Contains("framePreview"))
                 .ToArray();
-            var candidate = Assert.Single(narrowValues, static value => Grid.GetRow(value) == 1);
+            var candidateRow = Assert.Single(narrowPreview.GetVisualDescendants().OfType<Grid>(),
+                grid => Grid.GetRow(grid) == 1 && grid.Children.OfType<FramePresentationView>()
+                    .Any(static view => view.Classes.Contains("framePreview")));
+            var candidate = Assert.Single(narrowValues, value => ReferenceEquals(value.Parent, candidateRow));
             var narrowArrow = Assert.Single(narrowPreview.GetVisualDescendants().OfType<Control>(),
                 control => control.GetType().Name == "Icon" && control.IsVisible && control.Width >= 14);
-            Assert.Equal(Grid.GetRow(candidate), Grid.GetRow(narrowArrow));
+            Assert.Contains(narrowArrow, candidateRow.GetVisualDescendants());
+            Assert.True(HorizontalGap(narrowArrow, candidate, narrowPreview) > 5);
         }
+    }
+
+    private static void AssertTimeAndFramePreviewRowsAligned(
+        MainWindowHeadlessTestHost host,
+        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
+    {
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var timePreview = renderedRow.GetVisualDescendants().OfType<Grid>()
+            .Single(grid => grid.IsVisible && grid.RowDefinitions.Count == 2
+                && grid.GetVisualDescendants().OfType<TextBlock>().Any(block =>
+                    block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                    && block.Text == row.PreviewBeforeTimeText));
+        var framePreview = renderedRow.GetVisualDescendants().OfType<Grid>()
+            .Single(grid => grid.IsVisible && grid.RowDefinitions.Count == 2
+                && grid.GetVisualDescendants().OfType<FramePresentationView>()
+                    .Count(static view => view.Classes.Contains("framePreview")) == 2);
+        var timeBefore = Assert.Single(timePreview.GetVisualDescendants().OfType<TextBlock>(),
+            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && block.Text == row.PreviewBeforeTimeText);
+        var timeCandidate = Assert.Single(timePreview.GetVisualDescendants().OfType<TextBlock>(),
+            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && block.Text == row.PreviewTimeText);
+        var frameValues = framePreview.GetVisualDescendants().OfType<FramePresentationView>()
+            .Where(static view => view.Classes.Contains("framePreview"))
+            .ToArray();
+        var frameCandidateRow = Assert.Single(framePreview.GetVisualDescendants().OfType<Grid>(),
+            grid => Grid.GetRow(grid) == 1 && grid.GetVisualDescendants().OfType<FramePresentationView>()
+                .Any(static view => view.Classes.Contains("framePreview")));
+        var frameBefore = Assert.Single(frameValues, value => Grid.GetRow(value) == 0
+            && !value.GetVisualAncestors().Contains(frameCandidateRow));
+        var frameCandidate = Assert.Single(frameValues, value => value.GetVisualAncestors().Contains(frameCandidateRow));
+        var timeCell = timeBefore.GetVisualAncestors().OfType<DataGridCell>().First();
+        var frameCell = frameBefore.GetVisualAncestors().OfType<DataGridCell>().First();
+        var timeArrow = Assert.Single(timePreview.GetVisualDescendants().OfType<Control>(),
+            control => control.GetType().Name == "Icon" && control.IsVisible);
+        var timeArrowPosition = timeArrow.TranslatePoint(new Point(0, 0), timeCell);
+        Assert.NotNull(timeArrowPosition);
+        Assert.True(timeArrow.Width >= 14);
+        Assert.InRange(timeArrowPosition.Value.X, 3, timeCell.Bounds.Width - timeArrow.Bounds.Width);
+        Assert.InRange(timeArrowPosition.Value.X, 0, timeCell.Bounds.Width / 3);
+        var candidateLeft = timeCandidate.TranslatePoint(new Point(0, 0), timeCell);
+        var beforeLeft = timeBefore.TranslatePoint(new Point(0, 0), timeCell);
+        Assert.NotNull(candidateLeft);
+        Assert.NotNull(beforeLeft);
+        Assert.InRange(Math.Abs(candidateLeft.Value.X - beforeLeft.Value.X), 0, 1);
+        Assert.InRange(Math.Abs(CenterX(timeBefore, timeCell) - CenterX(timeCell, timeCell)), 0, 1);
+        Assert.InRange(Math.Abs(CenterX(timeCandidate, timeCell) - CenterX(timeCell, timeCell)), 0, 1);
+        var frameArrow = Assert.Single(framePreview.GetVisualDescendants().OfType<Control>(),
+            control => control.GetType().Name == "Icon" && control.IsVisible);
+        Assert.True(HorizontalGap(frameArrow, frameCandidate, frameCell) > 5);
+        var frameArrowPosition = frameArrow.TranslatePoint(new Point(0, 0), frameCell);
+        Assert.NotNull(frameArrowPosition);
+        Assert.InRange(frameArrowPosition.Value.X, 3, frameCell.Bounds.Width / 3);
+        Assert.InRange(Math.Abs(CenterX(frameCandidate, frameCell) - CenterX(frameCell, frameCell)), 0, 1);
+        var timeBeforeCenter = CenterY(timeBefore, renderedRow);
+        var timeCandidateCenter = CenterY(timeCandidate, renderedRow);
+        var frameBeforeCenter = CenterY(frameBefore, renderedRow);
+        var frameCandidateCenter = CenterY(frameCandidate, renderedRow);
+
+        Assert.InRange(Math.Abs(CenterY(timePreview, timeCell) - CenterY(timeCell, timeCell)), 0, 1);
+        Assert.InRange(Math.Abs(CenterY(framePreview, frameCell) - CenterY(frameCell, frameCell)), 0, 1);
+        Assert.InRange(Math.Abs(timeBeforeCenter - frameBeforeCenter), 0, 1);
+        Assert.InRange(Math.Abs(timeCandidateCenter - frameCandidateCenter), 0, 1);
+        Assert.InRange(Math.Abs((timeCandidateCenter - timeBeforeCenter)
+            - (frameCandidateCenter - frameBeforeCenter)), 0, 1);
+    }
+
+    private static void AssertWideTimeAndFramePreviewGroups(
+        MainWindowHeadlessTestHost host,
+        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
+    {
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var timeCell = renderedRow.GetVisualDescendants().OfType<DataGridCell>()
+            .Single(cell => cell.GetVisualDescendants().OfType<TextBlock>()
+                .Any(block => block.Text == row.PreviewBeforeTimeText));
+        var timeGroup = timeCell.GetVisualDescendants().OfType<StackPanel>()
+            .Single(panel => panel.IsVisible && panel.Orientation == Orientation.Horizontal
+                && panel.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == row.PreviewBeforeTimeText));
+        var frameGroup = renderedRow.GetVisualDescendants().OfType<StackPanel>()
+            .Single(panel => panel.IsVisible && panel.Orientation == Orientation.Horizontal
+                && panel.GetVisualDescendants().OfType<FramePresentationView>()
+                    .Count(static view => view.Classes.Contains("framePreview")) == 2);
+        var frameCell = frameGroup.GetVisualAncestors().OfType<DataGridCell>().First();
+        Assert.Equal(timeGroup.Spacing, frameGroup.Spacing);
+        Assert.Equal(HorizontalAlignment.Center, timeGroup.HorizontalAlignment);
+        Assert.Equal(HorizontalAlignment.Center, frameGroup.HorizontalAlignment);
+        Assert.InRange(Math.Abs(CenterX(timeGroup, timeCell) - CenterX(timeCell, timeCell)), 0, 1);
+        Assert.InRange(Math.Abs(CenterX(frameGroup, frameCell) - CenterX(frameCell, frameCell)), 0, 1);
+    }
+
+    private static double CenterY(Control control, Control relativeTo)
+    {
+        var position = control.TranslatePoint(new Point(0, control.Bounds.Height / 2), relativeTo);
+        Assert.NotNull(position);
+        return position.Value.Y;
+    }
+
+    private static double CenterX(Control control, Control relativeTo)
+    {
+        var position = control.TranslatePoint(new Point(control.Bounds.Width / 2, 0), relativeTo);
+        Assert.NotNull(position);
+        return position.Value.X;
+    }
+
+    private static double HorizontalGap(Control left, Control right, Control relativeTo)
+    {
+        var leftRight = left.TranslatePoint(new Point(left.Bounds.Width, 0), relativeTo);
+        var rightLeft = right.TranslatePoint(new Point(0, 0), relativeTo);
+        Assert.NotNull(leftRight);
+        Assert.NotNull(rightLeft);
+        return rightLeft.Value.X - leftRight.Value.X;
     }
 
     private static void AssertFramePreviewColor(
@@ -1006,10 +1186,10 @@ public sealed class MainWindowHeadlessTests
             ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey => "frameNeutral",
             _ => throw new ArgumentOutOfRangeException(nameof(brushKey))
         };
-        var frameTexts = renderedRow.GetVisualDescendants().OfType<TextBlock>()
+        var frameTexts = renderedRow.GetVisualDescendants().OfType<FramePresentationView>()
             .Where(
-            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
-                     && block.Classes.Contains("framePreview") && block.Classes.Contains(accuracyClass))
+                view => view is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                     && view.Classes.Contains("framePreview") && view.Classes.Contains(accuracyClass))
             .ToArray();
         Assert.NotEmpty(frameTexts);
         var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
@@ -1017,6 +1197,13 @@ public sealed class MainWindowHeadlessTests
         {
             var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
             Assert.Equal(expectedBrush.Color, actualBrush.Color);
+            var renderedDigits = frameText.GetVisualDescendants().OfType<TextBlock>().ToArray();
+            Assert.NotEmpty(renderedDigits);
+            Assert.All(renderedDigits, digit =>
+            {
+                var digitBrush = Assert.IsType<SolidColorBrush>(digit.Foreground);
+                Assert.Equal(expectedBrush.Color, digitBrush.Color);
+            });
         });
     }
 
@@ -1038,22 +1225,29 @@ public sealed class MainWindowHeadlessTests
             ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey => "frameNeutral",
             _ => throw new ArgumentOutOfRangeException(nameof(brushKey))
         };
-        var frameTexts = renderedRow.GetVisualDescendants().OfType<TextBlock>()
-            .Where(block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
-                && block.Classes.Contains("frameText") && !block.Classes.Contains("framePreview")
-                && block.Classes.Contains(accuracyClass))
+        var frameTexts = renderedRow.GetVisualDescendants().OfType<FramePresentationView>()
+            .Where(view => view is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && view.Classes.Contains("frameText") && !view.Classes.Contains("framePreview")
+                && view.Classes.Contains(accuracyClass))
             .ToArray();
         Assert.NotEmpty(frameTexts);
         Assert.All(frameTexts, frameText =>
         {
             Assert.Equal(HorizontalAlignment.Stretch, frameText.HorizontalAlignment);
-            Assert.Equal(TextAlignment.Center, frameText.TextAlignment);
+            Assert.Equal(HorizontalAlignment.Center, frameText.FindControl<StackPanel>("FrameParts")!.HorizontalAlignment);
         });
         var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
         Assert.All(frameTexts, frameText =>
         {
             var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
             Assert.Equal(expectedBrush.Color, actualBrush.Color);
+            var renderedDigits = frameText.GetVisualDescendants().OfType<TextBlock>().ToArray();
+            Assert.NotEmpty(renderedDigits);
+            Assert.All(renderedDigits, digit =>
+            {
+                var digitBrush = Assert.IsType<SolidColorBrush>(digit.Foreground);
+                Assert.Equal(expectedBrush.Color, digitBrush.Color);
+            });
         });
     }
 
