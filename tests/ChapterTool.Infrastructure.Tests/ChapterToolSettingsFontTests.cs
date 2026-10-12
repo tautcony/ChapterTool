@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Infrastructure.Configuration;
+using ChapterTool.Infrastructure.Importing.Runtime;
 
 namespace ChapterTool.Infrastructure.Tests;
 
@@ -42,13 +43,14 @@ public sealed class ChapterToolSettingsFontTests
     public async Task Blank_font_values_round_trip_as_stable_defaults()
     {
         var root = CreateTempDirectory();
-        var store = new ChapterToolSettingsStore(root);
+        var store = ChapterToolRuntimeComposition.CreateSettingsStore(root);
 
         await store.SaveAsync(
             new ChapterToolSettings { Font = new FontSettings(" ", "\t") },
             TestContext.Current.CancellationToken);
 
         Assert.Equal(FontSettings.Default, (await store.LoadAsync(TestContext.Current.CancellationToken)).Font);
+        Assert.True(File.Exists(Path.Combine(root, ChapterToolSettingsStore.FileName)));
     }
 
     private static string CreateTempDirectory()

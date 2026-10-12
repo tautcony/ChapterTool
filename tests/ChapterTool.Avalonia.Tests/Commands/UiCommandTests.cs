@@ -25,35 +25,25 @@ public sealed class UiCommandTests
     }
 
     [Fact]
-    public async Task ExecuteAsyncExposesObservedExceptions()
+    public async Task ExecuteAsyncExposesAndRoutesUnexpectedExceptions()
     {
         var expected = new InvalidOperationException("boom");
-        var command = new UiCommand((_, _) => throw expected);
+        Exception? reported = null;
+        var command = new UiCommand((_, _) => throw expected)
+        {
+            ErrorHandler = exception =>
+            {
+                reported = exception;
+                return ValueTask.CompletedTask;
+            }
+        };
 
         var actual = await Assert.ThrowsAsync<InvalidOperationException>(async () => await command.ExecuteAsync().AsTask());
 
         Assert.Same(expected, actual);
         Assert.Same(expected, command.ExecutionError);
+        Assert.Same(expected, reported);
         Assert.False(command.IsExecuting);
-    }
-
-    [Fact]
-    public async Task ExecuteAsyncRoutesUnexpectedExceptionsToTheUiBoundary()
-    {
-        var expected = new InvalidOperationException("boom");
-        var reported = new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var command = new UiCommand((_, _) => throw expected)
-        {
-            ErrorHandler = exception =>
-            {
-                reported.SetResult(exception);
-                return ValueTask.CompletedTask;
-            }
-        };
-
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await command.ExecuteAsync().AsTask());
-
-        Assert.Same(expected, await reported.Task);
     }
 
     [Fact]

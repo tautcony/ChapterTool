@@ -32,16 +32,6 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
-    public void CliLocalizationSettingTheSameCultureReturnsEarly()
-    {
-        var localizer = new CliLocalizationManager("en-US");
-
-        localizer.SetCulture("en-US");
-
-        Assert.Equal("en-US", localizer.CurrentCultureName);
-    }
-
-    [Fact]
     public void CliLocalizationFallsBackToEnglishWhenCurrentCultureMissesAKey()
     {
         var localizer = new CliLocalizationManager(

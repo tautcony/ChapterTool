@@ -1,7 +1,7 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Media;
-using ChapterTool.Infrastructure.Importing.Media;
+using ChapterTool.Infrastructure.Importing.Runtime;
 
 namespace ChapterTool.Infrastructure.Tests.Importing;
 
@@ -12,7 +12,7 @@ public sealed class Mp4IntegrationTests
     [Fact]
     public async Task AtlReader_reads_chapters_from_real_file()
     {
-        var reader = new AtlMp4ChapterReader();
+        var reader = ChapterToolRuntimeComposition.CreateMp4ChapterReader();
 
         var result = await reader.ReadAsync(FixturePath, TestContext.Current.CancellationToken);
 
@@ -32,7 +32,7 @@ public sealed class Mp4IntegrationTests
     [Fact]
     public async Task Importer_with_real_reader_converts_durations_to_cumulative_starts()
     {
-        var importer = new MediaChapterImporter(new AtlMp4ChapterReader(), [".mp4", ".m4a", ".m4v"]);
+        var importer = new MediaChapterImporter(ChapterToolRuntimeComposition.CreateMp4ChapterReader(), [".mp4", ".m4a", ".m4v"]);
 
         var result = await importer.ImportAsync(new ChapterImportRequest(FixturePath), TestContext.Current.CancellationToken);
 
@@ -47,7 +47,7 @@ public sealed class Mp4IntegrationTests
     [Fact]
     public async Task AtlReader_returns_empty_for_nonexistent_file()
     {
-        var reader = new AtlMp4ChapterReader();
+        var reader = ChapterToolRuntimeComposition.CreateMp4ChapterReader();
 
         var result = await reader.ReadAsync(Path.Combine(Path.GetTempPath(), "nonexistent.mp4"), TestContext.Current.CancellationToken);
 
@@ -61,7 +61,7 @@ public sealed class Mp4IntegrationTests
     [InlineData("  ")]
     public async Task AtlReader_reports_invalid_path(string path)
     {
-        var reader = new AtlMp4ChapterReader();
+        var reader = ChapterToolRuntimeComposition.CreateMp4ChapterReader();
 
         var result = await reader.ReadAsync(path, TestContext.Current.CancellationToken);
 
