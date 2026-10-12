@@ -20,9 +20,20 @@ python scripts/ci/run.py --stage browser --browser-suite chromium
 ```
 
 The default Playwright configuration serves the prepared Release output at
-`http://127.0.0.1:5261/ChapterTool/`. The preparation script copies the
-published `wwwroot` into `artifacts/wasm-e2e/site/ChapterTool/`, rewrites both
-HTML entry points, and creates the Pages metadata files.
+`http://127.0.0.1:5261/ChapterTool/`. Generate the Core API site before site
+preparation:
+
+```bash
+dotnet tool restore
+dotnet tool run docfx metadata src/ChapterTool.Core/docfx.json
+npm --prefix docs-site ci
+npm --prefix docs-site run docs:build
+```
+
+The preparation script copies the published `wwwroot` into
+`artifacts/wasm-e2e/site/ChapterTool/` and copies the API site into its `docs/`
+subdirectory. It rewrites both HTML entry points and creates the Pages metadata
+files.
 
 Run `npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e:dev` to use the local
 Blazor development server at `/`. Both configurations use the same workflow

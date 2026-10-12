@@ -33,6 +33,14 @@ jobs:
         run: python3 scripts/ci/run.py --stage browser --step restore-wasm
       - name: Publish Release WASM
         run: python3 scripts/ci/run.py --stage browser --step publish-release-wasm
+      - name: Restore DocFX tool
+        run: python3 scripts/ci/run.py --stage browser --step restore-docfx-tool
+      - name: Generate Core API Markdown
+        run: python3 scripts/ci/run.py --stage browser --step generate-core-api-markdown
+      - name: Install VitePress dependencies
+        run: python3 scripts/ci/run.py --stage browser --step install-vitepress-dependencies
+      - name: Build VitePress documentation
+        run: python3 scripts/ci/run.py --stage browser --step build-vitepress-documentation
       - name: Install browser test dependencies
         run: python3 scripts/ci/run.py --stage browser --step install-browser-test-dependencies
       - name: Prepare Pages-shaped site

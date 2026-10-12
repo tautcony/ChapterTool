@@ -122,7 +122,7 @@ The NuGet job builds and packs both packages with the same tag version. It insta
 
 The NuGet and npm publishers resolve a successful tag push for the exact checked-out SHA. They download its artifacts. They do not rebuild packages. GitHub Release downloads only the six named distribution artifacts. Browser reports and test diagnostics are not release attachments.
 
-Pages deployment runs after `CI ready` on `master` pushes and manual CI runs. It uploads the same `wasm-prepared-site` tested by the browser jobs. To deploy manually, dispatch `.NET 10 CI` on `master`.
+Pages deployment runs after `CI ready` on `master` pushes and manual CI runs. The browser job builds the Core API site, adds it under `/docs/` beside the WASM app, and uploads the same `wasm-prepared-site` tested by the browser jobs. To deploy manually, dispatch `.NET 10 CI` on `master`.
 
 ### Layout verification and platform limits
 

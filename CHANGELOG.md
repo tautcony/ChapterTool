@@ -1,5 +1,39 @@
 # Release Notes
 
+## Current Change: Generated Core API Reference
+
+This change adds generated Core API documentation and publishes it beside the WASM app.
+
+- Added DocFX reference pages for public Core types, members, and enum values.
+- Added an API reference landing page and namespace navigation.
+- Added a `/docs/` section to the GitHub Pages site. The WASM app remains at the site root.
+
+## [Unreleased]
+
+This section summarizes product changes accumulated since v23.3.2. The current documentation-only change is listed separately above.
+
+### Features
+
+- Added DVD disc chapter import from `VIDEO_TS` folders, including IFO timing and title selection.
+- Added a shared editable document and session history model with atomic edits, branching history, clip operations, and history inspection and restore across desktop and browser workflows.
+- Added reviewable live expression previews with diagnostics, plus inline preview and history workflows in the browser app.
+- Preserved exact frame-rate provenance from MPLS imports through editing, and added full-precision repeating frame display.
+- Added customizable keyboard shortcuts and chapter and selection counts to the desktop workflow.
+
+### Bug Fixes
+
+- Improved desktop and browser editing parity, including expression preview freshness, frame formatting, and responsive dialogs.
+- Fixed chapter time handling for sources with unknown duration and rejected chapter times beyond one day.
+- Improved frame display preference updates, preview layout, localization, and browser startup handling.
+
+### Internals
+
+- Expanded browser end-to-end coverage and reviewed Linux layout baselines, and reorganized CI checks and reusable scripts.
+- Updated dependencies and refined session, import, export, and UI composition boundaries.
+- Removed Core and Node numeric frame-rate compatibility surfaces and transform-bearing export options; Node callers now use canonical frame rates and tick strings.
+- Removed predecessor browser settings-key migration and cleanup. Renamed `LegacyMplsCode` to `MplsFrameRateCode`.
+- Removed obsolete expression-editor and expression-apply compatibility members.
+
 ## [23.3.2] - 2026.08.29
 
 ### Features

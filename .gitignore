@@ -165,6 +165,10 @@ ClientBin/
 *.pfx
 *.publishsettings
 node_modules/
+# DocFX API Markdown is generated before VitePress builds.
+/docs-site/api/ChapterTool.Core.*.md
+/docs-site/api/toc.yml
+/docs-site/.vitepress/cache/
 bower_components/
 
 # Python bytecode

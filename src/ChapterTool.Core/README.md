@@ -11,6 +11,21 @@
 dotnet add package ChapterTool.Core
 ```
 
+## API Reference
+
+The API reference is generated from public API metadata and XML documentation comments with DocFX. VitePress builds the site. It documents each public class, record, interface, enum, and member. Enum pages include every enum value. Generated API Markdown is not committed.
+
+View the [published API reference](https://tautcony.github.io/ChapterTool/docs/).
+
+Regenerate the Markdown pages and build the site from the repository root:
+
+```bash
+dotnet tool restore
+dotnet tool run docfx metadata src/ChapterTool.Core/docfx.json
+npm --prefix docs-site ci
+npm --prefix docs-site run docs:build
+```
+
 ## What You Can Build
 
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers

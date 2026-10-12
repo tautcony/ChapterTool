@@ -5,6 +5,7 @@ This directory contains documentation for the current ChapterTool codebase.
 ## Current Documentation
 
 - `code-map/` is the primary maintainer navigation index. Start here when you need to locate code, ownership, entry points, or primary tests.
+- [ChapterTool.Core API reference](../src/ChapterTool.Core/README.md#api-reference) links to generated class, interface, enum, and member documentation. The reference is also published at [GitHub Pages](https://tautcony.github.io/ChapterTool/docs/).
 - `testing/` contains current testing guidance and performance notes.
 - `code-map/ui-logging.md` maps shared Avalonia UI logging scenarios and log outputs.
 - `tasks/ui-visual-consistency.md` provides the current workflow for investigating Avalonia visual inconsistencies.

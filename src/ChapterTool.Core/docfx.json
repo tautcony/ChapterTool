@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": ["ChapterTool.Core.csproj"],
+          "src": "."
+        }
+      ],
+      "dest": "../../docs-site/api",
+      "outputFormat": "markdown"
+    }
+  ]
+}

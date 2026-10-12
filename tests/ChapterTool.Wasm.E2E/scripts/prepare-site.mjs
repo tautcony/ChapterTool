@@ -13,8 +13,11 @@ function option(name, fallback) {
 const publishPath = process.env.CHAPTERTOOL_E2E_PUBLISH
   ?? option('--publish', 'artifacts/wasm-e2e/publish/wwwroot');
 const publishDir = resolve(repoRoot, publishPath);
+const apiDocsPath = option('--api-docs', 'artifacts/core-api-docs/site');
+const apiDocsDir = resolve(repoRoot, apiDocsPath);
 const siteRoot = resolve(repoRoot, option('--site', 'artifacts/wasm-e2e/site'));
 const siteApp = resolve(siteRoot, 'ChapterTool');
+const siteDocs = resolve(siteApp, 'docs');
 const baseHref = '/ChapterTool/';
 
 function isWithin(parent, target) {
@@ -30,6 +33,10 @@ const publishInfo = await stat(publishDir).catch(() => null);
 if (!publishInfo?.isDirectory()) {
   throw new Error(`Publish wwwroot directory does not exist: ${publishDir}`);
 }
+const apiDocsInfo = await stat(apiDocsDir).catch(() => null);
+if (!apiDocsInfo?.isDirectory() || !(await stat(resolve(apiDocsDir, 'index.html')).catch(() => null))) {
+  throw new Error(`Generated Core API docs site does not exist: ${apiDocsDir}`);
+}
 for (const required of ['index.html', '_framework', 'js/download.js', 'css/app.css']) {
   const entry = await stat(resolve(publishDir, required)).catch(() => null);
   if (!entry) throw new Error(`Missing required publish asset: ${required}`);
@@ -38,6 +45,7 @@ for (const required of ['index.html', '_framework', 'js/download.js', 'css/app.c
 await rm(siteRoot, { recursive: true, force: true });
 await mkdir(siteApp, { recursive: true });
 await cp(publishDir, siteApp, { recursive: true });
+await cp(apiDocsDir, siteDocs, { recursive: true });
 
 for (const entryName of ['index.html', '404.html']) {
   const path = resolve(siteApp, entryName);
@@ -58,6 +66,7 @@ const metadata = [
   `sha=${process.env.GITHUB_SHA ?? 'local'}`,
   `ref=${process.env.GITHUB_REF ?? 'local'}`,
   `base_href=${baseHref}`,
+  'api_docs_path=docs/',
   `built_at=${new Date().toISOString()}`,
   '',
 ].join('\n');

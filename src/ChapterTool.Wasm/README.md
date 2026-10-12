@@ -132,6 +132,9 @@ Published URL (project pages):
 
 `https://tautcony.github.io/ChapterTool/`
 
+The generated Core API reference is published beside the browser app at
+`https://tautcony.github.io/ChapterTool/docs/`.
+
 ### One-time repository settings
 
 1. **Settings → Pages → Build and deployment → Source**: **GitHub Actions**

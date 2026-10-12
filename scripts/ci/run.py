@@ -105,11 +105,15 @@ def build_steps(root: Path) -> list[Step]:
     return resource_steps() + dotnet_steps(root) + node_steps()
 
 
-def browser_steps(suite: str, install_deps: bool, engine: str | None = None) -> list[Step]:
+def browser_steps(root: Path, suite: str, install_deps: bool, engine: str | None = None) -> list[Step]:
     project = "src/ChapterTool.Wasm/ChapterTool.Wasm.csproj"
     steps = [
         Step("Restore WASM", ["dotnet", "restore", project]),
         Step("Publish Release WASM", ["dotnet", "publish", project, "--configuration", "Release", "--no-restore", "--output", "artifacts/wasm-e2e/publish", "-p:WasmBuildNative=false", "-p:WasmRunWasmOpt=false"]),
+        Step("Restore DocFX tool", ["dotnet", "tool", "restore"]),
+        Step("Generate Core API Markdown", ["dotnet", "tool", "run", "docfx", "metadata", "src/ChapterTool.Core/docfx.json"]),
+        Step("Install VitePress dependencies", ["npm", "ci"], root / "docs-site"),
+        Step("Build VitePress documentation", ["npm", "run", "docs:build"], root / "docs-site"),
         Step("Install browser test dependencies", ["npm", "ci"], E2E),
         Step("Prepare Pages-shaped site", ["npm", "run", "prepare:site"], E2E, {"CHAPTERTOOL_E2E_PUBLISH": "artifacts/wasm-e2e/publish/wwwroot"}),
         Step("Type check browser tests", ["npm", "run", "typecheck"], E2E),
@@ -173,7 +177,7 @@ def plan(options: argparse.Namespace, root: Path) -> list[Step]:
         elif stage == "build-test":
             steps.extend(build_steps(root))
         elif stage == "browser":
-            steps.extend(browser_steps(options.browser_suite, options.install_browser_deps, options.browser_engine))
+            steps.extend(browser_steps(root, options.browser_suite, options.install_browser_deps, options.browser_engine))
         elif stage == "pack-node":
             steps.append(Step("Pack and verify npm tarball", ["npm", "run", "pack:verify"], NODE))
         elif stage == "pack-desktop":
