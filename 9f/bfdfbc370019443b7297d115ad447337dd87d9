@@ -1,0 +1,29 @@
+.github/workflows/dotnet-ci.yml
+  s_1758991fd47007::t_652959888f2432 59
+scripts/ci/plan.py
+  s_1758991fd47007::t_bc19cfd93eec8f 11
+scripts/ci/run.py
+  s_1758991fd47007::t_d8ba28d450b9de 15
+scripts/ci/verify-nuget.py
+  s_1758991fd47007::t_942854d9020e25 12-13
+scripts/testing/check-headless-xunit.py
+  s_1758991fd47007::t_85cc8fd70c725c 7-8,12,14,25,31-47,67
+tests/ChapterTool.Wasm.E2E/scripts/prepare-site.mjs
+  s_1758991fd47007::t_bb0d90babd88e3 28-50,78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9fbfdfbc370019443b7297d115ad447337dd87d9",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
