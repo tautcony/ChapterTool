@@ -26,72 +26,99 @@ public sealed partial class MainWindowViewModel
 
     private void UpdateInlinePreviewProjection()
     {
-        var preview = pendingContentPreview;
-        IReadOnlyDictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison> comparisons = preview is { IsValid: true }
+        var comparisons = BuildInlinePreviewComparisons(pendingContentPreview);
+        foreach (var row in Rows)
+        {
+            RefreshInlinePreviewRow(row, comparisons);
+        }
+    }
+
+    private IReadOnlyDictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison>
+        BuildInlinePreviewComparisons(ChapterContentPreview? preview) => preview is { IsValid: true }
             && Workspace.IsContentTokenCurrent(preview.BaseToken)
             ? ExpressionPreviewProjector.Build(preview, displayFrameRate: EffectiveFrameRateOption.Rate,
                 frameDecimalPlaces: PreviewFrameDecimalPlaces)
                 .Chapters.ToDictionary(item => (item.TrackId, item.Id))
             : new Dictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison>();
-        foreach (var row in Rows)
+
+    private void RefreshInlinePreviewRow(
+        ChapterRowViewModel row,
+        IReadOnlyDictionary<(ChapterTrackId TrackId, ChapterId ChapterId), ExpressionChapterComparison> comparisons)
+    {
+        var comparison = row.TrackId is { } trackId && row.ChapterId is { } chapterId
+            && comparisons.TryGetValue((trackId, chapterId), out var mappedComparison)
+                ? mappedComparison
+                : null;
+        row.UpdatePreviewComparison(comparison, DisplayFrameRate, Localizer.GetString("Expression.Value.NotCalculated"));
+        UpdatePreviewTimes(row);
+        UpdatePreviewValues(row);
+        UpdatePreviewAccessibleNames(row);
+        UpdatePreviewFramePresentations(row);
+    }
+
+    private void UpdatePreviewTimes(ChapterRowViewModel row)
+    {
+        row.PreviewTimeText = row.HasPreviewTimeChange && row.PreviewComparison?.Candidate is { } candidate
+            ? ExpressionChapterRowViewModel.FormatTicks(candidate.StartTicks)
+            : string.Empty;
+        row.PreviewBeforeTimeText = row.HasPreviewTimeChange && row.PreviewComparison?.Before is { } before
+            ? ExpressionChapterRowViewModel.FormatTicks(before.StartTicks)
+            : string.Empty;
+        row.PreviewTimeDelta = row.PreviewComparison is { } comparison && row.HasPreviewTimeChange
+            ? new ExpressionChapterRowViewModel(comparison, showFrames: false, Localizer).DeltaValue
+            : string.Empty;
+    }
+
+    private void UpdatePreviewValues(ChapterRowViewModel row)
+    {
+        row.PreviewName = row.HasPreviewNameChange
+            ? row.PreviewComparison?.Candidate?.Name ?? Localizer.GetString("Expression.Value.Missing")
+            : string.Empty;
+        row.PreviewNumber = row.HasPreviewNumberChange
+            ? row.PreviewComparison?.Candidate?.DisplayNumber.ToString() ?? Localizer.GetString("Expression.Value.Missing")
+            : string.Empty;
+        row.PreviewFrames = row.HasPreviewFramesChange
+            ? row.PreviewComparison?.CandidateFrames?.Text ?? Localizer.GetString("Expression.Value.NotCalculated")
+            : string.Empty;
+        row.PreviewBeforeFrames = row.HasPreviewFramesChange ? row.PreviewFrameBaseline : string.Empty;
+    }
+
+    private void UpdatePreviewAccessibleNames(ChapterRowViewModel row)
+    {
+        row.PreviewTimeAccessibleName = row.HasPreviewTimeChange
+            ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Time"), row.PreviewBeforeTimeText, row.PreviewTimeText, row.PreviewTimeDelta)
+            : string.Empty;
+        row.PreviewNameAccessibleName = row.HasPreviewNameChange
+            ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Name"), row.Name, row.PreviewName)
+            : string.Empty;
+        row.PreviewNumberAccessibleName = row.HasPreviewNumberChange
+            ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Number"), row.Number.ToString(CultureInfo.CurrentCulture), row.PreviewNumber)
+            : string.Empty;
+        row.PreviewFramesAccessibleName = row.HasPreviewFramesChange
+            ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Frames"), row.PreviewBeforeFrames, row.PreviewFrames)
+            : string.Empty;
+    }
+
+    private void UpdatePreviewFramePresentations(ChapterRowViewModel row)
+    {
+        var beforeInput = row.HasPreviewFramesChange && row.PreviewComparison is { Before: { } before, BeforeFrames: { } beforeFrames }
+            ? CreateFramePresentationInput(before.StartTicks, beforeFrames.FrameRate, row.PreviewBeforeFrames)
+            : null;
+        var candidateInput = row.HasPreviewFramesChange && row.PreviewComparison is { Candidate: { } candidate, CandidateFrames: { } candidateFrames }
+            ? CreateFramePresentationInput(candidate.StartTicks, candidateFrames.FrameRate, row.PreviewFrames)
+            : null;
+        row.SetPreviewFramePresentationInputs(beforeInput, candidateInput, FramePresentationPolicy);
+        if (!row.HasPreviewFramesChange)
         {
-            var comparison = row.TrackId is { } trackId && row.ChapterId is { } chapterId
-                && comparisons.TryGetValue((trackId, chapterId), out var mappedComparison)
-                    ? mappedComparison
-                    : null;
-            row.UpdatePreviewComparison(comparison, DisplayFrameRate, Localizer.GetString("Expression.Value.NotCalculated"));
-            row.PreviewTimeText = row.HasPreviewTimeChange && row.PreviewComparison?.Candidate is { } candidate
-                ? ExpressionChapterRowViewModel.FormatTicks(candidate.StartTicks)
-                : string.Empty;
-            row.PreviewBeforeTimeText = row.HasPreviewTimeChange && row.PreviewComparison?.Before is { } before
-                ? ExpressionChapterRowViewModel.FormatTicks(before.StartTicks)
-                : string.Empty;
-            row.PreviewTimeDelta = row.PreviewComparison is { } timeComparison && row.HasPreviewTimeChange
-                ? new ExpressionChapterRowViewModel(timeComparison, showFrames: false, Localizer).DeltaValue
-                : string.Empty;
-            row.PreviewName = row.HasPreviewNameChange
-                ? row.PreviewComparison?.Candidate?.Name ?? Localizer.GetString("Expression.Value.Missing")
-                : string.Empty;
-            row.PreviewNumber = row.HasPreviewNumberChange
-                ? row.PreviewComparison?.Candidate?.DisplayNumber.ToString() ?? Localizer.GetString("Expression.Value.Missing")
-                : string.Empty;
-            row.PreviewFrames = row.HasPreviewFramesChange
-                ? row.PreviewComparison?.CandidateFrames?.Text ?? Localizer.GetString("Expression.Value.NotCalculated")
-                : string.Empty;
-            row.PreviewBeforeFrames = row.HasPreviewFramesChange
-                ? row.PreviewFrameBaseline
-                : string.Empty;
-            row.PreviewTimeAccessibleName = row.HasPreviewTimeChange
-                ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Time"), row.PreviewBeforeTimeText, row.PreviewTimeText, row.PreviewTimeDelta)
-                : string.Empty;
-            row.PreviewNameAccessibleName = row.HasPreviewNameChange
-                ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Name"), row.Name, row.PreviewName)
-                : string.Empty;
-            row.PreviewNumberAccessibleName = row.HasPreviewNumberChange
-                ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Number"), row.Number.ToString(CultureInfo.CurrentCulture), row.PreviewNumber)
-                : string.Empty;
-            row.PreviewFramesAccessibleName = row.HasPreviewFramesChange
-                ? FormatPreviewAccessibleName(Localizer.GetString("Grid.Frames"), row.PreviewBeforeFrames, row.PreviewFrames)
-                : string.Empty;
-            var beforeInput = row.HasPreviewFramesChange && row.PreviewComparison is { Before: { } beforeChapter, BeforeFrames: { } beforeFrames }
-                ? CreateFramePresentationInput(beforeChapter.StartTicks, beforeFrames.FrameRate, row.PreviewBeforeFrames)
-                : null;
-            var candidateInput = row.HasPreviewFramesChange && row.PreviewComparison is { Candidate: { } candidateChapter, CandidateFrames: { } candidateFrames }
-                ? CreateFramePresentationInput(candidateChapter.StartTicks, candidateFrames.FrameRate, row.PreviewFrames)
-                : null;
-            row.SetPreviewFramePresentationInputs(beforeInput, candidateInput, FramePresentationPolicy);
-            if (row.HasPreviewFramesChange)
-            {
-                var beforeDescription = row.PreviewBeforeFramePresentation?.AccessibleDescription
-                    ?? row.PreviewBeforeFrames;
-                var candidateDescription = row.PreviewCandidateFramePresentation?.AccessibleDescription
-                    ?? row.PreviewFrames;
-                row.PreviewFramesAccessibleName = FormatPreviewAccessibleName(
-                    Localizer.GetString("Grid.Frames"),
-                    $"{Localizer.GetString("Expression.Preview.BeforeFrames")}: {beforeDescription}",
-                    $"{Localizer.GetString("Expression.Preview.CandidateFrames")}: {candidateDescription}");
-            }
+            return;
         }
+
+        var beforeDescription = row.PreviewBeforeFramePresentation?.AccessibleDescription ?? row.PreviewBeforeFrames;
+        var candidateDescription = row.PreviewCandidateFramePresentation?.AccessibleDescription ?? row.PreviewFrames;
+        row.PreviewFramesAccessibleName = FormatPreviewAccessibleName(
+            Localizer.GetString("Grid.Frames"),
+            $"{Localizer.GetString("Expression.Preview.BeforeFrames")}: {beforeDescription}",
+            $"{Localizer.GetString("Expression.Preview.CandidateFrames")}: {candidateDescription}");
     }
 
     private FramePresentationInput CreateFramePresentationInput(long startTicks, FrameRateValue rate, string fallback)

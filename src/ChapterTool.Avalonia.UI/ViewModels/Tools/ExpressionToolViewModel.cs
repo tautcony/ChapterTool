@@ -52,18 +52,20 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
         selectedPresetIndex = Presets.ToList().FindIndex(preset =>
             string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
         previewTimer.Tick += OnPreviewTimerTick;
-        InitializeCommands(errorHandler);
+        var commands = CreateCommands(errorHandler);
+        BrowseScriptCommand = commands.BrowseScript;
+        ApplyCommand = commands.Apply;
+        ConfirmApplyCommand = commands.ConfirmApply;
+        CancelPreviewCommand = commands.CancelPreview;
+        UpdatePreviewCommand = commands.UpdatePreview;
         InitializePreviewState();
     }
 
-    private void InitializeCommands(Func<Exception, ValueTask>? errorHandler)
-    {
-        BrowseScriptCommand = CreateBrowseScriptCommand(errorHandler);
-        ApplyCommand = CreateApplyCommand(errorHandler);
-        ConfirmApplyCommand = new UiCommand(ApplyPreviewAsync, _ => CanApplyPreview) { ErrorHandler = errorHandler };
-        CancelPreviewCommand = CreateCancelPreviewCommand();
-        UpdatePreviewCommand = CreateUpdatePreviewCommand();
-    }
+    private (UiCommand BrowseScript, UiCommand Apply, UiCommand ConfirmApply, UiCommand CancelPreview, UiCommand UpdatePreview)
+        CreateCommands(Func<Exception, ValueTask>? errorHandler) =>
+        (CreateBrowseScriptCommand(errorHandler), CreateApplyCommand(errorHandler),
+            new UiCommand(ApplyPreviewAsync, _ => CanApplyPreview) { ErrorHandler = errorHandler },
+            CreateCancelPreviewCommand(), CreateUpdatePreviewCommand());
 
     private UiCommand CreateBrowseScriptCommand(Func<Exception, ValueTask>? errorHandler) =>
         new(async (_, token) => await BrowseScriptAsync(token), _ => filePicker is not null) { ErrorHandler = errorHandler };

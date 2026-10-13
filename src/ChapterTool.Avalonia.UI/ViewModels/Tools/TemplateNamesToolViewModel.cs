@@ -43,7 +43,7 @@ public sealed class TemplateNamesToolViewModel : ObservableViewModel
 
     public UiCommand CancelPreviewCommand { get; }
 
-    private ValueTask ApplyTemplateNamesAsync(object? parameter, CancellationToken _)
+    private ValueTask ApplyTemplateNamesAsync(object? parameter, CancellationToken cancellationToken)
     {
         if (parameter is not TemplateNamesToolViewModel viewModel)
         {
@@ -69,7 +69,7 @@ public sealed class TemplateNamesToolViewModel : ObservableViewModel
         return ValueTask.CompletedTask;
     }
 
-    private async ValueTask ConfirmApplyAsync(object? _, CancellationToken token)
+    private async ValueTask ConfirmApplyAsync(object? parameter, CancellationToken token)
     {
         if (contentOperations is null || pendingPreview is not { IsValid: true } preview)
         {
@@ -85,7 +85,7 @@ public sealed class TemplateNamesToolViewModel : ObservableViewModel
         RaisePreviewCommands();
     }
 
-    private ValueTask CancelPreviewAsync(object? _, CancellationToken __)
+    private ValueTask CancelPreviewAsync(object? parameter, CancellationToken cancellationToken)
     {
         if (pendingPreview is { } preview)
         {

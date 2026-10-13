@@ -780,64 +780,55 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         {
             return localizer.GetString("History.Presence.Absent");
         }
-        if (value.Value is null)
+        return value.Value switch
         {
-            return localizer.GetString("History.Presence.Null");
-        }
-        if (value.Value is string text && text.Length == 0)
-        {
-            return localizer.GetString("History.Presence.Empty");
-        }
-        if (value.Value is long ticks && field is "StartTicks" or "EndTicks")
-        {
-            return FormatTimeSpan(TimeSpan.FromTicks(ticks));
-        }
-        if (value.Value is ChapterDuration duration)
-        {
-            return duration.IsKnown ? FormatTimeSpan(TimeSpan.FromTicks(duration.Ticks)) : localizer.GetString("History.Presence.Unknown");
-        }
-        if (value.Value is ChapterFrameRate frameRate)
-        {
-            var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
-            return frameRate.Denominator == 1
-                ? string.Concat(frameRate.Numerator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"))
-                : string.Concat(frameRate.Numerator.ToString(culture), "/", frameRate.Denominator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"));
-        }
-        if (value.Value is HistoryTrackReference trackReference)
-        {
-            return string.IsNullOrEmpty(trackReference.Label)
+            null => localizer.GetString("History.Presence.Null"),
+            string { Length: 0 } => localizer.GetString("History.Presence.Empty"),
+            long ticks when field is "StartTicks" or "EndTicks" => FormatTimeSpan(TimeSpan.FromTicks(ticks)),
+            ChapterDuration duration => FormatDuration(duration),
+            ChapterFrameRate frameRate => FormatChapterFrameRate(frameRate),
+            HistoryTrackReference trackReference => string.IsNullOrEmpty(trackReference.Label)
                 ? localizer.GetString("History.Track.Unknown")
-                : trackReference.Label;
-        }
-        if (value.Value is ChapterImportFormat format)
-        {
-            return localizer.GetString($"History.Enum.ImportFormat.{format}");
-        }
-        if (value.Value is ChapterKind kind)
-        {
-            return localizer.GetString($"History.Enum.ChapterKind.{kind}");
-        }
-        if (value.Value is FrameAccuracy accuracy)
-        {
-            return localizer.GetString(accuracy == FrameAccuracy.Neutral
+                : trackReference.Label,
+            ChapterImportFormat format => localizer.GetString($"History.Enum.ImportFormat.{format}"),
+            ChapterKind kind => localizer.GetString($"History.Enum.ChapterKind.{kind}"),
+            FrameAccuracy accuracy => localizer.GetString(accuracy == FrameAccuracy.Neutral
                 ? "Expression.FrameAccuracy.NotCalculated"
-                : $"Expression.FrameAccuracy.{accuracy}");
-        }
-        if (value.Value is System.Collections.IEnumerable sequence && value.Value is not string)
-        {
-            var items = new List<string>();
-            foreach (var item in sequence)
-            {
-                items.Add(item is HistoryOrderItem orderItem
-                    ? orderItem.Label
-                    : Convert.ToString(item, System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName)) ?? string.Empty);
-            }
-            return string.Join(", ", items);
-        }
-        return value.Value is IFormattable formattable
-            ? formattable.ToString(null, System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName)) ?? string.Empty
-            : value.Value.ToString() ?? string.Empty;
+                : $"Expression.FrameAccuracy.{accuracy}"),
+            System.Collections.IEnumerable sequence when value.Value is not string => FormatSequence(sequence),
+            IFormattable formattable => FormatFormattable(formattable),
+            _ => value.Value.ToString() ?? string.Empty
+        };
     }
+
+    private string FormatDuration(ChapterDuration duration) => duration.IsKnown
+        ? FormatTimeSpan(TimeSpan.FromTicks(duration.Ticks))
+        : localizer.GetString("History.Presence.Unknown");
+
+    private string FormatChapterFrameRate(ChapterFrameRate frameRate)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        return frameRate.Denominator == 1
+            ? string.Concat(frameRate.Numerator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"))
+            : string.Concat(frameRate.Numerator.ToString(culture), "/", frameRate.Denominator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"));
+    }
+
+    private string FormatSequence(System.Collections.IEnumerable sequence)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        var items = new List<string>();
+        foreach (var item in sequence)
+        {
+            items.Add(item is HistoryOrderItem orderItem
+                ? orderItem.Label
+                : Convert.ToString(item, culture) ?? string.Empty);
+        }
+
+        return string.Join(", ", items);
+    }
+
+    private string FormatFormattable(IFormattable formattable) =>
+        formattable.ToString(null, System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName)) ?? string.Empty;
 
     private string? FormatDelta(HistoryFieldChange change)
     {

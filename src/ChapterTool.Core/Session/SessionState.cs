@@ -166,56 +166,7 @@ public sealed class SessionState
                 cancellationToken.ThrowIfCancellationRequested();
                 var after = tree.Nodes[nodeId].ChangeSet!.Apply(before, forward: true);
                 changes = HistoryNodeDetailsProjector.ProjectChanges(before, after, cancellationToken);
-                var added = new HashSet<string>(StringComparer.Ordinal);
-                var removed = new HashSet<string>(StringComparer.Ordinal);
-                var modified = new HashSet<string>(StringComparer.Ordinal);
-                var changedTracks = new HashSet<string>(StringComparer.Ordinal);
-                var changedSegments = new HashSet<string>(StringComparer.Ordinal);
-                var beforeTrackByChapter = before.Tracks.SelectMany(track => track.Chapters.Select(chapter => (ChapterId: chapter.Id, TrackId: track.Id)))
-                    .ToDictionary(pair => pair.ChapterId, pair => pair.TrackId);
-                var afterTrackByChapter = after.Tracks.SelectMany(track => track.Chapters.Select(chapter => (ChapterId: chapter.Id, TrackId: track.Id)))
-                    .ToDictionary(pair => pair.ChapterId, pair => pair.TrackId);
-                foreach (var change in changes)
-                {
-                    if (change.Group == "Chapter")
-                    {
-                        if (!change.Before.IsPresent)
-                        {
-                            added.Add(change.ObjectId);
-                        }
-                        else if (!change.After.IsPresent)
-                        {
-                            removed.Add(change.ObjectId);
-                        }
-                        else
-                        {
-                            modified.Add(change.ObjectId);
-                        }
-                        if (Guid.TryParse(change.ObjectId, out var chapterGuid))
-                        {
-                            var chapterId = new ChapterId(chapterGuid);
-                            if (beforeTrackByChapter.TryGetValue(chapterId, out var beforeTrackId))
-                            {
-                                changedTracks.Add(beforeTrackId.Value.ToString("D"));
-                            }
-                            if (afterTrackByChapter.TryGetValue(chapterId, out var afterTrackId))
-                            {
-                                changedTracks.Add(afterTrackId.Value.ToString("D"));
-                            }
-                        }
-                    }
-                    else if (change.Group == "Track")
-                    {
-                        changedTracks.Add(change.ObjectId);
-                    }
-                    else if (change.Group == "Segment")
-                    {
-                        changedSegments.Add(change.ObjectId);
-                    }
-                }
-                modified.ExceptWith(added);
-                modified.ExceptWith(removed);
-                summary = new HistoryNodeSummary(added.Count, removed.Count, modified.Count, changedTracks.Count, changedSegments.Count);
+                summary = SummarizeChanges(changes, before, after);
             }
 
             var details = new HistoryNodeDetails(RootId: version.History.RootId, NodeId: nodeId, ParentId: node.ParentId,
@@ -231,6 +182,94 @@ public sealed class SessionState
         catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
         {
             return new HistoryInspectionOutcome(HistoryInspectionOutcomeKind.ResourceFailure, null, ["Resources were exhausted during history inspection."]);
+        }
+    }
+
+    private static HistoryNodeSummary SummarizeChanges(
+        ImmutableArray<HistoryFieldChange> changes,
+        EditableChapterDocument before,
+        EditableChapterDocument after)
+    {
+        var added = new HashSet<string>(StringComparer.Ordinal);
+        var removed = new HashSet<string>(StringComparer.Ordinal);
+        var modified = new HashSet<string>(StringComparer.Ordinal);
+        var changedTracks = new HashSet<string>(StringComparer.Ordinal);
+        var changedSegments = new HashSet<string>(StringComparer.Ordinal);
+        var beforeTrackByChapter = TrackByChapter(before);
+        var afterTrackByChapter = TrackByChapter(after);
+        foreach (var change in changes)
+        {
+            AccumulateChange(change, added, removed, modified, changedTracks, changedSegments,
+                beforeTrackByChapter, afterTrackByChapter);
+        }
+
+        modified.ExceptWith(added);
+        modified.ExceptWith(removed);
+        return new HistoryNodeSummary(added.Count, removed.Count, modified.Count, changedTracks.Count, changedSegments.Count);
+    }
+
+    private static Dictionary<ChapterId, ChapterTrackId> TrackByChapter(EditableChapterDocument document) =>
+        document.Tracks.SelectMany(track => track.Chapters.Select(chapter => (ChapterId: chapter.Id, TrackId: track.Id)))
+            .ToDictionary(pair => pair.ChapterId, pair => pair.TrackId);
+
+    private static void AccumulateChange(
+        HistoryFieldChange change,
+        HashSet<string> added,
+        HashSet<string> removed,
+        HashSet<string> modified,
+        HashSet<string> changedTracks,
+        HashSet<string> changedSegments,
+        IReadOnlyDictionary<ChapterId, ChapterTrackId> beforeTracks,
+        IReadOnlyDictionary<ChapterId, ChapterTrackId> afterTracks)
+    {
+        if (change.Group == "Chapter")
+        {
+            AddChapterChange(change, added, removed, modified);
+            AddChapterTracks(change.ObjectId, beforeTracks, afterTracks, changedTracks);
+        }
+        else if (change.Group == "Track")
+        {
+            changedTracks.Add(change.ObjectId);
+        }
+        else if (change.Group == "Segment")
+        {
+            changedSegments.Add(change.ObjectId);
+        }
+    }
+
+    private static void AddChapterChange(HistoryFieldChange change, HashSet<string> added, HashSet<string> removed,
+        HashSet<string> modified)
+    {
+        if (!change.Before.IsPresent)
+        {
+            added.Add(change.ObjectId);
+        }
+        else if (!change.After.IsPresent)
+        {
+            removed.Add(change.ObjectId);
+        }
+        else
+        {
+            modified.Add(change.ObjectId);
+        }
+    }
+
+    private static void AddChapterTracks(string objectId, IReadOnlyDictionary<ChapterId, ChapterTrackId> beforeTracks,
+        IReadOnlyDictionary<ChapterId, ChapterTrackId> afterTracks, HashSet<string> changedTracks)
+    {
+        if (!Guid.TryParse(objectId, out var chapterGuid))
+        {
+            return;
+        }
+
+        var chapterId = new ChapterId(chapterGuid);
+        if (beforeTracks.TryGetValue(chapterId, out var beforeTrackId))
+        {
+            changedTracks.Add(beforeTrackId.Value.ToString("D"));
+        }
+        if (afterTracks.TryGetValue(chapterId, out var afterTrackId))
+        {
+            changedTracks.Add(afterTrackId.Value.ToString("D"));
         }
     }
 
@@ -259,141 +298,25 @@ public sealed class SessionState
             queueEntered = true;
 
             var version = Volatile.Read(ref current);
-            if (IsEnded)
+            var precondition = GetTransactionPreconditionOutcome(version, baseToken, transactionId, requestFingerprint, cancellationToken);
+            if (precondition is not null)
             {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-            }
-            if (version.Transactions.TryGetValue(transactionId, out var cached))
-            {
-                return string.Equals(cached.RequestFingerprint, requestFingerprint, StringComparison.Ordinal)
-                    ? cached.Outcome
-                    : new TransactionOutcome(
-                        transactionId,
-                        TransactionOutcomeKind.TransactionIdConflict,
-                        new SessionSnapshot(version.Document, version.StateIdentity, version.MutationRevision),
-                        ["The transaction ID is already bound to a different request."]);
+                return precondition;
             }
 
-            if (cancellationToken.IsCancellationRequested)
+            var candidateResult = await CreateCandidateAsync(version, transactionId, requestFingerprint, createCandidate, cancellationToken)
+                .ConfigureAwait(false);
+            if (candidateResult.Outcome is not null)
             {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+                return candidateResult.Outcome;
             }
 
-            if (!IsCurrent(version, baseToken))
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Conflict, ["The transaction base token is stale."]);
-            }
-
-            EditableChapterDocument candidate;
-            try
-            {
-                candidate = await createCandidate(version.Document, cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-            }
-            catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure, ["Resources were exhausted before the transaction could be published."]);
-            }
-            catch (Exception exception) when (exception is not StackOverflowException)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid, [exception.Message]);
-            }
-
-            if (candidate is null)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid, ["The candidate document must not be null."]);
-            }
-
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-            }
-
-            if (!candidate.Id.Equals(version.Document.Id))
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid, ["The candidate must preserve the document identity."]);
-            }
-
-            var validation = EditableChapterDocumentValidator.Validate(candidate);
-            if (!validation.IsValid)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid, validation.Errors);
-            }
-
-            if (CanonicalEquals(version.Document, candidate))
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.NoChange, []);
-            }
-
-            if (version.MutationRevision == long.MaxValue)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure, ["The session mutation revision is exhausted."]);
-            }
-
-            try
-            {
-                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.ChangeSetConstruction);
-                var changeSet = DomainChangeSet.Create(version.Document, candidate);
-                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.NodePublication);
-                var nextIdentity = Guid.NewGuid();
-                var nextRevision = version.MutationRevision + 1;
-                var history = version.History.Append(nextIdentity, changeSet, NormalizeDescription(operationDescription), operation, DateTimeOffset.UtcNow);
-                var nextSnapshot = new SessionSnapshot(candidate, nextIdentity, nextRevision);
-                var outcome = new TransactionOutcome(transactionId, TransactionOutcomeKind.Committed, nextSnapshot, []);
-                var transactions = version.Transactions.Add(transactionId, new CachedTransaction(requestFingerprint, outcome));
-                var nextVersion = new SessionVersion(candidate, nextIdentity, nextRevision, transactions, history);
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-                }
-
-                if (IsEnded)
-                {
-                    return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-                }
-
-                // This reference write is the transaction's publication point.
-                Volatile.Write(ref current, nextVersion);
-                return outcome;
-            }
-            catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
-            {
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure, ["Resources were exhausted before the transaction could be published."]);
-            }
+            return PublishCandidate(version, transactionId, requestFingerprint, candidateResult.Candidate!,
+                operationDescription, operation, cancellationToken);
         }
         catch (OperationCanceledException) when (!queueEntered && cancellationToken.IsCancellationRequested)
         {
-            // Wait for an atomic queue boundary so the cancellation result is also bound
-            // to this transaction ID and cannot race a request with the same ID.
-            await commandQueue.WaitAsync(CancellationToken.None).ConfigureAwait(false);
-            try
-            {
-                var version = Volatile.Read(ref current);
-                if (IsEnded)
-                {
-                    return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-                }
-                if (version.Transactions.TryGetValue(transactionId, out var cached))
-                {
-                    return string.Equals(cached.RequestFingerprint, requestFingerprint, StringComparison.Ordinal)
-                        ? cached.Outcome
-                        : new TransactionOutcome(
-                            transactionId,
-                            TransactionOutcomeKind.TransactionIdConflict,
-                            new SessionSnapshot(version.Document, version.StateIdentity, version.MutationRevision),
-                            ["The transaction ID is already bound to a different request."]);
-                }
-
-                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
-            }
-            finally
-            {
-                commandQueue.Release();
-            }
+            return await CacheCancellationBeforeQueueAsync(transactionId, requestFingerprint).ConfigureAwait(false);
         }
         finally
         {
@@ -402,6 +325,173 @@ public sealed class SessionState
                 commandQueue.Release();
             }
         }
+    }
+
+    private TransactionOutcome? GetTransactionPreconditionOutcome(
+        SessionVersion version,
+        SessionBaseToken baseToken,
+        Guid transactionId,
+        string requestFingerprint,
+        CancellationToken cancellationToken)
+    {
+        if (IsEnded)
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+        }
+
+        if (version.Transactions.TryGetValue(transactionId, out var cached))
+        {
+            return CachedTransactionOutcome(version, transactionId, requestFingerprint, cached);
+        }
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+        }
+
+        return IsCurrent(version, baseToken)
+            ? null
+            : CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Conflict, ["The transaction base token is stale."]);
+    }
+
+    private static TransactionOutcome CachedTransactionOutcome(
+        SessionVersion version,
+        Guid transactionId,
+        string requestFingerprint,
+        CachedTransaction cached) =>
+        string.Equals(cached.RequestFingerprint, requestFingerprint, StringComparison.Ordinal)
+            ? cached.Outcome
+            : new TransactionOutcome(
+                transactionId,
+                TransactionOutcomeKind.TransactionIdConflict,
+                new SessionSnapshot(version.Document, version.StateIdentity, version.MutationRevision),
+                ["The transaction ID is already bound to a different request."]);
+
+    private async ValueTask<CandidateResult> CreateCandidateAsync(
+        SessionVersion version,
+        Guid transactionId,
+        string requestFingerprint,
+        Func<EditableChapterDocument, CancellationToken, ValueTask<EditableChapterDocument>> createCandidate,
+        CancellationToken cancellationToken)
+    {
+        EditableChapterDocument? candidate;
+        try
+        {
+            candidate = await createCandidate(version.Document, cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return CandidateResult.Failed(CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []));
+        }
+        catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
+        {
+            return CandidateResult.Failed(CreateAndCache(version, transactionId, requestFingerprint,
+                TransactionOutcomeKind.ResourceFailure, ["Resources were exhausted before the transaction could be published."]));
+        }
+        catch (Exception exception) when (exception is not StackOverflowException)
+        {
+            return CandidateResult.Failed(CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid, [exception.Message]));
+        }
+
+        return candidate is null
+            ? CandidateResult.Failed(CreateAndCache(version, transactionId, requestFingerprint,
+                TransactionOutcomeKind.Invalid, ["The candidate document must not be null."]))
+            : CandidateResult.Created(candidate);
+    }
+
+    private TransactionOutcome PublishCandidate(
+        SessionVersion version,
+        Guid transactionId,
+        string requestFingerprint,
+        EditableChapterDocument candidate,
+        string? operationDescription,
+        HistoryOperationDescriptor? operation,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+        }
+
+        if (!candidate.Id.Equals(version.Document.Id))
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid,
+                ["The candidate must preserve the document identity."]);
+        }
+
+        var validation = EditableChapterDocumentValidator.Validate(candidate);
+        if (!validation.IsValid)
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Invalid, validation.Errors);
+        }
+
+        if (CanonicalEquals(version.Document, candidate))
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.NoChange, []);
+        }
+
+        if (version.MutationRevision == long.MaxValue)
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure,
+                ["The session mutation revision is exhausted."]);
+        }
+
+        try
+        {
+            historyFailureInjector?.Invoke(SessionHistoryFailurePoint.ChangeSetConstruction);
+            var changeSet = DomainChangeSet.Create(version.Document, candidate);
+            historyFailureInjector?.Invoke(SessionHistoryFailurePoint.NodePublication);
+            var nextIdentity = Guid.NewGuid();
+            var nextRevision = version.MutationRevision + 1;
+            var history = version.History.Append(nextIdentity, changeSet, NormalizeDescription(operationDescription), operation, DateTimeOffset.UtcNow);
+            var nextSnapshot = new SessionSnapshot(candidate, nextIdentity, nextRevision);
+            var outcome = new TransactionOutcome(transactionId, TransactionOutcomeKind.Committed, nextSnapshot, []);
+            var transactions = version.Transactions.Add(transactionId, new CachedTransaction(requestFingerprint, outcome));
+            var nextVersion = new SessionVersion(candidate, nextIdentity, nextRevision, transactions, history);
+
+            if (cancellationToken.IsCancellationRequested || IsEnded)
+            {
+                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+            }
+
+            // This reference write is the transaction's publication point.
+            Volatile.Write(ref current, nextVersion);
+            return outcome;
+        }
+        catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
+        {
+            return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.ResourceFailure,
+                ["Resources were exhausted before the transaction could be published."]);
+        }
+    }
+
+    private async ValueTask<TransactionOutcome> CacheCancellationBeforeQueueAsync(Guid transactionId, string requestFingerprint)
+    {
+        // Wait for an atomic queue boundary so this result cannot race a request with the same ID.
+        await commandQueue.WaitAsync(CancellationToken.None).ConfigureAwait(false);
+        try
+        {
+            var version = Volatile.Read(ref current);
+            if (IsEnded)
+            {
+                return CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+            }
+
+            return version.Transactions.TryGetValue(transactionId, out var cached)
+                ? CachedTransactionOutcome(version, transactionId, requestFingerprint, cached)
+                : CreateAndCache(version, transactionId, requestFingerprint, TransactionOutcomeKind.Cancelled, []);
+        }
+        finally
+        {
+            commandQueue.Release();
+        }
+    }
+
+    private sealed record CandidateResult(EditableChapterDocument? Candidate, TransactionOutcome? Outcome)
+    {
+        public static CandidateResult Created(EditableChapterDocument candidate) => new(candidate, null);
+
+        public static CandidateResult Failed(TransactionOutcome outcome) => new(null, outcome);
     }
 
     /// <summary>Moves to the parent state. Returns <see cref="HistoryNavigationOutcomeKind.NoChange"/> at the root.</summary>

@@ -95,15 +95,24 @@ public static class WasmHistoryProjection
         }
         var cellEditField = operation.Parameters.FirstOrDefault(static parameter => parameter.Name == "field")?.Value;
         return operation.Parameters
-            .Where(parameter => parameter.Name is not "chapterId" and not "chapterIds" and not "trackId" and not "trackIds" and not "targetChapterIds"
-                && !(operation.Kind == "chapter.cell-edit"
-                    && (parameter.Name is "field" or "value" or "trackName"
-                        || (parameter.Name == "displayFps" && cellEditField is not ("Frame" or "StartTime")))))
+            .Where(parameter => IsVisibleParameter(parameter, operation.Kind, cellEditField))
             .Select(parameter => new WasmHistoryParameterRow(
                 localizer.T($"History.Parameter.{parameter.Name}"),
                 FormatParameter(localizer, parameter),
                 parameter.ValueKind))
             .ToArray();
+    }
+
+    private static bool IsVisibleParameter(HistoryOperationParameter parameter, string operationKind, string? cellEditField)
+    {
+        if (parameter.Name is "chapterId" or "chapterIds" or "trackId" or "trackIds" or "targetChapterIds")
+        {
+            return false;
+        }
+
+        return operationKind != "chapter.cell-edit"
+            || (parameter.Name is not ("field" or "value" or "trackName")
+                && (parameter.Name != "displayFps" || cellEditField is "Frame" or "StartTime"));
     }
 
     private static WasmHistoryChangeRow ProjectChange(WasmLocalizer localizer, HistoryNodeDetails details,
@@ -185,52 +194,36 @@ public static class WasmHistoryProjection
         {
             return localizer.T("History.Presence.Absent");
         }
-        if (value.Value is null)
+        return value.Value switch
         {
-            return localizer.T("History.Presence.Null");
-        }
-        if (value.Value is string text && text.Length == 0)
+            null => localizer.T("History.Presence.Null"),
+            string { Length: 0 } => localizer.T("History.Presence.Empty"),
+            long ticks when field is "StartTicks" or "EndTicks" => FormatTimeSpan(TimeSpan.FromTicks(ticks)),
+            ChapterDuration duration => duration.IsKnown
+                ? FormatTimeSpan(TimeSpan.FromTicks(duration.Ticks))
+                : localizer.T("History.Presence.Unknown"),
+            ChapterFrameRate frameRate => FormatFrameRate(localizer, frameRate),
+            HistoryTrackReference reference => string.IsNullOrEmpty(reference.Label)
+                ? localizer.T("History.Track.Unknown")
+                : reference.Label,
+            ChapterImportFormat format => localizer.T($"History.Enum.ImportFormat.{format}"),
+            ChapterKind kind => localizer.T($"History.Enum.ChapterKind.{kind}"),
+            FrameAccuracy accuracy => localizer.T($"History.Enum.FrameAccuracy.{accuracy}"),
+            IEnumerable sequence when value.Value is not string => FormatSequence(sequence, culture),
+            IFormattable formattable => formattable.ToString(null, culture) ?? string.Empty,
+            _ => value.Value.ToString() ?? string.Empty
+        };
+    }
+
+    private static string FormatSequence(IEnumerable sequence, CultureInfo culture)
+    {
+        var items = new List<string>();
+        foreach (var item in sequence)
         {
-            return localizer.T("History.Presence.Empty");
+            items.Add(item is HistoryOrderItem order ? order.Label : Convert.ToString(item, culture) ?? string.Empty);
         }
-        if (value.Value is long ticks && field is "StartTicks" or "EndTicks")
-        {
-            return FormatTimeSpan(TimeSpan.FromTicks(ticks));
-        }
-        if (value.Value is ChapterDuration duration)
-        {
-            return duration.IsKnown ? FormatTimeSpan(TimeSpan.FromTicks(duration.Ticks)) : localizer.T("History.Presence.Unknown");
-        }
-        if (value.Value is ChapterFrameRate frameRate)
-        {
-            return FormatFrameRate(localizer, frameRate);
-        }
-        if (value.Value is HistoryTrackReference reference)
-        {
-            return string.IsNullOrEmpty(reference.Label) ? localizer.T("History.Track.Unknown") : reference.Label;
-        }
-        if (value.Value is ChapterImportFormat format)
-        {
-            return localizer.T($"History.Enum.ImportFormat.{format}");
-        }
-        if (value.Value is ChapterKind kind)
-        {
-            return localizer.T($"History.Enum.ChapterKind.{kind}");
-        }
-        if (value.Value is FrameAccuracy accuracy)
-        {
-            return localizer.T($"History.Enum.FrameAccuracy.{accuracy}");
-        }
-        if (value.Value is IEnumerable sequence and not string)
-        {
-            var items = new List<string>();
-            foreach (var item in sequence)
-            {
-                items.Add(item is HistoryOrderItem order ? order.Label : Convert.ToString(item, culture) ?? string.Empty);
-            }
-            return string.Join(", ", items);
-        }
-        return value.Value is IFormattable formattable ? formattable.ToString(null, culture) ?? string.Empty : value.Value.ToString() ?? string.Empty;
+
+        return string.Join(", ", items);
     }
 
     private static string? FormatDelta(HistoryFieldChange change)
