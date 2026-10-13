@@ -126,18 +126,39 @@ internal static class HistoryNodeDetailsProjector
 
     private static bool ValuesEqual(object? left, object? right)
     {
+        if (TryCompareHistoryReference(left, right, out var equal))
+        {
+            return equal;
+        }
+
+        return Equals(left, right) || AreSequencesEqual(left, right);
+    }
+
+    private static bool TryCompareHistoryReference(object? left, object? right, out bool equal)
+    {
         if (left is HistoryTrackReference leftTrack && right is HistoryTrackReference rightTrack)
         {
-            return leftTrack.Id == rightTrack.Id;
+            equal = leftTrack.Id == rightTrack.Id;
+            return true;
         }
         if (left is HistoryOrderItem leftOrder && right is HistoryOrderItem rightOrder)
         {
-            return string.Equals(leftOrder.Id, rightOrder.Id, StringComparison.Ordinal);
-        }
-        if (ReferenceEquals(left, right) || Equals(left, right))
-        {
+            equal = string.Equals(leftOrder.Id, rightOrder.Id, StringComparison.Ordinal);
             return true;
         }
+
+        if (ReferenceEquals(left, right))
+        {
+            equal = true;
+            return true;
+        }
+
+        equal = false;
+        return false;
+    }
+
+    private static bool AreSequencesEqual(object? left, object? right)
+    {
         if (left is not System.Collections.IEnumerable leftValues || right is not System.Collections.IEnumerable rightValues)
         {
             return false;

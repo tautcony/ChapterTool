@@ -96,6 +96,16 @@ public sealed class HistoryEntryViewModel : ObservableViewModel
         }
 
         var snapshots = history.Nodes.ToDictionary(static node => node.Id);
+        var currentPath = GetCurrentPath(history, snapshots);
+        var projected = BuildProjectedEntries(history, snapshots, previous, expandedNodes, currentPath, titleProvider);
+        var roots = projected.TryGetValue(history.RootId, out var root) ? new[] { root } : [];
+        return (roots, Flatten(roots, projected.Count));
+    }
+
+    private static HashSet<Guid> GetCurrentPath(
+        SessionHistorySnapshot history,
+        IReadOnlyDictionary<Guid, SessionHistoryNodeSnapshot> snapshots)
+    {
         var currentPath = new HashSet<Guid>();
         var pathId = history.CursorId;
         while (snapshots.TryGetValue(pathId, out var pathNode))
@@ -105,9 +115,21 @@ public sealed class HistoryEntryViewModel : ObservableViewModel
             {
                 break;
             }
+
             pathId = parentId;
         }
 
+        return currentPath;
+    }
+
+    private static Dictionary<Guid, HistoryEntryViewModel> BuildProjectedEntries(
+        SessionHistorySnapshot history,
+        IReadOnlyDictionary<Guid, SessionHistoryNodeSnapshot> snapshots,
+        IReadOnlyDictionary<Guid, HistoryEntryViewModel> previous,
+        ISet<Guid> expandedNodes,
+        ISet<Guid> currentPath,
+        Func<SessionHistoryNodeSnapshot, string> titleProvider)
+    {
         var projected = new Dictionary<Guid, HistoryEntryViewModel>(history.Nodes.Length);
         foreach (var node in history.Nodes.Reverse())
         {
@@ -137,10 +159,14 @@ public sealed class HistoryEntryViewModel : ObservableViewModel
             entry.OnPropertyChanged(nameof(HasChildren));
         }
 
-        var roots = projected.TryGetValue(history.RootId, out var root) ? new[] { root } : [];
-        var all = new List<HistoryEntryViewModel>(projected.Count);
+        return projected;
+    }
+
+    private static List<HistoryEntryViewModel> Flatten(IReadOnlyList<HistoryEntryViewModel> roots, int capacity)
+    {
+        var all = new List<HistoryEntryViewModel>(capacity);
         var pending = new Stack<HistoryEntryViewModel>();
-        for (var index = roots.Length - 1; index >= 0; index--)
+        for (var index = roots.Count - 1; index >= 0; index--)
         {
             pending.Push(roots[index]);
         }
@@ -152,6 +178,7 @@ public sealed class HistoryEntryViewModel : ObservableViewModel
                 pending.Push(entry.Children[index]);
             }
         }
-        return (roots, all);
+
+        return all;
     }
 }

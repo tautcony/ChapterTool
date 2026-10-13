@@ -103,6 +103,18 @@ public static class ChapterContentOperationSession
         EditableChapterDocument after)
     {
         var result = ImmutableArray.CreateBuilder<ChapterContentDifference>();
+        AddDocumentDifferences(result, before, after);
+        AddChapterDifferences(result, before, after);
+        AddTrackDifferences(result, before, after);
+        AddTimingDifferences(result, before, after);
+        return result.ToImmutable();
+    }
+
+    private static void AddDocumentDifferences(
+        ImmutableArray<ChapterContentDifference>.Builder result,
+        EditableChapterDocument before,
+        EditableChapterDocument after)
+    {
         if (!string.Equals(before.Title, after.Title, StringComparison.Ordinal))
         {
             result.Add(new ChapterContentDifference(null, "Title", before.Title, after.Title));
@@ -112,7 +124,29 @@ public static class ChapterContentOperationSession
         {
             result.Add(new ChapterContentDifference(null, "SourceName", before.SourceName ?? string.Empty, after.SourceName ?? string.Empty));
         }
+    }
 
+    private static void AddTimingDifferences(
+        ImmutableArray<ChapterContentDifference>.Builder result,
+        EditableChapterDocument before,
+        EditableChapterDocument after)
+    {
+        if (before.Duration != after.Duration)
+        {
+            AddIfChanged(result, null, "Duration", before.Duration, after.Duration);
+        }
+
+        if (before.FrameRate != after.FrameRate)
+        {
+            AddIfChanged(result, null, "FrameRate", before.FrameRate, after.FrameRate);
+        }
+    }
+
+    private static void AddChapterDifferences(
+        ImmutableArray<ChapterContentDifference>.Builder result,
+        EditableChapterDocument before,
+        EditableChapterDocument after)
+    {
         var beforeChapters = before.Tracks.SelectMany(static track => track.Chapters).ToDictionary(static chapter => chapter.Id);
         var afterChapters = after.Tracks.SelectMany(static track => track.Chapters).ToDictionary(static chapter => chapter.Id);
         foreach (var id in beforeChapters.Keys.Union(afterChapters.Keys))
@@ -138,7 +172,13 @@ public static class ChapterContentOperationSession
                 AddIfChanged(result, id, "Kind", oldValue.Kind, newValue.Kind);
             }
         }
+    }
 
+    private static void AddTrackDifferences(
+        ImmutableArray<ChapterContentDifference>.Builder result,
+        EditableChapterDocument before,
+        EditableChapterDocument after)
+    {
         if (!before.Tracks.Select(static track => track.Id).SequenceEqual(after.Tracks.Select(static track => track.Id)))
         {
             result.Add(new ChapterContentDifference(null, "TrackOrder", TrackOrder(before), TrackOrder(after)));
@@ -151,18 +191,6 @@ public static class ChapterContentOperationSession
                 result.Add(new ChapterContentDifference(null, $"Track[{index}].Name", before.Tracks[index].Name, after.Tracks[index].Name));
             }
         }
-
-        if (before.Duration != after.Duration)
-        {
-            AddIfChanged(result, null, "Duration", before.Duration, after.Duration);
-        }
-
-        if (before.FrameRate != after.FrameRate)
-        {
-            AddIfChanged(result, null, "FrameRate", before.FrameRate, after.FrameRate);
-        }
-
-        return result.ToImmutable();
     }
 
     private static void AddIfChanged<T>(ImmutableArray<ChapterContentDifference>.Builder result, ChapterId? id, string field, T before, T after)

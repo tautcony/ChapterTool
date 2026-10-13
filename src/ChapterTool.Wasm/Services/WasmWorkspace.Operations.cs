@@ -131,12 +131,32 @@ public sealed partial class WasmWorkspace
     /// <returns><see langword="true"/> if the preview was committed or made no changes.</returns>
     public async ValueTask<bool> ApplyContentPreviewAsync(CancellationToken cancellationToken = default)
     {
-        if (ContentPreview is not { IsValid: true } preview || IsBusy || IsContentPreviewStale
-            || ContentPreviewProjection is not { HasChanges: true } || session.ContentSession is not { } content)
+        if (!TryGetApplicablePreview(out var preview, out var content))
         {
             return false;
         }
+
         var outcome = await ChapterContentOperationSession.ApplyAsync(content, preview, cancellationToken);
+        return CompletePreviewApplication(preview, outcome);
+    }
+
+    private bool TryGetApplicablePreview(out ChapterContentPreview preview, out SessionState content)
+    {
+        if (ContentPreview is { IsValid: true } candidate && !IsBusy && !IsContentPreviewStale
+            && ContentPreviewProjection is { HasChanges: true } && session.ContentSession is { } activeContent)
+        {
+            preview = candidate;
+            content = activeContent;
+            return true;
+        }
+
+        preview = null!;
+        content = null!;
+        return false;
+    }
+
+    private bool CompletePreviewApplication(ChapterContentPreview preview, TransactionOutcome outcome)
+    {
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
             StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("History.NavigationFailed");
