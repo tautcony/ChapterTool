@@ -102,6 +102,14 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         UpdateDraftSnapshot();
         snapshotCoordinator.Commit(snapshotCoordinator.Draft);
 
+        InitializeCommands(settingsStore, shellService);
+        cultureChangedHandler = CreateCultureChangedHandler();
+        this.localizer.CultureChanged += cultureChangedHandler;
+        InitializationTask = autoLoad ? InitializeAsync() : Task.CompletedTask;
+    }
+
+    private void InitializeCommands(ISettingsStore<ChapterToolSettings>? settingsStore, IShellService? shellService)
+    {
         SaveCommand = new UiCommand(
             async (_, token) => await SaveAsync(token),
             _ => settingsStore is not null && IsShortcutConfigurationValid);
@@ -121,7 +129,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         OpenSettingsFolderCommand = new UiCommand(
             async (_, token) => await OpenSettingsFolderAsync(token),
             _ => IsSettingsFolderVisible && shellService is not null && !string.IsNullOrWhiteSpace(settingsDirectory));
-        cultureChangedHandler = (_, _) =>
+    }
+
+    private EventHandler CreateCultureChangedHandler() => (_, _) =>
         {
             RefreshLanguages();
             Appearance.RefreshLocalizedOptions();
@@ -137,9 +147,6 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
                 StatusText = StatusTextForCurrentLoadState();
             }
         };
-        this.localizer.CultureChanged += cultureChangedHandler;
-        InitializationTask = autoLoad ? InitializeAsync() : Task.CompletedTask;
-    }
 
     internal Task InitializationTask { get; }
 
@@ -445,27 +452,27 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         private set => SetProperty(ref field, value);
     } = string.Empty;
 
-    public UiCommand SaveCommand { get; }
+    public UiCommand SaveCommand { get; private set; } = null!;
 
-    public UiCommand ResetCommand { get; }
+    public UiCommand ResetCommand { get; private set; } = null!;
 
-    public UiCommand ValidateToolsCommand { get; }
+    public UiCommand ValidateToolsCommand { get; private set; } = null!;
 
-    public UiCommand BrowseSaveDirectoryCommand { get; }
+    public UiCommand BrowseSaveDirectoryCommand { get; private set; } = null!;
 
-    public UiCommand BrowseMkvToolnixCommand { get; }
+    public UiCommand BrowseMkvToolnixCommand { get; private set; } = null!;
 
-    public UiCommand BrowseFfprobeCommand { get; }
+    public UiCommand BrowseFfprobeCommand { get; private set; } = null!;
 
-    public UiCommand ClearSaveDirectoryCommand { get; }
+    public UiCommand ClearSaveDirectoryCommand { get; private set; } = null!;
 
-    public UiCommand ClearMkvToolnixCommand { get; }
+    public UiCommand ClearMkvToolnixCommand { get; private set; } = null!;
 
-    public UiCommand ClearFfprobeCommand { get; }
+    public UiCommand ClearFfprobeCommand { get; private set; } = null!;
 
-    public UiCommand OpenRepositoryCommand { get; }
+    public UiCommand OpenRepositoryCommand { get; private set; } = null!;
 
-    public UiCommand OpenSettingsFolderCommand { get; }
+    public UiCommand OpenSettingsFolderCommand { get; private set; } = null!;
 
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {

@@ -829,61 +829,10 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             Progress = 0.2;
             Notify();
-
-            if (content.Length == 0)
+            if (ValidateLoadContent(content))
             {
-                SetLocalizedStatus("Status.DropEmpty");
-                AddLog("Error", StatusText);
-                return;
+                await ImportAndApplyLoadAsync(fileName, content, operationRevision, cancellationToken);
             }
-
-            if (!PortableInputPolicy.IsWithinLimit(content.LongLength) || content.LongLength > maxLoadBytes)
-            {
-                SetLocalizedStatus("Status.DropTooLarge");
-                AddLog("Error", StatusText);
-                return;
-            }
-
-            var result = await wasmChapterService.ImportAsync(fileName, content, cancellationToken);
-            AddLog("Info", $"Loading {fileName} ({content.Length:N0} bytes).");
-            Progress = 0.8;
-            Notify();
-
-            if (!result.Success || result.Groups.Count == 0)
-            {
-                diagnostics = WasmWorkspaceProjection.ToDiagnostics(result.Diagnostics);
-                StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.LoadFailed");
-                AddLog("Error", StatusText);
-                return;
-            }
-
-            var replacementToken = session.CaptureContentToken();
-            var candidate = result.Groups[0];
-            var candidateSession = ClipSessionTransitions.FromLoad(candidate);
-            var candidateDocument = EditableChapterDocumentAdapter.FromChapterImportSource(candidate);
-            while (RequiresSessionLossConfirmation && SessionLossConfirmation is not null)
-            {
-                if (!await SessionLossConfirmation(cancellationToken))
-                {
-                    SetLocalizedStatus("Status.SessionReplacementCanceled");
-                    return;
-                }
-
-                if (session.IsContentTokenCurrent(replacementToken))
-                {
-                    break;
-                }
-
-                replacementToken = session.CaptureContentToken();
-            }
-
-            if (!ApplySuccessfulLoad(fileName, content, result, operationRevision, candidateSession, candidateDocument, replacementToken))
-            {
-                return;
-            }
-
-            Progress = 1;
-            AddLog("Info", StatusText);
         }
         catch (Exception ex)
         {
@@ -895,6 +844,95 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             EndBusy();
         }
+    }
+
+    private bool ValidateLoadContent(byte[] content)
+    {
+        if (content.Length == 0)
+        {
+            SetLocalizedStatus("Status.DropEmpty");
+            AddLog("Error", StatusText);
+            return false;
+        }
+
+        if (PortableInputPolicy.IsWithinLimit(content.LongLength) && content.LongLength <= maxLoadBytes)
+        {
+            return true;
+        }
+
+        SetLocalizedStatus("Status.DropTooLarge");
+        AddLog("Error", StatusText);
+        return false;
+    }
+
+    private async Task ImportAndApplyLoadAsync(
+        string fileName,
+        byte[] content,
+        int operationRevision,
+        CancellationToken cancellationToken)
+    {
+        var result = await wasmChapterService.ImportAsync(fileName, content, cancellationToken);
+        AddLog("Info", $"Loading {fileName} ({content.Length:N0} bytes).");
+        Progress = 0.8;
+        Notify();
+        if (!HandleLoadImportResult(result))
+        {
+            return;
+        }
+
+        var candidate = result.Groups[0];
+        var candidateSession = ClipSessionTransitions.FromLoad(candidate);
+        var candidateDocument = EditableChapterDocumentAdapter.FromChapterImportSource(candidate);
+        var confirmation = await ConfirmSessionReplacementAsync(session.CaptureContentToken(), cancellationToken);
+        if (!confirmation.Confirmed)
+        {
+            return;
+        }
+
+        if (!ApplySuccessfulLoad(fileName, content, result, operationRevision, candidateSession, candidateDocument, confirmation.Token))
+        {
+            return;
+        }
+
+        Progress = 1;
+        AddLog("Info", StatusText);
+    }
+
+    private bool HandleLoadImportResult(ChapterImportResult result)
+    {
+        if (result.Success && result.Groups.Count > 0)
+        {
+            return true;
+        }
+
+        diagnostics = WasmWorkspaceProjection.ToDiagnostics(result.Diagnostics);
+        StatusText = WasmWorkspaceProjection.FirstError(result.Diagnostics) ?? localizer.T("Status.LoadFailed");
+        AddLog("Error", StatusText);
+        return false;
+    }
+
+    private async Task<(bool Confirmed, SessionBaseToken? Token)> ConfirmSessionReplacementAsync(
+        SessionBaseToken? initialToken,
+        CancellationToken cancellationToken)
+    {
+        var confirmedToken = initialToken;
+        while (RequiresSessionLossConfirmation && SessionLossConfirmation is not null)
+        {
+            if (!await SessionLossConfirmation(cancellationToken))
+            {
+                SetLocalizedStatus("Status.SessionReplacementCanceled");
+                return (false, confirmedToken);
+            }
+
+            if (session.IsContentTokenCurrent(confirmedToken))
+            {
+                return (true, confirmedToken);
+            }
+
+            confirmedToken = session.CaptureContentToken();
+        }
+
+        return (true, confirmedToken);
     }
 
     public async Task ReloadAsync(CancellationToken cancellationToken = default)

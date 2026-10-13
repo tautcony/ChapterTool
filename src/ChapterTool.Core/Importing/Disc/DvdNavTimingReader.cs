@@ -102,43 +102,19 @@ internal sealed class DvdNavTimingReader : IDisposable
             long address = first;
             while (address <= lastVobu)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (++packsRead > MaximumNavPacks || !ReadSector(address))
+                if (!TryReadNavigationTiming(address, lastVobu, last, vob, cell, previousEnd, out var timing))
                 {
                     return null;
                 }
 
-                var data = sectorBuffer.AsSpan();
-
-                if (!HasValidNavigationSector(data, address, vob, cell))
+                duration += timing.Elapsed;
+                if (timing.IsFinal)
                 {
-                    return null;
+                    return duration;
                 }
 
-                var start = Read32(data, 57);
-                var end = Read32(data, 61);
-                var elapsed = unchecked(end - start); // NAV PTM wraps at 32 bits.
-                var endAddress = address + Read32(data, 1039);
-                if (elapsed is 0 or > 900_000 || endAddress > last ||
-                    (previousEnd.HasValue && previousEnd.Value != start))
-                {
-                    return null;
-                }
-
-                duration += elapsed;
-                if (address == lastVobu)
-                {
-                    return endAddress == last && (Read32(data, 1345) & 0x7FFF_FFFF) == 0x3FFF_FFFF ? duration : null;
-                }
-
-                previousEnd = end;
-                var next = Read32(data, 1345) & 0x7FFF_FFFF;
-                if (next == 0 || next == 0x3FFF_FFFF || address + next <= endAddress || address + next > lastVobu)
-                {
-                    return null;
-                }
-
-                address += next;
+                previousEnd = timing.EndTimestamp;
+                address += timing.NextOffset;
             }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
@@ -147,6 +123,54 @@ internal sealed class DvdNavTimingReader : IDisposable
         }
 
         return null;
+    }
+
+    private bool TryReadNavigationTiming(
+        long address,
+        uint lastVobu,
+        uint last,
+        ushort vob,
+        byte cell,
+        uint? previousEnd,
+        out NavPackTiming timing)
+    {
+        timing = default;
+        cancellationToken.ThrowIfCancellationRequested();
+        if (++packsRead > MaximumNavPacks || !ReadSector(address))
+        {
+            return false;
+        }
+
+        var data = sectorBuffer.AsSpan();
+        if (!HasValidNavigationSector(data, address, vob, cell))
+        {
+            return false;
+        }
+
+        var start = Read32(data, 57);
+        var end = Read32(data, 61);
+        var elapsed = unchecked(end - start); // NAV PTM wraps at 32 bits.
+        var endAddress = address + Read32(data, 1039);
+        if (elapsed is 0 or > 900_000 || endAddress > last || (previousEnd.HasValue && previousEnd.Value != start))
+        {
+            return false;
+        }
+
+        if (address == lastVobu)
+        {
+            var isFinal = endAddress == last && (Read32(data, 1345) & 0x7FFF_FFFF) == 0x3FFF_FFFF;
+            timing = new NavPackTiming(elapsed, end, 0, true);
+            return isFinal;
+        }
+
+        var next = Read32(data, 1345) & 0x7FFF_FFFF;
+        if (next == 0 || next == 0x3FFF_FFFF || address + next <= endAddress || address + next > lastVobu)
+        {
+            return false;
+        }
+
+        timing = new NavPackTiming(elapsed, end, next, false);
+        return true;
     }
 
     private static bool HasValidNavigationSector(ReadOnlySpan<byte> data, long address, ushort vob, byte cell)
@@ -182,6 +206,8 @@ internal sealed class DvdNavTimingReader : IDisposable
     private static ushort Read16(ReadOnlySpan<byte> data, int offset) => BinaryPrimitives.ReadUInt16BigEndian(data[offset..]);
 
     private static uint Read32(ReadOnlySpan<byte> data, int offset) => BinaryPrimitives.ReadUInt32BigEndian(data[offset..]);
+
+    private readonly record struct NavPackTiming(uint Elapsed, uint EndTimestamp, uint NextOffset, bool IsFinal);
 
     public void Dispose()
     {

@@ -685,15 +685,30 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var cellEditField = Details?.Operation?.Parameters
             .FirstOrDefault(static parameter => parameter.Name == "field")?.Value;
         return Details?.Operation?.Parameters
-            .Where(parameter => parameter.Name is not "chapterId" and not "chapterIds" and not "trackId" and not "trackIds" and not "targetChapterIds"
-                && !(operationKind == "chapter.cell-edit"
-                    && (parameter.Name is "field" or "value" or "trackName"
-                        || (parameter.Name == "displayFps" && cellEditField is not ("Frame" or "StartTime")))))
-            .Select(parameter => new HistoryParameterRow(
-                localizer.GetString($"History.Parameter.{parameter.Name}"),
-                FormatParameter(parameter),
-                parameter.ValueKind)).ToArray() ?? [];
+            .Where(parameter => IsVisibleParameter(parameter, operationKind, cellEditField))
+            .Select(CreateParameterRow).ToArray() ?? [];
     }
+
+    private static bool IsVisibleParameter(HistoryOperationParameter parameter, string? operationKind, string? cellEditField)
+    {
+        if (parameter.Name is "chapterId" or "chapterIds" or "trackId" or "trackIds" or "targetChapterIds")
+        {
+            return false;
+        }
+
+        if (operationKind != "chapter.cell-edit")
+        {
+            return true;
+        }
+
+        return parameter.Name is not ("field" or "value" or "trackName")
+            && (parameter.Name != "displayFps" || cellEditField is "Frame" or "StartTime");
+    }
+
+    private HistoryParameterRow CreateParameterRow(HistoryOperationParameter parameter) => new(
+        localizer.GetString($"History.Parameter.{parameter.Name}"),
+        FormatParameter(parameter),
+        parameter.ValueKind);
 
     private string FormatFieldContext(HistoryFieldChange change)
     {
