@@ -1,0 +1,25 @@
+src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml.cs
+  s_1758991fd47007::t_e3a0aa8d936313 124,131-132,135,140-158
+src/ChapterTool.Avalonia.UI/Workflows/LoadSaveWorkflow.cs
+  s_1758991fd47007::t_620b55b1ed4106 101-110
+src/ChapterTool.Avalonia/Services/AvaloniaWindowService.cs
+  s_1758991fd47007::t_647953bd3dd185 98,103-126,139,141-154,156,158-162,164,166-182
+src/ChapterTool.Core/Importing/Disc/DvdIfoMetadataReader.cs
+  s_1758991fd47007::t_1f6ff34582902c 94-108,114,117-169
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7a0c276e9c0b73fadf444a142e267802f44f2ca0",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
