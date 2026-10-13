@@ -1,0 +1,23 @@
+packages/chaptertool/scripts/verify-pack.mjs
+  s_dbf36de5c5f866::t_10ca71854f06cf 78,83,88,90,105
+scripts/ci/consumers/core-frame-rate.cs
+  s_dbf36de5c5f866::t_205a9ea5251790 15,17-22,24-28,30-41,43,47
+scripts/ci/tests/test_check_ci.py
+  s_dbf36de5c5f866::t_6e6868bf4d8d72 132,149,157,164,208
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "548bfab627bec32a4917cad3ec584204a3bd6fd7",
+  "prompts": {},
+  "sessions": {
+    "s_dbf36de5c5f866": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13484-adc4-7f11-8d0f-696a04c7ac19",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
