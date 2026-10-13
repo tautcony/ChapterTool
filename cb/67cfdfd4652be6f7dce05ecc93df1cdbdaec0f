@@ -1,0 +1,27 @@
+scripts/ci/plan.py
+  s_1758991fd47007::t_87bcc351209a59 11,20,24
+scripts/ci/run.py
+  s_1758991fd47007::t_da16d468188194 15,38
+scripts/ci/verify-nuget.py
+  s_1758991fd47007::t_1de2a58d262562 11,25
+scripts/testing/check-headless-xunit.py
+  s_1758991fd47007::t_4c3f3e5c1feb55 15,70,80
+src/ChapterTool.Wasm/wwwroot/css/app.css
+  s_1758991fd47007::t_6fd0c9f8b17e1a 119-120,125,127-129,131,136-137,142,146,632-633,659,747-755,802,853,858,876-877,880,917,977,980,984-986,1001,1005-1006,1165,1429,1433,1435,1439
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cb67cfdfd4652be6f7dce05ecc93df1cdbdaec0f",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
