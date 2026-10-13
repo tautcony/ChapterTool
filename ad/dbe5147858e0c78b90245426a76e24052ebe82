@@ -1,0 +1,28 @@
+src/ChapterTool.Core/Session/SessionEditHistory.cs
+  s_69437837aad6a8::t_c7defd103d2405 194,196
+src/ChapterTool.Core/Session/SessionState.cs
+  s_69437837aad6a8::t_c7defd103d2405 762
+tests/ChapterTool.Core.Tests/Session/SessionStateTests.cs
+  s_69437837aad6a8::t_fa4c6c00ae2f52 195-242
+  s_69437837aad6a8::t_3e6ab3a05ee16f 194
+tests/ChapterTool.Core.Tests/Session/SessionEditHistoryTests.cs
+  s_69437837aad6a8::t_d27e380541c83e 91-93
+  s_69437837aad6a8::t_fa4c6c00ae2f52 73-90,94-99
+  s_69437837aad6a8::t_6fe5acf9ade18e 72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "addbe5147858e0c78b90245426a76e24052ebe82",
+  "prompts": {},
+  "sessions": {
+    "s_69437837aad6a8": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "4f4d3200-a0bd-403e-8029-962c2efed025",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
