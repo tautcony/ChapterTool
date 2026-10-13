@@ -1,0 +1,19 @@
+src/ChapterTool.Core/Importing/Disc/IfoChapterImporter.cs
+  s_1758991fd47007::t_ebfdb8b2839a99 53,68-105,182,194,196-198,200-206,208-210,212-227,229-233,235,237,239,241,243-264,267-269,627-657,695-712,714-716,718-723,725-727,729-736,738,743-761,763,766-767,960-963,970-979
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9c93829d3baf992bd76b5e52558ac9c177f523d3",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
