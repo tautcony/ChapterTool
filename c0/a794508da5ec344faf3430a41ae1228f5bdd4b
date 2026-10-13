@@ -1,0 +1,23 @@
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/ExpressionToolViewModel.cs
+  s_1758991fd47007::t_863ccadce80e45 321,325,329,333-365,370-373,375-384,387,390-407
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/HistoryToolViewModel.cs
+  s_1758991fd47007::t_931d4414eab696 454,469,497-537,659-671,681-683,687
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_1758991fd47007::t_08fbd1fd2147b7 1463,1470-1489,1491-1492,1494-1500,1502-1506,1510,1513-1516
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c0a794508da5ec344faf3430a41ae1228f5bdd4b",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
