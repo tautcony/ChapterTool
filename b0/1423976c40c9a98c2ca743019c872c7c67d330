@@ -1,0 +1,27 @@
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/TemplateNamesToolViewModel.cs
+  s_1758991fd47007::t_60269bc8dd3bf4 17-19,45-120
+src/ChapterTool.Avalonia.UI/Workflows/WorkspaceContentRows.cs
+  s_1758991fd47007::t_ff64a93a5e6b89 29-37,40-52,54-55,57-58
+src/ChapterTool.Core/Transform/ChapterExpressionService.cs
+  s_1758991fd47007::t_6f169691574c99 53-76,78-79,81-96,98,102-103,105-115,117-124,126,128
+src/ChapterTool.Core/Transform/FrameValueFormatter.cs
+  s_1758991fd47007::t_80444743e7254c 46-57,65,85,89,94,98
+src/ChapterTool.Node/NodeExactModels.cs
+  s_1758991fd47007::t_db3db072000af8 86,88-112,152-161,166-171,173-174,180,182-184,186,192,194-204
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b01423976c40c9a98c2ca743019c872c7c67d330",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
