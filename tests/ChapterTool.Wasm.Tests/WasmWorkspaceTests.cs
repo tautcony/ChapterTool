@@ -232,6 +232,21 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task EditingAppendedMplsThenRestoringSplitKeepsClipOptionIdsUnique()
+    {
+        var workspace = CreateWorkspace();
+        var firstPath = LocateFixture("Importing", "Disc", "Mpls", "00011_24_Eva.mpls");
+        var secondPath = LocateFixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls");
+        await workspace.LoadAsync(firstPath, await File.ReadAllBytesAsync(firstPath));
+        await workspace.AppendMplsAsync(secondPath, await File.ReadAllBytesAsync(secondPath));
+
+        workspace.UpdateRow(0, null, "Edited opening");
+        workspace.ToggleClipCombine();
+
+        Assert.Equal(workspace.ClipOptions.Count, workspace.ClipOptions.Select(static option => option.Id).Distinct().Count());
+    }
+
+    [Fact]
     public async Task TemplateModeProjectsNamesThroughExportOptions()
     {
         var workspace = CreateWorkspace();

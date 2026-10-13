@@ -49,7 +49,7 @@ internal static class WasmWorkspaceProjection
         return
         [
             .. session.ClipOptions
-                .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{entry.Id}", groupIndex, index, localizer))
+                .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{index}:{entry.Id}", groupIndex, index, localizer))
         ];
     }
 
