@@ -1,0 +1,22 @@
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  s_eef249661028a7::t_4bd79eda5dcfa2 235-248
+  s_eef249661028a7::t_697031175a2a9c 234
+src/ChapterTool.Wasm/Services/WasmWorkspaceProjection.cs
+  s_eef249661028a7::t_ba45b27648d86f 52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "60aed6a465ac8f1a79ae3b46655ae085f9f1a391",
+  "prompts": {},
+  "sessions": {
+    "s_eef249661028a7": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "26eff5ec-4856-481a-b9d6-236fa1383193",
+        "model": "gpt-5.4"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
