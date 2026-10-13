@@ -1,0 +1,25 @@
+src/ChapterTool.Avalonia.UI/ViewModels/HistoryEntryViewModel.cs
+  s_1758991fd47007::t_3324fe6b97f6d2 99-108,118,122-132,162-167,169,181-182
+src/ChapterTool.Core/Session/ChapterContentOperationSession.cs
+  s_1758991fd47007::t_29b3bef46ca31c 106-117,127-143,145-149,175,177-181
+src/ChapterTool.Core/Session/HistoryNodeDetailsProjector.cs
+  s_1758991fd47007::t_180d5dd0f09cba 128-137,141-142,146-147,149-150,152,155-161
+src/ChapterTool.Wasm/Services/WasmWorkspace.Operations.cs
+  s_1758991fd47007::t_31c0a876696eab 134,138,140-159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "bc8484e518713f7ca0c3fc03d088aac2d5916128",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
