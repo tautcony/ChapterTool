@@ -95,22 +95,35 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             return ValueTask.FromResult(AuxiliaryToolResult.Unknown(toolId));
         }
 
-        if (windows.TryGetValue(toolId.Value, out var existing))
+        if (TryActivateExisting(toolId, descriptor, request))
         {
-            if (descriptor.RefreshPolicy == ToolRefreshPolicy.RefreshRequest)
-            {
-                DisposeContentDataContext(existing);
-                existing.Content = CreateTypedContent(existing, descriptor, request);
-            }
-
-            existing.Activate();
             return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Activated, toolId));
         }
 
-        var focusOwner = request.HostWindow
-            ?? (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow }
-                ? mainWindow
-                : null);
+        OpenNewWindow(toolId, request, descriptor);
+        return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
+    }
+
+    private bool TryActivateExisting(ToolId toolId, ToolDescriptor descriptor, AuxiliaryToolRequest request)
+    {
+        if (!windows.TryGetValue(toolId.Value, out var existing))
+        {
+            return false;
+        }
+
+        if (descriptor.RefreshPolicy == ToolRefreshPolicy.RefreshRequest)
+        {
+            DisposeContentDataContext(existing);
+            existing.Content = CreateTypedContent(existing, descriptor, request);
+        }
+
+        existing.Activate();
+        return true;
+    }
+
+    private void OpenNewWindow(ToolId toolId, AuxiliaryToolRequest request, ToolDescriptor descriptor)
+    {
+        var focusOwner = ResolveFocusOwner(request);
         var returnFocus = focusOwner?.FocusManager.GetFocusedElement() as Control;
         var window = new Window
         {
@@ -123,37 +136,50 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
         window.Classes.Add("auxiliaryHost");
         window.Content = CreateTypedContent(window, descriptor, request);
         ConfigureCloseBehavior(window, toolId, descriptor);
-        window.Closed += (_, _) =>
-        {
-            DisposeContentDataContext(window);
-            window.Content = null;
-            windows.Remove(toolId.Value);
-            if (focusOwner is not null)
-            {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    if (!focusOwner.IsVisible || !focusOwner.IsEnabled)
-                    {
-                        return;
-                    }
-                    focusOwner.Activate();
-                    if (returnFocus is { IsEffectivelyVisible: true, IsEffectivelyEnabled: true })
-                    {
-                        returnFocus.Focus();
-                    }
-                });
-            }
-        };
+        window.Closed += (_, _) => OnWindowClosed(toolId, window, focusOwner, returnFocus);
         windows[toolId.Value] = window;
-        if (descriptor.IsModal && focusOwner is { } owner)
+        ShowWindow(window, descriptor.IsModal, focusOwner);
+    }
+
+    private static Window? ResolveFocusOwner(AuxiliaryToolRequest request) => request.HostWindow
+        ?? (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow }
+            ? mainWindow
+            : null);
+
+    private void OnWindowClosed(ToolId toolId, Window window, Window? focusOwner, Control? returnFocus)
+    {
+        DisposeContentDataContext(window);
+        window.Content = null;
+        windows.Remove(toolId.Value);
+        if (focusOwner is not null)
+        {
+            Dispatcher.UIThread.Post(() => RestoreFocus(focusOwner, returnFocus));
+        }
+    }
+
+    private static void RestoreFocus(Window focusOwner, Control? returnFocus)
+    {
+        if (!focusOwner.IsVisible || !focusOwner.IsEnabled)
+        {
+            return;
+        }
+
+        focusOwner.Activate();
+        if (returnFocus is { IsEffectivelyVisible: true, IsEffectivelyEnabled: true })
+        {
+            returnFocus.Focus();
+        }
+    }
+
+    private static void ShowWindow(Window window, bool isModal, Window? focusOwner)
+    {
+        if (isModal && focusOwner is { } owner)
         {
             _ = window.ShowDialog(owner);
+            return;
         }
-        else
-        {
-            window.Show();
-        }
-        return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
+
+        window.Show();
     }
 
     public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken)

@@ -91,53 +91,81 @@ internal static class DvdIfoMetadataReader
         var volumeNumber = ReadUInt16(bytes, 0x28);
         var declaredTitleSetCount = ReadUInt16(bytes, 0x3E);
         var chapterCount = entries.Sum(static entry => entry.ChapterSet.Chapters.Count);
+        return new ChapterDiagnostic(
+            DiagnosticSeverity.Info,
+            ChapterDiagnosticCode.IfoDiscLoaded,
+            CreateDiscSummary(entries.Count, chapterCount, titleSets.Length, tracks),
+            vmgPath,
+            Arguments: CreateDiscArguments(bytes, root, titleSets, titleVobFiles, tracks, entries,
+                provider, volumeCount, volumeNumber, declaredTitleSetCount, chapterCount));
+    }
+
+    private static string CreateDiscSummary(
+        int titleCount,
+        int chapterCount,
+        int titleSetCount,
+        IReadOnlyList<ChapterImportMediaTrack> tracks)
+    {
         var trackSummary = string.Join(", ", tracks
             .GroupBy(static track => track.Kind, StringComparer.Ordinal)
             .OrderBy(static group => TrackKindOrder(group.Key))
             .Select(static group => $"{group.Count()} {group.Key} track{(group.Count() == 1 ? string.Empty : "s")}"));
         var summary = string.IsNullOrWhiteSpace(trackSummary) ? "no stream attributes" : trackSummary;
-
-        return new ChapterDiagnostic(
-            DiagnosticSeverity.Info,
-            ChapterDiagnosticCode.IfoDiscLoaded,
-            $"Loaded DVD disc metadata: {entries.Count} title{(entries.Count == 1 ? string.Empty : "s")}, {chapterCount} chapter{(chapterCount == 1 ? string.Empty : "s")}, {titleSets.Length} title set{(titleSets.Length == 1 ? string.Empty : "s")}; {summary}.",
-            vmgPath,
-            Arguments: new Dictionary<string, object?>(StringComparer.Ordinal)
-            {
-                ["provider"] = provider,
-                ["volumeCount"] = volumeCount,
-                ["volumeNumber"] = volumeNumber,
-                ["regionMask"] = bytes[0x23],
-                ["declaredTitleSetCount"] = declaredTitleSetCount,
-                ["discoveredTitleSets"] = titleSets,
-                ["titleSetCount"] = titleSets.Length,
-                ["titleVobCount"] = titleVobFiles,
-                ["menuVobPresent"] = File.Exists(Path.Combine(root, "VIDEO_TS.VOB")),
-                ["backupVmgPresent"] = File.Exists(Path.Combine(root, "VIDEO_TS.BUP")),
-                ["titleCount"] = entries.Count,
-                ["chapterCount"] = chapterCount,
-                ["mediaTracks"] = tracks.Select(static track => new Dictionary<string, object?>(StringComparer.Ordinal)
-                {
-                    ["kind"] = track.Kind,
-                    ["summary"] = track.Summary,
-                    ["codec"] = track.Codec ?? string.Empty,
-                    ["language"] = track.Language ?? string.Empty,
-                    ["format"] = track.Format ?? string.Empty,
-                    ["channels"] = track.Channels ?? string.Empty,
-                    ["sampleRate"] = track.SampleRate ?? string.Empty,
-                    ["aspectRatio"] = track.AspectRatio ?? string.Empty
-                }).Cast<object?>().ToList(),
-                ["titles"] = entries.Select(static entry => new Dictionary<string, object?>(StringComparer.Ordinal)
-                {
-                    ["id"] = entry.Id,
-                    ["title"] = entry.ChapterSet.Title,
-                    ["source"] = entry.ChapterSet.SourceName ?? string.Empty,
-                    ["chapterCount"] = entry.ChapterSet.Chapters.Count,
-                    ["duration"] = entry.ChapterSet.Duration,
-                    ["mediaFiles"] = entry.ReferencedMediaFiles?.Select(static file => file.DisplayName).ToList() ?? []
-                }).Cast<object?>().ToList()
-            });
+        return $"Loaded DVD disc metadata: {titleCount} title{PluralSuffix(titleCount)}, {chapterCount} chapter{PluralSuffix(chapterCount)}, {titleSetCount} title set{PluralSuffix(titleSetCount)}; {summary}.";
     }
+
+    private static string PluralSuffix(int count) => count == 1 ? string.Empty : "s";
+
+    private static Dictionary<string, object?> CreateDiscArguments(
+        byte[] bytes,
+        string root,
+        string?[] titleSets,
+        int titleVobFiles,
+        ChapterImportMediaTrack[] tracks,
+        IReadOnlyList<ChapterImportEntry> entries,
+        string provider,
+        int volumeCount,
+        int volumeNumber,
+        int declaredTitleSetCount,
+        int chapterCount) => new(StringComparer.Ordinal)
+        {
+            ["provider"] = provider,
+            ["volumeCount"] = volumeCount,
+            ["volumeNumber"] = volumeNumber,
+            ["regionMask"] = bytes[0x23],
+            ["declaredTitleSetCount"] = declaredTitleSetCount,
+            ["discoveredTitleSets"] = titleSets,
+            ["titleSetCount"] = titleSets.Length,
+            ["titleVobCount"] = titleVobFiles,
+            ["menuVobPresent"] = File.Exists(Path.Combine(root, "VIDEO_TS.VOB")),
+            ["backupVmgPresent"] = File.Exists(Path.Combine(root, "VIDEO_TS.BUP")),
+            ["titleCount"] = entries.Count,
+            ["chapterCount"] = chapterCount,
+            ["mediaTracks"] = tracks.Select(ToTrackMetadata).Cast<object?>().ToList(),
+            ["titles"] = entries.Select(ToTitleMetadata).Cast<object?>().ToList()
+        };
+
+    private static Dictionary<string, object?> ToTrackMetadata(ChapterImportMediaTrack track) => new(StringComparer.Ordinal)
+    {
+        ["kind"] = track.Kind,
+        ["summary"] = track.Summary,
+        ["codec"] = track.Codec ?? string.Empty,
+        ["language"] = track.Language ?? string.Empty,
+        ["format"] = track.Format ?? string.Empty,
+        ["channels"] = track.Channels ?? string.Empty,
+        ["sampleRate"] = track.SampleRate ?? string.Empty,
+        ["aspectRatio"] = track.AspectRatio ?? string.Empty
+    };
+
+    private static Dictionary<string, object?> ToTitleMetadata(ChapterImportEntry entry) => new(StringComparer.Ordinal)
+    {
+        ["id"] = entry.Id,
+        ["title"] = entry.ChapterSet.Title,
+        ["source"] = entry.ChapterSet.SourceName ?? string.Empty,
+        ["chapterCount"] = entry.ChapterSet.Chapters.Count,
+        ["duration"] = entry.ChapterSet.Duration,
+        ["mediaFiles"] = entry.ReferencedMediaFiles?.Select(static file => file.DisplayName).ToList() ?? []
+    };
 
     private static ChapterImportMediaTrack? ReadVideoTrack(ReadOnlySpan<byte> attributes)
     {

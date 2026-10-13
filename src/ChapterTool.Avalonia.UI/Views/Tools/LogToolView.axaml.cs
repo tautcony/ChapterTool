@@ -121,30 +121,41 @@ public sealed partial class LogToolView : UserControl
 
     private void ApplyResponsiveLayout()
     {
-        if (LogList is null || LogListHost is null || LogLayout is null || LogDetailsPanel is null || LogContentSurface is null)
-        {
-            return;
-        }
-
-        var width = LogContentSurface.Bounds.Width;
-        if (width <= 0)
+        if (!TryGetResponsiveWidth(out var width))
         {
             return;
         }
 
         var narrow = width <= NarrowLayoutThreshold;
         var detailsOpen = DataContext is LogToolViewModel { ShowDetails: true };
-
-        LogLayout.ColumnDefinitions[0].Width = detailsOpen && narrow
+        var layout = LogLayout!;
+        layout.ColumnDefinitions[0].Width = detailsOpen && narrow
             ? new GridLength(0)
             : new GridLength(1, GridUnitType.Star);
-        LogLayout.ColumnDefinitions[1].Width = !detailsOpen
+        layout.ColumnDefinitions[1].Width = !detailsOpen
             ? new GridLength(0)
             : narrow
                 ? new GridLength(1, GridUnitType.Star)
                 : new GridLength(InspectorWidth, GridUnitType.Pixel);
-        LogListHost.IsVisible = !detailsOpen || !narrow;
-        LogDetailsPanel.HorizontalAlignment = HorizontalAlignment.Stretch;
+        LogListHost!.IsVisible = !detailsOpen || !narrow;
+        ConfigureDetailsPanel(narrow);
+    }
+
+    private bool TryGetResponsiveWidth(out double width)
+    {
+        width = 0;
+        if (LogList is null || LogListHost is null || LogLayout is null || LogDetailsPanel is null || LogContentSurface is null)
+        {
+            return false;
+        }
+
+        width = LogContentSurface.Bounds.Width;
+        return width > 0;
+    }
+
+    private void ConfigureDetailsPanel(bool narrow)
+    {
+        LogDetailsPanel!.HorizontalAlignment = HorizontalAlignment.Stretch;
         LogDetailsPanel.Width = double.NaN;
         LogDetailsPanel.MaxWidth = narrow ? double.PositiveInfinity : InspectorWidth;
     }

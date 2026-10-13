@@ -98,6 +98,16 @@ internal sealed class LoadSaveWorkflow(
         var expectedSessionId = expectedSession.SessionId;
         var capturedContent = contentSession.Snapshot;
         var result = await LoadSourceAsync(source, progress: null, cancellationToken);
+        return CompleteAppendLoad(operationRevision, expectedSessionId, capturedContent, result, cancellationToken);
+    }
+
+    private AppendWorkflowResult CompleteAppendLoad(
+        int operationRevision,
+        Guid expectedSessionId,
+        SessionSnapshot capturedContent,
+        ChapterImportResult result,
+        CancellationToken cancellationToken)
+    {
         if (!workspace.IsCurrentRevision(operationRevision)
             || workspace.ClipSession?.SessionId != expectedSessionId)
         {
