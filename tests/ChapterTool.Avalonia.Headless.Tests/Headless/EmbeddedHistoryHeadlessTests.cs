@@ -7,7 +7,6 @@ using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
-using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 

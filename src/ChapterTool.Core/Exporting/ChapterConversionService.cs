@@ -23,7 +23,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
         try
         {
             var lines = info.Chapters.Where(static chapter => !chapter.IsSeparator)
-                .Select(chapter => checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, framesPerSecond).RoundAwayFromZero())
+                .Select(chapter => ((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, framesPerSecond).RoundAwayFromZero())
                     .ToString(CultureInfo.InvariantCulture));
             return Success(string.Join(Environment.NewLine, lines), ".celltimes.txt");
         }
@@ -69,7 +69,7 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
             var lines = times.Select(time =>
             {
                 var frame = timecodeMap?.FrameFor(time) ??
-                    checked((long)ExactFrameMath.FromTicks(time.Ticks, framesPerSecond).RoundAwayFromZero());
+                    (long)ExactFrameMath.FromTicks(time.Ticks, framesPerSecond).RoundAwayFromZero();
                 return frame.ToString(CultureInfo.InvariantCulture) + " I";
             });
             return Success(string.Join(Environment.NewLine, lines), ".qpf");

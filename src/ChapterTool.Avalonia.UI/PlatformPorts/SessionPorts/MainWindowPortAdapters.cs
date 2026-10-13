@@ -100,7 +100,7 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
 
     public ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics)
     {
-        var result = new ChapterTool.Core.Transform.ChapterExpressionService(owner.ExpressionEngine).Apply(
+        var result = new Core.Transform.ChapterExpressionService(owner.ExpressionEngine).Apply(
             ChapterExpressionValidation.CreateInput(owner.CurrentChapterSet), true,
             string.IsNullOrWhiteSpace(scriptText) ? "t" : scriptText,
             owner.ComputationFrameRate.IsKnown ? owner.ComputationFrameRate : null);

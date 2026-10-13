@@ -7,34 +7,34 @@
     <div class="modal-body">
         <div class="log-filters">
             <label for="log-search">@L.T("Parity.LogSearch")</label>
-            <input id="log-search" type="search" @bind="view.Search" @bind:event="oninput" @bind:after="Refresh" />
+            <input id="log-search" type="search" @bind="_view.Search" @bind:event="oninput" @bind:after="Refresh" />
             <label for="log-severity">@L.T("Parity.LogSeverity")</label>
-            <select id="log-severity" @bind="view.Severity" @bind:after="Refresh">
+            <select id="log-severity" @bind="_view.Severity" @bind:after="Refresh">
                 <option value="">@L.T("Parity.LogAll")</option>
                 <option value="Info">@L.T("Tool.Log.FilterInformation")</option>
                 <option value="Warning">@L.T("Tool.Log.FilterWarning")</option>
                 <option value="Error">@L.T("Tool.Log.FilterError")</option>
             </select>
-            <button type="button" class="secondary" disabled="@(view.Search.Length == 0 && view.Severity.Length == 0)" @onclick="ResetFilters">@L.T("Tool.Log.ResetFilters")</button>
-            <output aria-live="polite">@L.Format("Parity.LogCount", view.Visible.Count)</output>
+            <button type="button" class="secondary" disabled="@(_view.Search.Length == 0 && _view.Severity.Length == 0)" @onclick="ResetFilters">@L.T("Tool.Log.ResetFilters")</button>
+            <output aria-live="polite">@L.Format("Parity.LogCount", _view.Visible.Count)</output>
         </div>
-        <div class="log-surfaces @(view.InspectorOpen ? "inspecting" : null)">
+        <div class="log-surfaces @(_view.InspectorOpen ? "inspecting" : null)">
             <div class="log-list" id="log-list" role="list" aria-label="@L.T("Modal.LogTitle")" tabindex="-1">
-                @if (view.Visible.Count == 0) { <p>@L.T(view.HasAnyEntries ? "Tool.Log.Empty" : "Tool.Log.NoEntries")</p> }
-                @foreach (var entry in view.Visible.Reverse())
+                @if (_view.Visible.Count == 0) { <p>@L.T(_view.HasAnyEntries ? "Tool.Log.Empty" : "Tool.Log.NoEntries")</p> }
+                @foreach (var entry in _view.Visible.Reverse())
                 {
                     var time = entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
                     var summary = WasmLogView.CompactSummary(entry.Message);
                     var level = LevelName(entry.Level);
-                    var additionalSearchMatch = view.Search.Length > 0 && !summary.Contains(view.Search, StringComparison.OrdinalIgnoreCase)
-                        && WasmLogView.SearchesAdditionalFields(entry, view.Search, summary, time, level);
+                    var additionalSearchMatch = _view.Search.Length > 0 && !summary.Contains(_view.Search, StringComparison.OrdinalIgnoreCase)
+                        && WasmLogView.SearchesAdditionalFields(entry, _view.Search, summary, time, level);
                     var accessibleName = L.Format("Tool.Log.EntryAccessibleName", level, summary, time, string.Empty)
                         + (additionalSearchMatch ? $" {L.T("Tool.Log.SearchMatchAdditional")}" : string.Empty);
-                    <div @key="entry.Id" id="@($"log-{entry.Id}")" class="log-entry @(view.SelectedId == entry.Id ? "selected" : null)"
+                    <div @key="entry.Id" id="@($"log-{entry.Id}")" class="log-entry @(_view.SelectedId == entry.Id ? "selected" : null)"
                          role="listitem">
-                        <button type="button" id="@($"log-select-{entry.Id}")" class="log-select" aria-pressed="@(view.SelectedId == entry.Id ? "true" : "false")"
+                        <button type="button" id="@($"log-select-{entry.Id}")" class="log-select" aria-pressed="@(_view.SelectedId == entry.Id ? "true" : "false")"
                                 aria-label="@accessibleName"
-                                @onclick="() => view.SelectedId = entry.Id">
+                                @onclick="() => _view.SelectedId = entry.Id">
                             <time>@Highlight(time)</time>
                             <span class="log-level @entry.Level.ToLowerInvariant()">@Highlight(level)</span>
                             <span class="log-summary">@Highlight(summary)</span>
@@ -50,7 +50,7 @@
                     </div>
                 }
             </div>
-            @if (view.InspectorOpen && view.Selected is { } selected)
+            @if (_view.InspectorOpen && _view.Selected is { } selected)
             {
                 <section id="log-inspector" class="log-inspector" aria-labelledby="log-inspector-title">
                     <button id="log-back" type="button" class="secondary" @onclick="BackAsync">@L.T("Parity.LogBack")</button>
@@ -65,7 +65,7 @@
                 </section>
             }
         </div>
-        @if (status is not null) { <p role="status">@status</p> }
+        @if (_status is not null) { <p role="status">@_status</p> }
     </div>
     <footer class="modal-footer">
         <button type="button" class="secondary" @onclick="Clear">@L.T("Common.Clear")</button>
@@ -80,65 +80,65 @@
 
 @code {
     [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
-    private WasmLogView view = null!;
-    private string? status;
-    private string? pendingFocus;
-    protected override void OnInitialized() { view = new(Workspace.Logs); Workspace.Changed += Changed; }
-    private void Changed() => InvokeAsync(() => { view.Refresh(); StateHasChanged(); });
+    private WasmLogView _view = null!;
+    private string? _status;
+    private string? _pendingFocus;
+    protected override void OnInitialized() { _view = new WasmLogView(Workspace.Logs); Workspace.Changed += Changed; }
+    private void Changed() => InvokeAsync(() => { _view.Refresh(); StateHasChanged(); });
     public void Dispose() => Workspace.Changed -= Changed;
-    protected override void OnParametersSet() => view?.Refresh();
-    private void Refresh() => view.Refresh();
+    protected override void OnParametersSet() => _view?.Refresh();
+    private void Refresh() => _view.Refresh();
     private void ResetFilters()
     {
-        view.Search = string.Empty;
-        view.Severity = string.Empty;
-        view.Refresh();
+        _view.Search = string.Empty;
+        _view.Severity = string.Empty;
+        _view.Refresh();
     }
-    private void Inspect(WasmLogEntry entry) { view.SelectedId = entry.Id; view.InspectorOpen = true; pendingFocus = "log-back"; }
+    private void Inspect(WasmLogEntry entry) { _view.SelectedId = entry.Id; _view.InspectorOpen = true; _pendingFocus = "log-back"; }
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (pendingFocus is not { } target) return;
-        pendingFocus = null;
+        if (_pendingFocus is not { } target) return;
+        _pendingFocus = null;
         await Js.InvokeVoidAsync("chapterToolWasm.focus", target);
     }
     private string LevelName(string level) => L.T("Parity.LogLevel." + level);
-    private void Clear() { Workspace.ClearLogs(); view.ClearSelection(); view.Refresh(); }
-    private Task CloseOrBackAsync() => view.InspectorOpen ? BackAsync() : OnClose.InvokeAsync();
+    private void Clear() { Workspace.ClearLogs(); _view.ClearSelection(); _view.Refresh(); }
+    private Task CloseOrBackAsync() => _view.InspectorOpen ? BackAsync() : OnClose.InvokeAsync();
     private Task BackAsync()
     {
-        view.InspectorOpen = false;
-        pendingFocus = view.SelectedId is { } id && view.Visible.Any(entry => entry.Id == id)
+        _view.InspectorOpen = false;
+        _pendingFocus = _view.SelectedId is { } id && _view.Visible.Any(entry => entry.Id == id)
             ? $"log-select-{id}"
             : "log-search";
         return Task.CompletedTask;
     }
     private async Task CopyAsync()
     {
-        if (view.Selected is not { } selected) return;
+        if (_view.Selected is not { } selected) return;
         await CopyTextAsync(System.Text.Json.JsonSerializer.Serialize(selected));
     }
     private async Task CopyTextAsync(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
-        try { await Js.InvokeVoidAsync("chapterToolWasm.copyText", text); status = L.T("Copy.Preview"); }
-        catch (JSException) { status = L.T("Parity.LogFailed"); }
+        try { await Js.InvokeVoidAsync("chapterToolWasm.copyText", text); _status = L.T("Copy.Preview"); }
+        catch (JSException) { _status = L.T("Parity.LogFailed"); }
     }
     private async Task ExportAsync(bool csv)
     {
-        var content = view.Export(csv);
+        var content = _view.Export(csv);
         try
         {
             await Js.InvokeVoidAsync("chapterToolWasm.downloadText", csv ? "chaptertool-log.csv" : "chaptertool-log.json", content, "utf8", false);
-            status = L.T("Parity.LogExported");
+            _status = L.T("Parity.LogExported");
         }
-        catch (JSException) { status = L.T("Parity.LogFailed"); }
+        catch (JSException) { _status = L.T("Parity.LogFailed"); }
     }
     private RenderFragment Highlight(string text) => builder =>
     {
-        var match = view.Search.Length == 0 ? -1 : text.IndexOf(view.Search, StringComparison.OrdinalIgnoreCase);
+        var match = _view.Search.Length == 0 ? -1 : text.IndexOf(_view.Search, StringComparison.OrdinalIgnoreCase);
         if (match < 0) { builder.AddContent(0, text); return; }
         builder.AddContent(0, text[..match]);
-        builder.OpenElement(1, "mark"); builder.AddContent(2, text.Substring(match, view.Search.Length)); builder.CloseElement();
-        builder.AddContent(3, text[(match + view.Search.Length)..]);
+        builder.OpenElement(1, "mark"); builder.AddContent(2, text.Substring(match, _view.Search.Length)); builder.CloseElement();
+        builder.AddContent(3, text[(match + _view.Search.Length)..]);
     };
 }

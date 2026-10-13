@@ -8,6 +8,7 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts;
 
@@ -224,7 +225,7 @@ public sealed record WorkspaceHostServices(
 
 public sealed record HostEffectServices(
     IApplicationLogService LogService,
-    Microsoft.Extensions.Logging.ILogger<MainWindowViewModel> Logger,
+    ILogger<MainWindowViewModel> Logger,
     IShellService ShellService);
 
 public sealed record SettingsAppearanceServices(

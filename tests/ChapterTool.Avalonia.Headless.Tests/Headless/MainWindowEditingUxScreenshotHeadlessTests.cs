@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
-using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
@@ -8,7 +7,6 @@ using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
 using ChapterTool.Contracts.Configuration;
-using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 
 

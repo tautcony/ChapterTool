@@ -146,7 +146,7 @@ public sealed partial class ChapterExportService
             ".qpf",
             info.Chapters
                 .Where(NotSeparator)
-                .Select(chapter => checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, rate).RoundAwayFromZero())
+                .Select(chapter => ((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, rate).RoundAwayFromZero())
                     .ToString(CultureInfo.InvariantCulture) + " I"));
     }
 

@@ -125,7 +125,7 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
 
     public IExpressionAuthoringService? ExpressionAuthoringService { get; }
 
-    public ChapterTool.Core.Models.FrameRateValue ExpressionFrameRate => expressionSession.ComputationFrameRate;
+    public FrameRateValue ExpressionFrameRate => expressionSession.ComputationFrameRate;
 
     public IReadOnlyList<ExpressionPresetViewModel> Presets { get; }
 

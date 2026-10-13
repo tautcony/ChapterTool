@@ -24,9 +24,6 @@ public sealed class ChapterRowViewModel(
     private string previewNameAccessibleName = string.Empty;
     private string previewNumberAccessibleName = string.Empty;
     private string previewFramesAccessibleName = string.Empty;
-    private string previewFrameBaseline = string.Empty;
-    private FrameAccuracy previewFrameBaselineAccuracy = FrameAccuracy.Neutral;
-    private FrameAccuracy previewCandidateFrameAccuracy = FrameAccuracy.Neutral;
     private decimal previewBeforeFramesPerSecond;
     private bool isNarrowPreviewLayout;
     private FramePresentationInput? framePresentationInput;
@@ -109,7 +106,7 @@ public sealed class ChapterRowViewModel(
     public bool HasPreviewFramesChange =>
         ((PreviewComparison?.Changes ?? ExpressionChapterChangeKind.None) & ExpressionChapterChangeKind.FrameInformation) != ExpressionChapterChangeKind.None
         && PreviewComparison?.CandidateFrames is { } candidateFrames
-        && !string.Equals(previewFrameBaseline, candidateFrames.Text, StringComparison.Ordinal);
+        && !string.Equals(PreviewFrameBaseline, candidateFrames.Text, StringComparison.Ordinal);
 
     public string PreviewTimeText { get => previewTimeText; internal set => SetProperty(ref previewTimeText, value); }
 
@@ -125,21 +122,21 @@ public sealed class ChapterRowViewModel(
 
     public string PreviewBeforeFrames { get => previewBeforeFrames; internal set => SetProperty(ref previewBeforeFrames, value); }
 
-    public bool IsPreviewBeforeFrameAccurate => previewFrameBaselineAccuracy == FrameAccuracy.Accurate;
+    public bool IsPreviewBeforeFrameAccurate => PreviewBeforeFrameAccuracy == FrameAccuracy.Accurate;
 
-    public bool IsPreviewBeforeFrameInexact => previewFrameBaselineAccuracy == FrameAccuracy.Inexact;
+    public bool IsPreviewBeforeFrameInexact => PreviewBeforeFrameAccuracy == FrameAccuracy.Inexact;
 
-    public bool IsPreviewBeforeFrameNeutral => previewFrameBaselineAccuracy == FrameAccuracy.Neutral;
+    public bool IsPreviewBeforeFrameNeutral => PreviewBeforeFrameAccuracy == FrameAccuracy.Neutral;
 
-    public bool IsPreviewCandidateFrameAccurate => previewCandidateFrameAccuracy == FrameAccuracy.Accurate;
+    public bool IsPreviewCandidateFrameAccurate => PreviewCandidateFrameAccuracy == FrameAccuracy.Accurate;
 
-    public bool IsPreviewCandidateFrameInexact => previewCandidateFrameAccuracy == FrameAccuracy.Inexact;
+    public bool IsPreviewCandidateFrameInexact => PreviewCandidateFrameAccuracy == FrameAccuracy.Inexact;
 
-    public bool IsPreviewCandidateFrameNeutral => previewCandidateFrameAccuracy == FrameAccuracy.Neutral;
+    public bool IsPreviewCandidateFrameNeutral => PreviewCandidateFrameAccuracy == FrameAccuracy.Neutral;
 
-    internal FrameAccuracy PreviewBeforeFrameAccuracy => previewFrameBaselineAccuracy;
+    internal FrameAccuracy PreviewBeforeFrameAccuracy { get; private set; } = FrameAccuracy.Neutral;
 
-    internal FrameAccuracy PreviewCandidateFrameAccuracy => previewCandidateFrameAccuracy;
+    internal FrameAccuracy PreviewCandidateFrameAccuracy { get; private set; } = FrameAccuracy.Neutral;
 
     public string PreviewTimeAccessibleName { get => previewTimeAccessibleName; internal set => SetProperty(ref previewTimeAccessibleName, value); }
 
@@ -155,7 +152,7 @@ public sealed class ChapterRowViewModel(
         private set => previewBeforeFramesPerSecond = value;
     }
 
-    internal string PreviewFrameBaseline => previewFrameBaseline;
+    internal string PreviewFrameBaseline { get; private set; } = string.Empty;
 
     internal void UpdatePreviewComparison(
         ExpressionChapterComparison? comparison,
@@ -164,8 +161,8 @@ public sealed class ChapterRowViewModel(
     {
         if (previewComparison is null && comparison is not null)
         {
-            previewFrameBaseline = string.IsNullOrEmpty(FramesInfo) ? missingFramesText : FramesInfo;
-            previewFrameBaselineAccuracy = IsFrameAccurate
+            PreviewFrameBaseline = string.IsNullOrEmpty(FramesInfo) ? missingFramesText : FramesInfo;
+            PreviewBeforeFrameAccuracy = IsFrameAccurate
                 ? FrameAccuracy.Accurate
                 : IsFrameInexact
                     ? FrameAccuracy.Inexact
@@ -175,9 +172,9 @@ public sealed class ChapterRowViewModel(
         }
 
         var candidateAccuracy = comparison?.CandidateFrames?.Accuracy ?? FrameAccuracy.Neutral;
-        if (previewCandidateFrameAccuracy != candidateAccuracy)
+        if (PreviewCandidateFrameAccuracy != candidateAccuracy)
         {
-            previewCandidateFrameAccuracy = candidateAccuracy;
+            PreviewCandidateFrameAccuracy = candidateAccuracy;
             NotifyCandidateFrameAccuracy();
         }
 

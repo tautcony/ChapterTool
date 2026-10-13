@@ -70,17 +70,16 @@ internal static class HistoryNodeDetailsProjector
                 var chapter = track.Chapters[chapterIndex];
                 var chapterId = chapter.Id.Value.ToString("D");
                 var chapterLabel = (chapterIndex + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                var context = trackLabel;
-                Add("Chapter", chapterId, "Presence", true, chapterLabel, context);
-                Add("Chapter", chapterId, "Track", new HistoryTrackReference(track.Id, trackLabel), chapterLabel, context);
-                Add("Chapter", chapterId, "Position", chapterIndex + 1, chapterLabel, context);
-                Add("Chapter", chapterId, "DisplayNumber", chapter.DisplayNumber, chapterLabel, context);
-                Add("Chapter", chapterId, "Name", chapter.Name, chapterLabel, context);
-                Add("Chapter", chapterId, "StartTicks", chapter.StartTicks, chapterLabel, context);
-                Add("Chapter", chapterId, "EndTicks", chapter.EndTicks, chapterLabel, context);
-                Add("Chapter", chapterId, "FramesInfo", chapter.FramesInfo, chapterLabel, context);
-                Add("Chapter", chapterId, "FrameAccuracy", chapter.FrameAccuracy, chapterLabel, context);
-                Add("Chapter", chapterId, "Kind", chapter.Kind, chapterLabel, context);
+                Add("Chapter", chapterId, "Presence", true, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "Track", new HistoryTrackReference(track.Id, trackLabel), chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "Position", chapterIndex + 1, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "DisplayNumber", chapter.DisplayNumber, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "Name", chapter.Name, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "StartTicks", chapter.StartTicks, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "EndTicks", chapter.EndTicks, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "FramesInfo", chapter.FramesInfo, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "FrameAccuracy", chapter.FrameAccuracy, chapterLabel, trackLabel);
+                Add("Chapter", chapterId, "Kind", chapter.Kind, chapterLabel, trackLabel);
             }
 
             for (var segmentIndex = 0; segmentIndex < track.Segments.Length; segmentIndex++)

@@ -1,8 +1,6 @@
 using System.Collections.Specialized;
 using ChapterTool.Avalonia.UI.Localization;
-using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Workflows;
-using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
@@ -43,9 +41,9 @@ public sealed partial class MainWindowViewModel
                 ("chapters", CurrentInfo.Chapters.Count), ("fps", fps));
         }
 
-        selectedFrameRateOption = frameRateService.FindByRate(CurrentInfo.FrameRate);
+        SelectedFrameRateOption = frameRateService.FindByRate(CurrentInfo.FrameRate);
         displayOptionCoordinator.SetContentRate(CurrentInfo.FrameRate, FrameRateDisplayOptions);
-        SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+        SetSelectedFrameRateIndexSilent(ComboIndexFor(SelectedFrameRateOption));
         ApplyFrameInfo(logSelection);
     }
 
@@ -162,7 +160,7 @@ public sealed partial class MainWindowViewModel
             ClipEditingCoordinator.CandidateBuilder.ApplyExpression(
                 document,
                 string.IsNullOrWhiteSpace(expression) ? "t" : expression,
-                selectedFrameRateOption.IsValid ? selectedFrameRateOption.Rate : null),
+                SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : null),
             new HistoryOperationDescriptor("expression.apply",
             [
                 new HistoryOperationParameter("script", string.IsNullOrWhiteSpace(expression) ? "t" : expression),
@@ -292,13 +290,13 @@ public sealed partial class MainWindowViewModel
             && preview.Operation == "Change chapter frame rate"
             && CurrentInfo is { } currentInfo)
         {
-            selectedFrameRateOption = frameRateService.FindByRate(currentInfo.FrameRate);
+            SelectedFrameRateOption = frameRateService.FindByRate(currentInfo.FrameRate);
             displayOptionCoordinator.SetContentRate(currentInfo.FrameRate, FrameRateDisplayOptions);
-            SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+            SetSelectedFrameRateIndexSilent(ComboIndexFor(SelectedFrameRateOption));
             ApplyFrameInfo(logResult: false);
             var sourceFps = preview.Before.FrameRate.ToDouble();
             var targetFps = preview.Candidate.FrameRate.ToDouble();
-            var optionName = selectedFrameRateOption.DisplayName;
+            var optionName = SelectedFrameRateOption.DisplayName;
             Log($"Convert to current FPS: option='{optionName}', source={sourceFps:0.###}, target={targetFps:0.###}, chapters {preview.Before.Tracks.Sum(static track => track.Chapters.Length)} -> {currentInfo.Chapters.Count}",
                 "Edit",
                 ("option", optionName),
@@ -397,7 +395,7 @@ public sealed partial class MainWindowViewModel
 
     private void ApplyFrameInfo(bool logResult = true)
     {
-        Workspace.ExportPreferences.SetComputationRate(selectedFrameRateOption.IsValid ? selectedFrameRateOption.Rate : null);
+        Workspace.ExportPreferences.SetComputationRate(SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : null);
         if (CurrentInfo is null)
         {
             RefreshRows();
@@ -406,7 +404,7 @@ public sealed partial class MainWindowViewModel
 
         var outcome = ClipEditingCoordinator.UpdateFrames(
             CurrentInfo,
-            selectedFrameRateOption,
+            SelectedFrameRateOption,
             EditingOptions.EffectiveFrameDecimalPlaces,
             FrameAccuracyTolerance);
         var result = outcome.FrameResult;
@@ -415,15 +413,15 @@ public sealed partial class MainWindowViewModel
         appliedFrameRateOption = appliedOption;
         if (detection is not null)
         {
-            selectedFrameRateOption = frameRateService.Options[0];
+            SelectedFrameRateOption = frameRateService.Options[0];
             SetStatus("Status.DetectedFrameRate", ("displayName", detection.Option.DisplayName), ("confidence", detection.Confidence));
         }
-        else if (selectedFrameRateOption.Code != "Auto")
+        else if (SelectedFrameRateOption.Code != "Auto")
         {
-            selectedFrameRateOption = result.SelectedOption;
+            SelectedFrameRateOption = result.SelectedOption;
         }
 
-        SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+        SetSelectedFrameRateIndexSilent(ComboIndexFor(SelectedFrameRateOption));
         if (logResult)
         {
             var message = $"Frame info updated: option={appliedOption.DisplayName}, fps={result.Rate.ToDecimal():0.###}, round={RoundFrames}, chapters={CurrentInfo.Chapters.Count}";
@@ -448,13 +446,13 @@ public sealed partial class MainWindowViewModel
 
     private async ValueTask ChangeFpsToSelectedOption(CancellationToken cancellationToken = default)
     {
-        if (CurrentInfo is null || !selectedFrameRateOption.IsValid)
+        if (CurrentInfo is null || !SelectedFrameRateOption.IsValid)
         {
             return;
         }
 
         var sourceFps = ResolveSourceFrameRate();
-        var targetOption = selectedFrameRateOption;
+        var targetOption = SelectedFrameRateOption;
         var targetFps = targetOption.Rate;
         pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
         OnPropertyChanged(nameof(IsContentPreviewPending));
@@ -469,10 +467,10 @@ public sealed partial class MainWindowViewModel
     }
 
     private FrameRateValue ResolveSourceFrameRate() => CurrentInfo?.FrameRate is { IsKnown: true } rate
-        ? rate : selectedFrameRateOption.IsValid ? selectedFrameRateOption.Rate : FrameRateValue.Unknown;
+        ? rate : SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : FrameRateValue.Unknown;
 
-    internal FrameRateValue ComputationFrameRate => selectedFrameRateOption.IsValid
-        ? selectedFrameRateOption.Rate : CurrentInfo?.FrameRate ?? FrameRateValue.Unknown;
+    internal FrameRateValue ComputationFrameRate => SelectedFrameRateOption.IsValid
+        ? SelectedFrameRateOption.Rate : CurrentInfo?.FrameRate ?? FrameRateValue.Unknown;
 
     /// <summary>
     /// Rebuilds bindable clip options / selection after the workspace session was already updated.

@@ -117,13 +117,6 @@ public sealed class HistoryInspectionViewModelTests
         viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == tree.Right);
         var current = history.WaitForInspectionAsync(1);
         var currentDetailsLoaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
-        {
-            if (args.PropertyName == nameof(viewModel.Details) && viewModel.Details?.NodeId == tree.Right)
-            {
-                currentDetailsLoaded.TrySetResult();
-            }
-        }
 
         viewModel.PropertyChanged += OnPropertyChanged;
 
@@ -141,6 +134,15 @@ public sealed class HistoryInspectionViewModelTests
         Assert.Equal(tree.Right, viewModel.SelectedEntry!.Id);
         Assert.Equal(tree.Right, viewModel.Details!.NodeId);
         Assert.Equal("current", viewModel.Details.Description);
+        return;
+
+        void OnPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+        {
+            if (args.PropertyName == nameof(viewModel.Details) && viewModel.Details?.NodeId == tree.Right)
+            {
+                currentDetailsLoaded.TrySetResult();
+            }
+        }
     }
 
     [Fact]
@@ -432,7 +434,6 @@ public sealed class HistoryInspectionViewModelTests
         private readonly Dictionary<Guid, HistoryNodeDetails> details = [];
         private readonly Dictionary<Guid, HistoryNodeDetails> configuredDetails = [];
         private int nextPendingInspection;
-        private Task lastInspection = Task.CompletedTask;
 
         public IReadOnlyList<HistoryEntryViewModel> Entries => [];
 
@@ -463,7 +464,7 @@ public sealed class HistoryInspectionViewModelTests
 
         public Exception? NavigationFailure { get; set; }
 
-        public Task LastInspection => lastInspection;
+        public Task LastInspection { get; private set; } = Task.CompletedTask;
 
         public event EventHandler? StateChanged;
 
@@ -478,14 +479,14 @@ public sealed class HistoryInspectionViewModelTests
             if (nextPendingInspection < pending.Count)
             {
                 var request = pending[nextPendingInspection++];
-                lastInspection = request.Task;
+                LastInspection = request.Task;
                 return new ValueTask<HistoryInspectionOutcome>(request.Task);
             }
 
             var result = outcomes.Count > 0
                 ? outcomes.Dequeue()
                 : HistoryInspectionOutcomeFor(nodeId);
-            lastInspection = Task.CompletedTask;
+            LastInspection = Task.CompletedTask;
             return ValueTask.FromResult(result);
         }
 

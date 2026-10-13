@@ -1,9 +1,7 @@
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
-using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Editing;

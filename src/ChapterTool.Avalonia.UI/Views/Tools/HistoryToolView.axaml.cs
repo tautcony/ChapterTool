@@ -7,6 +7,9 @@ using ChapterTool.Avalonia.UI.ViewModels.Tools;
 
 namespace ChapterTool.Avalonia.UI.Views.Tools;
 
+/// <summary>
+/// Interaction logic for HistoryToolView.xaml.
+/// </summary>
 public partial class HistoryToolView : UserControl
 {
     public HistoryToolView() => InitializeComponent();

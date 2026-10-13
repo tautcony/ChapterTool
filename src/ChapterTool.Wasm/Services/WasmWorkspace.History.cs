@@ -58,7 +58,7 @@ public sealed partial class WasmWorkspace
 
     public bool SelectHistoryRedoBranch(Guid? nodeId)
     {
-        if (nodeId is null || !HistoryRedoChoices.Any(choice => choice.Id == nodeId) || IsBusy || IsHistoryEnded)
+        if (nodeId is null || HistoryRedoChoices.All(choice => choice.Id != nodeId) || IsBusy || IsHistoryEnded)
         {
             return false;
         }

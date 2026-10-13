@@ -285,9 +285,9 @@ public sealed class ToolViewsHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
-            MainWindowHeadlessTestHost.Entry(ChapterTool.Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro", "End")),
+            MainWindowHeadlessTestHost.Entry(Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro", "End")),
             localizer: new AppLocalizationManager(language),
-            appSettings: new ChapterTool.Contracts.Configuration.AppSettings(Language: language));
+            appSettings: new Contracts.Configuration.AppSettings(Language: language));
         await host.LoadAsync("movie.txt");
         var viewModel = new ExpressionToolViewModel(
             host.ViewModel.ToolSession.Expression,
@@ -370,7 +370,7 @@ public sealed class ToolViewsHeadlessTests
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
-            MainWindowHeadlessTestHost.Entry(ChapterTool.Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro")));
+            MainWindowHeadlessTestHost.Entry(Core.Models.ChapterImportFormat.Ogm, "movie.txt", "Intro")));
         await host.LoadAsync("movie.txt");
         var closeCount = 0;
         var viewModel = new ExpressionToolViewModel(

@@ -13,7 +13,10 @@ public sealed class WasmWorkspaceTests
     public async Task Frame_time_frame_edits_commit_and_round_trip_through_history()
     {
         using var workspace = CreateWorkspace();
-        await workspace.LoadAsync("custom.txt", "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8.ToArray());
+        await workspace.LoadAsync("custom.txt",
+        [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8
+        ]);
         workspace.SelectedFrameRateIndex = workspace.FrameRateChoices.Single(choice =>
             choice.Option.Rate == FrameRateValue.Rational(25, 1)).Index;
 
@@ -40,19 +43,22 @@ public sealed class WasmWorkspaceTests
     public async Task NormalizeDeleteCommitsAndRoundTripsThroughHistory()
     {
         using var workspace = CreateWorkspace();
-        await workspace.LoadAsync("chapters.txt", "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8.ToArray());
+        await workspace.LoadAsync("chapters.txt",
+        [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8
+        ]);
         workspace.EditingOptions = workspace.EditingOptions with { DeleteRowsTiming = DeleteRowsTimingMode.Normalize };
         workspace.SelectRow(0);
 
         workspace.DeleteSelectedRows();
-        Assert.Equal(new[] { "00:00:00.000", "00:00:10.000" },
+        Assert.Equal(["00:00:00.000", "00:00:10.000"],
             workspace.Rows.Select(static row => row.TimeText));
 
         await workspace.UndoAsync();
-        Assert.Equal(new[] { "00:00:00.000", "00:00:10.000", "00:00:20.000" },
+        Assert.Equal(["00:00:00.000", "00:00:10.000", "00:00:20.000"],
             workspace.Rows.Select(static row => row.TimeText));
         await workspace.RedoAsync();
-        Assert.Equal(new[] { "00:00:00.000", "00:00:10.000" },
+        Assert.Equal(["00:00:00.000", "00:00:10.000"],
             workspace.Rows.Select(static row => row.TimeText));
     }
 
@@ -92,18 +98,18 @@ public sealed class WasmWorkspaceTests
 
         Assert.Equal("006993", parts.RepeatingDigits);
         Assert.False(workspace.RoundFrames);
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
+        Assert.Equal(FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
 
         workspace.EditingOptions = workspace.EditingOptions with
         {
-            FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision
+            FrameDisplay = FrameDisplayMode.FullPrecision
         };
         workspace.RoundFrames = false;
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
+        Assert.Equal(FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
 
         workspace.EditingOptions = workspace.EditingOptions with
         {
-            FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.Round
+            FrameDisplay = FrameDisplayMode.Round
         };
         Assert.True(workspace.RoundFrames);
     }

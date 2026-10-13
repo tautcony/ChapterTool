@@ -5,7 +5,6 @@
 @using System.Text.Json
 @using ChapterTool.Core.Session
 @using ChapterTool.Core.Models
-@using ChapterTool.Core.Transform
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
 
@@ -252,11 +251,11 @@
         return sign + Workspace.FormatExpressionTimeTicks(Math.Abs(ticks));
     }
 
-    private ChapterTool.Core.Models.FrameRateValue ScopeFrameRate(EditableChapterDocument document) =>
+    private FrameRateValue ScopeFrameRate(EditableChapterDocument document) =>
         document.Tracks.FirstOrDefault(track => track.Id == Workspace.ContentPreviewProjection?.ScopeTrackId)
             ?.FrameRate ?? document.FrameRate;
 
-    private string FrameRateValue(ChapterTool.Core.Models.FrameRateValue rate) => rate.IsKnown
+    private string FrameRateValue(FrameRateValue rate) => rate.IsKnown
         ? $"{rate} {L.T("Expression.Unit.FramesPerSecond")}"
         : L.T("Expression.Value.NotSet");
 

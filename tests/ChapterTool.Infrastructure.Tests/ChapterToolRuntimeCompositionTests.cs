@@ -23,7 +23,7 @@ public sealed class ChapterToolRuntimeCompositionTests
         try
         {
             var registry = new RuntimeChapterImporterRegistry(
-                new ChapterTool.Core.Transform.ChapterTimeFormatter(),
+                new Core.Transform.ChapterTimeFormatter(),
                 null!,
                 null!,
                 null!,

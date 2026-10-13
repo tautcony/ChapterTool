@@ -1,7 +1,6 @@
 using System.Globalization;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
-using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
@@ -14,7 +13,7 @@ public sealed partial class MainWindowViewModel
     private void RefreshRows()
     {
         var frameUpdate = CurrentInfo is null ? null : ClipEditingCoordinator.UpdateFrames(CurrentInfo,
-            selectedFrameRateOption, EditingOptions.EffectiveFrameDecimalPlaces,
+            SelectedFrameRateOption, EditingOptions.EffectiveFrameDecimalPlaces,
             FrameAccuracyTolerance);
         appliedFrameRateOption = frameUpdate?.AppliedOption;
         var display = frameUpdate?.FrameResult;
@@ -123,9 +122,9 @@ public sealed partial class MainWindowViewModel
 
     private FramePresentationInput CreateFramePresentationInput(long startTicks, FrameRateValue rate, string fallback)
     {
-        if (selectedFrameRateOption.IsValid && selectedFrameRateOption.Rate.IsKnown)
+        if (SelectedFrameRateOption.IsValid && SelectedFrameRateOption.Rate.IsKnown)
         {
-            return new FramePresentationInput(startTicks, selectedFrameRateOption.Rate, fallback);
+            return new FramePresentationInput(startTicks, SelectedFrameRateOption.Rate, fallback);
         }
 
         if (rate.IsKnown)
@@ -140,7 +139,7 @@ public sealed partial class MainWindowViewModel
 
     internal FramePresentationPolicy FramePresentationPolicy => new(
         RoundFrames,
-        ShowRepeatingFrameDecimals && EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision,
+        ShowRepeatingFrameDecimals && EditingOptions.FrameDisplay == Core.Editing.FrameDisplayMode.FullPrecision,
         PreviewFrameDecimalPlaces);
 
     internal void RefreshFramePresentations()
@@ -173,9 +172,9 @@ public sealed partial class MainWindowViewModel
 
     public FrameRateValue ExpressionFrameRate => ComputationFrameRate;
 
-    internal FrameRateOption SelectedFrameRateOption => selectedFrameRateOption;
+    internal FrameRateOption SelectedFrameRateOption { get; private set; }
 
-    internal FrameRateOption EffectiveFrameRateOption => appliedFrameRateOption ?? selectedFrameRateOption;
+    internal FrameRateOption EffectiveFrameRateOption => appliedFrameRateOption ?? SelectedFrameRateOption;
 
     private int PreviewFrameDecimalPlaces => EditingOptions.EffectiveFrameDecimalPlaces;
 

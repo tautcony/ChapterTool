@@ -209,7 +209,7 @@ public static class WasmHistoryProjection
             ChapterImportFormat format => localizer.T($"History.Enum.ImportFormat.{format}"),
             ChapterKind kind => localizer.T($"History.Enum.ChapterKind.{kind}"),
             FrameAccuracy accuracy => localizer.T($"History.Enum.FrameAccuracy.{accuracy}"),
-            IEnumerable sequence when value.Value is not string => FormatSequence(sequence, culture),
+            IEnumerable sequence and not string => FormatSequence(sequence, culture),
             IFormattable formattable => formattable.ToString(null, culture) ?? string.Empty,
             _ => value.Value.ToString() ?? string.Empty
         };

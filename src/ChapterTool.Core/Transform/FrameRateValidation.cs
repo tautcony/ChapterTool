@@ -1,5 +1,4 @@
 using ChapterTool.Core.Diagnostics;
-using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Transform;
 

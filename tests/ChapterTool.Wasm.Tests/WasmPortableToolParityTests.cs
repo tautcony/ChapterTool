@@ -88,7 +88,7 @@ public sealed class WasmPortableToolParityTests
         var originalRows = workspace.Rows.ToArray();
         var originalHistoryCount = workspace.HistoryEntries.Count;
 
-        var preview = Assert.IsType<ChapterTool.Core.Session.ChapterContentPreview>(workspace.PrepareFrameShiftPreview(-1));
+        var preview = Assert.IsType<Core.Session.ChapterContentPreview>(workspace.PrepareFrameShiftPreview(-1));
         Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
         var comparison = Assert.Single(workspace.ContentPreviewProjection!.Chapters,
             row => row.Before?.DisplayNumber == 2);

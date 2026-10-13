@@ -154,7 +154,7 @@ public sealed class WasmHistoryParityTests
         workspace.UpdateRow(0, null, "Inspection target");
         var cursor = workspace.CurrentHistoryId;
         using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
+        await cancellation.CancelAsync();
 
         var result = await workspace.InspectHistoryAsync(workspace.HistoryRootId!.Value, cancellation.Token);
 

@@ -50,8 +50,7 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
             return InvalidIndex(info, index);
         }
 
-        var rate = framesPerSecond;
-        if (!rate.IsKnown)
+        if (!framesPerSecond.IsKnown)
         {
             return new ChapterEditResult(info, [FrameRateValidation.InvalidFrameRate()]);
         }
@@ -67,7 +66,7 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
             return InvalidFrameText(info);
         }
 
-        var converted = ChapterFrameTimeConverter.FramesToTicks(frame, rate);
+        var converted = ChapterFrameTimeConverter.FramesToTicks(frame, framesPerSecond);
         if (!converted.Success)
         {
             return new ChapterEditResult(info, [converted.Diagnostic!]);
@@ -199,8 +198,7 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
     /// <summary>Shifts starts on a canonical frame grid using the retained scalar negative-row policy.</summary>
     public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, FrameRateValue framesPerSecond)
     {
-        var rate = framesPerSecond;
-        var converted = ChapterFrameTimeConverter.FramesToTicks(frames, rate);
+        var converted = ChapterFrameTimeConverter.FramesToTicks(frames, framesPerSecond);
         if (!converted.Success)
         {
             return new ChapterEditResult(info, [converted.Diagnostic!]);

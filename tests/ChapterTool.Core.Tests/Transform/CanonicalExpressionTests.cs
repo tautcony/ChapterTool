@@ -28,7 +28,7 @@ public sealed class CanonicalExpressionTests
     [InlineData("chapter.time")]
     public void UnchangedLuaProjectionPreservesTicksAboveSafeInteger(string expression)
     {
-        var ticks = 9_007_199_254_740_993L;
+        const long ticks = 9_007_199_254_740_993L;
         var set = Set(ticks, FrameRateValue.Rational(24000, 1001));
         var result = new ChapterExpressionService().Apply(set, true, expression);
         Assert.Empty(result.Diagnostics);

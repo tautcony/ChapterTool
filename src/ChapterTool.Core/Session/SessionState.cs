@@ -3,9 +3,7 @@ using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Session;
 
-internal sealed class SessionResourceFailureException(string message) : Exception(message)
-{
-}
+internal sealed class SessionResourceFailureException(string message) : Exception(message);
 
 /// <summary>Identifies one immutable document state that a transaction was based on.</summary>
 public readonly record struct SessionBaseToken(

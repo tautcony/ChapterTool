@@ -162,7 +162,7 @@ public sealed class AppCompositionRootIdentityHeadlessTests
         public IReadOnlyList<ExpressionSymbol> Symbols { get; } =
             [new("sentinel", ExpressionTokenKind.Function, "Sentinel", 0, "sentinel()")];
 
-        public ExpressionAnalysisResult Analyze(string expression, int caretIndex, long startTicks = 0, ChapterTool.Core.Models.FrameRateValue frameRate = default)
+        public ExpressionAnalysisResult Analyze(string expression, int caretIndex, long startTicks = 0, Core.Models.FrameRateValue frameRate = default)
         {
             AnalyzeCalls++;
             Expressions.Add(expression);

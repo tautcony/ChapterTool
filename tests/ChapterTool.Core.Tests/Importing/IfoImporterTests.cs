@@ -169,7 +169,7 @@ public sealed class IfoImporterTests
         try
         {
             var fixture = FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VmgRecovery", "DarlingFranxx", "VTS_01_0.IFO");
-            var bytes = File.ReadAllBytes(fixture);
+            var bytes = await File.ReadAllBytesAsync(fixture);
             WriteUInt16BigEndian(bytes, GetFirstPttEntryOffset(bytes), invalidPgc);
             await File.WriteAllBytesAsync(Path.Combine(directory.FullName, "VTS_01_0.IFO"), bytes);
             var path = Path.Combine(directory.FullName, "VIDEO_TS.IFO");
@@ -457,7 +457,7 @@ public sealed class IfoImporterTests
     [Fact]
     public async Task PttCanMapAChapterToAnotherPgc()
     {
-        var bytes = File.ReadAllBytes(FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_33_0.IFO"));
+        var bytes = await File.ReadAllBytesAsync(FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_33_0.IFO")) ?? throw new ArgumentNullException("File.ReadAllBytes(FixtureResolver.Fixture(\"Importing\", \"Disc\", \"Ifo\", \"VTS_33_0.IFO\"))");
         SetSingleTitlePtt(bytes, (1, 1), (2, 1));
 
         using var content = new MemoryStream(bytes);
@@ -475,7 +475,7 @@ public sealed class IfoImporterTests
     [Fact]
     public async Task ImportsEachPttTitleAndNamesItByTitleNumber()
     {
-        var bytes = File.ReadAllBytes(FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_33_0.IFO"));
+        var bytes = await File.ReadAllBytesAsync(FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_33_0.IFO"));
         var tableOffset = (int)(ReadUInt32BigEndian(bytes, 0xC8) * 2048L);
         WriteUInt16BigEndian(bytes, tableOffset, 2);
         WriteUInt32BigEndian(bytes, tableOffset + 8, 16);
@@ -545,7 +545,7 @@ public sealed class IfoImporterTests
         var directory = Directory.CreateTempSubdirectory("chaptertool-vmg-");
         try
         {
-            var vtsBytes = File.ReadAllBytes(FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_33_0.IFO"));
+            var vtsBytes = await File.ReadAllBytesAsync(FixtureResolver.Fixture("Importing", "Disc", "Ifo", "VTS_33_0.IFO"));
             await File.WriteAllBytesAsync(Path.Combine(directory.FullName, "VTS_33_0.IFO"), vtsBytes);
             var vmgPath = Path.Combine(directory.FullName, "VIDEO_TS.IFO");
             await File.WriteAllBytesAsync(vmgPath, BuildVmgIfo((33, 1, 1)));

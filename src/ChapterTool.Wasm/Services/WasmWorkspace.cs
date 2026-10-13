@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using ChapterTool.Core.Boundaries;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
@@ -41,7 +40,6 @@ public sealed partial class WasmWorkspace : IDisposable
     private int activeGroupIndex;
     private List<ChapterRowModel> rows = [];
     private int selectedFrameRateIndex;
-    private decimal exactFramesPerSecond;
     private FrameRateOption? appliedFrameRateOption;
     private int selectionAnchor = -1;
     private LoadedSourceSnapshot? lastLoadedSource;
@@ -50,10 +48,7 @@ public sealed partial class WasmWorkspace : IDisposable
     private string? statusLocalizationKey;
     private object[] statusLocalizationArgs = [];
 
-    private ChapterSet? BaseChapterSet
-    {
-        get => session.CurrentChapterSet;
-    }
+    private ChapterSet? BaseChapterSet => session.CurrentChapterSet;
 
     private ClipSession? ClipSessionState
     {
@@ -165,7 +160,7 @@ public sealed partial class WasmWorkspace : IDisposable
         }
 
         var nodes = history.Nodes.ToDictionary(static node => node.Id);
-        var rows = new List<WasmHistoryEntry>(nodes.Count);
+        var wasmHistoryEntries = new List<WasmHistoryEntry>(nodes.Count);
         var pending = new Stack<(Guid Id, int Depth)>();
         pending.Push((history.RootId, 0));
         while (pending.TryPop(out var item))
@@ -178,7 +173,7 @@ public sealed partial class WasmWorkspace : IDisposable
             var hiddenCurrent = expandedNodeIds?.Contains(node.Id) == false
                 && node.Id != history.CursorId
                 && IsAncestorOf(node.Id, history.CursorId, nodes);
-            rows.Add(new WasmHistoryEntry(node.Id, node.ParentId, node.Description, item.Depth, node.Id == history.CursorId,
+            wasmHistoryEntries.Add(new WasmHistoryEntry(node.Id, node.ParentId, node.Description, item.Depth, node.Id == history.CursorId,
                 !node.ChildIds.IsEmpty, hiddenCurrent));
             if (expandedNodeIds?.Contains(node.Id) == false)
             {
@@ -190,7 +185,7 @@ public sealed partial class WasmWorkspace : IDisposable
             }
         }
 
-        return rows;
+        return wasmHistoryEntries;
     }
 
     public bool HasPendingContentPreview => ContentPreview is not null || ExpressionPreview is not null;
@@ -206,7 +201,7 @@ public sealed partial class WasmWorkspace : IDisposable
         await NavigateHistoryAsync("restore", nodeId, cancellationToken);
 
     private static bool IsAncestorOf(Guid ancestorId, Guid nodeId,
-        IReadOnlyDictionary<Guid, ChapterTool.Core.Session.SessionHistoryNodeSnapshot> nodes)
+        IReadOnlyDictionary<Guid, SessionHistoryNodeSnapshot> nodes)
     {
         while (nodes.TryGetValue(nodeId, out var node) && node.ParentId is Guid parentId)
         {
@@ -416,7 +411,7 @@ public sealed partial class WasmWorkspace : IDisposable
 
     public double FramesPerSecond { get; private set; }
 
-    internal decimal ExactFramesPerSecond => exactFramesPerSecond;
+    internal decimal ExactFramesPerSecond { get; private set; }
 
     public FramePresentationParts FormatFramePresentation(
         long startTicks,
@@ -1211,7 +1206,6 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             SetLocalizedStatus("Status.ExpressionPresetApplied", preset.DisplayName);
             Notify();
-            return true;
         }
 
         return true;
@@ -1652,7 +1646,7 @@ public sealed partial class WasmWorkspace : IDisposable
         {
             rows = [];
             FramesPerSecond = 0;
-            exactFramesPerSecond = 0;
+            ExactFramesPerSecond = 0;
             appliedFrameRateOption = null;
             if (updateStatus && statusKey is not null)
             {
@@ -1667,7 +1661,7 @@ public sealed partial class WasmWorkspace : IDisposable
             .Select(index => rows[index].Id).ToHashSet();
         var framed = ApplyFrames(BaseChapterSet);
         appliedFrameRateOption = framed.SelectedOption;
-        exactFramesPerSecond = framed.Rate.ToDecimal();
+        ExactFramesPerSecond = framed.Rate.ToDecimal();
         FramesPerSecond = framed.Rate.ToDouble();
         RebuildFrameRateChoices(BaseChapterSet);
         var displayContent = framed.Info;
@@ -1778,7 +1772,7 @@ public sealed partial class WasmWorkspace : IDisposable
         ClipOptions = [];
         SelectedClipId = null;
         FramesPerSecond = 0;
-        exactFramesPerSecond = 0;
+        ExactFramesPerSecond = 0;
         FrameRateChoices = [];
         ClearSelection();
         diagnostics = [];

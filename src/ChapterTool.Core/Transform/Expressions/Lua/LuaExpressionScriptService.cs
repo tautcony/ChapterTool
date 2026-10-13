@@ -215,7 +215,7 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         });
     }
 
-    private static LuaTable CreateChapterTable(Models.Chapter chapter, int index, int count, FrameRateValue framesPerSecond) =>
+    private static LuaTable CreateChapterTable(Chapter chapter, int index, int count, FrameRateValue framesPerSecond) =>
         new()
         {
             ["number"] = chapter.DisplayNumber,

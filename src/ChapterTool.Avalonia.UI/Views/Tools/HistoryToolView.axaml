@@ -2,8 +2,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:tools="using:ChapterTool.Avalonia.UI.ViewModels.Tools"
              xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
-             xmlns:history="using:ChapterTool.Core.Session"
-             xmlns:models="using:ChapterTool.Core.Models"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.HistoryToolView"
              x:Name="HistoryRoot"
              x:DataType="tools:HistoryToolViewModel"

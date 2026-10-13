@@ -96,7 +96,7 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
         Assert.Empty(rootDetails.Details.Changes);
 
         using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
+        await cancellation.CancelAsync();
         var cancelled = await session.InspectHistoryNodeAsync(nodeId, cancellation.Token);
         Assert.Equal(HistoryInspectionOutcomeKind.Cancelled, cancelled.Kind);
     }

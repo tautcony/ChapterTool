@@ -36,7 +36,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private readonly EventHandler cultureChangedHandler;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
-    private FrameRateOption selectedFrameRateOption;
     private FrameRateOption? appliedFrameRateOption;
     private bool isRefreshingChapterNameModeOptions;
     private bool isApplyingContentPreview;
@@ -48,10 +47,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private IReadOnlyList<HistoryEntryViewModel> historyEntries = [];
     private SessionHistorySnapshot? historySnapshot;
 
-    private ChapterSet? CurrentInfo
-    {
-        get => Workspace.CurrentChapterSet;
-    }
+    private ChapterSet? CurrentInfo => Workspace.CurrentChapterSet;
 
     public MainWindowViewModel(AvaloniaHostComposition composition)
         : this(
@@ -151,7 +147,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         RefreshFrameRateDisplayOptions();
         cultureChangedHandler = (_, _) => RefreshLocalizedState();
         Localizer.CultureChanged += cultureChangedHandler;
-        selectedFrameRateOption = this.frameRateService.Options[0];
+        SelectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
         Rows.CollectionChanged += OnRowsChanged;
 
@@ -314,11 +310,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             {
                 if (value)
                 {
-                    EditingOptions = EditingOptions with { FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.Round };
+                    EditingOptions = EditingOptions with { FrameDisplay = Core.Editing.FrameDisplayMode.Round };
                 }
-                else if (EditingOptions.FrameDisplay == ChapterTool.Core.Editing.FrameDisplayMode.Round)
+                else if (EditingOptions.FrameDisplay == Core.Editing.FrameDisplayMode.Round)
                 {
-                    EditingOptions = EditingOptions with { FrameDisplay = ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision };
+                    EditingOptions = EditingOptions with { FrameDisplay = Core.Editing.FrameDisplayMode.FullPrecision };
                 }
                 OnFrameOptionsChangedFromBinding(invalidatePendingPreview: false);
             }
@@ -381,7 +377,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
                 var entry = FrameRateOptionForComboIndex(value);
                 if (entry is not null)
                 {
-                    selectedFrameRateOption = entry;
+                    SelectedFrameRateOption = entry;
                 }
             }
 
@@ -995,15 +991,15 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             var entry = FrameRateOptionForComboIndex(frameRateIndex);
             if (entry is not null)
             {
-                selectedFrameRateOption = entry;
+                SelectedFrameRateOption = entry;
                 SelectedFrameRateIndex = frameRateIndex;
             }
             else
             {
-                selectedFrameRateOption = CurrentInfo is null
+                SelectedFrameRateOption = CurrentInfo is null
                     ? frameRateService.Options[0]
                     : frameRateService.FindByRate(CurrentInfo.FrameRate);
-                SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+                SelectedFrameRateIndex = ComboIndexFor(SelectedFrameRateOption);
             }
         }
         finally

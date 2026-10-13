@@ -1,5 +1,3 @@
-using ChapterTool.Core.Models;
-
 namespace ChapterTool.Core.Exporting;
 
 /// <summary>

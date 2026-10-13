@@ -34,12 +34,12 @@ public sealed class MainWindowViewModelTests
     }
 
     [Theory]
-    [InlineData("round", ChapterTool.Core.Editing.FrameDisplayMode.Round, true)]
-    [InlineData("decimal-places", ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces, false)]
-    [InlineData("full-precision", ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, false)]
+    [InlineData("round", Core.Editing.FrameDisplayMode.Round, true)]
+    [InlineData("decimal-places", Core.Editing.FrameDisplayMode.DecimalPlaces, false)]
+    [InlineData("full-precision", Core.Editing.FrameDisplayMode.FullPrecision, false)]
     public async Task Startup_initializes_frame_display_from_saved_preference(
         string savedMode,
-        ChapterTool.Core.Editing.FrameDisplayMode expectedMode,
+        Core.Editing.FrameDisplayMode expectedMode,
         bool expectedRoundFrames)
     {
         var store = new FakeSettingsStore(new AppSettings(
@@ -68,12 +68,12 @@ public sealed class MainWindowViewModelTests
         await vm.LoadSettingsAsync(CancellationToken.None);
         vm.RoundFrames = true;
 
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.Round, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(Core.Editing.FrameDisplayMode.Round, vm.EditingOptions.FrameDisplay);
         Assert.Equal("full-precision", store.Current.Application.FrameDisplayMode);
 
         vm.RoundFrames = false;
 
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
         Assert.Equal("full-precision", store.Current.Application.FrameDisplayMode);
     }
 
@@ -184,7 +184,7 @@ public sealed class MainWindowViewModelTests
             confirmations++;
             if (confirmations == 1)
             {
-                await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Changed during confirmation"));
+                await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Changed during confirmation"), _);
             }
 
             return true;
@@ -1165,7 +1165,7 @@ public sealed class MainWindowViewModelTests
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
         Assert.False(vm.RoundFrames);
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
         Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.Rate.RationalRate);
         Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
     }

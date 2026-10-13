@@ -1,6 +1,5 @@
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
-using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
@@ -15,9 +14,6 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
     private readonly EventHandler cultureChangedHandler;
     private readonly HashSet<Guid> expandedNodeIds = [];
     private SessionHistorySnapshot? currentSnapshot;
-    private IReadOnlyList<HistoryEntryViewModel> visibleEntries = [];
-    private IReadOnlyList<HistoryEntryViewModel> treeRoots = [];
-    private IReadOnlyList<HistoryRedoChoice> redoChoices = [];
     private HistoryRedoChoice? selectedRedoChoice;
     private bool isNarrowLayout;
     private int narrowPageIndex;
@@ -31,8 +27,6 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
     private string? navigationStatus;
     private bool disposed;
     private IReadOnlyList<HistoryFieldRow> fieldRows = [];
-    private IReadOnlyList<HistoryParameterRow> parameterRows = [];
-    private IReadOnlyList<HistoryRootChapterRow> rootChapterRows = [];
     private string selectedChangeFilter = "All";
 
     public HistoryToolViewModel(IHistorySessionPort history, IAppLocalizer localizer, Action? close = null)
@@ -110,11 +104,11 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         SelectedEntry = Entries.FirstOrDefault(entry => entry.IsCurrent) ?? Entries.FirstOrDefault();
     }
 
-    public IReadOnlyList<HistoryEntryViewModel> Entries => visibleEntries;
+    public IReadOnlyList<HistoryEntryViewModel> Entries { get; private set; } = [];
 
-    public IReadOnlyList<HistoryEntryViewModel> TreeRoots => treeRoots;
+    public IReadOnlyList<HistoryEntryViewModel> TreeRoots { get; private set; } = [];
 
-    public IReadOnlyList<HistoryRedoChoice> RedoChoices => redoChoices;
+    public IReadOnlyList<HistoryRedoChoice> RedoChoices { get; private set; } = [];
 
     public HistoryRedoChoice? SelectedRedoChoice
     {
@@ -313,9 +307,9 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         }
     }
 
-    public IReadOnlyList<HistoryParameterRow> Parameters => parameterRows;
+    public IReadOnlyList<HistoryParameterRow> Parameters { get; private set; } = [];
 
-    public IReadOnlyList<HistoryRootChapterRow> RootChapterRows => rootChapterRows;
+    public IReadOnlyList<HistoryRootChapterRow> RootChapterRows { get; private set; } = [];
 
     public string SelectedChangeFilter
     {
@@ -386,11 +380,11 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         detailGeneration++;
         selectedEntry = null;
         details = null;
-        visibleEntries = [];
-        treeRoots = [];
+        Entries = [];
+        TreeRoots = [];
         fieldRows = [];
-        parameterRows = [];
-        rootChapterRows = [];
+        Parameters = [];
+        RootChapterRows = [];
         expandedNodeIds.Clear();
         OnPropertyChanged(nameof(SelectedEntry));
         OnPropertyChanged(nameof(Details));
@@ -548,7 +542,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
 
     private void ToggleExpansion(Guid nodeId)
     {
-        var node = visibleEntries.FirstOrDefault(entry => entry.Id == nodeId);
+        var node = Entries.FirstOrDefault(entry => entry.Id == nodeId);
         if (node is null)
         {
             return;
@@ -575,12 +569,12 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
 
     private void RebuildEntries()
     {
-        var previousNodes = visibleEntries.ToDictionary(static entry => entry.Id);
+        var previousNodes = Entries.ToDictionary(static entry => entry.Id);
         var (roots, projected) = HistoryEntryViewModel.CreateTree(currentSnapshot, previousNodes, expandedNodeIds, LocalizeHistoryTitle);
-        treeRoots = roots;
-        visibleEntries = projected;
+        TreeRoots = roots;
+        Entries = projected;
         OnPropertyChanged(nameof(TreeRoots));
-        if (selectedEntry is { } selected && visibleEntries.FirstOrDefault(entry => entry.Id == selected.Id) is { } replacement && !ReferenceEquals(selected, replacement))
+        if (selectedEntry is { } selected && Entries.FirstOrDefault(entry => entry.Id == selected.Id) is { } replacement && !ReferenceEquals(selected, replacement))
         {
             selectedEntry = replacement;
             OnPropertyChanged(nameof(SelectedEntry));
@@ -597,21 +591,21 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var nodes = currentSnapshot?.Nodes.ToDictionary(node => node.Id);
         if (currentSnapshot is null || nodes is null || !nodes.TryGetValue(currentSnapshot.CursorId, out var current))
         {
-            redoChoices = [];
+            RedoChoices = [];
             SelectedRedoChoice = null;
             return;
         }
 
-        redoChoices =
+        RedoChoices =
         [
             .. current.ChildIds.Select(childId => nodes.TryGetValue(childId, out var child)
                 ? new HistoryRedoChoice(child.Id, LocalizeHistoryTitle(child), child.Description,
                     current.PreferredChildId == child.Id)
                 : null).Where(choice => choice is not null).Cast<HistoryRedoChoice>()
         ];
-        SelectedRedoChoice = redoChoices.FirstOrDefault(choice => choice.Id == oldSelection)
-            ?? redoChoices.FirstOrDefault(choice => choice.IsPreferred)
-            ?? redoChoices.FirstOrDefault();
+        SelectedRedoChoice = RedoChoices.FirstOrDefault(choice => choice.Id == oldSelection)
+            ?? RedoChoices.FirstOrDefault(choice => choice.IsPreferred)
+            ?? RedoChoices.FirstOrDefault();
     }
 
     private async ValueTask ChooseRedoBranchAsync(object? parameter, CancellationToken cancellationToken)
@@ -657,7 +651,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
     private void RebuildInspectorRows()
     {
         fieldRows = BuildFieldRows();
-        parameterRows = BuildParameterRows();
+        Parameters = BuildParameterRows();
         OnPropertyChanged(nameof(VisibleChanges));
         OnPropertyChanged(nameof(VisibleChangeGroups));
         OnPropertyChanged(nameof(HasChanges));
@@ -805,7 +799,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
 
     private void RebuildRootChapterRows()
     {
-        rootChapterRows = Details?.RootDocument is { } document
+        RootChapterRows = Details?.RootDocument is { } document
             ? new HistoryRootChapterRows(document.Tracks, FormatTimeSpan)
             : [];
         OnPropertyChanged(nameof(RootChapterRows));
@@ -833,7 +827,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
             FrameAccuracy accuracy => localizer.GetString(accuracy == FrameAccuracy.Neutral
                 ? "Expression.FrameAccuracy.NotCalculated"
                 : $"Expression.FrameAccuracy.{accuracy}"),
-            System.Collections.IEnumerable sequence when value.Value is not string => FormatSequence(sequence),
+            System.Collections.IEnumerable sequence and not string => FormatSequence(sequence),
             IFormattable formattable => FormatFormattable(formattable),
             _ => value.Value.ToString() ?? string.Empty
         };
@@ -927,7 +921,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         return parameter.Value;
     }
 
-    private void ExpandCurrentPath(ChapterTool.Core.Session.SessionHistorySnapshot snapshot)
+    private void ExpandCurrentPath(SessionHistorySnapshot snapshot)
     {
         var nodes = snapshot.Nodes.ToDictionary(node => node.Id);
         var currentId = snapshot.CursorId;
@@ -938,7 +932,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
                 break;
             }
             expandedNodeIds.Add(parentId);
-            if (visibleEntries.FirstOrDefault(entry => entry.Id == parentId) is { } existing)
+            if (Entries.FirstOrDefault(entry => entry.Id == parentId) is { } existing)
             {
                 existing.IsExpanded = true;
             }

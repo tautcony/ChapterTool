@@ -14,7 +14,6 @@ using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
 using ChapterTool.Contracts.Configuration;
-using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
 using Optris.Icons.Avalonia;
 
@@ -78,7 +77,7 @@ public sealed class SettingsToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             Assert.False(checkBox.IsEnabled);
             Assert.False(checkBox.IsChecked);
-            Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.DecimalPlaces, host.ViewModel.EditingOptions.FrameDisplay);
+            Assert.Equal(Core.Editing.FrameDisplayMode.DecimalPlaces, host.ViewModel.EditingOptions.FrameDisplay);
             Assert.Equal(2, host.ViewModel.EditingOptions.FrameDecimalPlaces);
             Assert.False(host.ViewModel.RoundFrames);
             Assert.False(host.ViewModel.FramePresentationPolicy.RoundToInteger);
@@ -92,7 +91,7 @@ public sealed class SettingsToolHeadlessTests
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             Assert.True(checkBox.IsEnabled);
             Assert.False(checkBox.IsChecked);
-            Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
+            Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
             Assert.False(host.ViewModel.RoundFrames);
             Assert.Equal(fullPrecisionText, host.ViewModel.Rows[0].FramePresentation!.PlainNumericText);
         }

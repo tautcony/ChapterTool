@@ -54,7 +54,7 @@ public sealed class SessionStateTests
             before.BaseToken,
             transactionId,
             "cancel before publish",
-            (_, _) => ValueTask.FromResult(Rename(before.Document, "Changed")));
+            (_, _) => ValueTask.FromResult(Rename(before.Document, "Changed")), cancellationToken: source.Token);
 
         Assert.Same(outcome, retry);
     }
@@ -71,8 +71,8 @@ public sealed class SessionStateTests
             captured.BaseToken,
             Guid.NewGuid(),
             "edit after close",
-            (document, _) => ValueTask.FromResult(Rename(document, "Changed")));
-        var undo = await session.UndoAsync();
+            (document, _) => ValueTask.FromResult(Rename(document, "Changed")), cancellationToken: token);
+        var undo = await session.UndoAsync(token);
 
         Assert.True(token.IsCancellationRequested);
         Assert.Equal(TransactionOutcomeKind.Cancelled, edit.Kind);

@@ -113,7 +113,7 @@ public sealed class ChapterWorkspace
 
     /// <summary>Gets the successful export baseline for a track, if one exists.</summary>
     public ChapterExportBaseline? GetExportBaseline(ChapterTrackId trackId) =>
-        exportBaselines.TryGetValue(trackId, out var baseline) ? baseline : null;
+        exportBaselines.GetValueOrDefault(trackId);
 
     /// <summary>Checks whether a captured export matches the baseline for its track.</summary>
     public bool IsExported(ChapterExportSnapshot? snapshot) => snapshot is not null
@@ -549,7 +549,7 @@ public sealed class ChapterWorkspace
 }
 
 /// <summary>Result of an append against the captured workspace document.</summary>
-public sealed record ClipAppendCommitResult(bool Succeeded, bool IsStale, CombinedClipSession? Session, EditableChapterDocument? Document, System.Collections.Immutable.ImmutableArray<string> Errors)
+public sealed record ClipAppendCommitResult(bool Succeeded, bool IsStale, CombinedClipSession? Session, EditableChapterDocument? Document, ImmutableArray<string> Errors)
 {
     /// <summary>Gets the stale result.</summary>
     public static ClipAppendCommitResult Stale { get; } = new(false, true, null, null, []);

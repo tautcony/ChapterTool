@@ -50,10 +50,10 @@ public sealed class ExactFrameRateHeadlessTests
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult("custom.txt",
             new ChapterImportEntry("custom", "Custom", source)));
         await host.LoadAsync("custom.txt");
-        host.ViewModel.ApplyEditingOptions(new ChapterEditingOptions(ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize));
+        host.ViewModel.ApplyEditingOptions(new ChapterEditingOptions(DeleteRowsTimingMode.Normalize));
         var content = host.ViewModel.Workspace.ContentSession!;
 
-        Assert.Equal(ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize, host.ViewModel.EditingOptions.DeleteRowsTiming);
+        Assert.Equal(DeleteRowsTimingMode.Normalize, host.ViewModel.EditingOptions.DeleteRowsTiming);
         await host.ViewModel.DeleteCommand.ExecuteAsync(new HashSet<int> { 0 });
         Assert.Equal(new[] { 0L, 10 * TimeSpan.TicksPerSecond },
             content.Snapshot.Document.Tracks[0].Chapters.Select(static chapter => chapter.StartTicks));

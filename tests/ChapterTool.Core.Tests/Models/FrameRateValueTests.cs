@@ -71,7 +71,7 @@ public sealed class FrameRateValueTests
     [Fact]
     public void NumericRatioDoesNotAcquireRationalAuthority()
     {
-        var input = 24000d / 1001d;
+        const double input = 24000d / 1001d;
         Assert.True(FrameRateValue.TryFromDouble(input, metadata: false, out var rate, out _));
         Assert.Equal(FrameRateKind.Approximate, rate.Kind);
         Assert.Equal(decimal.Parse(input.ToString("R", CultureInfo.InvariantCulture), CultureInfo.InvariantCulture), rate.ApproximateValue);

@@ -1,6 +1,6 @@
 @inject WasmWorkspace Workspace
 @inject WasmLocalizer L
-@inject Microsoft.JSInterop.IJSRuntime JS
+@inject IJSRuntime JS
 @using ChapterTool.Core.Session
 @implements IDisposable
 
@@ -229,7 +229,7 @@
     protected override async Task OnParametersSetAsync()
     {
         SyncTree();
-        if (selectedId is null || !Workspace.HistoryEntries.Any(row => row.Id == selectedId))
+        if (selectedId is null || Workspace.HistoryEntries.All(row => row.Id != selectedId))
         {
             selectedId = CurrentId ?? Workspace.HistoryEntries.FirstOrDefault()?.Id;
             await LoadDetailsAsync(selectedId);

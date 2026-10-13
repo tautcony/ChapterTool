@@ -173,9 +173,9 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
 
     private static void ShowWindow(Window window, bool isModal, Window? focusOwner)
     {
-        if (isModal && focusOwner is { } owner)
+        if (isModal && focusOwner != null)
         {
-            _ = window.ShowDialog(owner);
+            _ = window.ShowDialog(focusOwner);
             return;
         }
 

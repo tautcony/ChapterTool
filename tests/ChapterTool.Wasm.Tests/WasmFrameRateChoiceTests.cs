@@ -107,7 +107,7 @@ public sealed class WasmFrameRateChoiceTests
 
     private static long[] ReadChapterTicks(WasmWorkspace workspace)
     {
-        var preview = Assert.IsType<ChapterTool.Core.Session.ChapterContentPreview>(
+        var preview = Assert.IsType<Core.Session.ChapterContentPreview>(
             workspace.PrepareExpressionPreview("t"));
         var ticks = preview.Before.Tracks.SelectMany(static track => track.Chapters)
             .Select(static chapter => chapter.StartTicks).ToArray();

@@ -110,7 +110,7 @@ public sealed partial class MainWindowViewModel
             ApplyFrameInfo();
             return ValueTask.CompletedTask;
         }, _ => CanEditRows);
-        ChangeFpsCommand = new UiCommand((_, token) => ChangeFpsToSelectedOption(token), _ => CanEditRows && selectedFrameRateOption.IsValid);
+        ChangeFpsCommand = new UiCommand((_, token) => ChangeFpsToSelectedOption(token), _ => CanEditRows && SelectedFrameRateOption.IsValid);
         SelectClipCommand = new UiCommand((parameter, _) =>
         {
             SelectClip(Convert.ToInt32(parameter));
@@ -207,7 +207,7 @@ public sealed partial class MainWindowViewModel
                 "Apply expression" => PrepareExpressionOperation(Expression),
                 "Change chapter frame rate" => PrepareFrameRateOperation(
                     ResolveSourceFrameRate(),
-                    selectedFrameRateOption.Rate),
+                    SelectedFrameRateOption.Rate),
                 _ => PrepareContentOptionsOperation()
             };
             ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);

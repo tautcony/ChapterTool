@@ -5,7 +5,7 @@ namespace ChapterTool.Wasm.Services;
 /// </summary>
 public sealed class ChapterRowModel
 {
-    public ChapterTool.Core.Models.ChapterId Id { get; set; }
+    public Core.Models.ChapterId Id { get; set; }
 
     public int Number { get; set; }
 
@@ -54,7 +54,7 @@ public sealed record WasmSettings(
     WasmThemeSettings? Theme = null,
     WasmFontSettings? Font = null,
     [property: System.Text.Json.Serialization.JsonConverter(typeof(WasmShortcutSettingsConverter))]
-    ChapterTool.Contracts.Shortcuts.ShortcutSettings? Shortcuts = null);
+    Contracts.Shortcuts.ShortcutSettings? Shortcuts = null);
 
 public sealed record WasmApplicationSettings(
     string? SavingPath = null,

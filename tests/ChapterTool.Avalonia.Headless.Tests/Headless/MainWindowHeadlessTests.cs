@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -88,7 +87,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal("Chapter 0001 · " + new string('x', 80), rows[0].Name);
         Assert.Equal(chapterIds, [.. host.ViewModel.Rows.Select(row => row.ChapterId)]);
 
-        var nameColumn = Assert.Single(grid.Columns, column => column.Tag?.ToString() == ChapterTool.Avalonia.UI.ViewModels.ChapterGridColumnIds.Name);
+        var nameColumn = Assert.Single(grid.Columns, column => column.Tag?.ToString() == UI.ViewModels.ChapterGridColumnIds.Name);
         grid.SelectedItem = rows[^1];
         grid.ScrollIntoView(rows[^1], nameColumn);
         Assert.Same(rows[^1], grid.SelectedItem);
@@ -118,7 +117,7 @@ public sealed class MainWindowHeadlessTests
         var englishCandidate = host.ViewModel.ExpressionPreviewText;
         foreach (var width in new[] { 860d, 861d, 1280d, 760d })
         {
-            await host.LayoutAsync(width, width == 760 ? 520 : 600);
+            await host.LayoutAsync(width, Math.Abs(width - 760) < 1e-5 ? 520 : 600);
             Assert.Equal(englishCandidate, host.ViewModel.ExpressionPreviewText);
             Assert.True(host.RequiredControl<Button>("ApplyContentPreviewButton").IsEnabled);
             Assert.True(host.RequiredControl<Button>("CancelContentPreviewButton").IsVisible);
@@ -247,7 +246,7 @@ public sealed class MainWindowHeadlessTests
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
             new ChapterImportEntry("movie.txt", "movie.txt", info)));
-        var application = global::Avalonia.Application.Current!;
+        var application = Application.Current!;
         var themeKeys = new[]
         {
             ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
@@ -288,8 +287,8 @@ public sealed class MainWindowHeadlessTests
             foreach (var theme in new[] { "default", "ayu-dark" })
             {
                 themeService.Apply(theme == "default"
-                    ? ChapterTool.Contracts.Configuration.ThemeSettings.Default
-                    : new ChapterTool.Contracts.Configuration.ThemeSettings(theme));
+                    ? Contracts.Configuration.ThemeSettings.Default
+                    : new Contracts.Configuration.ThemeSettings(theme));
                 await host.LayoutAsync(1280, 800);
                 if (theme == "default")
                 {
@@ -344,7 +343,7 @@ public sealed class MainWindowHeadlessTests
     [AvaloniaFact]
     public async Task Neutral_inline_frame_values_keep_neutral_colors_and_discard_restores_rows()
     {
-        var application = global::Avalonia.Application.Current!;
+        var application = Application.Current!;
         var themeKeys = new[]
         {
             ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
@@ -356,7 +355,7 @@ public sealed class MainWindowHeadlessTests
         var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
         try
         {
-            themeService.Apply(ChapterTool.Contracts.Configuration.ThemeSettings.Default);
+            themeService.Apply(Contracts.Configuration.ThemeSettings.Default);
             using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
                 "movie.txt",
                 MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Opening", "Next")));
@@ -371,10 +370,10 @@ public sealed class MainWindowHeadlessTests
             await host.LayoutAsync(1280, 800);
             Assert.All(rows, row => Assert.Equal(FrameAccuracy.Neutral, row.PreviewBeforeFrameAccuracy));
 
-            var comparison = Assert.IsType<ChapterTool.Core.Session.ExpressionChapterComparison>(rows[0].PreviewComparison);
+            var comparison = Assert.IsType<Core.Session.ExpressionChapterComparison>(rows[0].PreviewComparison);
             var neutralCandidateFrames = comparison.CandidateFrames is { } candidateFrames
                 ? candidateFrames with { Accuracy = FrameAccuracy.Neutral }
-                : new ChapterTool.Core.Session.ExpressionFrameValue(
+                : new Core.Session.ExpressionFrameValue(
                     rows[0].PreviewFrames,
                     null,
                     FrameRateValue.Unknown,
@@ -773,7 +772,7 @@ public sealed class MainWindowHeadlessTests
                    MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Opening", "Middle", "Ending"))))
         {
             var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
-            var application = global::Avalonia.Application.Current!;
+            var application = Application.Current!;
             var themeResourceKeys = ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.ImportedThemeColorKeys
                 .Concat([
                     ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
@@ -795,20 +794,20 @@ public sealed class MainWindowHeadlessTests
                 await host.LoadAsync("movie.txt");
                 host.ViewModel.Expression = "t + 1";
                 host.ViewModel.RefreshExpressionPreviewNow();
-                themeService.Apply(new ChapterTool.Contracts.Configuration.ThemeSettings("ayu-dark"));
+                themeService.Apply(new Contracts.Configuration.ThemeSettings("ayu-dark"));
                 await host.LayoutAsync(760, 600);
                 AssertBottomInputAlignment(host);
-                Assert.Equal("Dark", global::Avalonia.Application.Current!.RequestedThemeVariant?.ToString());
+                Assert.Equal("Dark", Application.Current!.RequestedThemeVariant?.ToString());
                 Assert.True(host.ViewModel.CanApplyContentPreview);
                 Assert.True(host.ContainsRenderedText("00:00:01.000"));
                 MainWindowHeadlessTestHost.CaptureRenderedFrame(
                     host.Window,
                     "artifacts/compact-content-preview-review/preview-dark.png");
 
-                themeService.Apply(ChapterTool.Contracts.Configuration.ThemeSettings.Default);
-                global::Avalonia.Application.Current!.Resources["ChapterTool.FontSize.Small"] = 16d;
-                global::Avalonia.Application.Current.Resources["ChapterTool.FontSize.Default"] = 18d;
-                global::Avalonia.Application.Current.Resources["ChapterTool.FontSize.Large"] = 20d;
+                themeService.Apply(Contracts.Configuration.ThemeSettings.Default);
+                Application.Current!.Resources["ChapterTool.FontSize.Small"] = 16d;
+                Application.Current.Resources["ChapterTool.FontSize.Default"] = 18d;
+                Application.Current.Resources["ChapterTool.FontSize.Large"] = 20d;
                 await host.LayoutAsync(760, 600);
                 AssertBottomInputAlignment(host);
                 Assert.True(host.ViewModel.CanApplyContentPreview);
@@ -851,7 +850,7 @@ public sealed class MainWindowHeadlessTests
                 new Chapter(1, TimeSpan.Zero, "Opening"),
                 new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")
             ]);
-        var settings = new ChapterTool.Contracts.Configuration.AppSettings(
+        var settings = new Contracts.Configuration.AppSettings(
             Language: "en-US",
             FrameDisplayMode: "full-precision",
             ShowRepeatingFrameDecimals: true);
@@ -863,7 +862,7 @@ public sealed class MainWindowHeadlessTests
         await host.LoadAsync("movie.mpls");
 
         Assert.False(host.RequiredControl<CheckBox>("RoundFramesBox").IsChecked);
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
         Assert.Equal(exactRate, host.ViewModel.EffectiveFrameRateOption.Rate.RationalRate);
         Assert.Equal("006993", host.ViewModel.Rows[1].FramePresentation?.RepeatingDigits);
     }
@@ -890,7 +889,7 @@ public sealed class MainWindowHeadlessTests
             ("wide", 1280, 800),
             ("narrow", 760, 520)
         };
-        var application = global::Avalonia.Application.Current!;
+        var application = Application.Current!;
         var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
         var originalTheme = application.RequestedThemeVariant;
         var fontKeys = new[] { "ChapterTool.FontSize.Small", "ChapterTool.FontSize.Default", "ChapterTool.FontSize.Large" };
@@ -900,8 +899,8 @@ public sealed class MainWindowHeadlessTests
             var row = host.ViewModel.Rows[0];
             foreach (var (themeName, theme) in new[]
                      {
-                         ("light", ChapterTool.Contracts.Configuration.ThemeSettings.Default),
-                         ("dark", new ChapterTool.Contracts.Configuration.ThemeSettings("ayu-dark"))
+                         ("light", Contracts.Configuration.ThemeSettings.Default),
+                         ("dark", new Contracts.Configuration.ThemeSettings("ayu-dark"))
                      })
             {
                 themeService.Apply(theme);
@@ -916,7 +915,7 @@ public sealed class MainWindowHeadlessTests
                 }
             }
 
-            themeService.Apply(ChapterTool.Contracts.Configuration.ThemeSettings.Default);
+            themeService.Apply(Contracts.Configuration.ThemeSettings.Default);
             application.Resources["ChapterTool.FontSize.Small"] = 18d;
             application.Resources["ChapterTool.FontSize.Default"] = 20d;
             application.Resources["ChapterTool.FontSize.Large"] = 22d;
@@ -963,7 +962,7 @@ public sealed class MainWindowHeadlessTests
                 new Chapter(2, TimeSpan.FromTicks(1_999_910_000), "First division"),
                 new Chapter(3, TimeSpan.FromTicks(2_900_400_000), "Second division")
             ]);
-        var settings = new ChapterTool.Contracts.Configuration.AppSettings(
+        var settings = new Contracts.Configuration.AppSettings(
             Language: "en-US",
             FrameDisplayMode: "full-precision",
             ShowRepeatingFrameDecimals: true);
@@ -988,7 +987,7 @@ public sealed class MainWindowHeadlessTests
 
     private static void AssertFrameDigitsAreContinuous(
         MainWindowHeadlessTestHost host,
-        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
+        UI.ViewModels.ChapterRowViewModel row)
     {
         var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
             .GetVisualDescendants()
@@ -1053,7 +1052,7 @@ public sealed class MainWindowHeadlessTests
 
     private static void AssertTimeAndFramePreviewRowsAligned(
         MainWindowHeadlessTestHost host,
-        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
+        UI.ViewModels.ChapterRowViewModel row)
     {
         var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
             .GetVisualDescendants()
@@ -1121,7 +1120,7 @@ public sealed class MainWindowHeadlessTests
 
     private static void AssertWideTimeAndFramePreviewGroups(
         MainWindowHeadlessTestHost host,
-        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row)
+        UI.ViewModels.ChapterRowViewModel row)
     {
         var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
             .GetVisualDescendants()
@@ -1170,7 +1169,7 @@ public sealed class MainWindowHeadlessTests
 
     private static void AssertFramePreviewColor(
         MainWindowHeadlessTestHost host,
-        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row,
+        UI.ViewModels.ChapterRowViewModel row,
         string text,
         string brushKey)
     {
@@ -1192,7 +1191,7 @@ public sealed class MainWindowHeadlessTests
                      && view.Classes.Contains("framePreview") && view.Classes.Contains(accuracyClass))
             .ToArray();
         Assert.NotEmpty(frameTexts);
-        var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
+        var expectedBrush = Assert.IsType<SolidColorBrush>(Application.Current!.Resources[brushKey]);
         Assert.All(frameTexts, frameText =>
         {
             var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
@@ -1209,7 +1208,7 @@ public sealed class MainWindowHeadlessTests
 
     private static void AssertNormalFrameColor(
         MainWindowHeadlessTestHost host,
-        ChapterTool.Avalonia.UI.ViewModels.ChapterRowViewModel row,
+        UI.ViewModels.ChapterRowViewModel row,
         string text,
         string brushKey)
     {
@@ -1236,7 +1235,7 @@ public sealed class MainWindowHeadlessTests
             Assert.Equal(HorizontalAlignment.Stretch, frameText.HorizontalAlignment);
             Assert.Equal(HorizontalAlignment.Center, frameText.FindControl<StackPanel>("FrameParts")!.HorizontalAlignment);
         });
-        var expectedBrush = Assert.IsType<SolidColorBrush>(global::Avalonia.Application.Current!.Resources[brushKey]);
+        var expectedBrush = Assert.IsType<SolidColorBrush>(Application.Current!.Resources[brushKey]);
         Assert.All(frameTexts, frameText =>
         {
             var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);

@@ -228,7 +228,7 @@ public sealed class SettingsToolViewModelTests
         Assert.False(viewModel.ShowRepeatingFrameDecimals);
         Assert.False(owner.ShowRepeatingFrameDecimals);
         Assert.True(viewModel.IsRepeatingFrameDecimalsEnabled);
-        Assert.Equal(ChapterTool.Core.Editing.FrameDisplayMode.FullPrecision, owner.EditingOptions.FrameDisplay);
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, owner.EditingOptions.FrameDisplay);
         Assert.Equal(3, viewModel.FrameDisplayOptions.Count);
 
         viewModel.ShowRepeatingFrameDecimals = true;

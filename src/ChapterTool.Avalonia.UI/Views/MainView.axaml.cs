@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -10,7 +9,6 @@ using AvaloniaEdit;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views.Controls;
-using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.UI.Views;
 
@@ -96,7 +94,7 @@ public sealed partial class MainView : UserControl
         RaiseCommandStates();
     }
 
-    private void OnShortcutsSaved(ChapterTool.Contracts.Shortcuts.ShortcutSettings settings)
+    private void OnShortcutsSaved(Contracts.Shortcuts.ShortcutSettings settings)
     {
         viewModel.SetShortcutSettings(settings);
         shortcutRouter.UpdateMapping(viewModel.ActiveShortcutMapping);
@@ -345,8 +343,8 @@ public sealed partial class MainView : UserControl
                 message,
                 new StackPanel
                 {
-                    Orientation = global::Avalonia.Layout.Orientation.Horizontal,
-                    HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right,
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right,
                     Spacing = 8,
                     Margin = new Thickness(0, 16, 0, 0),
                     Children = { continueButton, cancelButton }

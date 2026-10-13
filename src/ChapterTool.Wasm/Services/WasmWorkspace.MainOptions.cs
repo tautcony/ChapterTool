@@ -33,8 +33,7 @@ public sealed partial class WasmWorkspace
                 return new ChapterCandidateBuildResult(false, document, [], [localizer.T("Parity.InvalidNumber")]);
             }
 
-            var focused = document;
-            return candidateBuilder.ApplyOutputOptions(focused, AutoGenerateNames, UseTemplateNames,
+            return candidateBuilder.ApplyOutputOptions(document, AutoGenerateNames, UseTemplateNames,
                 ChapterNameTemplateText ?? string.Empty, OrderShift, applyExpression, expression, SelectedComputationRate);
         }, new HistoryOperationDescriptor("chapter.options-apply",
         [
