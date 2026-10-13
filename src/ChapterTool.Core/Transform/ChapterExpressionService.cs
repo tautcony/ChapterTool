@@ -50,59 +50,82 @@ public sealed class ChapterExpressionService
             return new ChapterExpressionResult(info, [FrameRateValidation.InvalidFrameRate()]);
         }
 
-        var chapters = info.Chapters.Select(chapter =>
-        {
-            if (chapter.IsSeparator)
-            {
-                return chapter;
-            }
-
-            nonSeparatorIndex++;
-            var originalSeconds = chapter.StartTime.Ticks / (decimal)TimeSpan.TicksPerSecond;
-            var evaluated = ChapterExpressionEngineBoundary.Evaluate(expressionEngine, expression,
-                new CanonicalChapterExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount,
-                    chapter.StartTime.Ticks, framesPerSecond, expressionChapters));
-            foreach (var expressionDiagnostic in evaluated.Diagnostics)
-            {
-                // An expression can fail identically for every chapter (for example, while
-                // the user is typing an incomplete identifier). Keep the preview diagnostic
-                // list focused on distinct problems instead of repeating one message per row.
-                if (seenDiagnostics.Add((expressionDiagnostic.Code, expressionDiagnostic.Message, expressionDiagnostic.Location)))
-                {
-                    diagnostics.Add(expressionDiagnostic);
-                }
-            }
-            if (!evaluated.Success)
-            {
-                return chapter;
-            }
-
-            try
-            {
-                var ticks = evaluated.TimeUnchanged || evaluated.Value == originalSeconds
-                    ? chapter.StartTime.Ticks : ChapterRounding.RoundToInt64(evaluated.Value * TimeSpan.TicksPerSecond);
-                if (ticks < 0)
-                {
-                    diagnostics.Add(InvalidTime("Expression result cannot be negative."));
-                    return chapter;
-                }
-
-                var frameDisplay = FormatFrames(ticks, framesPerSecond);
-                return chapter with
-                {
-                    StartTime = TimeSpan.FromTicks(ticks),
-                    FramesInfo = frameDisplay.Text,
-                    FrameAccuracy = frameDisplay.Accuracy
-                };
-            }
-            catch (OverflowException)
-            {
-                diagnostics.Add(InvalidTime("Expression result exceeds the supported time or frame range."));
-                return chapter;
-            }
-        }).ToList();
+        var chapters = info.Chapters.Select(chapter => ApplyChapter(
+            chapter,
+            expression,
+            framesPerSecond,
+            expressionChapters,
+            nonSeparatorCount,
+            ref nonSeparatorIndex,
+            diagnostics,
+            seenDiagnostics)).ToList();
 
         return new ChapterExpressionResult(diagnostics.Count == 0 ? info with { Chapters = chapters } : info, diagnostics);
+    }
+
+    private Chapter ApplyChapter(
+        Chapter chapter,
+        string expression,
+        FrameRateValue framesPerSecond,
+        IReadOnlyList<Chapter> expressionChapters,
+        int nonSeparatorCount,
+        ref int nonSeparatorIndex,
+        List<ChapterDiagnostic> diagnostics,
+        HashSet<(ChapterDiagnosticCode Code, string Message, string? Location)> seenDiagnostics)
+    {
+        if (chapter.IsSeparator)
+        {
+            return chapter;
+        }
+
+        nonSeparatorIndex++;
+        var originalSeconds = chapter.StartTime.Ticks / (decimal)TimeSpan.TicksPerSecond;
+        var evaluated = ChapterExpressionEngineBoundary.Evaluate(expressionEngine, expression,
+            new CanonicalChapterExpressionContext(chapter, nonSeparatorIndex, nonSeparatorCount,
+                chapter.StartTime.Ticks, framesPerSecond, expressionChapters));
+        AddDistinctDiagnostics(evaluated.Diagnostics, diagnostics, seenDiagnostics);
+        if (!evaluated.Success)
+        {
+            return chapter;
+        }
+
+        try
+        {
+            var ticks = evaluated.TimeUnchanged || evaluated.Value == originalSeconds
+                ? chapter.StartTime.Ticks : ChapterRounding.RoundToInt64(evaluated.Value * TimeSpan.TicksPerSecond);
+            if (ticks < 0)
+            {
+                diagnostics.Add(InvalidTime("Expression result cannot be negative."));
+                return chapter;
+            }
+
+            var frameDisplay = FormatFrames(ticks, framesPerSecond);
+            return chapter with
+            {
+                StartTime = TimeSpan.FromTicks(ticks),
+                FramesInfo = frameDisplay.Text,
+                FrameAccuracy = frameDisplay.Accuracy
+            };
+        }
+        catch (OverflowException)
+        {
+            diagnostics.Add(InvalidTime("Expression result exceeds the supported time or frame range."));
+            return chapter;
+        }
+    }
+
+    private static void AddDistinctDiagnostics(
+        IEnumerable<ChapterDiagnostic> source,
+        List<ChapterDiagnostic> destination,
+        HashSet<(ChapterDiagnosticCode Code, string Message, string? Location)> seen)
+    {
+        foreach (var diagnostic in source)
+        {
+            if (seen.Add((diagnostic.Code, diagnostic.Message, diagnostic.Location)))
+            {
+                destination.Add(diagnostic);
+            }
+        }
     }
 
     private static FrameDisplay FormatFrames(long ticks, FrameRateValue framesPerSecond)

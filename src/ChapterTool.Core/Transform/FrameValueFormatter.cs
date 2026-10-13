@@ -38,18 +38,23 @@ public static class FrameValueFormatter
         var frames = ExactFrameMath.FromTicks(input.StartTicks, input.Rate);
         var reduced = Reduce(frames.Numerator, frames.Denominator);
         var ordinaryText = FormatOrdinary(reduced.Numerator, reduced.Denominator, policy.DecimalPlaces);
-        var negative = reduced.Numerator.Sign < 0;
-        var absoluteNumerator = BigInteger.Abs(reduced.Numerator);
-        var integer = BigInteger.DivRem(absoluteNumerator, reduced.Denominator, out var remainder);
-        var integerDigits = integer.ToString(CultureInfo.InvariantCulture);
-        var sign = negative ? "-" : string.Empty;
-
         if (!policy.ShowRepeatingDecimals)
         {
             return FromPlainText(ordinaryText, FractionText(reduced.Numerator, reduced.Denominator));
         }
 
-        if (remainder.IsZero && policy.ShowRepeatingDecimals)
+        return FormatRepeating(reduced.Numerator, reduced.Denominator, ordinaryText);
+    }
+
+    private static FramePresentationParts FormatRepeating(BigInteger numerator, BigInteger denominator, string ordinaryText)
+    {
+        var negative = numerator.Sign < 0;
+        var absoluteNumerator = BigInteger.Abs(numerator);
+        var integer = BigInteger.DivRem(absoluteNumerator, denominator, out var remainder);
+        var integerDigits = integer.ToString(CultureInfo.InvariantCulture);
+        var sign = negative ? "-" : string.Empty;
+
+        if (remainder.IsZero)
         {
             return new FramePresentationParts(
                 sign,
@@ -57,7 +62,7 @@ public static class FrameValueFormatter
                 string.Empty,
                 string.Empty,
                 sign + integerDigits,
-                FractionText(reduced.Numerator, reduced.Denominator),
+                FractionText(numerator, denominator),
                 Describe(sign, integerDigits, string.Empty, string.Empty));
         }
 
@@ -77,26 +82,20 @@ public static class FrameValueFormatter
                         prefix,
                         repeating,
                         ordinaryText,
-                        FractionText(reduced.Numerator, reduced.Denominator),
+                        FractionText(numerator, denominator),
                         Describe(sign, integerDigits, prefix, repeating));
                 }
 
-                return FromPlainText(ordinaryText, FractionText(reduced.Numerator, reduced.Denominator));
+                return FromPlainText(ordinaryText, FractionText(numerator, denominator));
             }
 
             remainderPositions.Add(remainder, digits.Count);
             remainder *= 10;
-            var digit = BigInteger.DivRem(remainder, reduced.Denominator, out remainder);
+            var digit = BigInteger.DivRem(remainder, denominator, out remainder);
             digits.Add((char)('0' + (int)digit));
         }
 
-        if (remainder.IsZero)
-        {
-            // A finite decimal follows the existing decimal-place policy.
-            return FromPlainText(ordinaryText, FractionText(reduced.Numerator, reduced.Denominator));
-        }
-
-        return FromPlainText(ordinaryText, FractionText(reduced.Numerator, reduced.Denominator));
+        return FromPlainText(ordinaryText, FractionText(numerator, denominator));
     }
 
     private static FramePresentationParts FormatRounded(FramePresentationInput input)

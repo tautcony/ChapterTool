@@ -83,26 +83,33 @@ public static partial class NodeApi
             throw InvalidExactRate();
         }
 
-        switch (input.Kind)
+        if (input.Kind == "unknown" && input.Numerator is null && input.Denominator is null && input.Value is null)
         {
-            case "unknown" when input.Numerator is null && input.Denominator is null && input.Value is null:
-                return FrameRateValue.Unknown;
-            case "rational" when input.Numerator is not null && input.Denominator is not null && input.Value is null:
-                if (long.TryParse(input.Numerator, NumberStyles.None, CultureInfo.InvariantCulture, out var numerator)
-                    && long.TryParse(input.Denominator, NumberStyles.None, CultureInfo.InvariantCulture, out var denominator)
-                    && numerator > 0 && denominator > 0)
-                {
-                    return FrameRateValue.Rational(numerator, denominator);
-                }
+            return FrameRateValue.Unknown;
+        }
 
-                break;
-            case "approximate" when input.Value is not null && input.Numerator is null && input.Denominator is null:
-                if (FrameRateValue.TryFromInvariantDecimal(input.Value, out var approximate, out _))
-                {
-                    return approximate;
-                }
+        if (input.Kind == "rational")
+        {
+            return ParseRationalRate(input);
+        }
 
-                break;
+        if (input.Kind == "approximate" && input.Value is not null && input.Numerator is null && input.Denominator is null
+            && FrameRateValue.TryFromInvariantDecimal(input.Value, out var approximate, out _))
+        {
+            return approximate;
+        }
+
+        throw InvalidExactRate();
+    }
+
+    private static FrameRateValue ParseRationalRate(ExactRate input)
+    {
+        if (input.Numerator is not null && input.Denominator is not null && input.Value is null
+            && long.TryParse(input.Numerator, NumberStyles.None, CultureInfo.InvariantCulture, out var numerator)
+            && long.TryParse(input.Denominator, NumberStyles.None, CultureInfo.InvariantCulture, out var denominator)
+            && numerator > 0 && denominator > 0)
+        {
+            return FrameRateValue.Rational(numerator, denominator);
         }
 
         throw InvalidExactRate();
@@ -142,43 +149,59 @@ public static partial class NodeApi
     {
         var rate = ParseExactRate(set.FrameRate);
         var duration = set.DurationTicks is null ? 0 : ParseExactTicks(set.DurationTicks);
+        ValidateChapterSetPayload(set, duration);
+        var chapters = set.Chapters!.Select(FromExactChapter).ToArray();
+        ValidateChapterBounds(chapters);
+        ValidateSegmentRates(set.Segments, rate);
+        return new ChapterSet(set.Title, set.SourceName, Enum.Parse<ChapterImportFormat>(set.ImportFormat, ignoreCase: true),
+            rate, TimeSpan.FromTicks(duration), chapters);
+    }
+
+    private static void ValidateChapterSetPayload(ExactChapterSet set, long duration)
+    {
         if (duration < 0 || set.Chapters is null)
         {
             throw new ExactValidationException(ChapterDiagnosticCode.InvalidStructure, "Chapter duration or chapters are invalid.");
         }
+    }
 
-        var chapters = set.Chapters.Select(chapter => new Chapter(chapter.DisplayNumber,
-            TimeSpan.FromTicks(ParseExactTicks(chapter.StartTicks)), chapter.Name, chapter.FramesInfo,
-            chapter.EndTicks is null ? null : TimeSpan.FromTicks(ParseExactTicks(chapter.EndTicks)),
-            Enum.Parse<FrameAccuracy>(chapter.FrameAccuracy, ignoreCase: true), Enum.Parse<ChapterKind>(chapter.Kind, ignoreCase: true))).ToArray();
+    private static Chapter FromExactChapter(ExactChapter chapter) => new(chapter.DisplayNumber,
+        TimeSpan.FromTicks(ParseExactTicks(chapter.StartTicks)), chapter.Name, chapter.FramesInfo,
+        chapter.EndTicks is null ? null : TimeSpan.FromTicks(ParseExactTicks(chapter.EndTicks)),
+        Enum.Parse<FrameAccuracy>(chapter.FrameAccuracy, ignoreCase: true), Enum.Parse<ChapterKind>(chapter.Kind, ignoreCase: true));
+
+    private static void ValidateChapterBounds(IEnumerable<Chapter> chapters)
+    {
         if (chapters.Any(static chapter => !chapter.IsSeparator && (chapter.StartTime.Ticks < 0
             || (chapter.EndTime is { } end && end < chapter.StartTime))))
         {
             throw new ExactValidationException(ChapterDiagnosticCode.InvalidStructure, "Chapter bounds are invalid.");
         }
+    }
 
-        if (set.Segments is { Count: > 0 })
+    private static void ValidateSegmentRates(IReadOnlyList<ExactSegment>? segments, FrameRateValue rate)
+    {
+        if (segments is { Count: > 0 })
         {
-            var contributors = set.Segments.Select(segment =>
-            {
-                _ = ParseExactRate(segment.SourceFrameRate);
-                var start = ParseExactTicks(segment.StartTicks);
-                var length = segment.DurationTicks is null ? 0 : ParseExactTicks(segment.DurationTicks);
-                if (start < 0 || length < 0 || checked(start + length) < start)
-                {
-                    throw new ExactValidationException(ChapterDiagnosticCode.InvalidStructure, "Segment bounds are invalid.");
-                }
-
-                return ParseExactRate(segment.FrameRate);
-            }).ToArray();
+            var contributors = segments.Select(ParseExactSegmentRate).ToArray();
             if (rate != FrameRateValue.ResolveUniform(contributors))
             {
                 throw new ExactValidationException(ChapterDiagnosticCode.InvalidFrameRate, "The scalar rate conflicts with its segments.");
             }
         }
+    }
 
-        return new ChapterSet(set.Title, set.SourceName, Enum.Parse<ChapterImportFormat>(set.ImportFormat, ignoreCase: true),
-            rate, TimeSpan.FromTicks(duration), chapters);
+    private static FrameRateValue ParseExactSegmentRate(ExactSegment segment)
+    {
+        _ = ParseExactRate(segment.SourceFrameRate);
+        var start = ParseExactTicks(segment.StartTicks);
+        var length = segment.DurationTicks is null ? 0 : ParseExactTicks(segment.DurationTicks);
+        if (start < 0 || length < 0 || checked(start + length) < start)
+        {
+            throw new ExactValidationException(ChapterDiagnosticCode.InvalidStructure, "Segment bounds are invalid.");
+        }
+
+        return ParseExactRate(segment.FrameRate);
     }
 
     private static ImmutableArray<ImportedChapterSegment> FromExactSegments(IReadOnlyList<ExactSegment>? segments) =>

@@ -14,67 +14,9 @@ public sealed class TemplateNamesToolViewModel : ObservableViewModel
         this.namingPreferences = namingPreferences;
         this.contentOperations = contentOperations;
         UseTemplateNames = namingPreferences.UseTemplateNames;
-        ApplyCommand = new UiCommand(async (parameter, _) =>
-        {
-            if (parameter is not TemplateNamesToolViewModel viewModel)
-            {
-                return;
-            }
-
-            this.namingPreferences.AutoGenerateNames = false;
-            this.namingPreferences.UseTemplateNames = viewModel.UseTemplateNames;
-            if (this.contentOperations is null)
-            {
-                return;
-            }
-
-            viewModel.pendingPreview = this.contentOperations.PrepareTemplateNames(autoGenerateNames: false, useTemplateNames: viewModel.UseTemplateNames);
-            viewModel.OnPropertyChanged(nameof(IsPreviewPending));
-            viewModel.OnPropertyChanged(nameof(CanPreparePreview));
-            viewModel.OnPropertyChanged(nameof(CanApplyPreview));
-            viewModel.StatusText = viewModel.pendingPreview.IsValid
-                ? viewModel.pendingPreview.Differences.IsEmpty
-                    ? "No chapter names will change."
-                    : string.Join("; ", viewModel.pendingPreview.Differences.Take(4).Select(static difference =>
-                        $"{difference.Before} → {difference.After}"))
-                : string.Join("; ", viewModel.pendingPreview.Errors);
-            viewModel.ConfirmApplyCommand!.RaiseCanExecuteChanged();
-            viewModel.CancelPreviewCommand!.RaiseCanExecuteChanged();
-        });
-        ConfirmApplyCommand = new UiCommand(async (_, token) =>
-        {
-            if (this.contentOperations is null || this.pendingPreview is not { IsValid: true } preview)
-            {
-                return;
-            }
-
-            this.pendingPreview = null;
-            OnPropertyChanged(nameof(IsPreviewPending));
-            OnPropertyChanged(nameof(CanPreparePreview));
-            OnPropertyChanged(nameof(CanApplyPreview));
-            var outcome = await this.contentOperations.ApplyAsync(preview, token);
-            StatusText = outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange
-                ? "Chapter names updated."
-                : string.Join("; ", outcome.Errors);
-            ConfirmApplyCommand!.RaiseCanExecuteChanged();
-            CancelPreviewCommand!.RaiseCanExecuteChanged();
-        }, _ => CanApplyPreview);
-        CancelPreviewCommand = new UiCommand((_, _) =>
-        {
-            if (this.pendingPreview is { } preview)
-            {
-                this.contentOperations?.Cancel(preview);
-                this.pendingPreview = null;
-                StatusText = string.Empty;
-                OnPropertyChanged(nameof(IsPreviewPending));
-                OnPropertyChanged(nameof(CanPreparePreview));
-                OnPropertyChanged(nameof(CanApplyPreview));
-            }
-
-            ConfirmApplyCommand!.RaiseCanExecuteChanged();
-            CancelPreviewCommand!.RaiseCanExecuteChanged();
-            return ValueTask.CompletedTask;
-        }, _ => IsPreviewPending);
+        ApplyCommand = new UiCommand(ApplyTemplateNamesAsync);
+        ConfirmApplyCommand = new UiCommand(ConfirmApplyAsync, _ => CanApplyPreview);
+        CancelPreviewCommand = new UiCommand(CancelPreviewAsync, _ => IsPreviewPending);
     }
 
     public bool UseTemplateNames
@@ -100,4 +42,80 @@ public sealed class TemplateNamesToolViewModel : ObservableViewModel
     public UiCommand ConfirmApplyCommand { get; }
 
     public UiCommand CancelPreviewCommand { get; }
+
+    private ValueTask ApplyTemplateNamesAsync(object? parameter, CancellationToken _)
+    {
+        if (parameter is not TemplateNamesToolViewModel viewModel)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        namingPreferences.AutoGenerateNames = false;
+        namingPreferences.UseTemplateNames = viewModel.UseTemplateNames;
+        if (contentOperations is null)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        viewModel.pendingPreview = contentOperations.PrepareTemplateNames(
+            autoGenerateNames: false,
+            useTemplateNames: viewModel.UseTemplateNames);
+        viewModel.OnPropertyChanged(nameof(IsPreviewPending));
+        viewModel.OnPropertyChanged(nameof(CanPreparePreview));
+        viewModel.OnPropertyChanged(nameof(CanApplyPreview));
+        viewModel.StatusText = DescribePreview(viewModel.pendingPreview);
+        viewModel.ConfirmApplyCommand.RaiseCanExecuteChanged();
+        viewModel.CancelPreviewCommand.RaiseCanExecuteChanged();
+        return ValueTask.CompletedTask;
+    }
+
+    private async ValueTask ConfirmApplyAsync(object? _, CancellationToken token)
+    {
+        if (contentOperations is null || pendingPreview is not { IsValid: true } preview)
+        {
+            return;
+        }
+
+        pendingPreview = null;
+        RefreshPreviewCommands();
+        var outcome = await contentOperations.ApplyAsync(preview, token);
+        StatusText = outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange
+            ? "Chapter names updated."
+            : string.Join("; ", outcome.Errors);
+        RaisePreviewCommands();
+    }
+
+    private ValueTask CancelPreviewAsync(object? _, CancellationToken __)
+    {
+        if (pendingPreview is { } preview)
+        {
+            contentOperations?.Cancel(preview);
+            pendingPreview = null;
+            StatusText = string.Empty;
+            RefreshPreviewCommands();
+        }
+
+        RaisePreviewCommands();
+        return ValueTask.CompletedTask;
+    }
+
+    private void RefreshPreviewCommands()
+    {
+        OnPropertyChanged(nameof(IsPreviewPending));
+        OnPropertyChanged(nameof(CanPreparePreview));
+        OnPropertyChanged(nameof(CanApplyPreview));
+    }
+
+    private void RaisePreviewCommands()
+    {
+        ConfirmApplyCommand.RaiseCanExecuteChanged();
+        CancelPreviewCommand.RaiseCanExecuteChanged();
+    }
+
+    private static string DescribePreview(ChapterContentPreview preview) => !preview.IsValid
+        ? string.Join("; ", preview.Errors)
+        : preview.Differences.IsEmpty
+            ? "No chapter names will change."
+            : string.Join("; ", preview.Differences.Take(4).Select(static difference =>
+                $"{difference.Before} → {difference.After}"));
 }

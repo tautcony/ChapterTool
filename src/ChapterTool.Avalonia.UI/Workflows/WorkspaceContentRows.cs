@@ -26,28 +26,36 @@ internal sealed class WorkspaceContentRows(
         }
 
         var document = workspace.ContentSession?.Snapshot.Document;
-        var trackIndex = workspace.CurrentTrackIndex;
-        var track = document is not null && trackIndex >= 0 && trackIndex < document.Tracks.Length
-            ? document.Tracks[trackIndex]
-            : null;
+        var track = GetCurrentTrack(document, workspace.CurrentTrackIndex);
         for (var index = 0; index < current.Chapters.Count; index++)
         {
-            var chapter = current.Chapters[index];
-            var row = new ChapterRowViewModel(chapter, formatter);
-            var typedChapter = track is not null && index < track.Chapters.Length
-                ? track.Chapters[index]
-                : null;
-            var startTicks = typedChapter?.StartTicks ?? chapter.StartTime.Ticks;
-            var input = new FramePresentationInput(startTicks, frameRateOption.Rate, chapter.FramesInfo);
-            row.SetFramePresentationInput(input, policy);
-            if (typedChapter is not null)
-            {
-                row.TrackId = track!.Id;
-                row.ChapterId = typedChapter.Id;
-            }
-
-            rows.Add(row);
+            rows.Add(CreateRow(current.Chapters[index], track, index, frameRateOption, policy));
         }
+    }
+
+    private static EditableChapterTrack? GetCurrentTrack(EditableChapterDocument? document, int trackIndex) =>
+        document is not null && trackIndex >= 0 && trackIndex < document.Tracks.Length
+            ? document.Tracks[trackIndex]
+            : null;
+
+    private ChapterRowViewModel CreateRow(
+        Chapter chapter,
+        EditableChapterTrack? track,
+        int index,
+        FrameRateOption frameRateOption,
+        FramePresentationPolicy policy)
+    {
+        var row = new ChapterRowViewModel(chapter, formatter);
+        var typedChapter = track is not null && index < track.Chapters.Length ? track.Chapters[index] : null;
+        var startTicks = typedChapter?.StartTicks ?? chapter.StartTime.Ticks;
+        row.SetFramePresentationInput(new FramePresentationInput(startTicks, frameRateOption.Rate, chapter.FramesInfo), policy);
+        if (typedChapter is not null)
+        {
+            row.TrackId = track!.Id;
+            row.ChapterId = typedChapter.Id;
+        }
+
+        return row;
     }
 
     private static ChapterSet EmptyChapterSet() =>

@@ -743,7 +743,6 @@ input[type="number"],
 }
 
 .expression-input {
-  font-family: var(--mono);
   box-sizing: border-box;
   width: 100%;
   min-height: 3.5rem;
