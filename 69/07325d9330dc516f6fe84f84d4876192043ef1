@@ -1,0 +1,25 @@
+src/ChapterTool.Avalonia.UI/ViewModels/SettingsToolViewModel.cs
+  s_1758991fd47007::t_58bd1bfb4b95c1 105-112,132-134,455,457,459,461,463,465,467,469,471,473,475
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/HistoryToolViewModel.cs
+  s_1758991fd47007::t_ee1a718c0d12e0 688-689,692-712
+src/ChapterTool.Core/Importing/Disc/DvdNavTimingReader.cs
+  s_1758991fd47007::t_c0ba348eeb7aa1 105,110-111,113,116-117,128-175,210-211
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_1758991fd47007::t_f999d6826517d0 832,834,836-847,849-856,858-861,863-866,868-881,883-890,892-895,897-899,901-903,905,907-919,921-932,934-935
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6907325d9330dc516f6fe84f84d4876192043ef1",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
