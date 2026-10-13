@@ -50,28 +50,7 @@ public sealed class IfoChapterImporter : IChapterImporter
             }
 
             ownedStream = ReferenceEquals(stream, request.Content) ? null : stream;
-            var signature = System.Text.Encoding.ASCII.GetString(ReadBlock(stream, 0, 12));
-            List<ChapterDiagnostic> diagnostics = [];
-            using var navTiming = request.Content is null && signature == "DVDVIDEO-VTS"
-                ? DvdNavTimingReader.Open(resolvedPath, cancellationToken)
-                : null;
-            var entries = string.Equals(signature, "DVDVIDEO-VMG", StringComparison.Ordinal)
-                ? await GetVmgEntriesAsync(resolvedRequest, stream, diagnostics, cancellationToken)
-                : GetStreams(request.Path, stream, navTiming, diagnostics, cancellationToken)
-                    .Select((info, index) => CreateImportEntry(
-                        request.Path,
-                        info,
-                        index + 1,
-                        info.Title,
-                        request.Content is null ? DvdIfoMetadataReader.ReadTitleSetTracks(request.Path) : [],
-                        FindVobFiles(request.Path, info.SourceName)))
-                    .ToList();
-            if (entries.Count == 0)
-            {
-                return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.NoChaptersFound, "No DVD chapters were parsed."));
-            }
-
-            return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
+            return await ImportStreamAsync(request, resolvedRequest, resolvedPath, stream, cancellationToken);
         }
         catch (Exception exception) when (exception is IOException or InvalidDataException or EndOfStreamException or UnauthorizedAccessException)
         {
@@ -85,6 +64,44 @@ public sealed class IfoChapterImporter : IChapterImporter
             }
         }
     }
+
+    private static async ValueTask<ChapterImportResult> ImportStreamAsync(
+        ChapterImportRequest request,
+        ChapterImportRequest resolvedRequest,
+        string resolvedPath,
+        Stream stream,
+        CancellationToken cancellationToken)
+    {
+        var signature = System.Text.Encoding.ASCII.GetString(ReadBlock(stream, 0, 12));
+        List<ChapterDiagnostic> diagnostics = [];
+        using var navTiming = request.Content is null && signature == "DVDVIDEO-VTS"
+            ? DvdNavTimingReader.Open(resolvedPath, cancellationToken)
+            : null;
+        var entries = string.Equals(signature, "DVDVIDEO-VMG", StringComparison.Ordinal)
+            ? await GetVmgEntriesAsync(resolvedRequest, stream, diagnostics, cancellationToken)
+            : CreateTitleSetEntries(request, stream, navTiming, diagnostics, cancellationToken);
+        if (entries.Count == 0)
+        {
+            return ChapterImportResult.Failed(Error(ChapterDiagnosticCode.NoChaptersFound, "No DVD chapters were parsed."));
+        }
+
+        return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
+    }
+
+    private static List<ChapterImportEntry> CreateTitleSetEntries(
+        ChapterImportRequest request,
+        Stream stream,
+        DvdNavTimingReader? navTiming,
+        List<ChapterDiagnostic> diagnostics,
+        CancellationToken cancellationToken) => GetStreams(request.Path, stream, navTiming, diagnostics, cancellationToken)
+        .Select((info, index) => CreateImportEntry(
+            request.Path,
+            info,
+            index + 1,
+            info.Title,
+            request.Content is null ? DvdIfoMetadataReader.ReadTitleSetTracks(request.Path) : [],
+            FindVobFiles(request.Path, info.SourceName)))
+        .ToList();
 
     /// <summary>
     /// Executes the GetStreams operation.
@@ -162,8 +179,7 @@ public sealed class IfoChapterImporter : IChapterImporter
 
         var titles = GetVmgTitleTable(stream);
         var root = Path.GetDirectoryName(Path.GetFullPath(request.Path)) ?? Directory.GetCurrentDirectory();
-        var byTitleSet = new Dictionary<int, IReadOnlyList<ChapterSet>>();
-        var tracksByTitleSet = new Dictionary<int, IReadOnlyList<ChapterImportMediaTrack>>();
+        var titleSets = new Dictionary<int, VmgTitleSetData>();
         var entries = new List<ChapterImportEntry>(titles.Count);
         for (var titleIndex = 0; titleIndex < titles.Count; titleIndex++)
         {
@@ -175,59 +191,82 @@ public sealed class IfoChapterImporter : IChapterImporter
                 $"Title {title.DiscTitleNumber}",
                 titleIndex + 1,
                 titles.Count));
-            if (!byTitleSet.TryGetValue(title.TitleSetNumber, out var titleSet))
+            if (!titleSets.TryGetValue(title.TitleSetNumber, out var titleSet))
             {
-                var vtsPath = ResolveTitleSetInfoPath(root, title.TitleSetNumber);
-                if (!File.Exists(vtsPath))
-                {
-                    throw new InvalidDataException($"VMG title references missing title-set IFO '{Path.GetFileName(vtsPath)}'.");
-                }
-
-                if (!PortableInputPolicy.IsWithinLimit(new FileInfo(vtsPath).Length))
-                {
-                    throw new InvalidDataException($"Referenced title-set IFO '{Path.GetFileName(vtsPath)}' exceeds the supported input size.");
-                }
-
-                using var vtsStream = File.OpenRead(vtsPath);
-                using var navTiming = DvdNavTimingReader.Open(vtsPath, cancellationToken);
-                try
-                {
-                    titleSet = GetStreams(vtsPath, vtsStream, navTiming, diagnostics, cancellationToken);
-                }
-                catch (InvalidDataException exception) when (
-                    exception.Message is "Invalid VTS PTT chapter list." or "Invalid VTS PTT chapter reference."
-                        or "VTS PTT references an unknown PGC." or "VTS PTT references an unknown program.")
-                {
-                    titleSet = [];
-                }
-
-                byTitleSet.Add(title.TitleSetNumber, titleSet);
-                tracksByTitleSet.Add(title.TitleSetNumber, DvdIfoMetadataReader.ReadTitleSetTracks(vtsPath));
+                titleSet = LoadVmgTitleSet(title.TitleSetNumber, root, diagnostics, cancellationToken);
+                titleSets.Add(title.TitleSetNumber, titleSet);
             }
 
-            var set = title.TitleWithinTitleSet >= 1 && title.TitleWithinTitleSet <= titleSet.Count
-                ? titleSet[title.TitleWithinTitleSet - 1]
-                : null;
-            if (set is null)
-            {
-                var vtsPath = ResolveTitleSetInfoPath(root, title.TitleSetNumber);
-                set = TryCreateProgramChapterFallback(vtsPath, title, diagnostics, cancellationToken, allowOrdinalPgcRecovery: true)
-                    ?? throw new InvalidDataException($"The VTS PTT table for disc title {title.DiscTitleNumber} is invalid, and no matching PGC program map can recover its {title.PartCount} chapters.");
-            }
-            else if (set.Chapters.Count != title.PartCount)
-            {
-                var vtsPath = ResolveTitleSetInfoPath(root, title.TitleSetNumber);
-                set = TryCreateProgramChapterFallback(vtsPath, title, diagnostics, cancellationToken) ?? set;
-            }
-
+            var set = ResolveVmgTitleChapterSet(title, titleSet.ChapterSets, root, diagnostics, cancellationToken);
             set = set with { Title = $"Title {title.DiscTitleNumber}" };
             var titleSetIfoPath = ResolveTitleSetInfoPath(root, title.TitleSetNumber);
             var mediaFiles = FindVobFiles(titleSetIfoPath, set.SourceName);
-            entries.Add(CreateImportEntry(request.Path, set, title.DiscTitleNumber, set.Title, tracksByTitleSet[title.TitleSetNumber], mediaFiles, title.DiscTitleNumber));
+            entries.Add(CreateImportEntry(request.Path, set, title.DiscTitleNumber, set.Title,
+                titleSet.MediaTracks, mediaFiles, title.DiscTitleNumber));
         }
 
         diagnostics.Add(DvdIfoMetadataReader.CreateDiscLoadedDiagnostic(request.Path, entries));
         return entries;
+    }
+
+    private static VmgTitleSetData LoadVmgTitleSet(
+        int titleSetNumber,
+        string root,
+        List<ChapterDiagnostic> diagnostics,
+        CancellationToken cancellationToken)
+    {
+        var vtsPath = ResolveTitleSetInfoPath(root, titleSetNumber);
+        if (!File.Exists(vtsPath))
+        {
+            throw new InvalidDataException($"VMG title references missing title-set IFO '{Path.GetFileName(vtsPath)}'.");
+        }
+
+        if (!PortableInputPolicy.IsWithinLimit(new FileInfo(vtsPath).Length))
+        {
+            throw new InvalidDataException($"Referenced title-set IFO '{Path.GetFileName(vtsPath)}' exceeds the supported input size.");
+        }
+
+        IReadOnlyList<ChapterSet> chapterSets;
+        using (var vtsStream = File.OpenRead(vtsPath))
+        using (var navTiming = DvdNavTimingReader.Open(vtsPath, cancellationToken))
+        {
+            try
+            {
+                chapterSets = GetStreams(vtsPath, vtsStream, navTiming, diagnostics, cancellationToken);
+            }
+            catch (InvalidDataException exception) when (IsRecoverableVtsTableError(exception))
+            {
+                chapterSets = [];
+            }
+        }
+
+        return new VmgTitleSetData(chapterSets, DvdIfoMetadataReader.ReadTitleSetTracks(vtsPath));
+    }
+
+    private static bool IsRecoverableVtsTableError(InvalidDataException exception) =>
+        exception.Message is "Invalid VTS PTT chapter list." or "Invalid VTS PTT chapter reference."
+            or "VTS PTT references an unknown PGC." or "VTS PTT references an unknown program.";
+
+    private static ChapterSet ResolveVmgTitleChapterSet(
+        VmgTitle title,
+        IReadOnlyList<ChapterSet> titleSet,
+        string root,
+        List<ChapterDiagnostic> diagnostics,
+        CancellationToken cancellationToken)
+    {
+        var set = title.TitleWithinTitleSet >= 1 && title.TitleWithinTitleSet <= titleSet.Count
+            ? titleSet[title.TitleWithinTitleSet - 1]
+            : null;
+        var vtsPath = ResolveTitleSetInfoPath(root, title.TitleSetNumber);
+        if (set is null)
+        {
+            return TryCreateProgramChapterFallback(vtsPath, title, diagnostics, cancellationToken, allowOrdinalPgcRecovery: true)
+                ?? throw new InvalidDataException($"The VTS PTT table for disc title {title.DiscTitleNumber} is invalid, and no matching PGC program map can recover its {title.PartCount} chapters.");
+        }
+
+        return set.Chapters.Count == title.PartCount
+            ? set
+            : TryCreateProgramChapterFallback(vtsPath, title, diagnostics, cancellationToken) ?? set;
     }
 
     private static ChapterImportEntry CreateImportEntry(
@@ -586,6 +625,37 @@ public sealed class IfoChapterImporter : IChapterImporter
 
     private static PgcPlaybackInfo GetPgcPlaybackInfo(Stream stream, PgcTable table, int programChain, DvdNavTimingReader? navTiming = null)
     {
+        var layout = ReadPgcLayout(stream, table, programChain);
+        var programStarts = new long[layout.ProgramCount];
+        var navStarts = new long[layout.ProgramCount];
+        long duration = 0;
+        long navDuration = 0;
+        bool? isNtsc = null;
+        var usesNavTiming = navTiming is not null && layout.PositionOffset >= PgcHeaderSize;
+
+        for (var currentProgram = 0; currentProgram < layout.ProgramCount; currentProgram++)
+        {
+            programStarts[currentProgram] = duration;
+            navStarts[currentProgram] = navDuration;
+            var programTiming = ReadProgramTiming(stream, layout, currentProgram, navTiming, usesNavTiming, isNtsc);
+            duration += programTiming.Duration;
+            navDuration += programTiming.NavDuration;
+            usesNavTiming = programTiming.UsesNavTiming;
+            isNtsc = programTiming.IsNtsc;
+        }
+
+        if (duration <= 0 || !isNtsc.HasValue)
+        {
+            throw new InvalidDataException("DVD PGC has no usable playback cells.");
+        }
+
+        return usesNavTiming
+            ? new PgcPlaybackInfo(programStarts, duration, isNtsc.Value, navStarts, navDuration)
+            : new PgcPlaybackInfo(programStarts, duration, isNtsc.Value);
+    }
+
+    private static PgcLayout ReadPgcLayout(Stream stream, PgcTable table, int programChain)
+    {
         var chainOffset = GetChainOffset(stream, table, programChain);
         var pgcStart = checked(table.Offset + chainOffset);
         var header = ReadBlock(stream, pgcStart, PgcHeaderSize);
@@ -621,68 +691,80 @@ public sealed class IfoChapterImporter : IChapterImporter
             throw new InvalidDataException("Invalid IFO program map cell references.");
         }
 
-        var programStarts = new long[programCount];
-        var navStarts = new long[programCount];
-        long navDuration = 0;
-        var usesNavTiming = navTiming is not null;
         var positionOffset = ToUInt16(header.AsSpan(0xEA, 2).ToArray());
-        usesNavTiming &= positionOffset >= PgcHeaderSize && pgcStart + positionOffset + cellCount * 4 <= pgcEnd;
-        long duration = 0;
-        bool? isNtsc = null;
-        for (var currentProgram = 0; currentProgram < programCount; currentProgram++)
+        if (positionOffset < PgcHeaderSize || pgcStart + positionOffset + cellCount * 4 > pgcEnd)
         {
-            programStarts[currentProgram] = duration;
-            navStarts[currentProgram] = navDuration;
-            var entryCell = programMap[currentProgram];
-            var exitCell = currentProgram + 1 < programCount ? programMap[currentProgram + 1] - 1 : cellCount;
+            positionOffset = 0;
+        }
 
-            long programDuration = 0;
-            for (var currentCell = entryCell; currentCell <= exitCell; currentCell++)
+        return new PgcLayout(pgcStart, programCount, cellCount, cellTableOffset, positionOffset, programMap);
+    }
+
+    private static ProgramTiming ReadProgramTiming(
+        Stream stream,
+        PgcLayout layout,
+        int programIndex,
+        DvdNavTimingReader? navTiming,
+        bool usesNavTiming,
+        bool? previousIsNtsc)
+    {
+        var entryCell = layout.ProgramMap[programIndex];
+        var exitCell = programIndex + 1 < layout.ProgramCount ? layout.ProgramMap[programIndex + 1] - 1 : layout.CellCount;
+        long duration = 0;
+        long navDuration = 0;
+        var isNtsc = previousIsNtsc;
+        for (var currentCell = entryCell; currentCell <= exitCell; currentCell++)
+        {
+            var cellStart = layout.CellTableOffset + (currentCell - 1) * CellPlaybackEntrySize;
+            var cellHeader = ReadBlock(stream, layout.PgcStart + cellStart, 4);
+            if ((cellHeader[0] >> 6) is not (0x00 or 0x01))
             {
-                var cellStart = cellTableOffset + (currentCell - 1) * CellPlaybackEntrySize;
-                var typeBytes = ReadBlock(stream, pgcStart + cellStart, 4);
-                var cellType = typeBytes[0] >> 6;
-                if (cellType is 0x00 or 0x01)
-                {
-                    var timeBytes = ReadBlock(stream, pgcStart + cellStart + 4, 4);
-                    programDuration += ReadDvdFrameCount(timeBytes[0], timeBytes[1], timeBytes[2], timeBytes[3], out var cellIsNtsc);
-                    if (isNtsc.HasValue && isNtsc.Value != cellIsNtsc)
-                    {
-                        throw new InvalidDataException("A PGC contains mixed DVD playback frame rates.");
-                    }
-
-                    isNtsc = cellIsNtsc;
-                    if (usesNavTiming)
-                    {
-                        var cell = ReadBlock(stream, pgcStart + cellStart, CellPlaybackEntrySize);
-                        var position = ReadBlock(stream, pgcStart + positionOffset + (currentCell - 1) * 4, 4);
-
-                        // Interleaved angles need DVD navigation selection; never scan other angles as this one.
-                        if ((cell[0] & 0x30) != 0 || !navTiming!.TryGetCellDuration(
-                            ToInt32(cell.AsSpan(8, 4).ToArray()), ToInt32(cell.AsSpan(16, 4).ToArray()),
-                            ToInt32(cell.AsSpan(20, 4).ToArray()), (ushort)ToUInt16(position), position[3], out var cellPts))
-                        {
-                            usesNavTiming = false;
-                        }
-                        else
-                        {
-                            navDuration += cellPts;
-                        }
-                    }
-                }
+                continue;
             }
 
-            duration += programDuration;
+            var timeBytes = ReadBlock(stream, layout.PgcStart + cellStart + 4, 4);
+            duration += ReadDvdFrameCount(timeBytes[0], timeBytes[1], timeBytes[2], timeBytes[3], out var cellIsNtsc);
+            if (isNtsc.HasValue && isNtsc.Value != cellIsNtsc)
+            {
+                throw new InvalidDataException("A PGC contains mixed DVD playback frame rates.");
+            }
+
+            isNtsc = cellIsNtsc;
+            if (usesNavTiming)
+            {
+                usesNavTiming = TryReadNavCellDuration(stream, layout, currentCell, navTiming!, out var cellPts);
+                if (usesNavTiming)
+                {
+                    navDuration += cellPts;
+                }
+            }
         }
 
-        if (duration <= 0 || !isNtsc.HasValue)
+        return new ProgramTiming(duration, navDuration, isNtsc, usesNavTiming);
+    }
+
+    private static bool TryReadNavCellDuration(
+        Stream stream,
+        PgcLayout layout,
+        int currentCell,
+        DvdNavTimingReader navTiming,
+        out long duration)
+    {
+        duration = 0;
+        var cellStart = layout.CellTableOffset + (currentCell - 1) * CellPlaybackEntrySize;
+        var cell = ReadBlock(stream, layout.PgcStart + cellStart, CellPlaybackEntrySize);
+        var position = ReadBlock(stream, layout.PgcStart + layout.PositionOffset + (currentCell - 1) * 4, 4);
+
+        // Interleaved angles need DVD navigation selection; never scan other angles as this one.
+        if ((cell[0] & 0x30) != 0 || !navTiming.TryGetCellDuration(
+            ToInt32(cell.AsSpan(8, 4).ToArray()), ToInt32(cell.AsSpan(16, 4).ToArray()),
+            ToInt32(cell.AsSpan(20, 4).ToArray()), (ushort)ToUInt16(position), position[3], out var cellPts))
         {
-            throw new InvalidDataException("DVD PGC has no usable playback cells.");
+            return false;
         }
 
-        return usesNavTiming
-            ? new PgcPlaybackInfo(programStarts, duration, isNtsc.Value, navStarts, navDuration)
-            : new PgcPlaybackInfo(programStarts, duration, isNtsc.Value);
+        duration = cellPts;
+        return true;
     }
 
     private static PgcTable GetPgcTable(Stream stream)
@@ -875,11 +957,25 @@ public sealed class IfoChapterImporter : IChapterImporter
 
     private sealed record VmgTitle(int DiscTitleNumber, int TitleSetNumber, int TitleWithinTitleSet, int PartCount);
 
+    private sealed record VmgTitleSetData(
+        IReadOnlyList<ChapterSet> ChapterSets,
+        IReadOnlyList<ChapterImportMediaTrack> MediaTracks);
+
     private sealed record PgcPlaybackInfo(IReadOnlyList<long> ProgramStartFrames, long DurationFrames, bool IsNtsc,
         IReadOnlyList<long>? NavProgramStartPts = null, long? NavDurationPts = null)
     {
         public bool UsesNavTiming => NavProgramStartPts is not null;
     }
+
+    private sealed record PgcLayout(
+        long PgcStart,
+        int ProgramCount,
+        int CellCount,
+        int CellTableOffset,
+        int PositionOffset,
+        int[] ProgramMap);
+
+    private sealed record ProgramTiming(long Duration, long NavDuration, bool? IsNtsc, bool UsesNavTiming);
 
     private static TimeSpan FromDvdFrames(long frames, bool isNtsc) => TimeSpan.FromTicks((long)decimal.Round(
         isNtsc ? frames * (decimal)TimeSpan.TicksPerSecond * 1001 / 30000 : frames * (decimal)TimeSpan.TicksPerSecond / 25));
