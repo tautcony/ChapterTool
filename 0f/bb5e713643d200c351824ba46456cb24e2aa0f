@@ -1,0 +1,21 @@
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/ExpressionToolViewModel.cs
+  s_1758991fd47007::t_9ebf6fc2f7d3b6 55-57,59-69,71-72,76-81,83-100,102-103,105-109
+src/ChapterTool.Node/NodeExactModels.cs
+  s_1758991fd47007::t_df1aed2db3ca41 86,88-93,95-98,100-102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0fbb5e713643d200c351824ba46456cb24e2aa0f",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
