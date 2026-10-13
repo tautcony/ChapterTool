@@ -110,15 +110,7 @@ internal sealed class DvdNavTimingReader : IDisposable
 
                 var data = sectorBuffer.AsSpan();
 
-                // MPEG-2 pack, system header, PCI private_stream_2, and DSI private_stream_2.
-                if (Read32(data, 0) != 0x000001BA || (data[4] & 0xC0) != 0x40 ||
-                    (data[13] & 7) != 0 || Read32(data, 14) != 0x000001BB ||
-                    Read16(data, 18) != 18 || Read32(data, 38) != 0x000001BF ||
-                    Read16(data, 42) != 980 || data[44] != 0 ||
-                    Read32(data, 1024) != 0x000001BF ||
-                    Read16(data, 1028) != 1018 || data[1030] != 1 ||
-                    Read32(data, 45) != address || Read32(data, 1035) != address ||
-                    Read16(data, 1055) != vob || data[1058] != cell)
+                if (!HasValidNavigationSector(data, address, vob, cell))
                 {
                     return null;
                 }
@@ -155,6 +147,19 @@ internal sealed class DvdNavTimingReader : IDisposable
         }
 
         return null;
+    }
+
+    private static bool HasValidNavigationSector(ReadOnlySpan<byte> data, long address, ushort vob, byte cell)
+    {
+        // MPEG-2 pack, system header, PCI private_stream_2, and DSI private_stream_2.
+        return Read32(data, 0) == 0x000001BA && (data[4] & 0xC0) == 0x40 &&
+            (data[13] & 7) == 0 && Read32(data, 14) == 0x000001BB &&
+            Read16(data, 18) == 18 && Read32(data, 38) == 0x000001BF &&
+            Read16(data, 42) == 980 && data[44] == 0 &&
+            Read32(data, 1024) == 0x000001BF &&
+            Read16(data, 1028) == 1018 && data[1030] == 1 &&
+            Read32(data, 45) == address && Read32(data, 1035) == address &&
+            Read16(data, 1055) == vob && data[1058] == cell;
     }
 
     private bool ReadSector(long address)

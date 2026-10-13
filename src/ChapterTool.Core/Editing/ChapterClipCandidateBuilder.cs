@@ -185,6 +185,36 @@ public static class ChapterClipCandidateBuilder
         ArgumentNullException.ThrowIfNull(current);
         ArgumentNullException.ThrowIfNull(imported);
         var original = current;
+        var normalized = NormalizeAppendSource(current, imported, original);
+        if (!normalized.IsValid)
+        {
+            return normalized;
+        }
+
+        current = normalized.Candidate;
+        var currentTrack = current.Tracks[0];
+        var chapters = currentTrack.Chapters.ToBuilder();
+        var segments = CreateAppendSegments(current, currentTrack);
+        var appendOffset = current.Duration.Ticks;
+        long importedDuration = 0;
+        foreach (var track in imported.Tracks)
+        {
+            var error = AppendImportedTrack(imported, track, chapters, segments, ref appendOffset, ref importedDuration);
+            if (error is not null)
+            {
+                return Failure(original, error);
+            }
+        }
+
+        Renumber(chapters);
+        return CreateAppendCandidate(original, current, currentTrack, chapters, segments, importedDuration);
+    }
+
+    private static ChapterCandidateBuildResult NormalizeAppendSource(
+        EditableChapterDocument current,
+        EditableChapterDocument imported,
+        EditableChapterDocument original)
+    {
         if (current.Tracks.Length > 1)
         {
             var merged = MergeTracks(current, current.Tracks.Select(static track => track.Id));
@@ -201,114 +231,148 @@ public static class ChapterClipCandidateBuilder
             return Failure(original, "Append requires current chapter content.");
         }
 
-        if (!current.Duration.IsKnown || !imported.Duration.IsKnown)
-        {
-            return Failure(original, "Append requires known durations for both documents.");
-        }
+        return !current.Duration.IsKnown || !imported.Duration.IsKnown
+            ? Failure(original, "Append requires known durations for both documents.")
+            : Succeed(original, current);
+    }
 
-        var currentTrack = current.Tracks[0];
-        var offset = current.Duration.Ticks;
-        var chapters = currentTrack.Chapters.ToBuilder();
-        var segments = currentTrack.Segments.ToBuilder();
+    private static ImmutableArray<EditableChapterSegment>.Builder CreateAppendSegments(
+        EditableChapterDocument current,
+        EditableChapterTrack track)
+    {
+        var segments = track.Segments.ToBuilder();
         if (segments.Count == 0)
         {
             segments.Add(EditableChapterSegment.Create(
-                currentTrack.Id,
-                currentTrack.Id.Value.ToString("N"),
-                currentTrack.Name,
+                track.Id,
+                track.Id.Value.ToString("N"),
+                track.Name,
                 0,
                 current.Duration,
-                current.FrameRate,
+                track.FrameRate,
                 current.ImportFormat,
                 current.SourceName));
         }
 
-        var appendOffset = offset;
-        long importedDuration = 0;
-        foreach (var track in imported.Tracks)
+        return segments;
+    }
+
+    private static string? AppendImportedTrack(
+        EditableChapterDocument imported,
+        EditableChapterTrack track,
+        ImmutableArray<EditableChapter>.Builder chapters,
+        ImmutableArray<EditableChapterSegment>.Builder segments,
+        ref long appendOffset,
+        ref long importedDuration)
+    {
+        var trackDuration = TrackDuration(imported, track);
+        if (trackDuration is null)
         {
-            var trackDuration = TrackDuration(imported, track);
-            if (trackDuration is null)
-            {
-                return Failure(original, $"Imported track '{track.Name}' has no known duration.");
-            }
-
-            foreach (var chapter in track.Chapters)
-            {
-                try
-                {
-                    chapters.Add(chapter with
-                    {
-                        Id = ChapterId.New(),
-                        StartTicks = checked(chapter.StartTicks + appendOffset),
-                        EndTicks = chapter.EndTicks is long end ? checked(end + appendOffset) : null
-                    });
-                }
-                catch (OverflowException)
-                {
-                    return Failure(original, "Appending exceeds the supported time range.");
-                }
-            }
-
-            var trackSegments = track.Segments.IsEmpty
-                ? [EditableChapterSegment.Create(
-                        ChapterTrackId.New(),
-                        track.Id.Value.ToString("N"),
-                        track.Name,
-                        0,
-                        ChapterDuration.FromTicks(trackDuration.Value),
-                        track.FrameRate,
-                        imported.ImportFormat,
-                        imported.SourceName)]
-                : track.Segments;
-            foreach (var segment in trackSegments)
-            {
-                try
-                {
-                    segments.Add(segment with
-                    {
-                        Id = Guid.NewGuid(),
-                        SourceTrackId = ChapterTrackId.New(),
-                        StartTicks = checked(segment.StartTicks + appendOffset)
-                    });
-                }
-                catch (OverflowException)
-                {
-                    return Failure(original, "Appending segment boundaries exceeds the supported time range.");
-                }
-            }
-
-            try
-            {
-                appendOffset = checked(appendOffset + trackDuration.Value);
-                importedDuration = checked(importedDuration + trackDuration.Value);
-            }
-            catch (OverflowException)
-            {
-                return Failure(original, "Appending exceeds the supported time range.");
-            }
+            return $"Imported track '{track.Name}' has no known duration.";
         }
 
-        Renumber(chapters);
-        long duration;
+        if (!TryAppendChapters(track.Chapters, chapters, appendOffset))
+        {
+            return "Appending exceeds the supported time range.";
+        }
+
+        var trackSegments = track.Segments.IsEmpty
+            ? [EditableChapterSegment.Create(
+                    ChapterTrackId.New(), track.Id.Value.ToString("N"), track.Name, 0,
+                    ChapterDuration.FromTicks(trackDuration.Value), track.FrameRate, imported.ImportFormat, imported.SourceName)]
+            : track.Segments;
+        if (!TryAppendSegments(trackSegments, segments, appendOffset))
+        {
+            return "Appending segment boundaries exceeds the supported time range.";
+        }
+
         try
         {
-            duration = checked(current.Duration.Ticks + importedDuration);
+            appendOffset = checked(appendOffset + trackDuration.Value);
+            importedDuration = checked(importedDuration + trackDuration.Value);
+            return null;
+        }
+        catch (OverflowException)
+        {
+            return "Appending exceeds the supported time range.";
+        }
+    }
+
+    private static bool TryAppendChapters(
+        IEnumerable<EditableChapter> source,
+        ImmutableArray<EditableChapter>.Builder target,
+        long offset)
+    {
+        try
+        {
+            foreach (var chapter in source)
+            {
+                target.Add(chapter with
+                {
+                    Id = ChapterId.New(),
+                    StartTicks = checked(chapter.StartTicks + offset),
+                    EndTicks = chapter.EndTicks is long end ? checked(end + offset) : null
+                });
+            }
+
+            return true;
+        }
+        catch (OverflowException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryAppendSegments(
+        IEnumerable<EditableChapterSegment> source,
+        ImmutableArray<EditableChapterSegment>.Builder target,
+        long offset)
+    {
+        try
+        {
+            foreach (var segment in source)
+            {
+                target.Add(segment with
+                {
+                    Id = Guid.NewGuid(),
+                    SourceTrackId = ChapterTrackId.New(),
+                    StartTicks = checked(segment.StartTicks + offset)
+                });
+            }
+
+            return true;
+        }
+        catch (OverflowException)
+        {
+            return false;
+        }
+    }
+
+    private static ChapterCandidateBuildResult CreateAppendCandidate(
+        EditableChapterDocument original,
+        EditableChapterDocument current,
+        EditableChapterTrack currentTrack,
+        ImmutableArray<EditableChapter>.Builder chapters,
+        ImmutableArray<EditableChapterSegment>.Builder segments,
+        long importedDuration)
+    {
+        try
+        {
+            var duration = checked(current.Duration.Ticks + importedDuration);
+            var combined = new EditableChapterTrack(currentTrack.Id, currentTrack.Name, chapters, segments);
+            var candidate = new EditableChapterDocument(
+                current.Id,
+                current.Title,
+                current.SourceName,
+                current.ImportFormat,
+                ChapterDuration.FromTicks(duration),
+                [combined]);
+            return Succeed(original, candidate);
         }
         catch (OverflowException)
         {
             return Failure(original, "Appending exceeds the supported time range.");
         }
-
-        var combined = new EditableChapterTrack(currentTrack.Id, currentTrack.Name, chapters, segments);
-        var candidate = new EditableChapterDocument(
-            current.Id,
-            current.Title,
-            current.SourceName,
-            current.ImportFormat,
-            ChapterDuration.FromTicks(duration),
-            [combined]);
-        return Succeed(original, candidate);
     }
 
     private static IEnumerable<FrameRateValue> EffectiveRates(EditableChapterDocument document, EditableChapterTrack track) =>

@@ -123,28 +123,42 @@ public sealed class ConvertCliCommand
 
         if (FrameRate is { } numeric)
         {
-            if (!FrameRateValue.TryFromDouble(numeric, metadata: false, out var normalized, out _))
-            {
-                return false;
-            }
-
-            rate = normalized;
+            return TryResolveNumericFrameRate(numeric, out rate);
         }
-        else if (FrameRateRatio is { } text)
+        if (FrameRateRatio is { } text)
         {
             errorKey = "Cli.Error.FrameRateRatio";
-            var components = text.Split('/');
-            if (components.Length != 2
-                || !long.TryParse(components[0], NumberStyles.None, CultureInfo.InvariantCulture, out var numerator)
-                || !long.TryParse(components[1], NumberStyles.None, CultureInfo.InvariantCulture, out var denominator)
-                || numerator <= 0 || denominator <= 0)
-            {
-                return false;
-            }
-
-            rate = FrameRateValue.Rational(numerator, denominator);
+            return TryResolveRationalFrameRate(text, out rate);
         }
 
+        return true;
+    }
+
+    private static bool TryResolveNumericFrameRate(double value, out FrameRateValue? rate)
+    {
+        if (!FrameRateValue.TryFromDouble(value, metadata: false, out var normalized, out _))
+        {
+            rate = null;
+            return false;
+        }
+
+        rate = normalized;
+        return true;
+    }
+
+    private static bool TryResolveRationalFrameRate(string value, out FrameRateValue? rate)
+    {
+        var components = value.Split('/');
+        if (components.Length != 2
+            || !long.TryParse(components[0], NumberStyles.None, CultureInfo.InvariantCulture, out var numerator)
+            || !long.TryParse(components[1], NumberStyles.None, CultureInfo.InvariantCulture, out var denominator)
+            || numerator <= 0 || denominator <= 0)
+        {
+            rate = null;
+            return false;
+        }
+
+        rate = FrameRateValue.Rational(numerator, denominator);
         return true;
     }
 }
