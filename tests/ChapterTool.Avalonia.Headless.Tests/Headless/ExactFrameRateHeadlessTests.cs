@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Models;
@@ -14,6 +15,57 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class ExactFrameRateHeadlessTests
 {
+    [AvaloniaFact]
+    public async Task Frame_time_frame_edits_commit_and_round_trip_through_history()
+    {
+        var source = new ChapterSet("Custom", "custom.txt", ChapterImportFormat.Ogm, FrameRateValue.Rational(25, 1),
+            TimeSpan.FromSeconds(30),
+            [new Chapter(1, TimeSpan.Zero, "First"), new Chapter(2, TimeSpan.FromSeconds(10), "Second"),
+             new Chapter(3, TimeSpan.FromSeconds(20), "Third")]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult("custom.txt",
+            new ChapterImportEntry("custom", "Custom", source)));
+        await host.LoadAsync("custom.txt");
+        var content = host.ViewModel.Workspace.ContentSession!;
+
+        await host.ViewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(0, "25"));
+        Assert.Equal(TimeSpan.TicksPerSecond, content.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+        await host.ViewModel.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "00:00:02.000"));
+        Assert.Equal(2 * TimeSpan.TicksPerSecond, content.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+        await host.ViewModel.EditFrameCommand.ExecuteAsync(new ChapterCellEdit(0, "25"));
+
+        Assert.Equal(TimeSpan.TicksPerSecond, content.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+        await host.ViewModel.UndoCommand.ExecuteAsync();
+        Assert.Equal(2 * TimeSpan.TicksPerSecond, content.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+        await host.ViewModel.RedoCommand.ExecuteAsync();
+        Assert.Equal(TimeSpan.TicksPerSecond, content.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+    }
+
+    [AvaloniaFact]
+    public async Task Normalize_delete_commits_and_round_trips_through_history()
+    {
+        var source = new ChapterSet("Custom", "custom.txt", ChapterImportFormat.Ogm, FrameRateValue.Rational(25, 1),
+            TimeSpan.FromSeconds(30),
+            [new Chapter(1, TimeSpan.Zero, "First"), new Chapter(2, TimeSpan.FromSeconds(10), "Second"),
+             new Chapter(3, TimeSpan.FromSeconds(20), "Third")]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult("custom.txt",
+            new ChapterImportEntry("custom", "Custom", source)));
+        await host.LoadAsync("custom.txt");
+        host.ViewModel.ApplyEditingOptions(new ChapterEditingOptions(ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize));
+        var content = host.ViewModel.Workspace.ContentSession!;
+
+        Assert.Equal(ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize, host.ViewModel.EditingOptions.DeleteRowsTiming);
+        await host.ViewModel.DeleteCommand.ExecuteAsync(new HashSet<int> { 0 });
+        Assert.Equal(new[] { 0L, 10 * TimeSpan.TicksPerSecond },
+            content.Snapshot.Document.Tracks[0].Chapters.Select(static chapter => chapter.StartTicks));
+
+        await host.ViewModel.UndoCommand.ExecuteAsync();
+        Assert.Equal(new[] { 0L, 10 * TimeSpan.TicksPerSecond, 20 * TimeSpan.TicksPerSecond },
+            content.Snapshot.Document.Tracks[0].Chapters.Select(static chapter => chapter.StartTicks));
+        await host.ViewModel.RedoCommand.ExecuteAsync();
+        Assert.Equal(new[] { 0L, 10 * TimeSpan.TicksPerSecond },
+            content.Snapshot.Document.Tracks[0].Chapters.Select(static chapter => chapter.StartTicks));
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]

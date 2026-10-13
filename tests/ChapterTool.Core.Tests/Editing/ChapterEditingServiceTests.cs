@@ -38,6 +38,23 @@ public sealed class ChapterEditingServiceTests
     }
 
     [Fact]
+    public void EditFrame_updates_time_when_retained_frame_text_is_stale()
+    {
+        var rate = FrameRateValue.Rational(25, 1);
+        var frameEdit = service.EditFrame(Sample(), 1, "25", rate);
+        Assert.Equal(TimeSpan.FromSeconds(1), frameEdit.ChapterSet.Chapters[1].StartTime);
+
+        var timeEdit = service.EditTime(frameEdit.ChapterSet, 1, "00:00:02.000");
+        Assert.Equal(TimeSpan.FromSeconds(2), timeEdit.ChapterSet.Chapters[1].StartTime);
+        Assert.Equal("25", timeEdit.ChapterSet.Chapters[1].FramesInfo);
+
+        var frameEditAgain = service.EditFrame(timeEdit.ChapterSet, 1, "25", rate);
+        Assert.Equal(TimeSpan.FromSeconds(1), frameEditAgain.ChapterSet.Chapters[1].StartTime);
+        Assert.Equal("25", frameEditAgain.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Empty(frameEditAgain.Diagnostics);
+    }
+
+    [Fact]
     public void EditFrame_preserves_ticks_when_unrounded_decimal_frame_text_is_committed_unchanged()
     {
         const string frameText = "4495.000000999000999000999001";
@@ -47,7 +64,7 @@ public sealed class ChapterEditingServiceTests
             Chapters = sample.Chapters.Select((chapter, index) => index == 1
                 ? chapter with
                 {
-                    StartTime = TimeSpan.FromTicks(1_499_833_334),
+                    StartTime = TimeSpan.FromTicks(1_499_831_667),
                     FramesInfo = frameText,
                     FrameAccuracy = FrameAccuracy.Neutral
                 }
@@ -57,7 +74,7 @@ public sealed class ChapterEditingServiceTests
         var result = service.EditFrame(source, 1, frameText, FrameRateValue.Rational(30_000, 1_001));
 
         Assert.Same(source, result.ChapterSet);
-        Assert.Equal(1_499_833_334, result.ChapterSet.Chapters[1].StartTime.Ticks);
+        Assert.Equal(1_499_831_667, result.ChapterSet.Chapters[1].StartTime.Ticks);
         Assert.Equal(frameText, result.ChapterSet.Chapters[1].FramesInfo);
         Assert.Empty(result.Diagnostics);
     }
@@ -72,7 +89,7 @@ public sealed class ChapterEditingServiceTests
             Chapters = sample.Chapters.Select((chapter, index) => index == 1
                 ? chapter with
                 {
-                    StartTime = TimeSpan.FromTicks(1_499_833_334),
+                    StartTime = TimeSpan.FromTicks(1_499_831_667),
                     FramesInfo = frameText,
                     FrameAccuracy = FrameAccuracy.Neutral
                 }
@@ -82,7 +99,7 @@ public sealed class ChapterEditingServiceTests
         var result = service.EditFrame(source, 1, frameText, FrameRateValue.Approximate(30000m / 1001m));
 
         Assert.Same(source, result.ChapterSet);
-        Assert.Equal(1_499_833_334, result.ChapterSet.Chapters[1].StartTime.Ticks);
+        Assert.Equal(1_499_831_667, result.ChapterSet.Chapters[1].StartTime.Ticks);
         Assert.Equal(frameText, result.ChapterSet.Chapters[1].FramesInfo);
         Assert.Empty(result.Diagnostics);
     }

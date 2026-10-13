@@ -103,7 +103,6 @@ public sealed partial class ChapterContentCandidateBuilder(
             var shift = retained[0].StartTicks;
             chapters = chapters.Select(chapter => chapter with
             {
-                StartTicks = checked(chapter.StartTicks - shift),
                 EndTicks = chapter.EndTicks is long end ? checked(end - shift) : null
             }).ToImmutableArray();
         }

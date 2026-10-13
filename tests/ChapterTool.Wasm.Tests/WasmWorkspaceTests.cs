@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Wasm.Services;
@@ -8,6 +9,53 @@ namespace ChapterTool.Wasm.Tests;
 [SupportedOSPlatform("browser")]
 public sealed class WasmWorkspaceTests
 {
+    [Fact]
+    public async Task Frame_time_frame_edits_commit_and_round_trip_through_history()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("custom.txt", "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8.ToArray());
+        workspace.SelectedFrameRateIndex = workspace.FrameRateChoices.Single(choice =>
+            choice.Option.Rate == FrameRateValue.Rational(25, 1)).Index;
+
+        var frameDraft = workspace.BeginCellEdit(0, ChapterCellField.Frame)!;
+        Assert.Null(await workspace.CommitCellEditAsync(frameDraft, "25"));
+        Assert.Equal("00:00:01.000", workspace.Rows[0].TimeText);
+
+        var timeDraft = workspace.BeginCellEdit(0, ChapterCellField.StartTime)!;
+        Assert.Null(await workspace.CommitCellEditAsync(timeDraft, "00:00:02.000"));
+        Assert.Equal("00:00:02.000", workspace.Rows[0].TimeText);
+
+        var frameDraftAgain = workspace.BeginCellEdit(0, ChapterCellField.Frame)!;
+        Assert.NotEqual("25", frameDraftAgain.OriginalValue);
+        Assert.Null(await workspace.CommitCellEditAsync(frameDraftAgain, "25"));
+        Assert.Equal("00:00:01.000", workspace.Rows[0].TimeText);
+
+        await workspace.UndoAsync();
+        Assert.Equal("00:00:02.000", workspace.Rows[0].TimeText);
+        await workspace.RedoAsync();
+        Assert.Equal("00:00:01.000", workspace.Rows[0].TimeText);
+    }
+
+    [Fact]
+    public async Task NormalizeDeleteCommitsAndRoundTripsThroughHistory()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("chapters.txt", "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8.ToArray());
+        workspace.EditingOptions = workspace.EditingOptions with { DeleteRowsTiming = DeleteRowsTimingMode.Normalize };
+        workspace.SelectRow(0);
+
+        workspace.DeleteSelectedRows();
+        Assert.Equal(new[] { "00:00:00.000", "00:00:10.000" },
+            workspace.Rows.Select(static row => row.TimeText));
+
+        await workspace.UndoAsync();
+        Assert.Equal(new[] { "00:00:00.000", "00:00:10.000", "00:00:20.000" },
+            workspace.Rows.Select(static row => row.TimeText));
+        await workspace.RedoAsync();
+        Assert.Equal(new[] { "00:00:00.000", "00:00:10.000" },
+            workspace.Rows.Select(static row => row.TimeText));
+    }
+
     [Fact]
     public async Task LoadAndReloadRestoresLastSuccessfulSource()
     {

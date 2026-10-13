@@ -50,11 +50,6 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
             return InvalidIndex(info, index);
         }
 
-        if (string.Equals(text, chapter.FramesInfo, StringComparison.Ordinal))
-        {
-            return new ChapterEditResult(info, []);
-        }
-
         var rate = framesPerSecond;
         if (!rate.IsKnown)
         {
@@ -78,11 +73,18 @@ public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) :
             return new ChapterEditResult(info, [converted.Diagnostic!]);
         }
 
+        var normalizedFrameText = frame.ToString("G29", CultureInfo.InvariantCulture);
+        if (converted.Value == chapter.StartTime.Ticks
+            && string.Equals(normalizedFrameText, chapter.FramesInfo, StringComparison.Ordinal))
+        {
+            return new ChapterEditResult(info, []);
+        }
+
         var chapters = info.Chapters.ToList();
         chapters[index] = chapter with
         {
             StartTime = TimeSpan.FromTicks(converted.Value),
-            FramesInfo = frame.ToString("G29", CultureInfo.InvariantCulture),
+            FramesInfo = normalizedFrameText,
             FrameAccuracy = FrameAccuracy.Accurate
         };
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);

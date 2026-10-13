@@ -141,6 +141,31 @@ public sealed class ChapterContentCandidateBuilderTests
     }
 
     [Fact]
+    public async Task Normalize_delete_shifts_retained_timing_once_and_round_trips_through_history()
+    {
+        var source = CreateDocument();
+        var session = new SessionState(source);
+        var before = session.Snapshot;
+        var first = source.Tracks[0].Chapters[0];
+        var retained = source.Tracks[0].Chapters[1];
+        var preview = ChapterContentOperationSession.Prepare(session, "normalize delete", document =>
+            Builder().Delete(document, new HashSet<ChapterId> { first.Id }, new ChapterEditingOptions(DeleteRowsTimingMode.Normalize)));
+
+        Assert.True(preview.IsValid, string.Join("; ", preview.Errors));
+        var candidate = Assert.Single(preview.Candidate.Tracks[0].Chapters);
+        Assert.Equal(retained.Id, candidate.Id);
+        Assert.Equal(0, candidate.StartTicks);
+        Assert.Equal(TimeSpan.FromSeconds(5).Ticks, candidate.EndTicks);
+
+        var committed = await ChapterContentOperationSession.ApplyAsync(session, preview);
+        Assert.Equal(TransactionOutcomeKind.Committed, committed.Kind);
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, (await session.UndoAsync()).Kind);
+        AssertDocumentValues(before.Document, session.Snapshot.Document);
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, (await session.RedoAsync()).Kind);
+        Assert.Equal(preview.Candidate.Tracks[0].Chapters, session.Snapshot.Document.Tracks[0].Chapters);
+    }
+
+    [Fact]
     public async Task Preview_from_stale_snapshot_cannot_apply()
     {
         var session = new SessionState(CreateDocument());
