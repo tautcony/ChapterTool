@@ -192,6 +192,55 @@ public sealed class SessionStateTests
     }
 
     [Fact]
+    public async Task Per_track_frame_rate_change_is_committed_when_document_rate_stays_unknown()
+    {
+        var firstRate = FrameRateValue.Rational(24, 1);
+        var secondRate = FrameRateValue.Rational(25, 1);
+        var updatedRate = FrameRateValue.Rational(30, 1);
+        var document = new EditableChapterDocument(
+            ChapterDocumentId.New(),
+            "Title",
+            null,
+            ChapterImportFormat.Unknown,
+            ChapterDuration.Unknown,
+            [
+                new EditableChapterTrack(ChapterTrackId.New(), "First", [], frameRate: firstRate),
+                new EditableChapterTrack(ChapterTrackId.New(), "Second", [], frameRate: secondRate)
+            ]);
+        Assert.Equal(FrameRateValue.Unknown, document.FrameRate);
+
+        var session = new SessionState(document);
+        var before = session.Snapshot;
+        var outcome = await session.ExecuteAsync(
+            before.BaseToken,
+            Guid.NewGuid(),
+            "change first track frame rate",
+            (current, _) =>
+            {
+                var track = current.Tracks[0];
+                var updatedTrack = new EditableChapterTrack(
+                    track.Id,
+                    track.Name,
+                    track.Chapters,
+                    track.Segments,
+                    updatedRate);
+                var candidate = new EditableChapterDocument(
+                    current.Id,
+                    current.Title,
+                    current.SourceName,
+                    current.ImportFormat,
+                    current.Duration,
+                    current.Tracks.SetItem(0, updatedTrack));
+                return ValueTask.FromResult(candidate);
+            });
+
+        Assert.Equal(TransactionOutcomeKind.Committed, outcome.Kind);
+        Assert.Equal(1, outcome.Snapshot.MutationRevision);
+        Assert.Equal(updatedRate, outcome.Snapshot.Document.Tracks[0].FrameRate);
+        Assert.Equal(FrameRateValue.Unknown, outcome.Snapshot.Document.FrameRate);
+    }
+
+    [Fact]
     public async Task Legacy_non_structural_edit_adapter_preserves_chapter_identity_in_transaction()
     {
         var legacy = new ChapterSet(

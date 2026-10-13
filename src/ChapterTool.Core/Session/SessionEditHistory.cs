@@ -191,12 +191,11 @@ internal sealed record SessionHistoryTree(
         while (updatedNodes[childId].ParentId is Guid parentId)
         {
             var parent = updatedNodes[parentId];
-            if (parent.PreferredChildId == childId)
+            if (parent.PreferredChildId != childId)
             {
-                break;
+                updatedNodes = updatedNodes.SetItem(parentId, parent with { PreferredChildId = childId });
             }
 
-            updatedNodes = updatedNodes.SetItem(parentId, parent with { PreferredChildId = childId });
             childId = parentId;
         }
 

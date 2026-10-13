@@ -70,6 +70,34 @@ public sealed class SessionEditHistoryTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task Navigating_to_deep_history_node_updates_every_ancestor_branch_preference()
+    {
+        var session = new SessionState(CreateDocument([CreateChapter(1, "A")]));
+        _ = await CommitAsync(session, document => ChangeChapter(document, 0, name: "First"), "First");
+        _ = await CommitAsync(session, document => ChangeChapter(document, 0, name: "Selected branch"), "Selected branch");
+        _ = await CommitAsync(session, document => ChangeChapter(document, 0, name: "Selected leaf"), "Selected leaf");
+        var selectedLeafId = session.GetHistorySnapshot().CursorId;
+
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, (await session.UndoAsync()).Kind);
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, (await session.UndoAsync()).Kind);
+        _ = await CommitAsync(session, document => ChangeChapter(document, 0, name: "Other branch"), "Other branch");
+
+        var navigateToSelectedLeaf = await session.NavigateToAsync(selectedLeafId);
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, navigateToSelectedLeaf.Kind);
+        Assert.Equal("Selected leaf", navigateToSelectedLeaf.Snapshot.Document.Tracks[0].Chapters[0].Name);
+
+        var rootId = session.GetHistorySnapshot().RootId;
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, (await session.NavigateToAsync(rootId)).Kind);
+        var redoFirst = await session.RedoAsync();
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, redoFirst.Kind);
+        Assert.Equal("First", redoFirst.Snapshot.Document.Tracks[0].Chapters[0].Name);
+
+        var redoSelectedBranch = await session.RedoAsync();
+        Assert.Equal(HistoryNavigationOutcomeKind.Committed, redoSelectedBranch.Kind);
+        Assert.Equal("Selected branch", redoSelectedBranch.Snapshot.Document.Tracks[0].Chapters[0].Name);
+    }
+
+    [Fact]
     public async Task Inspection_returns_parent_relative_values_without_moving_the_cursor()
     {
         var initial = CreateDocument([CreateChapter(1, "A")]);
