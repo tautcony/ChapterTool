@@ -552,27 +552,10 @@ public sealed class SessionState
                 return HistoryOutcome(HistoryNavigationOutcomeKind.Cancelled, version, []);
             }
             var tree = version.History;
-            var targetId = selectTarget(tree);
-            if (targetId is null)
+            var targetError = ValidateNavigationTarget(tree, version, selectTarget, requestedId, requireDirectChild, out var targetId);
+            if (targetError is not null)
             {
-                var kind = requestedId is null ? HistoryNavigationOutcomeKind.NoChange : HistoryNavigationOutcomeKind.NotFound;
-                return HistoryOutcome(kind, version, kind == HistoryNavigationOutcomeKind.NoChange ? [] : ["The requested history node is not a child of the current node."]);
-            }
-
-            if (!tree.Nodes.ContainsKey(targetId.Value))
-            {
-                return HistoryOutcome(HistoryNavigationOutcomeKind.NotFound, version, ["The requested history node does not exist."]);
-            }
-
-            if (targetId == tree.CursorId)
-            {
-                return HistoryOutcome(HistoryNavigationOutcomeKind.NoChange, version, []);
-            }
-
-            if ((requestedId is Guid requested && requested != targetId)
-                || (requireDirectChild && !tree.Nodes[tree.CursorId].Children.Contains(targetId.Value)))
-            {
-                return HistoryOutcome(HistoryNavigationOutcomeKind.NotFound, version, ["The requested history node is not a child of the current node."]);
+                return targetError;
             }
 
             if (version.MutationRevision == long.MaxValue)
@@ -580,36 +563,80 @@ public sealed class SessionState
                 return HistoryOutcome(HistoryNavigationOutcomeKind.ResourceFailure, version, ["The session mutation revision is exhausted."]);
             }
 
-            try
-            {
-                historyFailureInjector?.Invoke(SessionHistoryFailurePoint.Reconstruction);
-                var document = Reconstruct(tree, version.Document, tree.CursorId, targetId.Value, cancellationToken);
-                var nextIdentity = Guid.NewGuid();
-                var nextRevision = version.MutationRevision + 1;
-                var nextTree = tree.MoveTo(targetId.Value);
-                var nextVersion = version with
-                {
-                    Document = document,
-                    StateIdentity = nextIdentity,
-                    MutationRevision = nextRevision,
-                    History = nextTree
-                };
-                var outcome = new HistoryNavigationOutcome(
-                    HistoryNavigationOutcomeKind.Committed,
-                    new SessionSnapshot(document, nextIdentity, nextRevision),
-                    targetId.Value,
-                    []);
-                Volatile.Write(ref current, nextVersion);
-                return outcome;
-            }
-            catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
-            {
-                return HistoryOutcome(HistoryNavigationOutcomeKind.ResourceFailure, version, ["Resources were exhausted before history navigation could be published."]);
-            }
+            return ReconstructAndPublish(version, tree, targetId!.Value, cancellationToken);
         }
         finally
         {
             commandQueue.Release();
+        }
+    }
+
+    private static HistoryNavigationOutcome? ValidateNavigationTarget(
+        SessionHistoryTree tree,
+        SessionVersion version,
+        Func<SessionHistoryTree, Guid?> selectTarget,
+        Guid? requestedId,
+        bool requireDirectChild,
+        out Guid? targetId)
+    {
+        targetId = selectTarget(tree);
+        if (targetId is null)
+        {
+            var kind = requestedId is null ? HistoryNavigationOutcomeKind.NoChange : HistoryNavigationOutcomeKind.NotFound;
+            return HistoryOutcome(kind, version, kind == HistoryNavigationOutcomeKind.NoChange ? [] : ["The requested history node is not a child of the current node."]);
+        }
+
+        if (!tree.Nodes.ContainsKey(targetId.Value))
+        {
+            return HistoryOutcome(HistoryNavigationOutcomeKind.NotFound, version, ["The requested history node does not exist."]);
+        }
+
+        if (targetId == tree.CursorId)
+        {
+            return HistoryOutcome(HistoryNavigationOutcomeKind.NoChange, version, []);
+        }
+
+        if ((requestedId is Guid requested && requested != targetId)
+            || (requireDirectChild && !tree.Nodes[tree.CursorId].Children.Contains(targetId.Value)))
+        {
+            return HistoryOutcome(HistoryNavigationOutcomeKind.NotFound, version, ["The requested history node is not a child of the current node."]);
+        }
+
+        return null;
+    }
+
+    private HistoryNavigationOutcome ReconstructAndPublish(
+        SessionVersion version,
+        SessionHistoryTree tree,
+        Guid targetId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            historyFailureInjector?.Invoke(SessionHistoryFailurePoint.Reconstruction);
+            var document = Reconstruct(tree, version.Document, tree.CursorId, targetId, cancellationToken);
+            var nextIdentity = Guid.NewGuid();
+            var nextRevision = version.MutationRevision + 1;
+            var nextTree = tree.MoveTo(targetId);
+            var nextVersion = version with
+            {
+                Document = document,
+                StateIdentity = nextIdentity,
+                MutationRevision = nextRevision,
+                History = nextTree
+            };
+            var outcome = new HistoryNavigationOutcome(
+                HistoryNavigationOutcomeKind.Committed,
+                new SessionSnapshot(document, nextIdentity, nextRevision),
+                targetId,
+                []);
+            Volatile.Write(ref current, nextVersion);
+            return outcome;
+        }
+        catch (Exception exception) when (exception is OutOfMemoryException or SessionResourceFailureException)
+        {
+            return HistoryOutcome(HistoryNavigationOutcomeKind.ResourceFailure, version,
+                ["Resources were exhausted before history navigation could be published."]);
         }
     }
 

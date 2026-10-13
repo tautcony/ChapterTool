@@ -141,18 +141,12 @@ internal static class DvdIfoMetadataReader
 
     private static ChapterImportMediaTrack? ReadVideoTrack(ReadOnlySpan<byte> attributes)
     {
-        var coding = attributes[0] >> 6;
         var standard = attributes[0] >> 4 & 0x03;
         var aspectCode = attributes[0] >> 2 & 0x03;
         var sizeCode = attributes[1] >> 2 & 0x03;
-        var codec = coding switch { 0 => "MPEG-1", 1 => "MPEG-2", _ => null };
+        var codec = ResolveVideoCodec(attributes[0] >> 6);
         var standardName = standard switch { 0 => "NTSC", 1 => "PAL", _ => null };
-        var dimensions = standard switch
-        {
-            0 => sizeCode switch { 0 => "720x480", 1 => "704x480", 2 => "352x480", _ => "352x240" },
-            1 => sizeCode switch { 0 => "720x576", 1 => "704x576", 2 => "352x576", _ => "352x288" },
-            _ => null
-        };
+        var dimensions = ResolveVideoDimensions(standard, sizeCode);
         var aspect = aspectCode switch { 0 => "4:3", 3 => "16:9", _ => null };
         if (codec is null || standardName is null || dimensions is null)
         {
@@ -171,38 +165,12 @@ internal static class DvdIfoMetadataReader
             return null;
         }
 
-        var codec = (attributes[0] >> 5) switch
-        {
-            0 => "AC3",
-            2 => "MPEG-1 Audio",
-            3 => "MPEG-2 Audio",
-            4 => "LPCM",
-            6 => "DTS",
-            _ => "DVD audio"
-        };
+        var codec = ResolveAudioCodec(attributes[0] >> 5);
         var language = ((attributes[0] >> 2) & 0x03) == 1
             ? NormalizeLanguage(attributes[2], attributes[3])
             : null;
-        var channelCountCode = attributes[1] & 0x07;
-        var channels = channelCountCode switch
-        {
-            0 => "mono",
-            1 => "stereo",
-            2 => "3ch",
-            3 => "4ch",
-            4 => "5ch",
-            5 => "6ch",
-            6 => "7ch",
-            7 => "8ch",
-            _ => null
-        };
-        var sampleRate = ((attributes[1] >> 4) & 0x03) switch
-        {
-            0 => "48kHz",
-            1 => "96kHz",
-            2 => "192kHz",
-            _ => null
-        };
+        var channels = ResolveChannelCount(attributes[1] & 0x07);
+        var sampleRate = ResolveSampleRate((attributes[1] >> 4) & 0x03);
         var parts = new List<string> { codec };
         if (language is not null)
         {
@@ -221,7 +189,7 @@ internal static class DvdIfoMetadataReader
 
         if (codec == "LPCM")
         {
-            var bitDepth = ((attributes[1] >> 6) & 0x03) switch { 0 => "16-bit", 1 => "20-bit", 2 => "24-bit", _ => null };
+            var bitDepth = ResolveBitDepth((attributes[1] >> 6) & 0x03);
             if (bitDepth is not null)
             {
                 parts.Add(bitDepth);
@@ -230,6 +198,40 @@ internal static class DvdIfoMetadataReader
 
         return new ChapterImportMediaTrack("audio", $"Audio {number}: {string.Join(", ", parts)}", codec, Language: language, Channels: channels, SampleRate: sampleRate);
     }
+
+    private static string? ResolveVideoCodec(int coding) => coding switch { 0 => "MPEG-1", 1 => "MPEG-2", _ => null };
+
+    private static string? ResolveVideoDimensions(int standard, int sizeCode) => standard switch
+    {
+        0 => sizeCode switch { 0 => "720x480", 1 => "704x480", 2 => "352x480", _ => "352x240" },
+        1 => sizeCode switch { 0 => "720x576", 1 => "704x576", 2 => "352x576", _ => "352x288" },
+        _ => null
+    };
+
+    private static string ResolveAudioCodec(int coding) => coding switch
+    {
+        0 => "AC3",
+        2 => "MPEG-1 Audio",
+        3 => "MPEG-2 Audio",
+        4 => "LPCM",
+        6 => "DTS",
+        _ => "DVD audio"
+    };
+
+    private static string ResolveChannelCount(int channelCountCode) => channelCountCode switch
+    {
+        0 => "mono", 1 => "stereo", 2 => "3ch", 3 => "4ch", 4 => "5ch", 5 => "6ch", 6 => "7ch", _ => "8ch"
+    };
+
+    private static string? ResolveSampleRate(int sampleRateCode) => sampleRateCode switch
+    {
+        0 => "48kHz", 1 => "96kHz", 2 => "192kHz", _ => null
+    };
+
+    private static string? ResolveBitDepth(int bitDepthCode) => bitDepthCode switch
+    {
+        0 => "16-bit", 1 => "20-bit", 2 => "24-bit", _ => null
+    };
 
     private static ChapterImportMediaTrack? ReadSubtitleTrack(int number, ReadOnlySpan<byte> attributes)
     {

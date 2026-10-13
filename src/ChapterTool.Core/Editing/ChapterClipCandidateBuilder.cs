@@ -31,54 +31,10 @@ public static class ChapterClipCandidateBuilder
         var segments = ImmutableArray.CreateBuilder<EditableChapterSegment>();
         foreach (var track in tracks)
         {
-            var duration = TrackDuration(source, track);
-            if (duration is null)
+            var error = AppendTrack(source, track, ref offset, chapters, segments);
+            if (error is not null)
             {
-                return Failure(source, $"Track '{track.Name}' has no known duration for boundary placement.");
-            }
-
-            foreach (var chapter in track.Chapters)
-            {
-                try
-                {
-                    chapters.Add(chapter with { StartTicks = checked(chapter.StartTicks + offset), EndTicks = chapter.EndTicks is long end ? checked(end + offset) : null });
-                }
-                catch (OverflowException)
-                {
-                    return Failure(source, "Merging the selected tracks exceeds the supported time range.");
-                }
-            }
-
-            var sourceSegments = track.Segments.IsEmpty
-                ? [EditableChapterSegment.Create(
-                    track.Id,
-                    track.Id.Value.ToString("N"),
-                    track.Name,
-                    0,
-                    ChapterDuration.FromTicks(duration.Value),
-                    track.FrameRate,
-                    source.ImportFormat,
-                    source.SourceName)]
-                : track.Segments;
-            foreach (var segment in sourceSegments)
-            {
-                try
-                {
-                    segments.Add(segment with { StartTicks = checked(segment.StartTicks + offset) });
-                }
-                catch (OverflowException)
-                {
-                    return Failure(source, "Merging the selected boundaries exceeds the supported time range.");
-                }
-            }
-
-            try
-            {
-                offset = checked(offset + duration.Value);
-            }
-            catch (OverflowException)
-            {
-                return Failure(source, "Merging the selected tracks exceeds the supported time range.");
+                return Failure(source, error);
             }
         }
 
@@ -95,6 +51,62 @@ public static class ChapterClipCandidateBuilder
             ChapterDuration.FromTicks(totalDuration),
             output);
         return Succeed(source, candidate);
+    }
+
+    private static string? AppendTrack(
+        EditableChapterDocument source,
+        EditableChapterTrack track,
+        ref long offset,
+        ImmutableArray<EditableChapter>.Builder chapters,
+        ImmutableArray<EditableChapterSegment>.Builder segments)
+    {
+        var duration = TrackDuration(source, track);
+        if (duration is null)
+        {
+            return $"Track '{track.Name}' has no known duration for boundary placement.";
+        }
+
+        foreach (var chapter in track.Chapters)
+        {
+            try
+            {
+                chapters.Add(chapter with
+                {
+                    StartTicks = checked(chapter.StartTicks + offset),
+                    EndTicks = chapter.EndTicks is long end ? checked(end + offset) : null
+                });
+            }
+            catch (OverflowException)
+            {
+                return "Merging the selected tracks exceeds the supported time range.";
+            }
+        }
+
+        var sourceSegments = track.Segments.IsEmpty
+            ? [EditableChapterSegment.Create(track.Id, track.Id.Value.ToString("N"), track.Name, 0,
+                ChapterDuration.FromTicks(duration.Value), track.FrameRate, source.ImportFormat, source.SourceName)]
+            : track.Segments;
+        foreach (var segment in sourceSegments)
+        {
+            try
+            {
+                segments.Add(segment with { StartTicks = checked(segment.StartTicks + offset) });
+            }
+            catch (OverflowException)
+            {
+                return "Merging the selected boundaries exceeds the supported time range.";
+            }
+        }
+
+        try
+        {
+            offset = checked(offset + duration.Value);
+            return null;
+        }
+        catch (OverflowException)
+        {
+            return "Merging the selected tracks exceeds the supported time range.";
+        }
     }
 
     /// <summary>Splits a current track at its stored boundaries without changing chapter identities.</summary>

@@ -258,47 +258,10 @@ internal sealed record DomainChangeSet(
         {
             beforeTracks.TryGetValue(trackId, out var oldTrack);
             afterTracks.TryGetValue(trackId, out var newTrack);
-            if (oldTrack is null || newTrack is null)
+            var change = CreateTrackChange(trackId, oldTrack, newTrack);
+            if (change is not null)
             {
-                changes.Add(new TrackChange(trackId, oldTrack, newTrack, null, null, [], null, null, null, null));
-                continue;
-            }
-
-            var valueChanges = ImmutableArray.CreateBuilder<ChapterChange>();
-            var oldChapters = oldTrack.Chapters.ToDictionary(chapter => chapter.Id);
-            var newChapters = newTrack.Chapters.ToDictionary(chapter => chapter.Id);
-            foreach (var chapterId in oldChapters.Keys.Union(newChapters.Keys))
-            {
-                oldChapters.TryGetValue(chapterId, out var oldChapter);
-                newChapters.TryGetValue(chapterId, out var newChapter);
-                if (oldChapter != newChapter)
-                {
-                    valueChanges.Add(new ChapterChange(chapterId, oldChapter, newChapter));
-                }
-            }
-
-            var oldOrder = oldTrack.Chapters.Select(chapter => chapter.Id).ToImmutableArray();
-            var newOrder = newTrack.Chapters.Select(chapter => chapter.Id).ToImmutableArray();
-            var orderChanged = !oldOrder.AsSpan().SequenceEqual(newOrder.AsSpan());
-            if (!string.Equals(oldTrack.Name, newTrack.Name, StringComparison.Ordinal)
-                || oldTrack.FrameRate != newTrack.FrameRate
-                || !oldTrack.Segments.SequenceEqual(newTrack.Segments)
-                || valueChanges.Count != 0
-                || orderChanged)
-            {
-                changes.Add(new TrackChange(
-                    trackId,
-                    null,
-                    null,
-                    oldTrack.Name,
-                    newTrack.Name,
-                    valueChanges.ToImmutable(),
-                    orderChanged ? oldOrder : null,
-                    orderChanged ? newOrder : null,
-                    oldTrack.Segments,
-                    newTrack.Segments,
-                    oldTrack.FrameRate,
-                    newTrack.FrameRate));
+                changes.Add(change);
             }
         }
 
@@ -311,6 +274,47 @@ internal sealed record DomainChangeSet(
             changes.ToImmutable(),
             tracksReordered ? beforeOrder : null,
             tracksReordered ? afterOrder : null);
+    }
+
+    private static TrackChange? CreateTrackChange(ChapterTrackId trackId, EditableChapterTrack? before, EditableChapterTrack? after)
+    {
+        if (before is null || after is null)
+        {
+            return new TrackChange(trackId, before, after, null, null, [], null, null, null, null);
+        }
+
+        var chapterChanges = CreateChapterChanges(before, after);
+        var beforeOrder = before.Chapters.Select(static chapter => chapter.Id).ToImmutableArray();
+        var afterOrder = after.Chapters.Select(static chapter => chapter.Id).ToImmutableArray();
+        var orderChanged = !beforeOrder.AsSpan().SequenceEqual(afterOrder.AsSpan());
+        var hasChanges = !string.Equals(before.Name, after.Name, StringComparison.Ordinal)
+            || before.FrameRate != after.FrameRate
+            || !before.Segments.SequenceEqual(after.Segments)
+            || !chapterChanges.IsEmpty
+            || orderChanged;
+        return hasChanges
+            ? new TrackChange(trackId, null, null, before.Name, after.Name, chapterChanges,
+                orderChanged ? beforeOrder : null, orderChanged ? afterOrder : null,
+                before.Segments, after.Segments, before.FrameRate, after.FrameRate)
+            : null;
+    }
+
+    private static ImmutableArray<ChapterChange> CreateChapterChanges(EditableChapterTrack before, EditableChapterTrack after)
+    {
+        var beforeChapters = before.Chapters.ToDictionary(static chapter => chapter.Id);
+        var afterChapters = after.Chapters.ToDictionary(static chapter => chapter.Id);
+        var changes = ImmutableArray.CreateBuilder<ChapterChange>();
+        foreach (var chapterId in beforeChapters.Keys.Union(afterChapters.Keys))
+        {
+            beforeChapters.TryGetValue(chapterId, out var oldChapter);
+            afterChapters.TryGetValue(chapterId, out var newChapter);
+            if (oldChapter != newChapter)
+            {
+                changes.Add(new ChapterChange(chapterId, oldChapter, newChapter));
+            }
+        }
+
+        return changes.ToImmutable();
     }
 
     private static bool TryCreateValueOnlyChanges(
@@ -383,36 +387,7 @@ internal sealed record DomainChangeSet(
         var order = (forward ? AfterTrackOrder : BeforeTrackOrder) ?? document.Tracks.Select(track => track.Id).ToImmutableArray();
         var changes = TrackChanges.ToDictionary(change => change.Id);
         var tracks = document.Tracks.ToDictionary(track => track.Id);
-        var output = ImmutableArray.CreateBuilder<EditableChapterTrack>(order.Length);
-        foreach (var trackId in order)
-        {
-            if (changes.TryGetValue(trackId, out var change))
-            {
-                var replacement = forward ? change.AfterTrack : change.BeforeTrack;
-                if (replacement is not null)
-                {
-                    output.Add(replacement);
-                    continue;
-                }
-
-                if (change.BeforeTrack is not null || change.AfterTrack is not null)
-                {
-                    continue;
-                }
-
-                if (tracks.TryGetValue(trackId, out var currentTrack))
-                {
-                    output.Add(change.Apply(currentTrack, forward));
-                }
-
-                continue;
-            }
-
-            if (tracks.TryGetValue(trackId, out var unchangedTrack))
-            {
-                output.Add(unchangedTrack);
-            }
-        }
+        var output = ApplyTrackOrder(order, changes, tracks, forward);
 
         return new EditableChapterDocument(
             values.Id,
@@ -421,6 +396,45 @@ internal sealed record DomainChangeSet(
             values.ImportFormat,
             values.Duration,
             output.MoveToImmutable());
+    }
+
+    private static ImmutableArray<EditableChapterTrack>.Builder ApplyTrackOrder(
+        ImmutableArray<ChapterTrackId> order,
+        IReadOnlyDictionary<ChapterTrackId, TrackChange> changes,
+        IReadOnlyDictionary<ChapterTrackId, EditableChapterTrack> tracks,
+        bool forward)
+    {
+        var output = ImmutableArray.CreateBuilder<EditableChapterTrack>(order.Length);
+        foreach (var trackId in order)
+        {
+            var track = ResolveTrack(trackId, changes, tracks, forward);
+            if (track is not null)
+            {
+                output.Add(track);
+            }
+        }
+
+        return output;
+    }
+
+    private static EditableChapterTrack? ResolveTrack(
+        ChapterTrackId trackId,
+        IReadOnlyDictionary<ChapterTrackId, TrackChange> changes,
+        IReadOnlyDictionary<ChapterTrackId, EditableChapterTrack> tracks,
+        bool forward)
+    {
+        if (!changes.TryGetValue(trackId, out var change))
+        {
+            return tracks.GetValueOrDefault(trackId);
+        }
+
+        var replacement = forward ? change.AfterTrack : change.BeforeTrack;
+        if (replacement is not null || change.BeforeTrack is not null || change.AfterTrack is not null)
+        {
+            return replacement;
+        }
+
+        return tracks.TryGetValue(trackId, out var currentTrack) ? change.Apply(currentTrack, forward) : null;
     }
 }
 

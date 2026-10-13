@@ -419,42 +419,70 @@ public static class ExpressionPreviewProjector
         {
             oldSegments.TryGetValue(id, out var oldItem);
             newSegments.TryGetValue(id, out var newItem);
-            var oldValue = oldItem.segment;
-            var newValue = newItem.segment;
-            var ownerTrackName = newItem.track?.Name ?? oldItem.track?.Name ?? string.Empty;
-            var owner = newValue?.Name is { Length: > 0 } segmentName
-                ? $"{ownerTrackName} · {segmentName}"
-                : ownerTrackName;
-            if (oldValue is null || newValue is null)
-            {
-                Add(output, ExpressionPropertyOwnerKind.Segment, id, owner, "Presence", oldValue is not null, newValue is not null);
-                continue;
-            }
-
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "SourceTrackId", oldValue.SourceTrackId, newValue.SourceTrackId);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "SourceEntryId", oldValue.SourceEntryId, newValue.SourceEntryId);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "Name", oldValue.Name, newValue.Name);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "StartTicks", oldValue.StartTicks, newValue.StartTicks);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "Duration", oldValue.Duration, newValue.Duration);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "FrameRate", oldValue.FrameRate, newValue.FrameRate);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "ImportFormat", oldValue.ImportFormat, newValue.ImportFormat);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "SourceName", oldValue.SourceName, newValue.SourceName);
-            if (!oldValue.ReferencedMediaFiles.SequenceEqual(newValue.ReferencedMediaFiles))
-            {
-                Add(output, ExpressionPropertyOwnerKind.Segment, id, owner, "ReferencedMediaFiles", oldValue.ReferencedMediaFiles, newValue.ReferencedMediaFiles);
-            }
-
-            if (!oldValue.MediaTracks.SequenceEqual(newValue.MediaTracks))
-            {
-                Add(output, ExpressionPropertyOwnerKind.Segment, id, owner, "MediaTracks", oldValue.MediaTracks, newValue.MediaTracks);
-            }
-
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "ChapterCount", oldValue.ChapterCount, newValue.ChapterCount);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "ImportDisplayName", oldValue.ImportDisplayName, newValue.ImportDisplayName);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "DiscTitleNumber", oldValue.DiscTitleNumber, newValue.DiscTitleNumber);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "SourceFrameRate", oldValue.SourceFrameRate, newValue.SourceFrameRate);
-            AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, owner, "SourceChapterCount", oldValue.SourceChapterCount, newValue.SourceChapterCount);
+            AddSegmentDifference(output, id, oldItem.segment, newItem.segment,
+                newItem.track?.Name ?? oldItem.track?.Name ?? string.Empty);
         }
+    }
+
+    private static void AddSegmentDifference(
+        ImmutableArray<ExpressionPropertyComparison>.Builder output,
+        Guid id,
+        EditableChapterSegment? before,
+        EditableChapterSegment? candidate,
+        string ownerTrackName)
+    {
+        var ownerName = candidate?.Name is { Length: > 0 } segmentName
+            ? $"{ownerTrackName} · {segmentName}"
+            : ownerTrackName;
+        if (before is null || candidate is null)
+        {
+            Add(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "Presence", before is not null, candidate is not null);
+            return;
+        }
+
+        AddSegmentCoreProperties(output, id, ownerName, before, candidate);
+        AddSegmentMetadataProperties(output, id, ownerName, before, candidate);
+    }
+
+    private static void AddSegmentCoreProperties(
+        ImmutableArray<ExpressionPropertyComparison>.Builder output,
+        Guid id,
+        string ownerName,
+        EditableChapterSegment before,
+        EditableChapterSegment candidate)
+    {
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "SourceTrackId", before.SourceTrackId, candidate.SourceTrackId);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "SourceEntryId", before.SourceEntryId, candidate.SourceEntryId);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "Name", before.Name, candidate.Name);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "StartTicks", before.StartTicks, candidate.StartTicks);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "Duration", before.Duration, candidate.Duration);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "FrameRate", before.FrameRate, candidate.FrameRate);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "ImportFormat", before.ImportFormat, candidate.ImportFormat);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "SourceName", before.SourceName, candidate.SourceName);
+    }
+
+    private static void AddSegmentMetadataProperties(
+        ImmutableArray<ExpressionPropertyComparison>.Builder output,
+        Guid id,
+        string ownerName,
+        EditableChapterSegment before,
+        EditableChapterSegment candidate)
+    {
+        if (!before.ReferencedMediaFiles.SequenceEqual(candidate.ReferencedMediaFiles))
+        {
+            Add(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "ReferencedMediaFiles", before.ReferencedMediaFiles, candidate.ReferencedMediaFiles);
+        }
+
+        if (!before.MediaTracks.SequenceEqual(candidate.MediaTracks))
+        {
+            Add(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "MediaTracks", before.MediaTracks, candidate.MediaTracks);
+        }
+
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "ChapterCount", before.ChapterCount, candidate.ChapterCount);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "ImportDisplayName", before.ImportDisplayName, candidate.ImportDisplayName);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "DiscTitleNumber", before.DiscTitleNumber, candidate.DiscTitleNumber);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "SourceFrameRate", before.SourceFrameRate, candidate.SourceFrameRate);
+        AddIfChanged(output, ExpressionPropertyOwnerKind.Segment, id, ownerName, "SourceChapterCount", before.SourceChapterCount, candidate.SourceChapterCount);
     }
 
     private static bool SegmentsEqual(

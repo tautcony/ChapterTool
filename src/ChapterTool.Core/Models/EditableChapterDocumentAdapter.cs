@@ -223,74 +223,91 @@ public static class EditableChapterDocumentValidator
         var segmentIds = new HashSet<Guid>();
         foreach (var track in document.Tracks)
         {
-            if (track.Id.Value == Guid.Empty)
-            {
-                errors.Add("Track identity must not be empty.");
-            }
-
-            if (!trackIds.Add(track.Id))
-            {
-                errors.Add("Track identities must be unique.");
-            }
+            ValidateTrackIdentity(track, trackIds, errors);
 
             foreach (var segment in track.Segments)
             {
-                if (segment.Id == Guid.Empty || !segmentIds.Add(segment.Id))
-                {
-                    errors.Add("Segment identities must be non-empty and unique.");
-                }
-
-                if (segment.SourceTrackId.Value == Guid.Empty)
-                {
-                    errors.Add("Segment source track identity must not be empty.");
-                }
-
-                if (segment.StartTicks < 0)
-                {
-                    errors.Add("Segment start time must not be negative.");
-                }
-
-                if (segment.Duration.IsKnown)
-                {
-                    try
-                    {
-                        var endTicks = checked(segment.StartTicks + segment.Duration.Ticks);
-                        if (document.Duration.IsKnown && endTicks > document.Duration.Ticks)
-                        {
-                            errors.Add("Segment exceeds the known document duration.");
-                        }
-                    }
-                    catch (OverflowException)
-                    {
-                        errors.Add("Segment end time exceeds the supported time range.");
-                    }
-                }
+                ValidateSegment(segment, segmentIds, document.Duration, errors);
             }
 
             foreach (var chapter in track.Chapters)
             {
-                if (chapter.Id.Value == Guid.Empty)
-                {
-                    errors.Add("Chapter identity must not be empty.");
-                }
-
-                if (!chapterIds.Add(chapter.Id))
-                {
-                    errors.Add("Chapter identities must be unique.");
-                }
-
-                if (chapter.StartTicks < 0)
-                {
-                    errors.Add("Chapter start time must not be negative.");
-                }
-
-                if (chapter.EndTicks is { } endTicks && endTicks < chapter.StartTicks)
-                {
-                    errors.Add("Chapter end time must not precede its start time.");
-                }
+                ValidateChapter(chapter, chapterIds, errors);
             }
         }
 
         return new EditableChapterDocumentValidationResult(errors.Count == 0, errors.ToImmutable());
+    }
+
+    private static void ValidateTrackIdentity(EditableChapterTrack track, HashSet<ChapterTrackId> trackIds,
+        ImmutableArray<string>.Builder errors)
+    {
+        if (track.Id.Value == Guid.Empty)
+        {
+            errors.Add("Track identity must not be empty.");
+        }
+        if (!trackIds.Add(track.Id))
+        {
+            errors.Add("Track identities must be unique.");
+        }
+    }
+
+    private static void ValidateSegment(EditableChapterSegment segment, HashSet<Guid> segmentIds,
+        ChapterDuration documentDuration, ImmutableArray<string>.Builder errors)
+    {
+        if (segment.Id == Guid.Empty || !segmentIds.Add(segment.Id))
+        {
+            errors.Add("Segment identities must be non-empty and unique.");
+        }
+        if (segment.SourceTrackId.Value == Guid.Empty)
+        {
+            errors.Add("Segment source track identity must not be empty.");
+        }
+        if (segment.StartTicks < 0)
+        {
+            errors.Add("Segment start time must not be negative.");
+        }
+        if (segment.Duration.IsKnown)
+        {
+            ValidateSegmentEnd(segment, documentDuration, errors);
+        }
+    }
+
+    private static void ValidateSegmentEnd(EditableChapterSegment segment, ChapterDuration documentDuration,
+        ImmutableArray<string>.Builder errors)
+    {
+        try
+        {
+            var endTicks = checked(segment.StartTicks + segment.Duration.Ticks);
+            if (documentDuration.IsKnown && endTicks > documentDuration.Ticks)
+            {
+                errors.Add("Segment exceeds the known document duration.");
+            }
+        }
+        catch (OverflowException)
+        {
+            errors.Add("Segment end time exceeds the supported time range.");
+        }
+    }
+
+    private static void ValidateChapter(EditableChapter chapter, HashSet<ChapterId> chapterIds,
+        ImmutableArray<string>.Builder errors)
+    {
+        if (chapter.Id.Value == Guid.Empty)
+        {
+            errors.Add("Chapter identity must not be empty.");
+        }
+        if (!chapterIds.Add(chapter.Id))
+        {
+            errors.Add("Chapter identities must be unique.");
+        }
+        if (chapter.StartTicks < 0)
+        {
+            errors.Add("Chapter start time must not be negative.");
+        }
+        if (chapter.EndTicks is { } endTicks && endTicks < chapter.StartTicks)
+        {
+            errors.Add("Chapter end time must not precede its start time.");
+        }
     }
 }

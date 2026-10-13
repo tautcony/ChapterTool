@@ -285,44 +285,60 @@ public sealed partial class ChapterContentCandidateBuilder(
         {
             var ticks = ExactFrameMath.TicksFromFrames((decimal)frames, frameRate);
             var shift = checked(-ticks);
-            var trackResult = RequireSingleTrack(source);
-            if (trackResult.Error is not null)
-            {
-                return Failure(source, trackResult.Error, targetIds);
-            }
-
-            var track = trackResult.Track!;
-            if (targetIds.Any(id => IndexOf(track, id) < 0))
-            {
-                return Failure(source, "A captured frame-offset target no longer exists.", targetIds);
-            }
-
-            if (frames == 0)
-            {
-                return ValidateAndSucceed(source, source, targetIds);
-            }
-
-            if (track.Chapters.Any(chapter => targetIds.Contains(chapter.Id) && checked(chapter.StartTicks + shift) < 0))
-            {
-                return Failure(source, "The frame offset would make a chapter time negative.", targetIds);
-            }
-
-            var chapters = track.Chapters
-                .Select(chapter => !targetIds.Contains(chapter.Id)
-                    ? chapter
-                    : chapter with
-                    {
-                        StartTicks = checked(chapter.StartTicks + shift),
-                        EndTicks = chapter.EndTicks is long end ? checked(end + shift) : null
-                    })
-                .ToImmutableArray();
-            chapters = Renumber(chapters);
-            return ValidateAndSucceed(source, WithTrack(source, new EditableChapterTrack(track.Id, track.Name, chapters, track.Segments, track.FrameRate)), targetIds);
+            return BuildFrameShift(source, targetIds, frames, shift);
         }
         catch (Exception exception) when (exception is OverflowException or ArgumentOutOfRangeException)
         {
             return Failure(source, "The frame offset exceeds the supported time range.", targetIds);
         }
+    }
+
+    private ChapterCandidateBuildResult BuildFrameShift(
+        EditableChapterDocument source,
+        IReadOnlySet<ChapterId> targetIds,
+        int frames,
+        long shift)
+    {
+        var trackResult = RequireSingleTrack(source);
+        if (trackResult.Error is not null)
+        {
+            return Failure(source, trackResult.Error, targetIds);
+        }
+
+        var track = trackResult.Track!;
+        if (targetIds.Any(id => IndexOf(track, id) < 0))
+        {
+            return Failure(source, "A captured frame-offset target no longer exists.", targetIds);
+        }
+
+        if (frames == 0)
+        {
+            return ValidateAndSucceed(source, source, targetIds);
+        }
+
+        if (WouldMakeChapterTimeNegative(track, targetIds, shift))
+        {
+            return Failure(source, "The frame offset would make a chapter time negative.", targetIds);
+        }
+
+        return ValidateAndSucceed(source, WithTrack(source, ShiftTrack(track, targetIds, shift)), targetIds);
+    }
+
+    private static bool WouldMakeChapterTimeNegative(EditableChapterTrack track, IReadOnlySet<ChapterId> targets, long shift) =>
+        track.Chapters.Any(chapter => targets.Contains(chapter.Id) && checked(chapter.StartTicks + shift) < 0);
+
+    private static EditableChapterTrack ShiftTrack(EditableChapterTrack track, IReadOnlySet<ChapterId> targets, long shift)
+    {
+        var chapters = track.Chapters
+            .Select(chapter => !targets.Contains(chapter.Id)
+                ? chapter
+                : chapter with
+                {
+                    StartTicks = checked(chapter.StartTicks + shift),
+                    EndTicks = chapter.EndTicks is long end ? checked(end + shift) : null
+                })
+            .ToImmutableArray();
+        return new EditableChapterTrack(track.Id, track.Name, Renumber(chapters), track.Segments, track.FrameRate);
     }
 
     /// <summary>Quantizes source frames and converts all absolute boundaries with canonical rates.</summary>
