@@ -329,56 +329,7 @@ public sealed class LogEntryViewModel(
 
         try
         {
-            switch (value)
-            {
-                case IReadOnlyDictionary<string, object?> readOnlyDictionary:
-                {
-                    foreach (var pair in readOnlyDictionary)
-                    {
-                        if (budget <= 0)
-                        {
-                            break;
-                        }
-
-                        values.Add(pair.Key);
-                        AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
-                    }
-
-                    return;
-                }
-                case IDictionary dictionary:
-                {
-                    foreach (DictionaryEntry pair in dictionary)
-                    {
-                        if (budget <= 0)
-                        {
-                            break;
-                        }
-
-                        values.Add(pair.Key?.ToString() ?? string.Empty);
-                        AppendSearchableValue(values, pair.Value, depth + 1, path, ref budget);
-                    }
-
-                    return;
-                }
-                case IEnumerable enumerable:
-                {
-                    foreach (var item in enumerable)
-                    {
-                        if (budget <= 0)
-                        {
-                            break;
-                        }
-
-                        AppendSearchableValue(values, item, depth + 1, path, ref budget);
-                    }
-
-                    return;
-                }
-                default:
-                    values.Add(value.ToString() ?? string.Empty);
-                    break;
-            }
+            AppendSearchableValueContent(values, value, depth, path, ref budget);
         }
         finally
         {
@@ -386,6 +337,87 @@ public sealed class LogEntryViewModel(
             {
                 path.Remove(value);
             }
+        }
+    }
+
+    private static void AppendSearchableValueContent(
+        List<string> values,
+        object value,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+        {
+            AppendSearchablePairs(values, readOnlyDictionary, depth + 1, path, ref budget);
+        }
+        else if (value is IDictionary dictionary)
+        {
+            AppendSearchableDictionary(values, dictionary, depth + 1, path, ref budget);
+        }
+        else if (value is IEnumerable enumerable)
+        {
+            AppendSearchableItems(values, enumerable, depth + 1, path, ref budget);
+        }
+        else
+        {
+            values.Add(value.ToString() ?? string.Empty);
+        }
+    }
+
+    private static void AppendSearchablePairs(
+        List<string> values,
+        IEnumerable<KeyValuePair<string, object?>> pairs,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        foreach (var pair in pairs)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            values.Add(pair.Key);
+            AppendSearchableValue(values, pair.Value, depth, path, ref budget);
+        }
+    }
+
+    private static void AppendSearchableDictionary(
+        List<string> values,
+        IDictionary pairs,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        foreach (DictionaryEntry pair in pairs)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            values.Add(pair.Key?.ToString() ?? string.Empty);
+            AppendSearchableValue(values, pair.Value, depth, path, ref budget);
+        }
+    }
+
+    private static void AppendSearchableItems(
+        List<string> values,
+        IEnumerable items,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        foreach (var item in items)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            AppendSearchableValue(values, item, depth, path, ref budget);
         }
     }
 

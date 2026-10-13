@@ -432,38 +432,11 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
         try
         {
             var result = await contentOperations.ApplyAsync(preview, cancellationToken);
-            if (result.Kind == TransactionOutcomeKind.Conflict)
-            {
-                PreviewReadiness = ExpressionPreviewReadiness.Stale;
-                StatusText = Localizer.GetString("Expression.State.Stale");
-                return;
-            }
-
-            if (result.Kind == TransactionOutcomeKind.Committed && Projection is { } appliedProjection)
-            {
-                expressionSession.SaveAppliedExpressionPreview(
-                    Expression,
-                    SelectedPreset?.Id ?? string.Empty,
-                    ExpressionSourceName,
-                    appliedProjection);
-                pendingPreview = null;
-                StatusText = Localizer.Format(LocalizedMessage.Create(
-                    "Expression.Preview.Applied",
-                    ("affected", appliedProjection.AffectedChapterCount),
-                    ("times", appliedProjection.TimeChangedChapterCount),
-                    ("frames", appliedProjection.FrameInformationChangedChapterCount)));
-                closeTool?.Invoke();
-            }
-            else
-            {
-                PreviewReadiness = ExpressionPreviewReadiness.Failed;
-                StatusText = string.Join(Environment.NewLine, result.Errors);
-            }
+            HandleApplyResult(result);
         }
         catch (Exception exception) when (exception is not StackOverflowException)
         {
-            PreviewReadiness = ExpressionPreviewReadiness.Failed;
-            StatusText = exception.Message;
+            SetApplyFailure(exception.Message);
         }
         finally
         {
@@ -474,6 +447,46 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
             }
             NotifyPreviewStateChanged();
         }
+    }
+
+    private void HandleApplyResult(TransactionOutcome result)
+    {
+        if (result.Kind == TransactionOutcomeKind.Conflict)
+        {
+            PreviewReadiness = ExpressionPreviewReadiness.Stale;
+            StatusText = Localizer.GetString("Expression.State.Stale");
+            return;
+        }
+
+        if (result.Kind == TransactionOutcomeKind.Committed && Projection is { } appliedProjection)
+        {
+            SaveAppliedPreview(appliedProjection);
+            return;
+        }
+
+        SetApplyFailure(string.Join(Environment.NewLine, result.Errors));
+    }
+
+    private void SaveAppliedPreview(ExpressionPreviewProjection appliedProjection)
+    {
+        expressionSession.SaveAppliedExpressionPreview(
+            Expression,
+            SelectedPreset?.Id ?? string.Empty,
+            ExpressionSourceName,
+            appliedProjection);
+        pendingPreview = null;
+        StatusText = Localizer.Format(LocalizedMessage.Create(
+            "Expression.Preview.Applied",
+            ("affected", appliedProjection.AffectedChapterCount),
+            ("times", appliedProjection.TimeChangedChapterCount),
+            ("frames", appliedProjection.FrameInformationChangedChapterCount)));
+        closeTool?.Invoke();
+    }
+
+    private void SetApplyFailure(string message)
+    {
+        PreviewReadiness = ExpressionPreviewReadiness.Failed;
+        StatusText = message;
     }
 
     private void SchedulePreview()
@@ -756,28 +769,27 @@ public sealed record ExpressionPropertyRowViewModel
             return localizer.GetString("Expression.Value.NotSet");
         }
 
-        if (value is ChapterFrameRate rate)
-        {
-            return $"{rate.Numerator}/{rate.Denominator} {localizer.GetString("Expression.Unit.FramesPerSecond")}";
-        }
-        if (value is ChapterDuration duration)
-        {
-            if (!duration.IsKnown)
-            {
-                return localizer.GetString("Expression.Value.NotSet");
-            }
-            return ExpressionChapterRowViewModel.FormatTicks(duration.Ticks);
-        }
-
-        if (value is string text && property is "Title" or "SourceName" or "Name")
-        {
-            return text;
-        }
-
-        if (value is int or long or bool)
-        {
-            return Convert.ToString(value, CultureInfo.CurrentUICulture) ?? string.Empty;
-        }
-        return localizer.GetString("Expression.Property.ValueChanged");
+        return FormatFrameRateValue(value, localizer)
+            ?? FormatDurationValue(value, localizer)
+            ?? FormatTextValue(property, value)
+            ?? FormatPrimitiveValue(value)
+            ?? localizer.GetString("Expression.Property.ValueChanged");
     }
+
+    private static string? FormatFrameRateValue(object value, IAppLocalizer localizer) => value is ChapterFrameRate rate
+        ? $"{rate.Numerator}/{rate.Denominator} {localizer.GetString("Expression.Unit.FramesPerSecond")}"
+        : null;
+
+    private static string? FormatDurationValue(object value, IAppLocalizer localizer) => value is ChapterDuration duration
+        ? duration.IsKnown
+            ? ExpressionChapterRowViewModel.FormatTicks(duration.Ticks)
+            : localizer.GetString("Expression.Value.NotSet")
+        : null;
+
+    private static string? FormatTextValue(string property, object value) =>
+        value is string text && property is "Title" or "SourceName" or "Name" ? text : null;
+
+    private static string? FormatPrimitiveValue(object value) => value is int or long or bool
+        ? Convert.ToString(value, CultureInfo.CurrentUICulture) ?? string.Empty
+        : null;
 }
