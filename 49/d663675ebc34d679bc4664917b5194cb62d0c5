@@ -1,0 +1,23 @@
+src/ChapterTool.CommandLine/Cli/ChapterToolCliCommands.cs
+  s_1758991fd47007::t_1d6c1a6216dad7 126,128,131-158,161
+src/ChapterTool.Core/Editing/ChapterClipCandidateBuilder.cs
+  s_1758991fd47007::t_f40d5efdd13a3f 188-217,234-237,239-243,247-249,252,257-269,271-299,301-308,310,312-315,318-333,335,337-340,343,345-349,351-358,361-370
+src/ChapterTool.Core/Importing/Disc/DvdNavTimingReader.cs
+  s_1758991fd47007::t_d1ea7362437c87 113,152-164
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "49d663675ebc34d679bc4664917b5194cb62d0c5",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
