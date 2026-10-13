@@ -318,55 +318,93 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
         previewTimer.Stop();
         if (contentOperations is null || !contentOperations.CanPrepareExpression)
         {
-            PreviewReadiness = ExpressionPreviewReadiness.Unavailable;
-            PreviewSummary = Localizer.GetString("Expression.State.Unavailable");
-            StatusText = PreviewSummary;
-            NotifyPreviewStateChanged();
+            SetUnavailablePreview();
             return;
         }
 
-        if (pendingPreview is { } previous)
-        {
-            contentOperations.Cancel(previous);
-            pendingPreview = null;
-        }
+        CancelPendingPreview();
 
         if (string.IsNullOrWhiteSpace(Expression))
         {
-            Projection = null;
-            previewRows = [];
-            PropertyRows = [];
-            PreviewReadiness = ExpressionPreviewReadiness.Empty;
-            PreviewSummary = Localizer.GetString("Expression.State.Empty");
-            StatusText = PreviewSummary;
-            NotifyPreviewStateChanged();
+            SetEmptyPreview();
             return;
         }
 
+        BuildPreview();
+    }
+
+    private void SetUnavailablePreview()
+    {
+        PreviewReadiness = ExpressionPreviewReadiness.Unavailable;
+        PreviewSummary = Localizer.GetString("Expression.State.Unavailable");
+        StatusText = PreviewSummary;
+        NotifyPreviewStateChanged();
+    }
+
+    private void CancelPendingPreview()
+    {
+        if (pendingPreview is { } previous)
+        {
+            contentOperations?.Cancel(previous);
+            pendingPreview = null;
+        }
+    }
+
+    private void SetEmptyPreview()
+    {
+        Projection = null;
+        previewRows = [];
+        PropertyRows = [];
+        PreviewReadiness = ExpressionPreviewReadiness.Empty;
+        PreviewSummary = Localizer.GetString("Expression.State.Empty");
+        StatusText = PreviewSummary;
+        NotifyPreviewStateChanged();
+    }
+
+    private void BuildPreview()
+    {
         PreviewReadiness = ExpressionPreviewReadiness.Computing;
         PreviewSummary = Localizer.GetString("Expression.Preview.Pending");
         StatusText = PreviewSummary;
         NotifyPreviewStateChanged();
-        pendingPreview = contentOperations.PrepareExpression(Expression);
-        Projection = ExpressionPreviewProjector.Build(pendingPreview);
+        var preview = contentOperations!.PrepareExpression(Expression);
+        pendingPreview = preview;
+        var projection = ExpressionPreviewProjector.Build(preview);
+        Projection = projection;
         preparedDraftRevision = draftRevision;
-        previewRows = BuildRows(Projection, showFrames, Localizer);
-        PropertyRows = [.. Projection.Properties.Select(row => new ExpressionPropertyRowViewModel(row, Localizer))];
-        PreviewSummary = BuildPreviewSummary(Projection, expressionSession.Localizer);
-        var diagnostic = pendingPreview.IsValid
+        previewRows = BuildRows(projection, showFrames, Localizer);
+        PropertyRows = [.. projection.Properties.Select(row => new ExpressionPropertyRowViewModel(row, Localizer))];
+        PreviewSummary = BuildPreviewSummary(projection, expressionSession.Localizer);
+        UpdatePreviewResult(preview, projection);
+        NotifyPreviewStateChanged();
+    }
+
+    private void UpdatePreviewResult(ChapterContentPreview preview, ExpressionPreviewProjection projection)
+    {
+        var diagnostic = preview.IsValid
             ? null
             : expressionSession.ValidateLuaExpressionScript(Expression, logDiagnostics: true);
-        PreviewReadiness = !pendingPreview.IsValid
-            ? ExpressionPreviewReadiness.Invalid
-            : Projection.ParticipatingChapterCount == 0
-            ? ExpressionPreviewReadiness.Unavailable
-            : Projection.HasChanges
-                ? ExpressionPreviewReadiness.Ready
-                : ExpressionPreviewReadiness.Unchanged;
+        PreviewReadiness = GetPreviewReadiness(preview, projection);
         StatusText = diagnostic is not null
             ? expressionSession.FormatDiagnosticForDisplay(diagnostic)
-            : pendingPreview.IsValid ? PreviewSummary : string.Join(Environment.NewLine, pendingPreview.Errors);
-        NotifyPreviewStateChanged();
+            : preview.IsValid ? PreviewSummary : string.Join(Environment.NewLine, preview.Errors);
+    }
+
+    private static ExpressionPreviewReadiness GetPreviewReadiness(
+        ChapterContentPreview preview,
+        ExpressionPreviewProjection projection)
+    {
+        if (!preview.IsValid)
+        {
+            return ExpressionPreviewReadiness.Invalid;
+        }
+
+        if (projection.ParticipatingChapterCount == 0)
+        {
+            return ExpressionPreviewReadiness.Unavailable;
+        }
+
+        return projection.HasChanges ? ExpressionPreviewReadiness.Ready : ExpressionPreviewReadiness.Unchanged;
     }
 
     public void Dispose()

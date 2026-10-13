@@ -1460,37 +1460,60 @@ public sealed partial class WasmWorkspace : IDisposable
 
         var track = session.ContentSession!.Snapshot.Document.Tracks[session.CurrentTrackIndex];
         var chapterId = track.Chapters[index].Id;
-        var editedField = timeText is null && name is not null
-            ? ChapterCellField.Name
-            : name is null && timeText is not null ? ChapterCellField.StartTime : (ChapterCellField?)null;
+        var editedField = GetEditedField(timeText, name);
         var editedValue = editedField switch
         {
             ChapterCellField.Name => name,
             ChapterCellField.StartTime => timeText,
             _ => null
         };
-        var outcome = session.ExecuteTrackCandidate("Update chapter content", document =>
+        var outcome = session.ExecuteTrackCandidate("Update chapter content",
+            document => BuildRowEditCandidate(document, track.Chapters[index].Kind, chapterId, timeText, name),
+            operationDescriptor: CreateCellEditDescriptor(editedField, chapterId, track.Name, editedValue));
+        HandleRowEditOutcome(outcome, index);
+    }
+
+    private static ChapterCellField? GetEditedField(string? timeText, string? name) =>
+        timeText is null && name is not null
+            ? ChapterCellField.Name
+            : name is null && timeText is not null ? ChapterCellField.StartTime : null;
+
+    private ChapterCandidateBuildResult BuildRowEditCandidate(
+        EditableChapterDocument document,
+        ChapterKind chapterKind,
+        ChapterId chapterId,
+        string? timeText,
+        string? name)
+    {
+        var candidate = new ChapterCandidateBuildResult(true, document, [chapterId], []);
+        if (name is not null)
         {
-            var candidate = new ChapterCandidateBuildResult(true, document, [chapterId], []);
-            if (name is not null)
-            {
-                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, ComputationFrameRate);
-            }
+            candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.Name, name, ComputationFrameRate);
+        }
 
-            if (candidate.IsValid && timeText is not null && track.Chapters[index].Kind != ChapterKind.Separator)
-            {
-                candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, ComputationFrameRate);
-            }
+        if (candidate.IsValid && timeText is not null && chapterKind != ChapterKind.Separator)
+        {
+            candidate = candidateBuilder.EditCell(candidate.Candidate, chapterId, ChapterCellField.StartTime, timeText, ComputationFrameRate);
+        }
 
-            return candidate;
-        }, operationDescriptor: new HistoryOperationDescriptor("chapter.cell-edit",
+        return candidate;
+    }
+
+    private HistoryOperationDescriptor CreateCellEditDescriptor(
+        ChapterCellField? editedField,
+        ChapterId chapterId,
+        string trackName,
+        string? editedValue) => new("chapter.cell-edit",
         [
             new HistoryOperationParameter("field", editedField?.ToString()),
             new HistoryOperationParameter("chapterId", chapterId.ToString()),
-            new HistoryOperationParameter("trackName", track.Name),
+            new HistoryOperationParameter("trackName", trackName),
             new HistoryOperationParameter("value", editedValue),
             new HistoryOperationParameter("displayFps", ExactFramesPerSecond.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
-        ]));
+        ]);
+
+    private void HandleRowEditOutcome(TransactionOutcome outcome, int index)
+    {
         if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
         {
             StatusText = outcome.Errors.FirstOrDefault() ?? "The chapter edit was rejected.";

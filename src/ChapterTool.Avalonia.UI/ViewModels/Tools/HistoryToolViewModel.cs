@@ -451,13 +451,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         var generation = ++detailGeneration;
         var rootId = currentSnapshot?.RootId;
         selectedRootId = rootId;
-        var previousCancellation = detailCancellation;
-        var request = detailCancellation = new CancellationTokenSource();
-        if (previousCancellation is not null)
-        {
-            await previousCancellation.CancelAsync();
-            previousCancellation.Dispose();
-        }
+        var request = await StartDetailsRequestAsync();
         if (generation != detailGeneration || disposed)
         {
             return;
@@ -472,26 +466,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         IsLoadingDetails = true;
         try
         {
-            var result = await history.InspectAsync(nodeId.Value, request.Token);
-            if (request.IsCancellationRequested || generation != detailGeneration || SelectedEntry?.Id != nodeId
-                || rootId is null || history.Snapshot?.RootId != rootId || history.IsEnded)
-            {
-                return;
-            }
-            if (result.Kind == HistoryInspectionOutcomeKind.Available)
-            {
-                Details = result.Details;
-            }
-            else
-            {
-                DetailError = result.Kind switch
-                {
-                    HistoryInspectionOutcomeKind.NotFound => "NotFound",
-                    HistoryInspectionOutcomeKind.Ended => "Ended",
-                    HistoryInspectionOutcomeKind.ResourceFailure => "ResourceFailure",
-                    _ => "Failed"
-                };
-            }
+            await InspectAndPublishDetailsAsync(nodeId.Value, rootId, generation, request);
         }
         catch (OperationCanceledException)
         {
@@ -517,6 +492,47 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
                 IsLoadingDetails = false;
             }
         }
+    }
+
+    private async Task<CancellationTokenSource> StartDetailsRequestAsync()
+    {
+        var previousCancellation = detailCancellation;
+        var request = detailCancellation = new CancellationTokenSource();
+        if (previousCancellation is not null)
+        {
+            await previousCancellation.CancelAsync();
+            previousCancellation.Dispose();
+        }
+
+        return request;
+    }
+
+    private async Task InspectAndPublishDetailsAsync(
+        Guid nodeId,
+        Guid? rootId,
+        long generation,
+        CancellationTokenSource request)
+    {
+        var result = await history.InspectAsync(nodeId, request.Token);
+        if (request.IsCancellationRequested || generation != detailGeneration || SelectedEntry?.Id != nodeId
+            || rootId is null || history.Snapshot?.RootId != rootId || history.IsEnded)
+        {
+            return;
+        }
+
+        if (result.Kind == HistoryInspectionOutcomeKind.Available)
+        {
+            Details = result.Details;
+            return;
+        }
+
+        DetailError = result.Kind switch
+        {
+            HistoryInspectionOutcomeKind.NotFound => "NotFound",
+            HistoryInspectionOutcomeKind.Ended => "Ended",
+            HistoryInspectionOutcomeKind.ResourceFailure => "ResourceFailure",
+            _ => "Failed"
+        };
     }
 
     private bool CanRestore(object? parameter) =>
@@ -640,7 +656,19 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
 
     private void RebuildInspectorRows()
     {
-        fieldRows = Details?.Changes.Select(change => new HistoryFieldRow(
+        fieldRows = BuildFieldRows();
+        parameterRows = BuildParameterRows();
+        OnPropertyChanged(nameof(VisibleChanges));
+        OnPropertyChanged(nameof(VisibleChangeGroups));
+        OnPropertyChanged(nameof(HasChanges));
+        OnPropertyChanged(nameof(HasVisibleChanges));
+        OnPropertyChanged(nameof(HasNoVisibleChanges));
+        OnPropertyChanged(nameof(HasDeltas));
+        OnPropertyChanged(nameof(HasParameters));
+        OnPropertyChanged(nameof(Parameters));
+    }
+
+    private HistoryFieldRow[] BuildFieldRows() => Details?.Changes.Select(change => new HistoryFieldRow(
             change.Group,
             change.ObjectId,
             localizer.GetString($"History.Field.{change.Field}"),
@@ -650,10 +678,13 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
             FormatHistoryValue(change, change.Before, before: true),
             FormatHistoryValue(change, change.After, before: false),
             FormatDelta(change))).ToArray() ?? [];
+
+    private HistoryParameterRow[] BuildParameterRows()
+    {
         var operationKind = Details?.Operation?.Kind;
         var cellEditField = Details?.Operation?.Parameters
             .FirstOrDefault(static parameter => parameter.Name == "field")?.Value;
-        parameterRows = Details?.Operation?.Parameters
+        return Details?.Operation?.Parameters
             .Where(parameter => parameter.Name is not "chapterId" and not "chapterIds" and not "trackId" and not "trackIds" and not "targetChapterIds"
                 && !(operationKind == "chapter.cell-edit"
                     && (parameter.Name is "field" or "value" or "trackName"
@@ -662,14 +693,6 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
                 localizer.GetString($"History.Parameter.{parameter.Name}"),
                 FormatParameter(parameter),
                 parameter.ValueKind)).ToArray() ?? [];
-        OnPropertyChanged(nameof(VisibleChanges));
-        OnPropertyChanged(nameof(VisibleChangeGroups));
-        OnPropertyChanged(nameof(HasChanges));
-        OnPropertyChanged(nameof(HasVisibleChanges));
-        OnPropertyChanged(nameof(HasNoVisibleChanges));
-        OnPropertyChanged(nameof(HasDeltas));
-        OnPropertyChanged(nameof(HasParameters));
-        OnPropertyChanged(nameof(Parameters));
     }
 
     private string FormatFieldContext(HistoryFieldChange change)
