@@ -129,7 +129,7 @@ class RunnerTests(unittest.TestCase):
             diagnostics = output.parent / "report"
             diagnostics.mkdir()
             with patch.object(ci.subprocess, "run") as run, contextlib.redirect_stdout(io.StringIO()):
-                ci.run_step(ci.browser_steps("pr", False)[1], root)
+                ci.run_step(ci.browser_steps(root, "pr", False)[1], root)
             self.assertFalse(output.exists())
             self.assertTrue(diagnostics.exists())
             run.assert_called_once()
@@ -146,7 +146,7 @@ class RunnerTests(unittest.TestCase):
         self.assertTrue(all("--no-build" in step.args and "--no-restore" in step.args for step in tests))
 
     def test_full_acceptance_installs_all_engines(self):
-        steps = ci.browser_steps("full", True)
+        steps = ci.browser_steps(ci.ROOT, "full", True)
         install = next(step for step in steps if step.name == "Install browser engines")
         self.assertEqual(["--with-deps", "chromium", "firefox", "webkit"], install.args[-4:])
         self.assertEqual({}, steps[-1].env)
@@ -154,14 +154,14 @@ class RunnerTests(unittest.TestCase):
     def test_engine_selection_keeps_full_coverage_in_isolated_jobs(self):
         for engine in ("chromium", "firefox", "webkit"):
             with self.subTest(engine=engine):
-                steps = ci.browser_steps("full", True, engine)
+                steps = ci.browser_steps(ci.ROOT, "full", True, engine)
                 install = next(step for step in steps if step.key == "install-browser-engines")
                 self.assertEqual(["--with-deps", engine], install.args[-2:])
                 self.assertEqual(["npm", "run", "test:e2e", "--", f"--project={engine}"], steps[-1].args)
                 self.assertEqual({"E2E_RUN_NAME": engine}, steps[-1].env)
 
     def test_pr_webkit_selection_does_not_run_chromium(self):
-        steps = ci.browser_steps("pr", False, "webkit")
+        steps = ci.browser_steps(ci.ROOT, "pr", False, "webkit")
         tests = [step for step in steps if "test:e2e" in step.args]
         self.assertEqual(1, len(tests))
         self.assertEqual("run-webkit-regressions", tests[0].key)
@@ -205,7 +205,7 @@ class RunnerTests(unittest.TestCase):
 
     def test_invalid_engine_for_suite_fails_before_commands(self):
         with self.assertRaisesRegex(ValueError, "not part of"):
-            ci.browser_steps("pr", False, "firefox")
+            ci.browser_steps(ci.ROOT, "pr", False, "firefox")
 
     def test_unsupported_macos_packaging_fails_before_commands_run(self):
         with patch.object(ci.platform, "system", return_value="Windows"):

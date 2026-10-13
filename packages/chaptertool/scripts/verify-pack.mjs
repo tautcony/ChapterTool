@@ -75,19 +75,19 @@ try {
       throw new Error("The installed npm package did not execute the Core import API.");
     }
     const tool = new ChapterTool();
-    const exact = await tool.exact.import("CHAPTER01=00:00:00.000\\nCHAPTER01NAME=Exact\\n");
+    const exact = await tool.import("CHAPTER01=00:00:00.000\\nCHAPTER01NAME=Exact\\n");
     const content = exact.groups[0].entries[0].chapterSet;
     content.chapters[0].startTicks = "9007199254740993";
     content.frameRate = { kind: "rational", numerator: "48000", denominator: "2002" };
     content.durationTicks = null;
-    const renamed = await tool.exact.rename(content, 0, "Packed");
+    const renamed = await tool.rename(content, 0, "Packed");
     if (!renamed.success || renamed.chapterSet.chapters[0].startTicks !== "9007199254740993"
         || renamed.chapterSet.frameRate.numerator !== "24000" || renamed.chapterSet.durationTicks !== null) {
       throw new Error("The installed exact facade lost ticks, authority, or duration availability.");
     }
-    const converted = await tool.exact.changeFrameRate(renamed.chapterSet, renamed.chapterSet.frameRate,
+    const converted = await tool.changeFrameRate(renamed.chapterSet, renamed.chapterSet.frameRate,
       { kind: "approximate", value: "25.0" });
-    const exported = await tool.exact.serialize(converted.chapterSet, { format: "qpf" });
+    const exported = await tool.serialize(converted.chapterSet, { format: "qpf" });
     if (!converted.success || converted.chapterSet.frameRate.kind !== "approximate" || !exported.success) {
       throw new Error("The installed exact facade failed conversion and serialization.");
     }
@@ -102,7 +102,7 @@ try {
     const content: ExactChapterSet = { title: "Types", sourceName: null, importFormat: "Ogm",
       frameRate: rate, durationTicks: null, chapters: [{ displayNumber: 1, startTicks: "9007199254740993",
       endTicks: null, name: "A", framesInfo: "", frameAccuracy: "Neutral", kind: "Marker" }] };
-    const result = await new ChapterTool().exact.editFrame(content, 0, "1.5", rate);
+    const result = await new ChapterTool().editFrame(content, 0, "1.5", rate);
     if (result.chapterSet) result.chapterSet.durationTicks satisfies string | null;
   `);
   execFileSync(process.execPath, [join(packageDirectory, "node_modules/typescript/bin/tsc"),
