@@ -1,0 +1,21 @@
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/ExpressionToolViewModel.cs
+  s_1758991fd47007::t_934f864c16deba 435,439,452-491,772-777,779-781,783-794
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs
+  s_1758991fd47007::t_80dac1adebf00c 332,343-423
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b5bebf8fffa9c4989f69327ea6dae21e31f55bea",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
