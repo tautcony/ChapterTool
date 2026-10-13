@@ -1,0 +1,31 @@
+src/ChapterTool.Core/Editing/ChapterClipCandidateBuilder.cs
+  s_1758991fd47007::t_7627bb9410cb31 34-35,37,56-111
+src/ChapterTool.Core/Editing/ChapterContentCandidateBuilder.cs
+  s_1758991fd47007::t_3c5d72f9db08ba 288-294,296-306,308-312,314-316,318-319,321,323-341
+src/ChapterTool.Core/Importing/Disc/DvdIfoMetadataReader.cs
+  s_1758991fd47007::t_4a4d7624e46997 147,149,168,172-173,192,202-235
+src/ChapterTool.Core/Models/EditableChapterDocumentAdapter.cs
+  s_1758991fd47007::t_2f2a9c85f7bac5 226,230,235,241-312
+src/ChapterTool.Core/Session/ExpressionPreviewProjection.cs
+  s_1758991fd47007::t_c51f3444cff633 422-425,427-441,443-445,447-478,480-485
+src/ChapterTool.Core/Session/SessionEditHistory.cs
+  s_1758991fd47007::t_fe3529845989f8 261-262,264,279-319,390-406,410-411,413-415,417-418,420-429,431-434,437
+src/ChapterTool.Core/Session/SessionState.cs
+  s_1758991fd47007::t_392ab2f61baab0 555-556,558,566,574-642
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "020b5b7f9a75dd6ed629d23038ef99643938940d",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
