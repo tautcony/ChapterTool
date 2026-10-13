@@ -4,13 +4,15 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
+import http.client
 import io
 import re
 import sys
-import urllib.request
+from urllib.parse import urlsplit
 import zipfile
+from defusedxml import ElementTree
 from pathlib import Path
-from xml.etree import ElementTree
 
 
 PACKAGE = "Avalonia.Headless.XUnit"
@@ -20,10 +22,27 @@ VERSION_PATTERN = re.compile(r"^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:[-+].*)?$")
 
 
 def load_json(url: str) -> dict:
-    with urllib.request.urlopen(url, timeout=15) as response:
+    with open_nuget_url(url) as response:
         import json
 
         return json.load(response)
+
+
+@contextmanager
+def open_nuget_url(url: str):
+    parsed = urlsplit(url)
+    if (parsed.scheme != "https" or parsed.hostname != "api.nuget.org" or parsed.port not in (None, 443)
+            or parsed.username or parsed.password):
+        raise ValueError("NuGet metadata URLs must use HTTPS on api.nuget.org.")
+    connection = http.client.HTTPSConnection("api.nuget.org", timeout=15)
+    try:
+        connection.request("GET", parsed.path, headers={"Accept": "application/json, application/octet-stream"})
+        response = connection.getresponse()
+        if response.status != 200:
+            raise OSError(f"NuGet returned HTTP {response.status} for {parsed.path}.")
+        yield response
+    finally:
+        connection.close()
 
 
 def version_key(version: str) -> tuple[int, int, int, int, str]:
@@ -45,7 +64,7 @@ def latest_stable_version() -> str:
 
 def dependency_version(version: str) -> str | None:
     url = f"{NUGET_BASE}/{PACKAGE.lower()}/{version}/{PACKAGE.lower()}.{version}.nupkg"
-    with urllib.request.urlopen(url, timeout=15) as response:
+    with open_nuget_url(url) as response:
         archive = zipfile.ZipFile(io.BytesIO(response.read()))
     nuspec_name = next(name for name in archive.namelist() if name.lower().endswith(".nuspec"))
     root = ElementTree.fromstring(archive.read(nuspec_name))

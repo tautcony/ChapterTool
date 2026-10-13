@@ -7,8 +7,9 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-import xml.etree.ElementTree as ET
 import zipfile
+
+from defusedxml import ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]

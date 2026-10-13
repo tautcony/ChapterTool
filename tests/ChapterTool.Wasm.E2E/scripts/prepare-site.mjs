@@ -25,6 +25,29 @@ function isWithin(parent, target) {
   return rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel));
 }
 
+function updateBaseHref(source, entryName) {
+  const tagStart = source.search(/<base\b/i);
+  const tagEnd = tagStart < 0 ? -1 : source.indexOf('>', tagStart);
+  if (tagStart < 0 || tagEnd < 0) {
+    throw new Error(`Could not find a base tag in ${entryName}`);
+  }
+
+  const tag = source.slice(tagStart, tagEnd + 1);
+  const hrefAttribute = /\bhref\s*=\s*(["'])/i.exec(tag);
+  if (!hrefAttribute) {
+    throw new Error(`Could not find a quoted base href in ${entryName}`);
+  }
+
+  const valueStart = hrefAttribute.index + hrefAttribute[0].length;
+  const valueEnd = tag.indexOf(hrefAttribute[1], valueStart);
+  if (valueEnd < 0) {
+    throw new Error(`Could not find the end of the base href in ${entryName}`);
+  }
+
+  const updatedTag = `${tag.slice(0, valueStart)}${baseHref}${tag.slice(valueEnd)}`;
+  return `${source.slice(0, tagStart)}${updatedTag}${source.slice(tagEnd + 1)}`;
+}
+
 if (!isWithin(allowedOutputRoot, siteRoot) || siteRoot === allowedOutputRoot) {
   throw new Error(`Refusing to clear site directory outside artifacts/wasm-e2e: ${siteRoot}`);
 }
@@ -52,8 +75,7 @@ for (const entryName of ['index.html', '404.html']) {
   const source = entryName === '404.html'
     ? await readFile(resolve(siteApp, 'index.html'), 'utf8')
     : await readFile(path, 'utf8');
-  const updated = source.replace(/(<base\s+href=)(["'])[^"'<>]*\2(\s*\/?\s*>)/i,
-    (_match, prefix, quote, suffix) => `${prefix}${quote}${baseHref}${quote}${suffix}`);
+  const updated = updateBaseHref(source, entryName);
   if (updated === source && !source.includes(`href="${baseHref}"`)) {
     throw new Error(`Could not set the base href in ${entryName}`);
   }
