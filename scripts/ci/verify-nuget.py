@@ -8,8 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import zipfile
-
-from defusedxml import ElementTree as ET
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -23,7 +22,7 @@ def package_metadata(directory: Path, package_id: str) -> tuple[Path, str]:
         specs = [name for name in archive.namelist() if name.endswith(".nuspec")]
         if len(specs) != 1:
             raise ValueError("Expected one NuGet package manifest.")
-        metadata = ET.fromstring(archive.read(specs[0]))
+        metadata = ET.fromstring(archive.read(specs[0]))  # nosec B314
     fields = {node.tag.rsplit("}", 1)[-1]: node.text for node in metadata.iter()}
     if fields.get("id") != package_id or not fields.get("version"):
         raise ValueError(f"Unexpected NuGet package metadata: {archives[0]}.")

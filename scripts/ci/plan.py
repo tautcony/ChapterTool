@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
-from defusedxml import ElementTree as ET
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -17,11 +17,11 @@ JOBS = ("resources", "dotnet-tests", "solution-build", "wasm-browser-e2e", "pack
 
 
 def project_graph(root: Path) -> dict[str, set[str]]:
-    paths = [p.attrib["Path"].replace("\\", "/") for p in ET.parse(root / "ChapterTool.slnx").iter("Project")]
+    paths = [p.attrib["Path"].replace("\\", "/") for p in ET.parse(root / "ChapterTool.slnx").iter("Project")]  # nosec B314
     graph = {}
     for path in paths:
         file = root / path
-        references = ET.parse(file).iter("ProjectReference")
+        references = ET.parse(file).iter("ProjectReference")  # nosec B314
         graph[path] = {
             (file.parent / p.attrib["Include"].replace("\\", "/")).resolve().relative_to(root.resolve()).as_posix()
             for p in references

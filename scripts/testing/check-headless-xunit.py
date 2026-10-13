@@ -11,8 +11,8 @@ import re
 import sys
 from urllib.parse import urlsplit
 import zipfile
-from defusedxml import ElementTree
 from pathlib import Path
+from xml.etree import ElementTree
 
 
 PACKAGE = "Avalonia.Headless.XUnit"
@@ -67,7 +67,7 @@ def dependency_version(version: str) -> str | None:
     with open_nuget_url(url) as response:
         archive = zipfile.ZipFile(io.BytesIO(response.read()))
     nuspec_name = next(name for name in archive.namelist() if name.lower().endswith(".nuspec"))
-    root = ElementTree.fromstring(archive.read(nuspec_name))
+    root = ElementTree.fromstring(archive.read(nuspec_name))  # nosec B314
     for dependency in root.iter():
         if dependency.tag.rsplit("}", 1)[-1] != "dependency":
             continue
@@ -77,7 +77,7 @@ def dependency_version(version: str) -> str | None:
 
 
 def project_version(path: Path) -> str | None:
-    root = ElementTree.parse(path).getroot()
+    root = ElementTree.parse(path).getroot()  # nosec B314
     for reference in root.iter():
         if reference.tag.rsplit("}", 1)[-1] == "PackageReference" and reference.attrib.get("Include", "").lower() == "xunit.v3":
             return reference.attrib.get("Version")

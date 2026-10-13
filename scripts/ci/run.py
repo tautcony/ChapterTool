@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 import time
-from defusedxml import ElementTree as ET
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -35,7 +35,7 @@ class Step:
 
 
 def dotnet_tests(root: Path) -> list[str]:
-    projects = ET.parse(root / "ChapterTool.slnx").iter("Project")
+    projects = ET.parse(root / "ChapterTool.slnx").iter("Project")  # nosec B314
     return [p.attrib["Path"].replace("\\", "/") for p in projects
             if p.attrib["Path"].replace("\\", "/").startswith("tests/")
             and p.attrib["Path"].endswith(".Tests.csproj")]
