@@ -1,0 +1,19 @@
+src/ChapterTool.Avalonia.UI/Workflows/LoadSaveWorkflow.cs
+  s_1758991fd47007::t_f7587537507a70 111,116-123,125-133,135,141-155,157-158,161
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3ccfa409903d52be5281302843cdb607ee778aa0",
+  "prompts": {},
+  "sessions": {
+    "s_1758991fd47007": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13494-f84c-72a0-83b6-31f017fb5586",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
