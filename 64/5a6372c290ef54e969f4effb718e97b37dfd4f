@@ -1,0 +1,28 @@
+src/ChapterTool.Avalonia.UI/ChapterTool.Avalonia.UI.csproj
+  h_3705811fa4502c 17,19
+tests/ChapterTool.Wasm.Tests/ChapterTool.Wasm.Tests.csproj
+  h_3705811fa4502c 12-14
+src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj
+  h_3705811fa4502c 11,13-14,19
+tests/ChapterTool.Avalonia.Tests/ChapterTool.Avalonia.Tests.csproj
+  h_3705811fa4502c 16-18
+tests/ChapterTool.Avalonia.Headless.Tests/ChapterTool.Avalonia.Headless.Tests.csproj
+  h_3705811fa4502c 18-19,22
+tests/ChapterTool.Core.Tests/ChapterTool.Core.Tests.csproj
+  h_3705811fa4502c 16-18
+tests/ChapterTool.CommandLine.Tests/ChapterTool.CommandLine.Tests.csproj
+  h_3705811fa4502c 16-18
+tests/ChapterTool.Infrastructure.Tests/ChapterTool.Infrastructure.Tests.csproj
+  h_3705811fa4502c 16-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "645a6372c290ef54e969f4effb718e97b37dfd4f",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
