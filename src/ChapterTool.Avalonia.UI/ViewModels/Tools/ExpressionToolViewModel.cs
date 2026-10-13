@@ -52,52 +52,61 @@ public sealed class ExpressionToolViewModel : ObservableViewModel, IDisposable
         selectedPresetIndex = Presets.ToList().FindIndex(preset =>
             string.Equals(preset.Id, expressionSession.ExpressionPresetId, StringComparison.Ordinal));
         previewTimer.Tick += OnPreviewTimerTick;
+        InitializeCommands(errorHandler);
+        InitializePreviewState();
+    }
 
-        BrowseScriptCommand = new UiCommand(async (_, token) => await BrowseScriptAsync(token), _ => this.filePicker is not null)
-        {
-            ErrorHandler = errorHandler
-        };
+    private void InitializeCommands(Func<Exception, ValueTask>? errorHandler)
+    {
+        BrowseScriptCommand = CreateBrowseScriptCommand(errorHandler);
+        ApplyCommand = CreateApplyCommand(errorHandler);
+        ConfirmApplyCommand = new UiCommand(ApplyPreviewAsync, _ => CanApplyPreview) { ErrorHandler = errorHandler };
+        CancelPreviewCommand = CreateCancelPreviewCommand();
+        UpdatePreviewCommand = CreateUpdatePreviewCommand();
+    }
 
-        // Retain this command for callers that request an immediate preview.
-        ApplyCommand = new UiCommand((_, _) =>
+    private UiCommand CreateBrowseScriptCommand(Func<Exception, ValueTask>? errorHandler) =>
+        new(async (_, token) => await BrowseScriptAsync(token), _ => filePicker is not null) { ErrorHandler = errorHandler };
+
+    private UiCommand CreateApplyCommand(Func<Exception, ValueTask>? errorHandler) =>
+        new((_, _) =>
         {
             RefreshPreviewNow();
             return ValueTask.CompletedTask;
-        }, _ => contentOperations is not null && !IsApplying)
-        {
-            ErrorHandler = errorHandler
-        };
-        ConfirmApplyCommand = new UiCommand(ApplyPreviewAsync, _ => CanApplyPreview)
-        {
-            ErrorHandler = errorHandler
-        };
-        CancelPreviewCommand = new UiCommand((_, _) =>
-        {
-            previewTimer.Stop();
-            if (pendingPreview is { } preview)
-            {
-                contentOperations?.Cancel(preview);
-                pendingPreview = null;
-            }
-            PreviewReadiness = ExpressionPreviewReadiness.Empty;
-            Projection = null;
-            previewRows = [];
-            PropertyRows = [];
-            PreviewSummary = Localizer.GetString("Expression.State.Empty");
-            StatusText = PreviewSummary;
-            NotifyPreviewStateChanged();
-            closeTool?.Invoke();
-            return ValueTask.CompletedTask;
-        }, _ => !IsApplying);
-        UpdatePreviewCommand = new UiCommand((_, _) =>
-        {
-            if (PreviewReadiness == ExpressionPreviewReadiness.Stale)
-            {
-                RefreshPreviewNow();
-            }
-            return ValueTask.CompletedTask;
-        }, _ => PreviewReadiness == ExpressionPreviewReadiness.Stale && !IsApplying);
+        }, _ => contentOperations is not null && !IsApplying) { ErrorHandler = errorHandler };
 
+    private UiCommand CreateCancelPreviewCommand() => new((_, _) =>
+    {
+        previewTimer.Stop();
+        if (pendingPreview is { } preview)
+        {
+            contentOperations?.Cancel(preview);
+            pendingPreview = null;
+        }
+
+        PreviewReadiness = ExpressionPreviewReadiness.Empty;
+        Projection = null;
+        previewRows = [];
+        PropertyRows = [];
+        PreviewSummary = Localizer.GetString("Expression.State.Empty");
+        StatusText = PreviewSummary;
+        NotifyPreviewStateChanged();
+        closeTool?.Invoke();
+        return ValueTask.CompletedTask;
+    }, _ => !IsApplying);
+
+    private UiCommand CreateUpdatePreviewCommand() => new((_, _) =>
+    {
+        if (PreviewReadiness == ExpressionPreviewReadiness.Stale)
+        {
+            RefreshPreviewNow();
+        }
+
+        return ValueTask.CompletedTask;
+    }, _ => PreviewReadiness == ExpressionPreviewReadiness.Stale && !IsApplying);
+
+    private void InitializePreviewState()
+    {
         if (contentOperations?.CanPrepareExpression == true && !string.IsNullOrWhiteSpace(Expression))
         {
             RefreshPreviewNow();

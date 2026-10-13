@@ -83,17 +83,23 @@ public static partial class NodeApi
             throw InvalidExactRate();
         }
 
-        if (input.Kind == "unknown" && input.Numerator is null && input.Denominator is null && input.Value is null)
+        return input.Kind switch
         {
-            return FrameRateValue.Unknown;
-        }
+            "unknown" => ParseUnknownRate(input),
+            "rational" => ParseRationalRate(input),
+            "approximate" => ParseApproximateRate(input),
+            _ => throw InvalidExactRate()
+        };
+    }
 
-        if (input.Kind == "rational")
-        {
-            return ParseRationalRate(input);
-        }
+    private static FrameRateValue ParseUnknownRate(ExactRate input) =>
+        input.Numerator is null && input.Denominator is null && input.Value is null
+            ? FrameRateValue.Unknown
+            : throw InvalidExactRate();
 
-        if (input.Kind == "approximate" && input.Value is not null && input.Numerator is null && input.Denominator is null
+    private static FrameRateValue ParseApproximateRate(ExactRate input)
+    {
+        if (input.Value is not null && input.Numerator is null && input.Denominator is null
             && FrameRateValue.TryFromInvariantDecimal(input.Value, out var approximate, out _))
         {
             return approximate;
