@@ -1,0 +1,20 @@
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Commands.cs
+  h_3705811fa4502c 277-282
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/HistoryToolViewModel.cs
+  h_3705811fa4502c 157,391,583
+tests/ChapterTool.Avalonia.Tests/ViewModels/HistoryInspectionViewModelTests.cs
+  h_3705811fa4502c 331-366
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  h_3705811fa4502c 216-220,227-247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2fd2588d6e9b11f8e9f8e2d20db05e61d2b770b3",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
