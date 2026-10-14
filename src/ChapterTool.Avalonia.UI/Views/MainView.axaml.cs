@@ -34,6 +34,7 @@ public sealed partial class MainView : UserControl
     private IFilePickerService? filePickerService;
     private bool windowCommandRefreshPending;
     private bool commandStateSubscribed;
+    private bool shortcutSettingsSubscribed;
     private bool? advancedOptionsNarrow;
     private (ChapterRowViewModel Row, string? Column, string? Text)? activeCellEdit;
 
@@ -87,7 +88,7 @@ public sealed partial class MainView : UserControl
 
         InitializeComponent();
         DataContext = viewModel;
-        SettingsToolViewModel.ShortcutsSaved += OnShortcutsSaved;
+        SubscribeShortcutSettingsSaved();
         _ = LoadShortcutMappingAsync();
         UpdateSecondarySurface();
         ApplyAdvancedOptionsLayout();
@@ -123,6 +124,7 @@ public sealed partial class MainView : UserControl
     {
         base.OnAttachedToVisualTree(e);
         filePickerService ??= filePickerServiceFactory(this);
+        SubscribeShortcutSettingsSaved();
         if (commandStateSubscribed)
         {
             return;
@@ -161,6 +163,9 @@ public sealed partial class MainView : UserControl
     }
 
     internal static bool IsNarrowAdvancedOptions(double width) => width <= 860;
+
+    /// <summary>Gets whether this view currently observes the static shortcut save event.</summary>
+    internal bool ShortcutSettingsSubscribed => shortcutSettingsSubscribed;
 
     public UiCommand BrowseAndLoadCommand { get; }
 
@@ -583,7 +588,7 @@ public sealed partial class MainView : UserControl
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        SettingsToolViewModel.ShortcutsSaved -= OnShortcutsSaved;
+        UnsubscribeShortcutSettingsSaved();
         if (commandStateSubscribed)
         {
             UnsubscribeViewModelCommandState();
@@ -592,6 +597,32 @@ public sealed partial class MainView : UserControl
         }
 
         base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>
+    /// Subscribes to the process-wide shortcut save event. The event is static and the
+    /// composition root keeps one view instance, so a detached view must subscribe again.
+    /// </summary>
+    private void SubscribeShortcutSettingsSaved()
+    {
+        if (shortcutSettingsSubscribed)
+        {
+            return;
+        }
+
+        SettingsToolViewModel.ShortcutsSaved += OnShortcutsSaved;
+        shortcutSettingsSubscribed = true;
+    }
+
+    private void UnsubscribeShortcutSettingsSaved()
+    {
+        if (!shortcutSettingsSubscribed)
+        {
+            return;
+        }
+
+        SettingsToolViewModel.ShortcutsSaved -= OnShortcutsSaved;
+        shortcutSettingsSubscribed = false;
     }
 
     private void OnSecondarySurfaceChanged(object? sender, EventArgs args) => UpdateSecondarySurface();

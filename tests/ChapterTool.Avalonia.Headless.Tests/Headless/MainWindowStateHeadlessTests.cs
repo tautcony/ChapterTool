@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views.Controls;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
@@ -152,5 +154,27 @@ public sealed class MainWindowStateHeadlessTests
         formatBox.SelectedIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         await host.LayoutAsync();
         Assert.False(xmlLanguageGroup.IsEnabled);
+    }
+
+    [AvaloniaFact]
+    public async Task Static_shortcut_settings_event_stays_subscribed_after_reattach()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        Assert.True(host.MainView.ShortcutSettingsSubscribed);
+
+        host.Window.Content = null;
+        Assert.False(host.MainView.ShortcutSettingsSubscribed);
+
+        host.Window.Content = host.MainView;
+        Assert.True(host.MainView.ShortcutSettingsSubscribed);
+
+        host.ViewModel.SetShortcutSettings(new ShortcutSettings
+        {
+            [ShortcutCatalog.SaveId] = "Ctrl+Alt+7"
+        });
+
+        Assert.Equal("Ctrl+Alt+7", host.ViewModel.SaveShortcutGesture);
+        Assert.Equal(ShortcutCatalog.SaveId, host.ViewModel.ActiveShortcutMapping.ActionForGesture("Ctrl+Alt+7"));
     }
 }
