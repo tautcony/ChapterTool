@@ -1,0 +1,14 @@
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/ExactFrameRateHeadlessTests.cs
+  h_3705811fa4502c 151-178
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3b4aca03af8e8137552acb50a88c41b0aae9453f",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
