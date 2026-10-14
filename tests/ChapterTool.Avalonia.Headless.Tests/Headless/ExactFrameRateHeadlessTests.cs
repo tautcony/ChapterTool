@@ -148,4 +148,32 @@ public sealed class ExactFrameRateHeadlessTests
         await host.ViewModel.RedoCommand.ExecuteAsync();
         Assert.Equal(original + 2000, host.ViewModel.Workspace.ContentSession!.Snapshot.Document.Tracks[0].Chapters[1].StartTicks);
     }
+
+    [AvaloniaFact]
+    public async Task Unchanged_rounded_frame_cell_commit_keeps_ticks_and_history()
+    {
+        const long startTicks = 100_000_000;
+        var source = new ChapterSet("Custom", "custom.txt", ChapterImportFormat.Ogm, FrameRateValue.Rational(24000, 1001),
+            TimeSpan.FromSeconds(30),
+            [new Chapter(1, TimeSpan.FromTicks(startTicks), "Opening", "240")]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult("custom.txt",
+            new ChapterImportEntry("custom", "Custom", source)));
+        await host.LoadAsync("custom.txt");
+        var cursor = host.ViewModel.ToolSession.History.Snapshot!.CursorId;
+        host.RequiredControl<CheckBox>("RoundFramesBox").IsChecked = true;
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        grid.SelectedItem = host.ViewModel.Rows[0];
+        grid.CurrentColumn = Assert.Single(grid.Columns, column => column.Tag?.ToString() == ChapterGridColumnIds.Frames);
+        grid.Focus();
+        host.Window.KeyPress(Key.F2, RawInputModifiers.None, PhysicalKey.F2, string.Empty);
+        await host.LayoutAsync();
+
+        var editor = Assert.Single(grid.GetVisualDescendants().OfType<TextBox>(), box => box.Classes.Contains("gridEditor"));
+        Assert.Equal("240", editor.Text);
+        host.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, string.Empty);
+        await host.LayoutAsync();
+
+        Assert.Equal(startTicks, host.ViewModel.Workspace.ContentSession!.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+        Assert.Equal(cursor, host.ViewModel.ToolSession.History.Snapshot!.CursorId);
+    }
 }
