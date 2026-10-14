@@ -127,9 +127,23 @@ public sealed class ChapterExportServiceTests
         var editionUid = Assert.Single(document.Descendants("EditionUID")).Value;
         var chapterUids = document.Descendants("ChapterUID").Select(static element => element.Value).ToArray();
 
-        Assert.True(int.Parse(editionUid, CultureInfo.InvariantCulture) > 1);
+        Assert.True(int.Parse(editionUid, CultureInfo.InvariantCulture) > 0);
         Assert.Equal(3, chapterUids.Length);
+        Assert.All(chapterUids, static uid => Assert.True(int.Parse(uid, CultureInfo.InvariantCulture) > 0));
         Assert.NotEqual(["1", "2", "3"], chapterUids);
+    }
+
+    [Fact]
+    public void Xml_export_reuses_content_seeded_uids_and_changes_them_with_content()
+    {
+        var options = new ChapterSerializationOptions(ChapterExportFormat.Xml);
+
+        var first = service.Serialize(Sample(), options);
+        var second = service.Serialize(Sample(), options);
+        var changed = service.Serialize(Sample() with { Title = "Other Title" }, options);
+
+        Assert.Equal(UidOrder(first.Content), UidOrder(second.Content));
+        Assert.NotEqual(UidOrder(first.Content), UidOrder(changed.Content));
     }
 
     [Fact]
@@ -216,6 +230,14 @@ public sealed class ChapterExportServiceTests
                 new Chapter(2, TimeSpan.FromSeconds(10), "Middle", "240", FrameAccuracy: FrameAccuracy.Inexact),
                 new Chapter(3, TimeSpan.FromSeconds(20), "End", "480")
             ]);
+
+    private static string UidOrder(string content)
+    {
+        var document = XDocument.Parse(content);
+        return string.Join(',', document.Descendants()
+            .Where(static element => element.Name.LocalName is "EditionUID" or "ChapterUID")
+            .Select(static element => element.Name.LocalName + "=" + element.Value));
+    }
 
     private static string NormalizeUids(string content)
     {

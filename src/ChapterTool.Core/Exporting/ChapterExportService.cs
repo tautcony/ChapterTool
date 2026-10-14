@@ -101,7 +101,18 @@ public sealed partial class ChapterExportService
     private ChapterExportResult Xml(ChapterSet info, ChapterSerializationOptions options)
     {
         var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
-        using var random = RandomNumberGenerator.Create();
+
+        // Seed the UID generator from the exported content so one document always exports the
+        // same UIDs, and a shorter chapter list never reuses a later chapter UID.
+        var seed = StableHashCode(
+            info.Title,
+            info.SourceName,
+            info.ImportFormat.ToString(),
+            info.FrameRate.ToString(),
+            info.Duration.Ticks.ToString(CultureInfo.InvariantCulture),
+            string.Join('\u001e', info.Chapters.Select(static chapter =>
+                $"{chapter.DisplayNumber}|{chapter.StartTime.Ticks}|{chapter.Name}|{chapter.FramesInfo}|{chapter.IsSeparator}")));
+        var random = new Random(seed);
         var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
             new XElement(
                 "ChapterAtom",
@@ -252,11 +263,10 @@ public sealed partial class ChapterExportService
 
     private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.StartTime);
 
-    private static int NextUid(RandomNumberGenerator random)
+    private static int NextUid(Random random)
     {
-        Span<byte> bytes = stackalloc byte[4];
-        random.GetBytes(bytes);
-        return BitConverter.ToInt32(bytes) & int.MaxValue;
+        // Matroska requires a non-zero UID. Keep the value inside the positive Int32 range.
+        return 1 + random.Next(0, int.MaxValue - 1);
     }
 
     private static int StableHashCode(params string?[] values)
