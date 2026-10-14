@@ -1,6 +1,6 @@
 # Release Notes
 
-## [Unreleased]
+## [23.31.0] - 2026.10.14
 
 ### Features
 

@@ -7,7 +7,7 @@
     <AnalysisLevel>latest</AnalysisLevel>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)ChapterTool.ruleset</CodeAnalysisRuleSet>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
-    <VersionPrefix>23.3.2</VersionPrefix>
+    <VersionPrefix>23.31.0</VersionPrefix>
     <Authors>TautCony</Authors>
     <Product>ChapterTool</Product>
     <RepositoryUrl>https://github.com/tautcony/ChapterTool</RepositoryUrl>
