@@ -1,0 +1,72 @@
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_ef7a5fd901b22a::t_7ef5c1ce33c453 618-629,657-663,691
+  s_ef7a5fd901b22a::t_31e2be17053ac0 615-617
+  s_7eef37b59c71ca::t_7c5b2142928cc2 273-280,614,698-701
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_ef7a5fd901b22a::t_553e2b3492239e 617-628,656-662,690
+  s_ef7a5fd901b22a::t_cf844b9bfd2332 614-616
+  s_7eef37b59c71ca::t_8bd0ee35ebd32b 272-279,613,697-700
+tests/ChapterTool.Wasm.Tests/WasmHistoryParityTests.cs
+  h_3705811fa4502c 94,99
+.github/workflows/dotnet-ci.yml
+  s_7eef37b59c71ca::t_b73527d48ca9d1 64-65
+scripts/ci/run.py
+  s_7eef37b59c71ca::t_35d6692e5b2edc 48
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_7eef37b59c71ca::t_4fdf6aac79949e 273-280,614-629,657-663,691,698-701
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_7eef37b59c71ca::t_a0d1f34fd6b355 273-280,614-629,657-663,691,698-701
+src/ChapterTool.Avalonia.UI/ViewModels/Tools/HistoryToolViewModel.cs
+  s_7eef37b59c71ca::t_30b48ed41e7714 261,703,719,919,924-926
+src/ChapterTool.Contracts/Configuration/ThemePresetCatalog.cs
+  s_7eef37b59c71ca::t_112950e78c6980 95,113-115
+src/ChapterTool.Wasm/Components/HistoryDialog.razor
+  s_7eef37b59c71ca::t_860ac43cc4c517 110
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_7eef37b59c71ca::t_2560cca8c1a52a 272-279,613-628,656-662,690,697-700
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_7eef37b59c71ca::t_d19fb16e5a2541 272-279,613-628,656-662,690,697-700
+src/ChapterTool.Wasm/Services/WasmHistoryProjection.cs
+  s_7eef37b59c71ca::t_0bfe2b285b94df 100,130,270,275-277
+tests/ChapterTool.Avalonia.Tests/ViewModels/HistoryInspectionViewModelTests.cs
+  s_7eef37b59c71ca::t_1e2a520f0bbfcc 307
+scripts/README.md
+  h_3705811fa4502c 149-150,157-160
+scripts/diagnostics/audit-ui-resources.py
+  h_3705811fa4502c 2,4,7,15,17-45,55-58,69,78,86,88-89,91-106,109-112
+scripts/diagnostics/avalonia-fluent-resource-references.json
+  h_3705811fa4502c 1-3351
+scripts/diagnostics/update-avalonia-fluent-resource-references.py
+  h_3705811fa4502c 1-165
+src/ChapterTool.Avalonia/Services/AvaloniaThemeApplicationService.cs
+  h_3705811fa4502c 16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "01f8d8fef27a3a6d3d43b9633e83c6dcd6d02999",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_7eef37b59c71ca": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a137ff-f994-7573-a7c0-80a9e7142f2d",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_ef7a5fd901b22a": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "f75f508d-f8bf-4749-9ebe-6a908c6ab83f",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
