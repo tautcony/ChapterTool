@@ -104,7 +104,9 @@ public static class EditableChapterDocumentAdapter
     public static EditableChapterDocument FromChapterSet(ChapterSet chapterSet)
     {
         ArgumentNullException.ThrowIfNull(chapterSet);
-        var duration = chapterSet.Duration.Ticks > 0 ? ChapterDuration.FromTicks(chapterSet.Duration.Ticks) : ChapterDuration.Unknown;
+        var duration = chapterSet.DurationIsKnown && chapterSet.Duration.Ticks > 0
+            ? ChapterDuration.FromTicks(chapterSet.Duration.Ticks)
+            : ChapterDuration.Unknown;
         var chapters = chapterSet.Chapters.Select(static chapter => FromChapter(chapter, ChapterId.New()));
         var track = new EditableChapterTrack(ChapterTrackId.New(), chapterSet.Title, chapters, frameRate: chapterSet.FrameRate);
         return new EditableChapterDocument(ChapterDocumentId.New(), chapterSet.Title, chapterSet.SourceName,
@@ -129,7 +131,11 @@ public static class EditableChapterDocumentAdapter
         }
 
         return new ChapterSet(document.Title, document.SourceName, document.ImportFormat, document.FrameRate,
-            document.Duration.IsKnown ? TimeSpan.FromTicks(document.Duration.Ticks) : TimeSpan.Zero, chapters.ToImmutable());
+            document.Duration.IsKnown ? TimeSpan.FromTicks(document.Duration.Ticks) : TimeSpan.Zero, chapters.ToImmutable())
+        {
+            // An unknown duration must survive the round trip. Do not turn it into a known zero.
+            DurationIsKnown = document.Duration.IsKnown
+        };
     }
 
     /// <summary>Applies a same-row-count edit while preserving chapter identities.</summary>

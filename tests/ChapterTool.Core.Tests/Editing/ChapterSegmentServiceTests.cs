@@ -99,6 +99,38 @@ public sealed class ChapterSegmentServiceTests
         Assert.Equal(FrameRateValue.Unknown, result.ChapterSet.FrameRate);
     }
 
+    [Fact]
+    public void CombineRejectsAnUnknownDurationInsteadOfOffsettingByZero()
+    {
+        var group = new ChapterImportSource(
+            "unknown-duration",
+            [
+                new ChapterImportEntry("a", "a", Info(ChapterImportFormat.Mpls, TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A"))),
+                new ChapterImportEntry("b", "b", Info(ChapterImportFormat.Mpls, TimeSpan.Zero, new Chapter(1, TimeSpan.Zero, "B")) with { DurationIsKnown = false })
+            ]);
+
+        var result = ChapterSegmentService.Combine(group);
+
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidStructure);
+        Assert.Empty(result.ChapterSet.Chapters);
+    }
+
+    [Fact]
+    public void AppendRejectsAnUnknownDurationInsteadOfOffsettingByZero()
+    {
+        var existing = new ChapterImportSource(
+            "a",
+            [new ChapterImportEntry("a", "a", Info(ChapterImportFormat.Mpls, TimeSpan.FromSeconds(20), new Chapter(1, TimeSpan.Zero, "A")))]);
+        var appended = new ChapterImportSource(
+            "b",
+            [new ChapterImportEntry("b", "b", Info(ChapterImportFormat.Mpls, TimeSpan.Zero, new Chapter(1, TimeSpan.Zero, "B")) with { DurationIsKnown = false })]);
+
+        var result = ChapterSegmentService.Append(existing, appended);
+
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidStructure);
+        Assert.Empty(result.ChapterSet.Chapters);
+    }
+
     private static ChapterSet Info(ChapterImportFormat sourceType, TimeSpan duration, params Chapter[] chapters) =>
         Info(sourceType, duration, FrameRateValue.Approximate(24), chapters);
 

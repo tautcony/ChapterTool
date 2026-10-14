@@ -24,6 +24,26 @@ public sealed class EditableChapterDocumentTests
     }
 
     [Fact]
+    public void Adapter_preserves_unknown_duration_flag_through_the_round_trip()
+    {
+        var unknown = new ChapterSet("Title", "source", ChapterImportFormat.Mpls, FrameRateValue.Approximate(24m),
+            TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")])
+        {
+            DurationIsKnown = false
+        };
+        var known = unknown with { Duration = TimeSpan.FromSeconds(30), DurationIsKnown = true };
+
+        var fromUnknown = EditableChapterDocumentAdapter.FromChapterSet(unknown);
+        var fromKnown = EditableChapterDocumentAdapter.FromChapterSet(known);
+
+        Assert.False(fromUnknown.Duration.IsKnown);
+        Assert.True(fromKnown.Duration.IsKnown);
+        Assert.False(EditableChapterDocumentAdapter.ToChapterSet(fromUnknown).DurationIsKnown);
+        Assert.True(EditableChapterDocumentAdapter.ToChapterSet(fromKnown).DurationIsKnown);
+        Assert.Equal(TimeSpan.FromSeconds(30), EditableChapterDocumentAdapter.ToChapterSet(fromKnown).Duration);
+    }
+
+    [Fact]
     public void Adapter_preserves_authoritative_rate_provenance_without_promoting_approximate_rates()
     {
         var exactRate = new ChapterFrameRate(24000, 1001);

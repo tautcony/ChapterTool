@@ -26,6 +26,14 @@ public sealed class ChapterSegmentService
             return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.UnsupportedCombineSource, "Only MPLS and DVD chapter groups can be combined.")]);
         }
 
+        if (group.Entries.Any(static entry => !entry.ChapterSet.DurationIsKnown))
+        {
+            // An unknown duration is not a zero offset. Joining entries would place later
+            // chapters at the wrong time and still report success.
+            return new ChapterEditResult(Empty(), [new ChapterDiagnostic(DiagnosticSeverity.Error,
+                ChapterDiagnosticCode.InvalidStructure, "A chapter entry has an unknown duration, so the entries cannot be combined.")]);
+        }
+
         var offset = TimeSpan.Zero;
         var rates = group.Entries.SelectMany(entry => entry.Segments.IsEmpty
             ? [entry.ChapterSet.FrameRate] : entry.Segments.Select(static segment => segment.FrameRate)).Distinct().ToArray();

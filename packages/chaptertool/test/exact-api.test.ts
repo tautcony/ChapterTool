@@ -127,4 +127,16 @@ describe("packaged exact facade", () => {
     expect(same.success).toBe(true);
     expect(same.chapterSet!.durationTicks).toBe("0");
   });
+
+  it("rejects a combine when an entry duration is unknown", async () => {
+    const unknownDuration = await tool.combine({ ...group(sample(rational)), entries: [
+      ...group(sample(rational)).entries, ...group(sample(rational, null)).entries,
+    ] });
+    expect(unknownDuration.success).toBe(false);
+    expect(unknownDuration.diagnostics[0].code).toBe("Structure.Invalid");
+
+    const appended = await tool.append(group(sample(rational)), group(sample(rational, null)));
+    expect(appended.success).toBe(false);
+    expect(appended.diagnostics[0].code).toBe("Structure.Invalid");
+  });
 });

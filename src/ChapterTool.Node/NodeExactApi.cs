@@ -27,7 +27,7 @@ public static partial class NodeApi
         return new ExactImportResponse(imported.Success, imported.IsPartial,
             [.. imported.Groups.Select(group => new ExactImportGroup(group.SourcePath,
                 [.. group.Entries.Select(entry => new ExactImportEntry(entry.Id, entry.DisplayName,
-                    ToExactSet(entry.ChapterSet, entry.ChapterSet.Duration.Ticks > 0 ? TickText(entry.ChapterSet.Duration.Ticks) : null,
+                    ToExactSet(entry.ChapterSet, entry.ChapterSet.DurationIsKnown ? TickText(entry.ChapterSet.Duration.Ticks) : null,
                         [.. entry.Segments.Select(ToExactSegment)]), entry.CanCombine,
                     entry.ReferencedMediaFiles?.Select(static media => new NodeReferencedMediaFile(media.DisplayName, media.RelativePath, media.AbsolutePath)).ToArray(),
                     entry.MediaTracks?.Select(static track => new NodeImportMediaTrack(track.Kind, track.Summary, track.Codec, track.Format,
@@ -180,6 +180,8 @@ public static partial class NodeApi
             ?? throw new ArgumentException("Appended group is missing.");
         var result = appended is null ? ChapterSegmentService.Combine(existing) : ChapterSegmentService.Append(existing, FromExactGroup(appended));
         var entries = input.Entries.Concat(appended?.Entries ?? []).ToArray();
+
+        // null means unknown. A rejected combine still reports the requested entries.
         var hasDuration = entries.All(static entry => entry.ChapterSet.DurationTicks is not null);
         return new ExactContentResponse(result.Diagnostics.Count == 0, ToExactSet(result.ChapterSet,
             hasDuration ? TickText(result.ChapterSet.Duration.Ticks) : null), [.. result.Diagnostics.Select(ToDiagnostic)]);

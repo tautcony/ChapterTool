@@ -154,13 +154,17 @@ public static partial class NodeApi
     private static ChapterSet FromExactSet(ExactChapterSet set)
     {
         var rate = ParseExactRate(set.FrameRate);
-        var duration = set.DurationTicks is null ? 0 : ParseExactTicks(set.DurationTicks);
+        var durationIsKnown = set.DurationTicks is not null;
+        var duration = durationIsKnown ? ParseExactTicks(set.DurationTicks!) : 0;
         ValidateChapterSetPayload(set, duration);
         var chapters = set.Chapters!.Select(FromExactChapter).ToArray();
         ValidateChapterBounds(chapters);
         ValidateSegmentRates(set.Segments, rate);
         return new ChapterSet(set.Title, set.SourceName, Enum.Parse<ChapterImportFormat>(set.ImportFormat, ignoreCase: true),
-            rate, TimeSpan.FromTicks(duration), chapters);
+            rate, TimeSpan.FromTicks(duration), chapters)
+        {
+            DurationIsKnown = durationIsKnown
+        };
     }
 
     private static void ValidateChapterSetPayload(ExactChapterSet set, long duration)
