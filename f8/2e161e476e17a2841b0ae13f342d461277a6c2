@@ -1,0 +1,34 @@
+src/ChapterTool.Avalonia.UI/Views/Controls/ExpressionEditor.axaml.cs
+  s_ae4750859c750c::t_68e79b11811a72 435-441
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowInteractionHeadlessTests.cs
+  s_df9351c60ab890::t_4f25cad7eb49e4 234-277
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f82e161e476e17a2841b0ae13f342d461277a6c2",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_ae4750859c750c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a138dc-64dc-7783-bf8a-523847a86609",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_df9351c60ab890": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a138d3-8c3c-7f61-be7b-e22784b158b5",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
