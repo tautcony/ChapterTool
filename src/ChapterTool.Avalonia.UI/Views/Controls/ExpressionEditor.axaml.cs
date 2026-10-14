@@ -432,7 +432,13 @@ public sealed partial class ExpressionEditor : UserControl
     {
         if (!editor.IsKeyboardFocusWithin)
         {
-            FocusInnerEditor();
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (IsKeyboardFocusWithin && !editor.IsKeyboardFocusWithin)
+                {
+                    FocusInnerEditor();
+                }
+            });
         }
     }
 

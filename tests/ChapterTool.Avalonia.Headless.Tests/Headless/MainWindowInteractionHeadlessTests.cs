@@ -231,6 +231,50 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.Equal(2, host.ViewModel.Rows.Count);
     }
 
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Expression_tab_focus_supports_backspace_and_text_input(bool selectAll)
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Text = "t/3.33";
+        host.RequiredControl<DataGrid>("ChapterGrid").Focus();
+        for (var i = 0; i < 40 && !expressionBox.IsKeyboardFocusWithin; i++)
+        {
+            host.Window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, string.Empty);
+            await host.LayoutAsync();
+        }
+        var inner = expressionBox.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single();
+        Assert.Same(inner.TextArea, host.Window.FocusManager!.GetFocusedElement());
+        inner.CaretOffset = inner.Document.TextLength;
+        if (selectAll)
+        {
+            inner.SelectAll();
+        }
+        host.Window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+        await host.LayoutAsync();
+        var expectedAfterDeletion = selectAll ? string.Empty : "t/3.3";
+        Assert.Equal(expectedAfterDeletion, expressionBox.EditorText);
+
+        host.Window.KeyTextInput("2");
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion + "2", expressionBox.EditorText);
+        host.Window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion, expressionBox.EditorText);
+
+        host.RequiredControl<DataGrid>("ChapterGrid").Focus();
+        inner.TextArea.Focus();
+        host.Window.KeyTextInput("4");
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion + "4", expressionBox.EditorText);
+        host.Window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion, expressionBox.EditorText);
+    }
+
     [AvaloniaFact]
     public async Task Shifted_plus_character_is_inserted_in_expression_editor()
     {
