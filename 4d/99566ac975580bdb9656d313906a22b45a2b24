@@ -1,0 +1,28 @@
+CHANGELOG.zh-CN.md
+  h_3705811fa4502c 7-13,17-33,37
+  s_50cb4c8298bd8f::t_f283f02cfa99fa 38
+CHANGELOG.md
+  h_3705811fa4502c 7-13,17-33,37
+  s_50cb4c8298bd8f::t_0a4be5d53c2e59 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4d99566ac975580bdb9656d313906a22b45a2b24",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_50cb4c8298bd8f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13872-fe45-7bb0-82c1-a15ae55ad704",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
