@@ -1,0 +1,16 @@
+src/ChapterTool.Contracts/Shortcuts/ShortcutSettings.cs
+  h_3705811fa4502c 31,35-37,51-57
+tests/ChapterTool.Infrastructure.Tests/SettingsMigrationTests.cs
+  h_3705811fa4502c 3,344-365
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "423239ed54f258c6023e80f73b19b0e2953d6354",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
