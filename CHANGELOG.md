@@ -1,38 +1,41 @@
 # Release Notes
 
-## Current Change: Generated Core API Reference
-
-This change adds generated Core API documentation and publishes it beside the WASM app.
-
-- Added DocFX reference pages for public Core types, members, and enum values.
-- Added an API reference landing page and namespace navigation.
-- Added a `/docs/` section to the GitHub Pages site. The WASM app remains at the site root.
-
 ## [Unreleased]
-
-This section summarizes product changes accumulated since v23.3.2. The current documentation-only change is listed separately above.
 
 ### Features
 
-- Added DVD disc chapter import from `VIDEO_TS` folders, including IFO timing and title selection.
-- Added a shared editable document and session history model with atomic edits, branching history, clip operations, and history inspection and restore across desktop and browser workflows.
-- Added reviewable live expression previews with diagnostics, plus inline preview and history workflows in the browser app.
-- Preserved exact frame-rate provenance from MPLS imports through editing, and added full-precision repeating frame display.
-- Added customizable keyboard shortcuts and chapter and selection counts to the desktop workflow.
+- Added DVD `VIDEO_TS` import with title selection and IFO/NAV timing.
+- Added branching undo/redo, history inspection, and node restoration for desktop and browser.
+- Added live expression previews and shared review/apply workflows for content edits.
+- Preserved exact frame-rate provenance and added full-precision frame counts with repeating decimals.
+- Added customizable shortcuts, conflict checks, and desktop chapter and selection counts.
+- Improved log filtering, inspection, copying, and export.
+- Added Core API reference documentation at `/ChapterTool/docs/`.
 
 ### Bug Fixes
 
-- Improved desktop and browser editing parity, including expression preview freshness, frame formatting, and responsive dialogs.
-- Fixed chapter time handling for sources with unknown duration and rejected chapter times beyond one day.
-- Improved frame display preference updates, preview layout, localization, and browser startup handling.
+- Preserved timestamps and history for unchanged frame cells; fixed per-track frame-rate commits.
+- Fixed stale expression previews and prevented expression replay during later edits or exports.
+- Preserved clip edits and rejected combine/append with unknown durations.
+- Fixed redo branch selection, history details, and restore messages.
+- Fixed browser settings and export-save failures, preserving drafts and restoring active options.
+- Fixed null shortcut overrides, shortcut refresh after reattachment, and browser dialog cleanup.
+- Fixed expression editor focus and Backspace input; improved responsive layouts and localization.
+- Fixed zero or duplicate Matroska XML UIDs.
+
+### Compatibility Changes
+
+- Removed numeric frame-rate compatibility APIs: Core uses `FrameRateValue`; Node uses tagged rates and tick strings.
+- Scalar combine/append now reject incompatible frame rates.
+- Removed transforms from export options. Apply them before Core `Serialize` or Node `serialize`.
+- Removed automatic migration and cleanup of old browser settings keys.
+- Renamed `LegacyMplsCode` to `MplsFrameRateCode` and removed obsolete expression compatibility members.
+- XML UIDs now use stable content hashes; values may differ from older versions.
 
 ### Internals
 
-- Expanded browser end-to-end coverage and reviewed Linux layout baselines, and reorganized CI checks and reusable scripts.
-- Updated dependencies and refined session, import, export, and UI composition boundaries.
-- Removed Core and Node numeric frame-rate compatibility surfaces and transform-bearing export options; Node callers now use canonical frame rates and tick strings.
-- Removed predecessor browser settings-key migration and cleanup. Renamed `LegacyMplsCode` to `MplsFrameRateCode`.
-- Removed obsolete expression-editor and expression-apply compatibility members.
+- Unified editable documents and atomic operations; simplified sessions and UI composition.
+- Expanded automated tests and shared CI/package checks; updated dependencies and resource audits.
 
 ## [23.3.2] - 2026.08.29
 
