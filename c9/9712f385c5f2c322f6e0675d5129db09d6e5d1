@@ -1,0 +1,16 @@
+src/ChapterTool.Core/Exporting/ChapterExportService.cs
+  h_3705811fa4502c 104-115,266,268-269
+tests/ChapterTool.Core.Tests/Exporting/ChapterExportServiceTests.cs
+  h_3705811fa4502c 130,132,136-148,234-241
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c99712f385c5f2c322f6e0675d5129db09d6e5d1",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
