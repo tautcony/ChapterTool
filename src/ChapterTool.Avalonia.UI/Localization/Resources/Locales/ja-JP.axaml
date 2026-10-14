@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
   <x:String x:Key="Text.Cut" xml:space="preserve">切り取り</x:String>
   <x:String x:Key="Text.Copy" xml:space="preserve">コピー</x:String>
@@ -359,6 +359,7 @@
   <x:String x:Key="Status.DropTooLarge" xml:space="preserve">ファイルが大きすぎます（最大 64 MB）。</x:String>
   <x:String x:Key="Status.Duplicated" xml:space="preserve">{0} 行目を複製しました。</x:String>
   <x:String x:Key="Status.ExpressionApplied" xml:space="preserve">式を適用しました · {0} fps · {1} 行</x:String>
+  <x:String x:Key="Status.ExpressionApplyFailed" xml:space="preserve">式を適用できませんでした。</x:String>
   <x:String x:Key="Status.ExpressionPresetApplied" xml:space="preserve">式プリセットを適用しました: {0}</x:String>
   <x:String x:Key="Status.ExpressionPresetUnknown" xml:space="preserve">不明な式プリセット: {0}</x:String>
   <x:String x:Key="Status.FramesUpdated" xml:space="preserve">フレームを更新しました · {0} fps · {1} 行</x:String>

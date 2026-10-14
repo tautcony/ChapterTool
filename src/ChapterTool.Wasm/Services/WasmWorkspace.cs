@@ -953,16 +953,19 @@ public sealed partial class WasmWorkspace : IDisposable
             return;
         }
 
-        BeginBusy("Status.Appending");
-        var operationRevision = session.CaptureRevision();
-        var expectedSessionId = ClipSessionState.SessionId;
         var contentSession = session.ContentSession;
         if (contentSession is null)
         {
+            // Resolve the content session before this operation owns the busy flag. An early
+            // return after BeginBusy would leave IsBusy set and disable every later action.
             SetLocalizedStatus("Status.CannotAppend");
             Notify();
             return;
         }
+
+        BeginBusy("Status.Appending");
+        var operationRevision = session.CaptureRevision();
+        var expectedSessionId = ClipSessionState.SessionId;
         var capturedContent = contentSession.Snapshot;
         try
         {

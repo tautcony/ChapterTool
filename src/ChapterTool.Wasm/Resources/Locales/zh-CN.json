@@ -358,6 +358,7 @@
   "Status.DropTooLarge": "文件过大（最大 64 MB）。",
   "Status.Duplicated": "已复制第 {0} 行。",
   "Status.ExpressionApplied": "已应用表达式 · {0} fps · {1} 行",
+  "Status.ExpressionApplyFailed": "无法应用表达式。",
   "Status.ExpressionPresetApplied": "已应用表达式预设：{0}",
   "Status.ExpressionPresetUnknown": "未知表达式预设：{0}",
   "Status.FramesUpdated": "已更新帧 · {0} fps · {1} 行",

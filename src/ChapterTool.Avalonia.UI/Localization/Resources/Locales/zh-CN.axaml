@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
   <x:String x:Key="Text.Cut" xml:space="preserve">剪切</x:String>
   <x:String x:Key="Text.Copy" xml:space="preserve">复制</x:String>
@@ -359,6 +359,7 @@
   <x:String x:Key="Status.DropTooLarge" xml:space="preserve">文件过大（最大 64 MB）。</x:String>
   <x:String x:Key="Status.Duplicated" xml:space="preserve">已复制第 {0} 行。</x:String>
   <x:String x:Key="Status.ExpressionApplied" xml:space="preserve">已应用表达式 · {0} fps · {1} 行</x:String>
+  <x:String x:Key="Status.ExpressionApplyFailed" xml:space="preserve">无法应用表达式。</x:String>
   <x:String x:Key="Status.ExpressionPresetApplied" xml:space="preserve">已应用表达式预设：{0}</x:String>
   <x:String x:Key="Status.ExpressionPresetUnknown" xml:space="preserve">未知表达式预设：{0}</x:String>
   <x:String x:Key="Status.FramesUpdated" xml:space="preserve">已更新帧 · {0} fps · {1} 行</x:String>

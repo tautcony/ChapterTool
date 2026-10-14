@@ -358,6 +358,7 @@
   "Status.DropTooLarge": "ファイルが大きすぎます（最大 64 MB）。",
   "Status.Duplicated": "{0} 行目を複製しました。",
   "Status.ExpressionApplied": "式を適用しました · {0} fps · {1} 行",
+  "Status.ExpressionApplyFailed": "式を適用できませんでした。",
   "Status.ExpressionPresetApplied": "式プリセットを適用しました: {0}",
   "Status.ExpressionPresetUnknown": "不明な式プリセット: {0}",
   "Status.FramesUpdated": "フレームを更新しました · {0} fps · {1} 行",

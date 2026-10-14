@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
   <x:String x:Key="Text.Cut" xml:space="preserve">Cut</x:String>
   <x:String x:Key="Text.Copy" xml:space="preserve">Copy</x:String>
@@ -359,6 +359,7 @@
   <x:String x:Key="Status.DropTooLarge" xml:space="preserve">File is too large (max 64 MB).</x:String>
   <x:String x:Key="Status.Duplicated" xml:space="preserve">Duplicated row {0}.</x:String>
   <x:String x:Key="Status.ExpressionApplied" xml:space="preserve">Expression applied · {0} fps · {1} row(s)</x:String>
+  <x:String x:Key="Status.ExpressionApplyFailed" xml:space="preserve">Could not apply the expression.</x:String>
   <x:String x:Key="Status.ExpressionPresetApplied" xml:space="preserve">Applied expression preset: {0}</x:String>
   <x:String x:Key="Status.ExpressionPresetUnknown" xml:space="preserve">Unknown expression preset: {0}</x:String>
   <x:String x:Key="Status.FramesUpdated" xml:space="preserve">Frames updated · {0} fps · {1} row(s)</x:String>

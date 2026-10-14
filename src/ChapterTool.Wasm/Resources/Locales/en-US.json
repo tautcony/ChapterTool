@@ -358,6 +358,7 @@
   "Status.DropTooLarge": "File is too large (max 64 MB).",
   "Status.Duplicated": "Duplicated row {0}.",
   "Status.ExpressionApplied": "Expression applied · {0} fps · {1} row(s)",
+  "Status.ExpressionApplyFailed": "Could not apply the expression.",
   "Status.ExpressionPresetApplied": "Applied expression preset: {0}",
   "Status.ExpressionPresetUnknown": "Unknown expression preset: {0}",
   "Status.FramesUpdated": "Frames updated · {0} fps · {1} row(s)",
