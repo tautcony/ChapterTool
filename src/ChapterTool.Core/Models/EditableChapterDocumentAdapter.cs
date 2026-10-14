@@ -34,9 +34,11 @@ public static class EditableChapterDocumentAdapter
         ArgumentNullException.ThrowIfNull(source);
         var tracks = ImmutableArray.CreateBuilder<EditableChapterTrack>(source.Entries.Count);
         var durationTicks = 0L;
+        var durationIsKnown = source.Entries.Count > 0;
         foreach (var entry in source.Entries)
         {
             var imported = FromChapterSet(entry.ChapterSet);
+            durationIsKnown &= imported.Duration.IsKnown && entry.Segments.All(static segment => segment.Duration.IsKnown);
             var track = imported.Tracks[0];
             if (imported.Duration.IsKnown)
             {
@@ -61,7 +63,7 @@ public static class EditableChapterDocumentAdapter
         var first = source.Entries.FirstOrDefault()?.ChapterSet;
         return new EditableChapterDocument(ChapterDocumentId.New(), first?.Title ?? string.Empty,
             first?.SourceName ?? source.SourcePath, first?.ImportFormat ?? ChapterImportFormat.Unknown,
-            durationTicks > 0 ? ChapterDuration.FromTicks(durationTicks) : ChapterDuration.Unknown, tracks);
+            durationIsKnown ? ChapterDuration.FromTicks(durationTicks) : ChapterDuration.Unknown, tracks);
     }
 
     /// <summary>Projects a selected track without borrowing another track's rate.</summary>
@@ -79,7 +81,10 @@ public static class EditableChapterDocumentAdapter
         return new ChapterSet(segment?.Name ?? track.Name, segment?.SourceName ?? document.SourceName,
             segment?.ImportFormat ?? document.ImportFormat, track.FrameRate,
             duration.IsKnown ? TimeSpan.FromTicks(duration.Ticks) : TimeSpan.Zero,
-            track.Chapters.Select(ToChapter).ToImmutableArray());
+            track.Chapters.Select(ToChapter).ToImmutableArray())
+        {
+            DurationIsKnown = duration.IsKnown
+        };
     }
 
     /// <summary>Applies a row edit while preserving other tracks and segment provenance.</summary>
@@ -104,7 +109,7 @@ public static class EditableChapterDocumentAdapter
     public static EditableChapterDocument FromChapterSet(ChapterSet chapterSet)
     {
         ArgumentNullException.ThrowIfNull(chapterSet);
-        var duration = chapterSet.DurationIsKnown && chapterSet.Duration.Ticks > 0
+        var duration = chapterSet.DurationIsKnown
             ? ChapterDuration.FromTicks(chapterSet.Duration.Ticks)
             : ChapterDuration.Unknown;
         var chapters = chapterSet.Chapters.Select(static chapter => FromChapter(chapter, ChapterId.New()));
@@ -185,7 +190,7 @@ public static class EditableChapterDocumentAdapter
         var track = source.Tracks[0];
         var chapters = result.Chapters.Select((chapter, index) => FromChapter(chapter,
             index < track.Chapters.Length ? track.Chapters[index].Id : ChapterId.New()));
-        var duration = result.Duration.Ticks > 0 ? ChapterDuration.FromTicks(result.Duration.Ticks) : source.Duration;
+        var duration = result.DurationIsKnown ? ChapterDuration.FromTicks(result.Duration.Ticks) : ChapterDuration.Unknown;
         return new EditableChapterDocument(source.Id, result.Title, result.SourceName, result.ImportFormat,
             duration, [new EditableChapterTrack(track.Id, result.Title, chapters, track.Segments, result.FrameRate)]);
     }

@@ -93,10 +93,7 @@ window.chapterToolWasm = {
     }
   },
   setLocalStorage: function (key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-    } catch (error) {
-    }
+    window.localStorage.setItem(key, value);
   },
   removeLocalStorage: function (key) {
     try {

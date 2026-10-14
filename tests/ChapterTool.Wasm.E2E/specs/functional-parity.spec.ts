@@ -308,6 +308,24 @@ test('P07 storage failure preserves the live settings draft and cancel restores 
   await expect(page.getByRole('dialog').locator('.history-entry')).toHaveCount(1);
 });
 
+test('P07b blocked storage keeps main preferences, editing, and downloads usable', async ({ readyPage: page }, testInfo) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Unavailable', 'QuotaExceededError'); }; });
+
+  await page.locator('#saveFormat').selectOption('1');
+  await page.locator('.fps-box').selectOption('1');
+  await page.locator('#main-xml-language').selectOption('ja');
+  await expect(page.locator('#saveFormat')).toHaveValue('1');
+  await expect(page.locator('.fps-box')).toHaveValue('1');
+  await expect(page.locator('#main-xml-language')).toHaveValue('ja');
+  await commit(chapters(page).getByLabel('Name 1', { exact: true }), 'Storage failure edit');
+  const exported = await downloadText(page, testInfo);
+  expect(exported.content.toString('utf8')).toContain('Storage failure edit');
+  expect(errors).toEqual([]);
+});
+
 test('P08 numbering rejects invalid drafts and templates remain uncommitted until Apply', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
   const original = await chapters(page).getByLabel('Name 1', { exact: true }).inputValue();

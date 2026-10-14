@@ -10,6 +10,25 @@ namespace ChapterTool.Wasm.Tests;
 public sealed class WasmWorkspaceTests
 {
     [Fact]
+    public async Task Cancelled_expression_apply_reports_expression_failure_and_preserves_history()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("custom.txt", [.. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\n"u8]);
+        var cursor = Assert.Single(workspace.HistoryEntries, entry => entry.IsCurrent).Id;
+        var originalTime = workspace.Rows[1].TimeText;
+        Assert.True(workspace.PrepareExpressionPreview("t / 2")!.IsValid);
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        Assert.False(await workspace.ApplyExpressionPreviewAsync(cancellation.Token));
+
+        Assert.Equal(new WasmLocalizer().T("Status.ExpressionApplyFailed"), workspace.StatusText);
+        Assert.Equal(cursor, Assert.Single(workspace.HistoryEntries, entry => entry.IsCurrent).Id);
+        Assert.Equal(originalTime, workspace.Rows[1].TimeText);
+        Assert.NotNull(workspace.ExpressionPreview);
+    }
+
+    [Fact]
     public async Task Frame_time_frame_edits_commit_and_round_trip_through_history()
     {
         using var workspace = CreateWorkspace();

@@ -131,6 +131,30 @@ public sealed class ChapterSegmentServiceTests
         Assert.Empty(result.ChapterSet.Chapters);
     }
 
+    [Theory]
+    [InlineData(0L)]
+    [InlineData(100_000_000L)]
+    public void CombinePreservesKnownZeroDurationAndOffsetsFollowingEntries(long followingTicks)
+    {
+        var zero = Info(ChapterImportFormat.Mpls, TimeSpan.Zero, new Chapter(1, TimeSpan.Zero, "A"))
+            with { DurationIsKnown = true };
+        var following = zero with { Duration = TimeSpan.FromTicks(followingTicks) };
+        var group = new ChapterImportSource("zero-duration",
+            [new ChapterImportEntry("a", "A", zero), new ChapterImportEntry("b", "B", following)]);
+
+        var combined = ChapterSegmentService.Combine(group);
+        var appended = ChapterSegmentService.Append(new ChapterImportSource("a", [group.Entries[0]]),
+            new ChapterImportSource("b", [group.Entries[1]]));
+
+        foreach (var result in new[] { combined, appended })
+        {
+            Assert.Empty(result.Diagnostics);
+            Assert.True(result.ChapterSet.DurationIsKnown);
+            Assert.Equal(followingTicks, result.ChapterSet.Duration.Ticks);
+            Assert.Equal([TimeSpan.Zero, TimeSpan.Zero], result.ChapterSet.Chapters.Select(chapter => chapter.StartTime));
+        }
+    }
+
     private static ChapterSet Info(ChapterImportFormat sourceType, TimeSpan duration, params Chapter[] chapters) =>
         Info(sourceType, duration, FrameRateValue.Approximate(24), chapters);
 

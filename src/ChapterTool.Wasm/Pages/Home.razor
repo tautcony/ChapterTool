@@ -1582,7 +1582,14 @@
     private async Task PersistSettingsAsync()
     {
         var settings = CreateSettingsDocument();
-        await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, JsonSerializer.Serialize(settings, SettingsJsonOptions));
+        try
+        {
+            await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, JsonSerializer.Serialize(settings, SettingsJsonOptions));
+        }
+        catch (JSException)
+        {
+            // Automatic preference persistence must not interrupt the active document.
+        }
     }
 
     private WasmSettings CreateSettingsDocumentFromDraft() =>

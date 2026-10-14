@@ -65,7 +65,7 @@ public sealed class ChapterSegmentService
             null, sourceType,
             rates[0],
             offset,
-            chapters);
+            chapters) { DurationIsKnown = true };
         return new ChapterEditResult(info, []);
     }
 

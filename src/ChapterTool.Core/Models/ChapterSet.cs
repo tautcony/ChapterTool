@@ -18,7 +18,8 @@ public sealed record ChapterSet(
     /// <summary>
     /// Gets whether <see cref="Duration"/> is authoritative. A portable payload can report an
     /// unknown duration. An unknown duration is not a zero duration, so callers must not use it
-    /// as a segment offset.
+    /// as a segment offset. Legacy zero durations default to unknown. Set this property to
+    /// true for an authoritative zero duration.
     /// </summary>
-    public bool DurationIsKnown { get; init; } = true;
+    public bool DurationIsKnown { get; init; } = Duration > TimeSpan.Zero;
 }

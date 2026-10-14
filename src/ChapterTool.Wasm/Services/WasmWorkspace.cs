@@ -1312,7 +1312,7 @@ public sealed partial class WasmWorkspace : IDisposable
             return false;
         }
 
-        StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("Status.ChangeFpsFailed");
+        StatusText = outcome.Errors.FirstOrDefault() ?? localizer.T("Status.ExpressionApplyFailed");
         Notify();
         return false;
     }

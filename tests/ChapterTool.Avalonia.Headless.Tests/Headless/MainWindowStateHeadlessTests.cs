@@ -169,10 +169,10 @@ public sealed class MainWindowStateHeadlessTests
         host.Window.Content = host.MainView;
         Assert.True(host.MainView.ShortcutSettingsSubscribed);
 
-        host.ViewModel.SetShortcutSettings(new ShortcutSettings
-        {
-            [ShortcutCatalog.SaveId] = "Ctrl+Alt+7"
-        });
+        using var settings = new SettingsToolViewModel(host.ViewModel.ToolSession.Preferences, host.SettingsStore, host.Localizer, autoLoad: false);
+        await settings.LoadAsync(TestContext.Current.CancellationToken);
+        settings.ShortcutRows.Single(row => row.ActionId == ShortcutCatalog.SaveId).Gesture = "Ctrl+Alt+7";
+        await settings.SaveCommand.ExecuteAsync();
 
         Assert.Equal("Ctrl+Alt+7", host.ViewModel.SaveShortcutGesture);
         Assert.Equal(ShortcutCatalog.SaveId, host.ViewModel.ActiveShortcutMapping.ActionForGesture("Ctrl+Alt+7"));

@@ -1,5 +1,6 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Tests.Models;
@@ -41,6 +42,46 @@ public sealed class EditableChapterDocumentTests
         Assert.False(EditableChapterDocumentAdapter.ToChapterSet(fromUnknown).DurationIsKnown);
         Assert.True(EditableChapterDocumentAdapter.ToChapterSet(fromKnown).DurationIsKnown);
         Assert.Equal(TimeSpan.FromSeconds(30), EditableChapterDocumentAdapter.ToChapterSet(fromKnown).Duration);
+    }
+
+    [Theory]
+    [InlineData(false, 0L)]
+    [InlineData(false, 300_000_000L)]
+    [InlineData(true, 0L)]
+    [InlineData(true, 300_000_000L)]
+    public void Adapter_preserves_duration_availability_in_scalar_and_track_projections(bool isKnown, long ticks)
+    {
+        var set = new ChapterSet("Title", "source.mpls", ChapterImportFormat.Mpls, FrameRateValue.Rational(24, 1),
+            TimeSpan.FromTicks(ticks), [new Chapter(1, TimeSpan.Zero, "A")]) { DurationIsKnown = isKnown };
+        var document = EditableChapterDocumentAdapter.FromChapterSet(set);
+
+        Assert.Equal(isKnown, document.Duration.IsKnown);
+        Assert.Equal(isKnown ? ticks : 0, document.Duration.Ticks);
+        Assert.Equal(isKnown, EditableChapterDocumentAdapter.ToChapterSet(document).DurationIsKnown);
+        Assert.Equal(isKnown, EditableChapterDocumentAdapter.ToChapterSet(document, 0).DurationIsKnown);
+
+        var edited = EditableChapterDocumentAdapter.ApplyLegacyChapterSetResult(document, set with { Title = "Edited" });
+        Assert.Equal(document.Duration, edited.Duration);
+    }
+
+    [Theory]
+    [InlineData(false, 0L)]
+    [InlineData(true, 0L)]
+    [InlineData(false, 300_000_000L)]
+    public void Import_adapter_preserves_unknown_entries_and_known_zero_durations(bool secondIsKnown, long firstTicks)
+    {
+        var first = new ChapterSet("Title", "source.mpls", ChapterImportFormat.Mpls, FrameRateValue.Rational(24, 1),
+            TimeSpan.FromTicks(firstTicks), [new Chapter(1, TimeSpan.Zero, "A")]) { DurationIsKnown = true };
+        var second = first with { Duration = TimeSpan.Zero, DurationIsKnown = secondIsKnown };
+        var group = new ChapterImportSource("source.mpls",
+            [new ChapterImportEntry("a", "A", first), new ChapterImportEntry("b", "B", second)]);
+        var document = EditableChapterDocumentAdapter.FromChapterImportSource(group);
+
+        Assert.Equal(secondIsKnown, document.Duration.IsKnown);
+        Assert.Equal(secondIsKnown, document.Tracks[1].Segments[0].Duration.IsKnown);
+        Assert.Equal(secondIsKnown, EditableChapterDocumentAdapter.ToChapterSet(document, 1).DurationIsKnown);
+        var clips = ClipSessionTransitions.FromDocument(ClipSessionTransitions.FromLoad(group), document, combined: false);
+        Assert.Equal(secondIsKnown, clips.OriginalGroup.Entries[1].ChapterSet.DurationIsKnown);
     }
 
     [Fact]

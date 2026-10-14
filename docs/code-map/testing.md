@@ -53,6 +53,11 @@ Desktop composition coverage:
 
 Use `tests/ChapterTool.Core.Tests` when changing pure parsing, editing, transform, or export behavior.
 
+`Models/EditableChapterDocumentTests.cs` covers duration availability through scalar, track, import, and clip metadata adapters.
+It distinguishes known zero duration from unknown duration.
+`Editing/ChapterSegmentServiceTests.cs` covers combine and append operations with unknown or known zero durations.
+The Node exact API tests verify the same boundary through the packaged public API.
+
 Use `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs` and `ChapterClipCandidateBuilderTests.cs` for one-shot content candidates and clip operations. Use `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs` and `ChapterWorkspaceTests.cs` for selector metadata, selected-track commits, load/append ownership, ended-session collection, and per-track export baselines. `SessionStateTests.cs` covers mutations and history navigation after session end.
 
 `tests/ChapterTool.Core.Tests/Session/SessionEditHistoryTests.cs` covers history branches, atomic operation metadata, cancellation, and deep-history allocation measurements. `SessionHistoryInspectionTests.cs` covers parent-relative inspection, stable identities, moves, property-only edits, root details, precise values, and resource failures. These tests verify that inspection does not publish a document or move the cursor.
@@ -68,6 +73,12 @@ Use `tests/ChapterTool.Wasm.E2E` for rendered Blazor workflows and browser bound
 `specs/modal-layout.spec.ts` owns dialog geometry, focus, hit targets, draft cancellation, background isolation, and long-body scrolling. It includes viewport boundaries from 320 pixels through desktop widths. `specs/unified-editing.spec.ts` owns modal history branches, expression before/after review, composition, and commits.
 
 Expression dialog drafts must keep the background grid values and geometry unchanged. History entry selection inspects details. The restore action changes the document. Browser tests verify both boundaries through rendered workflows.
+
+`WasmDialogTests` covers dialog disposal after JavaScript runtime disconnection.
+`WasmWorkspaceTests` verifies canceled expression application.
+Cancellation must preserve content, history, and the candidate.
+The status must use the expression failure message.
+`functional-parity.spec.ts` verifies main preferences, editing, and downloads when browser storage writes fail.
 
 `specs/layout-behavior.spec.ts` verifies page and dialog bounds at default, wide, narrow, short, and landscape sizes. It verifies visible actions, downloads, expression diagnostics, and long-content footer access. These assertions run in the browser behavior suite. Browser E2E and Avalonia Headless tests own layout verification. Screenshots support diagnosis and manual review. There is no pixel baseline gate.
 

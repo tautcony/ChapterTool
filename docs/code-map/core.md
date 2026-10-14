@@ -25,6 +25,10 @@ Canonical data contracts shared across the pipeline:
 `EditableChapterTrack.Segments` stores current boundaries and media placement. `ClipSession` stores selector metadata and does not keep editable chapter backups.
 
 `ChapterSet` is the import and conversion model for stateless workflows.
+`ChapterSet.DurationIsKnown` distinguishes unknown duration from known zero duration.
+Legacy zero durations default to unknown. Exact inputs set the flag explicitly.
+Document, track, and clip metadata adapters must preserve the flag.
+Combine and append operations must reject unknown durations before calculating offsets.
 Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState`.
 `ChapterWorkspace.CurrentChapterSet` is a transient selected-track view. It is not editable workspace storage.
 

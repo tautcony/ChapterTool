@@ -37,6 +37,10 @@
         {
             await Js.InvokeVoidAsync("chapterToolWasm.disposeDialog", titleId);
         }
+        catch (JSDisconnectedException)
+        {
+            // The page can release the dialog after the JavaScript runtime disconnects.
+        }
         finally
         {
             reference?.Dispose();

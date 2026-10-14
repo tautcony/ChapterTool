@@ -269,7 +269,8 @@ public static class ClipSessionTransitions
                 SourceName = combinedInfo.SourceName,
                 ImportFormat = combinedInfo.ImportFormat,
                 FrameRate = combinedInfo.FrameRate,
-                Duration = combinedInfo.Duration
+                Duration = combinedInfo.Duration,
+                DurationIsKnown = combinedInfo.DurationIsKnown
             },
             CanCombine: true,
             ReferencedMediaFiles: mediaReferences,
@@ -286,7 +287,7 @@ public static class ClipSessionTransitions
             segment.ImportFormat,
             segment.FrameRate,
             segment.Duration.IsKnown ? TimeSpan.FromTicks(segment.Duration.Ticks) : TimeSpan.Zero,
-            []),
+            []) { DurationIsKnown = segment.Duration.IsKnown },
         CanCombine: true,
         ReferencedMediaFiles: segment.ReferencedMediaFiles,
         MediaTracks: segment.MediaTracks,
