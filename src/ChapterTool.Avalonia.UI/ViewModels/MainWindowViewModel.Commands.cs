@@ -274,7 +274,12 @@ public sealed partial class MainWindowViewModel
         {
             Workspace.PublishContentDocument(outcome.Snapshot.Document);
             RefreshRows();
-            StatusText = Localizer.GetString(action == "undo" ? "History.UndoApplied" : "History.RedoApplied");
+            StatusText = Localizer.GetString(action switch
+            {
+                "undo" => "History.UndoApplied",
+                "redo" => "History.RedoApplied",
+                _ => "History.RestoreApplied"
+            });
         }
         else if (outcome.Kind is not HistoryNavigationOutcomeKind.NoChange)
         {

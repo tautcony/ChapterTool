@@ -329,6 +329,42 @@ public sealed class HistoryInspectionViewModelTests
             ]), DateTimeOffset.UnixEpoch, new HistoryNodeSummary(0, 0, 0, 0, 0), [], null);
 
     [Fact]
+    public async Task Selection_changes_notify_HasSelection_for_visibility_bindings()
+    {
+        var tree = ForkedTree();
+        var history = new FakeHistoryPort(tree.Snapshot);
+        using var viewModel = new HistoryToolViewModel(history, new AppLocalizationManager("en-US"));
+        await history.LastInspection;
+        var notifications = new List<string>();
+        viewModel.PropertyChanged += (_, args) => notifications.Add(args.PropertyName ?? string.Empty);
+
+        viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == tree.Left);
+        Assert.True(viewModel.HasSelection);
+        Assert.Contains(nameof(HistoryToolViewModel.HasSelection), notifications);
+
+        notifications.Clear();
+        viewModel.SelectedEntry = null;
+        Assert.False(viewModel.HasSelection);
+        Assert.Contains(nameof(HistoryToolViewModel.HasSelection), notifications);
+    }
+
+    [Fact]
+    public void Dispose_notifies_HasSelection_when_it_clears_the_selection()
+    {
+        var tree = ForkedTree();
+        var history = new FakeHistoryPort(tree.Snapshot);
+        var viewModel = new HistoryToolViewModel(history, new AppLocalizationManager("en-US"));
+        viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == tree.Left);
+        var notifications = new List<string>();
+        viewModel.PropertyChanged += (_, args) => notifications.Add(args.PropertyName ?? string.Empty);
+
+        viewModel.Dispose();
+
+        Assert.False(viewModel.HasSelection);
+        Assert.Contains(nameof(HistoryToolViewModel.HasSelection), notifications);
+    }
+
+    [Fact]
     public async Task Root_inspection_exposes_ordered_read_only_chapter_values()
     {
         var tree = ForkedTree();

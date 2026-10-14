@@ -154,6 +154,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
                 return;
             }
             _ = LoadDetailsAsync(value?.Id);
+            OnPropertyChanged(nameof(HasSelection));
             OnPropertyChanged(nameof(SelectedEntryDescription));
             OnPropertyChanged(nameof(HasSelectedEntryDescription));
             OnPropertyChanged(nameof(SelectedPublishedAtText));
@@ -387,6 +388,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         RootChapterRows = [];
         expandedNodeIds.Clear();
         OnPropertyChanged(nameof(SelectedEntry));
+        OnPropertyChanged(nameof(HasSelection));
         OnPropertyChanged(nameof(Details));
         OnPropertyChanged(nameof(Entries));
         OnPropertyChanged(nameof(TreeRoots));
@@ -578,6 +580,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         {
             selectedEntry = replacement;
             OnPropertyChanged(nameof(SelectedEntry));
+            OnPropertyChanged(nameof(HasSelection));
             OnPropertyChanged(nameof(SelectedEntryDescription));
             OnPropertyChanged(nameof(SelectedPublishedAtText));
             OnPropertyChanged(nameof(HasPublishedAtText));

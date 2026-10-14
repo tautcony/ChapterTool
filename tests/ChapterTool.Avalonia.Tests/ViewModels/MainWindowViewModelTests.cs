@@ -213,10 +213,36 @@ public sealed class MainWindowViewModelTests
         await vm.UndoCommand.ExecuteAsync();
         Assert.Equal("Intro", vm.Rows[0].Name);
         Assert.True(vm.CanRedo);
+        Assert.Equal("Edit undone", vm.StatusText);
+
+        await vm.RedoCommand.ExecuteAsync();
+        Assert.Equal("Changed", vm.Rows[0].Name);
+        Assert.Equal("Edit redone", vm.StatusText);
 
         await vm.NavigateHistoryCommand.ExecuteAsync(changedNode.Id);
         Assert.Equal("Changed", vm.Rows[0].Name);
         Assert.Contains(vm.HistoryEntries, entry => entry.IsCurrent && entry.Id == changedNode.Id);
+    }
+
+    [Fact]
+    public async Task HistoryNavigationToAnotherBranchReportsTheRestoredDocument()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "First edit"));
+        var firstBranch = Assert.Single(vm.HistoryEntries, entry => entry.IsCurrent).Id;
+        await vm.UndoCommand.ExecuteAsync();
+        Assert.Equal("Edit undone", vm.StatusText);
+
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Second edit"));
+        Assert.Equal("Second edit", vm.Rows[0].Name);
+
+        await vm.NavigateHistoryCommand.ExecuteAsync(firstBranch);
+
+        Assert.Equal("First edit", vm.Rows[0].Name);
+        Assert.Contains(vm.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstBranch);
+        Assert.Equal("Document restored to the selected node.", vm.StatusText);
     }
 
     [Fact]
