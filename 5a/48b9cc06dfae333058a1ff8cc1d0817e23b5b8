@@ -1,0 +1,28 @@
+packages/chaptertool/test/exact-api.test.ts
+  h_3705811fa4502c 130-141
+src/ChapterTool.Core/Editing/ChapterSegmentService.cs
+  h_3705811fa4502c 29-36
+src/ChapterTool.Core/Models/ChapterSet.cs
+  h_3705811fa4502c 4-9,16-24
+src/ChapterTool.Core/Models/EditableChapterDocumentAdapter.cs
+  h_3705811fa4502c 107-109,134-138
+src/ChapterTool.Node/NodeExactApi.cs
+  h_3705811fa4502c 30,183-184
+src/ChapterTool.Node/NodeExactModels.cs
+  h_3705811fa4502c 157-158,164-167
+tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs
+  h_3705811fa4502c 102-133
+tests/ChapterTool.Core.Tests/Models/EditableChapterDocumentTests.cs
+  h_3705811fa4502c 26-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5a48b9cc06dfae333058a1ff8cc1d0817e23b5b8",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
