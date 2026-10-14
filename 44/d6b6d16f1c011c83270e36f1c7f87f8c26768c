@@ -1,0 +1,16 @@
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml.cs
+  h_3705811fa4502c 37,91,127,167-169,591,602-627
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowStateHeadlessTests.cs
+  h_3705811fa4502c 3,5,158-179
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "44d6b6d16f1c011c83270e36f1c7f87f8c26768c",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
