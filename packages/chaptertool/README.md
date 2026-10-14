@@ -1,8 +1,120 @@
 # ChapterTool Node.js
 
-This package exposes the portable ChapterTool Core API to Node.js through .NET WebAssembly. It does not use Blazor or a browser user interface.
+Use `@chaptertool/node` to read, edit, transform, and export chapter markers from a Node.js application. It is useful for media pipelines, batch conversion, and services that need chapter support without a desktop UI.
 
-## Build
+The package runs the portable ChapterTool Core API through .NET WebAssembly. It does not use Blazor or require the .NET SDK on the consuming machine.
+
+## Install And Use
+
+```bash
+npm install @chaptertool/node
+```
+
+```js
+import { ChapterTool } from "@chaptertool/node";
+import { readFile } from "node:fs/promises";
+
+const tool = new ChapterTool();
+const imported = await tool.import(await readFile("chapters.txt"), {
+  fileName: "chapters.txt"
+});
+const chapterSet = imported.groups[0].entries[0].chapterSet;
+const exported = await tool.serialize(chapterSet, { format: "xml" });
+
+if (!exported.success) {
+  throw new Error(exported.diagnostics.map((item) => item.message).join("\n"));
+}
+
+console.log(exported.content);
+```
+
+## Transform And Serialize
+
+Use an explicit content operation when chapter values must change. `serialize` writes the
+supplied snapshot as-is and never replays transforms.
+
+```js
+const rate = { kind: "rational", numerator: "24000", denominator: "1001" };
+const transformed = await tool.applyExpression(chapterSet, true, "t + 1", rate);
+const output = await tool.serialize(transformed.chapterSet, { format: "xml" });
+```
+
+The package exposes only exact chapter content contracts. Apply expressions, naming, numbering,
+and frame-rate changes through content operations before serialization.
+
+The package accepts UTF-8 strings, `Buffer`, and `Uint8Array` input and supports the portable import and export formats listed below.
+
+## Exact Ticks And Frame Rates
+
+The API uses tick strings and tagged frame-rate values. Rational components and approximate
+values remain strings so JavaScript numbers do not round them.
+
+```ts
+const imported = await tool.import(await readFile("input.mpls"), {
+  fileName: "input.mpls"
+});
+const source = imported.groups[0].entries[0].chapterSet;
+const rate = { kind: "rational", numerator: "24000", denominator: "1001" } as const;
+const edited = await tool.editFrame(source, 0, "1.5", rate);
+if (!edited.success || !edited.chapterSet) throw new Error("Frame edit failed");
+const output = await tool.serialize(edited.chapterSet, { format: "qpf" });
+```
+
+Exact wire values use these shapes:
+
+```json
+{
+  "title": "Example",
+  "sourceName": null,
+  "importFormat": "Ogm",
+  "frameRate": { "kind": "rational", "numerator": "24000", "denominator": "1001" },
+  "durationTicks": null,
+  "chapters": [{ "displayNumber": 1, "name": "Opening", "startTicks": "9007199254740993", "endTicks": null, "framesInfo": "", "frameAccuracy": "Neutral", "kind": "Marker" }]
+}
+```
+
+`startTicks` and `endTicks` use signed Int64 decimal strings.
+One tick is 100 ns.
+An absent end uses `null`.
+`durationTicks: null` means Unknown; `"0"` means a known zero duration.
+Rational components must be positive Int64 strings and are reduced on output.
+Approximate uses `{ "kind": "approximate", "value": "23.976" }`.
+Its value must be a positive invariant decimal string within the .NET decimal range.
+Unknown uses `{ "kind": "unknown" }` with no payload.
+Conflicting payload fields, non-finite values, exponents, and invalid components return diagnostics.
+Parse failures return `chapterSet: null`.
+Operation failures preserve input content where available.
+
+Optional `segments` preserve `id`, `name`, `startTicks`, nullable `durationTicks`, `frameRate`, and `sourceFrameRate`.
+Current rates can change during conversion; source rates retain their original authority.
+Scalar combination must reject conflicting segment rates.
+A known rate plus Unknown, different rates, or Rational plus Approximate resolves to Unknown.
+The same numeric display does not make different kinds equal.
+
+Auto uses known content authority for computation.
+Detection supplies display suggestions only when authority is missing or mixed.
+Frame edits, shifts, zones, and frame exports then require an explicit computation rate.
+Time-only edits and exports remain available.
+Pass `computationRate` in exact output options to export mixed content at an explicit rate.
+This override must not change the supplied content or source metadata.
+
+Exact methods cover import, cell edits, rename, insert, delete, shifts, zones, combine, append,
+frame-rate detection, frame projection, conversion, expressions, and serialization.
+`updateFrames` refreshes display metadata and must not assign a detected content rate.
+`serialize` writes the supplied snapshot without replaying an expression.
+
+Frame arithmetic retains ticks and integer rate coefficients until its rounding boundary.
+Fractional frame edits round once to ticks, with midpoints away from zero.
+FPS conversion rounds to an integer source frame, then rounds once to target ticks.
+Frame exports round once to an integer frame, with midpoints away from zero.
+Display rounding must not change content.
+Lua uses floating-point seconds; changed arithmetic results are not exact rational arithmetic.
+An unchanged Lua time result retains the original ticks.
+Unknown FPS is `nil` in Lua.
+`fpsRateKind` exposes authority, and rational component text preserves large integers.
+Numeric ratio components are available only when both are at most `9007199254740991`.
+
+## Build From Source
 
 Run the following command from this directory:
 
@@ -18,44 +130,15 @@ The build uses `wasm-tools` when it is installed. The build prints a warning and
 dotnet workload install wasm-tools
 ```
 
-The build publishes the pure WebAssembly host, transpiles and bundles the TypeScript API for the `es2022` target, and writes all package files to `dist/`. Files in `src/`, `scripts/`, and `test/` are not included in the npm tarball.
-
-The package uses `tsdown` to bundle the ESM entry point and generate the TypeScript declaration file. The .NET WebAssembly runtime stays as a package-local external asset.
+The build writes the distributable package to `dist/`.
 
 Run `npm pack` to create an installable tarball. The `prepack` script builds the runtime before npm creates the tarball. Package consumers need Node.js only. They do not need the .NET SDK.
 
-## Use
-
-```js
-import { ChapterTool } from "@chaptertool/node";
-import { readFile } from "node:fs/promises";
-
-const tool = new ChapterTool();
-const imported = await tool.import(await readFile("chapters.txt"), {
-  fileName: "chapters.txt"
-});
-
-const chapterSet = imported.groups[0].entries[0].chapterSet;
-const exported = await tool.export(chapterSet, { format: "xml" });
-
-if (!exported.success) {
-  throw new Error(exported.diagnostics.map((item) => item.message).join("\n"));
-}
-
-console.log(exported.content);
-```
-
-## Runtime Contract
-
-The package validates public JavaScript inputs before it calls the .NET runtime. Invalid option objects, strings, booleans, numbers, and chapter indexes produce a JavaScript error.
-
-The package transfers complex values across the .NET WebAssembly boundary as JSON strings. This conversion is internal to the package. Callers use JavaScript objects and arrays through the typed API.
-
-The WebAssembly runtime is initialized once per Node.js process. Concurrent `ChapterTool` instances share the initialized runtime. A failed startup can be retried by a later API operation.
+## Runtime And Format Boundaries
 
 The package requires Node.js 20.x, 22.x, or 24 and later. It accepts UTF-8 strings, `Buffer`, and `Uint8Array` input. It supports the byte-based import formats provided by `ChapterTool.Core`. It does not run desktop tools such as `ffprobe`, `ffmpeg`, or `mkvtoolnix`.
 
-Portable imports have a 64 MiB byte limit. The package reads the live limit from `NodeApi.GetMaxInputBytes` after the runtime starts. The package checks the UTF-8 or binary byte count before it creates a conversion copy. An input above the limit throws a `RangeError` with `code` set to `INPUT_TOO_LARGE`.
+Portable imports have a 64 MiB byte limit. Inputs above the limit return an error with code `INPUT_TOO_LARGE`.
 
 Supported export codes are `txt`, `xml`, `qpf`, `timecodes`, `tsmuxer`, `cue`, `json`, `vtt`, and `celltimes`.
 

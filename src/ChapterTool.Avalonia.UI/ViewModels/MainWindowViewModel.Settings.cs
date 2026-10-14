@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
 /// <summary>Contains settings loading behavior for the main window.</summary>
@@ -12,9 +14,17 @@ public sealed partial class MainWindowViewModel
 
         var settings = await SettingsStore.LoadAsync(cancellationToken);
         ToolSession.Preferences.ApplyLoadedSettings(settings.Application);
-        Log("Log.SettingsLoaded",
+        Log(LogLevel.Information,
+            $"Settings loaded: savingPath='{SaveDirectory ?? string.Empty}', language='{UiLanguage}', " +
+            $"defaultSaveFormat={SaveFormat}, frameDisplay={EditingOptions.FrameDisplay}, " +
+            $"frameAccuracy={FrameAccuracyTolerance}, xmlLanguage='{XmlLanguage}'",
+            "Settings",
             ("savingPath", SaveDirectory ?? string.Empty),
-            ("language", UiLanguage));
+            ("language", UiLanguage),
+            ("defaultSaveFormat", SaveFormat),
+            ("frameDisplay", EditingOptions.FrameDisplay),
+            ("frameAccuracy", FrameAccuracyTolerance),
+            ("xmlLanguage", XmlLanguage));
         NotifyStateChanged();
     }
 

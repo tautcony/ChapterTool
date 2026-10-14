@@ -2,13 +2,14 @@ using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
+using ChapterTool.Contracts.PlatformPorts;
 
 namespace ChapterTool.Avalonia.Services;
 
 /// <summary>Creates the standard desktop catalog as an ordinary injected value.</summary>
 public static class StandardToolCatalogFactory
 {
-    public static IToolCatalog Create()
+    public static IToolCatalog Create(IApplicationLogExporter? logExporter = null)
     {
         return new ToolCatalog(
         [
@@ -37,7 +38,11 @@ public static class StandardToolCatalogFactory
                     DataContext = new LogToolViewModel(
                         context.Session.LogService,
                         context.Localizer,
-                        context.Clipboard)
+                        context.Clipboard,
+                        logExporter,
+                        context.Capabilities,
+                        context.ShellService,
+                        Path.Combine(context.SettingsDirectory, "logs"))
                 }),
             new ToolDescriptor(
                 ToolIds.Settings,
@@ -83,8 +88,11 @@ public static class StandardToolCatalogFactory
                         context.Session.Expression,
                         context.FilePicker,
                         context.ExpressionAuthoringService,
-                        context.Session.ReportUnexpectedUiException)
-                }),
+                        context.Session.ReportUnexpectedUiException,
+                        contentOperations: context.Session.ContentOperations,
+                        closeTool: () => context.HostWindow?.Close())
+                },
+                IsModal: true),
             new ToolDescriptor(
                 ToolIds.TemplateNames,
                 "Tool.TemplateNames.Title",
@@ -92,7 +100,7 @@ public static class StandardToolCatalogFactory
                 ToolRefreshPolicy.Reuse,
                 context => new TemplateNamesToolView
                 {
-                    DataContext = new TemplateNamesToolViewModel(context.Session.NamingPreferences)
+                    DataContext = new TemplateNamesToolViewModel(context.Session.NamingPreferences, context.Session.ContentOperations)
                 }),
             new ToolDescriptor(
                 ToolIds.Zones,
@@ -114,8 +122,22 @@ public static class StandardToolCatalogFactory
                 {
                     DataContext = new ForwardShiftToolViewModel(
                         context.Session.ChapterEdit,
-                        context.Session.ReportUnexpectedUiException)
-                })
+                        context.Session.ReportUnexpectedUiException,
+                        context.Session.ContentOperations)
+                }),
+            new ToolDescriptor(
+                ToolIds.History,
+                "History.Title",
+                new ToolSizeConstraints(1000, 700, 520, 420),
+                ToolRefreshPolicy.Reuse,
+                context => new HistoryToolView
+                {
+                    DataContext = new HistoryToolViewModel(
+                        context.Session.History,
+                        context.Localizer,
+                        context.CloseTool ?? (() => context.HostWindow?.Close()))
+                },
+                IsModal: true)
         ]);
     }
 }

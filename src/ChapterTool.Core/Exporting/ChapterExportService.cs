@@ -8,8 +8,6 @@ using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
-using ChapterTool.Core.Transform.Expressions;
-using LuaExpressionScriptService = ChapterTool.Core.Transform.Expressions.Lua.LuaExpressionScriptService;
 
 namespace ChapterTool.Core.Exporting;
 
@@ -19,53 +17,76 @@ namespace ChapterTool.Core.Exporting;
 public sealed partial class ChapterExportService
 {
     private readonly IChapterTimeFormatter timeFormatter;
-    private readonly IChapterExpressionEngine expressionEngine;
 
     /// <summary>
     /// Exports ChapterTool chapter data to supported chapter formats.
     /// </summary>
     /// <param name="timeFormatter">The chapter time formatter.</param>
-    /// <param name="expressionEngine">The chapter expression engine.</param>
-    public ChapterExportService(IChapterTimeFormatter timeFormatter, IChapterExpressionEngine? expressionEngine = null)
+    public ChapterExportService(IChapterTimeFormatter timeFormatter)
     {
         this.timeFormatter = timeFormatter;
-        this.expressionEngine = expressionEngine ?? new LuaExpressionScriptService();
     }
 
-    /// <summary>
-    /// Executes the Export operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="options">The export options.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterExportResult Export(ChapterSet info, ChapterExportOptions options)
+    /// <summary>Serializes the supplied immutable document snapshot without applying transforms.</summary>
+    public ChapterExportResult Serialize(EditableChapterDocument document, ChapterSerializationOptions options)
     {
-        var projection = options.ProjectOutput
-            ? new ChapterOutputProjectionService(expressionEngine).Project(info, options)
-            : new ChapterOutputProjectionResult(info, []);
-        info = projection.Info;
-        var outputInfo = info with { Chapters = projection.OutputChapters };
-        var result = options.Format switch
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(options);
+        var validation = EditableChapterDocumentValidator.Validate(document);
+        if (!validation.IsValid)
         {
-            ChapterExportFormat.Txt => Text(outputInfo, options),
-            ChapterExportFormat.Xml => Xml(outputInfo, options),
-            ChapterExportFormat.Qpfile => Qpfile(outputInfo),
-            ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", outputInfo.Chapters.Select(FormatTime)),
-            ChapterExportFormat.TsMuxerMeta => TsMuxer(outputInfo, options),
-            ChapterExportFormat.Cue => Cue(outputInfo, options),
-            ChapterExportFormat.Json => Json(info, options),
-            ChapterExportFormat.WebVtt => WebVtt(outputInfo, options),
-            ChapterExportFormat.Celltimes => Celltimes(outputInfo),
-            _ => Failure(ChapterDiagnosticCode.UnsupportedExportFormat, "Unsupported export format.")
-        };
+            return Failure(ChapterDiagnosticCode.InvalidStructure, string.Join(" ", validation.Errors));
+        }
 
-        return result with
+        var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document);
+        if (options.Format == ChapterExportFormat.WebVtt
+            && document.Tracks.SelectMany(static track => track.Chapters).LastOrDefault(static chapter => chapter.Kind == ChapterKind.Marker) is { EndTicks: null }
+            && !document.Duration.IsKnown)
         {
-            Diagnostics = [.. result.Diagnostics, .. projection.Diagnostics]
-        };
+            return Failure(ChapterDiagnosticCode.InvalidStructure, "WebVTT serialization requires a final chapter end or a known document duration.");
+        }
+
+        return Serialize(chapterSet, options);
     }
 
-    private ChapterExportResult Text(ChapterSet info, ChapterExportOptions options)
+    /// <summary>Serializes the supplied legacy chapter snapshot without applying transforms.</summary>
+    /// <param name="chapterSet">The chapter values to serialize.</param>
+    /// <param name="options">Format-only serialization settings.</param>
+    /// <returns>The serialized content and any format diagnostics.</returns>
+    public ChapterExportResult Serialize(ChapterSet chapterSet, ChapterSerializationOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(chapterSet);
+        ArgumentNullException.ThrowIfNull(options);
+        if (options.ComputationRate is { IsKnown: false })
+        {
+            return Failure(FrameRateValidation.InvalidFrameRate());
+        }
+
+        try
+        {
+            return SerializeChapterSet(chapterSet, options);
+        }
+        catch (OverflowException)
+        {
+            return Failure(ChapterDiagnosticCode.FrameConversionOverflow, "The exported frame number exceeds the supported Int64 range.");
+        }
+    }
+
+    private ChapterExportResult SerializeChapterSet(ChapterSet info, ChapterSerializationOptions options) => options.Format switch
+    {
+        ChapterExportFormat.Txt => Text(info),
+        ChapterExportFormat.Xml => Xml(info, options),
+        ChapterExportFormat.Qpfile => Qpfile(info, options.ComputationRate ?? info.FrameRate),
+        ChapterExportFormat.TimeCodes => Lines(".TimeCodes.txt", info.Chapters.Select(FormatTime)),
+        ChapterExportFormat.TsMuxerMeta => TsMuxer(info),
+        ChapterExportFormat.Cue => Cue(info, options),
+        ChapterExportFormat.Json => Json(info),
+        ChapterExportFormat.WebVtt => WebVtt(info),
+        ChapterExportFormat.Celltimes => Celltimes(info, options.ComputationRate ?? info.FrameRate),
+        _ => Failure(ChapterDiagnosticCode.UnsupportedExportFormat, "Unsupported export format.")
+    };
+
+    private ChapterExportResult Text(ChapterSet info)
     {
         var builder = new StringBuilder();
         foreach (var chapter in info.Chapters.Where(NotSeparator))
@@ -77,16 +98,25 @@ public sealed partial class ChapterExportService
         return Success(builder.ToString(), ".txt");
     }
 
-    private ChapterExportResult Xml(ChapterSet info, ChapterExportOptions options)
+    private ChapterExportResult Xml(ChapterSet info, ChapterSerializationOptions options)
     {
         var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
-        var uidSeed = StableHashCode(info.Title, info.SourceName, ChapterImportFormats.DisplayName(info.ImportFormat), info.Chapters.Count.ToString(CultureInfo.InvariantCulture));
-        var random = new Random(uidSeed);
-        var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
+
+        // UIDs are stable document identifiers. Derive them from the content with SHA-256.
+        var seed = CreateUidSeed(
+            info.Title,
+            info.SourceName,
+            info.ImportFormat.ToString(),
+            info.FrameRate.ToString(),
+            info.Duration.Ticks.ToString(CultureInfo.InvariantCulture),
+            string.Join('\u001e', info.Chapters.Select(static chapter =>
+                $"{chapter.DisplayNumber}|{chapter.StartTime.Ticks}|{chapter.Name}|{chapter.FramesInfo}|{chapter.IsSeparator}")));
+        var usedUids = new HashSet<int>();
+        var atoms = info.Chapters.Where(NotSeparator).Select((chapter, index) =>
             new XElement(
                 "ChapterAtom",
                 new XElement("ChapterDisplay", new XElement("ChapterString", chapter.Name), new XElement("ChapterLanguage", language)),
-                new XElement("ChapterUID", NextUid(random)),
+                new XElement("ChapterUID", NextUid(seed, index + 1, usedUids)),
                 new XElement("ChapterTimeStart", FormatTime(chapter) + "000"),
                 new XElement("ChapterFlagHidden", "0"),
                 new XElement("ChapterFlagEnabled", "1")));
@@ -99,12 +129,12 @@ public sealed partial class ChapterExportService
                     "EditionEntry",
                     new XElement("EditionFlagHidden", "0"),
                     new XElement("EditionFlagDefault", "0"),
-                    new XElement("EditionUID", NextUid(random)),
+                    new XElement("EditionUID", NextUid(seed, 0, usedUids)),
                     atoms)));
         return Success(document.Declaration + Environment.NewLine + document.ToString(SaveOptions.None), ".xml");
     }
 
-    private ChapterExportResult TsMuxer(ChapterSet info, ChapterExportOptions options)
+    private ChapterExportResult TsMuxer(ChapterSet info)
     {
         var chapters = info.Chapters.Where(NotSeparator).Select(FormatTime).ToList();
         if (chapters.Count == 0)
@@ -115,34 +145,28 @@ public sealed partial class ChapterExportService
         return Success($"--custom-{Environment.NewLine}chapters={string.Join(';', chapters)}", ".TsMuxeR_Meta.txt");
     }
 
-    private static ChapterExportResult Qpfile(ChapterSet info)
+    private static ChapterExportResult Qpfile(ChapterSet info, FrameRateValue rate)
     {
-        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
+        if (!rate.IsKnown)
         {
-            return Failure(diagnostic!);
+            return Failure(FrameRateValidation.InvalidFrameRate());
         }
 
         return Lines(
             ".qpf",
             info.Chapters
                 .Where(NotSeparator)
-                .Select(chapter => ChapterRounding
-                    .RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond)
+                .Select(chapter => ((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, rate).RoundAwayFromZero())
                     .ToString(CultureInfo.InvariantCulture) + " I"));
     }
 
-    private static ChapterExportResult Celltimes(ChapterSet info)
+    private static ChapterExportResult Celltimes(ChapterSet info, FrameRateValue rate)
     {
-        if (!FrameRateValidation.TryNormalize(info.FramesPerSecond, out var framesPerSecond, out var diagnostic))
-        {
-            return Failure(diagnostic!);
-        }
-
-        var conversion = ChapterConversionService.ToCelltimes(info, framesPerSecond);
+        var conversion = ChapterConversionService.ToCelltimes(info, rate);
         return new ChapterExportResult(conversion.Success, conversion.Content, conversion.Extension, conversion.Diagnostics);
     }
 
-    private ChapterExportResult Cue(ChapterSet info, ChapterExportOptions options)
+    private ChapterExportResult Cue(ChapterSet info, ChapterSerializationOptions options)
     {
         var builder = new StringBuilder();
         builder.AppendLine("REM Generate By ChapterTool");
@@ -159,7 +183,7 @@ public sealed partial class ChapterExportService
         return Success(builder.ToString(), ".cue");
     }
 
-    private static ChapterExportResult WebVtt(ChapterSet info, ChapterExportOptions options)
+    private static ChapterExportResult WebVtt(ChapterSet info)
     {
         var builder = new StringBuilder();
         builder.AppendLine("WEBVTT");
@@ -203,7 +227,7 @@ public sealed partial class ChapterExportService
         && !value.Contains('\n')
         && !value.Contains("-->", StringComparison.Ordinal);
 
-    private static ChapterExportResult Json(ChapterSet info, ChapterExportOptions options)
+    private static ChapterExportResult Json(ChapterSet info)
     {
         var entries = new List<JsonChapter>();
         var baseTime = TimeSpan.Zero;
@@ -238,13 +262,29 @@ public sealed partial class ChapterExportService
 
     private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.StartTime);
 
-    private static int NextUid(Random random) => random.Next(1, int.MaxValue);
+    private static int NextUid(ReadOnlySpan<byte> seed, int ordinal, HashSet<int> usedUids)
+    {
+        Span<byte> input = stackalloc byte[SHA256.HashSizeInBytes + 2 * sizeof(int)];
+        seed.CopyTo(input);
+        BinaryPrimitives.WriteInt32LittleEndian(input[SHA256.HashSizeInBytes..], ordinal);
+        Span<byte> hash = stackalloc byte[SHA256.HashSizeInBytes];
+        var attempt = 0;
+        int uid;
+        do
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(input[(SHA256.HashSizeInBytes + sizeof(int))..], attempt++);
+            SHA256.HashData(input, hash);
+            uid = BinaryPrimitives.ReadInt32LittleEndian(hash) & int.MaxValue;
+        }
+        while (uid == 0 || !usedUids.Add(uid));
 
-    private static int StableHashCode(params string?[] values)
+        return uid;
+    }
+
+    private static byte[] CreateUidSeed(params string?[] values)
     {
         var payload = string.Join('\u001f', values.Select(static value => value ?? string.Empty));
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
-        return BinaryPrimitives.ReadInt32LittleEndian(hash);
+        return SHA256.HashData(Encoding.UTF8.GetBytes(payload));
     }
 
     private static ChapterExportResult Success(string content, string extension) =>

@@ -14,19 +14,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.1" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
     <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
     <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <PackageReference Include="Optris.Icons.Avalonia" Version="12.0.7" />
     <PackageReference Include="Optris.Icons.Avalonia.FontAwesome" Version="12.0.7" />
-    <PackageReference Include="Svg.Controls.Avalonia" Version="12.0.0.16" />
+    <PackageReference Include="Svg.Controls.Avalonia" Version="12.0.0.17" />
   </ItemGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\Images\chapter-empty.svg" />
+    <AvaloniaResource Include="Assets\Fonts\Iosevka-Regular.ttf" />
     <AvaloniaResource Include="Resources\**\*.axaml" />
     <EmbeddedResource Include="Localization\Resources\Locales\*.axaml" />
   </ItemGroup>

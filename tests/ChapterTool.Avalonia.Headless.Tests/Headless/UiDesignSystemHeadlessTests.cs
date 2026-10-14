@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
+using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Models;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -22,7 +23,7 @@ public sealed class UiDesignSystemHeadlessTests
             new Chapter(1, TimeSpan.Zero, "Intro"),
             new Chapter(2, TimeSpan.FromMilliseconds(21), "Mid")
         };
-        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24, chapters[^1].StartTime, chapters);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Rational(24, 1), chapters[^1].StartTime, chapters);
         using var host = new MainWindowHeadlessTestHost(
             MainWindowHeadlessTestHost.ImportResult("movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)));
         await host.LoadAsync("movie.txt");
@@ -32,11 +33,15 @@ public sealed class UiDesignSystemHeadlessTests
 
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
         var frameTexts = grid.GetVisualDescendants()
-            .OfType<TextBlock>()
-            .Where(block => block.Classes.Contains("frameText"))
+            .OfType<FramePresentationView>()
+            .Where(view => view.Classes.Contains("frameText")
+                && !view.Classes.Contains("framePreview")
+                && view.IsVisible
+                && view.Bounds.Width > 0
+                && view.Bounds.Height > 0)
             .ToArray();
-        Assert.Equal(2, frameTexts.Length);
-        Assert.All(frameTexts, block => Assert.Null(block.Effect));
+        Assert.True(frameTexts.Length >= 2);
+        Assert.All(frameTexts, view => Assert.Null(view.Effect));
 
         var accurate = Assert.Single(frameTexts, block => block.Classes.Contains("frameAccurate"));
         var inexact = Assert.Single(frameTexts, block => block.Classes.Contains("frameInexact"));

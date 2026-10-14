@@ -7,7 +7,7 @@ public interface IChapterSaveService
 {
     ValueTask<ChapterExportResult> SaveAsync(
         ChapterSet info,
-        ChapterExportOptions options,
+        ChapterSerializationOptions options,
         string? directory,
         CancellationToken cancellationToken,
         string? sourcePath = null);

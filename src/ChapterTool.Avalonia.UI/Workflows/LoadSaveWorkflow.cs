@@ -1,5 +1,6 @@
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
@@ -28,7 +29,9 @@ internal sealed class LoadSaveWorkflow(
     public async ValueTask<LoadWorkflowResult> LoadAsync(
         ChapterSourceDocument source,
         Action<ChapterImportProgress> reportProgress,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<bool>? hasSessionLoss = null,
+        Func<CancellationToken, ValueTask<bool>>? confirmReplacement = null)
     {
         var operationRevision = workspace.BeginLoadOperation();
         if (string.IsNullOrWhiteSpace(source.DisplayName))
@@ -57,7 +60,24 @@ internal sealed class LoadSaveWorkflow(
         }
 
         var session = ClipSessionTransitions.FromLoad(result.Groups[0]);
-        return workspace.TryCommitLoad(operationRevision, source, session)
+        var document = EditableChapterDocumentAdapter.FromChapterImportSource(result.Groups[0]);
+        var expectedToken = workspace.CaptureContentToken();
+        while (hasSessionLoss?.Invoke() == true && confirmReplacement is not null)
+        {
+            if (!await confirmReplacement(cancellationToken))
+            {
+                return new LoadWorkflowResult(LoadWorkflowState.Cancelled, result, null);
+            }
+
+            if (workspace.IsContentTokenCurrent(expectedToken))
+            {
+                break;
+            }
+
+            expectedToken = workspace.CaptureContentToken();
+        }
+
+        return workspace.TryCommitLoad(operationRevision, source, session, document, expectedToken)
             ? new LoadWorkflowResult(LoadWorkflowState.Succeeded, result, session)
             : LoadWorkflowResult.Stale;
     }
@@ -69,38 +89,87 @@ internal sealed class LoadSaveWorkflow(
     {
         var operationRevision = workspace.CaptureRevision();
         var expectedSession = workspace.ClipSession;
-        if (expectedSession is null)
+        var contentSession = workspace.ContentSession;
+        if (expectedSession is null || contentSession is null)
         {
             return AppendWorkflowResult.NoSession;
         }
 
         var expectedSessionId = expectedSession.SessionId;
+        var capturedContent = contentSession.Snapshot;
         var result = await LoadSourceAsync(source, progress: null, cancellationToken);
-        if (!workspace.IsCurrentRevision(operationRevision)
-            || workspace.ClipSession?.SessionId != expectedSessionId)
+        return CompleteAppendLoad(operationRevision, expectedSessionId, capturedContent, result, cancellationToken);
+    }
+
+    private AppendWorkflowResult CompleteAppendLoad(
+        int operationRevision,
+        Guid expectedSessionId,
+        SessionSnapshot capturedContent,
+        ChapterImportResult result,
+        CancellationToken cancellationToken)
+    {
+        if (!IsAppendContextCurrent(operationRevision, expectedSessionId))
         {
             return AppendWorkflowResult.Stale;
         }
 
-        if (!result.Success || result.Groups.Count == 0)
+        return result.Success && result.Groups.Count > 0
+            ? ApplyAppendResult(operationRevision, expectedSessionId, capturedContent, result, cancellationToken)
+            : new AppendWorkflowResult(AppendWorkflowState.FailedLoad, result, null, null);
+    }
+
+    private bool IsAppendContextCurrent(int operationRevision, Guid expectedSessionId) =>
+        workspace.IsCurrentRevision(operationRevision)
+        && workspace.ClipSession?.SessionId == expectedSessionId;
+
+    private AppendWorkflowResult ApplyAppendResult(
+        int operationRevision,
+        Guid expectedSessionId,
+        SessionSnapshot capturedContent,
+        ChapterImportResult result,
+        CancellationToken cancellationToken)
+    {
+        var source = result.Groups[0];
+        var append = workspace.AppendClipSource(operationRevision, expectedSessionId, capturedContent, source,
+            new HistoryOperationDescriptor("workspace.append",
+            [new HistoryOperationParameter("sourcePath", source.SourcePath)]), cancellationToken);
+        if (append.IsStale)
         {
-            return new AppendWorkflowResult(AppendWorkflowState.FailedLoad, result, null, null);
+            return AppendWorkflowResult.Stale;
         }
 
-        var transition = ClipSessionTransitions.Append(workspace.ClipSession ?? expectedSession, result.Groups[0]);
+        return append.Succeeded && append.Session is not null && append.Document is not null
+            ? CreateSuccessfulAppendResult(result, append)
+            : CreateFailedAppendResult(result, capturedContent, append.Errors);
+    }
+
+    private static AppendWorkflowResult CreateFailedAppendResult(
+        ChapterImportResult result,
+        SessionSnapshot capturedContent,
+        IReadOnlyList<string> errors)
+    {
+        var error = new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidStructure, string.Join("; ", errors));
+        var failed = new ClipAppendTransitionResult(null,
+            new ChapterEditResult(EditableChapterDocumentAdapter.ToChapterSet(capturedContent.Document), [error]), false);
+        return new AppendWorkflowResult(AppendWorkflowState.FailedTransition, result, failed, null);
+    }
+
+    private static AppendWorkflowResult CreateSuccessfulAppendResult(ChapterImportResult result, ClipAppendCommitResult append)
+    {
+        var transition = new ClipAppendTransitionResult(
+            append.Session,
+            new ChapterEditResult(EditableChapterDocumentAdapter.ToChapterSet(append.Document!), []), true);
         if (!transition.Succeeded || transition.Session is null)
         {
             return new AppendWorkflowResult(AppendWorkflowState.FailedTransition, result, transition, null);
         }
 
-        return workspace.TryCommitAppend(operationRevision, expectedSessionId, transition.Session)
-            ? new AppendWorkflowResult(AppendWorkflowState.Succeeded, result, transition, transition.Session)
-            : AppendWorkflowResult.Stale;
+        return new AppendWorkflowResult(AppendWorkflowState.Succeeded, result, transition, transition.Session);
     }
 
     public ValueTask<ChapterExportResult> SaveAsync(
         ChapterSet chapterSet,
-        ChapterExportOptions options,
+        ChapterSerializationOptions options,
         string? directory,
         CancellationToken cancellationToken) =>
         saveService.SaveAsync(chapterSet, options, directory, cancellationToken, workspace.CurrentPath);
@@ -133,6 +202,7 @@ internal enum LoadWorkflowState
 {
     EmptyPath,
     Failed,
+    Cancelled,
     Succeeded,
     Stale
 }

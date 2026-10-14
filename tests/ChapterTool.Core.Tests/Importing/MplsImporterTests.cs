@@ -28,7 +28,7 @@ public sealed class MplsImporterTests
             Assert.Equal(ChapterImportFormat.Mpls, info.ImportFormat);
             Assert.Equal(expected.SourceName, info.SourceName);
             Assert.Equal(expected.ChapterCount, info.Chapters.Count);
-            Assert.Equal(expected.FramesPerSecond, info.FramesPerSecond, precision: 3);
+            Assert.Equal(expected.FramesPerSecond, info.FrameRate.ToDouble(), precision: 3);
             Assert.Equal(expected.Duration, info.Duration);
             Assert.Equal(expected.FirstTime, info.Chapters[0].StartTime);
             Assert.Equal(expected.LastTime, info.Chapters[^1].StartTime);
@@ -63,6 +63,18 @@ public sealed class MplsImporterTests
 
         Assert.True(first.Success, Diagnostics(first));
         Assert.True(second.Success, Diagnostics(second));
+    }
+
+    [Fact]
+    public async Task MplsImporterRetainsAuthoritativeRationalFrameRate()
+    {
+        var result = await new MplsChapterImporter().ImportAsync(
+            new ChapterImportRequest(FixtureResolver.Fixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls")),
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.Success, Diagnostics(result));
+        Assert.All(result.Groups.Single().Entries, entry =>
+            Assert.Equal(new ChapterFrameRate(24000, 1001), entry.ChapterSet.FrameRate.RationalRate));
     }
 
     [Fact]

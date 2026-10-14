@@ -8,7 +8,7 @@ namespace ChapterTool.Core.Importing.Cue;
 /// <summary>
 /// Parses CUE sheet text into ChapterTool chapter data.
 /// </summary>
-public sealed partial class CueSheetParser
+public static partial class CueSheetParser
 {
     /// <summary>
     /// Executes the Parse operation.
@@ -48,7 +48,7 @@ public sealed partial class CueSheetParser
             state.Title,
             state.SourceName.Length == 0 ? Path.GetFileName(path) : state.SourceName,
             ChapterImportFormat.Cue,
-            0,
+            FrameRateValue.Unknown,
             ordered[^1].StartTime,
             ordered);
         var entry = new ChapterImportEntry("default", "CUE Chapters", info);

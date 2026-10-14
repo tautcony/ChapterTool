@@ -1,5 +1,3 @@
-using ChapterTool.Core.Models;
-
 namespace ChapterTool.Core.Exporting;
 
 /// <summary>
@@ -12,11 +10,4 @@ public interface IChapterExporter
     /// </summary>
     ChapterExportFormat Format { get; }
 
-    /// <summary>
-    /// Exports chapter data with the supplied options.
-    /// </summary>
-    /// <param name="chapterSet">The chapter data to export.</param>
-    /// <param name="options">The export options.</param>
-    /// <returns>The export result.</returns>
-    ChapterExportResult Export(ChapterSet chapterSet, ChapterExportOptions options);
 }

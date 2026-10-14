@@ -14,6 +14,7 @@ using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Views.Tools;
 using ChapterTool.Contracts.Configuration;
+using ChapterTool.Core.Models;
 using Optris.Icons.Avalonia;
 
 namespace ChapterTool.Avalonia.Headless.Tests.Headless;
@@ -21,6 +22,85 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class SettingsToolHeadlessTests
 {
+    [AvaloniaFact]
+    public async Task Frame_display_mode_changes_refresh_existing_rows_without_clearing_repeating_preference()
+    {
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
+            FrameRateValue.Approximate(24000m / 1001m), TimeSpan.FromTicks(520_942_000),
+            [new Chapter(1, TimeSpan.FromTicks(520_942_000), "Fractional frame value")]);
+        using var host = new MainWindowHeadlessTestHost(
+            MainWindowHeadlessTestHost.ImportResult(
+                "movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)),
+            appSettings: new AppSettings(
+                FrameDisplayMode: "full-precision",
+                FrameDecimalPlaces: 2,
+                ShowRepeatingFrameDecimals: false));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+        Assert.Single(host.ViewModel.Rows);
+        var fullPrecisionText = host.ViewModel.Rows[0].FramePresentation!.PlainNumericText;
+        Assert.DoesNotContain(host.Window.GetVisualDescendants().OfType<CheckBox>(),
+            static checkBox => checkBox.Name == "ShowRepeatingFrameDecimalsCheckBox");
+
+        using var viewModel = new SettingsToolViewModel(
+            host.ViewModel.ToolSession.Preferences,
+            host.SettingsStore,
+            host.Localizer,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var settingsWindow = await MainWindowHeadlessTestHost.RenderToolAsync(
+            new SettingsToolView { DataContext = viewModel },
+            viewModel);
+
+        try
+        {
+            var tabControl = Assert.Single(settingsWindow.GetVisualDescendants().OfType<TabControl>());
+            tabControl.SelectedIndex = 3;
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
+            var checkBox = settingsWindow.GetVisualDescendants()
+                .OfType<CheckBox>()
+                .Single(control => control.Name == "ShowRepeatingFrameDecimalsCheckBox");
+            var displayMode = settingsWindow.GetVisualDescendants()
+                .OfType<ComboBox>()
+                .Single(control => control.Name == "FrameDisplayModeCombo");
+            Assert.False(checkBox.IsChecked);
+            Assert.True(checkBox.IsEnabled);
+
+            displayMode.SelectedIndex = 0;
+            Dispatcher.UIThread.RunJobs();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
+            Assert.False(checkBox.IsEnabled);
+            Assert.False(checkBox.IsChecked);
+
+            displayMode.SelectedIndex = 1;
+            Dispatcher.UIThread.RunJobs();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
+            Assert.False(checkBox.IsEnabled);
+            Assert.False(checkBox.IsChecked);
+            Assert.Equal(Core.Editing.FrameDisplayMode.DecimalPlaces, host.ViewModel.EditingOptions.FrameDisplay);
+            Assert.Equal(2, host.ViewModel.EditingOptions.FrameDecimalPlaces);
+            Assert.False(host.ViewModel.RoundFrames);
+            Assert.False(host.ViewModel.FramePresentationPolicy.RoundToInteger);
+            Assert.Equal(2, host.ViewModel.FramePresentationPolicy.DecimalPlaces);
+            var decimalPlacesText = host.ViewModel.Rows[0].FramePresentation!.PlainNumericText;
+            Assert.Equal("1249.01", decimalPlacesText);
+            Assert.NotEqual(fullPrecisionText, decimalPlacesText);
+
+            displayMode.SelectedIndex = 2;
+            Dispatcher.UIThread.RunJobs();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
+            Assert.True(checkBox.IsEnabled);
+            Assert.False(checkBox.IsChecked);
+            Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
+            Assert.False(host.ViewModel.RoundFrames);
+            Assert.Equal(fullPrecisionText, host.ViewModel.Rows[0].FramePresentation!.PlainNumericText);
+        }
+        finally
+        {
+            await MainWindowHeadlessTestHost.CloseWindowAsync(settingsWindow);
+        }
+    }
+
     [AvaloniaFact]
     public async Task Xml_language_selection_remains_visible_after_runtime_language_switch()
     {
@@ -58,6 +138,59 @@ public sealed class SettingsToolHeadlessTests
             Assert.Equal(viewModel.DefaultXmlLanguageIndex, xmlLanguageCombo.SelectedIndex);
             Assert.False(string.IsNullOrWhiteSpace(xmlLanguageCombo.SelectionBoxItem?.ToString()));
             Assert.StartsWith("jpn（", xmlLanguageCombo.SelectionBoxItem?.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            await MainWindowHeadlessTestHost.CloseWindowAsync(window);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Shortcut_tab_round_trips_custom_gesture_and_marks_conflicts()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        using var viewModel = new SettingsToolViewModel(
+            host.ViewModel.ToolSession.Preferences,
+            host.SettingsStore,
+            host.Localizer,
+            autoLoad: false);
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
+        var window = new Window
+        {
+            Content = new SettingsToolView { DataContext = viewModel },
+            Width = 760,
+            Height = 520
+        };
+
+        try
+        {
+            window.Show();
+            await MainWindowHeadlessTestHost.ExecuteLayoutAsync(window);
+            var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
+            Assert.True(tabControl.Items.Count >= 5);
+
+            viewModel.ShortcutRows[0].Gesture = "Ctrl+Shift+S";
+            viewModel.ShortcutRows[1].Gesture = "Ctrl+Shift+S";
+            Assert.False(viewModel.IsShortcutConfigurationValid);
+            Assert.All(viewModel.ShortcutRows.Take(2), row => Assert.True(row.HasConflict));
+
+            viewModel.ShortcutRows[1].Reset();
+            Assert.True(viewModel.IsShortcutConfigurationValid);
+            await viewModel.SaveCommand.ExecuteAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+            viewModel.ShortcutRows[0].Gesture = "S";
+            Assert.False(viewModel.IsShortcutConfigurationValid);
+            viewModel.DiscardUnsavedChanges();
+            Assert.Equal("Ctrl+Shift+S", viewModel.ShortcutRows[0].Gesture);
+
+            var reloaded = new SettingsToolViewModel(
+                host.ViewModel.ToolSession.Preferences,
+                host.SettingsStore,
+                host.Localizer,
+                autoLoad: false);
+            await reloaded.LoadAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("Ctrl+Shift+S", reloaded.ShortcutRows[0].Gesture);
+            reloaded.Dispose();
         }
         finally
         {
@@ -284,7 +417,6 @@ public sealed class SettingsToolHeadlessTests
         {
             settingsWindow.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
-            var tabControl = settingsWindow.GetVisualDescendants().OfType<TabControl>().Single();
             SelectAppearanceTab(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             var combo = settingsWindow.GetVisualDescendants().OfType<ComboBox>().Single(control => control.Name == "ThemePresetCombo");
@@ -355,7 +487,6 @@ public sealed class SettingsToolHeadlessTests
             textWindow.Show();
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(textWindow);
-            var tabControl = settingsWindow.GetVisualDescendants().OfType<TabControl>().Single();
             SelectAppearanceTab(settingsWindow);
             await MainWindowHeadlessTestHost.ExecuteLayoutAsync(settingsWindow);
 
@@ -482,9 +613,6 @@ public sealed class SettingsToolHeadlessTests
         }
     }
 
-    private static Color ResourceColor(string key) =>
-        BrushColor(Assert.IsType<IBrush>(Application.Current!.Resources[key], exactMatch: false));
-
     private static Color ColorResource(string key) =>
         Assert.IsType<Color>(Application.Current!.Resources[key]);
 
@@ -510,8 +638,7 @@ public sealed class SettingsToolHeadlessTests
     {
         var tabControl = window.GetVisualDescendants().OfType<TabControl>().Single();
         var tab = tabControl.ItemsView.OfType<TabItem>().Single(item =>
-            item.Header is TextBlock header
-            && header.Text is "外观" or "Appearance" or "外観");
+            item.Header is TextBlock { Text: "外观" or "Appearance" or "外観" });
         tabControl.SelectedItem = tab;
     }
 

@@ -1,4 +1,52 @@
+const chapterToolDialogs = new Map();
+let chapterToolDialogOpener;
 window.chapterToolWasm = {
+  openDialog: function (element, reference, lightDismiss) {
+    // WebKit does not focus buttons on a pointer click. Retain the activation target.
+    const opener = chapterToolDialogOpener?.isConnected ? chapterToolDialogOpener : document.activeElement;
+    chapterToolDialogOpener = null;
+    const cancel = (event) => {
+      event.preventDefault();
+      reference.invokeMethodAsync('CancelAsync');
+    };
+    const dismiss = (event) => {
+      if (!lightDismiss || event.target !== element) return;
+      const bounds = element.getBoundingClientRect();
+      if (event.clientX < bounds.left || event.clientX > bounds.right ||
+          event.clientY < bounds.top || event.clientY > bounds.bottom) cancel(event);
+    };
+    const containFocus = (event) => {
+      if (event.key !== 'Tab') return;
+      const targets = Array.from(element.querySelectorAll('button, input, select, textarea, a[href], [tabindex]'))
+        .filter(target => !target.disabled && target.tabIndex >= 0 && target.getClientRects().length &&
+          getComputedStyle(target).visibility !== 'hidden' && getComputedStyle(target).opacity !== '0');
+      const first = targets[0];
+      const last = targets[targets.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if ((event.shiftKey && document.activeElement === first) ||
+          (!event.shiftKey && document.activeElement === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      }
+    };
+    element.addEventListener('cancel', cancel);
+    element.addEventListener('click', dismiss);
+    element.addEventListener('keydown', containFocus);
+    chapterToolDialogs.set(element.id, { element, opener, cancel, dismiss, containFocus });
+    element.showModal();
+  },
+  disposeDialog: function (id) {
+    const state = chapterToolDialogs.get(id);
+    if (!state) return;
+    const element = state.element;
+    element.removeEventListener('cancel', state.cancel);
+    element.removeEventListener('click', state.dismiss);
+    element.removeEventListener('keydown', state.containFocus);
+    element.close();
+    chapterToolDialogs.delete(id);
+    const target = state.opener?.isConnected ? state.opener : document.getElementById('chaptertool-shell');
+    target?.focus({ preventScroll: true });
+  },
   downloadText: function (fileName, content, encodingId, emitBom) {
     const bytes = encodeText(content || '', encodingId || 'utf8', emitBom === true);
     const blob = new Blob([bytes], { type: 'text/plain' });
@@ -15,6 +63,13 @@ window.chapterToolWasm = {
       el.click();
     }
   },
+  getGridScrollTop: function () {
+    return document.querySelector('.grid-wrap')?.scrollTop || 0;
+  },
+  setGridScrollTop: function (scrollTop) {
+    const grid = document.querySelector('.grid-wrap');
+    if (grid) grid.scrollTop = scrollTop;
+  },
   copyText: async function (text) {
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text || '');
@@ -24,7 +79,7 @@ window.chapterToolWasm = {
     area.value = text || '';
     area.style.position = 'fixed';
     area.style.opacity = '0';
-    document.body.appendChild(area);
+    (document.querySelector('dialog[open] .modal-body') || document.body).appendChild(area);
     area.focus();
     area.select();
     document.execCommand('copy');
@@ -38,10 +93,7 @@ window.chapterToolWasm = {
     }
   },
   setLocalStorage: function (key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-    } catch (error) {
-    }
+    window.localStorage.setItem(key, value);
   },
   removeLocalStorage: function (key) {
     try {
@@ -88,12 +140,38 @@ window.chapterToolWasm = {
       return;
     }
     window.__chapterToolShortcutGuard = true;
+    document.addEventListener('click', (event) => {
+      if (!document.querySelector('dialog[open]')) {
+        chapterToolDialogOpener = event.target.closest('button, [role="button"]') || document.activeElement;
+      }
+    }, true);
     document.addEventListener('keydown', (event) => {
+      if (!document.querySelector('dialog[open]')) chapterToolDialogOpener = document.activeElement;
       if (shouldPreventBrowserShortcut(event)) {
         event.preventDefault();
       }
     }, true);
+    for (const type of ['dragover', 'drop']) {
+      document.addEventListener(type, (event) => {
+        if (document.querySelector('dialog[open]')) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }, true);
+    }
   },
+  focus: function (id) { document.getElementById(id)?.focus(); },
+  focusLoadMenuItem: function (direction) {
+    const items = Array.from(document.querySelectorAll('#load-menu [role="menuitem"]'))
+      .filter(item => !item.disabled && item.getClientRects().length);
+    if (items.length === 0) return;
+    const current = items.indexOf(document.activeElement);
+    const next = current < 0
+      ? (direction > 0 ? 0 : items.length - 1)
+      : (current + direction + items.length) % items.length;
+    items[next].focus();
+  },
+  setShortcutBindings: function (gestures) { window.__chapterToolBindings = new Set(gestures); },
   shouldPreventBrowserShortcut: function (event) {
     return shouldPreventBrowserShortcut(event);
   },
@@ -112,10 +190,12 @@ window.chapterToolWasm = {
 
     el.addEventListener('dragenter', (event) => {
       event.preventDefault();
+      if (document.querySelector('dialog[open]')) return;
       setOver(true);
     });
     el.addEventListener('dragover', (event) => {
       event.preventDefault();
+      if (document.querySelector('dialog[open]')) return;
       if (event.dataTransfer) {
         event.dataTransfer.dropEffect = 'copy';
       }
@@ -128,6 +208,7 @@ window.chapterToolWasm = {
     });
     el.addEventListener('drop', async (event) => {
       event.preventDefault();
+      if (document.querySelector('dialog[open]')) return;
       setOver(false);
       const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
       if (!file) {
@@ -169,10 +250,11 @@ function shouldPreventBrowserShortcut(event) {
   if (isEditableShortcutTarget(event.target)) {
     return false;
   }
-  if (ctrl && (key.toLowerCase() === 's' || key.toLowerCase() === 'o' || key.toLowerCase() === 'l')) {
-    return true;
-  }
-  return key === 'F11' || key === 'F9';
+  const aliases = { ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', ' ': 'Space' };
+  const normalizedKey = aliases[key] || (key.length === 1 ? key.toUpperCase() : key);
+  const gesture = (event.ctrlKey ? 'Ctrl+' : '') + (event.altKey ? 'Alt+' : '') +
+    (event.metaKey ? 'Meta+' : '') + (event.shiftKey ? 'Shift+' : '') + normalizedKey;
+  return window.__chapterToolBindings?.has(gesture) === true;
 }
 
 function encodeText(text, encodingId, emitBom) {

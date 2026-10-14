@@ -1,7 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:i="https://github.com/projektanker/icons.avalonia"
-             xmlns:vm="using:ChapterTool.Avalonia.UI.ViewModels"
              xmlns:tools="clr-namespace:ChapterTool.Avalonia.UI.ViewModels.Tools"
              x:Class="ChapterTool.Avalonia.UI.Views.Tools.TextToolView"
              x:DataType="tools:TextToolViewModel"

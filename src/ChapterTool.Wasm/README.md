@@ -6,7 +6,7 @@ The app provides chapter import, editing, time transforms, preview, and export. 
 
 1. **Top** — Load / Save, optional clip selector, frame rate readout
 2. **Center** — chapter grid (`#`, Time, Name, Frames)
-3. **Bottom** — save format, chapter name mode, order shift, XML language, expression
+3. **Bottom** — save format, chapter name mode, expression and advanced export actions
 4. **Status strip** — status text + progress
 
 Load imports data into the grid. Save and Preview use the Core projection and export options. Reload reuses the last successful file bytes. Append MPLS combines another playlist through the Core segment service.
@@ -39,40 +39,67 @@ Default URL: `http://localhost:5261`
 | **Reload / Append MPLS** | Load context menu reuses the last file or appends another MPLS group |
 | **Clip combo** | Shown when import has multiple entries; switches active `ChapterSet` |
 | **Clip combo context menu** | Combine MPLS/IFO entries or restore separate clips |
-| **Grid edit** | Time / Name editable; used on save |
+| **Grid edit** | Time, name, and frame drafts use Core cell edits. Enter, Tab, and valid blur commit once. Escape cancels. Invalid drafts retain an accessible error. |
 | **Save** | `ChapterExportService` with bottom options → browser download |
 | **Round frames + FPS** | `FrameRateService.UpdateFrames` fills Frames column (Auto detect or fixed rate) |
-| **Frame rate context menu** | Change chapter timing from the current frame rate to the selected valid rate |
-| **Expression + Use** | `ChapterOutputProjectionService` / Lua engine rewrites times + frames in the grid; built-in Core presets; invalid expressions surface Core diagnostics |
+| **Frame rate context menu** | Review source and target FPS before applying one captured conversion candidate |
+| **Expression** | Edit expressions inline and review candidate values in the grid before Apply or Discard. The advanced editor loads bounded UTF-8 Lua files and provides shared highlighting, completion, and positioned diagnostics. |
+| **Edit history** | Expand or collapse retained branches, locate the current node, inspect its field changes, and restore any node. Undo and redo remain available. |
+| **Advanced export options** | Stage XML language, encoding, and BOM preferences. Apply updates output preferences. |
+| **Naming and numbering** | Review automatic names, loaded templates, and integer numbering offsets from 0 to 1000. Apply commits once and clears the active intent. |
 | **Save as** | TXT, XML, QPFile, TimeCodes, … |
 | **Chapter name** | As is / Auto generate |
 | **Order +** | Display number shift |
 | **XML lang** | Enabled only for XML export |
-| **Settings** | Modal settings pages with browser-persisted output, appearance, and WASM capability preferences |
+| **Settings** | Draft output, appearance, and shared shortcuts. Save persists before activation. Close can discard a changed draft or keep editing. Settings do not replay content operations. |
+| **Log** | Filter the bounded list by severity and text, then reset both filters together. Open details explicitly. Copy an entry or download a captured filtered JSON/CSV snapshot. |
 | **Selection / context actions** | Ctrl/Shift multi-select; batch delete, `--zones`, Preview, forward translation, and related-media references |
 | **Drag and drop / language** | Drop-to-load with size/read errors; `en-US`, `zh-CN`, and `ja-JP` UI dictionaries |
 
 Empty grid offers **Load OGM sample** for a quick smoke path.
 
-## Main Components
+All tools use the native browser dialog lifecycle. Dialogs contain focus and make the main page inert. Escape closes a dialog from focused inputs. Close returns focus to the opener when it still exists. Dialog bodies scroll independently. Short pages can scroll to retain the toolbar, grid, bottom controls, and status strip.
 
-| Piece | Role |
-|-------|------|
-| `Services/WasmWorkspace` | Browser presentation state for load/reload/append, clip selection, multi-select editing, projection, diagnostics, logs, and save/preview. `ChapterWorkspace` owns the shared clip session and edit buffer. |
-| `Services/WasmChapterService` | Byte-based Core importers + `ChapterExportService` |
-| `Services/WasmLocalizer` | `en-US` / `zh-CN` / `ja-JP` UI and workspace status strings |
-| `Pages/Home.razor` | Main shell UI zones |
-| `wwwroot/js/download.js` | File picker trigger, encoded export download, appearance application, and localStorage persistence |
-
-Pass chapter bytes through `ChapterImportRequest.Content`. The browser app does not use local file paths for import.
+The browser app imports file bytes. It does not use local file paths for import.
 
 Portable browser imports use the shared 64 MiB byte limit in `ChapterTool.Core.Boundaries.PortableInputPolicy`. The limit applies to load, reload, and MPLS append.
+
+## Browser end-to-end tests
+
+`tests/ChapterTool.Wasm.E2E` owns real-browser coverage for the Blazor page and
+its JavaScript boundary. The suite uses Playwright Test and TypeScript. It does
+not replace the workspace or Core test projects.
+
+Run these commands from the repository root in a clean checkout:
+
+```bash
+dotnet restore src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
+dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj --configuration Release --no-restore --output artifacts/wasm-e2e/publish
+npm --prefix tests/ChapterTool.Wasm.E2E ci
+npm --prefix tests/ChapterTool.Wasm.E2E exec -- playwright install chromium
+npm --prefix tests/ChapterTool.Wasm.E2E run prepare:site
+npm --prefix tests/ChapterTool.Wasm.E2E run typecheck
+npm --prefix tests/ChapterTool.Wasm.E2E run test:e2e -- --project=chromium
+```
+
+The default configuration tests the prepared Release output at
+`http://127.0.0.1:5261/ChapterTool/`. Run `npm --prefix
+tests/ChapterTool.Wasm.E2E run test:e2e:dev` to use the local development
+server at `/`. Use `test:e2e:headed` or `test:e2e:ui` for interactive diagnosis.
+Run all installed engines with `test:e2e`. Layout tests verify bounds, focus,
+real clicks, and scrolling. Screenshots support failure diagnosis.
+
+Playwright writes reports, traces, screenshots, and downloaded files under
+`artifacts/wasm-e2e/`. Open the HTML report with
+`npm --prefix tests/ChapterTool.Wasm.E2E run report`.
+The first multi-browser and visual acceptance results are in
+`docs/testing/wasm-browser-e2e-acceptance.md`.
 
 ## Feature boundaries
 
 The browser app imports text, XML, CUE, WebVTT, MPLS, IFO, HD-DVD XPL, and embedded FLAC/TAK CUE data from bytes. It supports chapter editing, managed Lua expressions with Core presets, frame transforms, templates, export formats, settings persistence, drag and drop, and browser downloads.
 
-The browser intentionally does not expose desktop-only behavior: choosing a local save directory, running `mkvtoolnix`/`ffprobe`, importing external-tool media sources, opening local Related Media through a desktop shell, system font catalog, desktop Sentry telemetry, or loading Lua script files and the Lua editor/completion workflow.
+The browser does not expose choosing a local save directory, running `mkvtoolnix`/`ffprobe`, importing external-tool media sources, opening local Related Media through a desktop shell, system font enumeration, or desktop Sentry telemetry.
 
 Related Media paths are informational. Relative paths are rendered as browser links when present, but local filesystem paths are not made accessible by WASM.
 
@@ -105,23 +132,13 @@ Published URL (project pages):
 
 `https://tautcony.github.io/ChapterTool/`
 
+The generated Core API reference is published beside the browser app at
+`https://tautcony.github.io/ChapterTool/docs/`.
+
 ### One-time repository settings
 
 1. **Settings → Pages → Build and deployment → Source**: **GitHub Actions**
 2. Ensure Actions can run workflows (default GITHUB_TOKEN is enough for `pages: write`)
 3. First deploy: Actions → **Deploy WASM (GitHub Pages)** → **Run workflow**, or merge to `master`
 
-The workflow:
-
-1. `dotnet publish` the Blazor WASM app (Release)
-2. Writes `.nojekyll` so `_framework` is not ignored by Jekyll
-3. Copies `index.html` → `404.html` for SPA deep-link fallback
-4. Rewrites `<base href>` to `/ChapterTool/` for project-page hosting
-5. Uploads and deploys via `actions/deploy-pages`
-
-Local smoke of the same publish layout:
-
-```bash
-dotnet publish src/ChapterTool.Wasm/ChapterTool.Wasm.csproj -c Release
-# serve src/.../bin/Release/net10.0/publish/wwwroot with any static host
-```
+The workflow publishes the browser app and deploys its static files through GitHub Pages.

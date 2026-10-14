@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views;
 
 namespace ChapterTool.Avalonia.Views;
@@ -21,5 +22,14 @@ public sealed partial class MainWindow : Window
         MinHeight = 520;
         Content = mainView;
         DataContext = mainView.DataContext;
+        Closed += OnClosed;
+    }
+
+    private void OnClosed(object? sender, EventArgs args)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            viewModel.EndDocumentSession();
+        }
     }
 }

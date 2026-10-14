@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="LuaCSharp" Version="0.5.6" />
+    <PackageReference Include="LuaCSharp" Version="0.5.7" />
   </ItemGroup>
 
 </Project>

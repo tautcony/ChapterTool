@@ -74,6 +74,7 @@ public sealed partial class WasmLocalizer
         T("Settings.OutputPreferences"),
         T("Settings.Editing"),
         T("Settings.Appearance"),
+        T("Settings.Shortcuts"),
         T("Settings.About")
     ];
 

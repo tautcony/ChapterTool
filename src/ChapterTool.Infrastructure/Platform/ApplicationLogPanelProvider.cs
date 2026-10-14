@@ -59,11 +59,10 @@ public sealed class ApplicationLogPanelProvider(
         }
 
         var structuredState = StructuredState(state);
-        var messageKey = StateString(structuredState, "MessageKey");
         var technicalDetail = StateString(structuredState, "TechnicalDetail");
         var operation = StateString(structuredState, "Operation") ?? StateString(structuredState, "operation");
         var arguments = Arguments(structuredState);
-        var message = string.IsNullOrWhiteSpace(messageKey) ? formatter(state, exception).Trim() : messageKey.Trim();
+        var message = formatter(state, exception).Trim();
         if (string.IsNullOrWhiteSpace(message) && exception is null)
         {
             return;
@@ -73,7 +72,6 @@ public sealed class ApplicationLogPanelProvider(
             DateTimeOffset.Now,
             logLevel,
             string.IsNullOrWhiteSpace(message) ? exception!.Message : message,
-            messageKey,
             arguments,
             technicalDetail,
             category,
@@ -112,9 +110,7 @@ public sealed class ApplicationLogPanelProvider(
 
     private static Dictionary<string, object?> Arguments(IReadOnlyDictionary<string, object?> structuredState) =>
         structuredState
-            .Where(static pair =>
-                !string.Equals(pair.Key, "MessageKey", StringComparison.Ordinal) &&
-                !string.Equals(pair.Key, "TechnicalDetail", StringComparison.Ordinal))
+            .Where(static pair => !string.Equals(pair.Key, "TechnicalDetail", StringComparison.Ordinal))
             .ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
 
     private static string? StateString(IReadOnlyDictionary<string, object?> state, string key) =>

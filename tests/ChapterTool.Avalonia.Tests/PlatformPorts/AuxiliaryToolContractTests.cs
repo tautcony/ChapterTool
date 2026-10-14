@@ -28,16 +28,21 @@ public sealed class AuxiliaryToolContractTests
     {
         var presenter = new EmbeddedToolPresenter();
         var state = new DisposableState();
+        Action? closeTool = null;
         var descriptor = new ToolDescriptor(
             new ToolId("custom-tool"),
             "Tool.Custom.Title",
             new ToolSizeConstraints(),
             ToolRefreshPolicy.Reuse,
-            _ => new Border { DataContext = state });
+            context =>
+            {
+                closeTool = context.CloseTool;
+                return new Border { DataContext = state };
+            });
         var host = new EmbeddedAuxiliaryToolHost(
             new ToolCatalog([descriptor]),
             presenter,
-            _ => new ToolCreationContext(
+            request => new ToolCreationContext(
                 null!,
                 null!,
                 null!,
@@ -49,7 +54,8 @@ public sealed class AuxiliaryToolContractTests
                 null!,
                 string.Empty,
                 null!,
-                null!));
+                null!,
+                CloseTool: request.CloseTool));
 
         var request = new AuxiliaryToolRequest(null!, null!, new RuntimeCapabilities(
             RuntimeSourceMode.LocalPath,
@@ -68,7 +74,8 @@ public sealed class AuxiliaryToolContractTests
         Assert.Equal(AuxiliaryToolResultKind.Activated, secondResult.Kind);
         Assert.Same(firstContent, presenter.Content);
 
-        await host.CloseAsync(new ToolId("custom-tool"), CancellationToken.None);
+        Assert.NotNull(closeTool);
+        closeTool!();
 
         Assert.Null(presenter.Content);
         Assert.True(state.IsDisposed);

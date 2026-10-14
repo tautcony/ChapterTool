@@ -12,7 +12,7 @@ public sealed class ChapterConversionServiceTests
     [Fact]
     public void Celltimes_exports_non_separator_start_frames()
     {
-        var result = ChapterConversionService.ToCelltimes(Sample(), 24m);
+        var result = ChapterConversionService.ToCelltimes(Sample(), FrameRateValue.Rational(24, 1));
 
         Assert.True(result.Success);
         Assert.Equal($"0{Environment.NewLine}240", result.Content);
@@ -26,8 +26,8 @@ public sealed class ChapterConversionServiceTests
             Chapters = [new Chapter(1, TimeSpan.FromSeconds(0.0625), "Half")]
         };
 
-        var result = ChapterConversionService.ToCelltimes(info, 24m);
-        var invalid = ChapterConversionService.ToCelltimes(info, 0);
+        var result = ChapterConversionService.ToCelltimes(info, FrameRateValue.Rational(24, 1));
+        var invalid = ChapterConversionService.ToCelltimes(info, FrameRateValue.Unknown);
 
         Assert.Equal("2", result.Content);
         Assert.False(invalid.Success);
@@ -37,13 +37,13 @@ public sealed class ChapterConversionServiceTests
     [Fact]
     public void ToCelltimes_null_info_throws()
     {
-        Assert.Throws<ArgumentNullException>(() => ChapterConversionService.ToCelltimes(null!, 24m));
+        Assert.Throws<ArgumentNullException>(() => ChapterConversionService.ToCelltimes(null!, FrameRateValue.Rational(24, 1)));
     }
 
     [Fact]
     public void ToCelltimes_empty_chapters_succeeds_with_empty_content()
     {
-        var result = ChapterConversionService.ToCelltimes(Sample() with { Chapters = [] }, 24m);
+        var result = ChapterConversionService.ToCelltimes(Sample() with { Chapters = [] }, FrameRateValue.Rational(24, 1));
 
         Assert.True(result.Success);
         Assert.Equal(string.Empty, result.Content);
@@ -59,7 +59,7 @@ public sealed class ChapterConversionServiceTests
             CHAPTER02NAME=Middle
             """;
 
-        var result = service.ChapterTextToQpfile(text, 24m);
+        var result = service.ChapterTextToQpfile(text, FrameRateValue.Rational(24, 1));
 
         Assert.True(result.Success);
         Assert.Equal($"0 I{Environment.NewLine}240 I", result.Content);
@@ -76,14 +76,14 @@ public sealed class ChapterConversionServiceTests
             83.417
             """;
 
-        var result = service.ChapterTextToQpfile(text, 24m, timecodes);
+        var result = service.ChapterTextToQpfile(text, FrameRateValue.Rational(24, 1), timecodes);
 
         Assert.True(result.Success);
         Assert.Equal("2 I", result.Content);
     }
 
     [Fact]
-    public void ChapterTextToQpfile_zero_fps_with_timecodes_succeeds()
+    public void ChapterTextToQpfile_unknown_rate_requires_timecodes()
     {
         const string text = "CHAPTER01=00:00:00.050";
         const string timecodes = """
@@ -93,10 +93,13 @@ public sealed class ChapterConversionServiceTests
             83.417
             """;
 
-        var result = service.ChapterTextToQpfile(text, 0m, timecodes);
+        var result = service.ChapterTextToQpfile(text, FrameRateValue.Unknown, timecodes);
 
         Assert.True(result.Success);
         Assert.Equal("2 I", result.Content);
+        var invalid = service.ChapterTextToQpfile(text, FrameRateValue.Unknown);
+        Assert.False(invalid.Success);
+        Assert.Contains(invalid.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
     }
 
     [Theory]
@@ -113,7 +116,7 @@ public sealed class ChapterConversionServiceTests
             83.417
             """;
 
-        var result = service.ChapterTextToQpfile(text, 0m, timecodes);
+        var result = service.ChapterTextToQpfile(text, FrameRateValue.Unknown, timecodes);
 
         Assert.True(result.Success);
         Assert.Equal(expected, result.Content);
@@ -131,7 +134,7 @@ public sealed class ChapterConversionServiceTests
             Chapters = [new Chapter(1, ServiceTime(time), "Boundary")]
         };
 
-        var result = ChapterConversionService.ToCelltimes(info, 24m);
+        var result = ChapterConversionService.ToCelltimes(info, FrameRateValue.Rational(24, 1));
 
         Assert.True(result.Success);
         Assert.Equal(expected, result.Content);
@@ -143,7 +146,7 @@ public sealed class ChapterConversionServiceTests
     [Fact]
     public void ChapterTextToQpfile_invalid_input_returns_diagnostic()
     {
-        var result = service.ChapterTextToQpfile("not chapters", 24m);
+        var result = service.ChapterTextToQpfile("not chapters", FrameRateValue.Rational(24, 1));
 
         Assert.False(result.Success);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidChapterText);
@@ -154,7 +157,7 @@ public sealed class ChapterConversionServiceTests
             "Title",
             "source",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(30),
             [
                 new Chapter(1, TimeSpan.Zero, "Intro"),

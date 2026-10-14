@@ -20,7 +20,7 @@ public sealed record Chapter(
     ChapterKind Kind = ChapterKind.Marker)
 {
     /// <summary>
-    /// Gets whether this row is a structural separator rather than a real chapter marker.
+    /// Gets a value indicating whether gets whether this row is a structural separator rather than a real chapter marker.
     /// </summary>
     public bool IsSeparator => Kind == ChapterKind.Separator;
 

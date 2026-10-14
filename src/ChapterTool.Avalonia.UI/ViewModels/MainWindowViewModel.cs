@@ -1,11 +1,15 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using Avalonia.Input;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Avalonia.UI.Workflows;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
@@ -20,28 +24,30 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposable
 {
     private readonly IChapterEditingService editingService;
+    private readonly DispatcherTimer expressionPreviewTimer = new() { Interval = TimeSpan.FromMilliseconds(180) };
     private readonly IFrameRateService frameRateService;
+    private readonly IChapterTimeFormatter timeFormatter;
     private readonly ChapterExportService exportService;
     private readonly IShellService? shellService;
     private readonly LoadSaveWorkflow loadSaveWorkflow;
-    private readonly ProjectionFacade projectionFacade;
+    private readonly WorkspaceContentRows workspaceContentRows;
     private readonly StatusDiagnosticsPresenter statusDiagnosticsPresenter;
     private readonly DisplayOptionCoordinator displayOptionCoordinator;
     private readonly EventHandler cultureChangedHandler;
     private readonly ObservableCollection<SelectorDisplayOption> xmlLanguageDisplayOptions = [];
 
-    private FrameRateOption selectedFrameRateOption;
-    private decimal? configuredFrameRate;
+    private FrameRateOption? appliedFrameRateOption;
     private bool isRefreshingChapterNameModeOptions;
+    private bool isApplyingContentPreview;
+    private bool isNarrowPreviewLayout;
     private string chapterNameTemplateStatus;
     private string statusText;
-    private string? lastExpressionDiagnosticSignature;
+    private ChapterContentPreview? pendingContentPreview;
+    private string expressionPreviewText = string.Empty;
+    private IReadOnlyList<HistoryEntryViewModel> historyEntries = [];
+    private SessionHistorySnapshot? historySnapshot;
 
-    private ChapterSet? CurrentInfo
-    {
-        get => Workspace.CurrentChapterSet;
-        set => Workspace.SetCurrentChapterSet(value);
-    }
+    private ChapterSet? CurrentInfo => Workspace.CurrentChapterSet;
 
     public MainWindowViewModel(AvaloniaHostComposition composition)
         : this(
@@ -105,6 +111,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         this.editingService = editingService;
         this.AuxiliaryToolHost = auxiliaryToolHost;
         this.frameRateService = frameRateService;
+        this.timeFormatter = formatter;
         this.ExpressionEngine = expressionEngine;
         this.exportService = exportService;
         this.Capabilities = capabilities ?? new RuntimeCapabilities(
@@ -127,7 +134,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         ExpressionAuthoringService = expressionAuthoringService ?? new ExpressionAuthoringService(this.ExpressionEngine);
         loadSaveWorkflow = new LoadSaveWorkflow(Workspace, loadService, saveService);
         ClipEditingCoordinator = new ClipEditingCoordinator(Workspace, this.editingService, this.frameRateService);
-        projectionFacade = new ProjectionFacade(Workspace, this.ExpressionEngine, formatter);
+        workspaceContentRows = new WorkspaceContentRows(Workspace, formatter);
         statusDiagnosticsPresenter = new StatusDiagnosticsPresenter(Localizer, logger, formatter, value => StatusText = value);
         displayOptionCoordinator = new DisplayOptionCoordinator(Localizer, this.frameRateService);
         var toolSession = new MainWindowToolSession(this);
@@ -140,27 +147,32 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         RefreshFrameRateDisplayOptions();
         cultureChangedHandler = (_, _) => RefreshLocalizedState();
         Localizer.CultureChanged += cultureChangedHandler;
-        selectedFrameRateOption = this.frameRateService.Options[0];
+        SelectedFrameRateOption = this.frameRateService.Options[0];
         ClipOptions.CollectionChanged += OnClipOptionsChanged;
         Rows.CollectionChanged += OnRowsChanged;
 
         InitializeCommands();
+        expressionPreviewTimer.Tick += OnExpressionPreviewTimerTick;
+        RefreshHistoryEntries();
     }
 
     public void Dispose()
     {
+        expressionPreviewTimer.Stop();
+        expressionPreviewTimer.Tick -= OnExpressionPreviewTimerTick;
+        EndDocumentSession();
         Localizer.CultureChanged -= cultureChangedHandler;
         ClipOptions.CollectionChanged -= OnClipOptionsChanged;
         Rows.CollectionChanged -= OnRowsChanged;
     }
 
-    /// <summary>Explicit workspace owning clip session, edit buffer, path, and revision.</summary>
+    /// <summary>Gets explicit workspace owning clip session, edit buffer, path, and revision.</summary>
     internal ChapterWorkspace Workspace { get; } = new();
 
-    /// <summary>Session facade that owns the narrow ports used by auxiliary tools.</summary>
+    /// <summary>Gets session facade that owns the narrow ports used by auxiliary tools.</summary>
     public IWorkspaceToolSession ToolSession { get; }
 
-    /// <summary>Host effects projected into shared command and visibility state.</summary>
+    /// <summary>Gets host effects projected into shared command and visibility state.</summary>
     public IRuntimeCapabilities Capabilities { get; }
 
     public IAuxiliaryToolHost AuxiliaryToolHost { get; }
@@ -172,6 +184,35 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     internal ClipEditingCoordinator ClipEditingCoordinator { get; }
 
     internal ISettingsStore<ChapterToolSettings>? SettingsStore { get; }
+
+    public ShortcutMapping ActiveShortcutMapping { get; private set; } = ShortcutMapping.Default;
+
+    public string SaveShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.SaveId) ?? string.Empty;
+
+    public string ReloadShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.ReloadId) ?? string.Empty;
+
+    public string LogShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.LogId) ?? string.Empty;
+
+    public string PreviewShortcutGesture => ActiveShortcutMapping.RowGesture(ShortcutCatalog.PreviewId) ?? string.Empty;
+
+    public KeyGesture? ReloadShortcutKeyGesture => ParseGesture(ReloadShortcutGesture);
+
+    public KeyGesture? PreviewShortcutKeyGesture => ParseGesture(PreviewShortcutGesture);
+
+    public void SetShortcutSettings(ShortcutSettings settings)
+    {
+        ActiveShortcutMapping = ShortcutMapping.Resolve(settings);
+        OnPropertyChanged(nameof(ActiveShortcutMapping));
+        OnPropertyChanged(nameof(SaveShortcutGesture));
+        OnPropertyChanged(nameof(ReloadShortcutGesture));
+        OnPropertyChanged(nameof(LogShortcutGesture));
+        OnPropertyChanged(nameof(PreviewShortcutGesture));
+        OnPropertyChanged(nameof(ReloadShortcutKeyGesture));
+        OnPropertyChanged(nameof(PreviewShortcutKeyGesture));
+    }
+
+    private static KeyGesture? ParseGesture(string gesture) =>
+        string.IsNullOrWhiteSpace(gesture) ? null : KeyGesture.Parse(gesture);
 
     internal void NotifyPropertyChanged(string propertyName) => OnPropertyChanged(propertyName);
 
@@ -188,7 +229,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public string DisplayPath => Workspace.DisplayPath;
 
     /// <summary>
-    /// Authoritative path text for the source path box and reload/load adapters.
+    /// Gets or sets authoritative path text for the source path box and reload/load adapters.
     /// Updated by browse/drop and synchronized from successful loads.
     /// </summary>
     public string SourcePath
@@ -200,6 +241,20 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public ObservableCollection<ChapterRowViewModel> Rows { get; } = [];
 
     public bool IsChapterGridEmpty => Rows.Count == 0;
+
+    public int ChapterCount => Rows.Count;
+
+    public int SelectedRowCount => SelectedRowIndexes.Count;
+
+    public string ChapterCountDisplay => Localizer.Format(ChapterCount == 1 ? "Main.ChapterCountSingular" : "Main.ChapterCount", new Dictionary<string, object?> { ["count"] = ChapterCount });
+
+    public string ClipStructureActionText => Localizer.GetString(IsClipCombineChecked ? "Main.SplitByBoundaries" : "Main.Combine");
+
+    public string SelectedRowCountDisplay => Localizer.Format("Status.SelectedRows", new Dictionary<string, object?> { ["0"] = SelectedRowCount });
+
+    public string SourceDisplayText => string.IsNullOrWhiteSpace(SourcePath) ? string.Empty : Path.GetFileName(SourcePath);
+
+    public bool IsTemplateFileApplicable => UseTemplateNames;
 
     public ObservableCollection<ChapterImportEntry> ClipOptions { get; } = [];
 
@@ -253,7 +308,28 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         {
             if (SetProperty(ref field, value))
             {
-                OnFrameOptionsChangedFromBinding();
+                if (value)
+                {
+                    EditingOptions = EditingOptions with { FrameDisplay = Core.Editing.FrameDisplayMode.Round };
+                }
+                else if (EditingOptions.FrameDisplay == Core.Editing.FrameDisplayMode.Round)
+                {
+                    EditingOptions = EditingOptions with { FrameDisplay = Core.Editing.FrameDisplayMode.FullPrecision };
+                }
+                OnFrameOptionsChangedFromBinding(invalidatePendingPreview: false);
+            }
+        }
+    } = true;
+
+    public bool ShowRepeatingFrameDecimals
+    {
+        get;
+        set
+        {
+            if (SetProperty(ref field, value))
+            {
+                RefreshFramePresentations();
+                NotifyStateChanged();
             }
         }
     } = true;
@@ -266,6 +342,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             var normalized = NormalizeFrameAccuracyTolerance(value);
             if (SetProperty(ref field, normalized))
             {
+                InvalidatePendingContentPreview();
                 RefreshRows();
             }
         }
@@ -273,7 +350,17 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public ChapterEditingOptions EditingOptions { get; private set; } = ChapterEditingOptions.Default;
 
-    internal void ApplyEditingOptions(ChapterEditingOptions options) => EditingOptions = options ?? ChapterEditingOptions.Default;
+    internal void ApplyEditingOptions(ChapterEditingOptions? options)
+    {
+        var updatedOptions = options ?? ChapterEditingOptions.Default;
+        if (EditingOptions == updatedOptions)
+        {
+            return;
+        }
+
+        EditingOptions = updatedOptions;
+        RefreshFramePresentations();
+    }
 
     public int SelectedFrameRateIndex
     {
@@ -290,7 +377,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
                 var entry = FrameRateOptionForComboIndex(value);
                 if (entry is not null)
                 {
-                    selectedFrameRateOption = entry;
+                    SelectedFrameRateOption = entry;
                 }
             }
 
@@ -300,7 +387,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool IsClipSelectionVisible => ClipOptions.Count > 0 || IsClipCombineChecked;
 
-    /// <summary>Derived from typed clip session mode (combined vs split).</summary>
+    /// <summary>Gets a value indicating whether the clip session mode is combined.</summary>
     public bool IsClipCombineChecked => Workspace.ClipSession?.IsCombined == true;
 
     public bool IsAdvancedPanelExpanded
@@ -413,19 +500,21 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool AutoGenerateNames
     {
-        get => Workspace.Projection.AutoGenerateNames;
+        get => Workspace.OperationDrafts.AutoGenerateNames;
         set
         {
-            var previousTemplate = Workspace.Projection.UseTemplateNames;
-            if (Workspace.Projection.SetAutoGenerateNames(value))
+            var previousTemplate = Workspace.OperationDrafts.UseTemplateNames;
+            if (Workspace.OperationDrafts.SetAutoGenerateNames(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
-                if (previousTemplate != Workspace.Projection.UseTemplateNames)
+                if (previousTemplate != Workspace.OperationDrafts.UseTemplateNames)
                 {
                     OnPropertyChanged(nameof(UseTemplateNames));
                 }
 
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
+                OnPropertyChanged(nameof(IsTemplateFileApplicable));
                 RefreshRows();
             }
         }
@@ -433,19 +522,21 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool UseTemplateNames
     {
-        get => Workspace.Projection.UseTemplateNames;
+        get => Workspace.OperationDrafts.UseTemplateNames;
         set
         {
-            var previousAuto = Workspace.Projection.AutoGenerateNames;
-            if (Workspace.Projection.SetUseTemplateNames(value))
+            var previousAuto = Workspace.OperationDrafts.AutoGenerateNames;
+            if (Workspace.OperationDrafts.SetUseTemplateNames(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
-                if (previousAuto != Workspace.Projection.AutoGenerateNames)
+                if (previousAuto != Workspace.OperationDrafts.AutoGenerateNames)
                 {
                     OnPropertyChanged(nameof(AutoGenerateNames));
                 }
 
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
+                OnPropertyChanged(nameof(IsTemplateFileApplicable));
                 RefreshRows();
             }
         }
@@ -453,11 +544,12 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ChapterNameTemplateText
     {
-        get => Workspace.Projection.ChapterNameTemplateText;
+        get => Workspace.OperationDrafts.ChapterNameTemplateText;
         set
         {
-            if (Workspace.Projection.SetChapterNameTemplateText(value))
+            if (Workspace.OperationDrafts.SetChapterNameTemplateText(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ChapterNameModeIndex));
                 RefreshRows();
@@ -509,49 +601,38 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public int OrderShift
     {
-        get => Workspace.Projection.OrderShift;
+        get => Workspace.OperationDrafts.OrderShift;
         set
         {
-            if (Workspace.Projection.SetOrderShift(value))
+            if (Workspace.OperationDrafts.SetOrderShift(value))
             {
+                InvalidatePendingContentPreview();
                 OnPropertyChanged();
                 RefreshRows();
-            }
-        }
-    }
-
-    public bool ApplyExpression
-    {
-        get => Workspace.Projection.ApplyExpression;
-        set
-        {
-            if (Workspace.Projection.SetApplyExpression(value))
-            {
-                OnPropertyChanged();
-                RefreshRows();
+                RefreshContentOptionsPreview();
             }
         }
     }
 
     public string Expression
     {
-        get => Workspace.Projection.Expression;
+        get => Workspace.OperationDrafts.Expression;
         set
         {
-            if (Workspace.Projection.SetExpression(value))
+            if (Workspace.OperationDrafts.SetExpression(value))
             {
                 OnPropertyChanged();
-                RefreshRows();
+                ScheduleExpressionPreview();
             }
         }
     }
 
     public string ExpressionPresetId
     {
-        get => Workspace.Projection.ExpressionPresetId;
+        get => Workspace.OperationDrafts.ExpressionPresetId;
         set
         {
-            if (Workspace.Projection.SetExpressionPresetId(value))
+            if (Workspace.OperationDrafts.SetExpressionPresetId(value))
             {
                 OnPropertyChanged();
             }
@@ -560,10 +641,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public string ExpressionSourceName
     {
-        get => Workspace.Projection.ExpressionSourceName;
+        get => Workspace.OperationDrafts.ExpressionSourceName;
         set
         {
-            if (Workspace.Projection.SetExpressionSourceName(value))
+            if (Workspace.OperationDrafts.SetExpressionSourceName(value))
             {
                 OnPropertyChanged();
             }
@@ -599,6 +680,109 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         private set => SetProperty(ref statusText, value);
     }
 
+    public IReadOnlyList<HistoryEntryViewModel> HistoryEntries
+    {
+        get => historyEntries;
+        private set => SetProperty(ref historyEntries, value);
+    }
+
+    public bool HasHistory => HistoryEntries.Count > 0;
+
+    public bool CanOpenHistory => Workspace.ContentSession is not null;
+
+    public string HistoryLifetimeText => Localizer.GetString("History.SessionLifetimeShort");
+
+    /// <summary>Gets whether ending this document session would discard history, a draft, or unexported content.</summary>
+    public bool RequiresSessionLossConfirmation
+    {
+        get
+        {
+            var history = Workspace.ContentSession?.GetHistorySnapshot();
+            var hasHistory = history is not null && history.Nodes.Length > 1;
+            return hasHistory || pendingContentPreview is not null || HasUnexportedContent;
+        }
+    }
+
+    public bool HasUnexportedContent
+    {
+        get
+        {
+            if (CurrentInfo is null)
+            {
+                return false;
+            }
+
+            var capture = Workspace.CaptureExportSnapshot(
+                workspaceContentRows.GetCurrentChapterSet(),
+                Workspace.CreateSerializationOptions(),
+                Workspace.CurrentTrackIndex);
+            return !Workspace.IsExported(capture);
+        }
+    }
+
+    internal Func<CancellationToken, ValueTask<bool>>? SessionLossConfirmation { get; set; }
+
+    /// <summary>Asks the host before ending the current session.</summary>
+    public ValueTask<bool> ConfirmSessionLossAsync(CancellationToken cancellationToken) =>
+        SessionLossConfirmation is null
+            ? ValueTask.FromResult(true)
+            : SessionLossConfirmation(cancellationToken);
+
+    /// <summary>Ends the current session and drops its host projections and drafts.</summary>
+    public void EndDocumentSession()
+    {
+        expressionPreviewTimer.Stop();
+        if (pendingContentPreview is { } preview)
+        {
+            CancelContentPreview(preview);
+            pendingContentPreview = null;
+        }
+        ExpressionPreviewText = string.Empty;
+
+        Workspace.ClearSession();
+        SourcePath = string.Empty;
+        Rows.Clear();
+        ClipOptions.Clear();
+        ClipDisplayOptions.Clear();
+        SelectedClipIndex = -1;
+        SelectedRowIndexes = [];
+        HistoryEntries = [];
+        historySnapshot = null;
+        NotifyStateChanged();
+    }
+
+    public string UndoDescription => CurrentHistoryNode?.Description ?? string.Empty;
+
+    public string RedoDescription => PreferredRedoNode?.Description ?? string.Empty;
+
+    public bool CanUndo => historySnapshot is { } snapshot && snapshot.CursorId != snapshot.RootId;
+
+    public bool CanRedo => PreferredRedoNode is not null;
+
+    private SessionHistoryNodeSnapshot? CurrentHistoryNode
+    {
+        get
+        {
+            var snapshot = historySnapshot;
+            return snapshot?.Nodes.FirstOrDefault(node => node.Id == snapshot.CursorId);
+        }
+    }
+
+    private SessionHistoryNodeSnapshot? PreferredRedoNode
+    {
+        get
+        {
+            var snapshot = historySnapshot;
+            var cursor = snapshot?.Nodes.FirstOrDefault(node => node.Id == snapshot.CursorId);
+            var childId = cursor is null
+                ? (Guid?)null
+                : cursor.PreferredChildId ?? (cursor.ChildIds.IsEmpty ? null : cursor.ChildIds[0]);
+            return childId is null
+                ? null
+                : snapshot?.Nodes.FirstOrDefault(node => node.Id == childId.Value);
+        }
+    }
+
     public double Progress
     {
         get;
@@ -628,13 +812,15 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool CanAppendMpls => Workspace.ClipSession?.CanAppendMpls == true;
 
-    public bool CanCombine => Workspace.ClipSession?.CanCombine == true;
+    public bool CanCombine => Workspace.ClipSession?.CanCombine == true && !IsChapterGridReadOnly;
+
+    public bool CanOpenContentTools => CanEditRows;
 
     public bool CanSave => CurrentInfo is not null;
 
     public bool CanRefreshRows => CurrentInfo is not null;
 
-    public bool CanEditRows => CurrentInfo is not null;
+    public bool CanEditRows => CurrentInfo is not null && !IsChapterGridReadOnly;
 
     public bool CanOpenRelatedMedia => Capabilities.CanOpenLocalPaths && RelatedMediaReferences.Count > 0;
 
@@ -712,10 +898,92 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public UiCommand ForwardShiftCommand { get; private set; } = null!;
 
+    public UiCommand HistoryCommand { get; private set; } = null!;
+
+    public UiCommand PreviewContentOptionsCommand { get; private set; } = null!;
+
+    public UiCommand ApplyContentPreviewCommand { get; private set; } = null!;
+
+    public UiCommand RefreshContentPreviewCommand { get; private set; } = null!;
+
+    public UiCommand CancelContentPreviewCommand { get; private set; } = null!;
+
+    public UiCommand UndoCommand { get; private set; } = null!;
+
+    public UiCommand RedoCommand { get; private set; } = null!;
+
+    public UiCommand NavigateHistoryCommand { get; private set; } = null!;
+
+    public bool IsContentPreviewPending => pendingContentPreview is not null || expressionPreviewTimer.IsEnabled;
+
+    public string ExpressionPreviewText
+    {
+        get => pendingContentPreview is { } preview && !Workspace.IsContentTokenCurrent(preview.BaseToken)
+            ? Localizer.GetString("Expression.Preview.Stale")
+            : expressionPreviewText;
+        private set
+        {
+            SetProperty(ref expressionPreviewText, value);
+            OnPropertyChanged(nameof(ContentPreviewMetadataTooltip));
+            OnPropertyChanged(nameof(IsChapterGridReadOnly));
+            OnPropertyChanged(nameof(CanEditRows));
+            OnPropertyChanged(nameof(CanOpenContentTools));
+            OnPropertyChanged(nameof(CanCombine));
+            UpdateInlinePreviewProjection();
+            if (InsertCommand is not null)
+            {
+                InsertCommand.RaiseCanExecuteChanged();
+                DeleteCommand.RaiseCanExecuteChanged();
+                ChangeFpsCommand.RaiseCanExecuteChanged();
+                CombineCommand.RaiseCanExecuteChanged();
+                TemplateNamesCommand.RaiseCanExecuteChanged();
+                ZonesCommand.RaiseCanExecuteChanged();
+                ForwardShiftCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool IsChapterGridReadOnly => isApplyingContentPreview || CanApplyContentPreview;
+
+    public bool IsInlineCandidateVisible => pendingContentPreview is { IsValid: true } preview
+        && Workspace.IsContentTokenCurrent(preview.BaseToken)
+        && ExpressionPreviewProjector.Build(preview).HasChanges;
+
+    public string ContentPreviewMetadataTooltip
+    {
+        get
+        {
+            if (pendingContentPreview is not { IsValid: true } preview
+                || !Workspace.IsContentTokenCurrent(preview.BaseToken))
+            {
+                return string.Empty;
+            }
+
+            var projection = ExpressionPreviewProjector.Build(preview);
+            return string.Join(Environment.NewLine, projection.Properties
+                .Where(static property => property.OwnerKind != ExpressionPropertyOwnerKind.Chapter)
+                .Select(property =>
+                {
+                    var row = new ExpressionPropertyRowViewModel(property, Localizer);
+                    return $"{row.OwnerLabel} · {row.OwnerName} · {row.PropertyLabel}: {row.BeforeValue} → {row.CandidateValue}";
+                }));
+        }
+    }
+
+    public bool CanPreviewContentOptions => pendingContentPreview is null
+        && !expressionPreviewTimer.IsEnabled;
+
+    public bool CanRefreshContentPreview => pendingContentPreview is { } preview
+        && !Workspace.IsContentTokenCurrent(preview.BaseToken);
+
+    public bool CanApplyContentPreview => pendingContentPreview is { IsValid: true, Differences.IsEmpty: false } preview
+        && Workspace.IsContentTokenCurrent(preview.BaseToken);
+
     public UiCommand OpenRelatedMediaCommand { get; private set; } = null!;
 
     public void SetFrameOptions(int frameRateIndex, bool roundFrames)
     {
+        var priorComputationRate = ComputationFrameRate;
         suppressFrameOptionsRefresh = true;
         try
         {
@@ -723,29 +991,46 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             var entry = FrameRateOptionForComboIndex(frameRateIndex);
             if (entry is not null)
             {
-                selectedFrameRateOption = entry;
+                SelectedFrameRateOption = entry;
                 SelectedFrameRateIndex = frameRateIndex;
-                return;
             }
-
-            selectedFrameRateOption = CurrentInfo is null
-                ? frameRateService.Options[0]
-                : frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
-            SelectedFrameRateIndex = ComboIndexFor(selectedFrameRateOption);
+            else
+            {
+                SelectedFrameRateOption = CurrentInfo is null
+                    ? frameRateService.Options[0]
+                    : frameRateService.FindByRate(CurrentInfo.FrameRate);
+                SelectedFrameRateIndex = ComboIndexFor(SelectedFrameRateOption);
+            }
         }
         finally
         {
             suppressFrameOptionsRefresh = false;
         }
+
+        if (CurrentInfo is not null)
+        {
+            if (priorComputationRate != ComputationFrameRate)
+            {
+                InvalidatePendingContentPreview();
+            }
+
+            OnPropertyChanged(nameof(ExpressionFrameRate));
+            ApplyFrameInfo();
+        }
     }
 
-    private void OnFrameOptionsChangedFromBinding()
+    private void OnFrameOptionsChangedFromBinding(bool invalidatePendingPreview = true)
     {
         if (suppressFrameOptionsRefresh || CurrentInfo is null)
         {
             return;
         }
 
+        if (invalidatePendingPreview)
+        {
+            InvalidatePendingContentPreview();
+            OnPropertyChanged(nameof(ExpressionFrameRate));
+        }
         ApplyFrameInfo();
     }
 
@@ -756,6 +1041,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         try
         {
             SelectedFrameRateIndex = index;
+            OnPropertyChanged(nameof(SelectedFrameRateIndex));
         }
         finally
         {
@@ -773,11 +1059,11 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
             return string.Empty;
         }
 
-        var projection = CurrentOutputProjection();
-        var entries = CurrentExportOptionsForProjectedInfo();
+        var chapterSet = workspaceContentRows.GetCurrentChapterSet();
+        var entries = Workspace.CreateSerializationOptions();
 
         // Use composition-injected export service (same path family as save), not ad-hoc construction.
-        var result = exportService.Export(projection.Info, entries);
+        var result = exportService.Serialize(chapterSet, entries);
         if (!result.Success)
         {
             return string.Join(Environment.NewLine, result.Diagnostics.Select(static diagnostic => diagnostic.Message));
@@ -791,6 +1077,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     public void UpdateSelectedRows(IReadOnlySet<int> indexes)
     {
         SelectedRowIndexes = [.. indexes.Where(index => index >= 0)];
+        OnPropertyChanged(nameof(SelectedRowCount));
+        OnPropertyChanged(nameof(SelectedRowCountDisplay));
         NotifyCommandStates();
     }
 
@@ -804,9 +1092,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         var indexes = SelectedRowIndexes.Count == 0
             ? [.. Enumerable.Range(0, CurrentInfo.Chapters.Count)]
             : SelectedRowIndexes;
-        var result = editingService.CreateZones(CurrentInfo, indexes, (decimal)CurrentInfo.FramesPerSecond);
+        var result = editingService.CreateZones(CurrentInfo, indexes, ComputationFrameRate);
         SetStatus(result.Diagnostics.Count == 0 ? "Status.ZonesGenerated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log("Log.CreateZones", ("selectedRows", indexes.Count), ("chapters", CurrentInfo.Chapters.Count));
+        var zoneCount = string.IsNullOrEmpty(result.Zones) ? 0 : result.Zones.Split('/').Length - 1;
+        Log(LogLevel.Information,
+            $"Create zones: selectedRows={indexes.Count}, chapters={CurrentInfo.Chapters.Count}, zones={zoneCount}",
+            "Zones",
+            ("selectedRows", indexes.Count), ("chapters", CurrentInfo.Chapters.Count), ("zones", zoneCount));
         LogDiagnostics("Create zones", result.Diagnostics);
         NotifyStateChanged();
         return result.Zones;
@@ -815,17 +1107,24 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
     private void OnRowsChanged(object? sender, NotifyCollectionChangedEventArgs args)
     {
         OnPropertyChanged(nameof(IsChapterGridEmpty));
+        OnPropertyChanged(nameof(ChapterCount));
+        OnPropertyChanged(nameof(ChapterCountDisplay));
         NotifyCommandStates();
     }
 
     internal void NotifyStateChanged()
     {
+        RefreshHistoryEntries();
+        OnPropertyChanged(nameof(ExpressionFrameRate));
         OnPropertyChanged(nameof(IsClipSelectionVisible));
         OnPropertyChanged(nameof(IsClipCombineChecked));
+        OnPropertyChanged(nameof(ClipStructureActionText));
         OnPropertyChanged(nameof(RelatedMediaReferences));
         OnPropertyChanged(nameof(CanAppendMpls));
         OnPropertyChanged(nameof(CanCombine));
         OnPropertyChanged(nameof(CanSave));
+        OnPropertyChanged(nameof(Workspace.HasUnexportedChanges));
+        OnPropertyChanged(nameof(HasUnexportedContent));
         OnPropertyChanged(nameof(CanRefreshRows));
         OnPropertyChanged(nameof(CanEditRows));
         OnPropertyChanged(nameof(CanOpenRelatedMedia));
@@ -833,8 +1132,39 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(CanUseExternalTools));
         OnPropertyChanged(nameof(CanRunExternalActions));
         OnPropertyChanged(nameof(EffectiveSaveDirectoryDisplay));
+        OnPropertyChanged(nameof(SourceDisplayText));
+        OnPropertyChanged(nameof(ChapterCountDisplay));
+        OnPropertyChanged(nameof(SelectedRowCountDisplay));
+        OnPropertyChanged(nameof(ChapterCount));
+        OnPropertyChanged(nameof(SelectedRowCount));
         OnPropertyChanged(nameof(SaveButtonTooltip));
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        OnPropertyChanged(nameof(HistoryLifetimeText));
         NotifyCommandStates();
+    }
+
+    private void RefreshHistoryEntries()
+    {
+        historySnapshot = Workspace.ContentSession?.GetHistorySnapshot();
+        HistoryEntries = HistoryEntryViewModel.CreateTree(historySnapshot, new Dictionary<Guid, HistoryEntryViewModel>(),
+            new HashSet<Guid>(), static node => node.Description).All;
+        OnPropertyChanged(nameof(HasHistory));
+        OnPropertyChanged(nameof(CanOpenHistory));
+        HistoryCommand?.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+        UndoCommand?.RaiseCanExecuteChanged();
+        RedoCommand?.RaiseCanExecuteChanged();
+        NavigateHistoryCommand?.RaiseCanExecuteChanged();
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
     }
 
     private void NotifyCommandStates()
@@ -857,6 +1187,13 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         TemplateNamesCommand.RaiseCanExecuteChanged();
         ZonesCommand.RaiseCanExecuteChanged();
         ForwardShiftCommand.RaiseCanExecuteChanged();
+        PreviewContentOptionsCommand.RaiseCanExecuteChanged();
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand.RaiseCanExecuteChanged();
+        UndoCommand.RaiseCanExecuteChanged();
+        RedoCommand.RaiseCanExecuteChanged();
+        NavigateHistoryCommand.RaiseCanExecuteChanged();
     }
 
 
@@ -878,7 +1215,10 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         if (shellService is null || !Capabilities.CanOpenLocalPaths)
         {
             SetStatus("Status.ShellUnavailable");
-            LogStatus(LogLevel.Warning);
+            Log(LogLevel.Warning,
+                "Open related media skipped: shell unavailable",
+                "Open",
+                ("reference", (parameter as ReferencedMediaFile)?.RelativePath ?? string.Empty));
             NotifyStateChanged();
             return;
         }
@@ -889,7 +1229,9 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         if (string.IsNullOrWhiteSpace(target) || !File.Exists(target))
         {
             SetStatus("Status.RelatedMediaNotFound");
-            Log(LogLevel.Warning, "Log.RelatedMediaNotFound",
+            Log(LogLevel.Warning,
+                $"Related media not found: reference='{reference?.RelativePath ?? string.Empty}', resolved='{target ?? string.Empty}'",
+                "Open",
                 ("status", StatusText),
                 ("reference", reference?.RelativePath ?? string.Empty),
                 ("resolved", target ?? string.Empty));
@@ -899,7 +1241,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
         await shellService.OpenAsync(target, cancellationToken);
         SetStatus("Status.OpenedFile", ("fileName", Path.GetFileName(target)));
-        Log("Log.OpenedPath", ("status", StatusText), ("path", target));
+        Log(LogLevel.Information, $"Opened related media: path='{target}'", "Open",
+            ("status", StatusText), ("path", target));
         NotifyStateChanged();
     }
 

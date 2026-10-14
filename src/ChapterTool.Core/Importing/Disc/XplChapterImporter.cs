@@ -1,7 +1,9 @@
 using System.Globalization;
+using System.Numerics;
 using System.Xml.Linq;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Core.Importing.Disc;
 
@@ -67,8 +69,8 @@ public sealed class XplChapterImporter : IChapterImporter
         var optionIndex = 0;
         foreach (var titleSet in playlist.Elements(Namespace + "TitleSet"))
         {
-            var timeBase = ParseFps((string?)titleSet.Attribute("timeBase")) ?? 60;
-            var tickBase = ParseFps((string?)titleSet.Attribute("tickBase")) ?? 24;
+            var timeBase = ParseClock((string?)titleSet.Attribute("timeBase")) ?? 60;
+            var tickBase = ParseClock((string?)titleSet.Attribute("tickBase")) ?? 24;
             foreach (var title in titleSet.Elements(Namespace + "Title"))
             {
                 if (!TryCreateEntry(title, defaultTitleName, timeBase, tickBase, optionIndex, out var entry))
@@ -82,7 +84,7 @@ public sealed class XplChapterImporter : IChapterImporter
         }
     }
 
-    private static bool TryCreateEntry(XElement title, string defaultTitleName, double timeBase, double tickBase, int optionIndex, out ChapterImportEntry entry)
+    private static bool TryCreateEntry(XElement title, string defaultTitleName, decimal timeBase, decimal tickBase, int optionIndex, out ChapterImportEntry entry)
     {
         entry = null!;
         if (title.Element(Namespace + "ChapterList") is not { } chapterList)
@@ -106,7 +108,7 @@ public sealed class XplChapterImporter : IChapterImporter
             titleName,
             sourceName,
             ChapterImportFormat.HdDvdXpl,
-            24,
+            FrameRateValue.Unknown,
             ParseTime(durationText, timeBase, tickBase, tickBaseDivisor),
             chapters);
         IReadOnlyList<ReferencedMediaFile> mediaReferences = string.IsNullOrWhiteSpace(sourceName)
@@ -116,14 +118,14 @@ public sealed class XplChapterImporter : IChapterImporter
         return true;
     }
 
-    private static Chapter CreateChapter(XElement chapter, int index, double timeBase, double tickBase, int tickBaseDivisor)
+    private static Chapter CreateChapter(XElement chapter, int index, decimal timeBase, decimal tickBase, int tickBaseDivisor)
     {
         var name = (string?)chapter.Attribute("displayName") ?? (string?)chapter.Attribute("id") ?? string.Empty;
         var timeText = (string?)chapter.Attribute("titleTimeBegin") ?? throw new InvalidDataException("Missing titleTimeBegin.");
         return new Chapter(index + 1, ParseTime(timeText, timeBase, tickBase, tickBaseDivisor), name);
     }
 
-    private static double? ParseFps(string? value)
+    private static decimal? ParseClock(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -131,17 +133,16 @@ public sealed class XplChapterImporter : IChapterImporter
         }
 
         var text = value.Replace("fps", string.Empty, StringComparison.OrdinalIgnoreCase);
-        if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
-            || !double.IsFinite(parsed)
+        if (!decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
             || parsed <= 0)
         {
-            throw new InvalidDataException($"Invalid XPL frame rate value: {value}");
+            throw new InvalidDataException($"Invalid XPL clock value: {value}");
         }
 
         return parsed;
     }
 
-    private static TimeSpan ParseTime(string value, double timeBase, double tickBase, int tickBaseDivisor)
+    private static TimeSpan ParseTime(string value, decimal timeBase, decimal tickBase, int tickBaseDivisor)
     {
         if (tickBaseDivisor <= 0)
         {
@@ -155,21 +156,15 @@ public sealed class XplChapterImporter : IChapterImporter
         }
 
         var main = TimeSpan.Parse(value[..colon], CultureInfo.InvariantCulture);
-        var scaledSeconds = main.TotalSeconds / 60D * timeBase;
-        if (!double.IsFinite(scaledSeconds) || Math.Abs(scaledSeconds) > TimeSpan.MaxValue.TotalSeconds)
-        {
-            throw new InvalidDataException($"HD-DVD time is out of range: {value}");
-        }
+        var titleClock = ExactFrameMath.FromDecimal(timeBase);
+        var pageClock = ExactFrameMath.FromDecimal(tickBase);
+        var suffix = ExactFrameMath.FromDecimal(decimal.Parse(value[(colon + 1)..], CultureInfo.InvariantCulture));
 
-        main = TimeSpan.FromSeconds(scaledSeconds);
-        var tickDuration = TimeSpan.TicksPerSecond / ((decimal)tickBase / tickBaseDivisor);
-        var ticks = decimal.Parse(value[(colon + 1)..], CultureInfo.InvariantCulture) * tickDuration;
-        if (ticks is < long.MinValue or > long.MaxValue)
-        {
-            throw new InvalidDataException($"HD-DVD tick value is out of range: {value}");
-        }
-
-        return main.Add(TimeSpan.FromTicks((long)ticks));
+        // Preserve the title-timeline interpretation and truncate each imported component to ticks.
+        var mainTicks = new BigInteger(main.Ticks) * titleClock.Numerator / (60 * titleClock.Denominator);
+        var suffixTicks = suffix.Numerator * TimeSpan.TicksPerSecond * pageClock.Denominator * tickBaseDivisor
+            / (suffix.Denominator * pageClock.Numerator);
+        return TimeSpan.FromTicks(checked((long)(mainTicks + suffixTicks)));
     }
 
     private static ChapterDiagnostic Error(ChapterDiagnosticCode code, string message) =>

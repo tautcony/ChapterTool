@@ -304,7 +304,7 @@ public sealed class BdmvImporterTests
         Assert.NotNull(entry.MediaTracks);
         Assert.Contains(entry.MediaTracks!, static track => track.Kind == "video" && track.Summary.Contains("h264/AVC", StringComparison.Ordinal));
         Assert.Contains(entry.MediaTracks!, static track => track.Kind == "video" && track.Summary.Contains("1080p24/1.001", StringComparison.Ordinal));
-        Assert.Contains(entry.MediaTracks!, static track => track.Kind == "audio" && track.Summary == "RAW/PCM, [jpn], stereo, 48kHz");
+        Assert.Contains(entry.MediaTracks!, static track => track is { Kind: "audio", Summary: "RAW/PCM, [jpn], stereo, 48kHz" });
     }
 
     [Fact]

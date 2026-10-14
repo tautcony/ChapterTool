@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views.Controls;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 
@@ -79,7 +81,26 @@ public sealed class MainWindowStateHeadlessTests
         var clipBox = host.RequiredControl<ComboBox>("ClipBox");
         Assert.True(clipBox.IsVisible);
         Assert.Equal(0, clipBox.SelectedIndex);
-        Assert.Equal("00001.m2ts（1 chapters）", clipBox.SelectionBoxItem?.ToString());
+        Assert.Equal("00001.m2ts（1 chapter）", clipBox.SelectionBoxItem?.ToString());
+    }
+
+    [AvaloniaFact]
+    public async Task Numbering_control_rejects_fractional_and_negative_input()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+        var control = host.RequiredControl<NumericUpDown>("OrderShiftBox");
+        var initialHistoryCount = host.ViewModel.HistoryEntries.Count;
+        control.Text = "1.5";
+        await host.LayoutAsync();
+        Assert.Equal(0, host.ViewModel.OrderShift);
+        control.Text = "-1";
+        await host.LayoutAsync();
+        Assert.Equal(0, host.ViewModel.OrderShift);
+        control.Text = "2";
+        await host.LayoutAsync();
+        Assert.Equal(2, host.ViewModel.OrderShift);
+        Assert.Equal(initialHistoryCount, host.ViewModel.HistoryEntries.Count);
     }
 
     [AvaloniaFact]
@@ -95,7 +116,6 @@ public sealed class MainWindowStateHeadlessTests
         var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
         var chapterNameModeBox = host.RequiredControl<ComboBox>("ChapterNameModeBox");
         var orderShiftBox = host.RequiredControl<NumericUpDown>("OrderShiftBox");
-        var expressionCheckBox = host.RequiredControl<CheckBox>("ApplyExpressionBox");
         var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
         var frameRateBox = host.RequiredControl<ComboBox>("FrameRateBox");
         var roundFramesBox = host.RequiredControl<CheckBox>("RoundFramesBox");
@@ -107,11 +127,17 @@ public sealed class MainWindowStateHeadlessTests
         xmlLanguageBox.SelectedIndex = host.ViewModel.XmlLanguageOptions.ToList().IndexOf("jpn");
         chapterNameModeBox.SelectedIndex = 1;
         orderShiftBox.Value = 2;
-        expressionCheckBox.IsChecked = true;
         expressionBox.Text = "t + 1";
         Assert.True(expressionBox.Bounds.Height <= 34);
         frameRateBox.SelectedIndex = 3;
         roundFramesBox.IsChecked = false;
+        Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.Equal("00:00:00.000", host.ViewModel.Rows[0].TimeText);
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         await host.ViewModel.SaveCommand.ExecuteAsync("out");
         await host.LayoutAsync();
 
@@ -123,10 +149,32 @@ public sealed class MainWindowStateHeadlessTests
         Assert.NotNull(host.SaveService.LastInfo);
         Assert.Equal(3, host.SaveService.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", host.SaveService.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(1), host.SaveService.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, host.SaveService.LastInfo.Chapters[0].StartTime);
 
         formatBox.SelectedIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         await host.LayoutAsync();
         Assert.False(xmlLanguageGroup.IsEnabled);
+    }
+
+    [AvaloniaFact]
+    public async Task Static_shortcut_settings_event_stays_subscribed_after_reattach()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        Assert.True(host.MainView.ShortcutSettingsSubscribed);
+
+        host.Window.Content = null;
+        Assert.False(host.MainView.ShortcutSettingsSubscribed);
+
+        host.Window.Content = host.MainView;
+        Assert.True(host.MainView.ShortcutSettingsSubscribed);
+
+        using var settings = new SettingsToolViewModel(host.ViewModel.ToolSession.Preferences, host.SettingsStore, host.Localizer, autoLoad: false);
+        await settings.LoadAsync(TestContext.Current.CancellationToken);
+        settings.ShortcutRows.Single(row => row.ActionId == ShortcutCatalog.SaveId).Gesture = "Ctrl+Alt+7";
+        await settings.SaveCommand.ExecuteAsync();
+
+        Assert.Equal("Ctrl+Alt+7", host.ViewModel.SaveShortcutGesture);
+        Assert.Equal(ShortcutCatalog.SaveId, host.ViewModel.ActiveShortcutMapping.ActionForGesture("Ctrl+Alt+7"));
     }
 }

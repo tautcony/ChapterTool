@@ -44,6 +44,7 @@ public sealed class TextImporterTests
 
             Assert.True(result.Success);
             Assert.True(result.IsPartial);
+            Assert.Equal(FrameRateValue.Unknown, result.Groups.Single().Entries.Single().ChapterSet.FrameRate);
             Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.PartialParse);
             var chapters = result.Groups.Single().Entries.Single().ChapterSet.Chapters;
             Assert.Equal(6, chapters.Count);

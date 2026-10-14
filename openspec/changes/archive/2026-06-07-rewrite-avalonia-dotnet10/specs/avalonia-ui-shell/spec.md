@@ -60,10 +60,6 @@ The Avalonia shell SHALL preserve documented shortcuts and context menu actions.
 - **WHEN** the main window has focus
 - **THEN** `Ctrl+O`, `Ctrl+S`, `Alt+S`, `Ctrl+R`, `F5`, `Ctrl+L`, and `F11` SHALL invoke the corresponding ViewModel commands
 
-#### Scenario: Clip shortcuts preserve legacy mapping
-- **WHEN** `Ctrl+1` through `Ctrl+9` or `Ctrl+0` are pressed
-- **THEN** they SHALL select clips 1 through 9 and clip 10 respectively when in range
-
 #### Scenario: Context menus use capability flags
 - **WHEN** load, clip, or chapter-row context menus open
 - **THEN** entries such as append MPLS, merge chapters, related media, zones, forward translation, and insert SHALL be enabled only when the ViewModel capability flags allow them

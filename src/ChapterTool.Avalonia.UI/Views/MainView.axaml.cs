@@ -1,14 +1,14 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AvaloniaEdit;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
 using ChapterTool.Avalonia.UI.Views.Controls;
-using ChapterTool.Core.Exporting;
-using ChapterTool.Core.Session;
 
 namespace ChapterTool.Avalonia.UI.Views;
 
@@ -17,7 +17,7 @@ public sealed partial class MainView : UserControl
 {
     private static readonly IReadOnlyDictionary<Key, string> ControlGestures = new Dictionary<Key, string>
     {
-        [Key.S] = "Ctrl+S", [Key.O] = "Ctrl+O", [Key.R] = "Ctrl+R", [Key.L] = "Ctrl+L"
+        [Key.S] = "Ctrl+S", [Key.O] = "Ctrl+O", [Key.R] = "Ctrl+R", [Key.L] = "Ctrl+L", [Key.Z] = "Ctrl+Z", [Key.Y] = "Ctrl+Y"
     };
 
     private static readonly IReadOnlyDictionary<Key, string> FunctionGestures = new Dictionary<Key, string>
@@ -25,8 +25,6 @@ public sealed partial class MainView : UserControl
         [Key.F5] = "F5", [Key.F11] = "F11", [Key.PageUp] = "PageUp", [Key.PageDown] = "PageDown"
     };
 
-    private static readonly IReadOnlyDictionary<Key, string> AltNumberGestures = CreateNumberGestures("Alt+");
-    private static readonly IReadOnlyDictionary<Key, string> ControlNumberGestures = CreateNumberGestures("Ctrl+");
 
     private readonly MainWindowViewModel viewModel;
     private readonly ShortcutRouter shortcutRouter;
@@ -36,7 +34,9 @@ public sealed partial class MainView : UserControl
     private IFilePickerService? filePickerService;
     private bool windowCommandRefreshPending;
     private bool commandStateSubscribed;
+    private bool shortcutSettingsSubscribed;
     private bool? advancedOptionsNarrow;
+    private (ChapterRowViewModel Row, string? Column, string? Text)? activeCellEdit;
 
     public MainView()
     {
@@ -61,7 +61,11 @@ public sealed partial class MainView : UserControl
         this.viewModel = viewModel;
         this.filePickerServiceFactory = filePickerServiceFactory;
         this.embeddedToolPresenter = embeddedToolPresenter;
-        shortcutRouter = new ShortcutRouter(viewModel);
+        viewModel.SessionLossConfirmation = ConfirmSessionLossAsync;
+        shortcutRouter = new ShortcutRouter(
+            viewModel,
+            load: () => new ValueTask(BrowseAndLoadAsync()),
+            navigateClip: NavigateClipAsync);
         uiOperationBoundary = new UiOperationBoundary(viewModel.ReportUnexpectedUiException);
 
         // UI-only adapter commands: pickers and DataGrid selection. All other
@@ -70,10 +74,11 @@ public sealed partial class MainView : UserControl
         AppendMplsCommand = new UiCommand(async (_, _) => await AppendMplsAsync(), _ => viewModel.CanAppendMpls);
         LoadChapterNameTemplateCommand = new UiCommand(async (_, _) => await LoadChapterNameTemplateAsync());
         LoadLuaExpressionScriptCommand = new UiCommand(async (_, _) => await LoadLuaExpressionScriptAsync());
-        InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute());
-        DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute());
-        OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.Rows.Count > 0);
-        OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.Rows.Count > 0);
+        InsertSelectedCommand = new UiCommand(async (_, _) => await InsertSelectedAsync(), _ => viewModel.InsertCommand.CanExecute(null));
+        DeleteSelectedCommand = new UiCommand(async (_, _) => await DeleteSelectedAsync(), _ => viewModel.DeleteCommand.CanExecute(null));
+        OpenZonesCommand = new UiCommand(async (_, _) => await OpenZonesAsync(), _ => viewModel.CanOpenContentTools);
+        OpenForwardShiftCommand = new UiCommand(async (_, _) => await OpenForwardShiftAsync(), _ => viewModel.CanOpenContentTools);
+        ApplyContentPreviewCommand = new UiCommand(async (_, _) => await ApplyContentPreviewPreservingGridStateAsync(), _ => viewModel.CanApplyContentPreview);
 
         viewModel.SetUiErrorHandler(viewModel.ReportUnexpectedUiException);
         foreach (var command in UiAdapterCommands())
@@ -83,15 +88,43 @@ public sealed partial class MainView : UserControl
 
         InitializeComponent();
         DataContext = viewModel;
+        SubscribeShortcutSettingsSaved();
+        _ = LoadShortcutMappingAsync();
         UpdateSecondarySurface();
         ApplyAdvancedOptionsLayout();
         RaiseCommandStates();
+    }
+
+    private void OnShortcutsSaved(Contracts.Shortcuts.ShortcutSettings settings)
+    {
+        viewModel.SetShortcutSettings(settings);
+        shortcutRouter.UpdateMapping(viewModel.ActiveShortcutMapping);
+    }
+
+    private async Task LoadShortcutMappingAsync()
+    {
+        if (viewModel.SettingsStore is null)
+        {
+            return;
+        }
+
+        try
+        {
+            var settings = await viewModel.SettingsStore.LoadAsync(CancellationToken.None);
+            viewModel.SetShortcutSettings(settings.Shortcuts);
+            shortcutRouter.UpdateMapping(viewModel.ActiveShortcutMapping);
+        }
+        catch (Exception exception)
+        {
+            await viewModel.ReportUnexpectedUiException(exception);
+        }
     }
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
         filePickerService ??= filePickerServiceFactory(this);
+        SubscribeShortcutSettingsSaved();
         if (commandStateSubscribed)
         {
             return;
@@ -103,7 +136,10 @@ public sealed partial class MainView : UserControl
         UpdateSecondarySurface();
     }
 
-    private void OnSizeChanged(object? sender, SizeChangedEventArgs e) => ApplyAdvancedOptionsLayout();
+    private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        ApplyAdvancedOptionsLayout();
+    }
 
     private void OnExpressionEditorMultilineExpansionChanged(
         object? sender,
@@ -115,7 +151,7 @@ public sealed partial class MainView : UserControl
         }
 
         var nextHeight = Math.Max(window.MinHeight, window.Height + args.HeightDelta);
-        var screen = window.Screens?.ScreenFromWindow(window) ?? window.Screens?.Primary;
+        var screen = window.Screens.ScreenFromWindow(window) ?? window.Screens.Primary;
         if (screen is not null)
         {
             var scaling = window.RenderScaling <= 0 ? 1 : window.RenderScaling;
@@ -127,6 +163,9 @@ public sealed partial class MainView : UserControl
     }
 
     internal static bool IsNarrowAdvancedOptions(double width) => width <= 860;
+
+    /// <summary>Gets whether this view currently observes the static shortcut save event.</summary>
+    internal bool ShortcutSettingsSubscribed => shortcutSettingsSubscribed;
 
     public UiCommand BrowseAndLoadCommand { get; }
 
@@ -144,6 +183,37 @@ public sealed partial class MainView : UserControl
 
     public UiCommand OpenForwardShiftCommand { get; }
 
+    public UiCommand ApplyContentPreviewCommand { get; }
+
+    private async ValueTask ApplyContentPreviewPreservingGridStateAsync()
+    {
+        var selected = ChapterGrid.SelectedItems
+            .OfType<ChapterRowViewModel>()
+            .Select(static row => (row.TrackId, row.ChapterId))
+            .ToArray();
+        var scrollViewer = ChapterGrid.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
+        var offset = scrollViewer?.Offset ?? default;
+
+        await viewModel.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            ChapterGrid.SelectedItems.Clear();
+            foreach (var row in viewModel.Rows.Where(row => selected.Contains((row.TrackId, row.ChapterId))))
+            {
+                ChapterGrid.SelectedItems.Add(row);
+            }
+
+            if (selected.Length == 1)
+            {
+                ChapterGrid.SelectedItem = viewModel.Rows.FirstOrDefault(row =>
+                    selected[0] == (row.TrackId, row.ChapterId));
+            }
+
+            scrollViewer?.Offset = offset;
+        });
+    }
+
     private async Task LoadAsync()
     {
         var path = string.IsNullOrWhiteSpace(viewModel.SourcePath)
@@ -160,7 +230,6 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        viewModel.SourcePath = source is LocalPathChapterSource local ? local.Path : source.DisplayName;
         await viewModel.LoadCommand.ExecuteAsync(source);
     }
 
@@ -230,12 +299,70 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        viewModel.SourcePath = source is LocalPathChapterSource local ? local.Path : source.DisplayName;
         await viewModel.DropPathLoadCommand.ExecuteAsync(source);
     });
 
     private IFilePickerService FilePickerService =>
         filePickerService ?? throw new InvalidOperationException("The shared main view must be attached before file actions can run.");
+
+    private async ValueTask<bool> ConfirmSessionLossAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (TopLevel.GetTopLevel(this) is not Window owner)
+        {
+            return false;
+        }
+
+        var dialog = new Window
+        {
+            Title = viewModel.Localizer.GetString("SessionLoss.Title"),
+            Width = 420,
+            MinWidth = 380,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false
+        };
+        var message = new TextBlock
+        {
+            Text = viewModel.Localizer.GetString("SessionLoss.Message"),
+            TextWrapping = TextWrapping.Wrap
+        };
+        var continueButton = new Button
+        {
+            Content = viewModel.Localizer.GetString("SessionLoss.Continue"),
+            MinWidth = 100
+        };
+        var cancelButton = new Button
+        {
+            Content = viewModel.Localizer.GetString("Common.Cancel"),
+            MinWidth = 82
+        };
+        continueButton.Click += (_, _) => dialog.Close(true);
+        cancelButton.Click += (_, _) => dialog.Close(false);
+        var content = new Grid
+        {
+            Margin = new Thickness(16),
+            RowDefinitions = new RowDefinitions("Auto,Auto"),
+            Children =
+            {
+                message,
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    Spacing = 8,
+                    Margin = new Thickness(0, 16, 0, 0),
+                    Children = { continueButton, cancelButton }
+                }
+            }
+        };
+        Grid.SetRow(message, 0);
+        Grid.SetRow(content.Children[1], 1);
+        dialog.Content = content;
+        var confirmed = await dialog.ShowDialog<bool>(owner);
+        cancellationToken.ThrowIfCancellationRequested();
+        return confirmed;
+    }
 
     private async void OnKeyDown(object? sender, KeyEventArgs args) => await uiOperationBoundary.RunAsync(async () =>
     {
@@ -256,7 +383,7 @@ public sealed partial class MainView : UserControl
         }
 
         args.Handled = true;
-        if (await TryHandleKnownGestureAsync(gesture) || TryHandleSaveFormatGesture(gesture))
+        if (await TryHandleKnownGestureAsync(gesture))
         {
             return;
         }
@@ -283,43 +410,19 @@ public sealed partial class MainView : UserControl
 
     private async Task<bool> TryHandleKnownGestureAsync(string gesture)
     {
-        switch (gesture)
+        return gesture switch
         {
-            case "Ctrl+S":
-                await viewModel.SaveCommand.ExecuteAsync();
-                return true;
-            case "Ctrl+O":
-                await BrowseAndLoadAsync();
-                return true;
-            case "PageUp" or "PageDown":
-            {
-                var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
-                if (viewModel.SelectClipCommand.CanExecute(next))
-                {
-                    await viewModel.SelectClipCommand.ExecuteAsync(next);
-                }
-
-                return true;
-            }
-            default:
-                return false;
-        }
+            _ => false
+        };
     }
 
-    private bool TryHandleSaveFormatGesture(string gesture)
+    private async ValueTask NavigateClipAsync(string gesture)
     {
-        if (!gesture.StartsWith("Alt+", StringComparison.Ordinal) || !int.TryParse(gesture["Alt+".Length..], out var saveIndex))
+        var next = gesture == "PageUp" ? viewModel.SelectedClipIndex - 1 : viewModel.SelectedClipIndex + 1;
+        if (viewModel.SelectClipCommand.CanExecute(next))
         {
-            return false;
+            await viewModel.SelectClipCommand.ExecuteAsync(next);
         }
-
-        var mapped = saveIndex == 0 ? ChapterExportFormats.All.Count - 1 : saveIndex - 1;
-        if (mapped >= 0 && mapped < ChapterExportFormats.All.Count)
-        {
-            viewModel.SaveFormatIndex = mapped;
-        }
-
-        return true;
     }
 
     private bool IsTextInputKeyScope(Visual? source)
@@ -329,7 +432,7 @@ public sealed partial class MainView : UserControl
             return true;
         }
 
-        return TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual focused
+        return TopLevel.GetTopLevel(this)?.FocusManager.GetFocusedElement() is Visual focused
             && IsTextInputVisual(focused);
     }
 
@@ -345,48 +448,65 @@ public sealed partial class MainView : UserControl
     private static string? Gesture(KeyEventArgs args)
     {
         var control = args.KeyModifiers.HasFlag(KeyModifiers.Control);
+        var meta = args.KeyModifiers.HasFlag(KeyModifiers.Meta);
         var alt = args.KeyModifiers.HasFlag(KeyModifiers.Alt);
+
+        if ((control || meta) && args.Key == Key.Z)
+        {
+            var modifier = meta ? "Meta" : "Ctrl";
+            return args.KeyModifiers.HasFlag(KeyModifiers.Shift) ? $"{modifier}+Shift+Z" : $"{modifier}+Z";
+        }
+
+        if (control && args.Key == Key.Y)
+        {
+            return "Ctrl+Y";
+        }
 
         if (control && ControlGestures.TryGetValue(args.Key, out var controlGesture))
         {
             return controlGesture;
         }
 
-        if (FunctionGestures.TryGetValue(args.Key, out var functionGesture))
+        if (meta && ControlGestures.TryGetValue(args.Key, out var metaGesture))
         {
-            return functionGesture;
+            return metaGesture.Replace("Ctrl+", "Meta+", StringComparison.Ordinal);
         }
 
-        if (alt && AltNumberGestures.TryGetValue(args.Key, out var altGesture))
-        {
-            return altGesture;
-        }
-
-        return control && ControlNumberGestures.TryGetValue(args.Key, out var numberGesture)
-            ? numberGesture
-            : null;
-    }
-
-    private static IReadOnlyDictionary<Key, string> CreateNumberGestures(string prefix)
-    {
-        var gestures = new Dictionary<Key, string>();
-        for (var number = 0; number <= 9; number++)
-        {
-            gestures[(Key)((int)Key.D0 + number)] = $"{prefix}{number}";
-            gestures[(Key)((int)Key.NumPad0 + number)] = $"{prefix}{number}";
-        }
-
-        return gestures;
+        return FunctionGestures.GetValueOrDefault(args.Key);
     }
 
     private async ValueTask CommitCellEditAsync(DataGridCellEditEndedEventArgs args)
     {
+        var initial = activeCellEdit;
+        activeCellEdit = null;
+        if (initial is { } draft && ReferenceEquals(draft.Row, args.Row.DataContext)
+            && draft.Column == ColumnTagId(args.Column)
+            && draft.Text == CellText(draft.Row, draft.Column))
+        {
+            return;
+        }
+
         var edit = CreateCellEdit(args);
         if (edit is not null)
         {
             await edit();
         }
     }
+
+    private void OnChapterGridBeginningEdit(object? sender, DataGridBeginningEditEventArgs args)
+    {
+        activeCellEdit = args.Row.DataContext is ChapterRowViewModel row
+            ? (row, ColumnTagId(args.Column), CellText(row, ColumnTagId(args.Column)))
+            : null;
+    }
+
+    private static string? CellText(ChapterRowViewModel row, string? column) => column switch
+    {
+        ChapterGridColumnIds.Time => row.TimeText,
+        ChapterGridColumnIds.Name => row.Name,
+        ChapterGridColumnIds.Frames => row.FramesInfo,
+        _ => null
+    };
 
     private Func<ValueTask>? CreateCellEdit(DataGridCellEditEndedEventArgs args)
     {
@@ -466,8 +586,9 @@ public sealed partial class MainView : UserControl
         viewModel.Rows.CollectionChanged -= ScheduleWindowCommandRefresh;
     }
 
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs args)
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
+        UnsubscribeShortcutSettingsSaved();
         if (commandStateSubscribed)
         {
             UnsubscribeViewModelCommandState();
@@ -475,7 +596,33 @@ public sealed partial class MainView : UserControl
             commandStateSubscribed = false;
         }
 
-        base.OnDetachedFromVisualTree(args);
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>
+    /// Subscribes to the process-wide shortcut save event. The event is static and the
+    /// composition root keeps one view instance, so a detached view must subscribe again.
+    /// </summary>
+    private void SubscribeShortcutSettingsSaved()
+    {
+        if (shortcutSettingsSubscribed)
+        {
+            return;
+        }
+
+        SettingsToolViewModel.ShortcutsSaved += OnShortcutsSaved;
+        shortcutSettingsSubscribed = true;
+    }
+
+    private void UnsubscribeShortcutSettingsSaved()
+    {
+        if (!shortcutSettingsSubscribed)
+        {
+            return;
+        }
+
+        SettingsToolViewModel.ShortcutsSaved -= OnShortcutsSaved;
+        shortcutSettingsSubscribed = false;
     }
 
     private void OnSecondarySurfaceChanged(object? sender, EventArgs args) => UpdateSecondarySurface();
@@ -492,6 +639,7 @@ public sealed partial class MainView : UserControl
         yield return viewModel.SaveCommand;
         yield return viewModel.InsertCommand;
         yield return viewModel.DeleteCommand;
+        yield return viewModel.ApplyContentPreviewCommand;
         yield return viewModel.ZonesCommand;
         yield return viewModel.ForwardShiftCommand;
     }
@@ -506,6 +654,7 @@ public sealed partial class MainView : UserControl
         yield return DeleteSelectedCommand;
         yield return OpenZonesCommand;
         yield return OpenForwardShiftCommand;
+        yield return ApplyContentPreviewCommand;
     }
 
     private void RaiseCommandStates()
@@ -515,6 +664,7 @@ public sealed partial class MainView : UserControl
         DeleteSelectedCommand.RaiseCanExecuteChanged();
         OpenZonesCommand.RaiseCanExecuteChanged();
         OpenForwardShiftCommand.RaiseCanExecuteChanged();
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
     private void ScheduleWindowCommandRefresh(object? sender, EventArgs e)
@@ -538,6 +688,11 @@ public sealed partial class MainView : UserControl
     {
         var layoutWidth = Bounds.Width > 0 ? Bounds.Width : Width;
         var narrow = IsNarrowAdvancedOptions(layoutWidth);
+        viewModel.SetNarrowPreviewLayout(narrow);
+        var timeColumn = ChapterGrid.Columns.FirstOrDefault(column =>
+            string.Equals(column.Tag?.ToString(), ChapterGridColumnIds.Time, StringComparison.Ordinal));
+        timeColumn?.Width = new DataGridLength(narrow ? 300 : 400);
+
         if (advancedOptionsNarrow == narrow)
         {
             return;
@@ -557,7 +712,7 @@ public sealed partial class MainView : UserControl
             return;
         }
 
-        AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,2*,*");
+        AdvancedOptionsGrid.ColumnDefinitions = new ColumnDefinitions("*,3*,*");
         AdvancedOptionsGrid.RowDefinitions = new RowDefinitions("Auto,Auto");
 
         SetGridPosition(FormatOptionsGroup, 0, 0);

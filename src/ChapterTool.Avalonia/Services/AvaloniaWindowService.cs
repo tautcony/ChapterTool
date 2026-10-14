@@ -1,7 +1,11 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
+using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Transform;
@@ -91,18 +95,36 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             return ValueTask.FromResult(AuxiliaryToolResult.Unknown(toolId));
         }
 
-        if (windows.TryGetValue(toolId.Value, out var existing))
+        if (TryActivateExisting(toolId, descriptor, request))
         {
-            if (descriptor.RefreshPolicy == ToolRefreshPolicy.RefreshRequest)
-            {
-                DisposeContentDataContext(existing);
-                existing.Content = CreateTypedContent(existing, descriptor, request);
-            }
-
-            existing.Activate();
             return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Activated, toolId));
         }
 
+        OpenNewWindow(toolId, request, descriptor);
+        return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
+    }
+
+    private bool TryActivateExisting(ToolId toolId, ToolDescriptor descriptor, AuxiliaryToolRequest request)
+    {
+        if (!windows.TryGetValue(toolId.Value, out var existing))
+        {
+            return false;
+        }
+
+        if (descriptor.RefreshPolicy == ToolRefreshPolicy.RefreshRequest)
+        {
+            DisposeContentDataContext(existing);
+            existing.Content = CreateTypedContent(existing, descriptor, request);
+        }
+
+        existing.Activate();
+        return true;
+    }
+
+    private void OpenNewWindow(ToolId toolId, AuxiliaryToolRequest request, ToolDescriptor descriptor)
+    {
+        var focusOwner = ResolveFocusOwner(request);
+        var returnFocus = focusOwner?.FocusManager.GetFocusedElement() as Control;
         var window = new Window
         {
             Title = localizer.GetString(descriptor.TitleResourceKey),
@@ -114,15 +136,50 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
         window.Classes.Add("auxiliaryHost");
         window.Content = CreateTypedContent(window, descriptor, request);
         ConfigureCloseBehavior(window, toolId, descriptor);
-        window.Closed += (_, _) =>
-        {
-            DisposeContentDataContext(window);
-            window.Content = null;
-            windows.Remove(toolId.Value);
-        };
+        window.Closed += (_, _) => OnWindowClosed(toolId, window, focusOwner, returnFocus);
         windows[toolId.Value] = window;
+        ShowWindow(window, descriptor.IsModal, focusOwner);
+    }
+
+    private static Window? ResolveFocusOwner(AuxiliaryToolRequest request) => request.HostWindow
+        ?? (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: { } mainWindow }
+            ? mainWindow
+            : null);
+
+    private void OnWindowClosed(ToolId toolId, Window window, Window? focusOwner, Control? returnFocus)
+    {
+        DisposeContentDataContext(window);
+        window.Content = null;
+        windows.Remove(toolId.Value);
+        if (focusOwner is not null)
+        {
+            Dispatcher.UIThread.Post(() => RestoreFocus(focusOwner, returnFocus));
+        }
+    }
+
+    private static void RestoreFocus(Window focusOwner, Control? returnFocus)
+    {
+        if (!focusOwner.IsVisible || !focusOwner.IsEnabled)
+        {
+            return;
+        }
+
+        focusOwner.Activate();
+        if (returnFocus is { IsEffectivelyVisible: true, IsEffectivelyEnabled: true })
+        {
+            returnFocus.Focus();
+        }
+    }
+
+    private static void ShowWindow(Window window, bool isModal, Window? focusOwner)
+    {
+        if (isModal && focusOwner != null)
+        {
+            _ = window.ShowDialog(focusOwner);
+            return;
+        }
+
         window.Show();
-        return ValueTask.FromResult(new AuxiliaryToolResult(AuxiliaryToolResultKind.Opened, toolId));
     }
 
     public ValueTask<AuxiliaryToolResult> CloseAsync(ToolId toolId, CancellationToken cancellationToken)
@@ -176,12 +233,24 @@ public sealed class AvaloniaWindowService : IAuxiliaryToolHost
             request.Clipboard ?? clipboardServiceFactory(window),
             window,
             filePicker,
-            request.Capabilities);
+            request.Capabilities,
+            request.CloseTool);
         return descriptor.CreateContent(context);
     }
 
     private void ConfigureCloseBehavior(Window window, ToolId toolId, ToolDescriptor descriptor)
     {
+        if (descriptor.IsModal)
+        {
+            window.Closing += (_, args) =>
+            {
+                if (window.Content is Control { DataContext: ExpressionToolViewModel { IsApplying: true } })
+                {
+                    args.Cancel = true;
+                }
+            };
+        }
+
         if (!descriptor.RequiresCloseConfirmation)
         {
             return;

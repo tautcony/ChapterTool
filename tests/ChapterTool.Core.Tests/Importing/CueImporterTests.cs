@@ -49,6 +49,7 @@ public sealed class CueImporterTests
         Assert.True(result.Success);
         var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal(ChapterImportFormat.Cue, info.ImportFormat);
+        Assert.Equal(FrameRateValue.Unknown, info.FrameRate);
         Assert.Equal("ARCHIVES 2.flac", info.SourceName);
         Assert.Equal("とある科学の超電磁砲 ARCHIVES 2", info.Title);
         Assert.Equal(4, info.Chapters.Count);
@@ -318,7 +319,7 @@ public sealed class CueImporterTests
             "Album",
             "fallback.flac",
             ChapterImportFormat.Cue,
-            0,
+            FrameRateValue.Unknown,
             TimeSpan.FromSeconds(90),
             [
                 new Chapter(7, TimeSpan.Zero, "A"),
@@ -327,7 +328,7 @@ public sealed class CueImporterTests
             ]);
         var exporter = new ChapterExportService(new ChapterTimeFormatter());
 
-        var result = exporter.Export(info, new ChapterExportOptions(ChapterExportFormat.Cue, SourceFileName: "source.wav"));
+        var result = exporter.Serialize(info, new ChapterSerializationOptions(ChapterExportFormat.Cue, SourceFileName: "source.wav"));
 
         Assert.True(result.Success);
         Assert.StartsWith("REM Generate By ChapterTool", result.Content, StringComparison.Ordinal);
@@ -345,7 +346,7 @@ public sealed class CueImporterTests
             "WebVTT",
             "video.mp4",
             ChapterImportFormat.WebVtt,
-            0,
+            FrameRateValue.Unknown,
             TimeSpan.FromMinutes(2),
             [
                 new Chapter(1, TimeSpan.Zero, "Introduction"),
@@ -354,7 +355,7 @@ public sealed class CueImporterTests
             ]);
         var exporter = new ChapterExportService(new ChapterTimeFormatter());
 
-        var result = exporter.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
+        var result = exporter.Serialize(info, new ChapterSerializationOptions(ChapterExportFormat.WebVtt));
 
         Assert.True(result.Success);
         Assert.Equal(".vtt", result.FileExtension);

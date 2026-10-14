@@ -2,124 +2,176 @@ name: .NET 10 CI
 
 on:
   push:
-    paths:
-      - ".github/workflows/dotnet-ci.yml"
-      - "Directory.Build.props"
-      - "Directory.Build.targets"
-      - "global.json"
-      - "ChapterTool.slnx"
-      - "src/**"
-      - "tests/**"
-      - "tools/**"
-      - "scripts/**"
-      - "packages/chaptertool/**"
   pull_request:
-    paths:
-      - ".github/workflows/dotnet-ci.yml"
-      - "Directory.Build.props"
-      - "Directory.Build.targets"
-      - "global.json"
-      - "ChapterTool.slnx"
-      - "src/**"
-      - "tests/**"
-      - "tools/**"
-      - "scripts/**"
-      - "packages/chaptertool/**"
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
-  group: dotnet-ci-${{ github.ref }}
+  group: dotnet-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
-  build-test:
-    name: Build and test
+  plan:
+    name: Select affected checks
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      tests: ${{ steps.plan.outputs.tests }}
+      resources: ${{ steps.plan.outputs.resources }}
+      dotnet-tests: ${{ steps.plan.outputs.dotnet-tests }}
+      solution-build: ${{ steps.plan.outputs.solution-build }}
+      wasm-browser-e2e: ${{ steps.plan.outputs.wasm-browser-e2e }}
+      pack-nuget: ${{ steps.plan.outputs.pack-nuget }}
+      pack-nodejs: ${{ steps.plan.outputs.pack-nodejs }}
+      pack-dotnet: ${{ steps.plan.outputs.pack-dotnet }}
+    steps:
+      - name: Checkout comparison history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select consumers
+        id: plan
+        run: python3 scripts/ci/plan.py
 
+  wasm-browser-e2e:
+    name: WASM acceptance
+    needs: plan
+    if: needs.plan.outputs.wasm-browser-e2e == 'true'
+    uses: ./.github/workflows/wasm-browser-e2e.yml
+    with:
+      suite: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')) && 'full' || 'pr' }}
+
+  resources:
+    name: Resources and scripts
+    needs: plan
+    if: needs.plan.outputs.resources == 'true'
+    timeout-minutes: 10
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
-
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - name: Sync locked Python tools
+        run: python3 scripts/ci/run.py --stage resources --step sync-locked-python-tools
       - name: Verify localization resources
-        run: uv run --project scripts scripts/axaml-to-json.py --check
-
+        run: python3 scripts/ci/run.py --stage resources --step verify-localization-resources
+      - name: Audit UI resources
+        run: python3 scripts/ci/run.py --stage resources --step audit-ui-resources
       - name: Lint Python scripts
-        run: uv run --project scripts ruff check scripts/
+        run: python3 scripts/ci/run.py --stage resources --step lint-python-scripts
+      - name: Test CI runner
+        run: python3 scripts/ci/run.py --stage resources --step test-ci-runner
+      - name: Validate PowerShell publish script
+        run: python3 scripts/ci/run.py --stage resources --step validate-powershell-publish-script
 
+  dotnet-tests:
+    name: .NET tests — ${{ matrix.label }}
+    needs: plan
+    if: needs.plan.outputs.dotnet-tests == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.tests) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
       - name: Install .NET 10
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-
       - name: Cache NuGet packages
         uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
-
-      - name: Install .NET wasm-tools workload
-        run: dotnet workload install wasm-tools
-
-      - name: Install Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22.x
-          cache: npm
-          cache-dependency-path: packages/chaptertool/package-lock.json
-
-      - name: Install npm dependencies
-        working-directory: packages/chaptertool
-        run: npm ci
-
-      - name: Restore
-        run: dotnet restore ChapterTool.slnx
-
-      - name: Build
-        run: dotnet build ChapterTool.slnx --configuration Release --no-restore
-
-      - name: Build Node.js package
-        working-directory: packages/chaptertool
-        run: npm run build
-
-      - name: Validate PowerShell publish script
-        shell: pwsh
-        run: |
-          $null = [System.Management.Automation.Language.Parser]::ParseFile(
-            (Join-Path $PWD 'scripts/publish.ps1'),
-            [ref]$null,
-            [ref]$null)
-
-      - name: Pack ChapterTool.Core
-        run: dotnet pack src/ChapterTool.Core/ChapterTool.Core.csproj --configuration Release --no-build --no-restore --output artifacts/nuget /p:ContinuousIntegrationBuild=true
-
-      - name: Pack ChapterTool CLI
-        run: dotnet pack src/ChapterTool.CommandLine/ChapterTool.CommandLine.csproj --configuration Release --no-build --no-restore --output artifacts/cli-nuget /p:ContinuousIntegrationBuild=true
-
-      - name: Install external tools
+      - name: Install integration tools
+        if: matrix.media
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg mkvtoolnix
-
-      - name: Test .NET
-        run: dotnet test ChapterTool.slnx --configuration Release --no-build --no-restore --timeout 10m
-
-      - name: Test Node.js package
-        working-directory: packages/chaptertool
-        run: npm run typecheck && npm run test:built
-
-      - name: Upload Node.js build output
+      - name: Restore test dependencies
+        run: python3 scripts/ci/run.py --stage test-dotnet --test-project ${{ matrix.project }} --step restore-test-project
+      - name: Build test project
+        run: python3 scripts/ci/run.py --stage test-dotnet --test-project ${{ matrix.project }} --step build-test-project
+      - name: Run isolated test process
+        run: python3 scripts/ci/run.py --stage test-dotnet --test-project ${{ matrix.project }} --step run-tests
+      - name: Upload test diagnostics
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: ChapterTool-node-dist
-          path: packages/chaptertool/dist
-          if-no-files-found: error
-          retention-days: 1
+          name: dotnet-test-${{ matrix.project }}
+          path: |
+            artifacts/**/*.png
+            tests/${{ matrix.project }}/TestResults/
+          if-no-files-found: ignore
+          retention-days: 14
 
-      - name: Upload NuGet artifact
+  solution-build:
+    name: Full solution build
+    needs: plan
+    if: needs.plan.outputs.solution-build == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Install native WASM workload
+        run: dotnet workload install wasm-tools
+      - name: Restore solution
+        run: python3 scripts/ci/run.py --stage dotnet --step restore
+      - name: Build solution
+        run: python3 scripts/ci/run.py --stage dotnet --step build-release
+
+  pack-nuget:
+    name: NuGet packages
+    needs: plan
+    if: needs.plan.outputs.pack-nuget == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Build, pack, and verify NuGet consumers
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          args=(--stage pack-nuget)
+          if [[ "$RELEASE_REF" == refs/tags/v* ]]; then
+            args+=(--package-version "${RELEASE_REF#refs/tags/v}")
+          fi
+          python3 scripts/ci/run.py "${args[@]}"
+      - name: Upload Core package
         uses: actions/upload-artifact@v7
         with:
           name: ChapterTool-Core-nuget
@@ -127,8 +179,7 @@ jobs:
             artifacts/nuget/*.nupkg
             artifacts/nuget/*.snupkg
           if-no-files-found: error
-
-      - name: Upload CLI NuGet artifact
+      - name: Upload CLI package
         uses: actions/upload-artifact@v7
         with:
           name: ChapterTool-Cli-nuget
@@ -138,8 +189,10 @@ jobs:
           if-no-files-found: error
 
   pack-dotnet:
-    needs: build-test
-    name: Pack Avalonia (${{ matrix.runtime }})
+    name: Desktop packages (${{ matrix.runtime }})
+    needs: plan
+    if: needs.plan.outputs.pack-dotnet == 'true'
+    timeout-minutes: 20
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -168,22 +221,14 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore .NET projects
-        run: |
-          dotnet restore src/ChapterTool.Avalonia/ChapterTool.Avalonia.csproj --runtime ${{ matrix.runtime }}
-
-      - name: Publish Avalonia
-        run: >-
-          ./scripts/publish.sh
-          -Configuration Release
-          -Runtime ${{ matrix.runtime }}
-          -SelfContained=false
-          -NoRestore
-          -PublishSingleFile
+      - name: Restore desktop runtime
+        run: python3 scripts/ci/run.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step restore-desktop-${{ matrix.runtime }}
+      - name: Publish and validate desktop artifact
+        run: python3 scripts/ci/run.py --stage pack-desktop --runtime ${{ matrix.runtime }} --step publish-desktop-${{ matrix.runtime }}
 
       - name: Upload Avalonia artifact
         uses: actions/upload-artifact@v7
@@ -193,8 +238,10 @@ jobs:
           if-no-files-found: error
 
   pack-nodejs:
-    needs: build-test
-    name: Pack Node.js package
+    name: Node package
+    needs: plan
+    if: needs.plan.outputs.pack-nodejs == 'true'
+    timeout-minutes: 20
     runs-on: ubuntu-24.04
 
     steps:
@@ -205,16 +252,33 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22.x
+          cache: npm
+          cache-dependency-path: packages/chaptertool/package-lock.json
 
-      - name: Download Node.js build output
-        uses: actions/download-artifact@v8
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v6
         with:
-          name: ChapterTool-node-dist
-          path: packages/chaptertool/dist
+          dotnet-version: 10.0.x
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Directory.Build.targets', 'Directory.Packages.props', 'NuGet.config') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      - name: Install .NET wasm-tools workload
+        run: dotnet workload install wasm-tools
+      - name: Install npm dependencies
+        run: python3 scripts/ci/run.py --stage node --step install-npm-dependencies
+      - name: Build Node.js package
+        run: python3 scripts/ci/run.py --stage node --step build-node-js-package
+      - name: Type check Node.js package
+        run: python3 scripts/ci/run.py --stage node --step type-check-node-js-package
+      - name: Test built Node.js package
+        run: python3 scripts/ci/run.py --stage node --step test-built-node-js-package
 
       - name: Pack and verify npm tarball
-        working-directory: packages/chaptertool
-        run: npm run pack:verify
+        run: python3 scripts/ci/run.py --stage pack-node
 
       - name: Upload npm artifact
         uses: actions/upload-artifact@v7
@@ -222,3 +286,32 @@ jobs:
           name: ChapterTool-node-package
           path: artifacts/npm/*.tgz
           if-no-files-found: error
+
+  ci-ready:
+    name: CI ready
+    if: always()
+    needs: [plan, resources, dotnet-tests, solution-build, wasm-browser-e2e, pack-nuget, pack-nodejs, pack-dotnet]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Verify required results
+        env:
+          CI_PLAN: ${{ needs.plan.outputs.plan }}
+          CI_NEEDS: ${{ toJSON(needs) }}
+        run: python3 scripts/ci/plan.py --verify
+
+  deploy-pages:
+    name: Deploy verified WASM
+    needs: [plan, ci-ready]
+    if: >-
+      !cancelled() && needs.ci-ready.result == 'success' &&
+      github.ref == 'refs/heads/master' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      needs.plan.outputs.wasm-browser-e2e == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/github-pages.yml

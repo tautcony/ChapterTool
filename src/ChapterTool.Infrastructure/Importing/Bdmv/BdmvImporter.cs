@@ -6,8 +6,6 @@ using ChapterTool.Core.Importing.Disc.Index;
 using ChapterTool.Core.Importing.Disc.MovieObject;
 using ChapterTool.Core.Models;
 
-#pragma warning disable SA1503
-
 namespace ChapterTool.Infrastructure.Importing.Bdmv;
 
 /// <summary>Imports complete chapter-bearing Blu-ray playlists with managed parsers.</summary>
@@ -78,7 +76,10 @@ public sealed class BdmvImporter : IChapterImporter
                 candidate.Name,
                 indexValue + 1,
                 candidates.Count);
-            if (!candidate.Projection.HasChapterMarks) continue;
+            if (!candidate.Projection.HasChapterMarks)
+            {
+                continue;
+            }
 
             var chapterSet = candidate.Projection.ChapterSet with
             {
@@ -91,7 +92,8 @@ public sealed class BdmvImporter : IChapterImporter
                 CanCombine: true,
                 ReferencedMediaFiles: candidate.Projection.ReferencedMediaFiles,
                 MediaTracks: MplsMediaTrackProjection.ForPlayItems(candidate.Projection.Playlist.PlayList.PlayItems, clpiByClip),
-                ImportDisplayName: DisplayName(candidate)));
+                ImportDisplayName: DisplayName(candidate)) { Segments = candidate.Projection.Segments });
+            diagnostics.AddRange(candidate.Projection.Diagnostics);
         }
 
         if (entries.Count == 0)
@@ -334,7 +336,10 @@ public sealed class BdmvImporter : IChapterImporter
             evidenceOrder.Add(name);
         }
 
-        if (!values.Contains(source, StringComparer.Ordinal)) values.Add(source);
+        if (!values.Contains(source, StringComparer.Ordinal))
+        {
+            values.Add(source);
+        }
     }
 
     private static int FirstEvidenceOrder(string name, IReadOnlyList<string> evidenceOrder) =>

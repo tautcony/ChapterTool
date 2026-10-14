@@ -1,4 +1,3 @@
-using ChapterTool.Contracts.Configuration;
 using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Infrastructure.Tests;

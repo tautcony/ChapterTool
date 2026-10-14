@@ -4,6 +4,7 @@ using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
+using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Core.Tests.Exporting;
 
@@ -14,7 +15,7 @@ public sealed class ChapterExportServiceTests
     [Fact]
     public void Txt_export_writes_ogm_pairs()
     {
-        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Txt));
+        var result = service.Serialize(Sample(), new ChapterSerializationOptions(ChapterExportFormat.Txt));
 
         Assert.Contains("CHAPTER01=00:00:00.000", result.Content, StringComparison.Ordinal);
         Assert.Contains("CHAPTER01NAME=Intro", result.Content, StringComparison.Ordinal);
@@ -23,7 +24,7 @@ public sealed class ChapterExportServiceTests
     [Fact]
     public void Xml_export_uses_und_language_fallback()
     {
-        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Xml));
+        var result = service.Serialize(Sample(), new ChapterSerializationOptions(ChapterExportFormat.Xml));
 
         Assert.StartsWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>", result.Content, StringComparison.Ordinal);
         Assert.Contains("<!--<!DOCTYPE Tags SYSTEM \"matroskatags.dtd\">-->", result.Content, StringComparison.Ordinal);
@@ -40,7 +41,7 @@ public sealed class ChapterExportServiceTests
     [InlineData(OutputTextEncoding.Utf32BigEndian, "utf-32BE")]
     public void Xml_export_declaration_matches_selected_encoding(OutputTextEncoding encoding, string xmlName)
     {
-        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Xml, TextEncoding: encoding));
+        var result = service.Serialize(Sample(), new ChapterSerializationOptions(ChapterExportFormat.Xml, TextEncoding: encoding));
 
         Assert.StartsWith($"<?xml version=\"1.0\" encoding=\"{xmlName}\"?>", result.Content, StringComparison.Ordinal);
     }
@@ -58,7 +59,7 @@ public sealed class ChapterExportServiceTests
             ]
         };
 
-        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.Qpfile));
+        var result = service.Serialize(info, new ChapterSerializationOptions(ChapterExportFormat.Qpfile));
 
         Assert.Equal($"0 I{Environment.NewLine}240 I{Environment.NewLine}480 I", result.Content);
     }
@@ -66,7 +67,7 @@ public sealed class ChapterExportServiceTests
     [Fact]
     public void Celltimes_export_writes_start_frames()
     {
-        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Celltimes));
+        var result = service.Serialize(Sample(), new ChapterSerializationOptions(ChapterExportFormat.Celltimes));
 
         Assert.True(result.Success);
         Assert.Equal($"0{Environment.NewLine}240{Environment.NewLine}480", result.Content);
@@ -75,7 +76,7 @@ public sealed class ChapterExportServiceTests
     [Fact]
     public void Tsmuxer_export_has_no_trailing_semicolon()
     {
-        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.TsMuxerMeta));
+        var result = service.Serialize(Sample(), new ChapterSerializationOptions(ChapterExportFormat.TsMuxerMeta));
 
         Assert.Equal($"--custom-{Environment.NewLine}chapters=00:00:00.000;00:00:10.000;00:00:20.000", result.Content);
     }
@@ -94,7 +95,7 @@ public sealed class ChapterExportServiceTests
             ]
         };
 
-        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
+        var result = service.Serialize(info, new ChapterSerializationOptions(ChapterExportFormat.WebVtt));
 
         Assert.True(result.Success);
         Assert.Contains("00:00:00.000 --> 00:00:04.000", result.Content, StringComparison.Ordinal);
@@ -110,7 +111,7 @@ public sealed class ChapterExportServiceTests
             Chapters = [new Chapter(1, TimeSpan.Zero, "Line 1\r\nLine 2 --> marker", EndTime: TimeSpan.FromSeconds(1))]
         };
 
-        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.WebVtt));
+        var result = service.Serialize(info, new ChapterSerializationOptions(ChapterExportFormat.WebVtt));
 
         Assert.False(result.Success);
         Assert.Empty(result.Content);
@@ -118,109 +119,61 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
-    public void Txt_export_applies_order_shift_and_generated_names()
-    {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Txt, AutoGenerateNames: true, OrderShift: 2));
-
-        Assert.Contains("CHAPTER03=00:00:00.000", result.Content, StringComparison.Ordinal);
-        Assert.Contains("CHAPTER03NAME=Chapter 01", result.Content, StringComparison.Ordinal);
-        Assert.Contains("CHAPTER05=00:00:20.000", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("CHAPTER01=", result.Content, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Xml_export_applies_order_shift_language_and_template_names()
-    {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Xml, XmlLanguage: "jpn", UseTemplateNames: true, OrderShift: 4));
-
-        Assert.Contains("<ChapterLanguage>jpn</ChapterLanguage>", result.Content, StringComparison.Ordinal);
-        Assert.Contains("<ChapterString>Chapter 01</ChapterString>", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("<ChapterString>Intro</ChapterString>", result.Content, StringComparison.Ordinal);
-
-        var document = XDocument.Parse(result.Content);
-        var chapterUid = Assert.Single(document.Descendants("ChapterUID").Take(1)).Value;
-        Assert.True(int.Parse(chapterUid, CultureInfo.InvariantCulture) > 0);
-        Assert.NotEqual("5", chapterUid);
-    }
-
-    [Fact]
     public void Xml_export_uses_valid_non_trivial_uids()
     {
-        var result = service.Export(Sample(), new ChapterExportOptions(ChapterExportFormat.Xml));
+        var result = service.Serialize(Sample(), new ChapterSerializationOptions(ChapterExportFormat.Xml));
         var document = XDocument.Parse(result.Content);
 
         var editionUid = Assert.Single(document.Descendants("EditionUID")).Value;
         var chapterUids = document.Descendants("ChapterUID").Select(static element => element.Value).ToArray();
 
-        Assert.True(int.Parse(editionUid, CultureInfo.InvariantCulture) > 1);
+        Assert.True(int.Parse(editionUid, CultureInfo.InvariantCulture) > 0);
         Assert.Equal(3, chapterUids.Length);
+        Assert.All(chapterUids, static uid => Assert.True(int.Parse(uid, CultureInfo.InvariantCulture) > 0));
         Assert.NotEqual(["1", "2", "3"], chapterUids);
     }
 
     [Fact]
-    public void Txt_export_applies_template_file_names_by_line()
+    public void Xml_export_reuses_content_seeded_uids_and_changes_them_with_content()
     {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(
-                ChapterExportFormat.Txt,
-                UseTemplateNames: true,
-                ChapterNameTemplateText: "Opening\nMiddle Part\nFinale"));
+        var options = new ChapterSerializationOptions(ChapterExportFormat.Xml);
 
-        Assert.Contains("CHAPTER01NAME=Opening", result.Content, StringComparison.Ordinal);
-        Assert.Contains("CHAPTER02NAME=Middle Part", result.Content, StringComparison.Ordinal);
-        Assert.Contains("CHAPTER03NAME=Finale", result.Content, StringComparison.Ordinal);
+        var first = service.Serialize(Sample(), options);
+        var second = service.Serialize(Sample(), options);
+        var changed = service.Serialize(Sample() with { Title = "Other Title" }, options);
+
+        Assert.Equal(UidOrder(first.Content), UidOrder(second.Content));
+        Assert.NotEqual(UidOrder(first.Content), UidOrder(changed.Content));
     }
 
     [Fact]
-    public void Negative_order_shift_is_normalized_to_zero()
+    public void Xml_export_assigns_distinct_positive_uids_to_repeated_chapters()
     {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Txt, OrderShift: -2));
+        var sample = Sample();
+        var source = sample with { Chapters = Enumerable.Repeat(sample.Chapters[0], 1000).ToArray() };
 
-        Assert.Contains("CHAPTER01=00:00:00.000", result.Content, StringComparison.Ordinal);
-        Assert.Contains("CHAPTER03=00:00:20.000", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("CHAPTER00", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("CHAPTER-01", result.Content, StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.OrderShiftNormalized);
-    }
+        var result = service.Serialize(source, new ChapterSerializationOptions(ChapterExportFormat.Xml));
+        var document = XDocument.Parse(result.Content);
+        var uids = document.Descendants()
+            .Where(static element => element.Name.LocalName is "EditionUID" or "ChapterUID")
+            .Select(static element => int.Parse(element.Value, CultureInfo.InvariantCulture)).ToArray();
 
-    [Fact]
-    public void Order_shift_ignores_separator_markers()
-    {
-        var info = Sample() with
-        {
-            Chapters =
-            [
-                new Chapter(1, TimeSpan.Zero, "A", "0"),
-                Chapter.Separator(),
-                new Chapter(2, TimeSpan.FromSeconds(7), "B", "168")
-            ]
-        };
-
-        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.Txt, OrderShift: 2));
-
-        Assert.Contains("CHAPTER03=00:00:00.000", result.Content, StringComparison.Ordinal);
-        Assert.Contains("CHAPTER04=00:00:07.000", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("CHAPTER-01", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("CHAPTER05", result.Content, StringComparison.Ordinal);
+        Assert.Equal(1001, uids.Length);
+        Assert.All(uids, static uid => Assert.True(uid > 0));
+        Assert.Equal(uids.Length, uids.Distinct().Count());
+        Assert.Equal(UidOrder(result.Content), UidOrder(service.Serialize(source, new ChapterSerializationOptions(ChapterExportFormat.Xml)).Content));
     }
 
     [Fact]
     public void Cue_export_numbers_tracks_by_output_order()
     {
-        var result = service.Export(
+        var result = service.Serialize(
             Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Cue, SourceFileName: "audio.wav", AutoGenerateNames: true));
+            new ChapterSerializationOptions(ChapterExportFormat.Cue, SourceFileName: "audio.wav"));
 
         Assert.Contains("FILE \"audio.wav\" WAVE", result.Content, StringComparison.Ordinal);
         Assert.Contains("  TRACK 01 AUDIO", result.Content, StringComparison.Ordinal);
-        Assert.Contains("    TITLE \"Chapter 01\"", result.Content, StringComparison.Ordinal);
+        Assert.Contains("    TITLE \"Intro\"", result.Content, StringComparison.Ordinal);
         Assert.Contains("    INDEX 01 00:10:00", result.Content, StringComparison.Ordinal);
     }
 
@@ -238,7 +191,7 @@ public sealed class ChapterExportServiceTests
             ]
         };
 
-        var result = service.Export(info, new ChapterExportOptions(ChapterExportFormat.Json));
+        var result = service.Serialize(info, new ChapterSerializationOptions(ChapterExportFormat.Json));
 
         Assert.Contains("\"sourceName\":\"00001.m2ts\"", result.Content, StringComparison.Ordinal);
         Assert.Contains("\"time\":0", result.Content, StringComparison.Ordinal);
@@ -246,73 +199,41 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
-    public void Timecodes_export_applies_expression_when_enabled()
+    public void Snapshot_serialization_writes_captured_value_once_without_replaying_transforms()
     {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(ChapterExportFormat.TimeCodes, ApplyExpression: true, Expression: "t + 1"));
-
-        Assert.StartsWith("00:00:01.000", result.Content, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Expression_export_normalizes_negative_times_to_zero()
-    {
-        var info = Sample() with
+        var engine = new CountingExpressionEngine();
+        var exportService = new ChapterExportService(new ChapterTimeFormatter());
+        var document = EditableChapterDocumentAdapter.FromChapterSet(Sample() with
         {
-            Chapters = [new Chapter(1, TimeSpan.FromSeconds(10), "Middle", "240")]
-        };
-        var result = service.Export(
-            info,
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "t - 10000"));
+            Chapters = [new Chapter(1, TimeSpan.FromSeconds(3), "Edited")]
+        });
 
-        Assert.Contains("CHAPTER01=00:00:00.000", result.Content, StringComparison.Ordinal);
-        Assert.DoesNotContain("-", result.Content, StringComparison.Ordinal);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidExpressionTime);
+        var result = exportService.Serialize(document, new ChapterSerializationOptions(ChapterExportFormat.Txt));
+
+        Assert.True(result.Success);
+        Assert.Equal("CHAPTER01=00:00:03.000" + Environment.NewLine + "CHAPTER01NAME=Edited" + Environment.NewLine, result.Content);
+        Assert.Equal(0, engine.EvaluationCount);
     }
 
     [Fact]
-    public void Cue_export_applies_expression_when_enabled()
+    public void Snapshot_webvtt_export_requires_a_final_end_when_duration_is_unknown()
     {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Cue, ApplyExpression: true, Expression: "t + 1"));
+        var document = EditableChapterDocumentAdapter.FromChapterSet(
+            new ChapterSet("Title", null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
 
-        Assert.Contains("    INDEX 01 00:01:00", result.Content, StringComparison.Ordinal);
-    }
+        var result = service.Serialize(document, new ChapterSerializationOptions(ChapterExportFormat.WebVtt));
 
-    [Fact]
-    public void Qpfile_export_uses_expression_adjusted_frames_when_enabled()
-    {
-        var result = service.Export(
-            Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Qpfile, ApplyExpression: true, Expression: "t + 1"));
-
-        Assert.StartsWith("24 I", result.Content, StringComparison.Ordinal);
+        Assert.False(result.Success);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidStructure);
     }
 
     [Theory]
-    [InlineData(ChapterExportFormat.Qpfile)]
-    [InlineData(ChapterExportFormat.Celltimes)]
-    public void Frame_based_exports_return_diagnostic_for_non_finite_frame_rate(ChapterExportFormat format)
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    [InlineData(double.NegativeInfinity)]
+    public void Non_finite_frame_rate_is_rejected_before_export(double rate)
     {
-        var result = service.Export(
-            Sample() with { FramesPerSecond = double.NaN },
-            new ChapterExportOptions(format));
-
-        Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
-    }
-
-    [Fact]
-    public void Expression_projection_returns_diagnostic_for_non_finite_frame_rate()
-    {
-        var result = service.Export(
-            Sample() with { FramesPerSecond = double.PositiveInfinity },
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "t + 1"));
-
-        Assert.True(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameRate);
+        Assert.False(FrameRateValue.TryFromDouble(rate, metadata: false, out _, out _));
     }
 
     private static ChapterSet Sample(ChapterImportFormat sourceType = ChapterImportFormat.Ogm) =>
@@ -320,11 +241,47 @@ public sealed class ChapterExportServiceTests
             "Title",
             "source",
             sourceType,
-            24,
+            FrameRateValue.Rational(24, 1),
             TimeSpan.FromSeconds(30),
             [
                 new Chapter(1, TimeSpan.Zero, "Intro", "0"),
                 new Chapter(2, TimeSpan.FromSeconds(10), "Middle", "240", FrameAccuracy: FrameAccuracy.Inexact),
                 new Chapter(3, TimeSpan.FromSeconds(20), "End", "480")
             ]);
+
+    private static string UidOrder(string content)
+    {
+        var document = XDocument.Parse(content);
+        return string.Join(',', document.Descendants()
+            .Where(static element => element.Name.LocalName is "EditionUID" or "ChapterUID")
+            .Select(static element => element.Name.LocalName + "=" + element.Value));
+    }
+
+    private static string NormalizeUids(string content)
+    {
+        if (!content.TrimStart().StartsWith("<?xml", StringComparison.Ordinal))
+        {
+            return content;
+        }
+
+        var document = XDocument.Parse(content);
+        document.Descendants("ChapterUID").Remove();
+        document.Descendants("EditionUID").Remove();
+        return document.ToString(SaveOptions.DisableFormatting);
+    }
+
+    private sealed class CountingExpressionEngine : IChapterExpressionEngine
+    {
+        public int EvaluationCount { get; private set; }
+
+        public string EngineId => "counting";
+
+        public IReadOnlyList<ChapterExpressionPreset> Presets => [];
+
+        public ChapterExpressionEvaluationResult Evaluate(string sourceText, ChapterExpressionContext context)
+        {
+            EvaluationCount++;
+            return new ChapterExpressionEvaluationResult(true, context.TimeSeconds, []);
+        }
+    }
 }

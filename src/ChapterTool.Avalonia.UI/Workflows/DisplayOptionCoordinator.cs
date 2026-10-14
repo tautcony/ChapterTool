@@ -10,6 +10,15 @@ namespace ChapterTool.Avalonia.UI.Workflows;
 /// <summary>Builds and synchronizes localized selector projections used by the shell.</summary>
 internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRateService frameRateService)
 {
+    private FrameRateOption? customRate;
+
+    public void SetContentRate(FrameRateValue rate, ObservableCollection<SelectorDisplayOption> options)
+    {
+        customRate = rate.IsKnown && frameRateService.Options.All(option => option.Rate != rate)
+            ? frameRateService.FindByRate(rate) : null;
+        RefreshFrameRateDisplayOptions(options);
+    }
+
     public void SyncClipDisplayOptions(
         NotifyCollectionChangedEventArgs args,
         IReadOnlyList<ChapterImportEntry> clipOptions,
@@ -77,7 +86,7 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
 
     public void RefreshFrameRateDisplayOptions(ObservableCollection<SelectorDisplayOption> options)
     {
-        var entries = frameRateService.Options
+        var entries = frameRateService.Options.Concat(customRate is null ? [] : new[] { customRate })
             .Select((entry, index) => new SelectorDisplayOption(
                 entry.Code,
                 string.Empty,
@@ -89,16 +98,21 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
     public void RefreshXmlLanguageDisplayOptions(ObservableCollection<SelectorDisplayOption> options) =>
         UpdateOptions(options, XmlLanguageDisplay.Options(localizer));
 
-    public static int ComboIndexFor(FrameRateOption entry) =>
-        entry.LegacyMplsCode == 0 ? 0 : entry.IsValid ? entry.LegacyMplsCode : -1;
+    public int ComboIndexFor(FrameRateOption entry) => entry.MplsFrameRateCode == -1
+        ? frameRateService.Options.Count : entry.MplsFrameRateCode == 0 ? 0 : entry.IsValid ? entry.MplsFrameRateCode : -1;
 
     public FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
     {
+        if (frameRateIndex == frameRateService.Options.Count)
+        {
+            return customRate;
+        }
+
         return frameRateIndex switch
         {
             0 => frameRateService.Options[0],
             < 1 or 5 => null,
-            _ => frameRateService.Options.FirstOrDefault(entry => entry.LegacyMplsCode == frameRateIndex)
+            _ => frameRateService.Options.FirstOrDefault(entry => entry.MplsFrameRateCode == frameRateIndex)
         };
     }
 
@@ -106,15 +120,14 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
         ObservableCollection<SelectorDisplayOption> target,
         IReadOnlyList<SelectorDisplayOption> entries)
     {
-        if (target.Count != entries.Count)
+        while (target.Count > entries.Count)
         {
-            target.Clear();
-            foreach (var entry in entries)
-            {
-                target.Add(entry);
-            }
+            target.RemoveAt(target.Count - 1);
+        }
 
-            return;
+        while (target.Count < entries.Count)
+        {
+            target.Add(entries[target.Count]);
         }
 
         for (var index = 0; index < entries.Count; index++)
@@ -127,9 +140,14 @@ internal sealed class DisplayOptionCoordinator(IAppLocalizer localizer, IFrameRa
     {
         var display = ChapterImportDisplay.From(entry);
         var remarkText = display.ChapterCount > 0
-            ? localizer.Format("Main.ChapterCount", new Dictionary<string, object?> { ["count"] = display.ChapterCount })
+            ? localizer.Format(display.ChapterCount == 1 ? "Main.ChapterCountSingular" : "Main.ChapterCount", new Dictionary<string, object?> { ["count"] = display.ChapterCount })
             : string.Empty;
-        var mainText = display.MainText;
+        var mainText = entry.DiscTitleNumber is int titleNumber
+            ? ChapterImportDisplay.FormatDvdOption(
+                localizer.Format("Label.DvdTitle", new Dictionary<string, object?> { ["number"] = titleNumber }),
+                entry.ChapterSet,
+                entry.ReferencedMediaFiles)
+            : display.MainText;
         var displayText = string.IsNullOrWhiteSpace(remarkText) ? mainText : $"{mainText}（{remarkText}）";
         return new SelectorDisplayOption(mainText, remarkText, displayText);
     }

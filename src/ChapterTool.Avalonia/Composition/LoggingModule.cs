@@ -16,6 +16,9 @@ internal sealed class LoggingModule(string settingsDirectory) : Module
             .As<IApplicationLogService>()
             .As<ILoggerProvider>()
             .SingleInstance();
+        builder.Register(_ => new ApplicationLogFileExporter(settingsDirectory))
+            .As<IApplicationLogExporter>()
+            .SingleInstance();
         builder.Register(_ => CreateSerilogLogger(settingsDirectory))
             .As<Logger>()
             .SingleInstance()

@@ -10,22 +10,98 @@ public sealed class ChapterEditingServiceTests
     private readonly ChapterEditingService service = new(new ChapterTimeFormatter());
 
     [Fact]
-    public void EditTime_resets_values_over_one_day()
+    public void EditTime_rejects_values_over_one_day_without_changing_the_chapter()
     {
-        var result = service.EditTime(Sample(), 1, "25:00:00.000");
+        var source = Sample();
+        var result = service.EditTime(source, 1, "25:00:00.000");
 
-        Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[1].StartTime);
+        Assert.Equal(source, result.ChapterSet);
         Assert.Contains(result.Diagnostics, static diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidTimeText);
     }
 
     [Fact]
     public void EditFrame_uses_current_fps()
     {
-        var result = service.EditFrame(Sample(), 1, "240 frames", 24);
+        var result = service.EditFrame(Sample(), 1, "240 frames", FrameRateValue.Rational(24, 1));
 
         Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].StartTime);
         Assert.Equal("240", result.ChapterSet.Chapters[1].FramesInfo);
         Assert.Equal(FrameAccuracy.Accurate, result.ChapterSet.Chapters[1].FrameAccuracy);
+    }
+
+    [Fact]
+    public void EditFrame_uses_decimal_tick_conversion_for_fractional_frame_rates()
+    {
+        var result = service.EditFrame(Sample(), 1, "240 frames", FrameRateValue.Rational(24000, 1001));
+
+        Assert.Equal(100_100_000, result.ChapterSet.Chapters[1].StartTime.Ticks);
+    }
+
+    [Fact]
+    public void EditFrame_updates_time_when_retained_frame_text_is_stale()
+    {
+        var rate = FrameRateValue.Rational(25, 1);
+        var frameEdit = service.EditFrame(Sample(), 1, "25", rate);
+        Assert.Equal(TimeSpan.FromSeconds(1), frameEdit.ChapterSet.Chapters[1].StartTime);
+
+        var timeEdit = service.EditTime(frameEdit.ChapterSet, 1, "00:00:02.000");
+        Assert.Equal(TimeSpan.FromSeconds(2), timeEdit.ChapterSet.Chapters[1].StartTime);
+        Assert.Equal("25", timeEdit.ChapterSet.Chapters[1].FramesInfo);
+
+        var frameEditAgain = service.EditFrame(timeEdit.ChapterSet, 1, "25", rate);
+        Assert.Equal(TimeSpan.FromSeconds(1), frameEditAgain.ChapterSet.Chapters[1].StartTime);
+        Assert.Equal("25", frameEditAgain.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Empty(frameEditAgain.Diagnostics);
+    }
+
+    [Fact]
+    public void EditFrame_preserves_ticks_when_unrounded_decimal_frame_text_is_committed_unchanged()
+    {
+        const string frameText = "4495.000000999000999000999001";
+        var sample = Sample();
+        var source = sample with
+        {
+            Chapters = sample.Chapters.Select((chapter, index) => index == 1
+                ? chapter with
+                {
+                    StartTime = TimeSpan.FromTicks(1_499_831_667),
+                    FramesInfo = frameText,
+                    FrameAccuracy = FrameAccuracy.Neutral
+                }
+                : chapter).ToArray()
+        };
+
+        var result = service.EditFrame(source, 1, frameText, FrameRateValue.Rational(30_000, 1_001));
+
+        Assert.Same(source, result.ChapterSet);
+        Assert.Equal(1_499_831_667, result.ChapterSet.Chapters[1].StartTime.Ticks);
+        Assert.Equal(frameText, result.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
+    public void EditFrame_with_decimal_rate_preserves_ticks_when_decimal_text_is_committed_unchanged()
+    {
+        const string frameText = "4495.000000999000999000999001";
+        var sample = Sample();
+        var source = sample with
+        {
+            Chapters = sample.Chapters.Select((chapter, index) => index == 1
+                ? chapter with
+                {
+                    StartTime = TimeSpan.FromTicks(1_499_831_667),
+                    FramesInfo = frameText,
+                    FrameAccuracy = FrameAccuracy.Neutral
+                }
+                : chapter).ToArray()
+        };
+
+        var result = service.EditFrame(source, 1, frameText, FrameRateValue.Approximate(30000m / 1001m));
+
+        Assert.Same(source, result.ChapterSet);
+        Assert.Equal(1_499_831_667, result.ChapterSet.Chapters[1].StartTime.Ticks);
+        Assert.Equal(frameText, result.ChapterSet.Chapters[1].FramesInfo);
+        Assert.Empty(result.Diagnostics);
     }
 
     [Theory]
@@ -35,7 +111,7 @@ public sealed class ChapterEditingServiceTests
     {
         var sample = Sample();
 
-        var result = service.EditFrame(sample, 1, text, framesPerSecond);
+        var result = service.EditFrame(sample, 1, text, FrameRateValue.Approximate(framesPerSecond));
 
         Assert.Equal(sample.Chapters[1].StartTime, result.ChapterSet.Chapters[1].StartTime);
         Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.InvalidFrameText);
@@ -113,7 +189,7 @@ public sealed class ChapterEditingServiceTests
     [Fact]
     public void ShiftFramesForward_subtracts_shift_and_removes_negative_chapters()
     {
-        var result = service.ShiftFramesForward(Sample(), 240, 24);
+        var result = service.ShiftFramesForward(Sample(), 240, FrameRateValue.Rational(24, 1));
 
         Assert.Equal(TimeSpan.Zero, result.ChapterSet.Chapters[0].StartTime);
         Assert.Equal(TimeSpan.FromSeconds(10), result.ChapterSet.Chapters[1].StartTime);
@@ -133,7 +209,7 @@ public sealed class ChapterEditingServiceTests
             ]
         };
 
-        var result = service.CreateZones(info, new HashSet<int> { 0, 1 }, 24);
+        var result = service.CreateZones(info, new HashSet<int> { 0, 1 }, FrameRateValue.Rational(24, 1));
 
         Assert.Equal("--zones 0,239,/240,479,", result.Zones);
         Assert.Empty(result.Diagnostics);
@@ -144,7 +220,7 @@ public sealed class ChapterEditingServiceTests
             "Title",
             "source",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromSeconds(30),
             [
                 new Chapter(1, TimeSpan.FromSeconds(5), "Intro"),

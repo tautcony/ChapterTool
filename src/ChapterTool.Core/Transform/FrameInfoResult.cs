@@ -2,17 +2,13 @@ using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Transform;
 
-/// <summary>
-/// Represents calculated frame numbers and accuracy for chapters.
-/// </summary>
-/// <param name="Info">The chapter set updated with frame metadata.</param>
-/// <param name="Chapters">The chapters updated with frame display values.</param>
-/// <param name="SelectedOption">The frame rate option used for the calculation.</param>
-/// <param name="FramesPerSecond">The effective frame rate in frames per second.</param>
-/// <param name="Accuracy">Per-chapter frame accuracy classifications.</param>
+/// <summary>Represents display frame values and their computation rate.</summary>
 public sealed record FrameInfoResult(
     ChapterSet Info,
     IReadOnlyList<Chapter> Chapters,
     FrameRateOption SelectedOption,
-    decimal FramesPerSecond,
-    IReadOnlyList<FrameAccuracy> Accuracy);
+    IReadOnlyList<FrameAccuracy> Accuracy)
+{
+    /// <summary>Gets the display computation rate without changing content authority.</summary>
+    public FrameRateValue Rate => SelectedOption.Rate;
+}

@@ -33,7 +33,8 @@ public sealed partial class MainWindowViewModel
             if (string.IsNullOrWhiteSpace(text))
             {
                 SetStatus("Status.TemplateLoadFailed", ("path", Path.GetFileName(path)));
-                Log(LogLevel.Warning, "Log.TemplateLoadFailed", ("path", path), ("reason", "empty"));
+                Log(LogLevel.Warning, $"Failed to load chapter name template from '{path}': file is empty", "Template",
+                    ("path", path), ("reason", "empty"));
                 return;
             }
 
@@ -41,7 +42,14 @@ public sealed partial class MainWindowViewModel
             ChapterNameTemplateStatus = Path.GetFileName(path);
             ChapterNameModeIndex = 2;
             SetStatus("Status.TemplateLoaded", ("name", ChapterNameTemplateStatus));
-            Log("Log.TemplateLoaded", ("path", path), ("name", ChapterNameTemplateStatus));
+            Log(LogLevel.Information, $"Loaded chapter name template '{ChapterNameTemplateStatus}' from '{path}'", "Template",
+                ("path", path), ("name", ChapterNameTemplateStatus));
+
+            if (CurrentInfo is not null)
+            {
+                PreviewLoadedTemplateNames();
+                SetStatus("Status.TemplateLoaded", ("name", ChapterNameTemplateStatus));
+            }
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
         {
@@ -52,8 +60,22 @@ public sealed partial class MainWindowViewModel
             ChapterNameTemplateStatus = previousStatus;
 
             SetStatus("Status.TemplateLoadFailed", ("path", Path.GetFileName(path)));
-            Log(LogLevel.Warning, "Log.TemplateLoadFailed", exception.Message, ("path", path));
+            Log(LogLevel.Warning, $"Failed to load chapter name template from '{path}': {exception.Message}", "Template",
+                technicalDetail: exception.Message, ("path", path));
         }
+    }
+
+    private void PreviewLoadedTemplateNames()
+    {
+        pendingContentPreview = PrepareTemplateNamesOperation(autoGenerateNames: false, useTemplateNames: true);
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
     private ValueTask LoadPathAsync(string path, CancellationToken cancellationToken) =>
@@ -64,26 +86,36 @@ public sealed partial class MainWindowViewModel
         if (string.IsNullOrWhiteSpace(source.DisplayName))
         {
             SetStatus("Status.NoSourceSelected");
-            LogStatus();
+            Log(LogLevel.Information, "Load source skipped: no source selected", "Load",
+                ("displayName", source.DisplayName));
             NotifyStateChanged();
             return;
         }
 
-        Log("Log.LoadingSource", ("path", source.DisplayName));
+        var sourcePath = source is LocalPathChapterSource localSource ? localSource.NormalizedPath : source.DisplayName;
+        Log(LogLevel.Information, $"Loading source: path='{sourcePath}'", "Load",
+            ("path", sourcePath), ("displayName", source.DisplayName));
         Progress = 0.05;
         SetProgressStatus(ChapterImportProgressPhase.LoadingSource);
         var outcome = await loadSaveWorkflow.LoadAsync(source, update =>
         {
             Progress = Math.Clamp(update.Fraction ?? Progress, 0, 0.98);
             SetProgressStatus(update.Phase);
-        }, cancellationToken);
+        }, cancellationToken, () => RequiresSessionLossConfirmation, ConfirmSessionLossAsync);
         switch (outcome.State)
         {
             case LoadWorkflowState.Stale:
                 return;
             case LoadWorkflowState.EmptyPath:
                 SetStatus("Status.NoSourceSelected");
-                LogStatus();
+                Log(LogLevel.Information, "Load source skipped: no source selected", "Load",
+                    ("displayName", source.DisplayName));
+                NotifyStateChanged();
+                return;
+            case LoadWorkflowState.Cancelled:
+                SetStatus("Status.SessionReplacementCanceled");
+                ClearProgressStatus();
+                Progress = 0;
                 NotifyStateChanged();
                 return;
             case LoadWorkflowState.Failed:
@@ -110,7 +142,7 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(CurrentPath));
         OnPropertyChanged(nameof(DisplayPath));
         ApplyClipSessionUi(session, selectIndex: session.SelectedIndex);
-        SetStatus("Status.LoadedChapters", ("count", Rows.Count));
+        SetStatus(Rows.Count == 1 ? "Status.LoadedChapter" : "Status.LoadedChapters", ("count", Rows.Count));
         ClearProgressStatus();
         Progress = 1;
         LogImportDiagnostics("Load", result.Diagnostics);
@@ -125,17 +157,28 @@ public sealed partial class MainWindowViewModel
         }
 
         var directory = ResolveSaveDirectory(directoryOverride);
-        var projection = CurrentOutputProjection();
-        var entries = CurrentExportOptionsForProjectedInfo();
-        Log("Log.SavingChapters",
+        var chapterSet = workspaceContentRows.GetCurrentChapterSet();
+        var entries = Workspace.CreateSerializationOptions();
+        Log(LogLevel.Information,
+            $"Saving chapters: format={entries.Format}, directory='{directory ?? string.Empty}', source='{CurrentInfo.SourceName ?? string.Empty}', " +
+            $"chapters={chapterSet.Chapters.Count}, expression='{Expression}', " +
+            $"xmlLanguage='{entries.XmlLanguage ?? string.Empty}', encoding={entries.TextEncoding}, bom={entries.EmitBom}",
+            "Save",
             ("format", entries.Format),
             ("directory", directory ?? string.Empty),
             ("source", CurrentInfo.SourceName ?? string.Empty),
-            ("chapters", projection.Info.Chapters.Count),
-            ("applyExpression", ApplyExpression),
-            ("expression", Expression));
-        LogDiagnostics("Output projection", projection.Diagnostics);
-        var result = await loadSaveWorkflow.SaveAsync(projection.Info, entries, directory, cancellationToken);
+            ("chapters", chapterSet.Chapters.Count),
+            ("expression", Expression),
+            ("xmlLanguage", entries.XmlLanguage ?? string.Empty),
+            ("encoding", entries.TextEncoding),
+            ("bom", entries.EmitBom));
+        var exportSnapshot = Workspace.CaptureExportSnapshot(chapterSet, entries, Workspace.CurrentTrackIndex);
+        var result = await loadSaveWorkflow.SaveAsync(chapterSet, entries, directory, cancellationToken);
+        if (result.Success && exportSnapshot is not null)
+        {
+            Workspace.RecordSuccessfulExport(exportSnapshot);
+        }
+
         ApplySaveStatus(result);
         LogDiagnostics("Save", result.Diagnostics);
         NotifyStateChanged();
@@ -172,12 +215,17 @@ public sealed partial class MainWindowViewModel
         if (Workspace.ClipSession is null)
         {
             SetStatus("Status.NoCurrentMplsGroup");
-            LogStatus();
+            Log(LogLevel.Information, "Append MPLS skipped: no active MPLS group", "Append");
             NotifyStateChanged();
             return;
         }
 
-        Log("Log.AppendingMpls", ("path", source.DisplayName));
+        var sourcePath = source is LocalPathChapterSource localSource ? localSource.NormalizedPath : source.DisplayName;
+        Log(LogLevel.Information,
+            $"Appending MPLS: path='{sourcePath}', currentEntries={Workspace.ClipSession.ClipOptions.Count}, currentChapters={CurrentInfo?.Chapters.Count ?? 0}",
+            "Append",
+            ("path", sourcePath), ("displayName", source.DisplayName),
+            ("currentEntries", Workspace.ClipSession.ClipOptions.Count), ("currentChapters", CurrentInfo?.Chapters.Count ?? 0));
         var outcome = await loadSaveWorkflow.AppendAsync(source, cancellationToken);
         switch (outcome.State)
         {
@@ -185,7 +233,7 @@ public sealed partial class MainWindowViewModel
                 return;
             case AppendWorkflowState.NoSession:
                 SetStatus("Status.NoCurrentMplsGroup");
-                LogStatus();
+                Log(LogLevel.Information, "Append MPLS skipped: no active MPLS group", "Append");
                 NotifyStateChanged();
                 return;
             case AppendWorkflowState.FailedLoad:

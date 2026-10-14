@@ -3,8 +3,6 @@ using ChapterTool.Contracts.PlatformPorts;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing.Media;
 using ChapterTool.Core.Transform;
-using ChapterTool.Core.Transform.Expressions;
-using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Configuration;
 using ChapterTool.Infrastructure.Importing.Media;
 using ChapterTool.Infrastructure.Processes;
@@ -59,8 +57,8 @@ public static class ChapterToolRuntimeComposition
             toolLocator ?? new ExternalToolLocator(settingsStore, [.. PathSearchDirectories()]),
             processRunner ?? new ProcessRunner());
 
-    public static ChapterExportService CreateExportService(IChapterExpressionEngine? expressionEngine = null) =>
-        new(new ChapterTimeFormatter(), expressionEngine ?? new LuaExpressionScriptService());
+    public static ChapterExportService CreateExportService() =>
+        new(new ChapterTimeFormatter());
 
     public static IMediaChapterReader CreateMp4ChapterReader() => new AtlMp4ChapterReader();
 

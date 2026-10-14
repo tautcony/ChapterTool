@@ -1,0 +1,175 @@
+using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
+using ChapterTool.Core.Transform;
+
+namespace ChapterTool.Core.Tests.Models;
+
+public sealed class EditableChapterDocumentTests
+{
+    [Fact]
+    public void Adapter_copies_chapters_into_an_immutable_snapshot_and_retains_unknown_duration()
+    {
+        var chapters = new List<Chapter> { new(1, TimeSpan.FromSeconds(10), "A") };
+        var legacy = new ChapterSet("Title", "source", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.Zero, chapters);
+
+        var document = EditableChapterDocumentAdapter.FromChapterSet(legacy);
+        chapters.Add(new Chapter(2, TimeSpan.FromSeconds(20), "B"));
+
+        Assert.Single(document.Tracks);
+        Assert.Single(document.Tracks[0].Chapters);
+        Assert.False(document.Duration.IsKnown);
+        Assert.Equal(FrameRateValue.Approximate(24), document.FrameRate);
+        Assert.True(EditableChapterDocumentValidator.Validate(document).IsValid);
+        Assert.Equal(TimeSpan.Zero, EditableChapterDocumentAdapter.ToChapterSet(document).Duration);
+    }
+
+    [Fact]
+    public void Adapter_preserves_unknown_duration_flag_through_the_round_trip()
+    {
+        var unknown = new ChapterSet("Title", "source", ChapterImportFormat.Mpls, FrameRateValue.Approximate(24m),
+            TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")])
+        {
+            DurationIsKnown = false
+        };
+        var known = unknown with { Duration = TimeSpan.FromSeconds(30), DurationIsKnown = true };
+
+        var fromUnknown = EditableChapterDocumentAdapter.FromChapterSet(unknown);
+        var fromKnown = EditableChapterDocumentAdapter.FromChapterSet(known);
+
+        Assert.False(fromUnknown.Duration.IsKnown);
+        Assert.True(fromKnown.Duration.IsKnown);
+        Assert.False(EditableChapterDocumentAdapter.ToChapterSet(fromUnknown).DurationIsKnown);
+        Assert.True(EditableChapterDocumentAdapter.ToChapterSet(fromKnown).DurationIsKnown);
+        Assert.Equal(TimeSpan.FromSeconds(30), EditableChapterDocumentAdapter.ToChapterSet(fromKnown).Duration);
+    }
+
+    [Theory]
+    [InlineData(false, 0L)]
+    [InlineData(false, 300_000_000L)]
+    [InlineData(true, 0L)]
+    [InlineData(true, 300_000_000L)]
+    public void Adapter_preserves_duration_availability_in_scalar_and_track_projections(bool isKnown, long ticks)
+    {
+        var set = new ChapterSet("Title", "source.mpls", ChapterImportFormat.Mpls, FrameRateValue.Rational(24, 1),
+            TimeSpan.FromTicks(ticks), [new Chapter(1, TimeSpan.Zero, "A")]) { DurationIsKnown = isKnown };
+        var document = EditableChapterDocumentAdapter.FromChapterSet(set);
+
+        Assert.Equal(isKnown, document.Duration.IsKnown);
+        Assert.Equal(isKnown ? ticks : 0, document.Duration.Ticks);
+        Assert.Equal(isKnown, EditableChapterDocumentAdapter.ToChapterSet(document).DurationIsKnown);
+        Assert.Equal(isKnown, EditableChapterDocumentAdapter.ToChapterSet(document, 0).DurationIsKnown);
+
+        var edited = EditableChapterDocumentAdapter.ApplyLegacyChapterSetResult(document, set with { Title = "Edited" });
+        Assert.Equal(document.Duration, edited.Duration);
+    }
+
+    [Theory]
+    [InlineData(false, 0L)]
+    [InlineData(true, 0L)]
+    [InlineData(false, 300_000_000L)]
+    public void Import_adapter_preserves_unknown_entries_and_known_zero_durations(bool secondIsKnown, long firstTicks)
+    {
+        var first = new ChapterSet("Title", "source.mpls", ChapterImportFormat.Mpls, FrameRateValue.Rational(24, 1),
+            TimeSpan.FromTicks(firstTicks), [new Chapter(1, TimeSpan.Zero, "A")]) { DurationIsKnown = true };
+        var second = first with { Duration = TimeSpan.Zero, DurationIsKnown = secondIsKnown };
+        var group = new ChapterImportSource("source.mpls",
+            [new ChapterImportEntry("a", "A", first), new ChapterImportEntry("b", "B", second)]);
+        var document = EditableChapterDocumentAdapter.FromChapterImportSource(group);
+
+        Assert.Equal(secondIsKnown, document.Duration.IsKnown);
+        Assert.Equal(secondIsKnown, document.Tracks[1].Segments[0].Duration.IsKnown);
+        Assert.Equal(secondIsKnown, EditableChapterDocumentAdapter.ToChapterSet(document, 1).DurationIsKnown);
+        var clips = ClipSessionTransitions.FromDocument(ClipSessionTransitions.FromLoad(group), document, combined: false);
+        Assert.Equal(secondIsKnown, clips.OriginalGroup.Entries[1].ChapterSet.DurationIsKnown);
+    }
+
+    [Fact]
+    public void Adapter_preserves_authoritative_rate_provenance_without_promoting_approximate_rates()
+    {
+        var exactRate = new ChapterFrameRate(24000, 1001);
+        var imported = new ChapterSet("Title", "source", ChapterImportFormat.Mpls,
+            FrameRateValue.Rational(exactRate), TimeSpan.Zero,
+            [new Chapter(1, TimeSpan.FromMilliseconds(52094), "Later")]);
+
+        var document = EditableChapterDocumentAdapter.FromChapterSet(imported);
+        var roundTrip = EditableChapterDocumentAdapter.ToChapterSet(document);
+        var approximate = EditableChapterDocumentAdapter.FromChapterSet(imported with { FrameRate = FrameRateValue.Approximate(23.976m) });
+
+        Assert.Equal(FrameRateValue.Rational(exactRate), document.FrameRate);
+        Assert.Equal(exactRate, roundTrip.FrameRate.RationalRate);
+        Assert.Equal(FrameRateKind.Approximate, approximate.FrameRate.Kind);
+    }
+
+    [Fact]
+    public void Candidate_value_edit_preserves_identity_without_changing_published_snapshot()
+    {
+        var original = EditableChapterDocumentAdapter.FromChapterSet(
+            new ChapterSet("Title", null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
+        var sourceChapter = original.Tracks[0].Chapters[0];
+        var changedTrack = new EditableChapterTrack(
+            original.Tracks[0].Id,
+            original.Tracks[0].Name,
+            [sourceChapter with { Name = "B" }]);
+        var candidate = new EditableChapterDocument(
+            original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration, [changedTrack]);
+
+        Assert.Equal("A", original.Tracks[0].Chapters[0].Name);
+        Assert.Equal("B", candidate.Tracks[0].Chapters[0].Name);
+        Assert.Equal(sourceChapter.Id, candidate.Tracks[0].Chapters[0].Id);
+        Assert.Equal(original.Id, candidate.Id);
+    }
+
+    [Fact]
+    public void Unknown_duration_does_not_limit_chapter_start()
+    {
+        var original = EditableChapterDocumentAdapter.FromChapterSet(
+            new ChapterSet("Title", null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, "A")]));
+        var chapter = original.Tracks[0].Chapters[0] with { StartTicks = TimeSpan.FromDays(100).Ticks };
+        var document = new EditableChapterDocument(
+            original.Id, original.Title, original.SourceName, original.ImportFormat, original.Duration,
+            [new EditableChapterTrack(original.Tracks[0].Id, "Track", [chapter])]);
+
+        Assert.True(EditableChapterDocumentValidator.Validate(document).IsValid);
+    }
+
+    [Fact]
+    public void Export_adapter_preserves_track_boundaries_as_segment_separators()
+    {
+        var document = new EditableChapterDocument(
+            ChapterDocumentId.New(),
+            "Title",
+            null,
+            ChapterImportFormat.Unknown,
+            ChapterDuration.Unknown,
+            [
+                new EditableChapterTrack(ChapterTrackId.New(), "First", [new EditableChapter(ChapterId.New(), 1, 0, "A")]),
+                new EditableChapterTrack(ChapterTrackId.New(), "Second", [new EditableChapter(ChapterId.New(), 1, 0, "B")])
+            ]);
+
+        var chapterSet = EditableChapterDocumentAdapter.ToChapterSet(document);
+
+        Assert.Equal([ChapterKind.Marker, ChapterKind.Separator, ChapterKind.Marker], chapterSet.Chapters.Select(static chapter => chapter.Kind));
+        Assert.Equal("Second", chapterSet.Chapters[1].Name);
+    }
+
+    [Fact]
+    public void Rational_frame_rate_is_reduced_and_rounds_midpoints_away_from_zero()
+    {
+        var rate = new ChapterFrameRate(48_000, 2_002);
+
+        Assert.Equal(new ChapterFrameRate(24_000, 1_001), rate);
+        Assert.Equal(5_000_000, ChapterFrameTimeConverter.FramesToTicks(12, new ChapterFrameRate(24, 1)).Value);
+        Assert.Equal(-5_000_000, ChapterFrameTimeConverter.FramesToTicks(-12, new ChapterFrameRate(24, 1)).Value);
+        Assert.Equal(1, ChapterFrameTimeConverter.TicksToFrames(2_500_000, new ChapterFrameRate(2, 1)).Value);
+    }
+
+    [Fact]
+    public void Frame_conversion_overflow_returns_a_diagnostic_failure()
+    {
+        var result = ChapterFrameTimeConverter.FramesToTicks(long.MaxValue, new ChapterFrameRate(1, long.MaxValue));
+
+        Assert.False(result.Success);
+        Assert.Equal(ChapterDiagnosticCode.FrameConversionOverflow, result.Diagnostic?.Code);
+    }
+}

@@ -80,7 +80,7 @@ public sealed partial class WebVttChapterImporter : IChapterImporter
             "WebVTT Chapters",
             Path.GetFileName(path),
             ChapterImportFormat.WebVtt,
-            0,
+            FrameRateValue.Unknown,
             chapters[^1].EndTime ?? chapters[^1].StartTime,
             chapters);
         return TextImportUtilities.SingleGroup(path, info);

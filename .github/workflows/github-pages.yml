@@ -1,22 +1,7 @@
-# Deploy the Blazor WebAssembly app to GitHub Pages.
-# Site URL (project pages): https://<owner>.github.io/<repo>/
-#
-# One-time repo settings:
-#   Settings → Pages → Build and deployment → Source: GitHub Actions
-# Optional: Settings → Actions → General → allow SteveSandersonMS/ghaction-rewrite-base-href
 name: Deploy WASM (GitHub Pages)
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - "src/ChapterTool.Wasm/**"
-      - "src/ChapterTool.Core/**"
-      - "Directory.Build.props"
-      - "Directory.Build.targets"
-      - ".github/workflows/github-pages.yml"
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -27,105 +12,26 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-env:
-  PROJECT: src/ChapterTool.Wasm/ChapterTool.Wasm.csproj
-  PUBLISH_DIR: src/ChapterTool.Wasm/bin/Release/net10.0/publish/wwwroot
-
 jobs:
   deploy:
-    name: Build and deploy
+    name: Deploy tested site
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install .NET 10
-        uses: actions/setup-dotnet@v6
+      - name: Download tested site
+        uses: actions/download-artifact@v8
         with:
-          dotnet-version: 10.0.x
-
-      - name: Publish Blazor WASM app
-        run: |
-          set -euo pipefail
-          dotnet publish "${{ env.PROJECT }}" \
-            --configuration Release \
-            --nologo
-
-      - name: Prepare GitHub Pages assets
-        run: |
-          set -euo pipefail
-          publish_dir="${{ env.PUBLISH_DIR }}"
-          test -f "${publish_dir}/index.html"
-          test -d "${publish_dir}/_framework"
-
-          # Prevent Jekyll from ignoring underscore folders such as _framework.
-          touch "${publish_dir}/.nojekyll"
-
-          # GitHub Pages serves 404.html for unknown paths (SPA deep links).
-          cp "${publish_dir}/index.html" "${publish_dir}/404.html"
-
-          # Record deploy metadata for troubleshooting.
-          {
-            echo "repository=${{ github.repository }}"
-            echo "sha=${{ github.sha }}"
-            echo "ref=${{ github.ref }}"
-            echo "base_href=/${{ github.event.repository.name }}/"
-            date -u +'built_at=%Y-%m-%dT%H:%M:%SZ'
-          } > "${publish_dir}/deploy-info.txt"
-
-      - name: Rewrite base href (index.html)
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@5b54862a8831e012d4f1a8b2660894415fdde8ec # v1.1.0
-        with:
-          html_path: ${{ env.PUBLISH_DIR }}/index.html
-          base_href: /${{ github.event.repository.name }}/
-
-      - name: Rewrite base href (404.html)
-        uses: SteveSandersonMS/ghaction-rewrite-base-href@5b54862a8831e012d4f1a8b2660894415fdde8ec # v1.1.0
-        with:
-          html_path: ${{ env.PUBLISH_DIR }}/404.html
-          base_href: /${{ github.event.repository.name }}/
-
-      - name: Verify published site layout
-        run: |
-          set -euo pipefail
-          publish_dir="${{ env.PUBLISH_DIR }}"
-          repo_name="${{ github.event.repository.name }}"
-
-          # Project Pages base href must be present on both entry documents.
-          grep -F "href=\"/${repo_name}/\"" "${publish_dir}/index.html"
-          grep -F "href=\"/${repo_name}/\"" "${publish_dir}/404.html"
-
-          test -f "${publish_dir}/.nojekyll"
-          test -f "${publish_dir}/404.html"
-          test -f "${publish_dir}/js/download.js"
-          test -f "${publish_dir}/css/app.css"
-          test -d "${publish_dir}/_framework"
-
-          # Critical Blazor boot assets (fingerprinted names vary by publish).
-          # Do not use `ls | head` under pipefail: GNU ls exits 2 on SIGPIPE.
-          shopt -s nullglob
-          blazor_js=("${publish_dir}/_framework"/blazor.webassembly*.js)
-          wasm_binary=("${publish_dir}/_framework"/ChapterTool.Wasm*.wasm)
-          test "${#blazor_js[@]}" -ge 1
-          test "${#wasm_binary[@]}" -ge 1
-          framework_count="$(find "${publish_dir}/_framework" -type f | wc -l | tr -d ' ')"
-          test "${framework_count}" -ge 10
-          echo "framework_files=${framework_count}"
-          echo "blazor_js=${blazor_js[0]##*/}"
-          echo "wasm_binary=${wasm_binary[0]##*/}"
-
+          name: wasm-prepared-site
+          path: artifacts/wasm-e2e/site/
       - name: Setup Pages
         uses: actions/configure-pages@v6
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: ${{ env.PUBLISH_DIR }}
-
+          path: artifacts/wasm-e2e/site/ChapterTool
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

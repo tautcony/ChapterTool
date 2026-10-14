@@ -163,8 +163,8 @@ public interface IExpressionAuthoringService
     /// </summary>
     /// <param name="expression">The expression text.</param>
     /// <param name="caretIndex">The caret index in the expression.</param>
-    /// <param name="timeSeconds">The chapter time in seconds.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
+    /// <param name="startTicks">The chapter time in ticks.</param>
+    /// <param name="frameRate">The canonical computation rate.</param>
     /// <returns>The expression analysis result.</returns>
-    ExpressionAnalysisResult Analyze(string expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24);
+    ExpressionAnalysisResult Analyze(string expression, int caretIndex, long startTicks = 0, Models.FrameRateValue frameRate = default);
 }

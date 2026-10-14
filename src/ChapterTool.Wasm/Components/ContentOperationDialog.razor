@@ -1,0 +1,300 @@
+@implements IDisposable
+@using System.Collections
+@using System.Globalization
+@using System.Text
+@using System.Text.Json
+@using ChapterTool.Core.Session
+@using ChapterTool.Core.Models
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+
+<WasmDialog Title="@Title" CssClass="expression-modal content-operation-modal" OnClose="CancelAsync" DismissEnabled="@(!applying)">
+    <div class="modal-body">
+        @if (Operation == "naming")
+        {
+            <div class="settings-grid">
+                <label for="content-naming">@L.T("Label.ChapterName")</label>
+                <select id="content-naming" @bind="mode" @bind:after="Invalidate" disabled="@applying">
+                    @for (var i = 0; i < L.ChapterNameModes.Count; i++) { <option value="@i">@L.ChapterNameModes[i]</option> }
+                </select>
+                <label for="content-number">@L.T("Label.OrderShift")</label>
+                <input id="content-number" type="number" min="0" max="1000" step="1" @bind="shiftText" @bind:event="oninput" @bind:after="Invalidate" disabled="@applying" aria-invalid="@(error is null ? "false" : "true")" />
+                <label for="content-template">@L.T("Action.BrowseTemplate")</label>
+                <InputFile id="content-template" OnChange="LoadTemplateAsync" accept=".txt,text/*" disabled="@applying" />
+                <span></span><span role="status">@Workspace.ChapterNameTemplateStatus</span>
+            </div>
+        }
+        else if (Operation == "shift")
+        {
+            <label for="forward-frames">@L.T("Modal.Frames")</label>
+            <input id="forward-frames" type="number" min="-1000000" max="1000000" step="1" @bind="framesText" @bind:event="oninput" @bind:after="Invalidate" disabled="@applying" aria-invalid="@(error is null ? "false" : "true")" />
+        }
+        @if (Operation == "fps" && Workspace.ContentPreview is { } conversion)
+        {
+            <dl class="fps-review">
+                <dt>@L.T("Parity.SourceFps")</dt><dd data-testid="fps-source">@FrameRateValue(ScopeFrameRate(conversion.Before))</dd>
+                <dt>@L.T("Parity.TargetFps")</dt><dd data-testid="fps-target">@FrameRateValue(ScopeFrameRate(conversion.Candidate))</dd>
+            </dl>
+        }
+        @if (error is not null) { <p role="alert">@error</p> }
+        @if (Workspace.IsContentPreviewStale)
+        {
+            <p role="status">@L.T("Expression.State.Stale")</p>
+        }
+        else if (Workspace.ContentPreview is { IsValid: false } invalid)
+        {
+            <p role="alert">@L.T("Parity.InvalidCandidate")</p>
+            <details><summary>@L.T("Parity.LogDetails")</summary><ul>@foreach (var message in invalid.Errors) { <li>@message</li> }</ul></details>
+        }
+        else if (Workspace.ContentPreviewProjection is { } projection)
+        {
+            <p role="status">@L.Format("Expression.Preview.Scope", projection.ScopeTrackName, projection.ParticipatingChapterCount)</p>
+            @if (projection.ExcludedSeparatorCount > 0) { <p>@L.Format("Expression.Preview.Separators", projection.ExcludedSeparatorCount)</p> }
+            <p role="status">@(projection.HasChanges ? L.Format("Expression.Review.OtherSummary", projection.AffectedChapterCount, projection.FrameInformationChangedChapterCount, projection.Properties.Length) : L.T("Expression.State.Unchanged"))</p>
+            <div class="candidate-review" data-testid="content-review" aria-label="@L.T("Expression.Preview.ChangedOnly")">
+                @foreach (var row in projection.Chapters.Where(row => row.Changes != ExpressionChapterChangeKind.None))
+                {
+                    <article class="content-review-row" @key="row.Id">
+                        <h3>@ChapterLabel(row)</h3>
+                        <div class="content-review-sides">
+                            <section aria-label="@L.T("Expression.Preview.Before")">
+                                <h4>@L.T("Expression.Preview.Before")</h4>
+                                <dl>
+                                    <dt>@L.T("Grid.Number")</dt><dd>@ChapterNumber(row.Before)</dd>
+                                    <dt>@L.T("Grid.Name")</dt><dd>@ChapterName(row.Before)</dd>
+                                    <dt>@L.T("Grid.Time")</dt><dd class="review-time" data-testid="review-before-time">@ChapterTime(row.Before)</dd>
+                                    <dt>@L.T("Grid.Frames")</dt><dd data-testid="review-before-frames">@FrameValue(row, candidate: false)</dd>
+                                </dl>
+                            </section>
+                            <section aria-label="@L.T("Expression.Preview.After")">
+                                <h4>@L.T("Expression.Preview.After")</h4>
+                                <dl>
+                                    <dt>@L.T("Grid.Number")</dt><dd>@ChapterNumber(row.Candidate)</dd>
+                                    <dt>@L.T("Grid.Name")</dt><dd>@ChapterName(row.Candidate)</dd>
+                                    <dt>@L.T("Grid.Time")</dt><dd class="review-time" data-testid="review-candidate-time">@ChapterTime(row.Candidate)</dd>
+                                    <dt>@L.T("Grid.Frames")</dt><dd data-testid="review-candidate-frames">@FrameValue(row, candidate: true)</dd>
+                                </dl>
+                            </section>
+                        </div>
+                        @if (row.DeltaTicks is { } delta && delta != 0)
+                        {
+                            <p class="content-review-delta">@L.T("Expression.Preview.Delta"): @FormatDelta(delta)</p>
+                        }
+                        @if (row.DeltaFrames is { } frameDelta && frameDelta != 0)
+                        {
+                            <p class="content-review-delta">@L.T("Expression.Preview.Delta"): @L.Format("Expression.Preview.DeltaFrames", frameDelta)</p>
+                        }
+                    </article>
+                }
+                @if (projection.Properties.Length > 0)
+                {
+                    <details class="content-review-metadata">
+                        <summary>@L.Format("Expression.Review.OtherSummary", projection.AffectedChapterCount, projection.FrameInformationChangedChapterCount, projection.Properties.Length)</summary>
+                        <div class="metadata-list">
+                            @foreach (var property in projection.Properties)
+                            {
+                                <article @key="(property.OwnerKind, property.OwnerId, property.Property)">
+                                    <h4>@OwnerLabel(property.OwnerKind) · @property.OwnerName · @Workspace.FormatExpressionPropertyName(property.Property)</h4>
+                                    <dl>
+                                        <dt>@L.T("Expression.Preview.Before")</dt><dd>@PropertyValue(property.Property, property.Before)</dd>
+                                        <dt>@L.T("Expression.Preview.After")</dt><dd>@PropertyValue(property.Property, property.Candidate)</dd>
+                                    </dl>
+                                </article>
+                            }
+                        </div>
+                    </details>
+                }
+            </div>
+        }
+    </div>
+    <footer class="modal-footer">
+        <button type="button" class="secondary" disabled="@applying" @onclick="Prepare">@L.T("Menu.Preview")</button>
+        <span class="modal-spacer"></span>
+        <button type="button" class="secondary" disabled="@applying" @onclick="CancelAsync">@L.T("Common.Cancel")</button>
+        <button type="button" class="primary" disabled="@(!CanApply)" @onclick="ApplyAsync">@L.T("Common.Apply")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Parameter, EditorRequired] public string Operation { get; set; } = "naming";
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    private int mode;
+    private int shift;
+    private string shiftText = "0";
+    private string framesText = "1";
+    private int originalMode;
+    private int originalShift;
+    private string originalTemplate = string.Empty;
+    private string originalStatus = string.Empty;
+    private bool applying;
+    private bool applied;
+    private bool disposed;
+    private string? error;
+    private string Title => L.T(Operation switch { "shift" => "Modal.ForwardTitle", "fps" => "Menu.ChangeFps", _ => "Parity.NamingTitle" });
+    private bool CanApply => !applying && error is null && !Workspace.IsContentPreviewStale
+        && Workspace.ContentPreview is { IsValid: true } && Workspace.ContentPreviewProjection is { HasChanges: true };
+
+    protected override void OnInitialized()
+    {
+        originalMode = mode = Workspace.ChapterNameModeIndex;
+        originalShift = shift = Workspace.OrderShift;
+        shiftText = shift.ToString(CultureInfo.InvariantCulture);
+        originalTemplate = Workspace.ChapterNameTemplateText ?? string.Empty;
+        originalStatus = Workspace.ChapterNameTemplateStatus ?? string.Empty;
+        if (Operation == "fps") Prepare();
+    }
+
+    private void Invalidate() { error = null; Workspace.CancelContentPreview(); }
+
+    private void Prepare()
+    {
+        error = null;
+        if (Operation == "naming" && (!int.TryParse(shiftText, NumberStyles.Integer, CultureInfo.InvariantCulture, out shift) || shift is < 0 or > 1000))
+        {
+            error = L.T("Parity.InvalidNumber");
+            Workspace.CancelContentPreview();
+            return;
+        }
+        var frames = 0;
+        if (Operation == "shift" && (!int.TryParse(framesText, NumberStyles.Integer, CultureInfo.InvariantCulture, out frames) || frames is < -1000000 or > 1000000))
+        {
+            error = L.T("Parity.InvalidShift");
+            Workspace.CancelContentPreview();
+            return;
+        }
+        Workspace.ChapterNameModeIndex = mode;
+        Workspace.OrderShift = shift;
+        if (Operation == "shift") Workspace.PrepareFrameShiftPreview(frames);
+        else if (Operation == "fps") Workspace.PrepareFrameRatePreview();
+        else Workspace.PrepareNamingPreview();
+    }
+
+    private async Task LoadTemplateAsync(InputFileChangeEventArgs args)
+    {
+        Invalidate();
+        try
+        {
+            await using var stream = args.File.OpenReadStream(2 * 1024 * 1024);
+            using var reader = new StreamReader(stream, Encoding.UTF8, true);
+            var text = await reader.ReadToEndAsync();
+            if (disposed) return;
+            if (Workspace.SetChapterNameTemplate(args.File.Name, text)) mode = 2;
+            else error = L.T("Status.TemplateFailed");
+        }
+        catch (IOException) { error = L.T("Status.TemplateFailed"); }
+    }
+
+    private async Task ApplyAsync()
+    {
+        if (!CanApply) return;
+        applying = true;
+        try
+        {
+            if (await Workspace.ApplyContentPreviewAsync()) { applied = true; await OnClose.InvokeAsync(); }
+            else error = Workspace.StatusText;
+        }
+        finally { applying = false; }
+    }
+
+    private Task CancelAsync() => applying ? Task.CompletedTask : OnClose.InvokeAsync();
+
+    private string ChapterLabel(ExpressionChapterComparison row)
+    {
+        var chapter = row.Candidate ?? row.Before;
+        return chapter is null ? L.T("Expression.Preview.Chapter") : $"{chapter.DisplayNumber} · {chapter.Name}";
+    }
+
+    private string ChapterNumber(EditableChapter? chapter) => chapter?.DisplayNumber.ToString(CultureInfo.InvariantCulture)
+        ?? L.T("Expression.Value.Missing");
+
+    private string ChapterName(EditableChapter? chapter) => chapter?.Name ?? L.T("Expression.Value.Missing");
+
+    private string ChapterTime(EditableChapter? chapter) => chapter is null
+        ? L.T("Expression.Value.Missing")
+        : Workspace.FormatExpressionTimeTicks(chapter.StartTicks);
+
+    private RenderFragment FrameValue(ExpressionChapterComparison row, bool candidate) => builder =>
+    {
+        var chapter = candidate ? row.Candidate : row.Before;
+        var frame = candidate ? row.CandidateFrames : row.BeforeFrames;
+        if (chapter is null || frame is null || frame.IsMissing)
+        {
+            builder.AddContent(0, L.T("Expression.Value.NotCalculated"));
+            return;
+        }
+
+        var value = Workspace.FormatPreviewFramePresentation(row, candidate, showRepeatingDecimals: true);
+        var accuracy = Workspace.GetPreviewFrameAccuracy(chapter.StartTicks);
+        var accuracyClass = accuracy switch
+        {
+            FrameAccuracy.Accurate => "accurate",
+            FrameAccuracy.Inexact => "inexact",
+            _ => "neutral"
+        };
+        var accuracyText = L.T(accuracy switch
+        {
+            FrameAccuracy.Accurate => "Expression.FrameAccuracy.Accurate",
+            FrameAccuracy.Inexact => "Expression.FrameAccuracy.Inexact",
+            _ => "Expression.FrameAccuracy.NotCalculated"
+        });
+        var accessibleName = $"{(candidate ? L.T("Expression.Preview.AfterFrames") : L.T("Expression.Preview.BeforeFrames"))}: {value.AccessibleDescription}, {accuracyText}";
+        builder.OpenComponent<FrameValueView>(0);
+        builder.AddAttribute(1, "Value", value);
+        builder.AddAttribute(2, "CssClass", $"frame-text {accuracyClass}");
+        builder.AddAttribute(3, "AccessibleName", accessibleName);
+        builder.CloseComponent();
+    };
+
+    private string FormatDelta(long ticks)
+    {
+        var sign = ticks > 0 ? "+" : "−";
+        return sign + Workspace.FormatExpressionTimeTicks(Math.Abs(ticks));
+    }
+
+    private FrameRateValue ScopeFrameRate(EditableChapterDocument document) =>
+        document.Tracks.FirstOrDefault(track => track.Id == Workspace.ContentPreviewProjection?.ScopeTrackId)
+            ?.FrameRate ?? document.FrameRate;
+
+    private string FrameRateValue(FrameRateValue rate) => rate.IsKnown
+        ? $"{rate} {L.T("Expression.Unit.FramesPerSecond")}"
+        : L.T("Expression.Value.NotSet");
+
+    private string PropertyValue(string property, object? value)
+    {
+        if (value is null) return L.T("Expression.Value.NotSet");
+        if (value is ChapterFrameRate rate) return $"{rate.Numerator}/{rate.Denominator} {L.T("Expression.Unit.FramesPerSecond")}";
+        if (value is ChapterDuration duration)
+        {
+            return duration.IsKnown ? Workspace.FormatExpressionTimeTicks(duration.Ticks) : L.T("Expression.Value.NotSet");
+        }
+        if (property.EndsWith("Ticks", StringComparison.Ordinal) && value is long ticks)
+        {
+            return Workspace.FormatExpressionTimeTicks(ticks);
+        }
+        if (value is string text) return text;
+        if (value is Enum enumeration) return enumeration.ToString();
+        if (value is Guid id) return id.ToString("D", CultureInfo.InvariantCulture);
+        if (value is IFormattable formatted) return formatted.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty;
+        if (value is IEnumerable)
+        {
+            try { return JsonSerializer.Serialize(value, value.GetType()); }
+            catch (NotSupportedException) { }
+        }
+        return value.ToString() ?? string.Empty;
+    }
+
+    private string OwnerLabel(ExpressionPropertyOwnerKind owner) => owner switch
+    {
+        ExpressionPropertyOwnerKind.Document => L.T("Expression.PropertyOwner.Document"),
+        ExpressionPropertyOwnerKind.Track => L.T("Expression.PropertyOwner.Track"),
+        ExpressionPropertyOwnerKind.Segment => L.T("Expression.PropertyOwner.Segment"),
+        _ => L.T("Expression.PropertyOwner.Chapter")
+    };
+
+    public void Dispose()
+    {
+        disposed = true;
+        if (!applied) Workspace.RestoreNamingDraft(originalMode, originalShift, originalTemplate, originalStatus);
+        else Workspace.CancelContentPreview();
+    }
+}

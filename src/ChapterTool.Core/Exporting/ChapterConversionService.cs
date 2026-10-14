@@ -11,45 +11,37 @@ namespace ChapterTool.Core.Exporting;
 /// <param name="timeFormatter">The chapter time formatter.</param>
 public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter)
 {
-    /// <summary>
-    /// Executes the ToCelltimes operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public static ChapterConversionResult ToCelltimes(ChapterSet info, decimal framesPerSecond)
+    /// <summary>Serializes integer frames from ticks and a canonical rate.</summary>
+    public static ChapterConversionResult ToCelltimes(ChapterSet info, FrameRateValue framesPerSecond)
     {
         ArgumentNullException.ThrowIfNull(info);
-
-        if (framesPerSecond <= 0)
+        if (!framesPerSecond.IsKnown)
         {
             return Failure(ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero.");
         }
 
-        var lines = info.Chapters
-            .Where(static chapter => !chapter.IsSeparator)
-            .Select(chapter => ChapterRounding
-                .RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond)
-                .ToString(CultureInfo.InvariantCulture));
-
-        return Success(string.Join(Environment.NewLine, lines), ".celltimes.txt");
+        try
+        {
+            var lines = info.Chapters.Where(static chapter => !chapter.IsSeparator)
+                .Select(chapter => ((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, framesPerSecond).RoundAwayFromZero())
+                    .ToString(CultureInfo.InvariantCulture));
+            return Success(string.Join(Environment.NewLine, lines), ".celltimes.txt");
+        }
+        catch (OverflowException)
+        {
+            return Failure(ChapterDiagnosticCode.FrameConversionOverflow, "The frame number exceeds the supported Int64 range.");
+        }
     }
 
-    /// <summary>
-    /// Executes the ChapterTextToQpfile operation.
-    /// </summary>
-    /// <param name="chapterText">The OGM-style chapter text to convert.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <param name="timecodeText">Optional v2 timecode text used to map chapter times to frames.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterConversionResult ChapterTextToQpfile(string chapterText, decimal framesPerSecond, string? timecodeText = null)
+    /// <summary>Uses canonical constant FPS, or an explicit v2 map when constant FPS is Unknown.</summary>
+    public ChapterConversionResult ChapterTextToQpfile(string chapterText, FrameRateValue framesPerSecond, string? timecodeText = null)
     {
         if (string.IsNullOrWhiteSpace(chapterText))
         {
             return Failure(ChapterDiagnosticCode.InvalidChapterText, "Chapter text is empty.");
         }
 
-        if (framesPerSecond <= 0 && string.IsNullOrWhiteSpace(timecodeText))
+        if (!framesPerSecond.IsKnown && string.IsNullOrWhiteSpace(timecodeText))
         {
             return Failure(ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero when no timecode file is provided.");
         }
@@ -72,14 +64,20 @@ public sealed class ChapterConversionService(IChapterTimeFormatter timeFormatter
             timecodeMap = parsed;
         }
 
-        var lines = times.Select(time =>
+        try
         {
-            var frame = timecodeMap?.FrameFor(time) ??
-                ChapterRounding.RoundToInt64((decimal)time.TotalSeconds * framesPerSecond);
-            return frame.ToString(CultureInfo.InvariantCulture) + " I";
-        });
-
-        return Success(string.Join(Environment.NewLine, lines), ".qpf");
+            var lines = times.Select(time =>
+            {
+                var frame = timecodeMap?.FrameFor(time) ??
+                    (long)ExactFrameMath.FromTicks(time.Ticks, framesPerSecond).RoundAwayFromZero();
+                return frame.ToString(CultureInfo.InvariantCulture) + " I";
+            });
+            return Success(string.Join(Environment.NewLine, lines), ".qpf");
+        }
+        catch (OverflowException)
+        {
+            return Failure(ChapterDiagnosticCode.FrameConversionOverflow, "The frame number exceeds the supported Int64 range.");
+        }
     }
 
     private List<TimeSpan> ParseChapterTimes(string chapterText)

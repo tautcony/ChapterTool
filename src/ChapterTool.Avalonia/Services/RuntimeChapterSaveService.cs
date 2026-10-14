@@ -11,12 +11,12 @@ public sealed class RuntimeChapterSaveService(ChapterExportService exporter) : I
 
     public async ValueTask<ChapterExportResult> SaveAsync(
         ChapterSet info,
-        ChapterExportOptions options,
+        ChapterSerializationOptions options,
         string? directory,
         CancellationToken cancellationToken,
         string? sourcePath = null)
     {
-        var result = exporter.Export(info, options);
+        var result = exporter.Serialize(info, options);
         if (!result.Success)
         {
             return result;

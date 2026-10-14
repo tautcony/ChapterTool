@@ -17,8 +17,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         var result = service.Project(
             source,
-            new ChapterExportOptions(
-                ChapterExportFormat.Txt,
+            new ChapterOutputProjectionOptions(
                 AutoGenerateNames: true,
                 OrderShift: 2,
                 ApplyExpression: true,
@@ -45,7 +44,7 @@ public sealed class ChapterOutputProjectionServiceTests
 
         var result = service.Project(
             info,
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "index"));
+            new ChapterOutputProjectionOptions(ApplyExpression: true, Expression: "index"));
 
         Assert.Equal(3, result.Info.Chapters.Count);
         Assert.True(result.Info.Chapters[1].IsSeparator);
@@ -59,28 +58,27 @@ public sealed class ChapterOutputProjectionServiceTests
     {
         var result = service.Project(
             Sample(),
-            new ChapterExportOptions(
-                ChapterExportFormat.Txt,
+            new ChapterOutputProjectionOptions(
                 AutoGenerateNames: true,
                 ApplyExpression: true,
                 Expression: "return bad()"));
 
-        Assert.Equal(3, result.Diagnostics.Count);
+        Assert.Single(result.Diagnostics);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaRuntime, diagnostic.Code));
         Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
         Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03"], result.OutputChapters.Select(static chapter => chapter.Name));
     }
 
     [Fact]
-    public void Projection_normalizes_lua_time_and_reports_diagnostic()
+    public void Projection_rejects_negative_lua_time_and_reports_diagnostic()
     {
         var result = service.Project(
             Sample(),
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: true, Expression: "-1"));
+            new ChapterOutputProjectionOptions(ApplyExpression: true, Expression: "-1"));
 
         Assert.Equal(3, result.Diagnostics.Count);
         Assert.All(result.Diagnostics, diagnostic => Assert.Equal(ChapterDiagnosticCode.InvalidExpressionTime, diagnostic.Code));
-        Assert.All(result.OutputChapters, chapter => Assert.Equal(TimeSpan.Zero, chapter.StartTime));
+        Assert.Equal([10, 20, 30], result.OutputChapters.Select(static chapter => (int)chapter.StartTime.TotalSeconds));
     }
 
     private static ChapterSet Sample() =>
@@ -88,7 +86,7 @@ public sealed class ChapterOutputProjectionServiceTests
             "Movie",
             "movie.mkv",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [
                 new Chapter(1, TimeSpan.FromSeconds(10), "Intro"),

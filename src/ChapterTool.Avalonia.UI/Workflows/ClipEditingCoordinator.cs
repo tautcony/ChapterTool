@@ -16,6 +16,81 @@ internal sealed class ClipEditingCoordinator(
 {
     public ChapterSet? CurrentChapterSet => workspace.CurrentChapterSet;
 
+    public ChapterContentCandidateBuilder CandidateBuilder { get; } = new(editingService);
+
+    public ChapterContentPreview PrepareCandidate(
+        string operation,
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> build,
+        HistoryOperationDescriptor? operationDescriptor = null)
+    {
+        if (workspace.ContentSession is null)
+        {
+            throw new InvalidOperationException("No chapter content session is active.");
+        }
+
+        return ChapterContentOperationSession.Prepare(workspace.ContentSession, operation,
+            document => BuildForSelectedTrack(document, build), operationDescriptor);
+    }
+
+    public async ValueTask<TransactionOutcome> ApplyCandidateAsync(
+        ChapterContentPreview preview,
+        CancellationToken cancellationToken = default)
+    {
+        if (workspace.ContentSession is null)
+        {
+            throw new InvalidOperationException("No chapter content session is active.");
+        }
+
+        var outcome = await ChapterContentOperationSession.ApplyAsync(workspace.ContentSession, preview, cancellationToken);
+        if (outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+        {
+            workspace.PublishContentDocument(outcome.Snapshot.Document);
+        }
+
+        return outcome;
+    }
+
+    public async ValueTask<TransactionOutcome> ExecuteCandidateAsync(
+        string operation,
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> build,
+        CancellationToken cancellationToken = default)
+    {
+        var preview = PrepareCandidate(operation, build);
+        return await ApplyCandidateAsync(preview, cancellationToken);
+    }
+
+    public async ValueTask<HistoryNavigationOutcome?> UndoContentAsync(CancellationToken cancellationToken = default)
+    {
+        if (workspace.ContentSession is null)
+        {
+            return null;
+        }
+
+        var outcome = await workspace.ContentSession.UndoAsync(cancellationToken);
+        if (outcome.Kind == HistoryNavigationOutcomeKind.Committed)
+        {
+            workspace.PublishContentDocument(outcome.Snapshot.Document);
+        }
+
+        return outcome;
+    }
+
+    public async ValueTask<HistoryNavigationOutcome?> RedoContentAsync(CancellationToken cancellationToken = default)
+    {
+        if (workspace.ContentSession is null)
+        {
+            return null;
+        }
+
+        var outcome = await workspace.ContentSession.RedoAsync(cancellationToken);
+        if (outcome.Kind == HistoryNavigationOutcomeKind.Committed)
+        {
+            workspace.PublishContentDocument(outcome.Snapshot.Document);
+        }
+
+        return outcome;
+    }
+
     public bool SelectClip(int index)
     {
         if (workspace.ClipSession is null || index < 0 || index >= workspace.ClipSession.ClipOptions.Count)
@@ -29,61 +104,139 @@ internal sealed class ClipEditingCoordinator(
 
     public ClipCombineTransitionResult ToggleCombine()
     {
-        if (workspace.ClipSession is null)
-        {
-            return new ClipCombineTransitionResult(null, new ChapterEditResult(EmptyChapterSet(), []), false, false);
-        }
-
-        var transition = ClipSessionTransitions.ToggleCombine(workspace.ClipSession);
-        if (transition is { Succeeded: true, Session: not null })
-        {
-            workspace.ReplaceSession(transition.Session);
-        }
-
-        return transition;
+        return workspace.ToggleClipStructure();
     }
 
-    public ChapterEditResult Edit(ChapterSet current, ChapterCellEdit edit, ChapterEditKind kind) =>
-        kind switch
+    public ChapterContentPreview Edit(ChapterCellEdit edit, ChapterEditKind kind, FrameRateValue frameRate)
+    {
+        var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
+        var snapshot = session.Snapshot;
+        var trackIndex = workspace.CurrentTrackIndex;
+        var chapter = trackIndex >= 0 && trackIndex < snapshot.Document.Tracks.Length
+            ? snapshot.Document.Tracks[trackIndex].Chapters.ElementAtOrDefault(edit.Index)
+            : null;
+        if (chapter is null)
         {
-            ChapterEditKind.Time => editingService.EditTime(current, edit.Index, edit.Value),
-            ChapterEditKind.Name => editingService.Rename(current, edit.Index, edit.Value),
-            ChapterEditKind.Frame => editingService.EditFrame(current, edit.Index, edit.Value, (decimal)current.FramesPerSecond),
-            _ => new ChapterEditResult(current, [])
+            return ChapterContentOperationSession.Prepare(session, "Edit chapter", document =>
+                new ChapterCandidateBuildResult(false, document, [], ["The target chapter no longer exists."]));
+        }
+
+        var field = kind switch
+        {
+            ChapterEditKind.Time => ChapterCellField.StartTime,
+            ChapterEditKind.Name => ChapterCellField.Name,
+            ChapterEditKind.Frame => ChapterCellField.Frame,
+            _ => throw new ArgumentOutOfRangeException(nameof(kind))
         };
+        return PrepareCandidate($"Edit {field}", document =>
+            CandidateBuilder.EditCell(document, chapter.Id, field, edit.Value, frameRate),
+            new HistoryOperationDescriptor("chapter.cell-edit",
+            [
+                new HistoryOperationParameter("field", field.ToString()),
+                new HistoryOperationParameter("chapterId", chapter.Id.ToString()),
+                new HistoryOperationParameter("trackId", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < session.Snapshot.Document.Tracks.Length ? session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Id.ToString() : null),
+                new HistoryOperationParameter("trackName", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < session.Snapshot.Document.Tracks.Length ? session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Name : null),
+                new HistoryOperationParameter("value", edit.Value),
+                new HistoryOperationParameter("computationRate", frameRate.ToString(), frameRate.Kind.ToString())
+            ]));
+    }
 
-    public ChapterEditResult Delete(ChapterSet current, IReadOnlySet<int> indexes, ChapterEditingOptions options) => editingService.Delete(current, indexes, options);
+    public ChapterContentPreview Delete(IReadOnlySet<int> indexes, ChapterEditingOptions options)
+    {
+        var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
+        var snapshot = session.Snapshot;
+        var chapters = snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters;
+        var targets = indexes.Where(index => index >= 0 && index < chapters.Length).Select(index => chapters[index].Id).ToHashSet();
+        return PrepareCandidate("Delete chapters", document => CandidateBuilder.Delete(document, targets, options),
+            new HistoryOperationDescriptor("chapter.delete",
+            [
+                new HistoryOperationParameter("chapterIds", string.Join(",", targets)),
+                new HistoryOperationParameter("trackId", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < snapshot.Document.Tracks.Length ? snapshot.Document.Tracks[workspace.CurrentTrackIndex].Id.ToString() : null),
+                new HistoryOperationParameter("trackName", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < snapshot.Document.Tracks.Length ? snapshot.Document.Tracks[workspace.CurrentTrackIndex].Name : null),
+                new HistoryOperationParameter("deleteTiming", options.DeleteRowsTiming.ToString()),
+                new HistoryOperationParameter("frameDisplay", options.FrameDisplay.ToString()),
+                new HistoryOperationParameter("frameDecimalPlaces", options.EffectiveFrameDecimalPlaces.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer")
+            ]));
+    }
 
-    public ChapterEditResult InsertBefore(ChapterSet current, int index) => editingService.InsertBefore(current, index);
+    public ChapterContentPreview InsertBefore(int index)
+    {
+        var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
+        var snapshot = session.Snapshot;
+        var chapters = snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters;
+        var beforeId = index >= 0 && index < chapters.Length ? chapters[index].Id : (ChapterId?)null;
+        return PrepareCandidate("Insert chapter", document => CandidateBuilder.InsertBefore(document, beforeId),
+            new HistoryOperationDescriptor("chapter.insert",
+            [
+                new HistoryOperationParameter("beforeChapterId", beforeId?.ToString()),
+                new HistoryOperationParameter("trackId", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < snapshot.Document.Tracks.Length ? snapshot.Document.Tracks[workspace.CurrentTrackIndex].Id.ToString() : null),
+                new HistoryOperationParameter("trackName", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < snapshot.Document.Tracks.Length ? snapshot.Document.Tracks[workspace.CurrentTrackIndex].Name : null)
+            ]));
+    }
 
-    public ChapterEditResult ShiftFramesForward(ChapterSet current, int frames) =>
-        editingService.ShiftFramesForward(current, frames, (decimal)current.FramesPerSecond);
+    public ChapterContentPreview ShiftFramesForward(int frames, FrameRateValue frameRate)
+    {
+        var session = workspace.ContentSession ?? throw new InvalidOperationException("No chapter content session is active.");
+        var targets = session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Chapters.Where(static chapter => chapter.Kind != ChapterKind.Separator).Select(static chapter => chapter.Id).ToHashSet();
+        return PrepareCandidate("Shift chapter frames", document => CandidateBuilder.ShiftFrames(document, targets, frames, frameRate),
+            new HistoryOperationDescriptor("chapter.frame-shift",
+            [
+                new HistoryOperationParameter("frames", frames.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
+                new HistoryOperationParameter("computationRate", frameRate.ToString(), frameRate.Kind.ToString()),
+                new HistoryOperationParameter("trackName", workspace.CurrentTrackIndex >= 0 && workspace.CurrentTrackIndex < session.Snapshot.Document.Tracks.Length ? session.Snapshot.Document.Tracks[workspace.CurrentTrackIndex].Name : null),
+                new HistoryOperationParameter("chapterIds", string.Join(",", targets))
+            ]));
+    }
 
     public FrameUpdateOutcome UpdateFrames(
         ChapterSet current,
         FrameRateOption requestedOption,
         int frameDecimalPlaces,
-        decimal tolerance,
-        decimal? configuredFrameRate)
+        decimal tolerance)
     {
         FrameRateDetectionResult? detection = null;
         var appliedOption = requestedOption;
-        if (requestedOption.LegacyMplsCode == 0)
+        if (requestedOption.Code == "Auto" && !current.FrameRate.IsKnown)
         {
             detection = frameRateService.DetectDetailed(current, tolerance);
             appliedOption = detection.Option;
         }
 
         var frameResult = frameRateService.UpdateFrames(current, appliedOption, frameDecimalPlaces, tolerance);
-        var storedInfo = configuredFrameRate is null
-            ? frameResult.Info
-            : frameResult.Info with { FramesPerSecond = (double)configuredFrameRate.Value };
-        workspace.WriteBackCurrentChapterSet(storedInfo);
-        return new FrameUpdateOutcome(frameResult, detection, appliedOption, workspace.CurrentChapterSet ?? storedInfo);
+        return new FrameUpdateOutcome(frameResult, detection, frameResult.SelectedOption, current);
     }
 
     private static ChapterSet EmptyChapterSet() =>
-        new(string.Empty, null, ChapterImportFormat.Unknown, 0, TimeSpan.Zero, []);
+        new(string.Empty, null, ChapterImportFormat.Unknown, FrameRateValue.Unknown, TimeSpan.Zero, []);
+
+    private ChapterCandidateBuildResult BuildForSelectedTrack(
+        EditableChapterDocument source,
+        Func<EditableChapterDocument, ChapterCandidateBuildResult> build)
+    {
+        var trackIndex = workspace.CurrentTrackIndex;
+        if (trackIndex < 0 || trackIndex >= source.Tracks.Length)
+        {
+            return new ChapterCandidateBuildResult(false, source, [], ["The selected chapter track is unavailable."]);
+        }
+
+        var track = source.Tracks[trackIndex];
+        var segment = track.Segments.FirstOrDefault();
+        var focused = new EditableChapterDocument(source.Id, segment?.Name ?? track.Name,
+            segment?.SourceName ?? source.SourceName, segment?.ImportFormat ?? source.ImportFormat,
+            EditableChapterDocumentAdapter.TrackDuration(source, trackIndex),
+            [track]);
+        var result = build(focused);
+        if (!result.IsValid || result.Candidate.Tracks.Length != 1)
+        {
+            return result with { Candidate = source };
+        }
+
+        var tracks = source.Tracks.SetItem(trackIndex, result.Candidate.Tracks[0]);
+        var candidate = new EditableChapterDocument(source.Id, source.Title, source.SourceName,
+            source.ImportFormat, EditableChapterDocumentAdapter.ReplacedTrackDuration(source, trackIndex, result.Candidate),
+            tracks);
+        return result with { Candidate = candidate };
+    }
 }
 
 internal enum ChapterEditKind

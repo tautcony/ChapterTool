@@ -1,0 +1,1054 @@
+using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
+using ChapterTool.Core.Transform;
+
+namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
+
+public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
+{
+    private readonly IHistorySessionPort history;
+    private readonly IAppLocalizer localizer;
+    private readonly EventHandler stateChangedHandler;
+    private readonly EventHandler cultureChangedHandler;
+    private readonly HashSet<Guid> expandedNodeIds = [];
+    private SessionHistorySnapshot? currentSnapshot;
+    private HistoryRedoChoice? selectedRedoChoice;
+    private bool isNarrowLayout;
+    private int narrowPageIndex;
+    private CancellationTokenSource? detailCancellation;
+    private HistoryEntryViewModel? selectedEntry;
+    private HistoryNodeDetails? details;
+    private bool isLoadingDetails;
+    private string? detailError;
+    private long detailGeneration;
+    private Guid? selectedRootId;
+    private string? navigationStatus;
+    private bool disposed;
+    private IReadOnlyList<HistoryFieldRow> fieldRows = [];
+    private string selectedChangeFilter = "All";
+
+    public HistoryToolViewModel(IHistorySessionPort history, IAppLocalizer localizer, Action? close = null)
+    {
+        this.history = history ?? throw new ArgumentNullException(nameof(history));
+        this.localizer = localizer ?? throw new ArgumentNullException(nameof(localizer));
+        selectedChangeFilter = localizer.GetString("History.Filter.All");
+        stateChangedHandler = (_, _) =>
+        {
+            if (!disposed)
+            {
+                RefreshState();
+            }
+        };
+        cultureChangedHandler = (_, _) =>
+        {
+            if (disposed)
+            {
+                return;
+            }
+            OnPropertyChanged(nameof(SessionLifetimeText));
+            OnPropertyChanged(nameof(DetailErrorText));
+            OnPropertyChanged(nameof(NavigationStatus));
+            RebuildEntries();
+            RebuildInspectorRows();
+            RebuildRootChapterRows();
+            RebuildRedoChoices();
+            OnPropertyChanged(nameof(RedoChoices));
+            OnPropertyChanged(nameof(HasAlternateRedoChoices));
+            OnPropertyChanged(nameof(EffectSummary));
+            OnPropertyChanged(nameof(HasEffectSummary));
+            OnPropertyChanged(nameof(ChangeFilters));
+            OnPropertyChanged(nameof(SelectedEntryDescription));
+            OnPropertyChanged(nameof(HasSelectedEntryDescription));
+            OnPropertyChanged(nameof(SelectedPublishedAtText));
+            OnPropertyChanged(nameof(HasPublishedAtText));
+            selectedChangeFilter = localizer.GetString("History.Filter.All");
+            OnPropertyChanged(nameof(SelectedChangeFilter));
+            OnPropertyChanged(nameof(Entries));
+        };
+        history.StateChanged += stateChangedHandler;
+        localizer.CultureChanged += cultureChangedHandler;
+        currentSnapshot = history.Snapshot;
+        RebuildRedoChoices();
+        CloseCommand = new UiCommand((_, _) =>
+        {
+            close?.Invoke();
+            return ValueTask.CompletedTask;
+        });
+        SelectCommand = new UiCommand((parameter, _) =>
+        {
+            if (parameter is HistoryEntryViewModel entry)
+            {
+                SelectedEntry = entry;
+            }
+            return ValueTask.CompletedTask;
+        });
+        RestoreCommand = new UiCommand(RestoreAsync, CanRestore);
+        ChooseRedoBranchCommand = new UiCommand(ChooseRedoBranchAsync, CanChooseRedoBranch);
+        RetryCommand = new UiCommand(async (_, _) => await RetryDetailsAsync(), _ => HasDetailError);
+        ToggleExpansionCommand = new UiCommand((parameter, _) =>
+        {
+            if (parameter is Guid nodeId)
+            {
+                ToggleExpansion(nodeId);
+            }
+            return ValueTask.CompletedTask;
+        }, parameter => parameter is Guid nodeId && currentSnapshot?.Nodes.Any(node => node.Id == nodeId && !node.ChildIds.IsEmpty) == true);
+        LocateCurrentCommand = new UiCommand((_, _) =>
+        {
+            SelectCurrentNode();
+            return ValueTask.CompletedTask;
+        });
+        SelectCurrentNode();
+        SelectedEntry = Entries.FirstOrDefault(entry => entry.IsCurrent) ?? Entries.FirstOrDefault();
+    }
+
+    public IReadOnlyList<HistoryEntryViewModel> Entries { get; private set; } = [];
+
+    public IReadOnlyList<HistoryEntryViewModel> TreeRoots { get; private set; } = [];
+
+    public IReadOnlyList<HistoryRedoChoice> RedoChoices { get; private set; } = [];
+
+    public HistoryRedoChoice? SelectedRedoChoice
+    {
+        get => selectedRedoChoice;
+        set
+        {
+            if (SetProperty(ref selectedRedoChoice, value))
+            {
+                ChooseRedoBranchCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool HasAlternateRedoChoices => RedoChoices.Count > 1;
+
+    public bool IsNarrowLayout
+    {
+        get => isNarrowLayout;
+        private set
+        {
+            if (SetProperty(ref isNarrowLayout, value))
+            {
+                OnPropertyChanged(nameof(IsWideLayout));
+            }
+        }
+    }
+
+    public bool IsWideLayout => !IsNarrowLayout;
+
+    public int NarrowPageIndex
+    {
+        get => narrowPageIndex;
+        set => SetProperty(ref narrowPageIndex, value);
+    }
+
+    public HistoryEntryViewModel? SelectedEntry
+    {
+        get => selectedEntry;
+        set
+        {
+            if (!SetProperty(ref selectedEntry, value))
+            {
+                return;
+            }
+            _ = LoadDetailsAsync(value?.Id);
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(SelectedEntryDescription));
+            OnPropertyChanged(nameof(HasSelectedEntryDescription));
+            OnPropertyChanged(nameof(SelectedPublishedAtText));
+            OnPropertyChanged(nameof(HasPublishedAtText));
+            RestoreCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    public HistoryNodeDetails? Details
+    {
+        get => details;
+        private set
+        {
+            if (SetProperty(ref details, value))
+            {
+                OnPropertyChanged(nameof(IsRootDetails));
+                OnPropertyChanged(nameof(IsHistoryDetails));
+                RebuildInspectorRows();
+                RebuildRootChapterRows();
+                OnPropertyChanged(nameof(EffectSummary));
+                OnPropertyChanged(nameof(HasEffectSummary));
+                OnPropertyChanged(nameof(HasParameters));
+                OnPropertyChanged(nameof(HasChanges));
+            }
+        }
+    }
+
+    public bool IsLoadingDetails
+    {
+        get => isLoadingDetails;
+        private set => SetProperty(ref isLoadingDetails, value);
+    }
+
+    public string? DetailError
+    {
+        get => detailError;
+        private set
+        {
+            if (SetProperty(ref detailError, value))
+            {
+                OnPropertyChanged(nameof(HasDetailError));
+                RetryCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public string DetailErrorText => DetailError switch
+    {
+        "ResourceFailure" => localizer.GetString("History.DetailResourceFailure"),
+        "NotFound" => localizer.GetString("History.DetailNotFound"),
+        "Ended" => localizer.GetString("History.DetailEnded"),
+        _ => localizer.GetString("History.DetailFailed")
+    };
+
+    public string? NavigationStatus
+    {
+        get => navigationStatus;
+        private set
+        {
+            if (SetProperty(ref navigationStatus, value))
+            {
+                OnPropertyChanged(nameof(HasNavigationStatus));
+            }
+        }
+    }
+
+    public bool HasDetailError => !string.IsNullOrWhiteSpace(DetailError);
+
+    public bool HasSelection => SelectedEntry is not null;
+
+    public bool HasSelectedEntryDescription => !string.IsNullOrWhiteSpace(SelectedEntryDescription);
+
+    public bool HasNavigationStatus => !string.IsNullOrWhiteSpace(NavigationStatus);
+
+    public bool HasDeltas => VisibleChanges.Any(static row => !string.IsNullOrWhiteSpace(row.DeltaText));
+
+    public bool IsRootDetails => Details?.RootDocument is not null;
+
+    public bool IsHistoryDetails => Details is not null && !IsRootDetails;
+
+    public IReadOnlyList<string> ChangeFilters => [localizer.GetString("History.Filter.All"), localizer.GetString("History.Filter.Added"), localizer.GetString("History.Filter.Removed"), localizer.GetString("History.Filter.Modified")];
+
+    public string? SelectedEntryDescription => SelectedEntry?.Operation is null || SelectedEntry.Operation.Kind == "generic" ? SelectedEntry?.Description : null;
+
+    public string? SelectedPublishedAtText => SelectedEntry?.PublishedAt?.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName));
+
+    public bool HasPublishedAtText => !string.IsNullOrWhiteSpace(SelectedPublishedAtText);
+
+    public IReadOnlyList<HistoryFieldRow> VisibleChanges => SelectedChangeFilter switch
+    {
+        var value when value == localizer.GetString("History.Filter.Added") =>
+            [.. fieldRows.Where(static row => !row.Before.IsPresent && row.After.IsPresent)],
+        var value when value == localizer.GetString("History.Filter.Removed") =>
+            [.. fieldRows.Where(static row => row.Before.IsPresent && !row.After.IsPresent)],
+        var value when value == localizer.GetString("History.Filter.Modified") =>
+            [.. fieldRows.Where(static row => row.Before.IsPresent && row.After.IsPresent)],
+        _ => fieldRows
+    };
+
+    public IReadOnlyList<HistoryChangeGroup> VisibleChangeGroups => VisibleChanges
+        .GroupBy(static row => (row.Group, row.ObjectId))
+        .Select(group => new HistoryChangeGroup(
+            group.Key.Group,
+            group.Key.ObjectId,
+            group.FirstOrDefault(row => row.ObjectLabel.Contains(localizer.GetString("History.Parameter.DisplayFps"), StringComparison.Ordinal))?.ObjectLabel
+                ?? group.First().ObjectLabel,
+            string.Join(Environment.NewLine, group.Select(static row => row.Field)),
+            string.Join(Environment.NewLine, group.Select(static row => row.BeforeText)),
+            string.Join(Environment.NewLine, group.Select(static row => row.AfterText)),
+            group.Any(static row => !string.IsNullOrWhiteSpace(row.DeltaText))
+                ? string.Join(Environment.NewLine, group.Select(static row => row.DeltaText ?? string.Empty))
+                : null))
+        .ToArray();
+
+    public bool HasParameters => Parameters.Count > 0;
+
+    public bool HasChanges => fieldRows.Count > 0;
+
+    public bool HasVisibleChanges => VisibleChanges.Count > 0;
+
+    public bool HasNoVisibleChanges => HasChanges && !HasVisibleChanges;
+
+    public bool HasRootChapterRows => RootChapterRows.Count > 0;
+
+    public bool HasEffectSummary => !string.IsNullOrWhiteSpace(EffectSummary);
+
+    public string EffectSummary
+    {
+        get
+        {
+            var summary = Details?.Summary;
+            if (summary is null)
+            {
+                return string.Empty;
+            }
+            var items = new List<string>();
+            Add(summary.AddedChapters, "History.Added");
+            Add(summary.RemovedChapters, "History.Removed");
+            Add(summary.ModifiedChapters, "History.Modified");
+            Add(summary.ChangedTracks, "History.ChangedTracks");
+            Add(summary.ChangedSegments, "History.ChangedSegments");
+            return string.Join(" · ", items);
+
+            void Add(int count, string key)
+            {
+                if (count > 0)
+                {
+                    items.Add($"{count} {localizer.GetString(key)}");
+                }
+            }
+        }
+    }
+
+    public IReadOnlyList<HistoryParameterRow> Parameters { get; private set; } = [];
+
+    public IReadOnlyList<HistoryRootChapterRow> RootChapterRows { get; private set; } = [];
+
+    public string SelectedChangeFilter
+    {
+        get => selectedChangeFilter;
+        set
+        {
+            if (SetProperty(ref selectedChangeFilter, value))
+            {
+                OnPropertyChanged(nameof(VisibleChanges));
+                OnPropertyChanged(nameof(VisibleChangeGroups));
+                OnPropertyChanged(nameof(HasDeltas));
+                OnPropertyChanged(nameof(HasVisibleChanges));
+                OnPropertyChanged(nameof(HasNoVisibleChanges));
+            }
+        }
+    }
+
+    public bool HasPendingPreview => history.HasPendingPreview;
+
+    public UiCommand SelectCommand { get; }
+
+    public UiCommand RetryCommand { get; }
+
+    public UiCommand ToggleExpansionCommand { get; }
+
+    public UiCommand LocateCurrentCommand { get; }
+
+    public UiCommand RestoreCommand { get; }
+
+    public UiCommand ChooseRedoBranchCommand { get; }
+
+    public bool CanUndo => history.CanUndo;
+
+    public bool CanRedo => history.CanRedo;
+
+    public string UndoDescription => history.UndoDescription;
+
+    public string RedoDescription => history.RedoDescription;
+
+    public string SessionLifetimeText => localizer.GetString("History.SessionLifetime");
+
+    public UiCommand UndoCommand => history.UndoCommand;
+
+    public UiCommand RedoCommand => history.RedoCommand;
+
+    public UiCommand NavigateCommand => history.NavigateCommand;
+
+    public UiCommand CloseCommand { get; }
+
+    public async Task RetryDetailsAsync()
+    {
+        await LoadDetailsAsync(SelectedEntry?.Id);
+    }
+
+    public void UpdateAvailableWidth(double width) => IsNarrowLayout = width < 800;
+
+    public void ShowDetailsPage() => NarrowPageIndex = 1;
+
+    public void ShowHistoryPage() => NarrowPageIndex = 0;
+
+    public void Dispose()
+    {
+        disposed = true;
+        history.StateChanged -= stateChangedHandler;
+        localizer.CultureChanged -= cultureChangedHandler;
+        detailCancellation?.Cancel();
+        detailCancellation?.Dispose();
+        detailGeneration++;
+        selectedEntry = null;
+        details = null;
+        Entries = [];
+        TreeRoots = [];
+        fieldRows = [];
+        Parameters = [];
+        RootChapterRows = [];
+        expandedNodeIds.Clear();
+        OnPropertyChanged(nameof(SelectedEntry));
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(Details));
+        OnPropertyChanged(nameof(Entries));
+        OnPropertyChanged(nameof(TreeRoots));
+        OnPropertyChanged(nameof(VisibleChanges));
+        OnPropertyChanged(nameof(Parameters));
+        OnPropertyChanged(nameof(RootChapterRows));
+    }
+
+    private void RefreshState()
+    {
+        if (disposed)
+        {
+            return;
+        }
+        var previousSnapshot = currentSnapshot;
+        var previousSelection = selectedEntry?.Id;
+        currentSnapshot = history.Snapshot;
+        RebuildEntries();
+        RebuildRedoChoices();
+        OnPropertyChanged(nameof(Entries));
+        OnPropertyChanged(nameof(RedoChoices));
+        OnPropertyChanged(nameof(HasAlternateRedoChoices));
+        OnPropertyChanged(nameof(HasPendingPreview));
+        var snapshot = currentSnapshot;
+        if (snapshot is null || history.IsEnded)
+        {
+            detailGeneration++;
+            detailCancellation?.Cancel();
+            SelectedEntry = null;
+            Details = null;
+            DetailError = null;
+        }
+        else if (previousSnapshot is null || previousSnapshot.RootId != snapshot.RootId || previousSnapshot.CursorId != snapshot.CursorId)
+        {
+            selectedRootId = snapshot.RootId;
+            ExpandCurrentPath(snapshot);
+            RebuildEntries();
+            SelectedEntry = Entries.FirstOrDefault(entry => entry.Id == snapshot.CursorId);
+        }
+        else if (previousSelection is Guid selectedId)
+        {
+            selectedRootId = snapshot.RootId;
+            RebuildEntries();
+            SelectedEntry = Entries.FirstOrDefault(entry => entry.Id == selectedId);
+        }
+        NavigationStatus = string.IsNullOrWhiteSpace(history.NavigationStatus) ? null : history.NavigationStatus;
+        RestoreCommand.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(CanUndo));
+        OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(UndoDescription));
+        OnPropertyChanged(nameof(RedoDescription));
+    }
+
+    private async Task LoadDetailsAsync(Guid? nodeId)
+    {
+        var generation = ++detailGeneration;
+        var rootId = currentSnapshot?.RootId;
+        selectedRootId = rootId;
+        var request = await StartDetailsRequestAsync();
+        if (generation != detailGeneration || disposed)
+        {
+            return;
+        }
+        Details = null;
+        DetailError = null;
+        if (nodeId is null)
+        {
+            IsLoadingDetails = false;
+            return;
+        }
+        IsLoadingDetails = true;
+        try
+        {
+            await InspectAndPublishDetailsAsync(nodeId.Value, rootId, generation, request);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (OutOfMemoryException)
+        {
+            if (!request.IsCancellationRequested)
+            {
+                DetailError = "ResourceFailure";
+            }
+        }
+        catch (Exception)
+        {
+            if (!request.IsCancellationRequested && generation == detailGeneration)
+            {
+                DetailError = "Failed";
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(detailCancellation, request))
+            {
+                IsLoadingDetails = false;
+            }
+        }
+    }
+
+    private async Task<CancellationTokenSource> StartDetailsRequestAsync()
+    {
+        var previousCancellation = detailCancellation;
+        var request = detailCancellation = new CancellationTokenSource();
+        if (previousCancellation is not null)
+        {
+            await previousCancellation.CancelAsync();
+            previousCancellation.Dispose();
+        }
+
+        return request;
+    }
+
+    private async Task InspectAndPublishDetailsAsync(
+        Guid nodeId,
+        Guid? rootId,
+        long generation,
+        CancellationTokenSource request)
+    {
+        var result = await history.InspectAsync(nodeId, request.Token);
+        if (request.IsCancellationRequested || generation != detailGeneration || SelectedEntry?.Id != nodeId
+            || rootId is null || history.Snapshot?.RootId != rootId || history.IsEnded)
+        {
+            return;
+        }
+
+        if (result.Kind == HistoryInspectionOutcomeKind.Available)
+        {
+            Details = result.Details;
+            return;
+        }
+
+        DetailError = result.Kind switch
+        {
+            HistoryInspectionOutcomeKind.NotFound => "NotFound",
+            HistoryInspectionOutcomeKind.Ended => "Ended",
+            HistoryInspectionOutcomeKind.ResourceFailure => "ResourceFailure",
+            _ => "Failed"
+        };
+    }
+
+    private bool CanRestore(object? parameter) =>
+        parameter is Guid nodeId
+        && !history.IsEnded
+        && nodeId != currentSnapshot?.CursorId
+        && currentSnapshot?.Nodes.Any(node => node.Id == nodeId) == true;
+
+    private bool CanChooseRedoBranch(object? parameter) =>
+        parameter is Guid nodeId
+        && !history.IsEnded
+        && currentSnapshot?.Nodes.FirstOrDefault(node => node.Id == currentSnapshot.CursorId)?.ChildIds.Contains(nodeId) == true;
+
+    private void ToggleExpansion(Guid nodeId)
+    {
+        var node = Entries.FirstOrDefault(entry => entry.Id == nodeId);
+        if (node is null)
+        {
+            return;
+        }
+        node.IsExpanded = !node.IsExpanded;
+        if (!node.IsExpanded && selectedEntry is { } selected && IsDescendant(selected.Id, nodeId))
+        {
+            SelectedEntry = Entries.FirstOrDefault(entry => entry.Id == nodeId);
+        }
+        OnPropertyChanged(nameof(Entries));
+    }
+
+    private void SelectCurrentNode()
+    {
+        if (currentSnapshot is not { } snapshot)
+        {
+            return;
+        }
+        ExpandCurrentPath(snapshot);
+        RebuildEntries();
+        OnPropertyChanged(nameof(Entries));
+        SelectedEntry = Entries.FirstOrDefault(entry => entry.Id == snapshot.CursorId);
+    }
+
+    private void RebuildEntries()
+    {
+        var previousNodes = Entries.ToDictionary(static entry => entry.Id);
+        var (roots, projected) = HistoryEntryViewModel.CreateTree(currentSnapshot, previousNodes, expandedNodeIds, LocalizeHistoryTitle);
+        TreeRoots = roots;
+        Entries = projected;
+        OnPropertyChanged(nameof(TreeRoots));
+        if (selectedEntry is { } selected && Entries.FirstOrDefault(entry => entry.Id == selected.Id) is { } replacement && !ReferenceEquals(selected, replacement))
+        {
+            selectedEntry = replacement;
+            OnPropertyChanged(nameof(SelectedEntry));
+            OnPropertyChanged(nameof(HasSelection));
+            OnPropertyChanged(nameof(SelectedEntryDescription));
+            OnPropertyChanged(nameof(SelectedPublishedAtText));
+            OnPropertyChanged(nameof(HasPublishedAtText));
+            RestoreCommand?.RaiseCanExecuteChanged();
+        }
+    }
+
+    private void RebuildRedoChoices()
+    {
+        var oldSelection = selectedRedoChoice?.Id;
+        var nodes = currentSnapshot?.Nodes.ToDictionary(node => node.Id);
+        if (currentSnapshot is null || nodes is null || !nodes.TryGetValue(currentSnapshot.CursorId, out var current))
+        {
+            RedoChoices = [];
+            SelectedRedoChoice = null;
+            return;
+        }
+
+        RedoChoices =
+        [
+            .. current.ChildIds.Select(childId => nodes.TryGetValue(childId, out var child)
+                ? new HistoryRedoChoice(child.Id, LocalizeHistoryTitle(child), child.Description,
+                    current.PreferredChildId == child.Id)
+                : null).Where(choice => choice is not null).Cast<HistoryRedoChoice>()
+        ];
+        SelectedRedoChoice = RedoChoices.FirstOrDefault(choice => choice.Id == oldSelection)
+            ?? RedoChoices.FirstOrDefault(choice => choice.IsPreferred)
+            ?? RedoChoices.FirstOrDefault();
+    }
+
+    private async ValueTask ChooseRedoBranchAsync(object? parameter, CancellationToken cancellationToken)
+    {
+        var nodeId = parameter is Guid selectedId ? selectedId : SelectedRedoChoice?.Id;
+        if (nodeId is null || !CanChooseRedoBranch(nodeId))
+        {
+            return;
+        }
+        await RestoreAsync(nodeId.Value, cancellationToken);
+    }
+
+    private string LocalizeHistoryTitle(SessionHistoryNodeSnapshot node)
+    {
+        var resourceKey = node.Operation?.Kind switch
+        {
+            "load" => "History.Operation.Load",
+            "chapter.cell-edit" => "History.Operation.Edit",
+            "chapter.delete" => "History.Operation.Delete",
+            "chapter.insert" => "History.Operation.Insert",
+            "chapter.frame-shift" => "History.Operation.FrameShift",
+            "chapter.frame-rate-change" => "History.Operation.FrameRateChange",
+            "expression.apply" => "History.Operation.Expression",
+            "template.apply" => "History.Operation.Template",
+            "chapter.options-apply" => "History.Operation.Options",
+            "workspace.merge" => "History.Operation.Merge",
+            "workspace.split" => "History.Operation.Split",
+            "workspace.append" => "History.Operation.Append",
+            _ => "History.Operation.Generic"
+        };
+        var title = localizer.GetString(resourceKey);
+        if (node.Operation?.Kind == "chapter.cell-edit")
+        {
+            var field = node.Operation.Parameters.FirstOrDefault(static parameter => parameter.Name == "field")?.Value;
+            if (!string.IsNullOrWhiteSpace(field))
+            {
+                title = $"{title} · {localizer.GetString($"History.Enum.Field.{field}")}";
+            }
+        }
+        return title;
+    }
+
+    private void RebuildInspectorRows()
+    {
+        fieldRows = BuildFieldRows();
+        Parameters = BuildParameterRows();
+        OnPropertyChanged(nameof(VisibleChanges));
+        OnPropertyChanged(nameof(VisibleChangeGroups));
+        OnPropertyChanged(nameof(HasChanges));
+        OnPropertyChanged(nameof(HasVisibleChanges));
+        OnPropertyChanged(nameof(HasNoVisibleChanges));
+        OnPropertyChanged(nameof(HasDeltas));
+        OnPropertyChanged(nameof(HasParameters));
+        OnPropertyChanged(nameof(Parameters));
+    }
+
+    private HistoryFieldRow[] BuildFieldRows() => Details?.Changes.Select(change => new HistoryFieldRow(
+            change.Group,
+            change.ObjectId,
+            localizer.GetString($"History.Field.{change.Field}"),
+            FormatFieldContext(change),
+            change.Before,
+            change.After,
+            FormatHistoryValue(change, change.Before, before: true),
+            FormatHistoryValue(change, change.After, before: false),
+            FormatDelta(change))).ToArray() ?? [];
+
+    private HistoryParameterRow[] BuildParameterRows()
+    {
+        var operationKind = Details?.Operation?.Kind;
+        var cellEditField = Details?.Operation?.Parameters
+            .FirstOrDefault(static parameter => parameter.Name == "field")?.Value;
+        return Details?.Operation?.Parameters
+            .Where(parameter => IsVisibleParameter(parameter, operationKind, cellEditField))
+            .Select(CreateParameterRow).ToArray() ?? [];
+    }
+
+    private static bool IsVisibleParameter(HistoryOperationParameter parameter, string? operationKind, string? cellEditField)
+    {
+        if (parameter.Name is "chapterId" or "chapterIds" or "trackId" or "trackIds" or "targetChapterIds")
+        {
+            return false;
+        }
+
+        if (operationKind != "chapter.cell-edit")
+        {
+            return true;
+        }
+
+        return parameter.Name is not ("field" or "value" or "trackName")
+            && (parameter.Name != "displayFps" || cellEditField is "Frame" or "StartTime");
+    }
+
+    private HistoryParameterRow CreateParameterRow(HistoryOperationParameter parameter) => new(
+        localizer.GetString($"History.Parameter.{CapitalizeKeySegment(parameter.Name)}"),
+        FormatParameter(parameter),
+        parameter.ValueKind);
+
+    private string FormatFieldContext(HistoryFieldChange change)
+    {
+        var context = change.Group == "Chapter"
+            ? localizer.FormatPositional("History.ChapterContext", change.Context ?? string.Empty, change.ObjectLabel)
+            : change.Context is null ? change.ObjectLabel : $"{change.Context} · {change.ObjectLabel}";
+        if (change.Field is not ("StartTicks" or "EndTicks" or "FramesInfo"))
+        {
+            return context;
+        }
+
+        if (TryGetCapturedDisplayRate(out var displayRate))
+        {
+            return $"{context} · {localizer.GetString("History.Parameter.DisplayFps")}: {FormatFrameRate(displayRate)}";
+        }
+
+        if (!change.BeforeFrameRate.IsKnown && !change.AfterFrameRate.IsKnown)
+        {
+            return context;
+        }
+
+        var oldRate = change.BeforeFrameRate.IsKnown ? FormatFrameRate(change.BeforeFrameRate) : localizer.GetString("History.Presence.Absent");
+        var newRate = change.AfterFrameRate.IsKnown ? FormatFrameRate(change.AfterFrameRate) : localizer.GetString("History.Presence.Absent");
+        return $"{context} · {localizer.FormatPositional("History.FrameRateContext", oldRate, newRate)}";
+    }
+
+    private string FormatHistoryValue(HistoryFieldChange change, HistoryFieldValue value, bool before)
+    {
+        if (value.IsPresent
+            && TryGetCapturedDisplayRate(out var displayRate)
+            && TryGetRelatedStartTicks(change, before, out var startTicks))
+        {
+            var exactFrames = (decimal)startTicks / TimeSpan.TicksPerSecond * displayRate;
+            var roundedFrames = ChapterRounding.RoundToInt64(exactFrames);
+            if (change.Field == "FramesInfo" && value.Value is string frameText && string.IsNullOrWhiteSpace(frameText))
+            {
+                return roundedFrames.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+
+            if (change.Field == "FrameAccuracy" && value.Value is FrameAccuracy.Neutral)
+            {
+                var inferredAccuracy = Math.Abs(exactFrames - roundedFrames) < 0.01m
+                    ? FrameAccuracy.Accurate
+                    : FrameAccuracy.Inexact;
+                return FormatValue(new HistoryFieldValue(true, inferredAccuracy), change.Field);
+            }
+        }
+
+        return FormatValue(value, change.Field);
+    }
+
+    private bool TryGetRelatedStartTicks(HistoryFieldChange change, bool before, out long startTicks)
+    {
+        var startChange = Details?.Changes.FirstOrDefault(candidate =>
+            candidate.Group == change.Group
+            && candidate.ObjectId == change.ObjectId
+            && candidate.Field == "StartTicks");
+        var value = before ? startChange?.Before : startChange?.After;
+        if (value is { IsPresent: true, Value: long ticks })
+        {
+            startTicks = ticks;
+            return true;
+        }
+
+        startTicks = 0;
+        return false;
+    }
+
+    private bool TryGetCapturedDisplayRate(out decimal displayRate)
+    {
+        var value = Details?.Operation?.Parameters
+            .FirstOrDefault(static parameter => parameter.Name == "displayFps")?.Value;
+        return decimal.TryParse(value, System.Globalization.NumberStyles.Number,
+                   System.Globalization.CultureInfo.InvariantCulture, out displayRate)
+            && displayRate > 0;
+    }
+
+    private string FormatFrameRate(decimal frameRate)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        return string.Concat(frameRate.ToString("0.###", culture), " ", localizer.GetString("History.Unit.Fps"));
+    }
+
+    private string FormatFrameRate(FrameRateValue frameRate) =>
+        string.Concat(frameRate.ToString(), " ", localizer.GetString("History.Unit.Fps"));
+
+    private string FormatFrameRate(ChapterFrameRate frameRate)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        return frameRate.Denominator == 1
+            ? string.Concat(frameRate.Numerator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"))
+            : string.Concat(frameRate.Numerator.ToString(culture), "/", frameRate.Denominator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"));
+    }
+
+    private void RebuildRootChapterRows()
+    {
+        RootChapterRows = Details?.RootDocument is { } document
+            ? new HistoryRootChapterRows(document.Tracks, FormatTimeSpan)
+            : [];
+        OnPropertyChanged(nameof(RootChapterRows));
+        OnPropertyChanged(nameof(HasRootChapterRows));
+    }
+
+    private string FormatValue(HistoryFieldValue value, string field)
+    {
+        if (!value.IsPresent)
+        {
+            return localizer.GetString("History.Presence.Absent");
+        }
+        return value.Value switch
+        {
+            null => localizer.GetString("History.Presence.Null"),
+            string { Length: 0 } => localizer.GetString("History.Presence.Empty"),
+            long ticks when field is "StartTicks" or "EndTicks" => FormatTimeSpan(TimeSpan.FromTicks(ticks)),
+            ChapterDuration duration => FormatDuration(duration),
+            ChapterFrameRate frameRate => FormatChapterFrameRate(frameRate),
+            HistoryTrackReference trackReference => string.IsNullOrEmpty(trackReference.Label)
+                ? localizer.GetString("History.Track.Unknown")
+                : trackReference.Label,
+            ChapterImportFormat format => localizer.GetString($"History.Enum.ImportFormat.{format}"),
+            ChapterKind kind => localizer.GetString($"History.Enum.ChapterKind.{kind}"),
+            FrameAccuracy accuracy => localizer.GetString(accuracy == FrameAccuracy.Neutral
+                ? "Expression.FrameAccuracy.NotCalculated"
+                : $"Expression.FrameAccuracy.{accuracy}"),
+            System.Collections.IEnumerable sequence and not string => FormatSequence(sequence),
+            IFormattable formattable => FormatFormattable(formattable),
+            _ => value.Value.ToString() ?? string.Empty
+        };
+    }
+
+    private string FormatDuration(ChapterDuration duration) => duration.IsKnown
+        ? FormatTimeSpan(TimeSpan.FromTicks(duration.Ticks))
+        : localizer.GetString("History.Presence.Unknown");
+
+    private string FormatChapterFrameRate(ChapterFrameRate frameRate)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        return frameRate.Denominator == 1
+            ? string.Concat(frameRate.Numerator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"))
+            : string.Concat(frameRate.Numerator.ToString(culture), "/", frameRate.Denominator.ToString(culture), " ", localizer.GetString("History.Unit.Fps"));
+    }
+
+    private string FormatSequence(System.Collections.IEnumerable sequence)
+    {
+        var culture = System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName);
+        var items = new List<string>();
+        foreach (var item in sequence)
+        {
+            items.Add(item is HistoryOrderItem orderItem
+                ? orderItem.Label
+                : Convert.ToString(item, culture) ?? string.Empty);
+        }
+
+        return string.Join(", ", items);
+    }
+
+    private string FormatFormattable(IFormattable formattable) =>
+        formattable.ToString(null, System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName)) ?? string.Empty;
+
+    private string? FormatDelta(HistoryFieldChange change)
+    {
+        if (!change.Before.IsPresent || !change.After.IsPresent)
+        {
+            return null;
+        }
+        if (change.Before.Value is long before && change.After.Value is long after && change.Field is "StartTicks" or "EndTicks")
+        {
+            return FormatTimeSpan(TimeSpan.FromTicks(checked(after - before)), signed: true);
+        }
+        if (change.Before.Value is ChapterDuration previous && change.After.Value is ChapterDuration next && previous.IsKnown && next.IsKnown)
+        {
+            return FormatTimeSpan(TimeSpan.FromTicks(checked(next.Ticks - previous.Ticks)), signed: true);
+        }
+        return null;
+    }
+
+    private static string FormatTimeSpan(TimeSpan value, bool signed = false)
+    {
+        var prefix = signed && value > TimeSpan.Zero ? "+" : string.Empty;
+        var absolute = value.Duration();
+        var body = ExpressionChapterRowViewModel.FormatTicks(absolute.Ticks);
+        return string.Concat(value < TimeSpan.Zero ? "−" : prefix, body);
+    }
+
+    private string FormatParameter(HistoryOperationParameter parameter)
+    {
+        if (parameter.Value is null)
+        {
+            return localizer.GetString("History.Presence.Null");
+        }
+        if (parameter.Name == "field")
+        {
+            return localizer.GetString($"History.Enum.Field.{parameter.Value}");
+        }
+        if (parameter.ValueKind == "boolean" && bool.TryParse(parameter.Value, out var boolean))
+        {
+            return localizer.GetString(boolean ? "History.Boolean.True" : "History.Boolean.False");
+        }
+        if (parameter.ValueKind == "integer" && long.TryParse(parameter.Value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var integer))
+        {
+            return integer.ToString(System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName));
+        }
+        if (parameter.ValueKind == "decimal" && decimal.TryParse(parameter.Value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out var decimalValue))
+        {
+            if (parameter.Name == "displayFps")
+            {
+                return FormatFrameRate(decimalValue);
+            }
+
+            return decimalValue.ToString(System.Globalization.CultureInfo.GetCultureInfo(localizer.CurrentCultureName));
+        }
+        if (parameter.Name is "deleteTiming" or "frameDisplay")
+        {
+            return localizer.GetString($"History.Enum.{CapitalizeKeySegment(parameter.Name)}.{parameter.Value}");
+        }
+        return parameter.Value;
+    }
+
+    private static string CapitalizeKeySegment(string value) =>
+        string.IsNullOrEmpty(value) ? value : char.ToUpperInvariant(value[0]) + value[1..];
+
+    private void ExpandCurrentPath(SessionHistorySnapshot snapshot)
+    {
+        var nodes = snapshot.Nodes.ToDictionary(node => node.Id);
+        var currentId = snapshot.CursorId;
+        while (nodes.TryGetValue(currentId, out var node))
+        {
+            if (node.ParentId is not Guid parentId)
+            {
+                break;
+            }
+            expandedNodeIds.Add(parentId);
+            if (Entries.FirstOrDefault(entry => entry.Id == parentId) is { } existing)
+            {
+                existing.IsExpanded = true;
+            }
+            currentId = parentId;
+        }
+    }
+
+    private bool IsDescendant(Guid candidateId, Guid ancestorId)
+    {
+        var nodes = history.Snapshot?.Nodes.ToDictionary(node => node.Id);
+        if (nodes is null)
+        {
+            return false;
+        }
+        var currentId = candidateId;
+        while (nodes.TryGetValue(currentId, out var node) && node.ParentId is Guid parentId)
+        {
+            if (parentId == ancestorId)
+            {
+                return true;
+            }
+            currentId = parentId;
+        }
+        return false;
+    }
+
+    private async ValueTask RestoreAsync(object? parameter, CancellationToken cancellationToken)
+    {
+        if (parameter is not Guid nodeId || !CanRestore(nodeId))
+        {
+            return;
+        }
+        var oldCursor = history.Snapshot?.CursorId;
+        try
+        {
+            await history.NavigateCommand.ExecuteAsync(nodeId, cancellationToken);
+            var current = history.Snapshot?.CursorId;
+            if (current != oldCursor)
+            {
+                SelectedEntry = Entries.FirstOrDefault(entry => entry.Id == current);
+                NavigationStatus = localizer.GetString("History.RestoreApplied");
+            }
+            else
+            {
+                NavigationStatus = string.IsNullOrWhiteSpace(history.NavigationStatus)
+                    ? localizer.GetString("History.NavigationFailed")
+                    : history.NavigationStatus;
+            }
+        }
+        catch (Exception)
+        {
+            NavigationStatus = localizer.GetString("History.NavigationFailed");
+        }
+    }
+}
+
+public sealed record HistoryRedoChoice(Guid Id, string Title, string Description, bool IsPreferred);
+
+public sealed record HistoryFieldRow(string Group, string ObjectId, string Field, string ObjectLabel, HistoryFieldValue Before,
+    HistoryFieldValue After, string BeforeText, string AfterText, string? DeltaText);
+
+public sealed record HistoryChangeGroup(string Group, string ObjectId, string ObjectLabel, string Field,
+    string BeforeText, string AfterText, string? DeltaText);
+
+public sealed record HistoryParameterRow(string Name, string? Value, string ValueKind);
+
+public sealed record HistoryRootChapterRow(string TrackName, int DisplayNumber, string Name, string StartTime, string FramesInfo);
+
+internal sealed class HistoryRootChapterRows : IReadOnlyList<HistoryRootChapterRow>
+{
+    private readonly IReadOnlyList<EditableChapterTrack> tracks;
+    private readonly Func<TimeSpan, bool, string> formatTimeSpan;
+    private readonly int[] chapterOffsets;
+
+    public HistoryRootChapterRows(IReadOnlyList<EditableChapterTrack> tracks, Func<TimeSpan, bool, string> formatTimeSpan)
+    {
+        this.tracks = tracks;
+        this.formatTimeSpan = formatTimeSpan;
+        chapterOffsets = new int[tracks.Count + 1];
+        for (var index = 0; index < tracks.Count; index++)
+        {
+            chapterOffsets[index + 1] = chapterOffsets[index] + tracks[index].Chapters.Length;
+        }
+    }
+
+    public int Count => chapterOffsets[^1];
+
+    public HistoryRootChapterRow this[int index]
+    {
+        get
+        {
+            if ((uint)index >= (uint)Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            var trackIndex = Array.BinarySearch(chapterOffsets, index + 1);
+            trackIndex = trackIndex >= 0 ? trackIndex - 1 : ~trackIndex - 1;
+            var chapter = tracks[trackIndex].Chapters[index - chapterOffsets[trackIndex]];
+            return new HistoryRootChapterRow(tracks[trackIndex].Name, chapter.DisplayNumber, chapter.Name,
+                formatTimeSpan(TimeSpan.FromTicks(chapter.StartTicks), false), chapter.FramesInfo);
+        }
+    }
+
+    public IEnumerator<HistoryRootChapterRow> GetEnumerator()
+    {
+        for (var index = 0; index < Count; index++)
+        {
+            yield return this[index];
+        }
+    }
+
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+}

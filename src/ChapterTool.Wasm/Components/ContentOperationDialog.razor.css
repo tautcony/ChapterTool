@@ -1,0 +1,90 @@
+.candidate-review {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.content-review-row,
+.content-review-metadata {
+  min-width: 0;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.35rem;
+  background: var(--panel-bg);
+}
+
+.content-review-row h3,
+.content-review-row h4,
+.content-review-metadata h4 {
+  margin: 0 0 0.45rem;
+}
+
+.content-review-sides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.content-review-sides section + section {
+  padding-inline-start: 0.75rem;
+  border-inline-start: 1px solid var(--border);
+}
+
+.content-review-sides dl,
+.metadata-list dl {
+  display: grid;
+  grid-template-columns: minmax(3.5rem, auto) minmax(0, 1fr);
+  gap: 0.35rem 0.65rem;
+  margin: 0;
+}
+
+.content-review-sides dd,
+.metadata-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.review-time {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.content-review-delta {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+}
+
+.content-review-metadata summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.metadata-list {
+  display: grid;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+}
+
+.metadata-list article {
+  min-width: 0;
+  padding: 0.5rem 0;
+  border-block-start: 1px solid var(--border);
+}
+
+.metadata-list h4 {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 560px) {
+  .content-review-sides {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .content-review-sides section + section {
+    padding-inline-start: 0;
+    padding-block-start: 0.65rem;
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--border);
+  }
+}

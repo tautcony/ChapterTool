@@ -1,5 +1,7 @@
 using System.Runtime.Versioning;
+using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Wasm.Services;
 
 namespace ChapterTool.Wasm.Tests;
@@ -7,6 +9,78 @@ namespace ChapterTool.Wasm.Tests;
 [SupportedOSPlatform("browser")]
 public sealed class WasmWorkspaceTests
 {
+    [Fact]
+    public async Task Cancelled_expression_apply_reports_expression_failure_and_preserves_history()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("custom.txt", [.. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\n"u8]);
+        var cursor = Assert.Single(workspace.HistoryEntries, entry => entry.IsCurrent).Id;
+        var originalTime = workspace.Rows[1].TimeText;
+        Assert.True(workspace.PrepareExpressionPreview("t / 2")!.IsValid);
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+
+        Assert.False(await workspace.ApplyExpressionPreviewAsync(cancellation.Token));
+
+        Assert.Equal(new WasmLocalizer().T("Status.ExpressionApplyFailed"), workspace.StatusText);
+        Assert.Equal(cursor, Assert.Single(workspace.HistoryEntries, entry => entry.IsCurrent).Id);
+        Assert.Equal(originalTime, workspace.Rows[1].TimeText);
+        Assert.NotNull(workspace.ExpressionPreview);
+    }
+
+    [Fact]
+    public async Task Frame_time_frame_edits_commit_and_round_trip_through_history()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("custom.txt",
+        [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8
+        ]);
+        workspace.SelectedFrameRateIndex = workspace.FrameRateChoices.Single(choice =>
+            choice.Option.Rate == FrameRateValue.Rational(25, 1)).Index;
+
+        var frameDraft = workspace.BeginCellEdit(0, ChapterCellField.Frame)!;
+        Assert.Null(await workspace.CommitCellEditAsync(frameDraft, "25"));
+        Assert.Equal("00:00:01.000", workspace.Rows[0].TimeText);
+
+        var timeDraft = workspace.BeginCellEdit(0, ChapterCellField.StartTime)!;
+        Assert.Null(await workspace.CommitCellEditAsync(timeDraft, "00:00:02.000"));
+        Assert.Equal("00:00:02.000", workspace.Rows[0].TimeText);
+
+        var frameDraftAgain = workspace.BeginCellEdit(0, ChapterCellField.Frame)!;
+        Assert.NotEqual("25", frameDraftAgain.OriginalValue);
+        Assert.Null(await workspace.CommitCellEditAsync(frameDraftAgain, "25"));
+        Assert.Equal("00:00:01.000", workspace.Rows[0].TimeText);
+
+        await workspace.UndoAsync();
+        Assert.Equal("00:00:02.000", workspace.Rows[0].TimeText);
+        await workspace.RedoAsync();
+        Assert.Equal("00:00:01.000", workspace.Rows[0].TimeText);
+    }
+
+    [Fact]
+    public async Task NormalizeDeleteCommitsAndRoundTripsThroughHistory()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("chapters.txt",
+        [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=First\nCHAPTER02=00:00:10.000\nCHAPTER02NAME=Second\nCHAPTER03=00:00:20.000\nCHAPTER03NAME=Third\n"u8
+        ]);
+        workspace.EditingOptions = workspace.EditingOptions with { DeleteRowsTiming = DeleteRowsTimingMode.Normalize };
+        workspace.SelectRow(0);
+
+        workspace.DeleteSelectedRows();
+        Assert.Equal(["00:00:00.000", "00:00:10.000"],
+            workspace.Rows.Select(static row => row.TimeText));
+
+        await workspace.UndoAsync();
+        Assert.Equal(["00:00:00.000", "00:00:10.000", "00:00:20.000"],
+            workspace.Rows.Select(static row => row.TimeText));
+        await workspace.RedoAsync();
+        Assert.Equal(["00:00:00.000", "00:00:10.000"],
+            workspace.Rows.Select(static row => row.TimeText));
+    }
+
     [Fact]
     public async Task LoadAndReloadRestoresLastSuccessfulSource()
     {
@@ -27,6 +101,87 @@ public sealed class WasmWorkspaceTests
         await workspace.ReloadAsync();
         Assert.Equal("Opening", workspace.Rows[0].Name);
         Assert.Equal("first.txt", workspace.SourcePath);
+    }
+
+    [Fact]
+    public async Task Auto_rate_keeps_exact_display_rate_and_frame_rounding_uses_one_setting()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("repeating.txt", [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Opening\nCHAPTER02=00:00:52.094\nCHAPTER02NAME=Later\n"u8
+        ]);
+
+        workspace.RoundFrames = false;
+        workspace.ApplyOptionsAndRefresh();
+        var parts = workspace.FormatRowFramePresentation(1, workspace.Rows[1].FramesInfo, showRepeatingDecimals: true);
+
+        Assert.Equal("006993", parts.RepeatingDigits);
+        Assert.False(workspace.RoundFrames);
+        Assert.Equal(FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
+
+        workspace.EditingOptions = workspace.EditingOptions with
+        {
+            FrameDisplay = FrameDisplayMode.FullPrecision
+        };
+        workspace.RoundFrames = false;
+        Assert.Equal(FrameDisplayMode.FullPrecision, workspace.EditingOptions.FrameDisplay);
+
+        workspace.EditingOptions = workspace.EditingOptions with
+        {
+            FrameDisplay = FrameDisplayMode.Round
+        };
+        Assert.True(workspace.RoundFrames);
+    }
+
+    [Fact]
+    public async Task Auto_detection_is_display_only_and_explicit_rate_enables_frame_shift()
+    {
+        using var workspace = CreateWorkspace();
+        await workspace.LoadAsync("repeating.txt", [
+            .. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Opening\nCHAPTER02=00:00:52.094\nCHAPTER02NAME=Later\n"u8
+        ]);
+
+        var beforeTicks = workspace.Rows[1].TimeText;
+        var unresolved = workspace.PrepareFrameShiftPreview(-1)!;
+        Assert.False(unresolved.IsValid);
+        Assert.Equal(FrameRateValue.Unknown, unresolved.Before.FrameRate);
+        Assert.False(await workspace.ApplyContentPreviewAsync());
+        workspace.SelectedFrameRateIndex = 1;
+        var preview = workspace.PrepareFrameShiftPreview(-1)!;
+        Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
+        Assert.Equal(417083, preview.Candidate.Tracks[0].Chapters[1].StartTicks
+            - preview.Before.Tracks[0].Chapters[1].StartTicks);
+
+        Assert.True(await workspace.ApplyContentPreviewAsync());
+        Assert.NotEqual(beforeTicks, workspace.Rows[1].TimeText);
+    }
+
+    [Fact]
+    public async Task BrowserWorkspaceHistoryUndoRedoAndTabSessionsAreIndependent()
+    {
+        using var firstTab = CreateWorkspace();
+        using var secondTab = CreateWorkspace();
+        await firstTab.LoadSampleAsync();
+        await secondTab.LoadSampleAsync();
+        var original = firstTab.Rows[0].Name;
+
+        firstTab.UpdateRow(0, null, "Browser edit");
+        var firstBranch = Assert.Single(firstTab.HistoryEntries, entry => entry.IsCurrent);
+        Assert.Equal("Browser edit", firstTab.Rows[0].Name);
+        Assert.Equal(original, secondTab.Rows[0].Name);
+        Assert.True(firstTab.CanUndo);
+        Assert.Single(firstTab.HistoryEntries, entry => entry.IsCurrent);
+
+        await firstTab.UndoAsync();
+        Assert.Equal(original, firstTab.Rows[0].Name);
+        Assert.True(firstTab.CanRedo);
+
+        firstTab.UpdateRow(0, null, "Alternate browser edit");
+        Assert.Equal("Alternate browser edit", firstTab.Rows[0].Name);
+        await firstTab.NavigateHistoryAsync(firstBranch.Id);
+        Assert.Equal("Browser edit", firstTab.Rows[0].Name);
+        Assert.Contains(firstTab.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstBranch.Id);
+        Assert.Contains(firstTab.HistoryEntries, entry => entry.Description.Contains("Update chapter content", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -102,6 +257,21 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task EditingAppendedMplsThenRestoringSplitKeepsClipOptionIdsUnique()
+    {
+        var workspace = CreateWorkspace();
+        var firstPath = LocateFixture("Importing", "Disc", "Mpls", "00011_24_Eva.mpls");
+        var secondPath = LocateFixture("Importing", "Disc", "Mpls", "00020_Terminator2.mpls");
+        await workspace.LoadAsync(firstPath, await File.ReadAllBytesAsync(firstPath));
+        await workspace.AppendMplsAsync(secondPath, await File.ReadAllBytesAsync(secondPath));
+
+        workspace.UpdateRow(0, null, "Edited opening");
+        workspace.ToggleClipCombine();
+
+        Assert.Equal(workspace.ClipOptions.Count, workspace.ClipOptions.Select(static option => option.Id).Distinct().Count());
+    }
+
+    [Fact]
     public async Task TemplateModeProjectsNamesThroughExportOptions()
     {
         var workspace = CreateWorkspace();
@@ -109,6 +279,8 @@ public sealed class WasmWorkspaceTests
         Assert.True(workspace.SetChapterNameTemplate("names.txt", "Alpha\nBeta\nGamma"));
         Assert.Equal(2, workspace.ChapterNameModeIndex);
         Assert.Equal("names.txt", workspace.ChapterNameTemplateStatus);
+        workspace.PrepareNamingPreview();
+        Assert.True(await workspace.ApplyContentPreviewAsync());
         Assert.Equal("Alpha", workspace.Rows[0].Name);
         Assert.Equal("Beta", workspace.Rows[1].Name);
         Assert.Equal("Gamma", workspace.Rows[2].Name);
@@ -146,6 +318,7 @@ public sealed class WasmWorkspaceTests
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, "00:00:01.000", null);
 
         // Force a known FPS via fixed frame rate option when present.
         if (workspace.FrameRateChoices.Count > 1)
@@ -173,12 +346,64 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
+    public async Task Successful_save_records_snapshot_baseline_without_clearing_history()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, null, "Edited opening");
+        Assert.True(workspace.HasUnexportedChanges);
+        var historyCount = workspace.HistoryEntries.Count;
+
+        var save = workspace.Save();
+
+        Assert.True(save.Success);
+        Assert.False(workspace.HasUnexportedChanges);
+        Assert.Equal(historyCount, workspace.HistoryEntries.Count);
+    }
+
+    [Fact]
+    public async Task Failed_replacement_preserves_current_document_and_history()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, null, "Keep this edit");
+        var originalPath = workspace.SourcePath;
+        var originalHistoryCount = workspace.HistoryEntries.Count;
+        var originalRows = workspace.Rows.ToArray();
+
+        await workspace.LoadAsync("invalid.json", [.. "{}"u8]);
+
+        Assert.Equal(originalPath, workspace.SourcePath);
+        Assert.Equal(originalHistoryCount, workspace.HistoryEntries.Count);
+        Assert.Equal(originalRows, workspace.Rows);
+    }
+
+    [Fact]
+    public async Task Cancelled_replacement_preserves_wasm_session_and_history()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.UpdateRow(0, null, "Keep this edit");
+        var originalPath = workspace.SourcePath;
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Select(entry => entry.Id).ToArray();
+        workspace.SessionLossConfirmation = _ => ValueTask.FromResult(false);
+
+        await workspace.LoadAsync("replacement.txt", [.. "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Replacement"u8]);
+
+        Assert.Equal(originalPath, workspace.SourcePath);
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Select(entry => entry.Id));
+    }
+
+    [Fact]
     public async Task AutoGenerateNamesModeRewritesDisplayedNames()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
         workspace.ChapterNameModeIndex = 1;
-        workspace.ApplyOptionsAndRefresh();
+        workspace.PrepareNamingPreview();
+        Assert.True(await workspace.ApplyContentPreviewAsync());
         Assert.All(workspace.Rows, row => Assert.StartsWith("Chapter ", row.Name, StringComparison.Ordinal));
     }
 
@@ -237,51 +462,192 @@ public sealed class WasmWorkspaceTests
     }
 
     [Fact]
-    public async Task ExpressionModeProjectsTimesThroughPreview()
+    public async Task ExpressionPreviewDoesNotMutateRowsHistoryOrExportUntilApplied()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
-        workspace.ApplyExpression = true;
-        workspace.Expression = "t + 1";
-        workspace.ApplyOptionsAndRefresh();
+        Assert.True(workspace.Save().Success);
+        Assert.False(workspace.HasUnexportedChanges);
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
 
+        var candidate = Assert.IsType<ChapterContentPreview>(workspace.PrepareExpressionPreview("t / 2"));
+
+        Assert.True(candidate.IsValid);
+        Assert.NotEmpty(candidate.Differences);
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Count);
+        Assert.False(workspace.HasUnexportedChanges);
         var preview = workspace.Preview();
         Assert.True(preview.Success);
-        Assert.Contains("00:00:01", preview.Content, StringComparison.Ordinal);
+        Assert.Contains(originalRows[1].TimeText, preview.Content, StringComparison.Ordinal);
+        Assert.DoesNotContain("00:00:41.728", preview.Content, StringComparison.Ordinal);
+        Assert.Equal("OGM Chapters", workspace.ExpressionPreviewProjection!.ScopeTrackName);
+        Assert.True(workspace.ExpressionPreviewProjection.TimeChangedChapterCount > 0);
     }
 
     [Fact]
-    public async Task ExpressionPresetAppliesCoreEngineScriptAndProjectsRows()
+    public async Task ExpressionPreviewUsesUnroundedFrameDisplayWhenRoundingIsDisabled()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.RoundFrames = false;
+        workspace.ApplyOptionsAndRefresh();
+
+        Assert.NotNull(workspace.PrepareExpressionPreview("t + 0.0004"));
+
+        var comparison = Assert.Single(workspace.ExpressionPreviewProjection!.Chapters,
+            item => item.Before?.DisplayNumber == 1);
+        Assert.Equal(workspace.Rows[0].FramesInfo, comparison.BeforeFrames!.Text);
+        Assert.Contains('.', comparison.CandidateFrames!.Text);
+        Assert.NotEqual("0", comparison.CandidateFrames.Text);
+    }
+
+    [Fact]
+    public async Task EmptyExpressionPreviewIsUnavailableInsteadOfAnIdentityCandidate()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+
+        Assert.Null(workspace.PrepareExpressionPreview("  \n"));
+        Assert.Null(workspace.ExpressionPreview);
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
+    }
+
+    [Fact]
+    public async Task ExpressionPresetBeyondLastChapterStartIsValidWithoutPartialCommit()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
 
         Assert.NotEmpty(workspace.ExpressionPresets);
         var offset = Assert.Single(workspace.ExpressionPresets, preset => preset.Id == "offset-seconds");
+        var priorRows = workspace.Rows.ToArray();
+        var priorHistory = workspace.HistoryEntries.Count;
         Assert.True(workspace.ApplyExpressionPreset(offset.Id));
-        Assert.True(workspace.ApplyExpression);
+        workspace.PrepareExpressionPreview(offset.ScriptText);
         Assert.Equal(offset.Id, workspace.ExpressionPresetId);
         Assert.Equal(offset.ScriptText, workspace.Expression);
 
-        var preview = workspace.Preview();
-        Assert.True(preview.Success);
-
-        // offset-seconds default adds 1 second to t=0
-        Assert.Contains("00:00:01", preview.Content, StringComparison.Ordinal);
+        Assert.Equal(priorRows, workspace.Rows);
+        Assert.Equal(priorHistory, workspace.HistoryEntries.Count);
+        Assert.NotNull(workspace.ExpressionPreview);
+        Assert.True(workspace.ExpressionPreview!.IsValid);
     }
 
     [Fact]
-    public async Task InvalidExpressionSurfacesCoreDiagnosticToStatusAndLog()
+    public async Task InvalidExpressionShowsDiagnosticAndCannotBeApplied()
     {
         var workspace = CreateWorkspace();
         await workspace.LoadSampleAsync();
-        workspace.ApplyExpression = true;
-        workspace.Expression = "return bad()";
-        workspace.ApplyOptionsAndRefresh();
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
 
-        Assert.False(string.IsNullOrWhiteSpace(workspace.StatusText));
-        Assert.Contains(workspace.Logs, entry =>
-            entry.Details?.Contains("Lua", StringComparison.OrdinalIgnoreCase) == true);
+        var candidate = Assert.IsType<ChapterContentPreview>(workspace.PrepareExpressionPreview("return bad()"));
+
+        Assert.False(candidate.IsValid);
+        Assert.Contains(candidate.Errors, error => error.Contains("Lua", StringComparison.OrdinalIgnoreCase));
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Count);
+    }
+
+    [Fact]
+    public async Task CancelExpressionPreviewDiscardsCandidateWithoutChangingDocumentOrHistory()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
+        var originalExport = workspace.Preview().Content;
+        workspace.PrepareExpressionPreview("t / 2");
+
+        workspace.CancelExpressionPreview();
+
+        Assert.Null(workspace.ExpressionPreview);
+        Assert.Equal(originalRows, workspace.Rows);
+        Assert.Equal(originalHistory, workspace.HistoryEntries.Count);
+        Assert.Equal(originalExport, workspace.Preview().Content);
+    }
+
+    [Fact]
+    public async Task ApplyingExpressionPreviewCreatesOneTransactionAndUndoRestoresCommittedValues()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        var originalRows = workspace.Rows.ToArray();
+        var originalHistory = workspace.HistoryEntries.Count;
+        workspace.PrepareExpressionPreview("t / 2");
+
+        Assert.True(await workspace.ApplyExpressionPreviewAsync());
+
+        Assert.Equal(originalHistory + 1, workspace.HistoryEntries.Count);
+        Assert.Null(workspace.ExpressionPreview);
+        Assert.NotEqual(originalRows[1].TimeText, workspace.Rows[1].TimeText);
+        await workspace.UndoAsync();
+        Assert.Equal(
+            originalRows.Select(static row => (row.Number, row.TimeText, row.Name, row.FramesInfo)),
+            workspace.Rows.Select(static row => (row.Number, row.TimeText, row.Name, row.FramesInfo)));
+        await workspace.RedoAsync();
+        Assert.NotEqual(originalRows[1].TimeText, workspace.Rows[1].TimeText);
+    }
+
+    [Fact]
+    public async Task Explicit_identity_expression_uses_complete_candidate_effects()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+
+        var candidate = Assert.IsType<ChapterContentPreview>(workspace.PrepareExpressionPreview("t"));
+        var projection = Assert.IsType<ExpressionPreviewProjection>(workspace.ExpressionPreviewProjection);
+
+        Assert.True(candidate.IsValid);
+        Assert.True(projection.TimesUnchanged);
+        Assert.False(projection.HasChanges);
+        Assert.Equal(FrameRateValue.Unknown, candidate.Candidate.FrameRate);
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
+    }
+
+    [Fact]
+    public async Task StaleExpressionPreviewRequiresAnExplicitRefreshBeforeItCanBeReviewedAgain()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.PrepareExpressionPreview("t / 2");
+        workspace.UpdateRow(0, null, "Edited after preview");
+        var editedRows = workspace.Rows.ToArray();
+        var historyCount = workspace.HistoryEntries.Count;
+
+        Assert.False(await workspace.ApplyExpressionPreviewAsync());
+
+        Assert.Equal(editedRows, workspace.Rows);
+        Assert.Equal(historyCount, workspace.HistoryEntries.Count);
+        Assert.NotNull(workspace.ExpressionPreview);
+        Assert.True(workspace.IsExpressionPreviewStale);
+        Assert.DoesNotContain(workspace.ExpressionPreview!.Before.Tracks.SelectMany(static track => track.Chapters),
+            chapter => chapter.Name == "Edited after preview");
+
+        var refreshed = workspace.PrepareExpressionPreview(workspace.Expression);
+        Assert.NotNull(refreshed);
+        Assert.False(workspace.IsExpressionPreviewStale);
+        Assert.Contains(refreshed.Before.Tracks.SelectMany(static track => track.Chapters),
+            chapter => chapter.Name == "Edited after preview");
+    }
+
+    [Fact]
+    public async Task EditingRowAfterApplyingExpressionDoesNotReapplyExpressionOnExport()
+    {
+        var workspace = CreateWorkspace();
+        await workspace.LoadSampleAsync();
+        workspace.PrepareExpressionPreview("t / 2");
+        Assert.True(await workspace.ApplyExpressionPreviewAsync());
+
+        workspace.UpdateRow(1, "00:00:20.000", null);
+
+        Assert.Equal("00:00:20.000", workspace.Rows[1].TimeText);
+        var preview = workspace.Preview();
+        Assert.True(preview.Success);
+        Assert.Contains("00:00:20.000", preview.Content, StringComparison.Ordinal);
     }
 
     [Fact]

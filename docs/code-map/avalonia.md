@@ -29,10 +29,11 @@ Startup and main shell entry points:
 
 Main-window workflow owners under `src/ChapterTool.Avalonia.UI/Workflows/` use the same `ChapterWorkspace`:
 
-- `LoadSaveWorkflow.cs` — revision/session-aware load, append, and save service orchestration
-- `ClipEditingCoordinator.cs` — clip selection/combine transitions plus cell and frame edits written through the workspace
-- `ProjectionFacade.cs` — workspace-backed projection, preview/save options, and chapter-row materialization
+- `LoadSaveWorkflow.cs` — staged replacement, confirmation rechecks, append, and snapshot-bound save orchestration
+- `ClipEditingCoordinator.cs` — clip selection, merge/split-by-boundaries, and selected-track edits written through the workspace
+- `WorkspaceContentRows.cs` — row materialization from committed content
 - `StatusDiagnosticsPresenter.cs` — localized status/progress rendering and structured diagnostic logging
+- `DisplayOptionCoordinator.cs` renders DVD title numbers with localized labels. The chapter data and English log summaries remain stable when the culture changes. The clip selector exposes its complete label in a tooltip when the visible text is trimmed.
 
 Role split:
 
@@ -44,7 +45,7 @@ Role split:
   - `.cs`: fields, ctor, bindable state, command wiring, window/shell helpers
   - `.Settings.cs`: load/apply preferences and language persistence
   - `.ImportExport.cs`: load/save/append workflows, export options, and chapter-name template path application (`LoadChapterNameTemplateFromPathAsync`)
-  - `.Expression.cs`: Lua expression apply/validate and output projection
+  - `.Expression.cs`: Lua expression apply/validate and committed chapter row refresh
   - `.Editing.cs`: clip selection, row edits, combine/split, frame-rate transforms
   - `.StatusLog.cs`: status text, diagnostics localization, logging, localized option refresh
 
@@ -53,8 +54,8 @@ Role split:
 Shared session kernel lives in Core:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — `SplitClipSession` / `CombinedClipSession` and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — path, clip session, edit buffer, projection, export preferences, revision commit rules
-- `src/ChapterTool.Core/Session/ProjectionState.cs`
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, transient selected-track views, operation drafts, export preferences, and revision commit rules
+- `src/ChapterTool.Core/Session/ContentOperationDraftState.cs` — parameters for explicit, one-shot content operations
 - `src/ChapterTool.Core/Session/ExportPreferences.cs`
 
 Avalonia owns only host ports:
@@ -62,7 +63,25 @@ Avalonia owns only host ports:
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs` — concrete main-window adapters
 
-`MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Bindable projection/export properties facade workspace state. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load/append commits use workspace revision rules.
+`MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Operation parameters remain drafts until an explicit candidate is applied. Row materialization reads committed workspace content. It derives frame text and accuracy from the current display preferences. Display refresh must not create content history. Frame edits and signed shifts use the displayed FPS. Expression preparation can supply detected FPS to the selected track when source FPS is absent. Preview and save serialize committed content. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load and append commits use workspace revision rules. Replacement confirms session loss before ending the old session. Closing the desktop window ends its session and cancels its work.
+
+`MainWindowViewModel` exposes the Core history tree through `IHistorySessionPort`. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `HistoryToolView` renders the hierarchy with the native Avalonia `TreeView` in a modal dialog.
+
+`HistoryToolViewModel` keeps inspection selection separate from the saved history cursor. It requests details through `IHistorySessionPort.InspectAsync`. Selection changes cancel the previous query. Request generation and root identity checks ignore stale results. `SessionState.InspectHistoryNodeAsync` captures one immutable session version and reconstructs the selected node without publishing it. `HistoryNodeDetailsProjector` compares the selected node with its parent by stable identity. Root inspection exposes ordered chapter rows. The view virtualizes root rows and field changes. Wide windows show a split view. Narrow windows show History and Details pages. The inspector hides empty sections and shows meaningful parameters and before/after values.
+
+`HistoryEntryViewModel` builds stable parent and child models for the native Avalonia `TreeView`. It preserves node instances by ID and exposes mutable expansion state. `HistoryToolViewModel` owns current and inspected node state, detail query lifetime, explicit restore, and direct-child redo choices. `HistoryToolView` binds both wide and narrow TreeViews and keeps Restore in the narrow page footer. `ChapterContentPreview` carries the immutable operation descriptor through candidate application.
+
+`MainView.axaml` gives the chapter grid one central workspace. Its empty state overlays that workspace. Content previews compare changed values inside the original chapter cells. Arrow icons and semantic colors mark candidate values. Each row keeps the visible frame value captured before preview. The option row keeps apply and discard actions. Its apply tooltip lists changed non-chapter metadata. Expression diagnostics show invalid and stale states. The grid stays read-only while a candidate is valid.
+
+Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordinator` and `IChapterContentOperationPort`. Clip boundaries and media placement live in track segments. `ClipSession` contains selector metadata only. Batch tools preview, apply, or cancel typed candidates. Cell edits commit to the selected track. Tables and exports read committed chapter values. The browser host uses `ChapterContentOperationSession` for reviewed candidates and `ChapterWorkspace.ExecuteTrackCandidate` for immediate row commands.
+
+`MainView.OnChapterGridBeginningEdit` captures the initial cell text. `CommitCellEditAsync` skips unchanged editor text before it dispatches a content operation. This preserves timestamp ticks and the history cursor when rounded display text stays unchanged. `ExactFrameRateHeadlessTests` verifies this boundary through the rendered frame editor.
+
+`MainView.axaml` bounds the numbering offset to 0..1000. `ContentOperationDialog.razor` provides the browser draft and review surface. `WasmWorkspace.Operations.cs` owns preparation, freshness checks, exact application, and cell identity capture. Preferences refresh display and output without replaying content edits.
+
+`ChapterRowViewModel` keeps committed values and projects typed before/candidate comparisons by track and chapter ID. It captures visible frame text, accuracy, and display rate when preview starts. Candidate frame accuracy comes from the typed candidate. `FrameValueFormatter` formats timestamp ticks with each value's canonical rate. `MainView.axaml` aligns integer and fractional parts and marks repetends with an overline. `MainView.ApplyContentPreviewPreservingGridStateAsync` applies the captured candidate and restores selection and scroll state. Bottom option labels share measured widths across responsive columns.
+
+`tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs` verifies visible frame snapshots, inline values, preview lifecycle, localized layouts, control alignment, and viewport bounds. `MainWindowInteractionHeadlessTests.cs` verifies selection and scroll retention through apply and discard.
 
 ### Composition root
 
@@ -89,6 +108,12 @@ Window-bound file picker, settings picker, and clipboard services use host-owned
 
 `src/ChapterTool.Avalonia.UI/PlatformPorts/AuxiliaryTools.cs` owns `ToolId`, typed auxiliary-tool requests and results, host service groups, catalog descriptors, and the embedded presenter contract. `EmbeddedAuxiliaryToolHost.cs` provides the single-content host implementation. `UnavailableHostAdapters.cs` provides explicit no-op adapters for unavailable capabilities.
 
+`HistoryToolViewModel` reads history through `IHistorySessionPort`. The desktop catalog registers it as a modal tool. The embedded host supplies a tool-close callback.
+
+`AvaloniaWindowService` disposes tool state and detaches window content on close. It returns focus to the previously focused main-window control when that control remains available.
+
+`AuxiliaryToolRequest.HostWindow` can supply the owning window. The desktop host uses the application main window when the request omits an owner.
+
 `BrowserPortableAdapters.cs` remains in the shared assembly because it contains no browser API implementation. It defines the bounded source-read behavior and the `IBrowserFileAccess` host port. A browser host owns the `IBrowserFileAccess` implementation.
 
 For GUI production paths, one `AppCompositionRoot` shares the formatter, expression engine, authoring service, export service, process runner, and external-tool locator across the main window and tool windows. `ExpressionEditor` receives `IExpressionAuthoringService` through the host composition and the typed `ToolCreationContext`. Its private fallback is limited to direct design-time or test construction.
@@ -112,6 +137,16 @@ This is the first file to inspect when dependency wiring or service registration
 - `src/ChapterTool.Avalonia.UI/Views/Tools/ForwardShiftToolView.axaml`
 - `src/ChapterTool.Avalonia.UI/Views/Tools/TextToolView.axaml`
 
+### LogTool
+
+`LogToolViewModel` owns the bounded log projection, severity and text filters, selection, and inspector commands. Selection stays separate from inspection. The initial state has no selected row and a closed inspector. `LogEntryViewModel` owns compact row identity, localized search runs, and on-demand raw, technical, exception, and structured values.
+
+`LogToolView.axaml` renders a list-first surface. It shows compact one-line rows by default. It renders the inspector beside the list at wide widths and replaces the list at narrow widths. The inspector opens only after an explicit row action or keyboard command.
+
+`IApplicationLogService` is the shared log boundary. `ApplicationLogPanelProvider` keeps a bounded in-memory snapshot in append order and raises `EntryAdded` and `Cleared` notifications. It does not provide grouping, timestamp indexes, or history cursors. `IApplicationLogExporter` is an optional manual-export boundary. `ApplicationLogFileExporter` writes the selected entries as UTF-8 JSON or CSV below `settings/logs/`.
+
+Primary entry points are `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.axaml`, `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`, `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`, and `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`.
+
 ### Imported theme resources
 
 `src/ChapterTool.Avalonia.UI/Resources/` owns the shared and imported user interface resources.
@@ -127,6 +162,8 @@ This is the first file to inspect when dependency wiring or service registration
 
 The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. Change FPS is a visible `icon_button` next to the frame-rate selector.
 
+Shortcut ownership is shared. `src/ChapterTool.Contracts/Shortcuts/` defines stable action IDs, gesture normalization, conflict checks, and active mappings. `ShortcutRouter` routes undo and redo through the session commands. Windows and Linux use Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z. macOS uses Cmd+Z and Cmd+Shift+Z. Text controls keep their draft undo scope. `SettingsToolViewModel` owns draft rows and saves them through `ISettingsStore<ChapterToolSettings>`. `SettingsToolView.axaml` exposes the Shortcuts tab.
+
 ### ViewModels
 
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel*.cs`
@@ -139,6 +176,7 @@ The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. 
 - `src/ChapterTool.Avalonia.UI/ViewModels/ChapterRowViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/UiCommand.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRouter.cs`
+- `src/ChapterTool.Avalonia.UI/ViewModels/ShortcutRowViewModel.cs` (shortcut settings rows and reset commands)
 - `src/ChapterTool.Avalonia.UI/ViewModels/XmlLanguageDisplay.cs` (localized XML chapter language selector options)
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogToolViewModel.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/LogEntryViewModel.cs` (pure log projection and structured-data formatting)
@@ -237,6 +275,10 @@ Then inspect the matching pair in:
 - `src/ChapterTool.Avalonia.UI/Views/Tools/`
 - `src/ChapterTool.Avalonia.UI/ViewModels/`
 
+The Expression tool uses `ExpressionToolViewModel` and `ExpressionToolView` for draft state and typed candidate review. `IChapterContentOperationPort` prepares and applies the captured candidate. `IExpressionSessionPort.SaveAppliedExpressionPreview` stores accepted settings without evaluating Lua again. `AvaloniaWindowService` hosts this tool as a modal window and blocks close while Apply runs.
+
+`ExpressionToolView` keeps the editor above the result scroll area. It reflows comparison grids when the view width changes. The summary separates chapter time changes from frame updates and property changes. Property details follow the time comparisons.
+
 ### Application log window
 
 Start with:
@@ -246,8 +288,9 @@ Start with:
 - `src/ChapterTool.Avalonia/Services/StandardToolCatalogFactory.cs`
 - `src/ChapterTool.Contracts/PlatformPorts/IApplicationLogService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+- `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`
 
-The ViewModel owns the filtered projection, selection, localized display text, and copy commands. The provider owns bounded history and live entry notifications. The view uses the imported master-detail composition and resources.
+The ViewModel owns the filtered list projection, localized row text, selection, and inspector state. `LogEntryViewModel` keeps technical values out of the compact row and exposes them when the inspector is open. The provider owns bounded append-order retention and live entry notifications. The optional exporter receives the visible entries from the ViewModel. The view owns responsive list and inspector composition.
 
 ### Clip combine / multi-entry session
 
@@ -257,7 +300,7 @@ Start with:
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs`
 - `src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs`
 
-Pure transition coverage: `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs`. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
+Candidate and session coverage: `tests/ChapterTool.Core.Tests/Editing/ChapterClipCandidateBuilderTests.cs` and `tests/ChapterTool.Core.Tests/Session/ClipSessionTests.cs`. The ViewModel tests cover merge/split labels and selected-track rows. Concurrent load/append anti-stale coverage remains in `MainWindowViewModelTests`.
 
 ### Load/save/import behavior exposed in UI
 
@@ -267,7 +310,7 @@ Start with:
 - `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs`
 - `src/ChapterTool.Infrastructure/Importing/Runtime/RuntimeChapterImporterRegistry.cs`
 
-`RuntimeChapterSaveService` applies UI save-file concerns such as output directory selection, generated file path diagnostics, and the selected `ChapterExportOptions.TextEncoding` / `EmitBom` behavior around Core export content.
+`RuntimeChapterSaveService` applies UI save-file concerns such as output directory selection, generated file path diagnostics, and the selected `ChapterSerializationOptions.TextEncoding` / `EmitBom` behavior around Core export content.
 
 If the wiring looks wrong, inspect:
 
@@ -292,7 +335,7 @@ Start with:
 - `src/ChapterTool.Avalonia.UI/ViewModels/Tools/`
 - `src/ChapterTool.Core/Transform/ExpressionAuthoringService.cs`
 
-Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live valid projections, editing-key routing, and single-editor multiline expansion.
+Behavior coverage is concentrated in `ExpressionAuthoringServiceTests`, `MainWindowViewModelTests`, `MainWindowInteractionHeadlessTests`, and `ToolViewsHeadlessTests` for Lua tokens/completions, delayed edit diagnostics, live candidate review, typed before/after values, editing-key routing, and single-editor multiline expansion. AvaloniaEdit keeps IME preedit text inside the editor until it commits text to the bound value; the preview timer responds to committed edits.
 `AppCompositionRootIdentityHeadlessTests` additionally exercises both production XAML editor hosts with a sentinel authoring service, including initial binding and subsequent text edits.
 
 ### Settings / theme / language UI
@@ -314,7 +357,7 @@ Output defaults, external-tool paths and statuses, and runtime/footer display st
 
 Main-window selectors with runtime-localized display text, including the automatic frame-rate option, use `SelectorDisplayOption` collections owned by `MainWindowViewModel`; item and selection-box templates bind the same mutable display value so open lists and current selections refresh together. `DisplayOptionCoordinator` owns localized option construction, clip-list incremental synchronization, and frame-rate index mapping, while `ChapterCellEdit` and `ChapterGridColumnIds` are standalone binding-contract types.
 
-Secondary tool windows consume the stable interfaces in `PlatformPorts/SessionPorts/ShellPorts.cs` through `IWorkspaceToolSession`. `MainWindowToolSession` owns one concrete `MainWindowPortAdapters` instance internally. The adapters own expression application and validation, live preference application, language persistence, export/naming projection, and chapter-edit commands; `MainWindowViewModel` does not implement or expose those concrete adapters.
+Secondary tool windows consume the stable interfaces in `PlatformPorts/SessionPorts/ShellPorts.cs` through `IWorkspaceToolSession`. `MainWindowToolSession` owns one concrete `MainWindowPortAdapters` instance internally. The adapters own expression application and validation, live preference application, language persistence, operation drafts, export options, and chapter-edit commands; `MainWindowViewModel` does not implement or expose those concrete adapters.
 
 Appearance is preset-only and owned by `SettingsAppearanceViewModel` (bound as `Appearance.*` from `SettingsToolView`). It owns localized preset options, font family catalogs, live selection, and palette preview metadata. `AvaloniaThemeApplicationService` resolves the catalog preset. It updates ChapterTool semantic brushes, all imported `Color.*` tokens, and the Avalonia light or dark variant. `SharedStyles.axaml` loads the imported theme foundation through `Styles.axaml` after `FluentTheme`.
 

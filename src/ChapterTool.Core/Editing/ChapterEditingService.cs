@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
@@ -10,7 +9,7 @@ namespace ChapterTool.Core.Editing;
 /// Provides chapter editing operations for ChapterTool chapter data.
 /// </summary>
 /// <param name="timeFormatter">The chapter time formatter.</param>
-public sealed partial class ChapterEditingService(IChapterTimeFormatter timeFormatter) : IChapterEditingService
+public sealed class ChapterEditingService(IChapterTimeFormatter timeFormatter) : IChapterEditingService
 {
     /// <summary>
     /// Executes the EditTime operation.
@@ -32,51 +31,59 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         var value = parsed.Value;
         if (value >= TimeSpan.FromDays(1))
         {
-            value = TimeSpan.Zero;
             diagnostics.Add(new ChapterDiagnostic(
                 DiagnosticSeverity.Warning,
                 ChapterDiagnosticCode.InvalidTimeText,
-                "A chapter time of 24 hours or more was reset to zero."));
+                "A chapter time must be less than 24 hours."));
+            return new ChapterEditResult(info, diagnostics);
         }
 
         chapters[index] = chapter with { StartTime = value };
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, diagnostics);
     }
 
-    /// <summary>
-    /// Executes the EditFrame operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="index">The zero-based chapter index.</param>
-    /// <param name="text">The text to parse.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterEditResult EditFrame(ChapterSet info, int index, string text, decimal framesPerSecond)
+    /// <summary>Edits a finite decimal frame count at the nearest-tick boundary.</summary>
+    public ChapterEditResult EditFrame(ChapterSet info, int index, string text, FrameRateValue framesPerSecond)
     {
-        var chapters = info.Chapters.ToList();
-        if (!TryGetChapter(chapters, index, out var chapter))
+        if (!TryGetChapter(info.Chapters, index, out var chapter))
         {
             return InvalidIndex(info, index);
         }
 
-        var match = FirstIntegerRegex().Match(text);
-        if (!match.Success
-            || framesPerSecond <= 0
-            || !decimal.TryParse(match.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var frame))
+        if (!framesPerSecond.IsKnown)
+        {
+            return new ChapterEditResult(info, [FrameRateValidation.InvalidFrameRate()]);
+        }
+
+        var valueText = text.Trim();
+        if (valueText.EndsWith(" frames", StringComparison.OrdinalIgnoreCase))
+        {
+            valueText = valueText[..^7].TrimEnd();
+        }
+
+        if (!FrameRateValue.TryParseInvariantDecimal(valueText, out var frame) || frame < 0)
         {
             return InvalidFrameText(info);
         }
 
-        var seconds = frame / framesPerSecond;
-        if (seconds < 0 || seconds > (decimal)TimeSpan.MaxValue.TotalSeconds)
+        var converted = ChapterFrameTimeConverter.FramesToTicks(frame, framesPerSecond);
+        if (!converted.Success)
         {
-            return InvalidFrameText(info);
+            return new ChapterEditResult(info, [converted.Diagnostic!]);
         }
 
+        var normalizedFrameText = frame.ToString("G29", CultureInfo.InvariantCulture);
+        if (converted.Value == chapter.StartTime.Ticks
+            && string.Equals(normalizedFrameText, chapter.FramesInfo, StringComparison.Ordinal))
+        {
+            return new ChapterEditResult(info, []);
+        }
+
+        var chapters = info.Chapters.ToList();
         chapters[index] = chapter with
         {
-            StartTime = TimeSpan.FromSeconds((double)seconds),
-            FramesInfo = frame.ToString("0", CultureInfo.InvariantCulture),
+            StartTime = TimeSpan.FromTicks(converted.Value),
+            FramesInfo = normalizedFrameText,
             FrameAccuracy = FrameAccuracy.Accurate
         };
         return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
@@ -188,40 +195,48 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
         return new ChapterEditResult(info with { Chapters = chapters }, []);
     }
 
-    /// <summary>
-    /// Executes the ShiftFramesForward operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="frames">The frame count.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, decimal framesPerSecond)
+    /// <summary>Shifts starts on a canonical frame grid using the retained scalar negative-row policy.</summary>
+    public ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, FrameRateValue framesPerSecond)
     {
-        if (framesPerSecond <= 0)
+        var converted = ChapterFrameTimeConverter.FramesToTicks(frames, framesPerSecond);
+        if (!converted.Success)
         {
-            return new ChapterEditResult(
-                info,
-                [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidFrameRate, "Frame rate must be greater than zero.")]);
+            return new ChapterEditResult(info, [converted.Diagnostic!]);
         }
 
-        var shift = ChapterRounding.SecondsToTimeSpan(frames / framesPerSecond);
-        var chapters = info.Chapters
-            .Select(chapter => chapter.IsSeparator ? chapter : chapter with { StartTime = chapter.StartTime - shift })
-            .Where(static chapter => chapter.IsSeparator || chapter.StartTime >= TimeSpan.Zero);
-
-        return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
+        try
+        {
+            var chapters = info.Chapters.Select(chapter => chapter.IsSeparator ? chapter : chapter with
+            {
+                StartTime = TimeSpan.FromTicks(checked(chapter.StartTime.Ticks - converted.Value)),
+                EndTime = chapter.EndTime is { } end ? TimeSpan.FromTicks(checked(end.Ticks - converted.Value)) : null
+            }).Where(static chapter => chapter.IsSeparator || chapter.StartTime >= TimeSpan.Zero).ToArray();
+            return new ChapterEditResult(info with { Chapters = Renumber(chapters) }, []);
+        }
+        catch (OverflowException)
+        {
+            return new ChapterEditResult(info, [new ChapterDiagnostic(DiagnosticSeverity.Error,
+                ChapterDiagnosticCode.FrameConversionOverflow, "The frame shift exceeds the supported time range.")]);
+        }
     }
 
-    /// <summary>
-    /// Executes the CreateZones operation.
-    /// </summary>
-    /// <param name="info">The chapter data to process.</param>
-    /// <param name="indexes">The zero-based chapter indexes.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The operation result.</returns>
-    public ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, decimal framesPerSecond)
+    /// <summary>Creates zones from ticks on an explicitly resolved canonical frame grid.</summary>
+    public ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, FrameRateValue framesPerSecond)
     {
-        if (framesPerSecond <= 0)
+        try
+        {
+            return CreateZonesCore(info, indexes, framesPerSecond);
+        }
+        catch (OverflowException)
+        {
+            return new ChapterZonesResult(string.Empty, [new ChapterDiagnostic(DiagnosticSeverity.Error,
+                ChapterDiagnosticCode.FrameConversionOverflow, "Zone frames exceed the supported Int64 range.")]);
+        }
+    }
+
+    private static ChapterZonesResult CreateZonesCore(ChapterSet info, IReadOnlySet<int> indexes, FrameRateValue framesPerSecond)
+    {
+        if (!framesPerSecond.IsKnown)
         {
             return new ChapterZonesResult(
                 string.Empty,
@@ -290,11 +305,8 @@ public sealed partial class ChapterEditingService(IChapterTimeFormatter timeForm
             [new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.InvalidChapterIndex, $"Chapter index {index} is out of range.",
                 Arguments: new Dictionary<string, object?>(StringComparer.Ordinal) { ["index"] = index })]);
 
-    [GeneratedRegex(@"\d+")]
-    private static partial Regex FirstIntegerRegex();
-
-    private static long ChapterFrame(Chapter chapter, decimal framesPerSecond)
+    private static long ChapterFrame(Chapter chapter, FrameRateValue framesPerSecond)
     {
-        return ChapterRounding.RoundToInt64((decimal)chapter.StartTime.TotalSeconds * framesPerSecond);
+        return checked((long)ExactFrameMath.FromTicks(chapter.StartTime.Ticks, framesPerSecond).RoundAwayFromZero());
     }
 }

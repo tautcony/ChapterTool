@@ -141,7 +141,7 @@ public sealed partial class PremiereMarkerListImporter(IChapterTimeFormatter tim
             "Adobe Premiere Pro Markers",
             Path.GetFileName(path),
             ChapterImportFormat.PremiereMarkers,
-            0,
+            FrameRateValue.Unknown,
             chapters[^1].StartTime,
             chapters);
         result = TextImportUtilities.SingleGroup(path, info);

@@ -1,5 +1,6 @@
 using System.Globalization;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Core.Transform;
@@ -22,7 +23,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
 
     private static readonly HashSet<string> VariableNames = new(StringComparer.Ordinal)
     {
-        "t", "fps", "index", "count", "chapter"
+        "t", "fps", "fpsRateKind", "fpsNumeratorText", "fpsDenominatorText", "fpsNumerator", "fpsDenominator", "index", "count", "chapter"
     };
 
     private static readonly HashSet<string> FunctionNames = new(StringComparer.Ordinal)
@@ -47,13 +48,25 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
     /// <returns>The operation result.</returns>
     public ExpressionAnalysisResult Analyze(string? expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24)
     {
+        if (!FrameRateValue.TryFromDecimal(framesPerSecond, metadata: true, out var rate, out var diagnostic))
+        {
+            return new ExpressionAnalysisResult([], [],
+                [new ExpressionAuthoringDiagnostic(diagnostic!, new ExpressionDiagnosticSuggestion("Expression.Suggestion.CheckLuaSyntax", "Supply a valid frame rate."), 0, expression?.Length ?? 0)]);
+        }
+
+        return Analyze(expression, caretIndex, ChapterRounding.RoundToInt64(timeSeconds * TimeSpan.TicksPerSecond), rate);
+    }
+
+    /// <summary>Analyzes with the same canonical context used by script execution.</summary>
+    public ExpressionAnalysisResult Analyze(string? expression, int caretIndex, long startTicks, FrameRateValue frameRate)
+    {
         expression ??= string.Empty;
         caretIndex = Math.Clamp(caretIndex, 0, expression.Length);
         var spans = Tokenize(expression);
         var completions = Complete(expression, caretIndex).ToList();
         var diagnostics = completions.Count > 0 && IsCompletionOnly(expression, caretIndex)
             ? []
-            : Diagnostics(expression, spans, timeSeconds, framesPerSecond);
+            : Diagnostics(expression, spans, startTicks, frameRate);
         return new ExpressionAnalysisResult(spans, completions, diagnostics);
     }
 
@@ -62,7 +75,12 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         var symbols = new List<ExpressionSymbol>
         {
             new("t", ExpressionTokenKind.Variable, "Current chapter time in seconds."),
-            new("fps", ExpressionTokenKind.Variable, "Current frame rate."),
+            new("fps", ExpressionTokenKind.Variable, "Numeric computation rate, or nil when the rate is Unknown."),
+            new("fpsRateKind", ExpressionTokenKind.Variable, "Rational, Approximate, or Unknown computation-rate provenance."),
+            new("fpsNumeratorText", ExpressionTokenKind.Variable, "Reduced rational numerator as invariant text; otherwise nil."),
+            new("fpsDenominatorText", ExpressionTokenKind.Variable, "Reduced rational denominator as invariant text; otherwise nil."),
+            new("fpsNumerator", ExpressionTokenKind.Variable, "Numeric rational numerator only when both components are safe integers; otherwise nil."),
+            new("fpsDenominator", ExpressionTokenKind.Variable, "Numeric rational denominator only when both components are safe integers; otherwise nil."),
             new("index", ExpressionTokenKind.Variable, "One-based index of the current non-separator chapter."),
             new("count", ExpressionTokenKind.Variable, "Total non-separator chapter count."),
             new("chapter", ExpressionTokenKind.Variable, "Current chapter context table."),
@@ -155,7 +173,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
                expression[(token.Start + token.Length)..].Trim().Length == 0;
     }
 
-    private List<ExpressionAuthoringDiagnostic> Diagnostics(string expression, IReadOnlyList<ExpressionTokenSpan> spans, decimal timeSeconds, decimal framesPerSecond)
+    private List<ExpressionAuthoringDiagnostic> Diagnostics(string expression, IReadOnlyList<ExpressionTokenSpan> spans, long startTicks, FrameRateValue frameRate)
     {
         if (spans.Any(static span => span.Kind == ExpressionTokenKind.Unknown))
         {
@@ -163,10 +181,9 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
             return [Diagnostic(ChapterDiagnosticCode.InvalidExpressionLuaUnknownToken, $"Unsupported Lua token '{unknown.Text}'.", "Expression.Suggestion.CheckLuaSyntax", "Check the Lua expression syntax.", unknown.Start, unknown.Length)];
         }
 
-        var chapter = new Models.Chapter(1, TimeSpan.FromSeconds((double)timeSeconds), "Chapter");
-        var result = expressionEngine.Evaluate(
-            expression,
-            new ChapterExpressionContext(chapter, 1, 1, timeSeconds, framesPerSecond, [chapter]));
+        var chapter = new Chapter(1, TimeSpan.FromTicks(startTicks), "Chapter");
+        var result = ChapterExpressionEngineBoundary.Evaluate(expressionEngine, expression,
+            new CanonicalChapterExpressionContext(chapter, 1, 1, startTicks, frameRate, [chapter]));
         if (result.Success)
         {
             return [];
@@ -257,7 +274,7 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
             return true;
         }
 
-        comment = default;
+        comment = null;
         return false;
     }
 
@@ -287,9 +304,12 @@ public sealed class ExpressionAuthoringService(IChapterExpressionEngine? express
         {
             return new ExpressionTokenSpan(index - 1, 1, text, ExpressionTokenKind.Operator);
         }
-        var kind = c is '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']' ? ExpressionTokenKind.Punctuation
-            : c is '\'' or '"' ? ExpressionTokenKind.String
-            : ExpressionTokenKind.Unknown;
+        var kind = c switch
+        {
+            '(' or ')' or ',' or ';' or '{' or '}' or '[' or ']' => ExpressionTokenKind.Punctuation,
+            '\'' or '"' => ExpressionTokenKind.String,
+            _ => ExpressionTokenKind.Unknown
+        };
         if (kind == ExpressionTokenKind.String)
         {
             index--;

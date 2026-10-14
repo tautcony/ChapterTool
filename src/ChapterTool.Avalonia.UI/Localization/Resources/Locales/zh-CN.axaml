@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <ResourceDictionary xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns="https://github.com/avaloniaui">
   <x:String x:Key="Text.Cut" xml:space="preserve">剪切</x:String>
   <x:String x:Key="Text.Copy" xml:space="preserve">复制</x:String>
@@ -6,12 +6,7 @@
   <x:String x:Key="Action.AppendMpls" xml:space="preserve">追加 MPLS…</x:String>
   <x:String x:Key="Action.BrowseTemplate" xml:space="preserve">浏览模板…</x:String>
   <x:String x:Key="Action.Close" xml:space="preserve">关闭</x:String>
-  <x:String x:Key="Action.CombineSegments" xml:space="preserve">合并段落：选项数={entries}，源类型={sourceType}</x:String>
-  <x:String x:Key="Action.DeleteRows" xml:space="preserve">删除行：索引={indexes}</x:String>
   <x:String x:Key="Action.Download" xml:space="preserve">下载</x:String>
-  <x:String x:Key="Action.EditCell" xml:space="preserve">编辑{kind}：行={row}，值='{value}'</x:String>
-  <x:String x:Key="Action.EditChapters" xml:space="preserve">编辑章节</x:String>
-  <x:String x:Key="Action.InsertRow" xml:space="preserve">插入行：索引={index}</x:String>
   <x:String x:Key="Action.Load" xml:space="preserve">加载</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">加载 OGM 示例</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">日志</x:String>
@@ -20,8 +15,6 @@
   <x:String x:Key="Action.Reload" xml:space="preserve">重新加载</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">恢复默认</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">设置</x:String>
-  <x:String x:Key="Action.ShiftFramesForward" xml:space="preserve">帧数前移：帧数={frames}</x:String>
-  <x:String x:Key="Action.SplitCombinedSegments" xml:space="preserve">拆分已合并段落：选项数={entries}，源类型={sourceType}</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
   <x:String x:Key="Common.Apply" xml:space="preserve">应用</x:String>
   <x:String x:Key="Common.Cancel" xml:space="preserve">取消</x:String>
@@ -32,6 +25,19 @@
   <x:String x:Key="Tool.Log.FilterWarning" xml:space="preserve">警告</x:String>
   <x:String x:Key="Tool.Log.FilterError" xml:space="preserve">错误</x:String>
   <x:String x:Key="Tool.Log.Filter" xml:space="preserve">按级别筛选</x:String>
+  <x:String x:Key="Tool.Log.FilterLevelLabel" xml:space="preserve">级别</x:String>
+  <x:String x:Key="Tool.Log.ResetFilters" xml:space="preserve">重置筛选</x:String>
+  <x:String x:Key="Tool.Log.MoreActions" xml:space="preserve">更多操作</x:String>
+  <x:String x:Key="Tool.Log.ExportFormat" xml:space="preserve">导出格式</x:String>
+  <x:String x:Key="Tool.Log.OpenDetails" xml:space="preserve">打开详情</x:String>
+  <x:String x:Key="Tool.Log.SearchMatchAdditional" xml:space="preserve">详情中有匹配内容。</x:String>
+  <x:String x:Key="Tool.Log.EntryAccessibleName" xml:space="preserve">{level}：{summary}，{time}。{context}</x:String>
+  <x:String x:Key="Tool.Log.NoEntries" xml:space="preserve">暂时没有日志记录。</x:String>
+  <x:String x:Key="Tool.Log.NoMatches" xml:space="preserve">没有符合搜索或筛选条件的记录。</x:String>
+  <x:String x:Key="Tool.Log.Message" xml:space="preserve">消息</x:String>
+  <x:String x:Key="Tool.Log.Context" xml:space="preserve">上下文</x:String>
+  <x:String x:Key="Tool.Log.NoDetails" xml:space="preserve">该记录没有更多详情。</x:String>
+  <x:String x:Key="Tool.Log.BackToList" xml:space="preserve">返回日志列表</x:String>
   <x:String x:Key="Tool.Log.CopySummary" xml:space="preserve">复制摘要</x:String>
   <x:String x:Key="Tool.Log.CopyDetails" xml:space="preserve">复制详情</x:String>
   <x:String x:Key="Tool.Log.Details" xml:space="preserve">技术详情</x:String>
@@ -45,6 +51,13 @@
   <x:String x:Key="Tool.Log.Properties" xml:space="preserve">属性</x:String>
   <x:String x:Key="Tool.Log.Raw" xml:space="preserve">原始数据</x:String>
   <x:String x:Key="Tool.Log.SearchPlaceholder" xml:space="preserve">搜索日志…</x:String>
+  <x:String x:Key="Tool.Log.ExportJson" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="Tool.Log.ExportCsv" xml:space="preserve">CSV</x:String>
+  <x:String x:Key="Tool.Log.ExportSucceeded" xml:space="preserve">已导出到 {value}</x:String>
+  <x:String x:Key="Tool.Log.ExportFailed" xml:space="preserve">导出失败：{value}</x:String>
+  <x:String x:Key="Tool.Log.CloseDetails" xml:space="preserve">关闭详情</x:String>
+  <x:String x:Key="Tool.Log.OpenFolder" xml:space="preserve">打开日志文件夹</x:String>
+  <x:String x:Key="Tool.Log.Export" xml:space="preserve">导出日志</x:String>
   <x:String x:Key="Tool.Log.NoStructuredData" xml:space="preserve">该日志没有嵌套结构化数据。</x:String>
   <x:String x:Key="Tool.Log.NoExceptionData" xml:space="preserve">该日志没有异常数据。</x:String>
   <x:String x:Key="Common.Save" xml:space="preserve">保存</x:String>
@@ -110,7 +123,10 @@
   <x:String x:Key="Diagnostic.FlacEmbeddedCue.NotFound" xml:space="preserve">未找到 Vorbis cuesheet 注释。</x:String>
   <x:String x:Key="Diagnostic.FrameRate.Invalid" xml:space="preserve">帧率必须大于零。</x:String>
   <x:String x:Key="Diagnostic.FrameText.Invalid" xml:space="preserve">帧文本未包含帧编号，或帧率无效。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Available" xml:space="preserve">已读取 DVD 光盘：{titleCount} 个标题，{chapterCount} 个章节，{titleSetCount} 个标题集。</x:String>
   <x:String x:Key="Diagnostic.Ifo.Invalid" xml:space="preserve">IFO 文件无效：{message}</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Captured" xml:space="preserve">已从 {source} 对应的 VOB 导航数据读取 DVD 章节时间。</x:String>
+  <x:String x:Key="Diagnostic.Ifo.Fallback" xml:space="preserve">无法验证 {source} 对应的 VOB 导航时间戳。DVD 章节保留原始 IFO 估算时间，未作对齐调整。</x:String>
   <x:String x:Key="Diagnostic.ImporterFallback.Used" xml:space="preserve">主导入器不可用，已使用备用导入器。</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.Cancelled" xml:space="preserve">Lua 表达式已取消。</x:String>
   <x:String x:Key="Diagnostic.LuaExpression.CompileFailed" xml:space="preserve">Lua 表达式语法错误：{message}</x:String>
@@ -157,8 +173,6 @@
   <x:String x:Key="Diagnostic.XmlRoot.Invalid" xml:space="preserve">应为 Chapters 根节点，实际为 {name}。</x:String>
   <x:String x:Key="Diagnostic.XplChapters.None" xml:space="preserve">未解析到 HD-DVD 章节。</x:String>
   <x:String x:Key="Diagnostic.XplParse.Failed" xml:space="preserve">无法解析 XPL 播放列表：{message}</x:String>
-  <x:String x:Key="EditKind.Frame" xml:space="preserve">帧</x:String>
-  <x:String x:Key="EditKind.Name" xml:space="preserve">名称</x:String>
   <x:String x:Key="Empty.Hint" xml:space="preserve">加载文件、拖放到此处，或加载示例以计算帧与表达式。</x:String>
   <x:String x:Key="Empty.Title" xml:space="preserve">尚未加载章节</x:String>
   <x:String x:Key="Expression.Suggestion.AddOperand" xml:space="preserve">在应用此记号前补充缺失的操作数。</x:String>
@@ -178,10 +192,12 @@
   <x:String x:Key="Grid.Frames" xml:space="preserve">帧</x:String>
   <x:String x:Key="Grid.Name" xml:space="preserve">名称</x:String>
   <x:String x:Key="Grid.Number" xml:space="preserve">#</x:String>
+  <x:String x:Key="Grid.TableLabel" xml:space="preserve">章节</x:String>
   <x:String x:Key="Grid.Time" xml:space="preserve">时间</x:String>
   <x:String x:Key="Label.ChapterName" xml:space="preserve">章节名</x:String>
   <x:String x:Key="Label.Clip" xml:space="preserve">片段 / 播放列表项</x:String>
   <x:String x:Key="Label.ClipOption" xml:space="preserve">{0}（{1} 个章节）</x:String>
+  <x:String x:Key="Label.DvdTitle" xml:space="preserve">标题 {number}</x:String>
   <x:String x:Key="Label.Expression" xml:space="preserve">表达式</x:String>
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">用于帧列的帧率</x:String>
@@ -193,31 +209,14 @@
   <x:String x:Key="Language.ChineseSimplified" xml:space="preserve">简体中文</x:String>
   <x:String x:Key="Language.English" xml:space="preserve">英语</x:String>
   <x:String x:Key="Language.Japanese" xml:space="preserve">日语</x:String>
-  <x:String x:Key="Log.AppendingMpls" xml:space="preserve">正在追加 MPLS：path='{path}'</x:String>
-  <x:String x:Key="Log.AutoFrameRateDetection" xml:space="preserve">自动帧率检测：option={option}，confidence={confidence}，accurate={accurate}/{evaluated}，deviation={deviation}</x:String>
-  <x:String x:Key="Log.ChangeFps" xml:space="preserve">转换至当前帧率：源配置={sourceFps}，目标配置={targetFps}，章节数 {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.CreateZones" xml:space="preserve">生成 Zones：选中行={selectedRows}，章节数={chapters}</x:String>
-  <x:String x:Key="Log.Diagnostic" xml:space="preserve">{operation} 诊断：severity={severity}，code={code}{location} message='{message}'{details}</x:String>
-  <x:String x:Key="Log.EditChapters" xml:space="preserve">{action}：章节数 {before} -&gt; {after}</x:String>
-  <x:String x:Key="Log.FrameInfoUpdated" xml:space="preserve">帧信息已更新：option={option}，fps={fps}，round={round}，chapters={chapters}</x:String>
-  <x:String x:Key="Log.ImportSummary" xml:space="preserve">{operation} {result}: groups={groups}, entries={entries}, chapters={chapters}, diagnostics={diagnostics}</x:String>
-  <x:String x:Key="Log.LanguageSet" xml:space="preserve">语言已设置为 {language}</x:String>
-  <x:String x:Key="Log.LoadingSource" xml:space="preserve">正在载入源：path='{path}'</x:String>
-  <x:String x:Key="Log.OpenedPath" xml:space="preserve">{status}：path='{path}'</x:String>
-  <x:String x:Key="Log.RelatedMediaNotFound" xml:space="preserve">{status}：reference='{reference}'，resolved='{resolved}'</x:String>
-  <x:String x:Key="Log.SavingChapters" xml:space="preserve">正在保存章节：格式={format}，目录='{directory}'，来源='{source}'，章节数={chapters}，应用表达式={applyExpression}，表达式='{expression}'</x:String>
-  <x:String x:Key="Log.SelectedSourceOption" xml:space="preserve">已选择源选项：index={index}，label='{label}'，source='{source}'，sourceType={sourceType}，chapters={chapters}，fps={fps}</x:String>
-  <x:String x:Key="Log.SettingsLoaded" xml:space="preserve">已载入设置：保存目录='{savingPath}'，语言='{language}'</x:String>
-  <x:String x:Key="Log.Status" xml:space="preserve">{status}</x:String>
-  <x:String x:Key="Log.UnexpectedError" xml:space="preserve">用户界面操作意外失败</x:String>
-  <x:String x:Key="Log.StatusFromPath" xml:space="preserve">{status}，来源：{path}</x:String>
-  <x:String x:Key="Log.TemplateLoadFailed" xml:space="preserve">无法从 '{path}' 加载章节名称模板</x:String>
-  <x:String x:Key="Log.TemplateLoaded" xml:space="preserve">已从 '{path}' 加载章节名称模板 '{name}'</x:String>
   <x:String x:Key="Main.AppendMpls" xml:space="preserve">追加合并 MPLS</x:String>
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自动</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 个章节</x:String>
+  <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 个章节</x:String>
   <x:String x:Key="Main.ChangeFps" xml:space="preserve">转换至当前帧率</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">合并</x:String>
+  <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">按边界拆分</x:String>
+  <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">按边界拆分</x:String>
   <x:String x:Key="Main.CreateZones" xml:space="preserve">生成 Zones</x:String>
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">前移帧</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">插入</x:String>
@@ -271,14 +270,14 @@
   <x:String x:Key="Settings.Appearance.MonospaceFont" xml:space="preserve">等宽字体</x:String>
   <x:String x:Key="Settings.Appearance.MonospaceFontPreviewFor" xml:space="preserve">{name} 的等宽字体预览</x:String>
   <x:String x:Key="Settings.Appearance.Preset" xml:space="preserve">主题预设</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.avalonia-default" xml:space="preserve">Avalonia 默认</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-dark" xml:space="preserve">Ayu 深色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-light" xml:space="preserve">Ayu 浅色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve">Ayu 幻景</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve">Gruvbox 深色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve">Gruvbox 浅色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-dark" xml:space="preserve">Solarized 深色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-light" xml:space="preserve">Solarized 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AvaloniaDefault" xml:space="preserve">Avalonia 默认</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuDark" xml:space="preserve">Ayu 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuLight" xml:space="preserve">Ayu 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuMirage" xml:space="preserve">Ayu 幻景</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxDark" xml:space="preserve">Gruvbox 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxLight" xml:space="preserve">Gruvbox 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedDark" xml:space="preserve">Solarized 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedLight" xml:space="preserve">Solarized 浅色</x:String>
   <x:String x:Key="Settings.Appearance.Preview" xml:space="preserve">配色预览</x:String>
   <x:String x:Key="Settings.Appearance.PreviewFor" xml:space="preserve">{name} 的配色预览</x:String>
   <x:String x:Key="Settings.Appearance.SystemMonospaceFont" xml:space="preserve">系统等宽默认</x:String>
@@ -298,7 +297,10 @@
   <x:String x:Key="Settings.FrameDisplay" xml:space="preserve">帧显示</x:String>
   <x:String x:Key="Settings.FrameDisplayRound" xml:space="preserve">取整</x:String>
   <x:String x:Key="Settings.FrameDisplayDecimalPlaces" xml:space="preserve">保留小数位</x:String>
+  <x:String x:Key="Settings.FrameDisplayFullPrecision" xml:space="preserve">不截取</x:String>
   <x:String x:Key="Settings.FrameDecimalPlaces" xml:space="preserve">小数位数</x:String>
+  <x:String x:Key="Settings.ShowRepeatingFrameDecimals" xml:space="preserve">显示小数循环节</x:String>
+  <x:String x:Key="Settings.ShowRepeatingFrameDecimals.Help" xml:space="preserve">选择“不截取”时，可用上划线显示循环节；关闭后显示普通小数格式。</x:String>
   <x:String x:Key="Settings.DeleteRowsTiming" xml:space="preserve">删除行时的时间处理</x:String>
   <x:String x:Key="Settings.PreserveChapterTimes" xml:space="preserve">保留章节时间</x:String>
   <x:String x:Key="Settings.NormalizeChapterTimes" xml:space="preserve">归一化章节时间</x:String>
@@ -332,6 +334,10 @@
   <x:String x:Key="Settings.Unsaved.Discard" xml:space="preserve">放弃</x:String>
   <x:String x:Key="Settings.Unsaved.Message" xml:space="preserve">设置修改已实时应用到当前会话，但尚未保存。关闭前要保存吗？</x:String>
   <x:String x:Key="Settings.Unsaved.Title" xml:space="preserve">设置尚未保存</x:String>
+  <x:String x:Key="SessionLoss.Title" xml:space="preserve">结束当前文档会话？</x:String>
+  <x:String x:Key="SessionLoss.Message" xml:space="preserve">继续后将结束当前文档会话及其撤销历史。导出的章节文件不包含历史记录。要继续吗？</x:String>
+  <x:String x:Key="SessionLoss.Continue" xml:space="preserve">继续</x:String>
+  <x:String x:Key="Status.SessionReplacementCanceled" xml:space="preserve">当前文档会话未更改。</x:String>
   <x:String x:Key="Settings.ValidateTools" xml:space="preserve">检查工具</x:String>
   <x:String x:Key="Status.AppendFailed" xml:space="preserve">追加失败</x:String>
   <x:String x:Key="Status.Appended" xml:space="preserve">已从 {1} 追加 {0} 个 MPLS 片段。</x:String>
@@ -353,6 +359,7 @@
   <x:String x:Key="Status.DropTooLarge" xml:space="preserve">文件过大（最大 64 MB）。</x:String>
   <x:String x:Key="Status.Duplicated" xml:space="preserve">已复制第 {0} 行。</x:String>
   <x:String x:Key="Status.ExpressionApplied" xml:space="preserve">已应用表达式 · {0} fps · {1} 行</x:String>
+  <x:String x:Key="Status.ExpressionApplyFailed" xml:space="preserve">无法应用表达式。</x:String>
   <x:String x:Key="Status.ExpressionPresetApplied" xml:space="preserve">已应用表达式预设：{0}</x:String>
   <x:String x:Key="Status.ExpressionPresetUnknown" xml:space="preserve">未知表达式预设：{0}</x:String>
   <x:String x:Key="Status.FramesUpdated" xml:space="preserve">已更新帧 · {0} fps · {1} 行</x:String>
@@ -360,6 +367,7 @@
   <x:String x:Key="Status.LoadFailed" xml:space="preserve">载入失败</x:String>
   <x:String x:Key="Status.Loaded" xml:space="preserve">已从 {1} 加载 {0} 个章节。</x:String>
   <x:String x:Key="Status.LoadedChapters" xml:space="preserve">已载入 {count} 个章节</x:String>
+  <x:String x:Key="Status.LoadedChapter" xml:space="preserve">已载入 {count} 个章节</x:String>
   <x:String x:Key="Status.Loading" xml:space="preserve">加载中…</x:String>
   <x:String x:Key="Status.LoadingSource" xml:space="preserve">正在加载...</x:String>
   <x:String x:Key="Status.LoadingSource.Discover" xml:space="preserve">正在发现标题...</x:String>
@@ -382,7 +390,7 @@
   <x:String x:Key="Status.Ready" xml:space="preserve">就绪</x:String>
   <x:String x:Key="Status.RelatedMediaNotFound" xml:space="preserve">未找到相关媒体文件</x:String>
   <x:String x:Key="Status.RelatedMediaNote" xml:space="preserve">浏览器无法打开本地媒体路径；可用时仅以下载/链接方式展示引用。</x:String>
-  <x:String x:Key="Status.RestoredClips" xml:space="preserve">已恢复分开的剪辑。</x:String>
+  <x:String x:Key="Status.RestoredClips" xml:space="preserve">已按源边界拆分。</x:String>
   <x:String x:Key="Status.RowsRefreshed" xml:space="preserve">已刷新行 · {0} fps · {1} 行</x:String>
   <x:String x:Key="Status.SaveFailed" xml:space="preserve">保存失败</x:String>
   <x:String x:Key="Status.Saved" xml:space="preserve">已保存</x:String>
@@ -395,6 +403,50 @@
   <x:String x:Key="Status.TemplateLoaded" xml:space="preserve">已加载模板 {name}</x:String>
   <x:String x:Key="Status.TemplateNotSelected" xml:space="preserve">未选择</x:String>
   <x:String x:Key="Status.Updated" xml:space="preserve">已更新</x:String>
+  <x:String x:Key="History.Title" xml:space="preserve">编辑历史</x:String>
+  <x:String x:Key="History.SessionLifetime" xml:space="preserve">历史记录仅在当前文档会话期间保留。</x:String>
+  <x:String x:Key="History.SessionLifetimeShort" xml:space="preserve">仅当前会话</x:String>
+  <x:String x:Key="History.Undo" xml:space="preserve">撤销</x:String>
+  <x:String x:Key="History.Redo" xml:space="preserve">重做</x:String>
+  <x:String x:Key="History.Close" xml:space="preserve">关闭</x:String>
+  <x:String x:Key="History.Current" xml:space="preserve">当前历史位置</x:String>
+  <x:String x:Key="History.Restore" xml:space="preserve">恢复到此节点</x:String>
+  <x:String x:Key="History.Retry" xml:space="preserve">重试</x:String>
+  <x:String x:Key="History.Loading" xml:space="preserve">正在加载详细信息…</x:String>
+  <x:String x:Key="History.RootOverview" xml:space="preserve">初始文档概览</x:String>
+  <x:String x:Key="History.PendingPreviewNotice" xml:space="preserve">历史导航会丢弃待处理的预览。</x:String>
+  <x:String x:Key="History.Added" xml:space="preserve">新增</x:String>
+  <x:String x:Key="History.Removed" xml:space="preserve">删除</x:String>
+  <x:String x:Key="History.Modified" xml:space="preserve">修改</x:String>
+  <x:String x:Key="History.DetailResourceFailure" xml:space="preserve">资源不足，无法加载详细信息。</x:String>
+  <x:String x:Key="History.DetailNotFound" xml:space="preserve">此历史节点已不可用。</x:String>
+  <x:String x:Key="History.DetailEnded" xml:space="preserve">此文档会话已结束。</x:String>
+  <x:String x:Key="History.DetailFailed" xml:space="preserve">无法加载历史详细信息。</x:String>
+  <x:String x:Key="History.RestoreApplied" xml:space="preserve">已恢复到所选节点。</x:String>
+  <x:String x:Key="History.LocateCurrent" xml:space="preserve">定位当前节点</x:String>
+  <x:String x:Key="History.CurrentHidden" xml:space="preserve">当前节点隐藏在此分支下</x:String>
+  <x:String x:Key="History.PreferredRedo" xml:space="preserve">首选重做分支</x:String>
+  <x:String x:Key="History.RedoChoices" xml:space="preserve">重做分支选项</x:String>
+  <x:String x:Key="History.RedoChoice" xml:space="preserve">重做所选分支</x:String>
+  <x:String x:Key="History.Summary" xml:space="preserve">摘要</x:String>
+  <x:String x:Key="History.Changes" xml:space="preserve">变更</x:String>
+  <x:String x:Key="History.Parameters" xml:space="preserve">参数</x:String>
+  <x:String x:Key="History.Operation.Generic" xml:space="preserve">编辑</x:String>
+  <x:String x:Key="History.Operation.Load" xml:space="preserve">初始文档</x:String>
+  <x:String x:Key="History.Operation.Edit" xml:space="preserve">编辑章节</x:String>
+  <x:String x:Key="History.Operation.Delete" xml:space="preserve">删除章节</x:String>
+  <x:String x:Key="History.Operation.Insert" xml:space="preserve">插入章节</x:String>
+  <x:String x:Key="History.Operation.FrameShift" xml:space="preserve">偏移章节</x:String>
+  <x:String x:Key="History.Operation.FrameRateChange" xml:space="preserve">更改帧率</x:String>
+  <x:String x:Key="History.Operation.Expression" xml:space="preserve">应用表达式</x:String>
+  <x:String x:Key="History.Operation.Template" xml:space="preserve">应用模板名称</x:String>
+  <x:String x:Key="History.Operation.Options" xml:space="preserve">应用章节选项</x:String>
+  <x:String x:Key="History.Operation.Merge" xml:space="preserve">合并轨道</x:String>
+  <x:String x:Key="History.Operation.Split" xml:space="preserve">拆分轨道</x:String>
+  <x:String x:Key="History.Operation.Append" xml:space="preserve">追加片段</x:String>
+  <x:String x:Key="History.UndoApplied" xml:space="preserve">已撤销编辑</x:String>
+  <x:String x:Key="History.RedoApplied" xml:space="preserve">已重做编辑</x:String>
+  <x:String x:Key="History.NavigationFailed" xml:space="preserve">无法切换历史记录。</x:String>
   <x:String x:Key="Status.UnexpectedError" xml:space="preserve">操作意外失败。请查看日志了解详细信息。</x:String>
   <x:String x:Key="Status.ZonesEmpty" xml:space="preserve">未生成 zones。</x:String>
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones 已生成</x:String>
@@ -404,6 +456,78 @@
   <x:String x:Key="Title.Refresh" xml:space="preserve">按当前选项刷新表格</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">按当前选项导出并下载</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">应用表达式</x:String>
+  <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">时间修改 {times}/{count} 个章节</x:String>
+  <x:String x:Key="Expression.Review.OtherSummary" xml:space="preserve">影响 {affected} 章 · 帧更新 {frames} 项 · 属性 {properties} 项</x:String>
+  <x:String x:Key="Expression.Review.Details" xml:space="preserve">其他修改</x:String>
+  <x:String x:Key="Expression.Preview.Title" xml:space="preserve">表达式预览</x:String>
+  <x:String x:Key="Expression.Preview.NoChanges" xml:space="preserve">章节值不会发生变化。</x:String>
+  <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">已取消表达式预览。</x:String>
+  <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">正在更新表达式预览…</x:String>
+  <x:String x:Key="Expression.Preview.Options" xml:space="preserve">预览其他选项</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">更新预览</x:String>
+  <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">放弃</x:String>
+  <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">预览已过期。请更新后再应用。</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">浅色值为已提交内容；箭头指向预览值。</x:String>
+  <x:String x:Key="Expression.Preview.ComparisonAccessibleName" xml:space="preserve">{field}：已提交 {before}；预览 {candidate}；变化 {delta}。</x:String>
+  <x:String x:Key="Expression.Preview.Scope" xml:space="preserve">当前轨道：{track} · {count} 个章节</x:String>
+  <x:String x:Key="Expression.Preview.Separators" xml:space="preserve">已排除 {count} 个分隔行</x:String>
+  <x:String x:Key="Expression.Preview.Summary" xml:space="preserve">受影响章节：{affected} · 时间变化：{times} · 帧信息更新：{frames} · 属性变化：{properties}</x:String>
+  <x:String x:Key="Expression.Preview.DeltaFrames" xml:space="preserve">{value} 帧</x:String>
+  <x:String x:Key="Expression.Preview.Applied" xml:space="preserve">已应用表达式：{affected} 个受影响章节，{times} 处时间变化，{frames} 处帧信息更新。撤销一次即可恢复。</x:String>
+  <x:String x:Key="Expression.Preview.TimesUnchanged" xml:space="preserve">章节时间未变化。</x:String>
+  <x:String x:Key="Expression.Preview.Properties" xml:space="preserve">文档和轨道属性</x:String>
+  <x:String x:Key="Expression.Preview.Filter" xml:space="preserve">显示</x:String>
+  <x:String x:Key="Expression.Preview.ChangedOnly" xml:space="preserve">仅显示变化</x:String>
+  <x:String x:Key="Expression.Preview.AllChapters" xml:space="preserve">所有章节</x:String>
+  <x:String x:Key="Expression.Preview.Units" xml:space="preserve">单位</x:String>
+  <x:String x:Key="Expression.Preview.TimeUnits" xml:space="preserve">时间</x:String>
+  <x:String x:Key="Expression.Preview.FrameUnits" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="Expression.Preview.Chapter" xml:space="preserve">章节</x:String>
+  <x:String x:Key="Expression.Preview.Before" xml:space="preserve">修改前</x:String>
+  <x:String x:Key="Expression.Preview.After" xml:space="preserve">修改后</x:String>
+  <x:String x:Key="Expression.Preview.Delta" xml:space="preserve">变化量</x:String>
+  <x:String x:Key="Expression.Preview.FrameDetails" xml:space="preserve">帧信息详情</x:String>
+  <x:String x:Key="Expression.Preview.BeforeFrames" xml:space="preserve">修改前帧数</x:String>
+  <x:String x:Key="Expression.Preview.AfterFrames" xml:space="preserve">修改后帧数</x:String>
+  <x:String x:Key="Expression.Preview.Accuracy" xml:space="preserve">帧精度</x:String>
+  <x:String x:Key="Expression.State.Unavailable" xml:space="preserve">当前没有可预览的章节。</x:String>
+  <x:String x:Key="Expression.State.Waiting" xml:space="preserve">等待更新预览…</x:String>
+  <x:String x:Key="Expression.State.Computing" xml:space="preserve">正在计算预览…</x:String>
+  <x:String x:Key="Expression.State.Ready" xml:space="preserve">预览已就绪。</x:String>
+  <x:String x:Key="Expression.State.Empty" xml:space="preserve">请输入表达式或选择预设。</x:String>
+  <x:String x:Key="Expression.State.Composing" xml:space="preserve">完成文字输入后再更新预览。</x:String>
+  <x:String x:Key="Expression.State.Stale" xml:space="preserve">章节已变化。请先更新预览再应用。</x:String>
+  <x:String x:Key="Expression.State.Invalid" xml:space="preserve">此表达式无法应用。</x:String>
+  <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">结果没有可应用的变化。</x:String>
+  <x:String x:Key="Expression.State.Applying" xml:space="preserve">正在应用已检查的更改…</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">更新预览</x:String>
+  <x:String x:Key="Expression.Action.Apply" xml:space="preserve">应用更改</x:String>
+  <x:String x:Key="Expression.Value.Missing" xml:space="preserve">不可用</x:String>
+  <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">未计算</x:String>
+  <x:String x:Key="Expression.Value.NotSet" xml:space="preserve">未设置</x:String>
+  <x:String x:Key="Expression.Value.IncompatibleFrames" xml:space="preserve">帧率不同</x:String>
+  <x:String x:Key="Expression.Unit.FramesShort" xml:space="preserve">帧</x:String>
+  <x:String x:Key="Expression.Unit.FramesPerSecond" xml:space="preserve">帧/秒</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Accurate" xml:space="preserve">帧精确</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Inexact" xml:space="preserve">位于帧之间</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.NotCalculated" xml:space="preserve">未计算</x:String>
+  <x:String x:Key="Expression.FrameAccuracy.Policy" xml:space="preserve">与最近帧的距离小于 0.01 帧时，标记为帧精确。</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Document" xml:space="preserve">文档</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Track" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Segment" xml:space="preserve">片段</x:String>
+  <x:String x:Key="Expression.PropertyOwner.Chapter" xml:space="preserve">章节</x:String>
+  <x:String x:Key="Expression.Property.Title" xml:space="preserve">标题</x:String>
+  <x:String x:Key="Expression.Property.Source" xml:space="preserve">来源</x:String>
+  <x:String x:Key="Expression.Property.ImportFormat" xml:space="preserve">导入格式</x:String>
+  <x:String x:Key="Expression.Property.Duration" xml:space="preserve">时长</x:String>
+  <x:String x:Key="Expression.Property.FrameRate" xml:space="preserve">帧率</x:String>
+  <x:String x:Key="Expression.Property.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="Expression.Property.Number" xml:space="preserve">章节编号</x:String>
+  <x:String x:Key="Expression.Property.Type" xml:space="preserve">章节类型</x:String>
+  <x:String x:Key="Expression.Property.Presence" xml:space="preserve">章节条目</x:String>
+  <x:String x:Key="Expression.Property.TrackOrder" xml:space="preserve">轨道顺序</x:String>
+  <x:String x:Key="Expression.Property.Additional" xml:space="preserve">其他字段</x:String>
+  <x:String x:Key="Expression.Property.ValueChanged" xml:space="preserve">已更新</x:String>
   <x:String x:Key="Tool.Expression.LoadLuaScript" xml:space="preserve">加载 Lua...</x:String>
   <x:String x:Key="Tool.Expression.Preset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Tool.Expression.Title" xml:space="preserve">表达式</x:String>
@@ -416,4 +540,168 @@
   <x:String x:Key="Tool.TemplateNames.UseStandard" xml:space="preserve">使用标准模板名称</x:String>
   <x:String x:Key="Tool.Zones.Title" xml:space="preserve">Zones</x:String>
   <x:String x:Key="XmlLanguage.Undetermined" xml:space="preserve">未确定</x:String>
+  <x:String x:Key="Settings.Shortcuts" xml:space="preserve">快捷键</x:String>
+  <x:String x:Key="Settings.Shortcuts.Description" xml:space="preserve">自定义主要操作的键盘手势。</x:String>
+  <x:String x:Key="Settings.Shortcuts.Reset" xml:space="preserve">恢复快捷键</x:String>
+  <x:String x:Key="Settings.Shortcuts.CaptureHint" xml:space="preserve">按下组合键即可设置快捷键。</x:String>
+  <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">此快捷键由应用程序固定。</x:String>
+  <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">保存</x:String>
+  <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">重新加载</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">刷新</x:String>
+  <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">日志</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">选择片段</x:String>
+  <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">插入行</x:String>
+  <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">删除行</x:String>
+  <x:String x:Key="Shortcuts.Action.Load" xml:space="preserve">加载</x:String>
+  <x:String x:Key="Shortcuts.Action.PreviousClip" xml:space="preserve">上一个片段</x:String>
+  <x:String x:Key="Shortcuts.Action.NextClip" xml:space="preserve">下一个片段</x:String>
+  <x:String x:Key="Shortcuts.Action.Undo" xml:space="preserve">撤销编辑</x:String>
+  <x:String x:Key="Shortcuts.Action.Redo" xml:space="preserve">重做编辑</x:String>
+  <x:String x:Key="Shortcuts.Action.SaveFormat" xml:space="preserve">选择保存格式</x:String>
+  <x:String x:Key="Modal.ExpressionTitle">表达式</x:String>
+  <x:String x:Key="Modal.ExportOptionsTitle">高级导出选项</x:String>
+  <x:String x:Key="Parity.NamingTitle">命名与编号</x:String>
+  <x:String x:Key="Parity.InvalidNumber">请输入 0 至 1000 的整数偏移量。</x:String>
+  <x:String x:Key="Parity.InvalidShift">请输入 -1000000 至 1000000 的整数帧平移量。</x:String>
+  <x:String x:Key="Parity.Completions">补全建议</x:String>
+  <x:String x:Key="Parity.Position">位置</x:String>
+  <x:String x:Key="Parity.ScriptLoadFailed">无法加载此 Lua 脚本，已保留原草稿。</x:String>
+  <x:String x:Key="Parity.UnsavedSettings">放弃未保存的设置？</x:String>
+  <x:String x:Key="Parity.Discard">放弃</x:String>
+  <x:String x:Key="Parity.KeepEditing">继续编辑</x:String>
+  <x:String x:Key="Parity.SettingsSaveFailed">设置保存失败，请继续编辑或重试。</x:String>
+  <x:String x:Key="Parity.InvalidShortcut">快捷键无效、被保留或存在冲突。</x:String>
+  <x:String x:Key="Parity.LogSearch">搜索日志</x:String>
+  <x:String x:Key="Parity.LogSeverity">级别</x:String>
+  <x:String x:Key="Parity.LogAll">全部级别</x:String>
+  <x:String x:Key="Parity.LogCount">{count} 条日志</x:String>
+  <x:String x:Key="Parity.LogDetails">详情</x:String>
+  <x:String x:Key="Parity.LogBack">返回日志</x:String>
+  <x:String x:Key="Parity.LogRaw">原始条目</x:String>
+  <x:String x:Key="Parity.LogExport">导出日志</x:String>
+  <x:String x:Key="Parity.LogDetailMatch">详情匹配</x:String>
+  <x:String x:Key="Parity.LogFailed">日志操作失败，可以重试。</x:String>
+  <x:String x:Key="Parity.LogExported">已发起日志下载。</x:String>
+  <x:String x:Key="Parity.LogLevel.Info">信息</x:String>
+  <x:String x:Key="Parity.LogLevel.Information">信息</x:String>
+  <x:String x:Key="Parity.LogLevel.Warning">警告</x:String>
+  <x:String x:Key="Parity.LogLevel.Error">错误</x:String>
+  <x:String x:Key="Parity.LogLevel.Debug">调试</x:String>
+  <x:String x:Key="Parity.LogLevel.Trace">跟踪</x:String>
+  <x:String x:Key="Parity.SourceFps">源帧率</x:String>
+  <x:String x:Key="Parity.TargetFps">目标帧率</x:String>
+  <x:String x:Key="Parity.InvalidCandidate">无法应用此操作。请检查输入值与详细信息。</x:String>
+  <x:String x:Key="XmlLanguage.Chinese">中文</x:String>
+  <x:String x:Key="XmlLanguage.German">德语</x:String>
+  <x:String x:Key="XmlLanguage.French">法语</x:String>
+  <x:String x:Key="XmlLanguage.Italian">意大利语</x:String>
+  <x:String x:Key="XmlLanguage.Spanish">西班牙语</x:String>
+  <x:String x:Key="History.HistoryPage" xml:space="preserve">历史</x:String>
+  <x:String x:Key="History.DetailsPage" xml:space="preserve">详情</x:String>
+  <x:String x:Key="History.Filter.All" xml:space="preserve">所有更改</x:String>
+  <x:String x:Key="History.NoFilteredChanges" xml:space="preserve">没有符合此筛选条件的更改。</x:String>
+  <x:String x:Key="History.Filter.Added" xml:space="preserve">新增</x:String>
+  <x:String x:Key="History.Filter.Removed" xml:space="preserve">移除</x:String>
+  <x:String x:Key="History.Filter.Modified" xml:space="preserve">修改</x:String>
+  <x:String x:Key="History.FieldHeader" xml:space="preserve">字段</x:String>
+  <x:String x:Key="History.BeforeHeader" xml:space="preserve">更改前</x:String>
+  <x:String x:Key="History.AfterHeader" xml:space="preserve">更改后</x:String>
+  <x:String x:Key="History.DeltaHeader" xml:space="preserve">差值</x:String>
+  <x:String x:Key="History.DeltaTicks" xml:space="preserve">{0} 个刻度</x:String>
+  <x:String x:Key="History.Presence.Absent" xml:space="preserve">不存在</x:String>
+  <x:String x:Key="History.Presence.Null" xml:space="preserve">空值</x:String>
+  <x:String x:Key="History.Presence.Empty" xml:space="preserve">空文本</x:String>
+  <x:String x:Key="History.Parameter.Field" xml:space="preserve">字段</x:String>
+  <x:String x:Key="History.Parameter.ChapterId" xml:space="preserve">章节</x:String>
+  <x:String x:Key="History.Parameter.ChapterIds" xml:space="preserve">章节</x:String>
+  <x:String x:Key="History.Parameter.Value" xml:space="preserve">值</x:String>
+  <x:String x:Key="History.Parameter.DisplayFps" xml:space="preserve">显示帧率</x:String>
+  <x:String x:Key="History.Parameter.Frames" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="History.Parameter.BeforeChapterId" xml:space="preserve">前置章节</x:String>
+  <x:String x:Key="History.Parameter.SourcePath" xml:space="preserve">来源</x:String>
+  <x:String x:Key="History.Parameter.Script" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="History.Parameter.Expression" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="History.Parameter.AutoGenerateNames" xml:space="preserve">生成名称</x:String>
+  <x:String x:Key="History.Parameter.UseTemplateNames" xml:space="preserve">使用模板名称</x:String>
+  <x:String x:Key="History.Parameter.Template" xml:space="preserve">模板</x:String>
+  <x:String x:Key="History.Parameter.OrderShift" xml:space="preserve">顺序偏移</x:String>
+  <x:String x:Key="History.Parameter.SourceFps" xml:space="preserve">源帧率</x:String>
+  <x:String x:Key="History.Parameter.TargetFps" xml:space="preserve">目标帧率</x:String>
+  <x:String x:Key="History.Field.Title" xml:space="preserve">标题</x:String>
+  <x:String x:Key="History.Field.SourceName" xml:space="preserve">来源名称</x:String>
+  <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">导入格式</x:String>
+  <x:String x:Key="History.Field.Duration" xml:space="preserve">时长</x:String>
+  <x:String x:Key="History.Field.FrameRate" xml:space="preserve">帧率</x:String>
+  <x:String x:Key="History.Field.TrackOrder" xml:space="preserve">轨道顺序</x:String>
+  <x:String x:Key="History.Field.Presence" xml:space="preserve">存在状态</x:String>
+  <x:String x:Key="History.Field.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="History.Field.ChapterOrder" xml:space="preserve">章节顺序</x:String>
+  <x:String x:Key="History.Field.SegmentOrder" xml:space="preserve">片段顺序</x:String>
+  <x:String x:Key="History.Field.Track" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Field.Position" xml:space="preserve">位置</x:String>
+  <x:String x:Key="History.Field.DisplayNumber" xml:space="preserve">章节编号</x:String>
+  <x:String x:Key="History.Field.StartTicks" xml:space="preserve">开始时间</x:String>
+  <x:String x:Key="History.Field.EndTicks" xml:space="preserve">结束时间</x:String>
+  <x:String x:Key="History.Field.FramesInfo" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="History.Field.FrameAccuracy" xml:space="preserve">帧精度</x:String>
+  <x:String x:Key="History.Field.Kind" xml:space="preserve">类型</x:String>
+  <x:String x:Key="History.Field.SourceTrackId" xml:space="preserve">来源轨道</x:String>
+  <x:String x:Key="History.Field.SourceEntryId" xml:space="preserve">来源条目</x:String>
+  <x:String x:Key="History.Field.ReferencedMediaFiles" xml:space="preserve">媒体文件</x:String>
+  <x:String x:Key="History.Field.MediaTracks" xml:space="preserve">媒体轨道</x:String>
+  <x:String x:Key="History.Field.ChapterCount" xml:space="preserve">章节数</x:String>
+  <x:String x:Key="History.Field.ImportDisplayName" xml:space="preserve">导入名称</x:String>
+  <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">光盘标题</x:String>
+  <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">源帧率</x:String>
+  <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">源章节数</x:String>
+  <x:String x:Key="History.Parameter.TargetScope" xml:space="preserve">范围</x:String>
+  <x:String x:Key="History.Parameter.TrackId" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Parameter.TrackIds" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Parameter.TrackCount" xml:space="preserve">轨道数</x:String>
+  <x:String x:Key="History.Parameter.DeleteTiming" xml:space="preserve">删除时间处理</x:String>
+  <x:String x:Key="History.Parameter.FrameDisplay" xml:space="preserve">帧显示</x:String>
+  <x:String x:Key="History.Parameter.FrameDecimalPlaces" xml:space="preserve">帧小数位</x:String>
+  <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">名称</x:String>
+  <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">开始时间</x:String>
+  <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">帧</x:String>
+  <x:String x:Key="History.Presence.Unknown" xml:space="preserve">未知</x:String>
+  <x:String x:Key="History.Unit.Fps" xml:space="preserve">帧/秒</x:String>
+  <x:String x:Key="History.FrameRateContext" xml:space="preserve">帧率 {Before} → {After}</x:String>
+  <x:String x:Key="History.Track.Unknown" xml:space="preserve">不可用的轨道</x:String>
+  <x:String x:Key="History.ChapterContext" xml:space="preserve">{Track} · 章节位置 {Position}</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Unknown" xml:space="preserve">未知</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Ogm" xml:space="preserve">OGM</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.MatroskaXml" xml:space="preserve">Matroska XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.WebVtt" xml:space="preserve">WebVTT</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Cue" xml:space="preserve">CUE</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.PremiereMarkers" xml:space="preserve">Premiere 标记</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Mpls" xml:space="preserve">蓝光播放列表 (MPLS)</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.DvdIfo" xml:space="preserve">DVD IFO</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.HdDvdXpl" xml:space="preserve">HD-DVD XPL</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Media" xml:space="preserve">媒体容器</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Bdmv" xml:space="preserve">蓝光光盘</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Text" xml:space="preserve">文本</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Xml" xml:space="preserve">XML</x:String>
+  <x:String x:Key="History.Enum.ImportFormat.Json" xml:space="preserve">JSON</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Marker" xml:space="preserve">标记</x:String>
+  <x:String x:Key="History.Enum.ChapterKind.Separator" xml:space="preserve">分隔符</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">标准</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">偏早</x:String>
+  <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">偏晚</x:String>
+  <x:String x:Key="History.Parameter.TrackName" xml:space="preserve">轨道名称</x:String>
+  <x:String x:Key="History.ChangedTracks" xml:space="preserve">变更轨道</x:String>
+  <x:String x:Key="History.ChangedSegments" xml:space="preserve">变更片段</x:String>
+  <x:String x:Key="History.ComparisonNotice" xml:space="preserve">以下更改将此节点与其父节点进行比较。</x:String>
+  <x:String x:Key="History.CurrentStateNote" xml:space="preserve">查看历史记录不会移动当前保存状态。</x:String>
+  <x:String x:Key="History.Boolean.True" xml:space="preserve">是</x:String>
+  <x:String x:Key="History.Boolean.False" xml:space="preserve">否</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Preserve" xml:space="preserve">保留时间戳</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Normalize" xml:space="preserve">规范剩余时间</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.Round" xml:space="preserve">整数帧</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.DecimalPlaces" xml:space="preserve">小数帧</x:String>
+  <x:String x:Key="History.ToggleBranch" xml:space="preserve">展开或折叠历史分支</x:String>
+  <x:String x:Key="History.Empty" xml:space="preserve">没有可用的历史记录。</x:String>
+  <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">请选择有效的导出选项。</x:String>
+  <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">无法应用这些设置。草稿仍可继续编辑。</x:String>
 </ResourceDictionary>

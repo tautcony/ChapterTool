@@ -1,5 +1,11 @@
+using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.VisualTree;
+using ChapterTool.Avalonia.UI.Views.Controls;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Importing.Disc;
 using ChapterTool.Core.Importing.Text;
@@ -11,6 +17,1272 @@ namespace ChapterTool.Avalonia.Headless.Tests.Headless;
 [Collection(AvaloniaHeadlessTestCollection.Name)]
 public sealed class MainWindowHeadlessTests
 {
+    [AvaloniaFact]
+    public async Task Inline_candidate_keeps_original_rows_selection_and_workspace_bounds()
+    {
+        var chapterNames = Enumerable.Range(1, 1000).Select(index => $"Chapter {index:D4} · {new string('x', 80)}").ToArray();
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", chapterNames)));
+        await host.LoadAsync("movie.txt");
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var workspace = host.RequiredControl<Grid>("ChapterWorkspaceGrid");
+        var viewportSizes = new (double Width, double Height)[]
+        {
+            (760, 600),
+            (1280, 800),
+            (760, 520),
+            (860, 600),
+            (861, 600)
+        };
+        host.SelectRows(0, 999);
+        Assert.Equal(host.Localizer.GetString("Grid.Time"), grid.Columns[1].Header);
+        var selectedRows = host.ViewModel.SelectedRowCount;
+        var rows = host.ViewModel.Rows.ToArray();
+        var chapterIds = rows.Select(row => row.ChapterId).ToArray();
+        Assert.Equal(1000, chapterIds.Distinct().Count());
+        Assert.All(rows, row =>
+        {
+            Assert.False(row.HasPreviewTimeChange);
+            Assert.False(row.HasPreviewNameChange);
+            Assert.False(row.HasPreviewNumberChange);
+            Assert.False(row.HasPreviewFramesChange);
+        });
+        var originalBounds = new Dictionary<(double Width, double Height), (double GridHeight, double WorkspaceHeight)>();
+        foreach (var size in viewportSizes)
+        {
+            await host.LayoutAsync(size.Width, size.Height);
+            originalBounds[size] = (grid.Bounds.Height, workspace.Bounds.Height);
+        }
+
+        host.ViewModel.Expression = "t + 1";
+        Assert.True(host.ViewModel.IsContentPreviewPending);
+        Assert.False(host.ViewModel.IsInlineCandidateVisible);
+        foreach (var (width, height) in viewportSizes)
+        {
+            await host.LayoutAsync(width, height);
+            var baseline = originalBounds[(width, height)];
+            Assert.InRange(Math.Abs(grid.Bounds.Height - baseline.GridHeight), 0, 1);
+            Assert.InRange(Math.Abs(workspace.Bounds.Height - baseline.WorkspaceHeight), 0, 1);
+        }
+
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.True(host.ViewModel.IsInlineCandidateVisible);
+        Assert.Equal(host.Localizer.GetString("Grid.Time"), grid.Columns[1].Header);
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewSummary"));
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewDetailsButton"));
+        Assert.True(host.RequiredControl<Button>("ApplyContentPreviewButton").IsEnabled);
+        Assert.True(grid.IsReadOnly);
+        Assert.False(host.ViewModel.CanEditRows);
+        Assert.Equal("00:00:00.000", rows[0].TimeText);
+        Assert.Equal("00:00:01.000", rows[0].PreviewTimeText);
+        Assert.Contains("00:00:00.000", rows[0].PreviewTimeAccessibleName, StringComparison.Ordinal);
+        Assert.Contains("00:00:01.000", rows[0].PreviewTimeAccessibleName, StringComparison.Ordinal);
+        Assert.Contains(grid.GetVisualDescendants(), control => control.GetType().Name == "Icon" && control.IsVisible);
+        var accessibleTimePreview = grid.GetVisualDescendants().OfType<StackPanel>().First(panel => panel.IsVisible
+            && panel.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == rows[0].PreviewTimeText));
+        Assert.Equal(rows[0].PreviewTimeAccessibleName, AutomationProperties.GetName(accessibleTimePreview));
+        Assert.False(rows[0].HasPreviewNameChange);
+        Assert.Equal("Chapter 0001 · " + new string('x', 80), rows[0].Name);
+        Assert.Equal(chapterIds, [.. host.ViewModel.Rows.Select(row => row.ChapterId)]);
+
+        var nameColumn = Assert.Single(grid.Columns, column => column.Tag?.ToString() == UI.ViewModels.ChapterGridColumnIds.Name);
+        grid.SelectedItem = rows[^1];
+        grid.ScrollIntoView(rows[^1], nameColumn);
+        Assert.Same(rows[^1], grid.SelectedItem);
+        Assert.Equal("Chapter 1000 · " + new string('x', 80), rows[^1].Name);
+        Assert.True(rows[^1].HasPreviewTimeChange);
+
+        var verificationSizes = new (double Width, double Height)[]
+        {
+            (760, 600),
+            (1280, 800),
+            (760, 520),
+            (860, 600),
+            (861, 600)
+        };
+        foreach (var (width, height) in verificationSizes)
+        {
+            await host.LayoutAsync(width, height);
+            Assert.Single(host.RequiredControl<Grid>("ChapterWorkspaceGrid").RowDefinitions);
+            var baseline = originalBounds[(width, height)];
+            Assert.InRange(Math.Abs(grid.Bounds.Height - baseline.GridHeight), 0, 1);
+            Assert.InRange(Math.Abs(workspace.Bounds.Height - baseline.WorkspaceHeight), 0, 1);
+            Assert.Equal(selectedRows, host.ViewModel.SelectedRowCount);
+            Assert.Equal("t + 1", host.ViewModel.Expression);
+            Assert.Equal(width <= 860, rows[0].IsNarrowPreviewLayout);
+        }
+
+        var englishCandidate = host.ViewModel.ExpressionPreviewText;
+        foreach (var width in new[] { 860d, 861d, 1280d, 760d })
+        {
+            await host.LayoutAsync(width, Math.Abs(width - 760) < 1e-5 ? 520 : 600);
+            Assert.Equal(englishCandidate, host.ViewModel.ExpressionPreviewText);
+            Assert.True(host.RequiredControl<Button>("ApplyContentPreviewButton").IsEnabled);
+            Assert.True(host.RequiredControl<Button>("CancelContentPreviewButton").IsVisible);
+            Assert.Equal(selectedRows, host.ViewModel.SelectedRowCount);
+            Assert.Equal("t + 1", host.ViewModel.Expression);
+        }
+        Assert.DoesNotContain("Chapter 1000", host.ViewModel.ExpressionPreviewText, StringComparison.Ordinal);
+
+        host.Localizer.SetCulture("zh-CN");
+        host.ViewModel.RefreshExpressionPreviewNow();
+        foreach (var (width, height) in verificationSizes)
+        {
+            await host.LayoutAsync(width, height);
+            Assert.Single(host.RequiredControl<Grid>("ChapterWorkspaceGrid").RowDefinitions);
+            var baseline = originalBounds[(width, height)];
+            Assert.InRange(Math.Abs(grid.Bounds.Height - baseline.GridHeight), 0, 1);
+            Assert.InRange(Math.Abs(workspace.Bounds.Height - baseline.WorkspaceHeight), 0, 1);
+            Assert.Equal(selectedRows, host.ViewModel.SelectedRowCount);
+            Assert.Equal("t + 1", host.ViewModel.Expression);
+        }
+
+        host.ViewModel.Expression = "t * 1";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        if (host.ViewModel.CanApplyContentPreview)
+        {
+            Assert.DoesNotContain(rows, row => row.HasPreviewFramesChange);
+            await host.MainView.ApplyContentPreviewCommand.ExecuteAsync();
+            rows = [.. host.ViewModel.Rows];
+        }
+
+        host.ViewModel.Expression = "t * 1";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.False(host.ViewModel.CanApplyContentPreview, host.ViewModel.ExpressionPreviewText);
+        Assert.False(host.ViewModel.IsInlineCandidateVisible);
+        Assert.False(rows[0].HasPreviewTimeChange);
+        foreach (var (width, height) in viewportSizes)
+        {
+            await host.LayoutAsync(width, height);
+            var baseline = originalBounds[(width, height)];
+            Assert.InRange(Math.Abs(grid.Bounds.Height - baseline.GridHeight), 0, 1);
+            Assert.InRange(Math.Abs(workspace.Bounds.Height - baseline.WorkspaceHeight), 0, 1);
+        }
+
+        host.ViewModel.Expression = "t + (";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.False(host.ViewModel.CanApplyContentPreview);
+        Assert.False(host.ViewModel.IsInlineCandidateVisible);
+        Assert.False(rows[0].HasPreviewTimeChange);
+        foreach (var (width, height) in viewportSizes)
+        {
+            await host.LayoutAsync(width, height);
+            var baseline = originalBounds[(width, height)];
+            Assert.InRange(Math.Abs(grid.Bounds.Height - baseline.GridHeight), 0, 1);
+            Assert.InRange(Math.Abs(workspace.Bounds.Height - baseline.WorkspaceHeight), 0, 1);
+        }
+
+        await host.LayoutAsync(width: 760, height: 520);
+
+        var historyButton = host.RequiredControl<Button>("HistoryButton");
+
+        Assert.Single(workspace.RowDefinitions);
+        Assert.True(grid.Bounds.Height >= workspace.Bounds.Height - 1);
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewRegion"));
+        Assert.Null(host.Window.FindControl<Control>("SessionHistoryPanel"));
+        Assert.True(historyButton.IsEnabled);
+        grid.SelectedItem = rows[^1];
+        grid.ScrollIntoView(rows[^1], nameColumn);
+        Assert.Same(rows[^1], grid.SelectedItem);
+        Assert.Equal("Chapter 1000 · " + new string('x', 80), rows[^1].Name);
+        Assert.False(rows[^1].HasPreviewTimeChange);
+        grid.ScrollIntoView(rows[0], nameColumn);
+        await host.LayoutAsync(width: 760, height: 520);
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewDetailsButton"));
+    }
+
+    [AvaloniaFact]
+    public async Task Visible_display_frames_survive_preview_even_when_source_frame_information_is_missing()
+    {
+        var info = new ChapterSet(
+            "movie.txt",
+            "movie.txt",
+            ChapterImportFormat.Ogm,
+            FrameRateValue.Approximate(24000m / 1001m),
+            TimeSpan.Zero,
+            [
+                new Chapter(1, TimeSpan.Zero, "Opening"),
+                new Chapter(2, TimeSpan.FromMilliseconds(348557), "Next")
+            ]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: true);
+        host.ViewModel.RefreshRowsFromPort();
+        var rows = host.ViewModel.Rows.ToArray();
+
+        Assert.Equal("0", rows[0].FramesInfo);
+        Assert.Equal("8357", rows[1].FramesInfo);
+        host.ViewModel.Expression = "t + 1";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.LayoutAsync(1280, 800);
+
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.Equal("0", rows[0].PreviewBeforeFrames);
+        Assert.Equal("24", rows[0].PreviewFrames);
+        Assert.Equal("8357", rows[1].PreviewBeforeFrames);
+        Assert.Equal("8381", rows[1].PreviewFrames);
+        Assert.Equal(24000m / 1001m, rows[1].PreviewBeforeFramesPerSecond);
+        Assert.True(rows[1].PreviewComparison?.BeforeFrames?.IsMissing);
+    }
+
+    [AvaloniaFact]
+    public async Task Inline_frame_preview_uses_visible_and_candidate_accuracy_colors()
+    {
+        var info = new ChapterSet(
+            "movie.txt",
+            "movie.txt",
+            ChapterImportFormat.Ogm,
+            FrameRateValue.Approximate(24000m / 1001m),
+            TimeSpan.Zero,
+            [
+                new Chapter(1, TimeSpan.Zero, "Accurate before"),
+                new Chapter(2, TimeSpan.FromMilliseconds(1), "Inexact before"),
+                new Chapter(3, TimeSpan.FromMilliseconds(348557), "Visible frame value")
+            ]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        var application = Application.Current!;
+        var themeKeys = new[]
+        {
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey,
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey
+        };
+        var originalResources = themeKeys.ToDictionary(key => key, key => application.Resources[key]);
+        var originalThemeVariant = application.RequestedThemeVariant;
+        try
+        {
+            await host.LoadAsync("movie.txt");
+            host.ViewModel.FrameAccuracyTolerance = 0.01m;
+            host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: true);
+            host.ViewModel.RefreshRowsFromPort();
+            var rows = host.ViewModel.Rows.ToArray();
+            Assert.All(rows, row => Assert.True(row.PreviewComparison is null));
+            var sourceChapters = Assert.Single(host.ViewModel.Workspace.ContentSession!.Snapshot.Document.Tracks).Chapters;
+            Assert.All(sourceChapters, chapter => Assert.True(string.IsNullOrEmpty(chapter.FramesInfo)));
+            Assert.All(sourceChapters, chapter => Assert.Equal(FrameAccuracy.Neutral, chapter.FrameAccuracy));
+            var chapterIds = rows.Select(row => row.ChapterId!.Value).ToArray();
+
+            host.ViewModel.Expression = "t + 1";
+            host.ViewModel.RefreshExpressionPreviewNow();
+            await host.LayoutAsync(1280, 800);
+            AssertWideTimeAndFramePreviewGroups(host, rows[0]);
+
+            Assert.Equal(FrameAccuracy.Accurate, rows[0].Chapter.FrameAccuracy);
+            Assert.Equal(FrameAccuracy.Inexact, rows[1].Chapter.FrameAccuracy);
+            Assert.Equal(FrameAccuracy.Neutral, rows[0].PreviewComparison?.BeforeFrames?.Accuracy);
+            Assert.Equal(FrameAccuracy.Accurate, rows[0].PreviewBeforeFrameAccuracy);
+            Assert.Equal(FrameAccuracy.Inexact, rows[0].PreviewCandidateFrameAccuracy);
+            Assert.Equal(FrameAccuracy.Inexact, rows[1].PreviewBeforeFrameAccuracy);
+            Assert.Equal(FrameAccuracy.Accurate, rows[1].PreviewCandidateFrameAccuracy);
+            Assert.Equal("8357", rows[2].PreviewBeforeFrames);
+            Assert.Equal(FrameAccuracy.Inexact, rows[2].PreviewBeforeFrameAccuracy);
+
+            var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
+            foreach (var theme in new[] { "default", "ayu-dark" })
+            {
+                themeService.Apply(theme == "default"
+                    ? Contracts.Configuration.ThemeSettings.Default
+                    : new Contracts.Configuration.ThemeSettings(theme));
+                await host.LayoutAsync(1280, 800);
+                if (theme == "default")
+                {
+                    MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                        "artifacts/compact-content-preview-review/time-frame-alignment-wide.png");
+                }
+
+                AssertFramePreviewColor(host, rows[0], rows[0].PreviewBeforeFrames,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey);
+                AssertFramePreviewColor(host, rows[0], rows[0].PreviewFrames,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey);
+                AssertFramePreviewColor(host, rows[1], rows[1].PreviewBeforeFrames,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey);
+                AssertFramePreviewColor(host, rows[1], rows[1].PreviewFrames,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey);
+                AssertFramePreviewColor(host, rows[2], rows[2].PreviewBeforeFrames,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey);
+            }
+
+            await host.LayoutAsync(760, 520);
+            AssertTimeAndFramePreviewRowsAligned(host, rows[0]);
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                "artifacts/compact-content-preview-review/time-frame-alignment-narrow.png");
+            AssertFramePreviewColor(host, rows[0], rows[0].PreviewBeforeFrames,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey);
+            AssertFramePreviewColor(host, rows[0], rows[0].PreviewFrames,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey);
+            await host.LayoutAsync(1280, 800);
+            await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
+            await host.LayoutAsync(1280, 800);
+            var appliedRows = host.ViewModel.Rows.ToDictionary(row => row.ChapterId!.Value);
+            var appliedRow0 = appliedRows[chapterIds[0]];
+            var appliedRow1 = appliedRows[chapterIds[1]];
+            Assert.False(appliedRow0.HasPreviewFramesChange);
+            Assert.False(appliedRow1.HasPreviewFramesChange);
+            AssertNormalFrameColor(host, appliedRow0, appliedRow0.FramesInfo,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey);
+            AssertNormalFrameColor(host, appliedRow1, appliedRow1.FramesInfo,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey);
+        }
+        finally
+        {
+            foreach (var (key, value) in originalResources)
+            {
+                application.Resources[key] = value;
+            }
+
+            application.RequestedThemeVariant = originalThemeVariant;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Neutral_inline_frame_values_keep_neutral_colors_and_discard_restores_rows()
+    {
+        var application = Application.Current!;
+        var themeKeys = new[]
+        {
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey,
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey
+        };
+        var originalResources = themeKeys.ToDictionary(key => key, key => application.Resources[key]);
+        var originalThemeVariant = application.RequestedThemeVariant;
+        var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
+        try
+        {
+            themeService.Apply(Contracts.Configuration.ThemeSettings.Default);
+            using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+                "movie.txt",
+                MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Opening", "Next")));
+            await host.LoadAsync("movie.txt");
+            host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+            host.ViewModel.RefreshRowsFromPort();
+            var rows = host.ViewModel.Rows.ToArray();
+            Assert.All(rows, row => Assert.True(row.IsFrameNeutral));
+
+            host.ViewModel.Expression = "t + 1";
+            host.ViewModel.RefreshExpressionPreviewNow();
+            await host.LayoutAsync(1280, 800);
+            Assert.All(rows, row => Assert.Equal(FrameAccuracy.Neutral, row.PreviewBeforeFrameAccuracy));
+
+            var comparison = Assert.IsType<Core.Session.ExpressionChapterComparison>(rows[0].PreviewComparison);
+            var neutralCandidateFrames = comparison.CandidateFrames is { } candidateFrames
+                ? candidateFrames with { Accuracy = FrameAccuracy.Neutral }
+                : new Core.Session.ExpressionFrameValue(
+                    rows[0].PreviewFrames,
+                    null,
+                    FrameRateValue.Unknown,
+                    FrameAccuracy.Neutral);
+            rows[0].UpdatePreviewComparison(
+                comparison with { CandidateFrames = neutralCandidateFrames },
+                host.ViewModel.DisplayFrameRate,
+                host.Localizer.GetString("Expression.Value.NotCalculated"));
+            await host.LayoutAsync(1280, 800);
+            AssertFramePreviewColor(host, rows[0], rows[0].PreviewBeforeFrames,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey);
+            AssertFramePreviewColor(host, rows[0], rows[0].PreviewFrames,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey);
+
+            rows[0].UpdatePreviewComparison(
+                comparison,
+                host.ViewModel.DisplayFrameRate,
+                host.Localizer.GetString("Expression.Value.NotCalculated"));
+            await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+            await host.LayoutAsync(1280, 800);
+            Assert.All(rows, row => Assert.Null(row.PreviewComparison));
+            AssertNormalFrameColor(host, rows[0], rows[0].FramesInfo,
+                ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey);
+        }
+        finally
+        {
+            foreach (var (key, value) in originalResources)
+            {
+                application.Resources[key] = value;
+            }
+
+            application.RequestedThemeVariant = originalThemeVariant;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task History_button_tracks_document_session_availability()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        var historyButton = host.RequiredControl<Button>("HistoryButton");
+
+        Assert.False(historyButton.IsEnabled);
+
+        await host.LoadAsync("movie.txt");
+        Assert.True(historyButton.IsEnabled);
+        Assert.Equal("HistoryButton", AutomationProperties.GetAutomationId(historyButton));
+    }
+
+    [AvaloniaFact]
+    public async Task Empty_state_and_loaded_grid_share_the_same_workspace()
+    {
+        using var host = new MainWindowHeadlessTestHost([]);
+        await host.LayoutAsync(width: 760, height: 600);
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var workspace = host.RequiredControl<Grid>("ChapterWorkspaceGrid");
+        var emptyImage = host.RequiredControl<Control>("ChapterGridEmptyImage");
+        var emptyBounds = grid.Bounds;
+
+        Assert.True(emptyImage.IsVisible);
+        Assert.False(emptyImage.IsHitTestVisible);
+        Assert.True(host.ViewModel.IsChapterGridEmpty);
+
+        await host.LoadAsync("movie.txt");
+        await host.LayoutAsync(width: 760, height: 600);
+
+        Assert.False(emptyImage.IsVisible);
+        Assert.False(host.ViewModel.IsChapterGridEmpty);
+        Assert.Equal(emptyBounds, grid.Bounds);
+        Assert.Single(workspace.RowDefinitions);
+    }
+
+    [AvaloniaFact]
+    public async Task Invalid_expression_preview_clears_inline_values_and_cannot_be_applied()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.Expression = "t + 1";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        host.ViewModel.OrderShift = 1;
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+
+        host.ViewModel.Expression = "t + (";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.LayoutAsync(width: 760, height: 520);
+
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewRegion"));
+        Assert.False(host.ViewModel.CanApplyContentPreview);
+        Assert.False(host.RequiredControl<Button>("ApplyContentPreviewButton").IsEnabled);
+        Assert.False(host.ViewModel.Rows[0].HasPreviewTimeChange);
+        Assert.False(host.RequiredControl<DataGrid>("ChapterGrid").IsReadOnly);
+        Assert.NotEmpty(host.ViewModel.ExpressionPreviewText);
+        Assert.Equal(host.ViewModel.ExpressionPreviewText, host.RequiredControl<Control>("ExpressionBox").GetValue(ToolTip.TipProperty));
+
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+        await host.LayoutAsync(width: 760, height: 520);
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewDetailsButton"));
+    }
+
+    [AvaloniaFact]
+    public async Task Naming_order_and_frame_rate_candidates_project_into_the_original_rows()
+    {
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro", "Ending")));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.AutoGenerateNames = false;
+        host.ViewModel.UseTemplateNames = false;
+        host.ViewModel.OrderShift = 0;
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.False(host.ViewModel.CanApplyContentPreview);
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+
+        host.ViewModel.AutoGenerateNames = true;
+        host.ViewModel.OrderShift = 2;
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        await host.LayoutAsync(width: 760, height: 600);
+
+        Assert.True(host.RequiredControl<Button>("ApplyContentPreviewButton").IsVisible);
+        Assert.Null(host.Window.FindControl<Control>("ContentPreviewDetailsButton"));
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.Empty(host.ViewModel.ContentPreviewMetadataTooltip);
+        Assert.Empty(host.ViewModel.ExpressionPreviewText);
+        Assert.Equal(1, host.ViewModel.Rows[0].Number);
+        Assert.True(host.ViewModel.Rows[0].HasPreviewNumberChange);
+        Assert.Equal("3", host.ViewModel.Rows[0].PreviewNumber);
+
+        host.ViewModel.OrderShift = 3;
+        await host.ViewModel.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal("4", host.ViewModel.Rows[0].PreviewNumber);
+        Assert.True(host.ViewModel.Rows[0].HasPreviewNumberChange);
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+        host.ViewModel.SelectedFrameRateIndex = 1;
+        await host.ViewModel.ChangeFpsCommand.ExecuteAsync();
+        await host.LayoutAsync(width: 760, height: 600);
+
+        Assert.True(host.RequiredControl<Button>("ApplyContentPreviewButton").IsVisible);
+        Assert.Contains(host.Localizer.GetString("Expression.Property.FrameRate"), host.ViewModel.ContentPreviewMetadataTooltip, StringComparison.Ordinal);
+        Assert.Empty(host.ViewModel.ExpressionPreviewText);
+    }
+
+    [AvaloniaFact]
+    public async Task Frame_rate_property_only_preview_keeps_missing_row_values_and_exposes_metadata_on_apply()
+    {
+        var info = new ChapterSet(
+            "movie.txt",
+            "movie.txt",
+            ChapterImportFormat.Ogm,
+            FrameRateValue.Approximate(24m),
+            TimeSpan.Zero,
+            [new Chapter(1, TimeSpan.Zero, "Opening")]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        await host.LoadAsync("movie.txt");
+        var row = Assert.Single(host.ViewModel.Rows);
+        var original = (row.TimeText, row.Name, row.Number, row.FramesInfo);
+        host.ViewModel.SelectedFrameRateIndex = 1;
+        await host.ViewModel.ChangeFpsCommand.ExecuteAsync();
+        await host.LayoutAsync(760, 600);
+
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.True(host.ViewModel.IsInlineCandidateVisible);
+        Assert.Equal(original, (row.TimeText, row.Name, row.Number, row.FramesInfo));
+        Assert.False(row.HasPreviewTimeChange);
+        Assert.False(row.HasPreviewNameChange);
+        Assert.False(row.HasPreviewNumberChange);
+        Assert.False(row.HasPreviewFramesChange);
+        var applyButton = host.RequiredControl<Button>("ApplyContentPreviewButton");
+        Assert.NotEmpty(host.ViewModel.ContentPreviewMetadataTooltip);
+        Assert.Equal(host.ViewModel.ContentPreviewMetadataTooltip, applyButton.GetValue(ToolTip.TipProperty));
+        Assert.DoesNotContain("Opening", host.ViewModel.ContentPreviewMetadataTooltip, StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact]
+    public async Task Inline_projection_formats_preview_times_to_milliseconds()
+    {
+        var start = TimeSpan.FromTicks(1_000);
+        var info = new ChapterSet(
+            "movie.txt",
+            "movie.txt",
+            ChapterImportFormat.Ogm,
+            FrameRateValue.Rational(24, 1),
+            start,
+            [new Chapter(1, start, "Submillisecond")]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.Expression = "t + 0.0006";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.LayoutAsync(1280, 800);
+
+        var row = Assert.Single(host.ViewModel.Rows);
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.False(row.IsNarrowPreviewLayout);
+        Assert.True(row.HasPreviewTimeChange);
+        Assert.Equal("00:00:00.000", row.PreviewBeforeTimeText);
+        Assert.Equal("00:00:00.001", row.PreviewTimeText);
+        Assert.Equal("+00:00:00.001", row.PreviewTimeDelta);
+
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var timeCell = Assert.Single(grid.GetVisualDescendants().OfType<DataGridCell>(), cell =>
+            ReferenceEquals(cell.DataContext, row)
+            && cell.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == row.PreviewBeforeTimeText));
+        MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+            "artifacts/compact-content-preview-review/preview-submillisecond.png");
+        Assert.DoesNotContain(timeCell.GetVisualDescendants().OfType<TextBlock>(),
+            block => block.IsVisible && string.Equals(block.Text, row.PreviewTimeDelta, StringComparison.Ordinal));
+        foreach (var text in new[] { row.PreviewBeforeTimeText, row.PreviewTimeText })
+        {
+            var textBlocks = timeCell.GetVisualDescendants().OfType<TextBlock>()
+                .Where(block => block.IsVisible
+                    && block.GetVisualAncestors().Any(ancestor => ancestor is StackPanel)
+                    && string.Equals(block.Text, text, StringComparison.Ordinal))
+                .ToArray();
+            Assert.NotEmpty(textBlocks);
+            foreach (var textBlock in textBlocks)
+            {
+                var position = textBlock.TranslatePoint(new Point(0, 0), timeCell);
+                Assert.NotNull(position);
+                Assert.True(position.Value.X >= 0, $"{text}: x={position.Value.X}, cell={timeCell.Bounds}");
+                Assert.True(position.Value.Y >= 0, $"{text}: y={position.Value.Y}, cell={timeCell.Bounds}");
+                Assert.True(position.Value.X + textBlock.Bounds.Width <= timeCell.Bounds.Width,
+                    $"{text}: right={position.Value.X + textBlock.Bounds.Width}, cell={timeCell.Bounds}");
+                Assert.True(position.Value.Y + textBlock.Bounds.Height <= timeCell.Bounds.Height,
+                    $"{text}: pos={position.Value}, bounds={textBlock.Bounds}, bottom={position.Value.Y + textBlock.Bounds.Height}, cell={timeCell.Bounds}");
+            }
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Missing_source_frame_information_preserves_the_visible_calculated_zero_frame()
+    {
+        var info = new ChapterSet(
+            "movie.txt",
+            "movie.txt",
+            ChapterImportFormat.Ogm,
+            FrameRateValue.Unknown,
+            TimeSpan.Zero,
+            [new Chapter(1, TimeSpan.Zero, "Opening")]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.Expression = "t";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.LayoutAsync(1280, 800);
+
+        var row = Assert.Single(host.ViewModel.Rows);
+        Assert.False(host.ViewModel.CanApplyContentPreview);
+        Assert.False(row.HasPreviewFramesChange);
+        Assert.True(row.PreviewComparison?.BeforeFrames?.IsMissing);
+        Assert.Equal("0", row.FramesInfo);
+        Assert.Empty(row.PreviewBeforeFrames);
+        Assert.Empty(row.PreviewFrames);
+        Assert.True(host.ContainsRenderedText("0"));
+
+        var comparison = row.PreviewComparison;
+        row.FramesInfo = string.Empty;
+        row.UpdatePreviewComparison(null, host.ViewModel.DisplayFrameRate, host.Localizer.GetString("Expression.Value.NotCalculated"));
+        row.UpdatePreviewComparison(comparison, host.ViewModel.DisplayFrameRate, host.Localizer.GetString("Expression.Value.NotCalculated"));
+        row.PreviewBeforeFrames = row.PreviewFrameBaseline;
+        Assert.Equal(host.Localizer.GetString("Expression.Value.NotCalculated"), row.PreviewBeforeFrames);
+    }
+
+    [AvaloniaFact]
+    public async Task Inline_preview_default_wide_and_narrow_screenshots_are_captured()
+    {
+        var sizes = new (string Name, double Width, double Height)[]
+        {
+            ("default", 760, 600),
+            ("wide", 1280, 800),
+            ("narrow", 760, 520)
+        };
+        foreach (var (name, width, height) in sizes)
+        {
+            using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+                "movie.txt",
+                MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", [
+                    .. Enumerable.Range(1, 20)
+                        .Select(index => $"Chapter {index:D2} · A longer preview title")
+                ])));
+            await host.LoadAsync("movie.txt");
+            await host.LayoutAsync(width, height);
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(
+                host.Window,
+                $"artifacts/compact-content-preview-review/normal-{name}.png");
+
+            host.ViewModel.Expression = "t + 1";
+            host.ViewModel.RefreshExpressionPreviewNow();
+            await host.LayoutAsync(width, height);
+            AssertBottomInputAlignment(host);
+            Assert.True(host.ViewModel.CanApplyContentPreview);
+            Assert.True(host.ContainsRenderedText("00:00:01.000"));
+            if (width <= 860)
+            {
+                var renderedRows = host.RequiredControl<DataGrid>("ChapterGrid")
+                    .GetVisualDescendants()
+                    .OfType<DataGridRow>()
+                    .Where(static row => row is { IsVisible: true, Bounds.Height: > 0 })
+                    .ToArray();
+                Assert.NotEmpty(renderedRows);
+                Assert.All(renderedRows, row => Assert.InRange(row.Bounds.Height, 0, 56));
+            }
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(
+                host.Window,
+                $"artifacts/compact-content-preview-review/preview-{name}.png");
+
+            await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
+            await host.LayoutAsync(width, height);
+            Assert.False(host.ViewModel.IsChapterGridReadOnly);
+            Assert.False(host.ViewModel.IsInlineCandidateVisible);
+            Assert.Equal(host.Localizer.GetString("Grid.Time"), host.RequiredControl<DataGrid>("ChapterGrid").Columns[1].Header);
+            Assert.Equal("00:00:01.000", host.ViewModel.Rows[0].TimeText);
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(
+                host.Window,
+                $"artifacts/compact-content-preview-review/applied-{name}.png");
+        }
+
+        foreach (var (name, width, height) in sizes)
+        {
+            using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+                "movie.txt",
+                new ChapterImportEntry("movie.txt", "movie.txt", new ChapterSet(
+                    "movie.txt",
+                    "movie.txt",
+                    ChapterImportFormat.Ogm,
+                    FrameRateValue.Approximate(24000m / 1001m),
+                    TimeSpan.Zero,
+                    [
+                        .. Enumerable.Range(0, 20)
+                            .Select(index => new Chapter(
+                                index + 1,
+                                index switch
+                                {
+                                    0 => TimeSpan.Zero,
+                                    1 => TimeSpan.FromMilliseconds(348557),
+                                    2 => TimeSpan.FromMilliseconds(599600),
+                                    _ => TimeSpan.FromSeconds(600 + 60 * (index - 3))
+                                },
+                                $"第 {index + 1:D2} 章 · 较长的预览标题"))
+                    ]))));
+            await host.LoadAsync("movie.txt");
+            host.Localizer.SetCulture("zh-CN");
+            host.ViewModel.FrameAccuracyTolerance = 0.01m;
+            host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: true);
+            host.ViewModel.RefreshRowsFromPort();
+            host.ViewModel.Expression = "t + 1";
+            host.ViewModel.RefreshExpressionPreviewNow();
+            await host.LayoutAsync(width, height);
+            AssertBottomInputAlignment(host);
+            var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+            Assert.Equal(host.Localizer.GetString("Grid.Time"), grid.Columns[1].Header);
+            Assert.False(host.ContainsRenderedText("原"));
+            Assert.False(host.ContainsRenderedText("预览"));
+            Assert.Null(host.Window.FindControl<Control>("ContentPreviewSummary"));
+            Assert.Null(host.Window.FindControl<Control>("ContentPreviewDetailsButton"));
+            Assert.Equal("00:05:48.557", host.ViewModel.Rows[1].PreviewBeforeTimeText);
+            Assert.Equal("00:05:49.557", host.ViewModel.Rows[1].PreviewTimeText);
+            Assert.Equal("8357", host.ViewModel.Rows[1].PreviewBeforeFrames);
+            Assert.Equal("8381", host.ViewModel.Rows[1].PreviewFrames);
+            var renderedRows = host.RequiredControl<DataGrid>("ChapterGrid")
+                .GetVisualDescendants()
+                .OfType<DataGridRow>()
+                .Where(static row => row is { IsVisible: true, Bounds.Height: > 0 })
+                .ToArray();
+            Assert.NotEmpty(renderedRows);
+            Assert.All(renderedRows, row => Assert.InRange(row.Bounds.Height, 0, 56));
+            MainWindowHeadlessTestHost.CaptureRenderedFrame(
+                host.Window,
+                $"artifacts/compact-content-preview-review/preview-zh-{name}.png");
+        }
+
+        using (var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+                   "movie.txt",
+                   MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", [
+                       .. Enumerable.Range(1, 20)
+                           .Select(index => $"Chapter {index:D2} · Long title")
+                   ]))))
+        {
+            await host.LoadAsync("movie.txt");
+            host.Localizer.SetCulture("ja-JP");
+            foreach (var (_, width, height) in sizes)
+            {
+                await host.LayoutAsync(width, height);
+                AssertBottomInputAlignment(host);
+            }
+        }
+
+        using (var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+                   "movie.txt",
+                   MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Opening", "Middle", "Ending"))))
+        {
+            var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
+            var application = Application.Current!;
+            var themeResourceKeys = ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.ImportedThemeColorKeys
+                .Concat([
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.DiagnosticErrorBrushKey,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.LogInformationBrushKey,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.LogWarningBrushKey,
+                    ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.LogErrorBrushKey,
+                    "ChapterTool.FontSize.Small",
+                    "ChapterTool.FontSize.Default",
+                    "ChapterTool.FontSize.Large"
+                ])
+                .ToArray();
+            var originalResources = themeResourceKeys.ToDictionary(key => key, key => application.Resources[key]);
+            var originalThemeVariant = application.RequestedThemeVariant;
+            try
+            {
+                await host.LoadAsync("movie.txt");
+                host.ViewModel.Expression = "t + 1";
+                host.ViewModel.RefreshExpressionPreviewNow();
+                themeService.Apply(new Contracts.Configuration.ThemeSettings("ayu-dark"));
+                await host.LayoutAsync(760, 600);
+                AssertBottomInputAlignment(host);
+                Assert.Equal("Dark", Application.Current!.RequestedThemeVariant?.ToString());
+                Assert.True(host.ViewModel.CanApplyContentPreview);
+                Assert.True(host.ContainsRenderedText("00:00:01.000"));
+                MainWindowHeadlessTestHost.CaptureRenderedFrame(
+                    host.Window,
+                    "artifacts/compact-content-preview-review/preview-dark.png");
+
+                themeService.Apply(Contracts.Configuration.ThemeSettings.Default);
+                Application.Current!.Resources["ChapterTool.FontSize.Small"] = 16d;
+                Application.Current.Resources["ChapterTool.FontSize.Default"] = 18d;
+                Application.Current.Resources["ChapterTool.FontSize.Large"] = 20d;
+                await host.LayoutAsync(760, 600);
+                AssertBottomInputAlignment(host);
+                Assert.True(host.ViewModel.CanApplyContentPreview);
+                var enlargedCandidate = host.RequiredControl<DataGrid>("ChapterGrid")
+                    .GetVisualDescendants()
+                    .OfType<TextBlock>()
+                    .FirstOrDefault(block => block is { Text: "00:00:01.000", FontSize: >= 18 });
+                Assert.NotNull(enlargedCandidate);
+                var statusBar = host.RequiredControl<Border>("StatusBar");
+                var logButton = host.RequiredControl<Button>("LogButton");
+                var logButtonOrigin = logButton.TranslatePoint(new Point(0, 0), statusBar);
+                Assert.NotNull(logButtonOrigin);
+                Assert.True(logButtonOrigin.Value.X >= 0);
+                Assert.True(logButtonOrigin.Value.Y >= 0);
+                Assert.True(logButtonOrigin.Value.X + logButton.Bounds.Width <= statusBar.Bounds.Width);
+                Assert.True(logButtonOrigin.Value.Y + logButton.Bounds.Height <= statusBar.Bounds.Height);
+                MainWindowHeadlessTestHost.CaptureRenderedFrame(
+                    host.Window,
+                    "artifacts/compact-content-preview-review/preview-large-font.png");
+            }
+            finally
+            {
+                foreach (var (key, value) in originalResources)
+                {
+                    application.Resources[key] = value;
+                }
+
+                application.RequestedThemeVariant = originalThemeVariant;
+            }
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Saved_cycle_display_is_active_when_the_window_loads_an_exact_rate_source()
+    {
+        var exactRate = new ChapterFrameRate(24000, 1001);
+        var info = new ChapterSet("movie.mpls", "movie.mpls", ChapterImportFormat.Mpls,
+            FrameRateValue.Rational(exactRate), TimeSpan.FromMilliseconds(52094),
+            [
+                new Chapter(1, TimeSpan.Zero, "Opening"),
+                new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")
+            ]);
+        var settings = new Contracts.Configuration.AppSettings(
+            Language: "en-US",
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true);
+        using var host = new MainWindowHeadlessTestHost(
+            MainWindowHeadlessTestHost.ImportResult("movie.mpls", new ChapterImportEntry("movie.mpls", "movie.mpls", info)),
+            appSettings: settings);
+
+        await host.MainView.InitializeAsync();
+        await host.LoadAsync("movie.mpls");
+
+        Assert.False(host.RequiredControl<CheckBox>("RoundFramesBox").IsChecked);
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, host.ViewModel.EditingOptions.FrameDisplay);
+        Assert.Equal(exactRate, host.ViewModel.EffectiveFrameRateOption.Rate.RationalRate);
+        Assert.Equal("006993", host.ViewModel.Rows[1].FramePresentation?.RepeatingDigits);
+    }
+
+    [AvaloniaFact]
+    public async Task Repeating_frame_layout_screenshots_cover_themes_widths_and_large_text()
+    {
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
+            FrameRateValue.Approximate(24000m / 1001m), TimeSpan.FromTicks(520_942_000),
+            [
+                new Chapter(1, TimeSpan.FromTicks(520_940_000), "Original frame value"),
+                new Chapter(2, TimeSpan.FromTicks(520_942_000), "Candidate frame value")
+            ]);
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)));
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+        host.ViewModel.Expression = "t + 0.0002";
+        host.ViewModel.RefreshExpressionPreviewNow();
+
+        var sizes = new (string Name, double Width, double Height)[]
+        {
+            ("default", 760, 600),
+            ("wide", 1280, 800),
+            ("narrow", 760, 520)
+        };
+        var application = Application.Current!;
+        var themeService = new ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService();
+        var originalTheme = application.RequestedThemeVariant;
+        var fontKeys = new[] { "ChapterTool.FontSize.Small", "ChapterTool.FontSize.Default", "ChapterTool.FontSize.Large" };
+        var originalFonts = fontKeys.ToDictionary(key => key, key => application.Resources[key]);
+        try
+        {
+            var row = host.ViewModel.Rows[0];
+            foreach (var (themeName, theme) in new[]
+                     {
+                         ("light", Contracts.Configuration.ThemeSettings.Default),
+                         ("dark", new Contracts.Configuration.ThemeSettings("ayu-dark"))
+                     })
+            {
+                themeService.Apply(theme);
+                foreach (var (name, width, height) in sizes)
+                {
+                    await host.LayoutAsync(width, height);
+                    Assert.Equal("006993", row.PreviewBeforeFramePresentation?.RepeatingDigits);
+                    Assert.Equal("117882", row.PreviewCandidateFramePresentation?.RepeatingDigits);
+                    AssertFrameDigitsAreContinuous(host, row);
+                    MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                        $"artifacts/compact-repeating-frame-decimals/{themeName}-{name}.png");
+                }
+            }
+
+            themeService.Apply(Contracts.Configuration.ThemeSettings.Default);
+            application.Resources["ChapterTool.FontSize.Small"] = 18d;
+            application.Resources["ChapterTool.FontSize.Default"] = 20d;
+            application.Resources["ChapterTool.FontSize.Large"] = 22d;
+            foreach (var (name, width, height) in sizes)
+            {
+                await host.LayoutAsync(width, height);
+                MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+                    $"artifacts/compact-repeating-frame-decimals/large-text-{name}.png");
+            }
+
+            var roundFramesBox = host.RequiredControl<CheckBox>("RoundFramesBox");
+            var previewText = host.ViewModel.ExpressionPreviewText;
+            Assert.False(host.ViewModel.RoundFrames);
+            Assert.True(host.ViewModel.CanApplyContentPreview);
+            roundFramesBox.IsChecked = true;
+            await host.LayoutAsync();
+
+            Assert.True(host.ViewModel.RoundFrames);
+            Assert.True(host.ViewModel.IsContentPreviewPending);
+            Assert.True(host.ViewModel.IsInlineCandidateVisible);
+            Assert.True(host.ViewModel.CanApplyContentPreview, host.ViewModel.ExpressionPreviewText);
+            Assert.Equal(previewText, host.ViewModel.ExpressionPreviewText);
+            Assert.True(row.HasPreviewFramesChange);
+        }
+        finally
+        {
+            foreach (var (key, value) in originalFonts)
+            {
+                application.Resources[key] = value;
+            }
+
+            application.RequestedThemeVariant = originalTheme;
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Division_expression_keeps_repeating_frame_marks_inside_both_preview_rows()
+    {
+        var exactRate = new ChapterFrameRate(24000, 1001);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm,
+            FrameRateValue.Rational(exactRate), TimeSpan.FromTicks(2_900_400_000),
+            [
+                new Chapter(1, TimeSpan.Zero, "Opening"),
+                new Chapter(2, TimeSpan.FromTicks(1_999_910_000), "First division"),
+                new Chapter(3, TimeSpan.FromTicks(2_900_400_000), "Second division")
+            ]);
+        var settings = new Contracts.Configuration.AppSettings(
+            Language: "en-US",
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true);
+        using var host = new MainWindowHeadlessTestHost(
+            MainWindowHeadlessTestHost.ImportResult("movie.txt", new ChapterImportEntry("movie.txt", "movie.txt", info)),
+            appSettings: settings);
+
+        await host.LoadAsync("movie.txt");
+        host.ViewModel.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+        host.ViewModel.Expression = "t / 3";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.LayoutAsync(760, 520);
+
+        var row = host.ViewModel.Rows[1];
+        Assert.Equal("989010", row.PreviewBeforeFramePresentation?.RepeatingDigits);
+        Assert.Equal("3296", row.PreviewCandidateFramePresentation?.NonRepeatingDigits);
+        Assert.Equal("711288", row.PreviewCandidateFramePresentation?.RepeatingDigits);
+        AssertFrameDigitsAreContinuous(host, row);
+        MainWindowHeadlessTestHost.CaptureRenderedFrame(host.Window,
+            "artifacts/compact-repeating-frame-decimals/expression-t-divided-by-three.png");
+    }
+
+    private static void AssertFrameDigitsAreContinuous(
+        MainWindowHeadlessTestHost host,
+        UI.ViewModels.ChapterRowViewModel row)
+    {
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var frameValues = renderedRow.GetVisualDescendants()
+            .OfType<FramePresentationView>()
+            .Where(view => view is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && view.Classes.Contains("framePreview"))
+            .ToArray();
+
+        Assert.NotEmpty(frameValues);
+        foreach (var frameValue in frameValues)
+        {
+            Assert.Contains(frameValue.HorizontalAlignment,
+                new[] { HorizontalAlignment.Center, HorizontalAlignment.Stretch });
+            var frameParts = frameValue.FindControl<StackPanel>("FrameParts")!;
+            Assert.Equal(HorizontalAlignment.Center, frameParts.HorizontalAlignment);
+            Assert.Equal(frameParts.Bounds.Height, frameValue.Bounds.Height);
+            var presentation = Assert.IsType<FramePresentationParts>(frameValue.Presentation);
+            Assert.DoesNotContain(" ", presentation.SignedIntegerDigits + presentation.DecimalPoint
+                + presentation.NonRepeatingDigits + presentation.RepeatingDigits);
+            var repeatingGroup = frameValue.FindControl<Grid>("RepeatingDigitsGroup")!;
+            Assert.True(repeatingGroup.IsVisible);
+            var overline = frameValue.FindControl<Border>("RepeatingDigitsOverline")!;
+            var repeatingDigits = frameValue.FindControl<TextBlock>("RepeatingDigitsText")!;
+            Assert.True(overline.Bounds.Width > 0);
+            Assert.True(overline.Bounds.Height > 0);
+            Assert.Equal(0, overline.Bounds.Top);
+            Assert.True(overline.Bounds.Bottom <= repeatingGroup.Bounds.Height);
+            Assert.True(repeatingDigits.Bounds.Top >= 0);
+            Assert.Equal(-2, Assert.IsType<TranslateTransform>(overline.RenderTransform).Y);
+        }
+
+        var frameCell = frameValues[0].GetVisualAncestors().OfType<DataGridCell>().First();
+        var frameArrows = frameCell.GetVisualDescendants().OfType<Control>()
+            .Where(control => control.GetType().Name == "Icon" && control.IsVisible && control.Width >= 14)
+            .ToArray();
+        Assert.NotEmpty(frameArrows);
+        Assert.All(frameArrows, frameArrow => Assert.True(frameArrow.Width >= 14));
+
+        if (row.IsNarrowPreviewLayout)
+        {
+            var narrowPreview = frameCell.GetVisualDescendants().OfType<Grid>()
+                .Where(grid => grid.RowDefinitions.Count > 1)
+                .Single(grid => grid.GetVisualDescendants().OfType<FramePresentationView>()
+                    .Count(static view => view.Classes.Contains("framePreview")) == 2);
+            Assert.Equal(2, narrowPreview.RowDefinitions.Count);
+            var narrowValues = narrowPreview.GetVisualDescendants().OfType<FramePresentationView>()
+                .Where(static view => view.Classes.Contains("framePreview"))
+                .ToArray();
+            var candidateRow = Assert.Single(narrowPreview.GetVisualDescendants().OfType<Grid>(),
+                grid => Grid.GetRow(grid) == 1 && grid.Children.OfType<FramePresentationView>()
+                    .Any(static view => view.Classes.Contains("framePreview")));
+            var candidate = Assert.Single(narrowValues, value => ReferenceEquals(value.Parent, candidateRow));
+            var narrowArrow = Assert.Single(narrowPreview.GetVisualDescendants().OfType<Control>(),
+                control => control.GetType().Name == "Icon" && control.IsVisible && control.Width >= 14);
+            Assert.Contains(narrowArrow, candidateRow.GetVisualDescendants());
+            Assert.True(HorizontalGap(narrowArrow, candidate, narrowPreview) > 5);
+        }
+    }
+
+    private static void AssertTimeAndFramePreviewRowsAligned(
+        MainWindowHeadlessTestHost host,
+        UI.ViewModels.ChapterRowViewModel row)
+    {
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var timePreview = renderedRow.GetVisualDescendants().OfType<Grid>()
+            .Single(grid => grid.IsVisible && grid.RowDefinitions.Count == 2
+                && grid.GetVisualDescendants().OfType<TextBlock>().Any(block =>
+                    block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                    && block.Text == row.PreviewBeforeTimeText));
+        var framePreview = renderedRow.GetVisualDescendants().OfType<Grid>()
+            .Single(grid => grid.IsVisible && grid.RowDefinitions.Count == 2
+                && grid.GetVisualDescendants().OfType<FramePresentationView>()
+                    .Count(static view => view.Classes.Contains("framePreview")) == 2);
+        var timeBefore = Assert.Single(timePreview.GetVisualDescendants().OfType<TextBlock>(),
+            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && block.Text == row.PreviewBeforeTimeText);
+        var timeCandidate = Assert.Single(timePreview.GetVisualDescendants().OfType<TextBlock>(),
+            block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && block.Text == row.PreviewTimeText);
+        var frameValues = framePreview.GetVisualDescendants().OfType<FramePresentationView>()
+            .Where(static view => view.Classes.Contains("framePreview"))
+            .ToArray();
+        var frameCandidateRow = Assert.Single(framePreview.GetVisualDescendants().OfType<Grid>(),
+            grid => Grid.GetRow(grid) == 1 && grid.GetVisualDescendants().OfType<FramePresentationView>()
+                .Any(static view => view.Classes.Contains("framePreview")));
+        var frameBefore = Assert.Single(frameValues, value => Grid.GetRow(value) == 0
+            && !value.GetVisualAncestors().Contains(frameCandidateRow));
+        var frameCandidate = Assert.Single(frameValues, value => value.GetVisualAncestors().Contains(frameCandidateRow));
+        var timeCell = timeBefore.GetVisualAncestors().OfType<DataGridCell>().First();
+        var frameCell = frameBefore.GetVisualAncestors().OfType<DataGridCell>().First();
+        var timeArrow = Assert.Single(timePreview.GetVisualDescendants().OfType<Control>(),
+            control => control.GetType().Name == "Icon" && control.IsVisible);
+        var timeArrowPosition = timeArrow.TranslatePoint(new Point(0, 0), timeCell);
+        Assert.NotNull(timeArrowPosition);
+        Assert.True(timeArrow.Width >= 14);
+        Assert.InRange(timeArrowPosition.Value.X, 3, timeCell.Bounds.Width - timeArrow.Bounds.Width);
+        Assert.InRange(timeArrowPosition.Value.X, 0, timeCell.Bounds.Width / 3);
+        var candidateLeft = timeCandidate.TranslatePoint(new Point(0, 0), timeCell);
+        var beforeLeft = timeBefore.TranslatePoint(new Point(0, 0), timeCell);
+        Assert.NotNull(candidateLeft);
+        Assert.NotNull(beforeLeft);
+        Assert.InRange(Math.Abs(candidateLeft.Value.X - beforeLeft.Value.X), 0, 1);
+        Assert.InRange(Math.Abs(CenterX(timeBefore, timeCell) - CenterX(timeCell, timeCell)), 0, 1);
+        Assert.InRange(Math.Abs(CenterX(timeCandidate, timeCell) - CenterX(timeCell, timeCell)), 0, 1);
+        var frameArrow = Assert.Single(framePreview.GetVisualDescendants().OfType<Control>(),
+            control => control.GetType().Name == "Icon" && control.IsVisible);
+        Assert.True(HorizontalGap(frameArrow, frameCandidate, frameCell) > 5);
+        var frameArrowPosition = frameArrow.TranslatePoint(new Point(0, 0), frameCell);
+        Assert.NotNull(frameArrowPosition);
+        Assert.InRange(frameArrowPosition.Value.X, 3, frameCell.Bounds.Width / 3);
+        Assert.InRange(Math.Abs(CenterX(frameCandidate, frameCell) - CenterX(frameCell, frameCell)), 0, 1);
+        var timeBeforeCenter = CenterY(timeBefore, renderedRow);
+        var timeCandidateCenter = CenterY(timeCandidate, renderedRow);
+        var frameBeforeCenter = CenterY(frameBefore, renderedRow);
+        var frameCandidateCenter = CenterY(frameCandidate, renderedRow);
+
+        Assert.InRange(Math.Abs(CenterY(timePreview, timeCell) - CenterY(timeCell, timeCell)), 0, 1);
+        Assert.InRange(Math.Abs(CenterY(framePreview, frameCell) - CenterY(frameCell, frameCell)), 0, 1);
+        Assert.InRange(Math.Abs(timeBeforeCenter - frameBeforeCenter), 0, 1);
+        Assert.InRange(Math.Abs(timeCandidateCenter - frameCandidateCenter), 0, 1);
+        Assert.InRange(Math.Abs((timeCandidateCenter - timeBeforeCenter)
+            - (frameCandidateCenter - frameBeforeCenter)), 0, 1);
+    }
+
+    private static void AssertWideTimeAndFramePreviewGroups(
+        MainWindowHeadlessTestHost host,
+        UI.ViewModels.ChapterRowViewModel row)
+    {
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var timeCell = renderedRow.GetVisualDescendants().OfType<DataGridCell>()
+            .Single(cell => cell.GetVisualDescendants().OfType<TextBlock>()
+                .Any(block => block.Text == row.PreviewBeforeTimeText));
+        var timeGroup = timeCell.GetVisualDescendants().OfType<StackPanel>()
+            .Single(panel => panel.IsVisible && panel.Orientation == Orientation.Horizontal
+                && panel.GetVisualDescendants().OfType<TextBlock>().Any(block => block.Text == row.PreviewBeforeTimeText));
+        var frameGroup = renderedRow.GetVisualDescendants().OfType<StackPanel>()
+            .Single(panel => panel.IsVisible && panel.Orientation == Orientation.Horizontal
+                && panel.GetVisualDescendants().OfType<FramePresentationView>()
+                    .Count(static view => view.Classes.Contains("framePreview")) == 2);
+        var frameCell = frameGroup.GetVisualAncestors().OfType<DataGridCell>().First();
+        Assert.Equal(timeGroup.Spacing, frameGroup.Spacing);
+        Assert.Equal(HorizontalAlignment.Center, timeGroup.HorizontalAlignment);
+        Assert.Equal(HorizontalAlignment.Center, frameGroup.HorizontalAlignment);
+        Assert.InRange(Math.Abs(CenterX(timeGroup, timeCell) - CenterX(timeCell, timeCell)), 0, 1);
+        Assert.InRange(Math.Abs(CenterX(frameGroup, frameCell) - CenterX(frameCell, frameCell)), 0, 1);
+    }
+
+    private static double CenterY(Control control, Control relativeTo)
+    {
+        var position = control.TranslatePoint(new Point(0, control.Bounds.Height / 2), relativeTo);
+        Assert.NotNull(position);
+        return position.Value.Y;
+    }
+
+    private static double CenterX(Control control, Control relativeTo)
+    {
+        var position = control.TranslatePoint(new Point(control.Bounds.Width / 2, 0), relativeTo);
+        Assert.NotNull(position);
+        return position.Value.X;
+    }
+
+    private static double HorizontalGap(Control left, Control right, Control relativeTo)
+    {
+        var leftRight = left.TranslatePoint(new Point(left.Bounds.Width, 0), relativeTo);
+        var rightLeft = right.TranslatePoint(new Point(0, 0), relativeTo);
+        Assert.NotNull(leftRight);
+        Assert.NotNull(rightLeft);
+        return rightLeft.Value.X - leftRight.Value.X;
+    }
+
+    private static void AssertFramePreviewColor(
+        MainWindowHeadlessTestHost host,
+        UI.ViewModels.ChapterRowViewModel row,
+        string text,
+        string brushKey)
+    {
+        Assert.Contains(text, new[] { row.PreviewBeforeFrames, row.PreviewFrames });
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var accuracyClass = brushKey switch
+        {
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey => "frameAccurate",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey => "frameInexact",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey => "frameNeutral",
+            _ => throw new ArgumentOutOfRangeException(nameof(brushKey))
+        };
+        var frameTexts = renderedRow.GetVisualDescendants().OfType<FramePresentationView>()
+            .Where(
+                view => view is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                     && view.Classes.Contains("framePreview") && view.Classes.Contains(accuracyClass))
+            .ToArray();
+        Assert.NotEmpty(frameTexts);
+        var expectedBrush = Assert.IsType<SolidColorBrush>(Application.Current!.Resources[brushKey]);
+        Assert.All(frameTexts, frameText =>
+        {
+            var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
+            Assert.Equal(expectedBrush.Color, actualBrush.Color);
+            var renderedDigits = frameText.GetVisualDescendants().OfType<TextBlock>().ToArray();
+            Assert.NotEmpty(renderedDigits);
+            Assert.All(renderedDigits, digit =>
+            {
+                var digitBrush = Assert.IsType<SolidColorBrush>(digit.Foreground);
+                Assert.Equal(expectedBrush.Color, digitBrush.Color);
+            });
+        });
+    }
+
+    private static void AssertNormalFrameColor(
+        MainWindowHeadlessTestHost host,
+        UI.ViewModels.ChapterRowViewModel row,
+        string text,
+        string brushKey)
+    {
+        Assert.Equal(row.FramesInfo, text);
+        var renderedRow = host.RequiredControl<DataGrid>("ChapterGrid")
+            .GetVisualDescendants()
+            .OfType<DataGridRow>()
+            .Single(item => ReferenceEquals(item.DataContext, row));
+        var accuracyClass = brushKey switch
+        {
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameAccurateBrushKey => "frameAccurate",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameInexactBrushKey => "frameInexact",
+            ChapterTool.Avalonia.Services.AvaloniaThemeApplicationService.FrameNeutralBrushKey => "frameNeutral",
+            _ => throw new ArgumentOutOfRangeException(nameof(brushKey))
+        };
+        var frameTexts = renderedRow.GetVisualDescendants().OfType<FramePresentationView>()
+            .Where(view => view is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } }
+                && view.Classes.Contains("frameText") && !view.Classes.Contains("framePreview")
+                && view.Classes.Contains(accuracyClass))
+            .ToArray();
+        Assert.NotEmpty(frameTexts);
+        Assert.All(frameTexts, frameText =>
+        {
+            Assert.Equal(HorizontalAlignment.Stretch, frameText.HorizontalAlignment);
+            Assert.Equal(HorizontalAlignment.Center, frameText.FindControl<StackPanel>("FrameParts")!.HorizontalAlignment);
+        });
+        var expectedBrush = Assert.IsType<SolidColorBrush>(Application.Current!.Resources[brushKey]);
+        Assert.All(frameTexts, frameText =>
+        {
+            var actualBrush = Assert.IsType<SolidColorBrush>(frameText.Foreground);
+            Assert.Equal(expectedBrush.Color, actualBrush.Color);
+            var renderedDigits = frameText.GetVisualDescendants().OfType<TextBlock>().ToArray();
+            Assert.NotEmpty(renderedDigits);
+            Assert.All(renderedDigits, digit =>
+            {
+                var digitBrush = Assert.IsType<SolidColorBrush>(digit.Foreground);
+                Assert.Equal(expectedBrush.Color, digitBrush.Color);
+            });
+        });
+    }
+
+    private static void AssertBottomInputAlignment(MainWindowHeadlessTestHost host)
+    {
+        var options = host.RequiredControl<Grid>("AdvancedOptionsGrid");
+        var expressionGroup = host.RequiredControl<Grid>("ExpressionOptionsGroup");
+        if (Grid.GetColumn(expressionGroup) == 1)
+        {
+            var chapterNameGroup = host.RequiredControl<Grid>("ChapterNameOptionsGroup");
+            var orderShiftGroup = host.RequiredControl<Grid>("OrderShiftOptionsGroup");
+            var chapterName = host.RequiredControl<Control>("ChapterNameModeBox");
+            var orderShift = host.RequiredControl<Control>("OrderShiftBox");
+            var expression = host.RequiredControl<Control>("ExpressionBox");
+            var nameInput = chapterName.TranslatePoint(new Point(0, 0), options)!.Value.X;
+            var orderInput = orderShift.TranslatePoint(new Point(0, 0), options)!.Value.X;
+            var expressionInput = expression.TranslatePoint(new Point(0, 0), options)!.Value.X;
+            var nameGroup = chapterNameGroup.TranslatePoint(new Point(0, 0), options)!.Value.X;
+            var orderGroup = orderShiftGroup.TranslatePoint(new Point(0, 0), options)!.Value.X;
+            Assert.InRange(Math.Abs((nameInput - nameGroup) - (orderInput - orderGroup)), 0, 1);
+            Assert.InRange(Math.Abs(nameInput - expressionInput), 0, 1);
+            return;
+        }
+
+        var controls = new[]
+        {
+            host.RequiredControl<Control>("FormatBox"),
+            host.RequiredControl<Control>("XmlLanguageBox"),
+            host.RequiredControl<Control>("ExpressionBox")
+        };
+        var positions = controls.Select(control => control.TranslatePoint(new Point(0, 0), options)).ToArray();
+        Assert.All(positions, position => Assert.NotNull(position));
+        var left = positions.Select(position => position!.Value.X).ToArray();
+        Assert.InRange(left.Max() - left.Min(), 0, 1);
+    }
+
     [AvaloniaFact]
     public void Default_width_matches_minimum_width()
     {
@@ -83,12 +1355,12 @@ public sealed class MainWindowHeadlessTests
         host.Localizer.SetCulture(culture);
 
         await host.LayoutAsync(width: 736, height: 576);
+        AssertBottomInputAlignment(host);
 
         var options = host.RequiredControl<Grid>("AdvancedOptionsGrid");
         var expressionGroup = host.RequiredControl<Grid>("ExpressionOptionsGroup");
         var expressionEditor = host.RequiredControl<Control>("ExpressionBox");
         var loadExpressionButton = host.RequiredControl<Button>("LoadExpressionButton");
-        var applyExpression = host.RequiredControl<CheckBox>("ApplyExpressionBox");
         var chapterNameMode = host.RequiredControl<ComboBox>("ChapterNameModeBox");
         var formatBox = host.RequiredControl<ComboBox>("FormatBox");
         var xmlLanguageBox = host.RequiredControl<ComboBox>("XmlLanguageBox");
@@ -96,10 +1368,9 @@ public sealed class MainWindowHeadlessTests
 
         Assert.Equal(2, options.ColumnDefinitions.Count);
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
-        Assert.True(expressionEditor.Bounds.Width >= 500);
+        Assert.True(expressionEditor.Bounds.Width >= 400);
         Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
-        Assert.Null(applyExpression.Content);
-        Assert.False(string.IsNullOrWhiteSpace(ToolTip.GetTip(applyExpression)?.ToString()));
+        Assert.Null(host.Window.FindControl<CheckBox>("ApplyExpressionBox"));
         Assert.True(chapterNameMode.Bounds.Width >= 128);
         Assert.True(formatBox.Bounds.Right <= options.Bounds.Right);
         Assert.True(xmlLanguageBox.Bounds.Right <= options.Bounds.Right);
@@ -107,6 +1378,7 @@ public sealed class MainWindowHeadlessTests
         Assert.True(orderShiftBox.Bounds.Right <= options.Bounds.Right);
 
         await host.LayoutAsync(width: 1100, height: 576);
+        AssertBottomInputAlignment(host);
 
         Assert.Equal(3, options.ColumnDefinitions.Count);
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
@@ -185,12 +1457,12 @@ public sealed class MainWindowHeadlessTests
         Assert.True(result.Success);
         using var host = new MainWindowHeadlessTestHost(result);
 
-        await AssertDefaultSelectionDisplaysLabelAsync(host, "real.xml", "Edition 01（1 chapters）");
-        await AssertSelectorDisplaysLabelAsync(host, "real.xml", selectedIndex: 1, "Edition 02（1 chapters）");
+        await AssertDefaultSelectionDisplaysLabelAsync(host, "real.xml", "Edition 01（1 chapter）");
+        await AssertSelectorDisplaysLabelAsync(host, "real.xml", selectedIndex: 1, "Edition 02（1 chapter）");
     }
 
     [AvaloniaFact]
-    public async Task Ifo_importer_option_labels_render_in_clip_selector()
+    public async Task Ifo_importer_labels_follow_ptt_title_and_chapter_data()
     {
         var importer = new IfoChapterImporter();
         var path = Path.Combine(MainWindowHeadlessTestHost.RepositoryRoot(), "tests", "ChapterTool.Core.Tests", "Fixtures", "Importing", "Disc", "Ifo", "VTS_33_0.IFO");
@@ -199,8 +1471,7 @@ public sealed class MainWindowHeadlessTests
         Assert.True(result.Success);
         using var host = new MainWindowHeadlessTestHost(result);
 
-        await AssertDefaultSelectionDisplaysLabelAsync(host, path, "VTS_33_1（47 chapters）");
-        await AssertSelectorDisplaysLabelAsync(host, path, selectedIndex: 1, "VTS_33_2（47 chapters）");
+        await AssertDefaultSelectionDisplaysLabelAsync(host, path, "VTS_33_1 (0:23:31) [VTS_33_1]（47 chapters）");
     }
 
     [AvaloniaFact]

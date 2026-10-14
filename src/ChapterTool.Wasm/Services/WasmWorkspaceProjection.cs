@@ -49,13 +49,14 @@ internal static class WasmWorkspaceProjection
         return
         [
             .. session.ClipOptions
-                .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{entry.Id}", groupIndex, index, localizer))
+                .Select((entry, index) => ToClipOption(entry, $"{groupIndex}:{index}:{entry.Id}", groupIndex, index, localizer))
         ];
     }
 
-    internal static ChapterRowModel ToRow(Chapter chapter, IChapterTimeFormatter formatter) =>
+    internal static ChapterRowModel ToRow(Chapter chapter, IChapterTimeFormatter formatter, ChapterId id) =>
         new()
         {
+            Id = id,
             Number = chapter.DisplayNumber,
             TimeText = chapter.IsSeparator ? string.Empty : formatter.Format(chapter.StartTime),
             Name = chapter.Name,

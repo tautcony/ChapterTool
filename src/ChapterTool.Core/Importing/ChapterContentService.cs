@@ -135,21 +135,20 @@ public class ChapterContentService
         return await ResolveImporter(extension).ImportAsync(request, cancellationToken);
     }
 
-    /// <summary>
-    /// Exports a chapter set with the specified options.
-    /// </summary>
-    /// <param name="chapterSet">The chapter set to export.</param>
-    /// <param name="options">The export options.</param>
-    /// <returns>The export result.</returns>
-    public ChapterExportResult Export(ChapterSet chapterSet, ChapterExportOptions options) =>
-        exportService.Export(chapterSet, options);
+    /// <summary>Serializes an already transformed immutable snapshot without replaying transforms.</summary>
+    public ChapterExportResult Serialize(EditableChapterDocument document, ChapterSerializationOptions options) =>
+        exportService.Serialize(document, options);
+
+    /// <summary>Serializes an already prepared legacy chapter snapshot without replaying transforms.</summary>
+    public ChapterExportResult Serialize(ChapterSet chapterSet, ChapterSerializationOptions options) =>
+        exportService.Serialize(chapterSet, options);
 
     /// <summary>
     /// Gets an export format by its selector index.
     /// </summary>
     /// <param name="index">The format index.</param>
     /// <returns>The export format.</returns>
-    public ChapterExportFormat FormatAt(int index) => ChapterExportFormats.AtIndex(index);
+    public static ChapterExportFormat FormatAt(int index) => ChapterExportFormats.AtIndex(index);
 
     /// <summary>
     /// Gets the extension for an export format.

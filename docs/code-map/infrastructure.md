@@ -19,8 +19,15 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvMetadataReader.cs`: optional disc title reader
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvSourceLayout.cs`: accepted input shapes and primary/backup paths
   - `src/ChapterTool.Infrastructure/Importing/Bdmv/BdmvPlaylistScanner.cs`: bounded playlist discovery and parity filtering
+- DVD path:
+  - `src/ChapterTool.Infrastructure/Importing/Dvd/DvdSourceLayout.cs`: DVD disc root and `VIDEO_TS` directory detection
+  - `src/ChapterTool.Core/Importing/Disc/DvdIfoMetadataReader.cs`: VTS video, audio, subtitle, and disc metadata
 
 `BdmvImporter` preserves global INDEX title numbers, skips prohibited titles, reports hidden titles, and consumes bounded HDMV navigation evidence.
+
+`RuntimeChapterImporterRegistry` routes DVD disc directories to `IfoChapterImporter`. The importer reads every VMG title and exposes VTS stream attributes in the import summary.
+
+DVD timing uses the managed `DvdNavTimingReader` in Core. It needs sibling title VOB files to read navigation timestamps. It does not need an external executable. Missing or unsupported VOB navigation data produces a warning and preserves IFO estimates.
 
 ### Runtime importer composition
 
@@ -95,9 +102,17 @@ All runtime consumers receive the same aggregate store. `SettingsToolViewModel` 
   - `src/ChapterTool.Infrastructure/Platform/NativeDependencyLocation.cs`
 - app log surface:
   - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+- manual log export:
+  - `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`
 - test/dummy platform services:
   - `src/ChapterTool.Infrastructure/Platform/MemoryClipboardService.cs`
   - `src/ChapterTool.Infrastructure/Platform/ScriptedDialogService.cs`
+
+`ApplicationLogPanelProvider` implements `IApplicationLogService` and `ILoggerProvider`. It captures entries at or above its configured minimum level. It keeps a bounded in-memory snapshot in append order. `Entries` returns a copy of the snapshot. `EntryAdded` fires after an entry is retained. `Cleared` fires after the snapshot is empty. The provider has no grouping, timestamp index, or older-page cursor.
+
+`ApplicationLogFileExporter` implements the optional `IApplicationLogExporter` contract. It creates `settings/logs/` below the host settings directory. It writes the requested entries as UTF-8 JSON or RFC 4180 CSV. It orders exported rows by timestamp and returns filesystem failures as `ApplicationLogExportResult` values.
+
+The desktop `LoggingModule` registers the provider and exporter as application singletons. It also keeps the Serilog rolling archive separate from the in-memory panel. The archive rolls daily, keeps up to 14 files, and rolls at 10 MB.
 
 ## Feature Lookup
 
@@ -158,3 +173,4 @@ Start with:
 
 - `src/ChapterTool.Infrastructure/Platform/ShellService.cs`
 - `src/ChapterTool.Infrastructure/Platform/ApplicationLogPanelProvider.cs`
+- `src/ChapterTool.Infrastructure/Platform/ApplicationLogFileExporter.cs`

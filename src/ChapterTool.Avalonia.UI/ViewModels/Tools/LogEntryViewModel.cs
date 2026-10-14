@@ -9,47 +9,37 @@ namespace ChapterTool.Avalonia.UI.ViewModels.Tools;
 
 public sealed record LogPropertyViewModel(string Name, string Value);
 
-public sealed record LogStructuredNodeViewModel(
-    string Name,
-    string Value,
-    IReadOnlyList<LogStructuredNodeViewModel> Children,
-    bool IsInitiallyExpanded)
-{
-    public bool HasChildren => Children.Count > 0;
-}
+public sealed record LogHighlightRun(string Text, bool IsMatch);
 
 public sealed class LogEntryViewModel(
     ApplicationLogEntry entry,
-    IAppLocalizer localizer,
-    IAppLocalizer contentLocalizer)
+    IAppLocalizer localizer)
     : ObservableViewModel
 {
+    private const int MaxSearchDepth = 32;
+    private const int MaxSearchValues = 4096;
+    private const int MaxCompactSummaryLength = 180;
+
     private string? rawText;
     private string? searchableText;
+    private string? additionalSearchableText;
+    private string? compactSummary;
 
     public ApplicationLogEntry Entry => entry;
 
-    public string Timestamp => entry.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
-
-    public string Time => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss");
+    public string Time => entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
 
     public string LevelText => localizer.GetString(LevelKey(entry.Level));
 
-    public string Summary
-    {
-        get
-        {
-            if (entry.Arguments is { } arguments && arguments.TryGetValue("message", out var message)
-                && !string.IsNullOrWhiteSpace(message?.ToString()))
-            {
-                return message.ToString()!;
-            }
+    public string Summary => entry.Message;
 
-            return entry.MessageKey is null
-                ? entry.Message
-                : contentLocalizer.Format(entry.MessageKey, entry.Arguments);
-        }
-    }
+    public bool HasSummary => !string.IsNullOrWhiteSpace(Summary);
+
+    /// <summary>
+    /// Gets the short message used by the list. Technical arguments stay in the
+    /// inspector so a long path or import payload cannot take over the feed.
+    /// </summary>
+    public string CompactSummary => compactSummary ??= CreateCompactSummary();
 
     public string Category => entry.Category ?? string.Empty;
 
@@ -63,64 +53,92 @@ public sealed class LogEntryViewModel(
 
     public bool HasOperation => !string.IsNullOrWhiteSpace(Operation);
 
-    public string Context => string.IsNullOrWhiteSpace(EventName)
-        ? Category
-        : string.IsNullOrWhiteSpace(Category)
-            ? EventDisplay
-            : $"{Category} / {EventDisplay}";
+    public bool HasContext => !string.IsNullOrWhiteSpace(Context);
 
-    public string Details
+    /// <summary>Gets only identity that helps scan a row. The full category stays in the inspector.</summary>
+    public string RowContext
     {
         get
         {
-            var builder = new StringBuilder();
-            Append(builder, entry.TechnicalDetail);
-            Append(builder, entry.ExceptionText);
-            if (TryGetImportOverview(out var importOverview))
-            {
-                Append(builder, importOverview);
-            }
-            else if (HasStructuredTree)
-            {
-                Append(builder, FormatNodes(StructuredTree));
-            }
-
-            return builder.ToString();
+            var parts = new List<string>(capacity: 2);
+            AddContextPart(parts, Operation);
+            AddContextPart(parts, EventDisplay);
+            return string.Join(" / ", parts);
         }
     }
 
-    public bool HasDetails => !string.IsNullOrWhiteSpace(Details);
+    public bool HasRowContext => !string.IsNullOrWhiteSpace(RowContext);
+
+    public string Context
+    {
+        get
+        {
+            var parts = new List<string>(capacity: 3);
+            AddContextPart(parts, Operation);
+            AddContextPart(parts, Category);
+            AddContextPart(parts, EventDisplay);
+            return string.Join(" / ", parts);
+        }
+    }
+
+    public string IdentityText => Context;
+
+    public string AccessibleName => localizer.Format(
+            "Tool.Log.EntryAccessibleName",
+            new Dictionary<string, object?>
+            {
+                ["level"] = LevelText,
+                ["summary"] = CompactSummary,
+                ["time"] = Time,
+                ["context"] = Context
+            })
+        + (HasAdditionalSearchMatch ? $" {SearchMatchIndicatorText}" : string.Empty);
+
+    public string DetailsActionText => localizer.GetString("Tool.Log.OpenDetails");
+
+    public string SearchMatchIndicatorText => localizer.GetString("Tool.Log.SearchMatchAdditional");
+
+    public bool HasAdditionalSearchMatch
+    {
+        get;
+        private set
+        {
+            if (SetProperty(ref field, value))
+            {
+                OnPropertyChanged(nameof(AccessibleName));
+            }
+        }
+    }
+
+    public IReadOnlyList<LogHighlightRun> SummaryRuns
+    {
+        get;
+        private set => SetProperty(ref field, value);
+    } = [];
+
+    public bool HasInspectorContent => HasTechnicalDetail || HasException || HasStructuredProperties;
 
     public string TechnicalDetail => entry.TechnicalDetail?.Trim() ?? string.Empty;
 
     public bool HasTechnicalDetail => !string.IsNullOrWhiteSpace(TechnicalDetail);
 
-    public bool HasOverviewContent => HasTechnicalDetail || HasStructuredProperties;
-
     public string ExceptionText => entry.ExceptionText?.Trim() ?? string.Empty;
 
     public bool HasException => !string.IsNullOrWhiteSpace(ExceptionText);
 
-    /// <summary>Complete, deterministic JSON for diagnostics and clipboard export.</summary>
+    /// <summary>Gets complete, deterministic JSON for diagnostics and clipboard export.</summary>
     public string RawText => rawText ??= LogRawValueFormatter.Format(entry, Summary);
 
     public IReadOnlyList<LogPropertyViewModel> StructuredProperties =>
-        entry.StructuredState is not { Count: > 0 }
+        field ??= entry.StructuredState is not { Count: > 0 }
             ? []
             : CreateStructuredProperties();
 
     public bool HasStructuredProperties => StructuredProperties.Count > 0;
 
-    public IReadOnlyList<LogStructuredNodeViewModel> StructuredTree =>
-        entry.StructuredState is not { Count: > 0 }
-            ? []
-            : CreateNodes(
-                entry.StructuredState
-                    .Where(static pair => !IsHiddenStructuredKey(pair.Key))
-                    .Where(static pair => IsContainer(pair.Value))
-                    .OrderBy(static pair => pair.Key, StringComparer.Ordinal));
+    public bool HasNoStructuredProperties => !HasStructuredProperties;
 
-    public bool HasStructuredTree => StructuredTree.Count > 0;
+    public bool ShowNoDetails => !HasInspectorContent;
 
     public bool IsInformation => entry.Level == LogLevel.Information;
 
@@ -147,35 +165,304 @@ public sealed class LogEntryViewModel(
         return Contains(SearchableText, query);
     }
 
+    public void ApplySearchHighlight(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            HasAdditionalSearchMatch = false;
+            SummaryRuns = [new LogHighlightRun(CompactSummary, false)];
+            return;
+        }
+
+        HasAdditionalSearchMatch = !Contains(CompactSummary, query)
+            && Contains(AdditionalSearchableText, query);
+
+        var runs = new List<LogHighlightRun>();
+        var offset = 0;
+        while (offset < CompactSummary.Length)
+        {
+            var match = CompactSummary.IndexOf(query, offset, StringComparison.OrdinalIgnoreCase);
+            if (match < 0)
+            {
+                runs.Add(new LogHighlightRun(CompactSummary[offset..], false));
+                break;
+            }
+
+            if (match > offset)
+            {
+                runs.Add(new LogHighlightRun(CompactSummary[offset..match], false));
+            }
+
+            runs.Add(new LogHighlightRun(CompactSummary.Substring(match, query.Length), true));
+            offset = match + query.Length;
+        }
+
+        SummaryRuns = runs;
+    }
+
     public void RefreshLocalizedProperties()
     {
-        OnPropertyChanged(nameof(LevelText));
         rawText = null;
         searchableText = null;
+        additionalSearchableText = null;
+        compactSummary = null;
+
+        // Clear derived text before raising notifications so bindings never read a stale
+        // accessible name or summary during a culture switch.
+        OnPropertyChanged(nameof(LevelText));
+        OnPropertyChanged(nameof(DetailsActionText));
+        OnPropertyChanged(nameof(SearchMatchIndicatorText));
         OnPropertyChanged(nameof(Summary));
-        OnPropertyChanged(nameof(Details));
+        OnPropertyChanged(nameof(HasSummary));
+        OnPropertyChanged(nameof(CompactSummary));
+        OnPropertyChanged(nameof(AccessibleName));
         OnPropertyChanged(nameof(RawText));
         OnPropertyChanged(nameof(TechnicalDetail));
         OnPropertyChanged(nameof(ExceptionText));
         OnPropertyChanged(nameof(StructuredProperties));
-        OnPropertyChanged(nameof(StructuredTree));
-        OnPropertyChanged(nameof(HasStructuredTree));
         OnPropertyChanged(nameof(Context));
+        OnPropertyChanged(nameof(RowContext));
+        OnPropertyChanged(nameof(IdentityText));
+        OnPropertyChanged(nameof(HasContext));
+        OnPropertyChanged(nameof(HasRowContext));
+        ApplySearchHighlight(string.Empty);
     }
 
-    private string SearchableText => searchableText ??= string.Join(
-        Environment.NewLine,
-        Summary,
-        Category,
-        Operation,
-        EventDisplay,
-        entry.MessageKey,
-        entry.TechnicalDetail,
-        entry.ExceptionText,
-        RawText);
+    private string SearchableText => searchableText ??= BuildSearchableText();
+
+    private string AdditionalSearchableText => additionalSearchableText ??= BuildAdditionalSearchableText();
+
+    private string BuildSearchableText()
+    {
+        var values = new List<string>
+        {
+            Summary,
+            CompactSummary,
+            AdditionalSearchableText
+        };
+
+        return string.Join(Environment.NewLine, values);
+    }
+
+    private string BuildAdditionalSearchableText()
+    {
+        var values = new List<string>
+        {
+            entry.Message,
+            Summary,
+            Category,
+            Operation,
+            EventDisplay,
+            entry.TechnicalDetail ?? string.Empty,
+            entry.ExceptionText ?? string.Empty
+        };
+
+        var budget = MaxSearchValues;
+        if (entry.StructuredState is not null)
+        {
+            AppendSearchablePairs(values, entry.StructuredState, ref budget);
+        }
+
+        // Some callers construct ApplicationLogEntry directly and provide arguments
+        // without mirroring them into StructuredState. Keep those fields searchable.
+        if (entry.Arguments is not null)
+        {
+            AppendSearchablePairs(values, entry.Arguments, ref budget);
+        }
+
+        return string.Join(Environment.NewLine, values);
+    }
+
+    private static void AppendSearchablePairs(
+        List<string> values,
+        IEnumerable<KeyValuePair<string, object?>> pairs,
+        ref int budget)
+    {
+        foreach (var pair in pairs)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            values.Add(pair.Key);
+            AppendSearchableValue(
+                values,
+                pair.Value,
+                depth: 0,
+                new HashSet<object>(ReferenceEqualityComparer.Instance),
+                ref budget);
+        }
+    }
+
+    private static void AppendSearchableValue(
+        List<string> values,
+        object? value,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        if (value is null || budget-- <= 0)
+        {
+            return;
+        }
+
+        if (value is string text)
+        {
+            values.Add(text);
+            return;
+        }
+
+        if (depth >= MaxSearchDepth)
+        {
+            values.Add("[depth limit]");
+            return;
+        }
+
+        var runtimeType = value.GetType();
+        var trackReference = !runtimeType.IsValueType;
+        if (trackReference && !path.Add(value))
+        {
+            values.Add("[cycle]");
+            return;
+        }
+
+        try
+        {
+            AppendSearchableValueContent(values, value, depth, path, ref budget);
+        }
+        finally
+        {
+            if (trackReference)
+            {
+                path.Remove(value);
+            }
+        }
+    }
+
+    private static void AppendSearchableValueContent(
+        List<string> values,
+        object value,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+        {
+            AppendSearchablePairs(values, readOnlyDictionary, depth + 1, path, ref budget);
+        }
+        else if (value is IDictionary dictionary)
+        {
+            AppendSearchableDictionary(values, dictionary, depth + 1, path, ref budget);
+        }
+        else if (value is IEnumerable enumerable)
+        {
+            AppendSearchableItems(values, enumerable, depth + 1, path, ref budget);
+        }
+        else
+        {
+            values.Add(value.ToString() ?? string.Empty);
+        }
+    }
+
+    private static void AppendSearchablePairs(
+        List<string> values,
+        IEnumerable<KeyValuePair<string, object?>> pairs,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        foreach (var pair in pairs)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            values.Add(pair.Key);
+            AppendSearchableValue(values, pair.Value, depth, path, ref budget);
+        }
+    }
+
+    private static void AppendSearchableDictionary(
+        List<string> values,
+        IDictionary pairs,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        foreach (DictionaryEntry pair in pairs)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            values.Add(pair.Key?.ToString() ?? string.Empty);
+            AppendSearchableValue(values, pair.Value, depth, path, ref budget);
+        }
+    }
+
+    private static void AppendSearchableItems(
+        List<string> values,
+        IEnumerable items,
+        int depth,
+        HashSet<object> path,
+        ref int budget)
+    {
+        foreach (var item in items)
+        {
+            if (budget <= 0)
+            {
+                break;
+            }
+
+            AppendSearchableValue(values, item, depth, path, ref budget);
+        }
+    }
 
     private static bool Contains(string value, string query) =>
         value.Contains(query, StringComparison.OrdinalIgnoreCase);
+
+    private string CreateCompactSummary()
+    {
+        if (TryArgument("Summary", out var explicitSummary) || TryArgument("summary", out explicitSummary))
+        {
+            return TruncateSummary(explicitSummary);
+        }
+
+        // 摘要 = 完整消息去掉尾部的载荷（message='...'）。诊断等长消息保留
+        // operation/severity/code 等前置上下文，原文只进检查器，不会占据整行。
+        return TruncateSummary(TrimMessagePayload(Summary));
+    }
+
+    private static string TrimMessagePayload(string value)
+    {
+        var index = value.IndexOf(", message='", StringComparison.Ordinal);
+        return index > 0 ? value[..index].TrimEnd() : value;
+    }
+
+    private bool TryArgument(string key, out string value)
+    {
+        if (entry.Arguments is not null
+            && entry.Arguments.TryGetValue(key, out var argument)
+            && !string.IsNullOrWhiteSpace(argument?.ToString()))
+        {
+            value = argument.ToString()!;
+            return true;
+        }
+
+        value = string.Empty;
+        return false;
+    }
+
+    private static string TruncateSummary(string value)
+    {
+        var normalized = value.Trim();
+        return normalized.Length <= MaxCompactSummaryLength
+            ? normalized
+            : normalized[..(MaxCompactSummaryLength - 1)].TrimEnd() + '\u2026';
+    }
 
     private IReadOnlyList<LogPropertyViewModel> CreateStructuredProperties()
     {
@@ -202,115 +489,12 @@ public sealed class LogEntryViewModel(
         return !string.IsNullOrWhiteSpace(value);
     }
 
-    private static void Append(StringBuilder builder, string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return;
-        }
-
-        if (builder.Length > 0)
-        {
-            builder.AppendLine();
-        }
-
-        builder.Append(value.Trim());
-    }
-
     private static string LevelKey(LogLevel level) => level switch
     {
         LogLevel.Warning => "Tool.Log.FilterWarning",
         LogLevel.Error or LogLevel.Critical => "Tool.Log.FilterError",
         _ => "Tool.Log.FilterInformation"
     };
-
-    private static IReadOnlyList<LogStructuredNodeViewModel> CreateNodes(
-        IEnumerable<KeyValuePair<string, object?>> values,
-        int depth = 0)
-    {
-        return
-        [
-            .. values
-                .Select(pair => CreateNode(pair.Key, pair.Value, depth))
-        ];
-    }
-
-    private static string FormatNodes(IEnumerable<LogStructuredNodeViewModel> nodes, int depth = 0)
-    {
-        var lines = new List<string>();
-        foreach (var node in nodes)
-        {
-            var value = string.IsNullOrEmpty(node.Value) ? string.Empty : $" = {node.Value}";
-            lines.Add($"{new string(' ', depth * 2)}{node.Name}{value}");
-            if (node.HasChildren)
-            {
-                lines.Add(FormatNodes(node.Children, depth + 1));
-            }
-        }
-
-        return string.Join(Environment.NewLine, lines);
-    }
-
-    private static LogStructuredNodeViewModel CreateNode(string name, object? value, int depth)
-    {
-        if (depth >= 32)
-        {
-            return new LogStructuredNodeViewModel(HumanizeKey(name), "[depth limit]", [], false);
-        }
-
-        var children = CreateChildren(value, depth + 1);
-        return new LogStructuredNodeViewModel(
-            HumanizeKey(name),
-            FormatContainer(value, children),
-            children,
-            depth == 0 && children.Count > 0);
-    }
-
-    private static IReadOnlyList<LogStructuredNodeViewModel> CreateChildren(object? value, int depth)
-    {
-        switch (value)
-        {
-            case IReadOnlyDictionary<string, object?> readOnlyDictionary:
-                return CreateNodes(
-                    readOnlyDictionary
-                        .Where(static pair => !IsHiddenStructuredKey(pair.Key))
-                        .OrderBy(static pair => pair.Key, StringComparer.Ordinal),
-                    depth);
-            case IDictionary dictionary:
-            {
-                var pairs = new List<KeyValuePair<string, object?>>();
-                foreach (DictionaryEntry entry in dictionary)
-                {
-                    pairs.Add(new KeyValuePair<string, object?>(entry.Key?.ToString() ?? string.Empty, entry.Value));
-                }
-
-                return CreateNodes(pairs.OrderBy(static pair => pair.Key, StringComparer.Ordinal), depth);
-            }
-        }
-
-        if (value is IEnumerable enumerable and not string)
-        {
-            var index = 0;
-
-            return [.. from object? item in enumerable select CreateNode($"#{++index}", item, depth)];
-        }
-
-        return [];
-    }
-
-    private static string FormatContainer(object? value, IReadOnlyList<LogStructuredNodeViewModel> children)
-    {
-        if (children.Count == 0)
-        {
-            return FormatValue(value);
-        }
-
-        return value is IDictionary or IReadOnlyDictionary<string, object?>
-            ? CountLabel(children.Count, "field")
-            : CountLabel(children.Count, "item");
-    }
-
-    private static string CountLabel(int count, string noun) => $"{count} {noun}{(count == 1 ? string.Empty : "s")}";
 
     private static string HumanizeKey(string key)
     {
@@ -344,18 +528,16 @@ public sealed class LogEntryViewModel(
         return builder.ToString();
     }
 
-    private static bool IsHiddenStructuredKey(string key) =>
-        string.Equals(key, "MessageKey", StringComparison.Ordinal) ||
-        string.Equals(key, "TechnicalDetail", StringComparison.Ordinal) ||
-        string.Equals(key, "Operation", StringComparison.Ordinal) ||
-        string.Equals(key, "operation", StringComparison.Ordinal);
-
     /// <summary>
-    /// Keys hidden from the flat overview list: infrastructure keys, the operation tag
-    /// (already shown as a badge) and the folded import details (available in the tree).
+    /// Keys hidden from the flat overview list: infrastructure keys, the operation tag,
+    /// and import details available in the raw representation.
     /// </summary>
     private static bool IsOverviewHiddenKey(string key) =>
-        IsHiddenStructuredKey(key) ||
+        string.Equals(key, "TechnicalDetail", StringComparison.Ordinal) ||
+        string.Equals(key, "Operation", StringComparison.Ordinal) ||
+        string.Equals(key, "operation", StringComparison.Ordinal) ||
+        string.Equals(key, "Summary", StringComparison.Ordinal) ||
+        string.Equals(key, "summary", StringComparison.Ordinal) ||
         string.Equals(key, "severity", StringComparison.Ordinal) ||
         string.Equals(key, "message", StringComparison.Ordinal) ||
         string.Equals(key, "importOverview", StringComparison.Ordinal) ||
@@ -370,4 +552,13 @@ public sealed class LogEntryViewModel(
         string text => text,
         _ => value.ToString() ?? string.Empty
     };
+
+    private static void AddContextPart(List<string> parts, string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)
+            && !parts.Contains(value, StringComparer.OrdinalIgnoreCase))
+        {
+            parts.Add(value.Trim());
+        }
+    }
 }

@@ -13,12 +13,22 @@
         DragDrop.AllowDrop="True"
         DragDrop.Drop="OnDrop"
         x:CompileBindings="True">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.previewTarget">
+      <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="controls|FramePresentationView.framePreview">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+  </UserControl.Styles>
   <DockPanel x:Name="RootPanel" LastChildFill="True">
-    <Border DockPanel.Dock="Bottom"
-            Background="{DynamicResource Brush.ToolBar}"
+    <Border x:Name="StatusBar"
+            DockPanel.Dock="Bottom"
+            Background="{DynamicResource Brush.StatusBar}"
             BorderBrush="{DynamicResource Brush.Border1}"
             BorderThickness="0,1,0,0">
-      <Grid ColumnDefinitions="*,Auto,Auto" Height="28">
+      <Grid ColumnDefinitions="*,Auto,Auto" MinHeight="32">
         <StackPanel Grid.Column="0"
                     Orientation="Horizontal"
                     Margin="8,0"
@@ -56,7 +66,7 @@
                 Grid.Column="1"
                 Classes="flat"
                 MinWidth="48"
-                MinHeight="24"
+                MinHeight="28"
                 FontSize="{DynamicResource ChapterTool.FontSize.Small}"
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="LogWindow"
@@ -80,7 +90,7 @@
               <MenuFlyout>
                 <MenuItem x:Name="ReloadMenuItem"
                           Header="{DynamicResource Main.Reload}"
-                          InputGesture="Ctrl+R"
+                          InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadShortcutKeyGesture}"
                           Command="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadCommand}" />
                 <MenuItem x:Name="AppendLoadMenuItem"
                           Header="{DynamicResource Main.AppendMpls}"
@@ -109,6 +119,7 @@
                   ItemsSource="{Binding ClipDisplayOptions}"
                   SelectedItem="{Binding SelectedClipDisplayOption, Mode=TwoWay}"
                   IsVisible="{Binding IsClipSelectionVisible}"
+                  ToolTip.Tip="{Binding SelectedClipDisplayOption.DisplayText}"
                   AutomationProperties.AutomationId="ClipSelector">
           <ComboBox.ItemTemplate>
             <DataTemplate x:DataType="vm:SelectorDisplayOption">
@@ -124,7 +135,7 @@
             <ContextMenu x:DataType="vm:MainWindowViewModel"
                          DataContext="{Binding #RootView.DataContext}">
               <MenuItem x:Name="ClipCombineMenuItem"
-                        Header="{DynamicResource Main.Combine}"
+                        Header="{Binding ClipStructureActionText}"
                         ToggleType="CheckBox"
                         IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                         IsEnabled="{Binding CanCombine}"
@@ -142,6 +153,17 @@
             <CheckBox x:Name="RoundFramesBox"
                       Content="{DynamicResource Label.RoundFrames}"
                       IsChecked="{Binding RoundFrames}" />
+            <Button x:Name="HistoryButton"
+                    Classes="icon_button"
+                    Width="32"
+                    Height="32"
+                    IsEnabled="{Binding CanOpenHistory}"
+                    Command="{Binding HistoryCommand}"
+                    AutomationProperties.AutomationId="HistoryButton"
+                    AutomationProperties.Name="{DynamicResource History.Title}"
+                    ToolTip.Tip="{DynamicResource History.Title}">
+              <i:Icon Value="fa-solid fa-clock-rotate-left" FontSize="14" />
+            </Button>
             <Button x:Name="PreviewButton"
                     Classes="icon_button"
                     Width="32"
@@ -210,61 +232,122 @@
         </Grid>
       </Grid>
 
-      <Grid Grid.Row="1" MinHeight="208">
+      <Grid x:Name="ChapterWorkspaceGrid" Grid.Row="1" MinHeight="128" ColumnDefinitions="*" RowDefinitions="*">
         <DataGrid x:Name="ChapterGrid"
+                  Grid.Column="0"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="False"
                   CanUserResizeColumns="True"
-                  IsReadOnly="False"
+                  IsReadOnly="{Binding IsChapterGridReadOnly}"
                   SelectionMode="Extended"
                   GridLinesVisibility="All"
                   ItemsSource="{Binding Rows}"
+                  BeginningEdit="OnChapterGridBeginningEdit"
                   CellEditEnded="OnChapterGridCellEditEnded"
                   AutomationProperties.AutomationId="ChapterGrid">
           <DataGrid.ContextMenu>
             <ContextMenu x:DataType="vm:MainWindowViewModel"
                          DataContext="{Binding #RootView.DataContext}">
-              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" InputGesture="Insert" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}" />
-              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" InputGesture="Delete" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}" />
+              <MenuItem x:Name="InsertMenuItem" Header="{DynamicResource Main.Insert}" Tag="⎀" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.InsertSelectedCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-plus" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="DeleteMenuItem" Header="{DynamicResource Menu.Delete}" Tag="⌦" IsEnabled="{Binding CanEditRows}" Command="{Binding #RootView.DeleteSelectedCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-trash-can" /></MenuItem.Icon>
+              </MenuItem>
               <MenuItem x:Name="GridCombineMenuItem"
-                        Header="{DynamicResource Main.Combine}"
+                        Header="{Binding ClipStructureActionText}"
                         ToggleType="CheckBox"
                         IsChecked="{Binding IsClipCombineChecked, Mode=OneWay}"
                         IsEnabled="{Binding CanCombine}"
-                        Command="{Binding CombineCommand}" />
-              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding OpenRelatedMediaCommand}" />
-              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootView.OpenZonesCommand}" />
-              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}" />
-              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="F11" Command="{Binding PreviewCommand}" />
+                        Command="{Binding CombineCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-code-merge" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="OpenMediaMenuItem" Header="{DynamicResource Main.OpenRelatedMedia}" IsEnabled="{Binding CanOpenRelatedMedia}" Command="{Binding OpenRelatedMediaCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-link" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="ZonesMenuItem" Header="{DynamicResource Main.CreateZones}" Command="{Binding #RootView.OpenZonesCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-wand-magic-sparkles" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-arrow-up" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).PreviewShortcutKeyGesture}" Command="{Binding PreviewCommand}">
+                <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-circle-play" /></MenuItem.Icon>
+              </MenuItem>
             </ContextMenu>
           </DataGrid.ContextMenu>
           <DataGrid.Columns>
-            <DataGridTemplateColumn Header="#" IsReadOnly="True" Width="56" MinWidth="56">
+            <DataGridTemplateColumn Header="#" IsReadOnly="True" Width="88" MinWidth="72">
+              <DataGridTemplateColumn.HeaderTemplate>
+                <DataTemplate>
+                  <TextBlock Text="#"
+                             ToolTip.Tip="{DynamicResource Grid.Number}"
+                             AutomationProperties.Name="{DynamicResource Grid.Number}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.HeaderTemplate>
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding Number}" />
+                  <Grid>
+                    <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Center"
+                               IsVisible="{Binding ShowNormalNumber}" Text="{Binding Number}" />
+                    <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                                AutomationProperties.Name="{Binding PreviewNumberAccessibleName}"
+                                Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
+                                IsVisible="{Binding ShowWideNumberPreview}">
+                      <TextBlock Text="{Binding Number}" Opacity="0.65" />
+                      <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" />
+                      <TextBlock Classes="previewTarget" Text="{Binding PreviewNumber}" />
+                    </StackPanel>
+                    <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                          AutomationProperties.Name="{Binding PreviewNumberAccessibleName}"
+                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="1"
+                          Margin="4,0,0,0" VerticalAlignment="Center"
+                          IsVisible="{Binding ShowNarrowNumberPreview}">
+                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Number}" Opacity="0.65" />
+                      <i:Icon Grid.Row="1" Grid.Column="0" Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Classes="previewTarget" Text="{Binding PreviewNumber}" />
+                    </Grid>
+                  </Grid>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
             <DataGridTemplateColumn Header="{DynamicResource Grid.Time}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Time}"
-                                    Width="136"
-                                    MinWidth="106">
+                                    Width="300"
+                                    MinWidth="220">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding TimeText}" />
+                  <Grid>
+                    <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Center"
+                               TextWrapping="NoWrap" IsVisible="{Binding ShowNormalTime}" Text="{Binding TimeText}" />
+                    <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                                AutomationProperties.Name="{Binding PreviewTimeAccessibleName}"
+                                Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
+                                IsVisible="{Binding ShowWideTimePreview}">
+                      <TextBlock Text="{Binding PreviewBeforeTimeText}" TextWrapping="NoWrap" Opacity="0.65" />
+                      <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" />
+                      <TextBlock Classes="previewTarget" Text="{Binding PreviewTimeText}" TextWrapping="NoWrap" />
+                    </StackPanel>
+                    <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                          AutomationProperties.Name="{Binding PreviewTimeAccessibleName}"
+                          RowDefinitions="Auto,Auto" RowSpacing="1"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                          IsVisible="{Binding ShowNarrowTimePreview}">
+                      <TextBlock Grid.Row="0" Text="{Binding PreviewBeforeTimeText}" TextWrapping="NoWrap"
+                                 HorizontalAlignment="Stretch" TextAlignment="Center" Opacity="0.65" />
+                      <Grid Grid.Row="1" HorizontalAlignment="Stretch">
+                        <TextBlock Classes="previewTarget" Text="{Binding PreviewTimeText}"
+                                   HorizontalAlignment="Stretch" TextAlignment="Center" TextWrapping="NoWrap" />
+                        <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Margin="6,0,0,0"
+                                Foreground="{DynamicResource Brush.Accent}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                      </Grid>
+                    </Grid>
+                  </Grid>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
               <DataGridTemplateColumn.CellEditingTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <TextBox Classes="gridEditor"
-                           TextAlignment="Center"
                            Text="{Binding TimeText, Mode=TwoWay}" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellEditingTemplate>
@@ -275,61 +358,124 @@
                                     MinWidth="144">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding Name}" />
+                  <Grid>
+                    <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Center"
+                               IsVisible="{Binding ShowNormalName}" Text="{Binding Name}" />
+                    <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                                AutomationProperties.Name="{Binding PreviewNameAccessibleName}"
+                                Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
+                                IsVisible="{Binding ShowWideNamePreview}">
+                      <TextBlock Text="{Binding Name}" Opacity="0.65" TextTrimming="CharacterEllipsis" />
+                      <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" />
+                      <TextBlock Classes="previewTarget" Text="{Binding PreviewName}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                          AutomationProperties.Name="{Binding PreviewNameAccessibleName}"
+                          ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="1"
+                          Margin="4,0,0,0" VerticalAlignment="Center"
+                          IsVisible="{Binding ShowNarrowNamePreview}">
+                      <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Name}" Opacity="0.65" TextTrimming="CharacterEllipsis" />
+                      <i:Icon Grid.Row="1" Grid.Column="0" Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
+                      <TextBlock Grid.Row="1" Grid.Column="1" Classes="previewTarget" Text="{Binding PreviewName}" TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                  </Grid>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
               <DataGridTemplateColumn.CellEditingTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <TextBox Classes="gridEditor"
-                           TextAlignment="Center"
                            Text="{Binding Name, Mode=TwoWay}" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellEditingTemplate>
             </DataGridTemplateColumn>
             <DataGridTemplateColumn Header="{DynamicResource Grid.Frames}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Frames}"
-                                    Width="120"
-                                    MinWidth="80">
+                                     Width="260"
+                                     MinWidth="220">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
-                  <TextBlock Classes.frameText="True"
-                             Classes.frameAccurate="{Binding IsFrameAccurate}"
-                             Classes.frameInexact="{Binding IsFrameInexact}"
-                             Classes.frameNeutral="{Binding IsFrameNeutral}"
-                             HorizontalAlignment="Stretch"
-                             VerticalAlignment="Center"
-                             TextAlignment="Center"
-                             Text="{Binding FramesInfo}" />
+                  <Grid>
+                    <controls:FramePresentationView Classes="frameText"
+                                                     Classes.frameAccurate="{Binding IsFrameAccurate}"
+                                                     Classes.frameInexact="{Binding IsFrameInexact}"
+                                                     Classes.frameNeutral="{Binding IsFrameNeutral}"
+                                                     HorizontalAlignment="Stretch"
+                                                     VerticalAlignment="Center"
+                                                     Presentation="{Binding FramePresentation}"
+                                                     AutomationProperties.Name="{Binding FramePresentation.AccessibleDescription}"
+                                                     IsVisible="{Binding ShowNormalFrames}" />
+                    <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                                AutomationProperties.Name="{Binding PreviewFramesAccessibleName}"
+                                Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
+                                IsVisible="{Binding ShowWideFramesPreview}">
+                      <controls:FramePresentationView Classes="frameText framePreview"
+                                                      Classes.frameAccurate="{Binding IsPreviewBeforeFrameAccurate}"
+                                                      Classes.frameInexact="{Binding IsPreviewBeforeFrameInexact}"
+                                                      Classes.frameNeutral="{Binding IsPreviewBeforeFrameNeutral}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Presentation="{Binding PreviewBeforeFramePresentation}" />
+                      <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" VerticalAlignment="Center" />
+                      <controls:FramePresentationView Classes="frameText framePreview"
+                                                      Classes.frameAccurate="{Binding IsPreviewCandidateFrameAccurate}"
+                                                      Classes.frameInexact="{Binding IsPreviewCandidateFrameInexact}"
+                                                      Classes.frameNeutral="{Binding IsPreviewCandidateFrameNeutral}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Presentation="{Binding PreviewCandidateFramePresentation}" />
+                    </StackPanel>
+                    <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                          AutomationProperties.Name="{Binding PreviewFramesAccessibleName}"
+                          RowDefinitions="Auto,Auto" RowSpacing="1"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                          IsVisible="{Binding ShowNarrowFramesPreview}">
+                      <controls:FramePresentationView Grid.Row="0" Classes="frameText framePreview"
+                                                      Classes.frameAccurate="{Binding IsPreviewBeforeFrameAccurate}"
+                                                      Classes.frameInexact="{Binding IsPreviewBeforeFrameInexact}"
+                                                      Classes.frameNeutral="{Binding IsPreviewBeforeFrameNeutral}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                      Presentation="{Binding PreviewBeforeFramePresentation}" />
+                      <Grid Grid.Row="1" HorizontalAlignment="Stretch">
+                        <controls:FramePresentationView Classes="frameText framePreview"
+                                                        Classes.frameAccurate="{Binding IsPreviewCandidateFrameAccurate}"
+                                                        Classes.frameInexact="{Binding IsPreviewCandidateFrameInexact}"
+                                                        Classes.frameNeutral="{Binding IsPreviewCandidateFrameNeutral}"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                        Presentation="{Binding PreviewCandidateFramePresentation}" />
+                        <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Margin="6,0,0,0"
+                                Foreground="{DynamicResource Brush.Accent}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                      </Grid>
+                    </Grid>
+                  </Grid>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
               <DataGridTemplateColumn.CellEditingTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <TextBox Classes="gridEditor"
-                           TextAlignment="Center"
                            Text="{Binding FramesInfo, Mode=TwoWay}" />
                 </DataTemplate>
               </DataGridTemplateColumn.CellEditingTemplate>
             </DataGridTemplateColumn>
           </DataGrid.Columns>
         </DataGrid>
+        <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsChapterGridEmpty}" IsHitTestVisible="False" Spacing="8">
         <svg:Svg x:Name="ChapterGridEmptyImage"
+                 IsVisible="{Binding IsChapterGridEmpty}"
                  Width="160"
                  Height="96"
                  HorizontalAlignment="Center"
                  VerticalAlignment="Center"
                  IsHitTestVisible="False"
-                 IsVisible="{Binding IsChapterGridEmpty}"
                  Path="/Assets/Images/chapter-empty.svg"
                  AutomationProperties.AutomationId="ChapterGridEmptyImage" />
+        <TextBlock Text="{DynamicResource Main.EmptyGuidance}" HorizontalAlignment="Center" />
+        </StackPanel>
       </Grid>
 
+      <Grid Grid.Row="2" RowDefinitions="Auto">
       <Grid x:Name="AdvancedOptionsGrid"
-            Grid.Row="2"
-            ColumnDefinitions="*,2*,*"
-            RowDefinitions="Auto,Auto,*"
+            Grid.Row="0"
+            ColumnDefinitions="*,3*,*"
+            RowDefinitions="Auto,Auto,Auto"
+            Grid.IsSharedSizeScope="True"
             ColumnSpacing="16"
             RowSpacing="8"
             Margin="0"
@@ -338,7 +484,11 @@
               Classes="optionCell"
               Grid.Row="0"
               Grid.Column="0"
-              ColumnSpacing="6" ColumnDefinitions="Auto,*">
+              ColumnSpacing="6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="BottomOptionLabel" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.SaveFormat}" />
           <ComboBox x:Name="FormatBox"
                     Grid.Column="1"
@@ -352,7 +502,12 @@
               Classes="optionCell"
               Grid.Row="0"
               Grid.Column="1"
-              ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
+              ColumnSpacing="6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="BottomOptionLabel" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Label.ChapterName}" />
           <ComboBox x:Name="ChapterNameModeBox"
                     Grid.Column="1"
@@ -389,7 +544,11 @@
               Classes="optionCell"
               Grid.Row="1"
               Grid.Column="1"
-              ColumnSpacing="6" ColumnDefinitions="Auto,*">
+              ColumnSpacing="6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="BottomOptionLabel" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
           <TextBlock x:Name="OrderShiftLabel"
                      Grid.Column="0"
                      Classes="optionLabel"
@@ -399,9 +558,10 @@
                          Grid.Column="1"
                          HorizontalAlignment="Stretch"
                          FontFamily="{DynamicResource ChapterTool.MonospaceFontFamily}"
-                         Minimum="-1000"
+                         Minimum="0"
                          Maximum="1000"
                          Increment="1"
+                         ParsingNumberStyle="Integer"
                          Value="{Binding OrderShift}"
                          ValueChanged="OnOrderShiftValueChanged"
                          AutomationProperties.AutomationId="OrderShift" />
@@ -413,7 +573,11 @@
               Grid.Column="0"
               ColumnSpacing="6"
               IsEnabled="{Binding IsXmlLanguageEnabled}"
-              HorizontalAlignment="Stretch" ColumnDefinitions="Auto,*">
+              HorizontalAlignment="Stretch">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="BottomOptionLabel" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Main.XmlLanguage}" />
           <ComboBox x:Name="XmlLanguageBox"
                     Grid.Column="1"
@@ -438,16 +602,17 @@
               Classes="optionCell"
               Grid.Row="2"
               Grid.Column="0"
-              ColumnSpacing="6" ColumnDefinitions="Auto,*,Auto">
-          <Grid Grid.Column="0" ColumnDefinitions="Auto,Auto" ColumnSpacing="6">
-            <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
-            <CheckBox x:Name="ApplyExpressionBox"
-                      Grid.Column="1"
-                      AutomationProperties.Name="{DynamicResource Common.Enable}"
-                      AutomationProperties.AutomationId="ApplyExpression"
-                      IsChecked="{Binding ApplyExpression}"
-                      ToolTip.Tip="{DynamicResource Common.Enable}" />
-          </Grid>
+              ColumnSpacing="6">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="BottomOptionLabel" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
           <controls:ExpressionEditor x:Name="ExpressionBox"
                                      Grid.Column="1"
                                      MinWidth="128"
@@ -457,6 +622,8 @@
                                      Text="{Binding Expression, Mode=TwoWay}"
                                      Localizer="{Binding Localizer}"
                                      AuthoringService="{Binding ExpressionAuthoringService}"
+                                     FrameRate="{Binding ExpressionFrameRate}"
+                                     ToolTip.Tip="{Binding ExpressionPreviewText}"
                                      AutomationProperties.AutomationId="ExpressionText" />
           <Button x:Name="LoadExpressionButton"
                   Grid.Column="2"
@@ -468,7 +635,27 @@
                   Command="{Binding #RootView.LoadLuaExpressionScriptCommand}">
             <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
           </Button>
+          <Button x:Name="PreviewContentOptionsButton"
+                  Grid.Column="3"
+                  Classes="flat"
+                  MinWidth="76"
+                  Content="{DynamicResource Expression.Preview.Options}"
+                  IsVisible="{Binding CanPreviewContentOptions}"
+                  Command="{Binding PreviewContentOptionsCommand}"
+                  AutomationProperties.AutomationId="PreviewContentOptions" />
+          <Button x:Name="ApplyContentPreviewButton" Grid.Column="4" Classes="flat primary" MinWidth="64"
+                  Content="{DynamicResource Common.Apply}" IsVisible="{Binding IsContentPreviewPending}"
+                  IsEnabled="{Binding CanApplyContentPreview}" Command="{Binding #RootView.ApplyContentPreviewCommand}"
+                  ToolTip.Tip="{Binding ContentPreviewMetadataTooltip}"
+                  AutomationProperties.AutomationId="ApplyContentPreview" />
+          <Button x:Name="CancelContentPreviewButton" Grid.Column="5" Classes="flat" MinWidth="64"
+                  Content="{DynamicResource Expression.Preview.Discard}" IsVisible="{Binding IsContentPreviewPending}"
+                  Command="{Binding CancelContentPreviewCommand}" AutomationProperties.AutomationId="CancelContentPreview" />
+          <Button x:Name="RefreshContentPreviewButton" Grid.Column="6" Classes="flat" MinWidth="64"
+                  Content="{DynamicResource Expression.Preview.Update}" IsVisible="{Binding CanRefreshContentPreview}"
+                  Command="{Binding RefreshContentPreviewCommand}" AutomationProperties.AutomationId="RefreshContentPreview" />
         </Grid>
+      </Grid>
       </Grid>
       <ContentControl x:Name="SecondarySurface"
                       Grid.Row="0"

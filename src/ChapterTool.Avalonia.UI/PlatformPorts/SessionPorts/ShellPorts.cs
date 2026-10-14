@@ -3,6 +3,8 @@ using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -16,19 +18,19 @@ public interface IExpressionSessionPort
 
     string Expression { get; }
 
-    bool ApplyExpression { get; }
-
     string ExpressionPresetId { get; }
 
     string ExpressionSourceName { get; }
 
+    FrameRateValue ComputationFrameRate => FrameRateValue.Unknown;
+
     ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken);
 
-    ChapterDiagnostic? ApplyLuaExpressionSettings(
+    void SaveAppliedExpressionPreview(
         string expression,
-        bool applyExpression,
         string expressionPresetId,
-        string expressionSourceName);
+        string expressionSourceName,
+        ExpressionPreviewProjection projection);
 
     ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics);
 
@@ -49,6 +51,8 @@ public interface IPreferenceSink
     OutputTextEncoding OutputTextEncoding { get; }
 
     decimal FrameAccuracyTolerance { get; }
+
+    bool ShowRepeatingFrameDecimals => true;
 
     ChapterEditingOptions EditingOptions => ChapterEditingOptions.Default;
 
@@ -78,7 +82,27 @@ public interface INamingPreferencePort
 /// <summary>Chapter edit surface for tools such as forward-shift.</summary>
 public interface IChapterEditPort
 {
-    void ShiftFramesForward(int frames);
+    ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Builds one-shot content previews and applies them through the active history session.</summary>
+public interface IChapterContentOperationPort
+{
+    bool CanPrepareExpression => true;
+
+    ChapterContentPreview PrepareExpression(string expression);
+
+    ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames);
+
+    ChapterContentPreview PrepareContentOptions();
+
+    ChapterContentPreview PrepareFrameShift(int frames);
+
+    ChapterContentPreview PrepareFrameRateConversion(FrameRateValue sourceFps, FrameRateValue targetFps);
+
+    ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default);
+
+    void Cancel(ChapterContentPreview preview);
 }
 
 public interface IMainShellNotificationPort

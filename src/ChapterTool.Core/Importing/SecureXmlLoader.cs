@@ -4,14 +4,14 @@ using System.Xml.Linq;
 namespace ChapterTool.Core.Importing;
 
 /// <summary>
-/// Loads untrusted XML without permitting DTD processing or external entity resolution.
+/// Loads untrusted XML while ignoring DTD declarations and external entity resolution.
 /// </summary>
 internal static class SecureXmlLoader
 {
     private static readonly XmlReaderSettings ReaderSettings = new()
     {
         Async = true,
-        DtdProcessing = DtdProcessing.Prohibit,
+        DtdProcessing = DtdProcessing.Ignore,
         XmlResolver = null
     };
 

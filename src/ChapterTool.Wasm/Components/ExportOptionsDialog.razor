@@ -1,0 +1,74 @@
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+
+<WasmDialog Title="@L.T("Modal.ExportOptionsTitle")" CssClass="export-options-modal" OnClose="CancelAsync" DismissEnabled="@(!applying)">
+    <div class="modal-body">
+        <div class="export-options-grid">
+            <label for="xmlLang">@L.T("Label.XmlLang")</label>
+            <select id="xmlLang" @bind="xmlLanguage" disabled="@(applying || !Workspace.IsXmlLanguageEnabled)"
+                    aria-invalid="@(error is null ? "false" : "true")">
+                @foreach (var language in Workspace.XmlLanguages) { <option value="@language">@Workspace.XmlLanguageName(language)</option> }
+            </select>
+            <label for="export-encoding">@L.T("Settings.OutputTextEncoding")</label>
+            <select id="export-encoding" @bind="encodingIndex" disabled="@applying"
+                    aria-invalid="@(error is null ? "false" : "true")">
+                @for (var i = 0; i < OutputTextEncodings.All.Count; i++)
+                {
+                    <option value="@i">@OutputTextEncodings.DisplayName(OutputTextEncodings.All[i])</option>
+                }
+            </select>
+            <label for="export-bom">@L.T("Settings.EmitBom")</label>
+            <label class="settings-check"><input id="export-bom" type="checkbox" @bind="emitBom" disabled="@applying" />@L.T("Settings.EmitBomLabel")</label>
+        </div>
+        @if (error is not null) { <p role="alert">@error</p> }
+    </div>
+    <footer class="modal-footer">
+        <span class="modal-spacer"></span>
+        <button type="button" class="secondary" disabled="@applying" @onclick="CancelAsync">@L.T("Common.Cancel")</button>
+        <button type="button" class="primary" disabled="@applying" @onclick="ApplyAsync">@L.T("Common.Apply")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public EventCallback<ExportOptionsDraft> OnApply { get; set; }
+    private string xmlLanguage = string.Empty;
+    private int encodingIndex;
+    private bool emitBom;
+    private bool applying;
+    private string? error;
+
+    protected override void OnInitialized()
+    {
+        xmlLanguage = Workspace.XmlLanguage;
+        encodingIndex = OutputTextEncodings.All.ToList().IndexOf(Workspace.TextEncoding);
+        emitBom = Workspace.EmitBom;
+    }
+
+    private async Task ApplyAsync()
+    {
+        var draft = new ExportOptionsDraft(xmlLanguage, encodingIndex, emitBom);
+        if (!draft.IsValid(Workspace.XmlLanguages, OutputTextEncodings.All.Count, Workspace.IsXmlLanguageEnabled))
+        {
+            error = L.T("Parity.ExportOptionsInvalid");
+            return;
+        }
+
+        error = null;
+        applying = true;
+        try
+        {
+            await OnApply.InvokeAsync(draft);
+        }
+        catch (JSException)
+        {
+            error = L.T("Parity.SettingsSaveFailed");
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
+    private Task CancelAsync() => applying ? Task.CompletedTask : OnClose.InvokeAsync();
+}

@@ -37,23 +37,22 @@ public sealed class ChapterImporterRegistryTests
     }
 
     [Theory]
-    [InlineData("movie.txt", "TextChapterImporter")]
-    [InlineData("markers.csv", "PremiereMarkerListImporter")]
-    [InlineData("movie.xml", "XmlChapterImporter")]
-    [InlineData("movie.mkv", "MatroskaChapterImporter")]
-    [InlineData("movie.mp4", "MediaChapterImporter")]
-    [InlineData("movie.m4a", "MediaChapterImporter")]
-    [InlineData("movie.m4v", "MediaChapterImporter")]
-    [InlineData("movie.mov", "MediaChapterImporter")]
-    [InlineData("movie.webm", "MatroskaChapterImporter")]
-    public void RuntimeRegistryResolvesImporterBySource(string fileName, string expectedTypeName)
+    [InlineData("movie.txt", "text")]
+    [InlineData("markers.csv", "premiere-marker-list")]
+    [InlineData("movie.xml", "matroska-xml")]
+    [InlineData("movie.mkv", "matroska")]
+    [InlineData("movie.mp4", "ffprobe-media")]
+    [InlineData("movie.m4a", "ffprobe-media")]
+    [InlineData("movie.m4v", "ffprobe-media")]
+    [InlineData("movie.mov", "ffprobe-media")]
+    [InlineData("movie.webm", "matroska")]
+    public void RuntimeRegistryResolvesImporterBySource(string fileName, string expectedImporterId)
     {
         var registry = CreateRealRegistry();
 
         var importer = registry.Resolve(fileName);
 
-        Assert.NotNull(importer);
-        Assert.Equal(expectedTypeName, importer.GetType().Name);
+        Assert.Equal(expectedImporterId, importer?.Id);
     }
 
     [Theory]
@@ -114,8 +113,7 @@ public sealed class ChapterImporterRegistryTests
         var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FfprobeMissingDependency, "missing"));
         var fallback = registry.ResolveFallback("movie.mp4", primary, primaryResult);
 
-        Assert.NotNull(fallback);
-        Assert.Equal("MediaChapterImporter", fallback.GetType().Name);
+        Assert.Equal("ffprobe-media", fallback?.Id);
         Assert.NotSame(primary, fallback);
     }
 
@@ -132,8 +130,7 @@ public sealed class ChapterImporterRegistryTests
         var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.MatroskaMissingDependency, "missing"));
         var fallback = registry.ResolveFallback("movie.mkv", primary, primaryResult);
 
-        Assert.NotNull(fallback);
-        Assert.Equal("MediaChapterImporter", fallback.GetType().Name);
+        Assert.Equal("ffprobe-media", fallback?.Id);
     }
 
     [Fact]
@@ -149,8 +146,7 @@ public sealed class ChapterImporterRegistryTests
         var primaryResult = ChapterImportResult.Failed(new ChapterDiagnostic(DiagnosticSeverity.Error, ChapterDiagnosticCode.FlacEmbeddedCueNotFound, "missing"));
         var fallback = registry.ResolveFallback("music.flac", primary, primaryResult);
 
-        Assert.NotNull(fallback);
-        Assert.Equal("MediaChapterImporter", fallback.GetType().Name);
+        Assert.Equal("ffprobe-media", fallback?.Id);
     }
 
     [Fact]
@@ -211,7 +207,7 @@ public sealed class ChapterImporterRegistryTests
         public ValueTask<ChapterImportResult> ImportAsync(ChapterImportRequest request, CancellationToken cancellationToken)
         {
             LastRequest = request;
-            var info = new ChapterSet("title", request.Path, ChapterImportFormat.Unknown, 24, TimeSpan.Zero, []);
+            var info = new ChapterSet("title", request.Path, ChapterImportFormat.Unknown, FrameRateValue.Approximate(24m), TimeSpan.Zero, []);
             var entry = new ChapterImportEntry("0", "test", info);
             return ValueTask.FromResult(new ChapterImportResult(true, [new ChapterImportSource(request.Path, [entry])], []));
         }

@@ -13,7 +13,7 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
     [
         "Color.Window", "Color.WindowBorder", "Color.ToolBar", "Color.Popup",
         "Color.PopupBorder", "Color.Contents", "Color.Border1", "Color.Border2",
-        "Color.FlatButton.Background", "Color.FlatButton.BackgroundHovered",
+        "Color.FlatButton.Background",
         "Color.FG1", "Color.FG2", "Color.Hover", "Color.Active", "Color.Selection"
     ];
 
@@ -76,7 +76,6 @@ public sealed class AvaloniaThemeApplicationService : IThemeApplicationService
             ["Color.Border1"] = palette.Border,
             ["Color.Border2"] = auxiliary.SubtleBorder,
             ["Color.FlatButton.Background"] = auxiliary.Control,
-            ["Color.FlatButton.BackgroundHovered"] = auxiliary.Hover,
             ["Color.FG1"] = palette.ControlForeground,
             ["Color.FG2"] = palette.MutedForeground,
             ["Color.Hover"] = palette.HoverBackground,

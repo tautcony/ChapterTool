@@ -59,11 +59,7 @@ internal static class HdmvProfileVariantFactory
     {
         8 => [0, 1],
         9 => [1, 2],
-        10 => [0, 1],
-        12 => [0, 1],
-        13 => [0, 1],
-        14 => [0, 1],
-        15 => [0, 1],
+        10 or 12 or 13 or 14 or 15 => [0, 1],
         20 => [1, 2],
         _ => [current]
     };

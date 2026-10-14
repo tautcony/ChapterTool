@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.PlatformPorts;
 using ChapterTool.Avalonia.UI.ViewModels;
@@ -31,6 +31,50 @@ public sealed class MainWindowViewModelTests
         Assert.False(vm.IsAdvancedPanelExpanded);
         Assert.Equal(ChapterExportFormat.Txt, vm.SaveFormat);
         Assert.False(vm.SaveCommand.CanExecute());
+    }
+
+    [Theory]
+    [InlineData("round", Core.Editing.FrameDisplayMode.Round, true)]
+    [InlineData("decimal-places", Core.Editing.FrameDisplayMode.DecimalPlaces, false)]
+    [InlineData("full-precision", Core.Editing.FrameDisplayMode.FullPrecision, false)]
+    public async Task Startup_initializes_frame_display_from_saved_preference(
+        string savedMode,
+        Core.Editing.FrameDisplayMode expectedMode,
+        bool expectedRoundFrames)
+    {
+        var store = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: savedMode,
+            FrameDecimalPlaces: 6,
+            ShowRepeatingFrameDecimals: true));
+        var vm = CreateViewModel(settingsStore: store);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+
+        Assert.Equal(expectedRoundFrames, vm.RoundFrames);
+        Assert.Equal(expectedMode, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(6, vm.EditingOptions.FrameDecimalPlaces);
+        Assert.True(vm.ShowRepeatingFrameDecimals);
+        Assert.Equal(savedMode, store.Current.Application.FrameDisplayMode);
+    }
+
+    [Fact]
+    public async Task Main_window_rounding_toggle_is_session_only()
+    {
+        var store = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            FrameDecimalPlaces: 6));
+        var vm = CreateViewModel(settingsStore: store);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+        vm.RoundFrames = true;
+
+        Assert.Equal(Core.Editing.FrameDisplayMode.Round, vm.EditingOptions.FrameDisplay);
+        Assert.Equal("full-precision", store.Current.Application.FrameDisplayMode);
+
+        vm.RoundFrames = false;
+
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
+        Assert.Equal("full-precision", store.Current.Application.FrameDisplayMode);
     }
 
     [Fact]
@@ -78,8 +122,191 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("0", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
         Assert.Equal(2, vm.SelectedFrameRateIndex);
-        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal("Loaded 1 chapter", vm.StatusText);
         Assert.Equal(1, vm.Progress);
+    }
+
+    [Fact]
+    public async Task Cancelled_replacement_keeps_current_document_and_history()
+    {
+        var load = new FakeLoadService(
+            ImportResult("first.txt", Info(ChapterImportFormat.Ogm, "first.txt", new Chapter(1, TimeSpan.Zero, "First"))),
+            ImportResult("second.txt", Info(ChapterImportFormat.Ogm, "second.txt", new Chapter(1, TimeSpan.Zero, "Second"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("first.txt");
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Keep this edit"));
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.True(vm.IsContentPreviewPending);
+        var beforeHistory = vm.HistoryEntries.ToArray();
+        vm.SessionLossConfirmation = _ => ValueTask.FromResult(false);
+
+        await vm.LoadCommand.ExecuteAsync("second.txt");
+
+        Assert.Equal("first.txt", vm.CurrentPath);
+        Assert.Equal("Keep this edit", vm.Rows[0].Name);
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.Equal(beforeHistory.Select(entry => entry.Id), vm.HistoryEntries.Select(entry => entry.Id));
+        Assert.Equal("The current document session is unchanged.", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task Successful_save_marks_only_the_captured_state_exported_and_keeps_history()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        Assert.True(vm.RequiresSessionLossConfirmation);
+        Assert.True(vm.HasUnexportedContent);
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Edited"));
+        Assert.True(vm.RequiresSessionLossConfirmation);
+        var historyCount = vm.HistoryEntries.Count;
+
+        await vm.SaveCommand.ExecuteAsync();
+
+        Assert.False(vm.HasUnexportedContent);
+        Assert.True(vm.RequiresSessionLossConfirmation);
+        Assert.Equal(historyCount, vm.HistoryEntries.Count);
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Later edit"));
+        Assert.True(vm.RequiresSessionLossConfirmation);
+    }
+
+    [Fact]
+    public async Task Replacement_rechecks_confirmation_after_document_changes_during_dialog()
+    {
+        var load = new FakeLoadService(
+            ImportResult("first.txt", Info(ChapterImportFormat.Ogm, "first.txt", new Chapter(1, TimeSpan.Zero, "First"))),
+            ImportResult("second.txt", Info(ChapterImportFormat.Ogm, "second.txt", new Chapter(1, TimeSpan.Zero, "Second"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("first.txt");
+        var firstHistoryRoot = vm.HistoryEntries[0].Id;
+        var confirmations = 0;
+        vm.SessionLossConfirmation = async _ =>
+        {
+            confirmations++;
+            if (confirmations == 1)
+            {
+                await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Changed during confirmation"), _);
+            }
+
+            return true;
+        };
+
+        await vm.LoadCommand.ExecuteAsync("second.txt");
+
+        Assert.Equal(2, confirmations);
+        Assert.Equal("second.txt", vm.CurrentPath);
+        Assert.Equal("Second", vm.Rows[0].Name);
+        Assert.NotEqual(firstHistoryRoot, vm.HistoryEntries[0].Id);
+    }
+
+    [Fact]
+    public async Task HistoryUndoRedoAndArbitraryNavigationRefreshTheCommittedRows()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Changed"));
+        var changedNode = Assert.Single(vm.HistoryEntries, entry => entry.IsCurrent);
+        Assert.Equal("Changed", vm.Rows[0].Name);
+        Assert.True(vm.CanUndo);
+        Assert.Contains("Edit name", vm.UndoDescription, StringComparison.OrdinalIgnoreCase);
+
+        await vm.UndoCommand.ExecuteAsync();
+        Assert.Equal("Intro", vm.Rows[0].Name);
+        Assert.True(vm.CanRedo);
+        Assert.Equal("Edit undone", vm.StatusText);
+
+        await vm.RedoCommand.ExecuteAsync();
+        Assert.Equal("Changed", vm.Rows[0].Name);
+        Assert.Equal("Edit redone", vm.StatusText);
+
+        await vm.NavigateHistoryCommand.ExecuteAsync(changedNode.Id);
+        Assert.Equal("Changed", vm.Rows[0].Name);
+        Assert.Contains(vm.HistoryEntries, entry => entry.IsCurrent && entry.Id == changedNode.Id);
+    }
+
+    [Fact]
+    public async Task HistoryNavigationToAnotherBranchReportsTheRestoredDocument()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "First edit"));
+        var firstBranch = Assert.Single(vm.HistoryEntries, entry => entry.IsCurrent).Id;
+        await vm.UndoCommand.ExecuteAsync();
+        Assert.Equal("Edit undone", vm.StatusText);
+
+        await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Second edit"));
+        Assert.Equal("Second edit", vm.Rows[0].Name);
+
+        await vm.NavigateHistoryCommand.ExecuteAsync(firstBranch);
+
+        Assert.Equal("First edit", vm.Rows[0].Name);
+        Assert.Contains(vm.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstBranch);
+        Assert.Equal("Document restored to the selected node.", vm.StatusText);
+    }
+
+    [Fact]
+    public async Task Applied_expression_keeps_its_captured_script_and_publication_time_through_undo_redo()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var candidate = vm.ToolSession.ContentOperations.PrepareExpression("t + 1");
+
+        vm.Expression = "t + 9";
+        var applied = await vm.ToolSession.ContentOperations.ApplyAsync(candidate);
+
+        Assert.Equal(TransactionOutcomeKind.Committed, applied.Kind);
+        Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
+        var (committedNode, committedDetails) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("expression.apply", committedNode.Operation!.Kind);
+        Assert.Equal("t + 1", Assert.Single(committedNode.Operation.Parameters, parameter => parameter.Name == "script").Value);
+        Assert.NotNull(committedNode.PublishedAt);
+        Assert.Equal(committedNode.PublishedAt, committedDetails.PublishedAt);
+
+        var retainedNodeCount = vm.ToolSession.History.Snapshot!.Nodes.Length;
+        await vm.UndoCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        vm.Expression = "(";
+        await vm.RedoCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
+        var (redoneNode, redoneDetails) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal(committedNode.Id, redoneNode.Id);
+        Assert.Equal(committedNode.PublishedAt, redoneNode.PublishedAt);
+        Assert.Equal(committedNode.PublishedAt, redoneDetails.PublishedAt);
+        Assert.Equal("expression.apply", redoneNode.Operation!.Kind);
+        Assert.Equal("t + 1", Assert.Single(redoneNode.Operation.Parameters, parameter => parameter.Name == "script").Value);
+        Assert.Equal(retainedNodeCount, vm.ToolSession.History.Snapshot!.Nodes.Length);
+    }
+
+    [Fact]
+    public async Task Workspace_merge_split_and_append_commands_publish_structured_history_metadata()
+    {
+        var load = new FakeLoadService(
+            ImportResult("base.mpls",
+                InfoWithDuration(ChapterImportFormat.Mpls, "00001", TimeSpan.FromSeconds(2), new Chapter(1, TimeSpan.Zero, "A")),
+                InfoWithDuration(ChapterImportFormat.Mpls, "00002", TimeSpan.FromSeconds(2), new Chapter(1, TimeSpan.FromSeconds(1), "B"))),
+            ImportResult("append.mpls", InfoWithDuration(ChapterImportFormat.Mpls, "append", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "Append"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("base.mpls");
+
+        await vm.CombineCommand.ExecuteAsync();
+        var (merge, _) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("workspace.merge", merge.Operation!.Kind);
+        Assert.Equal("2", Assert.Single(merge.Operation.Parameters, parameter => parameter.Name == "trackCount").Value);
+        Assert.NotNull(merge.PublishedAt);
+
+        await vm.CombineCommand.ExecuteAsync();
+        var (split, _) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("workspace.split", split.Operation!.Kind);
+        Assert.Equal("1", Assert.Single(split.Operation.Parameters, parameter => parameter.Name == "trackCount").Value);
+        Assert.NotNull(split.PublishedAt);
+
+        await vm.AppendMplsCommand.ExecuteAsync("append.mpls");
+        var (append, _) = await CurrentHistoryDetailsAsync(vm);
+        Assert.Equal("workspace.append", append.Operation!.Kind);
+        Assert.Equal("append.mpls", Assert.Single(append.Operation.Parameters, parameter => parameter.Name == "sourcePath").Value);
+        Assert.NotNull(append.PublishedAt);
     }
 
     [Fact]
@@ -190,7 +417,7 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(0, vm.SelectedClipIndex);
         Assert.Single(vm.Rows);
         Assert.Equal("A", vm.Rows[0].Name);
-        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal("Loaded 1 chapter", vm.StatusText);
         Assert.Equal(1, vm.Progress);
         Assert.Contains("Parsing chapter text...", statusNotifications);
         Assert.Contains(progressNotifications, value => value is > 0 and < 1);
@@ -357,7 +584,7 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.CanCombine);
         Assert.Single(vm.ClipOptions);
         Assert.Equal(4, vm.Rows.Count);
-        Assert.Equal(["Chapter 01", "Chapter 02", "Chapter 03", "Chapter 04"], vm.Rows.Select(static row => row.Name).ToArray());
+        Assert.Equal(["A", "B", "C", "D"], vm.Rows.Select(static row => row.Name).ToArray());
 
         await vm.CombineCommand.ExecuteAsync();
 
@@ -365,7 +592,9 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.IsClipSelectionVisible);
         Assert.Equal(2, vm.ClipOptions.Count);
         Assert.Equal(0, vm.SelectedClipIndex);
-        Assert.Equal(["A", "B"], vm.Rows.Select(static row => row.Name).ToArray());
+        Assert.Equal(["A"], vm.Rows.Select(static row => row.Name).ToArray());
+        await vm.SelectClipCommand.ExecuteAsync(1);
+        Assert.Equal(["B", "C", "D"], vm.Rows.Select(static row => row.Name).ToArray());
     }
 
     [Fact]
@@ -562,7 +791,40 @@ public sealed class MainWindowViewModelTests
             Assert.Equal(2, vm.ChapterNameModeIndex);
             Assert.True(vm.UseTemplateNames);
             Assert.Contains("Loaded template", vm.StatusText, StringComparison.Ordinal);
-            Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoaded");
+            Assert.Contains(log.Entries, static entry =>
+                entry.Operation == "Template" && entry.Message.StartsWith("Loaded chapter name template", StringComparison.Ordinal));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LoadingChapterNameTemplateWithDocumentPreparesContentPreview()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "names.txt");
+        await File.WriteAllTextAsync(path, "Opening\nMiddle\nFinale");
+        var vm = CreateViewModel();
+
+        try
+        {
+            await vm.LoadCommand.ExecuteAsync("movie.txt");
+            var historyNodeCount = vm.ToolSession.History.Snapshot!.Nodes.Length;
+
+            await vm.LoadChapterNameTemplateFromPathAsync(path, TestContext.Current.CancellationToken);
+
+            Assert.True(vm.IsContentPreviewPending);
+            Assert.True(vm.CanApplyContentPreview);
+            Assert.Equal("Intro", vm.Rows[0].Name);
+            Assert.Equal(historyNodeCount, vm.ToolSession.History.Snapshot!.Nodes.Length);
+
+            await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+            Assert.Equal("Opening", vm.Rows[0].Name);
+            Assert.Equal(historyNodeCount + 1, vm.ToolSession.History.Snapshot!.Nodes.Length);
         }
         finally
         {
@@ -587,7 +849,8 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("keep.txt", vm.ChapterNameTemplateStatus);
         Assert.Equal(2, vm.ChapterNameModeIndex);
         Assert.Contains("Failed to load chapter name template", vm.StatusText, StringComparison.Ordinal);
-        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.TemplateLoadFailed");
+        Assert.Contains(log.Entries, static entry =>
+            entry.Operation == "Template" && entry.Message.StartsWith("Failed to load chapter name template", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -639,8 +902,10 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
 
-        var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
-        Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey is "Log.ImportGroup" or "Log.ImportEntry");
+        var summary = Assert.Single(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load completed", StringComparison.Ordinal));
+        Assert.DoesNotContain(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load diagnostic", StringComparison.Ordinal));
         Assert.Equal("Load", summary.Operation);
         Assert.Contains(
             "1) movie.mpls, 00001.m2ts, 0:00:00",
@@ -681,8 +946,10 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("index.bdmv");
 
-        Assert.DoesNotContain(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic");
-        var summary = Assert.Single(log.Entries, static entry => entry.MessageKey == "Log.ImportSummary");
+        Assert.DoesNotContain(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load diagnostic", StringComparison.Ordinal));
+        var summary = Assert.Single(log.Entries, static entry =>
+            entry.Operation == "Load" && entry.Message.StartsWith("Load completed", StringComparison.Ordinal));
         var details = Assert.IsType<Dictionary<string, object?>>(summary.StructuredState?["details"]);
         var diagnostics = Assert.IsType<List<object?>>(details["diagnostics"]);
         var folded = Assert.IsType<Dictionary<string, object?>>(Assert.Single(diagnostics));
@@ -720,8 +987,8 @@ public sealed class MainWindowViewModelTests
     public async Task AppendMplsAfterSuccessfulLoadReportsAppendedStatus()
     {
         var load = new FakeLoadService(
-            ImportResult("base.mpls", Info(ChapterImportFormat.Mpls, "base", new Chapter(1, TimeSpan.Zero, "Base"))),
-            ImportResult("append.mpls", Info(ChapterImportFormat.Mpls, "append", new Chapter(1, TimeSpan.Zero, "Append"))));
+            ImportResult("base.mpls", InfoWithDuration(ChapterImportFormat.Mpls, "base", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "Base"))),
+            ImportResult("append.mpls", InfoWithDuration(ChapterImportFormat.Mpls, "append", TimeSpan.FromSeconds(1), new Chapter(1, TimeSpan.Zero, "Append"))));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("base.mpls");
@@ -818,8 +1085,8 @@ public sealed class MainWindowViewModelTests
         Assert.True(vm.Rows[0].IsFrameNeutral);
         Assert.Equal(3, vm.SelectedFrameRateIndex);
         Assert.NotNull(save.LastInfo);
-        Assert.Equal("12.5", save.LastInfo.Chapters[0].FramesInfo);
-        Assert.Equal(FrameAccuracy.Neutral, save.LastInfo.Chapters[0].FrameAccuracy);
+        Assert.Equal(info.Chapters[0].FramesInfo, save.LastInfo.Chapters[0].FramesInfo);
+        Assert.Equal(info.Chapters[0].FrameAccuracy, save.LastInfo.Chapters[0].FrameAccuracy);
     }
 
     [Fact]
@@ -855,17 +1122,78 @@ public sealed class MainWindowViewModelTests
             "movie.txt",
             new Chapter(1, TimeSpan.Zero, "A"),
             new Chapter(2, TimeSpan.FromMilliseconds(40), "B"),
-            new Chapter(3, TimeSpan.FromMilliseconds(80), "C"));
+            new Chapter(3, TimeSpan.FromMilliseconds(80), "C")) with { FrameRate = FrameRateValue.Unknown };
         var load = new FakeLoadService(ImportResult("movie.txt", info));
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SetFrameOptions(frameRateIndex: 0, roundFrames: false);
-        await vm.RefreshCommand.ExecuteAsync();
 
         Assert.Equal(0, vm.SelectedFrameRateIndex);
         Assert.Contains("Detected 25000 / 1000", vm.StatusText, StringComparison.Ordinal);
         Assert.Contains("High", vm.StatusText, StringComparison.Ordinal);
+        Assert.Equal(25m, vm.DisplayFrameRate);
+        Assert.Equal(new ChapterFrameRate(25, 1), vm.EffectiveFrameRateOption.Rate.RationalRate);
+    }
+
+    [Fact]
+    public async Task AutoFrameRateUsesDetectedRationalForFramePresentationAndShift()
+    {
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt",
+            new Chapter(1, TimeSpan.Zero, "Opening"),
+            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")) with
+        {
+            FrameRate = FrameRateValue.Unknown
+        };
+        Assert.Equal("Fps23976", new FrameRateService().DetectDetailed(info, 0.15m).Option.Code);
+        var settings = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true));
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), settingsStore: settings);
+        await vm.LoadSettingsAsync(TestContext.Current.CancellationToken);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SetFrameOptions(frameRateIndex: 0, roundFrames: false);
+
+        Assert.Equal(0, vm.SelectedFrameRateIndex);
+        Assert.Equal(24000m / 1001m, vm.DisplayFrameRate);
+        Assert.Equal("Fps23976", vm.EffectiveFrameRateOption.Code);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.Rate.RationalRate);
+        Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
+
+        var detectedOnly = vm.ToolSession.ContentOperations.PrepareFrameShift(-1);
+        Assert.False(detectedOnly.IsValid);
+        Assert.Equal(FrameRateValue.Unknown, detectedOnly.Before.FrameRate);
+        vm.SetFrameOptions(frameRateIndex: 1, roundFrames: false);
+
+        var before = vm.ToolSession.ContentOperations.PrepareContentOptions()!.Before.Tracks[0].Chapters[1].StartTicks;
+        var preview = vm.ToolSession.ContentOperations.PrepareFrameShift(-1);
+        Assert.True(preview.IsValid, string.Join(Environment.NewLine, preview.Errors));
+        var candidate = preview.Candidate.Tracks[0].Chapters[1].StartTicks;
+        Assert.Equal(before + 417083, candidate);
+    }
+
+    [Fact]
+    public async Task Saved_full_precision_cycle_display_applies_when_file_loads_after_startup()
+    {
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt",
+            new Chapter(1, TimeSpan.Zero, "Opening"),
+            new Chapter(2, TimeSpan.FromMilliseconds(52094), "Later")) with
+        {
+            FrameRate = FrameRateValue.Rational(24000, 1001)
+        };
+        var settings = new FakeSettingsStore(new AppSettings(
+            FrameDisplayMode: "full-precision",
+            ShowRepeatingFrameDecimals: true));
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), settingsStore: settings);
+
+        await vm.LoadSettingsAsync(CancellationToken.None);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        Assert.False(vm.RoundFrames);
+        Assert.Equal(Core.Editing.FrameDisplayMode.FullPrecision, vm.EditingOptions.FrameDisplay);
+        Assert.Equal(new ChapterFrameRate(24000, 1001), vm.EffectiveFrameRateOption.Rate.RationalRate);
+        Assert.Equal("006993", vm.Rows[1].FramePresentation?.RepeatingDigits);
     }
 
     [Fact]
@@ -894,13 +1222,38 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(load);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps5994").LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps5994").MplsFrameRateCode;
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.ChangeFpsCommand.ExecuteAsync();
 
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
         Assert.Equal("00:00:04.004", vm.Rows[0].TimeText);
         Assert.Equal("240", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
+    }
+
+    [Fact]
+    public async Task ChangeFpsCommandUsesSelectedRateWhenSourceRateIsMissing()
+    {
+        var info = Info(ChapterImportFormat.Ogm, "movie.txt",
+            new Chapter(1, TimeSpan.FromSeconds(10), "A")) with { FrameRate = FrameRateValue.Unknown };
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), saveService: save);
+
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var targetIndex = new FrameRateService().Options.Single(option => option.Rate.ToDecimal() == 25).MplsFrameRateCode;
+        vm.SetFrameOptions(targetIndex, roundFrames: true);
+        await vm.ChangeFpsCommand.ExecuteAsync();
+
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.True(vm.CanApplyContentPreview, vm.ExpressionPreviewText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+        await vm.SaveCommand.ExecuteAsync("out");
+
+        Assert.Equal(FrameRateValue.Rational(25, 1), save.LastInfo!.FrameRate);
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
     }
 
     [Fact]
@@ -911,14 +1264,18 @@ public sealed class MainWindowViewModelTests
         var vm = CreateViewModel(load, logService: log);
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
-        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps50").LegacyMplsCode;
+        var targetIndex = new FrameRateService().Options.Single(entry => entry.Code == "Fps50").MplsFrameRateCode;
         vm.SetFrameOptions(frameRateIndex: targetIndex, roundFrames: true);
         await vm.RefreshCommand.ExecuteAsync();
         await vm.ChangeFpsCommand.ExecuteAsync();
 
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         Assert.Equal("00:00:04.800", vm.Rows[0].TimeText);
         Assert.Contains(log.Entries, entry =>
-            entry is { MessageKey: "Log.ChangeFps", Arguments: not null }
+            entry is { Operation: "Edit", Arguments: not null }
+            && entry.Message.StartsWith("Convert to current FPS:", StringComparison.Ordinal)
             && entry.Arguments.TryGetValue("sourceFps", out var sourceFps)
             && entry.Arguments.TryGetValue("targetFps", out var targetFps)
             && string.Equals(sourceFps?.ToString(), "24", StringComparison.Ordinal)
@@ -938,9 +1295,13 @@ public sealed class MainWindowViewModelTests
         vm.XmlLanguage = "eng";
         vm.ChapterNameModeIndex = 0;
         vm.OrderShift = 5;
-        vm.ApplyExpression = true;
         vm.Expression = "t + 2";
         vm.RoundFrames = true;
+
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.True(vm.IsContentPreviewPending);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         var preview = vm.BuildPreview();
         await vm.SaveCommand.ExecuteAsync("out");
@@ -951,8 +1312,7 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastOptions);
         Assert.Equal(ChapterExportFormat.Xml, save.LastOptions.Format);
         Assert.Equal("eng", save.LastOptions.XmlLanguage);
-        Assert.Equal("t + 2", save.LastOptions.Expression);
-        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo!.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo!.Chapters[0].StartTime);
     }
 
     [Theory]
@@ -967,8 +1327,9 @@ public sealed class MainWindowViewModelTests
         switch (columnId)
         {
             case ChapterGridColumnIds.Time:
-                await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "00:00:05.000"));
+                await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "0:0:5.000"));
                 Assert.Equal("00:00:05.000", vm.Rows[0].TimeText);
+                Assert.Equal("120", vm.Rows[0].FramesInfo);
                 break;
             case ChapterGridColumnIds.Name:
                 await vm.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Renamed"));
@@ -985,6 +1346,18 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Rejected_time_edit_restores_the_committed_row_value()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        await vm.EditTimeCommand.ExecuteAsync(new ChapterCellEdit(0, "25:00:00.000"));
+
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.Contains("24 hours", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task SaveProjectsChaptersAndDelegatesNeutralOptions()
     {
         var save = new FakeSaveService();
@@ -994,44 +1367,55 @@ public sealed class MainWindowViewModelTests
         vm.XmlLanguage = "jpn";
         vm.AutoGenerateNames = true;
         vm.OrderShift = 2;
-        vm.ApplyExpression = true;
         vm.Expression = "t + 1";
+
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastOptions);
         Assert.Equal(ChapterExportFormat.Cue, save.LastOptions.Format);
         Assert.Equal("jpn", save.LastOptions.XmlLanguage);
-        Assert.False(save.LastOptions.AutoGenerateNames);
-        Assert.False(save.LastOptions.UseTemplateNames);
-        Assert.Equal(0, save.LastOptions.OrderShift);
-        Assert.False(save.LastOptions.ApplyExpression);
-        Assert.Equal("t + 1", save.LastOptions.Expression);
-        Assert.Equal(string.Empty, save.LastOptions.ExpressionPresetId);
-        Assert.Equal(string.Empty, save.LastOptions.ExpressionSourceName);
         Assert.NotNull(save.LastInfo);
         Assert.Equal(3, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(1), save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
         Assert.Equal(Path.GetFullPath("out"), save.LastDirectory);
     }
 
     [Fact]
-    public async Task ExpressionAppliesToRowsPreviewAndSavedInfo()
+    public async Task ExpressionPreviewIsReadOnlyUntilAppliedAndExportUsesCommittedValues()
     {
         var save = new FakeSaveService();
         var vm = CreateViewModel(saveService: save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SaveFormat = ChapterExportFormat.Txt;
 
-        vm.ApplyExpression = true;
         vm.Expression = "t + 1";
+        vm.AutoGenerateNames = true;
+        vm.OrderShift = 2;
+
+        vm.RefreshExpressionPreviewNow();
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.Equal(1, vm.Rows[0].Number);
+        Assert.Equal("00:00:01.000", vm.Rows[0].PreviewTimeText);
+        Assert.Empty(vm.ExpressionPreviewText);
+        await vm.CancelContentPreviewCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+
+        vm.RefreshExpressionPreviewNow();
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
         vm.ExpressionSourceName = "inline";
 
         Assert.Equal("00:00:01.000", vm.Rows[0].TimeText);
         Assert.Equal("24", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
         Assert.Contains("CHAPTER01=00:00:01.000", vm.BuildPreview(), StringComparison.Ordinal);
+        Assert.True(vm.AutoGenerateNames);
+        Assert.Equal(2, vm.OrderShift);
 
         await vm.SaveCommand.ExecuteAsync("out");
 
@@ -1040,33 +1424,226 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("24", save.LastInfo.Chapters[0].FramesInfo);
         Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
         Assert.NotNull(save.LastOptions);
-        Assert.False(save.LastOptions.ApplyExpression);
-        Assert.Equal("t + 1", save.LastOptions.Expression);
-        Assert.Equal("inline", save.LastOptions.ExpressionSourceName);
     }
 
-
     [Fact]
-    public async Task PreviewAndSaveUseSameLuaProjectionForTimesNamesAndNumbers()
+    public async Task Candidate_projection_keeps_committed_rows_and_content_history_unchanged()
     {
         var save = new FakeSaveService();
         var vm = CreateViewModel(saveService: save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         vm.SaveFormat = ChapterExportFormat.Txt;
-        vm.ApplyExpression = true;
+
+        var row = Assert.Single(vm.Rows);
+        var trackId = row.TrackId;
+        var chapterId = row.ChapterId;
+        var originalTime = row.TimeText;
+        var originalNumber = row.Number;
+        var originalName = row.Name;
+        var originalFrames = row.FramesInfo;
+        var mutationRevision = vm.Workspace.ContentSession!.Snapshot.MutationRevision;
+        Assert.False(row.HasPreviewTimeChange);
+        Assert.False(row.HasPreviewNameChange);
+        Assert.False(row.HasPreviewNumberChange);
+        Assert.False(row.HasPreviewFramesChange);
+
+        vm.Expression = "t + 1";
+        vm.RefreshExpressionPreviewNow();
+
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Same(row, vm.Rows[0]);
+        Assert.Equal(trackId, row.TrackId);
+        Assert.Equal(chapterId, row.ChapterId);
+        Assert.Equal(originalTime, row.TimeText);
+        Assert.Equal(originalNumber, row.Number);
+        Assert.Equal(originalName, row.Name);
+        Assert.Equal(originalFrames, row.FramesInfo);
+        Assert.True(row.HasPreviewTimeChange);
+        Assert.Equal("00:00:00.000", row.PreviewBeforeTimeText);
+        Assert.Equal("00:00:01.000", row.PreviewTimeText);
+        Assert.Equal("+00:00:01.000", row.PreviewTimeDelta);
+        Assert.False(row.HasPreviewNameChange);
+        Assert.False(row.HasPreviewNumberChange);
+        Assert.True(row.HasPreviewFramesChange);
+        Assert.Equal("24", row.PreviewFrames);
+        Assert.Equal(mutationRevision, vm.Workspace.ContentSession.Snapshot.MutationRevision);
+
+        await vm.SaveCommand.ExecuteAsync("out");
+
+        Assert.NotNull(save.LastInfo);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(originalName, save.LastInfo.Chapters[0].Name);
+    }
+
+    [Fact]
+    public async Task Inline_time_preview_is_hidden_when_values_match_at_millisecond_precision()
+    {
+        var start = TimeSpan.FromTicks(1_000);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m),
+            TimeSpan.FromSeconds(1), [new Chapter(1, start, "Submillisecond")]);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var row = Assert.Single(vm.Rows);
+
+        vm.Expression = "t + 0.0001";
+        vm.RefreshExpressionPreviewNow();
+
+        Assert.Equal("00:00:00.000", row.TimeText);
+        Assert.False(row.HasPreviewTimeChange);
+        Assert.Empty(row.PreviewBeforeTimeText);
+        Assert.Empty(row.PreviewTimeText);
+        Assert.Empty(row.PreviewTimeDelta);
+        Assert.False(row.HasPreviewFramesChange);
+    }
+
+    [Fact]
+    public async Task Inline_time_preview_uses_fixed_millisecond_precision()
+    {
+        var start = TimeSpan.FromTicks(1_000);
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m),
+            TimeSpan.FromSeconds(1), [new Chapter(1, start, "Submillisecond")]);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        var row = Assert.Single(vm.Rows);
+
+        vm.Expression = "t + 0.0006";
+        vm.RefreshExpressionPreviewNow();
+
+        Assert.Equal("00:00:00.000", row.PreviewBeforeTimeText);
+        Assert.Equal("00:00:00.001", row.PreviewTimeText);
+        Assert.Equal("+00:00:00.001", row.PreviewTimeDelta);
+    }
+
+    [Fact]
+    public async Task Inline_frame_preview_preserves_unrounded_display_when_rounding_is_disabled()
+    {
+        var info = new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m),
+            TimeSpan.FromSeconds(1), [new Chapter(1, TimeSpan.Zero, "Intro")]);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SetFrameOptions(frameRateIndex: 3, roundFrames: false);
+
+        vm.Expression = "t + 0.0004";
+        vm.RefreshExpressionPreviewNow();
+
+        var row = Assert.Single(vm.Rows);
+        Assert.True(row.HasPreviewFramesChange);
+        Assert.Equal("0.0", row.PreviewBeforeFrames);
+        Assert.Equal("0", row.PreviewBeforeFramePresentation?.PlainNumericText);
+        Assert.Equal("0.01", row.PreviewFrames);
+    }
+
+
+    [Fact]
+    public async Task ExpressionDraftDoesNotRunDuringOptionPreviewOrExport()
+    {
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(saveService: save);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.SaveFormat = ChapterExportFormat.Txt;
         vm.Expression = "t + 2";
         vm.AutoGenerateNames = true;
         vm.OrderShift = 3;
 
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal(1, vm.Rows[0].Number);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         var preview = vm.BuildPreview();
         await vm.SaveCommand.ExecuteAsync("out");
 
-        Assert.Contains("CHAPTER04=00:00:02.000", preview, StringComparison.Ordinal);
+        Assert.Contains("CHAPTER04=00:00:00.000", preview, StringComparison.Ordinal);
         Assert.Contains("CHAPTER04NAME=Chapter 01", preview, StringComparison.Ordinal);
         Assert.NotNull(save.LastInfo);
         Assert.Equal(4, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.Equal("Chapter 01", save.LastInfo.Chapters[0].Name);
-        Assert.Equal(TimeSpan.FromSeconds(2), save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
+    }
+
+    [Fact]
+    public async Task StaleExpressionCandidateRefreshesFromCurrentDocumentBeforeApply()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.Expression = "t + 1";
+        vm.RefreshExpressionPreviewNow();
+
+        var session = Assert.IsType<SessionState>(vm.Workspace.ContentSession);
+        var snapshot = session.Snapshot;
+        var track = snapshot.Document.Tracks[0];
+        var candidateTrack = new EditableChapterTrack(
+            track.Id,
+            track.Name,
+            track.Chapters.SetItem(0, track.Chapters[0] with { StartTicks = TimeSpan.FromSeconds(10).Ticks }),
+            track.Segments);
+        var candidateDocument = new EditableChapterDocument(
+            snapshot.Document.Id,
+            snapshot.Document.Title,
+            snapshot.Document.SourceName,
+            snapshot.Document.ImportFormat,
+            snapshot.Document.Duration,
+            snapshot.Document.Tracks.SetItem(0, candidateTrack));
+        var externalOutcome = await session.ExecuteAsync(
+            snapshot.BaseToken,
+            Guid.NewGuid(),
+            "external-time-change",
+            (_, _) => ValueTask.FromResult(candidateDocument),
+            operationDescription: "External edit");
+        Assert.Equal(TransactionOutcomeKind.Committed, externalOutcome.Kind);
+        vm.Workspace.PublishContentDocument(externalOutcome.Snapshot.Document);
+        vm.RefreshRowsFromPort();
+
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        Assert.False(vm.Rows[0].HasPreviewTimeChange);
+        Assert.Contains("out of date", vm.ExpressionPreviewText, StringComparison.Ordinal);
+        Assert.False(vm.CanApplyContentPreview);
+        Assert.True(vm.CanRefreshContentPreview);
+        await vm.RefreshContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Equal("00:00:10.000", vm.Rows[0].PreviewBeforeTimeText);
+        Assert.Equal("00:00:11.000", vm.Rows[0].PreviewTimeText);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:11.000", vm.Rows[0].TimeText);
+    }
+
+    [Fact]
+    public async Task StaleChapterOptionsPreviewRequiresRefreshBeforeApply()
+    {
+        var vm = CreateViewModel();
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        vm.OrderShift = 2;
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+
+        var session = Assert.IsType<SessionState>(vm.Workspace.ContentSession);
+        var snapshot = session.Snapshot;
+        var externalOutcome = await session.ExecuteAsync(
+            snapshot.BaseToken,
+            Guid.NewGuid(),
+            "external-title-change",
+            (document, _) => ValueTask.FromResult(new EditableChapterDocument(
+                document.Id,
+                "External title",
+                document.SourceName,
+                document.ImportFormat,
+                document.Duration,
+                document.Tracks)),
+            operationDescription: "External edit");
+        Assert.Equal(TransactionOutcomeKind.Committed, externalOutcome.Kind);
+
+        Assert.False(vm.CanApplyContentPreview);
+        Assert.True(vm.CanRefreshContentPreview);
+        await vm.RefreshContentPreviewCommand.ExecuteAsync();
+
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.False(vm.CanRefreshContentPreview);
+        Assert.Empty(vm.ContentPreviewMetadataTooltip);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal(3, vm.Rows[0].Number);
+        Assert.Equal("External title", vm.Workspace.ContentSession!.Snapshot.Document.Title);
     }
 
     [Fact]
@@ -1079,6 +1656,10 @@ public sealed class MainWindowViewModelTests
         vm.OrderShift = 2;
         vm.AutoGenerateNames = true;
 
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        Assert.Equal(1, vm.Rows[0].Number);
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
         Assert.Equal(3, vm.Rows[0].Number);
         Assert.Equal("Chapter 01", vm.Rows[0].Name);
         Assert.Contains("CHAPTER03=00:00:00.000", vm.BuildPreview(), StringComparison.Ordinal);
@@ -1090,6 +1671,9 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("Chapter 01", vm.Rows[0].Name);
 
         vm.ChapterNameTemplateText = "Opening";
+
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
 
         Assert.Equal("Opening", vm.Rows[0].Name);
         Assert.Contains("CHAPTER03NAME=Opening", vm.BuildPreview(), StringComparison.Ordinal);
@@ -1116,7 +1700,6 @@ public sealed class MainWindowViewModelTests
         Assert.NotNull(save.LastInfo);
         Assert.Equal(1, save.LastInfo.Chapters[0].DisplayNumber);
         Assert.NotNull(save.LastOptions);
-        Assert.Equal(0, save.LastOptions.OrderShift);
     }
 
     [Fact]
@@ -1136,12 +1719,38 @@ public sealed class MainWindowViewModelTests
 
         vm.OrderShift = 2;
 
-        Assert.Equal([3, 4], vm.Rows.Select(static row => row.Number).ToArray());
+        await vm.PreviewContentOptionsCommand.ExecuteAsync();
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal([3, 0, 4], vm.Rows.Select(static row => row.Number).ToArray());
         var preview = vm.BuildPreview();
         Assert.Contains("CHAPTER03=00:00:00.000", preview, StringComparison.Ordinal);
         Assert.Contains("CHAPTER04=00:00:07.000", preview, StringComparison.Ordinal);
         Assert.DoesNotContain("CHAPTER-01", preview, StringComparison.Ordinal);
         Assert.DoesNotContain("CHAPTER05", preview, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task OrderShiftImmediatelyPreviewsRenumberedChaptersBeforeApplying()
+    {
+        var load = new FakeLoadService(ImportResult(
+            "movie.txt",
+            Info(ChapterImportFormat.Ogm, "movie.txt",
+                new Chapter(1, TimeSpan.Zero, "A"),
+                new Chapter(2, TimeSpan.FromSeconds(1), "B"))));
+        var vm = CreateViewModel(load);
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+
+        vm.OrderShift = 2;
+
+        Assert.True(vm.IsContentPreviewPending);
+        Assert.True(vm.CanApplyContentPreview);
+        Assert.Equal([1, 2], vm.Rows.Select(static row => row.Number).ToArray());
+        Assert.Equal(["3", "4"], vm.Rows.Select(static row => row.PreviewNumber).ToArray());
+
+        await vm.ApplyContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal([3, 4], vm.Rows.Select(static row => row.Number).ToArray());
     }
 
     [Fact]
@@ -1158,26 +1767,30 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task NegativeExpressionResultNormalizesRowsAndSavedInfoToZero()
+    public async Task NegativeExpressionResultIsRejectedWithoutChangingRowsOrSavedInfo()
     {
         var save = new FakeSaveService();
         var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.FromSeconds(10), "Intro", "240"))));
         var vm = CreateViewModel(load, save);
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        vm.ApplyExpression = true;
         vm.Expression = "t - 10000";
 
-        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
-        Assert.Equal("0", vm.Rows[0].FramesInfo);
+        vm.RefreshExpressionPreviewNow();
+        Assert.False(vm.CanApplyContentPreview);
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        await vm.CancelContentPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
+        Assert.Equal("240", vm.Rows[0].FramesInfo);
         Assert.True(vm.Rows[0].IsFrameAccurate);
 
         await vm.SaveCommand.ExecuteAsync("out");
 
         Assert.NotNull(save.LastInfo);
-        Assert.Equal(TimeSpan.Zero, save.LastInfo.Chapters[0].StartTime);
-        Assert.Equal("0", save.LastInfo.Chapters[0].FramesInfo);
-        Assert.Equal(FrameAccuracy.Accurate, save.LastInfo.Chapters[0].FrameAccuracy);
+        Assert.Equal(TimeSpan.FromSeconds(10), save.LastInfo.Chapters[0].StartTime);
+        Assert.Equal("240", save.LastInfo.Chapters[0].FramesInfo);
+        Assert.Equal(FrameAccuracy.Neutral, save.LastInfo.Chapters[0].FrameAccuracy);
     }
 
     [Fact]
@@ -1189,10 +1802,9 @@ public sealed class MainWindowViewModelTests
         await vm.LoadCommand.ExecuteAsync("movie.mpls");
         var router = new ShortcutRouter(vm);
 
-        await router.RouteAsync("Ctrl+2");
         await router.RouteAsync("Ctrl+S");
 
-        Assert.Equal(1, vm.SelectedClipIndex);
+        Assert.Equal(0, vm.SelectedClipIndex);
         Assert.NotNull(save.LastOptions);
     }
 
@@ -1234,7 +1846,8 @@ public sealed class MainWindowViewModelTests
 
         Assert.Contains("CHAPTER01=", vm.BuildPreview(), StringComparison.Ordinal);
         Assert.Contains(log.Entries, entry =>
-            entry is { Level: LogLevel.Information, MessageKey: "Log.LoadingSource" } &&
+            entry is { Level: LogLevel.Information } &&
+            entry.Message.StartsWith("Loading source: path='", StringComparison.Ordinal) &&
             string.Equals(entry.Category, typeof(MainWindowViewModel).FullName, StringComparison.Ordinal));
     }
 
@@ -1291,11 +1904,13 @@ public sealed class MainWindowViewModelTests
         vm.UpdateSelectedRows(new HashSet<int> { 0 });
 
         var zones = vm.CreateZonesText();
-        vm.ToolSession.ChapterEdit.ShiftFramesForward(24);
+        await vm.ToolSession.ChapterEdit.ShiftFramesForwardAsync(24);
 
         Assert.StartsWith("--zones ", zones, StringComparison.Ordinal);
-        Assert.Single(vm.Rows);
-        Assert.Equal("00:00:09.000", vm.Rows[0].TimeText);
+        Assert.Equal(2, vm.Rows.Count);
+        Assert.Equal("00:00:00.000", vm.Rows[0].TimeText);
+        Assert.Equal("00:00:10.000", vm.Rows[1].TimeText);
+        Assert.Contains("negative", vm.StatusText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -1424,7 +2039,7 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        Assert.Equal("Loaded 1 chapters", vm.StatusText);
+        Assert.Equal("Loaded 1 chapter", vm.StatusText);
         localizer.SetCulture("ja-JP");
 
         Assert.Equal("1 個のチャプターを読み込みました", vm.StatusText);
@@ -1463,14 +2078,15 @@ public sealed class MainWindowViewModelTests
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
 
-        var entry = Assert.Single(log.Entries, static item => item.MessageKey == "Log.Diagnostic");
+        var entry = Assert.Single(log.Entries, static item =>
+            item.Operation == "Load" && item.Message.StartsWith("Load diagnostic:", StringComparison.Ordinal));
         Assert.Equal(LogLevel.Warning, entry.Level);
         Assert.Equal("Parse.Partial", entry.Arguments?["code"]);
         Assert.Equal("tail", entry.TechnicalDetail);
     }
 
     [Fact]
-    public async Task LoadLuaExpressionScriptAsyncReportsCompileDiagnosticToStatusAndLog()
+    public async Task LoadLuaExpressionScriptAsyncReportsCompileDiagnosticToLog()
     {
         var log = new ApplicationLogPanelProvider();
         var vm = CreateViewModel(logService: log);
@@ -1482,8 +2098,10 @@ public sealed class MainWindowViewModelTests
 
             Assert.NotNull(diagnostic);
             Assert.Equal(ChapterDiagnosticCode.InvalidExpressionLuaCompile, diagnostic.Code);
-            Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
-            Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+            Assert.Contains(log.Entries, static entry =>
+                entry.Operation == "Lua expression script"
+                && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
+                && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
         }
         finally
         {
@@ -1491,17 +2109,16 @@ public sealed class MainWindowViewModelTests
         }
     }
 
-    [Fact]
-    public async Task ExplicitlyAppliedLuaExpressionReportsCompileDiagnosticToStatusAndLog()
+    private static async Task<(SessionHistoryNodeSnapshot Node, HistoryNodeDetails Details)> CurrentHistoryDetailsAsync(
+        MainWindowViewModel viewModel)
     {
-        var log = new ApplicationLogPanelProvider();
-        var vm = CreateViewModel(logService: log);
-        await vm.LoadCommand.ExecuteAsync("movie.txt");
-
-        vm.ToolSession.Expression.ApplyLuaExpressionSettings("return (", true, string.Empty, string.Empty);
-
-        Assert.Contains("Lua expression syntax error", vm.StatusText, StringComparison.Ordinal);
-        Assert.Contains(log.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+        var history = viewModel.ToolSession.History;
+        var snapshot = Assert.IsType<SessionHistorySnapshot>(history.Snapshot);
+        var node = Assert.Single(snapshot.Nodes, entry => entry.Id == snapshot.CursorId);
+        var outcome = await history.InspectAsync(node.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(HistoryInspectionOutcomeKind.Available, outcome.Kind);
+        Assert.NotNull(outcome.Details);
+        return (node, outcome.Details!);
     }
 
     private static MainWindowViewModel CreateViewModel(
@@ -1529,21 +2146,22 @@ public sealed class MainWindowViewModelTests
             new FrameRateService(),
             localizer ?? new AppLocalizationManager("en-US"),
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine),
+            new ChapterExportService(formatter),
             shellService,
             settingsStore);
     }
 
     private static ChapterSet Info(ChapterImportFormat sourceType, string sourceName, params Chapter[] chapters) =>
-        new(sourceName, sourceName, sourceType, 24, chapters.Last().StartTime, chapters);
+        new(sourceName, sourceName, sourceType, FrameRateValue.Rational(24, 1), chapters.Last().StartTime, chapters);
+
+    private static ChapterSet InfoWithDuration(ChapterImportFormat sourceType, string sourceName, TimeSpan duration, params Chapter[] chapters) =>
+        new(sourceName, sourceName, sourceType, FrameRateValue.Rational(24, 1), duration, chapters);
 
     private static ChapterImportResult ImportResult(string path, params ChapterSet[] infos)
     {
         var entries = infos.Select((info, index) => new ChapterImportEntry($"entry-{index}", info.SourceName ?? info.Title, info)).ToArray();
         return new ChapterImportResult(true, [new ChapterImportSource(path, entries)], []);
     }
-
-    private static string RepositoryRoot() => TestRepository.Root;
 
     private sealed class FakeLoadService(params ChapterImportResult[] results) : IChapterLoadService
     {
@@ -1644,13 +2262,13 @@ public sealed class MainWindowViewModelTests
     {
         public ChapterSet? LastInfo { get; private set; }
 
-        public ChapterExportOptions? LastOptions { get; private set; }
+        public ChapterSerializationOptions? LastOptions { get; private set; }
 
         public string? LastDirectory { get; private set; }
 
         public ChapterExportResult Result { get; init; } = new(true, "ok", ".txt", []);
 
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null)
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterSerializationOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null)
         {
             LastInfo = info;
             LastOptions = options;

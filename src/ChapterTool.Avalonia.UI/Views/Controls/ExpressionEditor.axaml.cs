@@ -11,6 +11,7 @@ using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
 using ChapterTool.Avalonia.UI.Localization;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 namespace ChapterTool.Avalonia.UI.Views.Controls;
@@ -20,9 +21,6 @@ public sealed class ExpressionEditorExpansionChangedEventArgs(double heightDelta
     public double HeightDelta { get; } = heightDelta;
 }
 
-
-// Compatibility name used by ExpressionEditor.axaml bindings.
-public sealed class ExpressionCompletionKindBrushConverter : Expression.ExpressionCompletionPresentation;
 
 /// <summary>Provides an expression editor with completion and diagnostic presentation.</summary>
 public sealed partial class ExpressionEditor : UserControl
@@ -38,6 +36,9 @@ public sealed partial class ExpressionEditor : UserControl
 
     public static readonly StyledProperty<IExpressionAuthoringService?> AuthoringServiceProperty =
         AvaloniaProperty.Register<ExpressionEditor, IExpressionAuthoringService?>(nameof(AuthoringService));
+
+    public static readonly StyledProperty<FrameRateValue> FrameRateProperty =
+        AvaloniaProperty.Register<ExpressionEditor, FrameRateValue>(nameof(FrameRate));
 
     public static readonly StyledProperty<double> EditorHeightProperty =
         AvaloniaProperty.Register<ExpressionEditor, double>(nameof(EditorHeight), 32);
@@ -142,6 +143,12 @@ public sealed partial class ExpressionEditor : UserControl
         set => SetValue(EditorHeightProperty, value);
     }
 
+    public FrameRateValue FrameRate
+    {
+        get => GetValue(FrameRateProperty);
+        set => SetValue(FrameRateProperty, value);
+    }
+
     public bool IsMultilineExpandable
     {
         get => GetValue(IsMultilineExpandableProperty);
@@ -238,17 +245,13 @@ public sealed partial class ExpressionEditor : UserControl
         {
             AnalyzeAndRender();
         }
-        else if (change.Property == AuthoringServiceProperty)
+        else if (change.Property == AuthoringServiceProperty || change.Property == FrameRateProperty)
         {
             diagnosticHideTimer.Stop();
             diagnosticRenderTimer.Stop();
             AnalyzeAndRender(renderDiagnosticsImmediately: true);
         }
-        else if (change.Property == EditorHeightProperty)
-        {
-            UpdateMultilineState();
-        }
-        else if (change.Property == IsMultilineExpandableProperty)
+        else if (change.Property == EditorHeightProperty || change.Property == IsMultilineExpandableProperty)
         {
             UpdateMultilineState();
         }
@@ -429,7 +432,13 @@ public sealed partial class ExpressionEditor : UserControl
     {
         if (!editor.IsKeyboardFocusWithin)
         {
-            FocusInnerEditor();
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (IsKeyboardFocusWithin && !editor.IsKeyboardFocusWithin)
+                {
+                    FocusInnerEditor();
+                }
+            });
         }
     }
 
@@ -446,7 +455,7 @@ public sealed partial class ExpressionEditor : UserControl
 
     private void AnalyzeAndRender(bool renderDiagnosticsImmediately = true)
     {
-        var result = EffectiveAuthoringService.Analyze(editor.Text, editor.CaretOffset);
+        var result = EffectiveAuthoringService.Analyze(editor.Text, editor.CaretOffset, frameRate: FrameRate);
         CurrentCompletions = result.Completions;
         colorizer.Update(result.Spans);
         editor.TextArea.TextView.Redraw();
@@ -467,7 +476,7 @@ public sealed partial class ExpressionEditor : UserControl
     private void OnDiagnosticRenderTimerTick(object? sender, EventArgs args)
     {
         diagnosticRenderTimer.Stop();
-        var result = EffectiveAuthoringService.Analyze(editor.Text, editor.CaretOffset);
+        var result = EffectiveAuthoringService.Analyze(editor.Text, editor.CaretOffset, frameRate: FrameRate);
         RenderDiagnostics(result);
     }
 
@@ -710,7 +719,7 @@ public sealed partial class ExpressionEditor : UserControl
     private bool IsOpenLeftClick(PointerPressedEventArgs args) =>
         CompletionPopup.IsOpen && args.GetCurrentPoint(CompletionList).Properties.IsLeftButtonPressed;
 
-    private bool TryGetCompletionSource(PointerPressedEventArgs args, out ExpressionCompletion completion)
+    private static bool TryGetCompletionSource(PointerPressedEventArgs args, out ExpressionCompletion completion)
     {
         var item = (args.Source as Visual)?.FindAncestorOfType<ListBoxItem>();
         if (item?.DataContext is ExpressionCompletion found)

@@ -9,7 +9,7 @@ public sealed record LocalPathChapterSource(string Path, string? DisplayName = n
         DisplayName ?? System.IO.Path.GetFileName(Path),
         System.IO.Path.GetFullPath(Path))
 {
-    /// <summary>Normalized local path used by desktop importers.</summary>
+    /// <summary>Gets normalized local path used by desktop importers.</summary>
     public string NormalizedPath { get; } = System.IO.Path.GetFullPath(Path);
 }
 
@@ -17,6 +17,6 @@ public sealed record LocalPathChapterSource(string Path, string? DisplayName = n
 public sealed record BufferedChapterSource(string FileName, byte[] Content)
     : ChapterSourceDocument(FileName, $"buffer:{FileName}")
 {
-    /// <summary>Number of retained source bytes.</summary>
+    /// <summary>Gets number of retained source bytes.</summary>
     public long Length => Content.LongLength;
 }

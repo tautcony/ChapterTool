@@ -11,7 +11,22 @@
 dotnet add package ChapterTool.Core
 ```
 
-## Capabilities
+## API Reference
+
+The API reference is generated from public API metadata and XML documentation comments with DocFX. VitePress builds the site. It documents each public class, record, interface, enum, and member. Enum pages include every enum value. Generated API Markdown is not committed.
+
+View the [published API reference](https://tautcony.github.io/ChapterTool/docs/).
+
+Regenerate the Markdown pages and build the site from the repository root:
+
+```bash
+dotnet tool restore
+dotnet tool run docfx metadata src/ChapterTool.Core/docfx.json
+npm --prefix docs-site ci
+npm --prefix docs-site run docs:build
+```
+
+## What You Can Build
 
 - **Import** chapters from common chapter formats and media-container adapters: CUE, FLAC, TAK, IFO, MPLS, XPL, MP4/media containers via `IMediaChapterReader`, OGM, Matroska XML, WebVTT, plain text, Premiere markers
 - **Export** chapters to multiple chapter formats: OGM Text, Matroska XML, QPFile, TimeCodes, tsMuxeR Meta, CUE, JSON, WebVTT, Celltimes
@@ -51,22 +66,25 @@ if (result.Success)
 
 ```csharp
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
 using ChapterTool.Core.Transform;
 
 var formatter = new ChapterTimeFormatter();
 var exportService = new ChapterExportService(formatter);
 
-var entries = new ChapterExportOptions(
-    Format: ChapterExportFormat.Xml,
-    XmlLanguage: "eng"
-);
-
-var result = exportService.Export(chapterInfo, entries);
+var document = EditableChapterDocumentAdapter.FromChapterSet(chapterInfo);
+var result = exportService.Serialize(
+    document,
+    new ChapterSerializationOptions(ChapterExportFormat.Xml, XmlLanguage: "eng"));
 if (result.Success)
 {
     File.WriteAllText($"output{result.FileExtension}", result.Content);
 }
 ```
+
+`ChapterExportService.Serialize` writes the supplied snapshot as-is. It does not apply expressions,
+name templates, or numbering shifts. Apply a content operation before serialization when output
+values must change.
 
 ### Edit Chapters
 
@@ -101,7 +119,8 @@ var fpsService = new FrameRateService();
 var detected = fpsService.Detect(info, tolerance: 0.001m);
 
 // Change frame rate
-var fpsResult = ChapterFpsTransformService.ChangeFps(info, sourceFps: 23.976m, targetFps: 25m);
+var fpsResult = ChapterFpsTransformService.ChangeFps(info,
+    sourceFps: FrameRateValue.Approximate(23.976m), targetFps: FrameRateValue.Rational(25, 1));
 
 IChapterExpressionEngine expressionEngine = new LuaExpressionScriptService();
 var context = new ChapterExpressionContext(chapter, Index: 1, Count: 10, TimeSeconds: 60m, FramesPerSecond: 23.976m);
@@ -129,7 +148,7 @@ var expressionResult = expressionEngine.Evaluate("t + 1.0", context);
 
 ### Media Reader Adapters
 
-`ChapterTool.Core` keeps media container parsing behind `IMediaChapterReader`. This keeps the core package free of native tools, shell process execution, and container-specific libraries.
+Use `MediaChapterImporter` when your application already has chapter metadata from a media container. Supply an `IMediaChapterReader` from your integration layer.
 
 Use `MediaChapterImporter` when your integration layer reads raw media-container chapter entries, including MP4 chapter metadata or data shaped like `ffprobe -show_chapters` JSON. Construct it with an `IMediaChapterReader`; optionally pass the extensions that adapter supports:
 
@@ -152,13 +171,7 @@ static ValueTask<ChapterImportResult> ImportMediaChaptersAsync(
 }
 ```
 
-The reader returns:
-
-```csharp
-ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cancellationToken);
-```
-
-`MediaChapterEntry` accepts either decimal-second timestamps (`StartTime` / `EndTime`) or integer timestamps (`Start` / `End`) with a rational `TimeBase`, for example `"1/1000"`. Chapter names are read from `Tags["title"]` when present; otherwise the importer generates fallback chapter names. If the reader cannot load metadata, return `MediaChapterReadResult.Failed(code, message, details)`; the importer converts it to a `ChapterDiagnostic`.
+The adapter can provide decimal-second or time-base timestamps. Read failures are returned as chapter diagnostics.
 
 ### Export
 
@@ -179,10 +192,51 @@ ValueTask<MediaChapterReadResult> ReadAsync(string path, CancellationToken cance
 `IChapterExpressionEngine` is the standard interface for chapter time expression evaluation.
 `LuaExpressionScriptService` is the built-in Lua implementation under `ChapterTool.Core.Transform.Expressions.Lua`. Simple arithmetic can be entered without `return`, while full scripts may use `return` or define `transform(chapter)`.
 
-- **Globals**: `t` (time in seconds), `fps` (frames per second), `index`, `count`, and `chapter`
+- **Globals**: `t` (time in seconds), `fps` (numeric computation rate or nil), `index`, `count`, and `chapter`
+- **Rate authority**: `fpsRateKind` is `Rational`, `Approximate`, or `Unknown`. Rational rates expose reduced `fpsNumeratorText` and `fpsDenominatorText` strings. `fpsNumerator` and `fpsDenominator` are numeric only when both components are at most `9007199254740991`. Other states expose nil components.
+- **Unknown rate**: Time-only scripts can run with nil `fps` and `chapter.fps`. Frame-dependent presets need an explicit computation rate. A script can handle nil explicitly.
+- **Precision**: Lua arithmetic uses floating point. A script that returns its unchanged numeric input preserves the original ticks. Changed results use one validated tick conversion. Frame metadata is calculated from the resulting ticks and canonical rate.
 - **Libraries**: safe Lua `math`, `string`, and `table` libraries
 - **Aliases**: common math helpers such as `floor`, `ceil`, `round`, `sin`, `sqrt`, and `sign`
 - **Presets**: identity, time offset, frame rounding, and half-frame shift
+
+## Canonical Frame Rates
+
+Use `ChapterSet.FrameRate` and `FrameRateValue` to preserve authority.
+`Rational(24000, 1001)` stores a reduced positive Int64 ratio.
+`Approximate(23.976m)` stores a positive decimal without rational authority.
+The default value is Unknown.
+Equal numeric displays with different kinds remain different values.
+
+```csharp
+var rate = FrameRateValue.Rational(24000, 1001);
+var canonical = chapterSet with { FrameRate = rate };
+var output = exportService.Serialize(canonical,
+    new ChapterSerializationOptions(ChapterExportFormat.Qpfile) { ComputationRate = rate });
+```
+
+Core APIs carry rates as `FrameRateValue` and timestamps as `TimeSpan` ticks.
+Use `FrameRateValue.Approximate` only when the source rate is approximate.
+Use `FrameRateValue.Rational` when the source provides an exact ratio.
+
+Editable tracks and segments retain current rates and original source rates separately.
+Uniform resolution requires every contributing rate to have the same kind and payload.
+Missing or conflicting rates resolve to Unknown.
+Scalar combination must reject conflicting rates.
+Auto uses known content authority.
+Detection is a display suggestion for Unknown or mixed content.
+FPS-dependent operations require an explicit known rate in that case.
+Time-only operations remain available.
+Serialization computation overrides do not mutate content or source metadata.
+
+Frame arithmetic uses timestamp ticks and integer rational or decimal coefficients.
+Fractional frame edits round once to ticks, with midpoints away from zero.
+FPS conversion quantizes to an integer source frame and then rounds to target ticks.
+Same-rate conversion can therefore change off-grid timestamps.
+Undo restores the original ticks.
+QPFile, Celltimes, and zones round once to integer frames.
+Display rounding must not change content or history.
+Lua changed-result arithmetic uses floating-point seconds as described above.
 
 ## Diagnostic System
 

@@ -16,15 +16,8 @@ public interface IChapterEditingService
     /// <returns>The edit result.</returns>
     ChapterEditResult EditTime(ChapterSet info, int index, string text);
 
-    /// <summary>
-    /// Edits a chapter frame number from text.
-    /// </summary>
-    /// <param name="info">The chapter data to edit.</param>
-    /// <param name="index">The zero-based chapter index.</param>
-    /// <param name="text">The frame text.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The edit result.</returns>
-    ChapterEditResult EditFrame(ChapterSet info, int index, string text, decimal framesPerSecond);
+    /// <summary>Edits a frame count with a canonical computation rate.</summary>
+    ChapterEditResult EditFrame(ChapterSet info, int index, string text, FrameRateValue framesPerSecond);
 
     /// <summary>
     /// Renames a chapter.
@@ -68,23 +61,11 @@ public interface IChapterEditingService
     /// <returns>The edit result.</returns>
     ChapterEditResult ApplyTemplate(ChapterSet info, string templateText);
 
-    /// <summary>
-    /// Shifts all chapter times forward by a number of frames.
-    /// </summary>
-    /// <param name="info">The chapter data to edit.</param>
-    /// <param name="frames">The frame count.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The edit result.</returns>
-    ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, decimal framesPerSecond);
+    /// <summary>Shifts starts with a canonical computation rate.</summary>
+    ChapterEditResult ShiftFramesForward(ChapterSet info, int frames, FrameRateValue framesPerSecond);
 
-    /// <summary>
-    /// Creates zone text from selected chapters.
-    /// </summary>
-    /// <param name="info">The chapter data to inspect.</param>
-    /// <param name="indexes">The selected zero-based chapter indexes.</param>
-    /// <param name="framesPerSecond">The frame rate in frames per second.</param>
-    /// <returns>The generated zone text and diagnostics.</returns>
-    ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, decimal framesPerSecond);
+    /// <summary>Creates zones with a canonical computation rate.</summary>
+    ChapterZonesResult CreateZones(ChapterSet info, IReadOnlySet<int> indexes, FrameRateValue framesPerSecond);
 }
 
 /// <summary>

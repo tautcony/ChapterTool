@@ -1,0 +1,22 @@
+@using ChapterTool.Core.Transform
+
+<span class="frame-display @CssClass" aria-hidden="@(Decorative ? "true" : null)"
+      aria-label="@(Decorative ? null : AccessibleName ?? Value.AccessibleDescription)">
+    <span class="frame-integer">@Value.SignedIntegerDigits</span>
+    @if (Value.HasFractionalDigits)
+    {
+        <span class="frame-decimal-point">.</span>
+        <span class="frame-fraction">@Value.NonRepeatingDigits</span>
+    }
+    @if (Value.HasRepeatingDigits)
+    {
+        <span class="frame-repetend">@Value.RepeatingDigits</span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public FramePresentationParts Value { get; set; } = null!;
+    [Parameter] public string? AccessibleName { get; set; }
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public bool Decorative { get; set; }
+}

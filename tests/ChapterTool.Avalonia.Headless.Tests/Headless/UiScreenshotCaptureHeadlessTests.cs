@@ -22,6 +22,7 @@ public sealed class UiScreenshotCaptureHeadlessTests
             return;
         }
 
+        var capturedFrames = 0;
         var sizes = new (string Name, double Width, double Height)[]
         {
             ("default", 800, 600),
@@ -37,12 +38,14 @@ public sealed class UiScreenshotCaptureHeadlessTests
                 : ThemeSettings.Default);
 
             using var host = new MainWindowHeadlessTestHost();
+            await host.LoadAsync("movie.txt");
             foreach (var (name, width, height) in sizes)
             {
                 await host.LayoutAsync(width, height);
                 MainWindowHeadlessTestHost.CaptureRenderedFrame(
                     host.Window,
                     Path.Combine("artifacts", "unify-sourcegit-design-system", set, $"main-{name}.png"));
+                capturedFrames++;
             }
 
             await CaptureToolAsync(
@@ -58,12 +61,12 @@ public sealed class UiScreenshotCaptureHeadlessTests
             await CaptureToolAsync(
                 set,
                 "template-names",
-                new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(host.ViewModel.ToolSession.NamingPreferences) },
+                new TemplateNamesToolView { DataContext = new TemplateNamesToolViewModel(host.ViewModel.ToolSession.NamingPreferences, host.ViewModel.ToolSession.ContentOperations) },
                 sizes);
             await CaptureToolAsync(
                 set,
                 "expression",
-                new ExpressionToolView { DataContext = new ExpressionToolViewModel(host.ViewModel.ToolSession.Expression) },
+                new ExpressionToolView { DataContext = new ExpressionToolViewModel(host.ViewModel.ToolSession.Expression, contentOperations: host.ViewModel.ToolSession.ContentOperations) },
                 sizes);
             await CaptureToolAsync(
                 set,
@@ -83,6 +86,7 @@ public sealed class UiScreenshotCaptureHeadlessTests
                 autoLoad: false);
             await settingsViewModel.LoadAsync(TestContext.Current.CancellationToken);
             await CaptureToolAsync(set, "settings", new SettingsToolView { DataContext = settingsViewModel }, sizes);
+            Assert.True(capturedFrames >= sizes.Length, "Expected a screenshot for every main-window size.");
         }
         finally
         {

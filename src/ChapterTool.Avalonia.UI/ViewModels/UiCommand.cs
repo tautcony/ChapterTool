@@ -20,7 +20,7 @@ public sealed class UiCommand(
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    /// <summary>Optional host boundary for unexpected command failures.</summary>
+    /// <summary>Gets or sets optional host boundary for unexpected command failures.</summary>
     public Func<Exception, ValueTask>? ErrorHandler { get; set; }
 
     public bool IsExecuting
@@ -54,7 +54,9 @@ public sealed class UiCommand(
         }
     }
 
-    public bool CanExecute(object? parameter = null) => !IsExecuting && canExecute(parameter);
+    public bool CanExecute(object? parameter) => !IsExecuting && canExecute(parameter);
+
+    public bool CanExecute() => CanExecute(null);
 
     public async ValueTask ExecuteAsync(object? parameter = null, CancellationToken cancellationToken = default)
     {

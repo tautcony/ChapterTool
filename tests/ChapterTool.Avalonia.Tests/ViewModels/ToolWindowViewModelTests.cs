@@ -9,6 +9,7 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Importing;
 using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions.Lua;
 using ChapterTool.Infrastructure.Platform;
@@ -104,16 +105,28 @@ public sealed class ToolWindowViewModelTests
         var owner = CreateOwner();
         await owner.LoadCommand.ExecuteAsync("movie.txt");
 
-        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression) { Expression = "t + 1", ApplyExpression = true };
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, contentOperations: owner.ToolSession.ContentOperations) { Expression = "t + 1" };
         await expression.ApplyCommand.ExecuteAsync(expression);
-        var template = new TemplateNamesToolViewModel(owner.ToolSession.NamingPreferences) { UseTemplateNames = true };
+        Assert.Equal(ExpressionPreviewReadiness.Ready, expression.PreviewReadiness);
+        Assert.True(expression.CanApplyPreview);
+        Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
+        await expression.ConfirmApplyCommand.ExecuteAsync();
+        var template = new TemplateNamesToolViewModel(owner.ToolSession.NamingPreferences, owner.ToolSession.ContentOperations) { UseTemplateNames = true };
         await template.ApplyCommand.ExecuteAsync(template);
-        var forward = new ForwardShiftToolViewModel(owner.ToolSession.ChapterEdit) { Frames = 24 };
+        Assert.True(template.IsPreviewPending);
+        await template.ConfirmApplyCommand.ExecuteAsync();
+        var forward = new ForwardShiftToolViewModel(owner.ToolSession.ChapterEdit, contentOperations: owner.ToolSession.ContentOperations) { Frames = 24 };
         await forward.ApplyCommand.ExecuteAsync(forward);
+        Assert.True(forward.IsPreviewPending);
+        var beforeShift = owner.Rows[0].TimeText;
+        await forward.CancelPreviewCommand.ExecuteAsync();
+        Assert.False(forward.IsPreviewPending);
+        Assert.Equal(beforeShift, owner.Rows[0].TimeText);
+        await forward.ApplyCommand.ExecuteAsync(forward);
+        await forward.ConfirmApplyCommand.ExecuteAsync();
 
         Assert.Equal("t + 1", owner.Expression);
-        Assert.True(owner.ApplyExpression);
-        Assert.True(owner.UseTemplateNames);
+        Assert.False(owner.UseTemplateNames);
         Assert.False(owner.AutoGenerateNames);
         Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
@@ -149,6 +162,8 @@ public sealed class ToolWindowViewModelTests
         Assert.True(catalog.TryGet(ToolIds.Preview, out _));
         Assert.True(catalog.TryGet(ToolIds.Settings, out _));
         Assert.True(catalog.TryGet(ToolIds.Expression, out _));
+        Assert.True(catalog.TryGet(ToolIds.History, out var history));
+        Assert.True(history.IsModal);
         Assert.True(catalog.TryGet(ToolIds.Language, out _));
         Assert.False(catalog.TryGet("missing-tool", out _));
     }
@@ -161,10 +176,12 @@ public sealed class ToolWindowViewModelTests
         await owner.LoadCommand.ExecuteAsync("movie.txt");
         var scriptPath = Path.Combine(Path.GetTempPath(), $"chaptertool-{Guid.NewGuid():N}.lua");
         await File.WriteAllTextAsync(scriptPath, "t + 2");
+        var closeCount = 0;
         try
         {
             var picker = new FakeFilePicker(scriptPath);
-            var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker) { ApplyExpression = true };
+            var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, picker,
+                contentOperations: owner.ToolSession.ContentOperations, closeTool: () => closeCount++);
 
             expression.SelectedPresetIndex = expression.Presets.ToList().FindIndex(preset => preset.Id == "round-to-frame");
 
@@ -174,17 +191,128 @@ public sealed class ToolWindowViewModelTests
 
             await expression.BrowseScriptCommand.ExecuteAsync();
             await expression.ApplyCommand.ExecuteAsync(expression);
+            Assert.Equal(ExpressionPreviewReadiness.Ready, expression.PreviewReadiness);
+            Assert.Contains("time changes", expression.PreviewSummary, StringComparison.Ordinal);
+            Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
+            await expression.ConfirmApplyCommand.ExecuteAsync();
 
             Assert.Equal("t + 2", owner.Expression);
-            Assert.True(owner.ApplyExpression);
             Assert.Equal(string.Empty, owner.ExpressionPresetId);
             Assert.Equal(Path.GetFileName(scriptPath), owner.ExpressionSourceName);
             Assert.Equal("00:00:07.000", owner.Rows[0].TimeText);
+            Assert.Contains("Applied expression", owner.StatusText, StringComparison.Ordinal);
+            Assert.False(expression.CanApplyPreview);
+            Assert.True(owner.CanUndo);
+            Assert.Equal(1, closeCount);
+            await expression.ConfirmApplyCommand.ExecuteAsync();
+            Assert.Equal(1, closeCount);
+
         }
         finally
         {
             File.Delete(scriptPath);
         }
+    }
+
+    [Fact]
+    public async Task ExpressionToolRejectsEmptyAndInvalidDraftsAndCancelKeepsSavedSettings()
+    {
+        var owner = CreateOwner();
+        await owner.LoadCommand.ExecuteAsync("movie.txt");
+        var closeCount = 0;
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression,
+            contentOperations: owner.ToolSession.ContentOperations, closeTool: () => closeCount++);
+
+        expression.Expression = string.Empty;
+        Assert.Equal(ExpressionPreviewReadiness.Empty, expression.PreviewReadiness);
+        Assert.False(expression.CanApplyPreview);
+
+        expression.Expression = "return (";
+        Assert.Equal(ExpressionPreviewReadiness.Waiting, expression.PreviewReadiness);
+        expression.RefreshPreviewNow();
+        Assert.Equal(ExpressionPreviewReadiness.Invalid, expression.PreviewReadiness);
+        Assert.False(expression.CanApplyPreview);
+
+        await expression.CancelPreviewCommand.ExecuteAsync();
+
+        Assert.Equal("t", owner.Expression);
+        Assert.Equal(string.Empty, owner.ExpressionPresetId);
+        Assert.Equal(1, closeCount);
+    }
+
+    [Fact]
+    public async Task ExpressionToolMarksConflictedCandidateStaleAndRequiresExplicitRefresh()
+    {
+        var owner = CreateOwner();
+        await owner.LoadCommand.ExecuteAsync("movie.txt");
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression,
+            contentOperations: owner.ToolSession.ContentOperations) { Expression = "t / 2" };
+        expression.RefreshPreviewNow();
+        var original = expression.Projection;
+        var competingChange = owner.ToolSession.ContentOperations.PrepareFrameShift(1);
+        var competingOutcome = await owner.ToolSession.ContentOperations.ApplyAsync(competingChange);
+        Assert.Equal(TransactionOutcomeKind.Committed, competingOutcome.Kind);
+
+        await expression.ConfirmApplyCommand.ExecuteAsync();
+
+        Assert.Equal(ExpressionPreviewReadiness.Stale, expression.PreviewReadiness);
+        Assert.Equal("t / 2", expression.Expression);
+        Assert.Same(original, expression.Projection);
+        Assert.True(expression.CanRefreshPreview);
+        Assert.False(expression.CanApplyPreview);
+
+        await expression.UpdatePreviewCommand.ExecuteAsync();
+
+        Assert.Equal(ExpressionPreviewReadiness.Ready, expression.PreviewReadiness);
+        Assert.NotSame(original, expression.Projection);
+        Assert.True(expression.CanApplyPreview);
+    }
+
+    [Fact]
+    public async Task ExpressionToolMarksCompleteNoChangeCandidateUnchanged()
+    {
+        var owner = CreateOwner();
+        await owner.LoadCommand.ExecuteAsync("movie.txt");
+        var operations = new DeferredContentOperationPort(owner.ToolSession.ContentOperations, completion: null, forceNoChange: true);
+        using var expression = new ExpressionToolViewModel(owner.ToolSession.Expression,
+            contentOperations: operations);
+        expression.Expression = "t + 2";
+
+        expression.RefreshPreviewNow();
+
+        Assert.Equal(ExpressionPreviewReadiness.Unchanged, expression.PreviewReadiness);
+        Assert.False(expression.CanApplyPreview);
+    }
+
+    [Fact]
+    public async Task ExpressionToolDisablesWhileApplyingAndRetainsFailedCandidate()
+    {
+        var owner = CreateOwner();
+        await owner.LoadCommand.ExecuteAsync("movie.txt");
+        var completion = new TaskCompletionSource<TransactionOutcome>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var operations = new DeferredContentOperationPort(owner.ToolSession.ContentOperations, completion);
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression,
+            contentOperations: operations) { Expression = "t / 2" };
+        expression.RefreshPreviewNow();
+        var preview = Assert.IsType<ChapterContentPreview>(operations.ExpressionPreview);
+
+        var applying = expression.ConfirmApplyCommand.ExecuteAsync();
+        Assert.Equal(ExpressionPreviewReadiness.Applying, expression.PreviewReadiness);
+        Assert.False(expression.CanEditExpression);
+        Assert.False(expression.CanApplyPreview);
+
+        completion.SetResult(new TransactionOutcome(
+            preview.PreviewId,
+            TransactionOutcomeKind.Invalid,
+            new SessionSnapshot(preview.Before, preview.BaseToken.StateIdentity, preview.BaseToken.MutationRevision),
+            System.Collections.Immutable.ImmutableArray.Create("The simulated transaction failed.")));
+        await applying;
+
+        Assert.Equal(ExpressionPreviewReadiness.Failed, expression.PreviewReadiness);
+        Assert.True(expression.CanEditExpression);
+        Assert.False(expression.CanApplyPreview);
+        Assert.Same(preview, operations.ExpressionPreview);
+        Assert.Equal("The simulated transaction failed.", expression.StatusText);
     }
 
     [Fact]
@@ -229,19 +357,24 @@ public sealed class ToolWindowViewModelTests
     {
         var owner = CreateOwner(new AppLocalizationManager("en-US"));
         await owner.LoadCommand.ExecuteAsync("movie.txt");
-        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression)
+        var expression = new ExpressionToolViewModel(owner.ToolSession.Expression, contentOperations: owner.ToolSession.ContentOperations)
         {
-            Expression = "return (",
-            ApplyExpression = true
+            Expression = "return ("
         };
 
-        await expression.ApplyCommand.ExecuteAsync(expression);
+        expression.RefreshPreviewNow();
 
-        Assert.Equal("return (", owner.Expression);
-        Assert.True(owner.ApplyExpression);
-        Assert.Contains("Lua expression syntax error", owner.StatusText, StringComparison.Ordinal);
+        Assert.Equal("t", owner.Expression);
+        Assert.Equal("return (", expression.Expression);
+        Assert.False(expression.CanApplyPreview);
         Assert.Contains("Lua expression syntax error", expression.StatusText, StringComparison.Ordinal);
-        Assert.Contains(owner.LogService.Entries, static entry => entry.MessageKey == "Log.Diagnostic" && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+        Assert.Contains(owner.LogService.Entries, static entry =>
+            entry.Operation == "Lua expression script"
+            && entry.Message.StartsWith("Lua expression script diagnostic:", StringComparison.Ordinal)
+            && Equals(entry.Arguments?["code"], "LuaExpression.CompileFailed"));
+
+        await expression.CancelPreviewCommand.ExecuteAsync();
+        Assert.Equal("00:00:05.000", owner.Rows[0].TimeText);
     }
 
     private static MainWindowViewModel CreateOwner(IAppLocalizer? localizer = null)
@@ -252,7 +385,7 @@ public sealed class ToolWindowViewModelTests
         return new MainWindowViewModel(
             new FakeLoadService(new ChapterImportResult(
                 true,
-                [new ChapterImportSource("movie.txt", [new ChapterImportEntry("0", "movie", new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, 24, TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
+                [new ChapterImportSource("movie.txt", [new ChapterImportEntry("0", "movie", new ChapterSet("movie.txt", "movie.txt", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.FromSeconds(10), [new Chapter(1, TimeSpan.FromSeconds(5), "Intro")]))])],
                 [])),
             new FakeSaveService(),
             new ChapterEditingService(formatter),
@@ -264,7 +397,46 @@ public sealed class ToolWindowViewModelTests
             new FrameRateService(),
             localizer ?? new AppLocalizationManager("en-US"),
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine));
+            new ChapterExportService(formatter));
+    }
+
+    private sealed class DeferredContentOperationPort(
+        IChapterContentOperationPort inner,
+        TaskCompletionSource<TransactionOutcome>? completion,
+        bool forceNoChange = false) : IChapterContentOperationPort
+    {
+        public ChapterContentPreview? ExpressionPreview { get; private set; }
+
+        public bool CanPrepareExpression => inner.CanPrepareExpression;
+
+        public ChapterContentPreview PrepareExpression(string expression)
+        {
+            var preview = inner.PrepareExpression(expression);
+            ExpressionPreview = forceNoChange
+                ? preview with
+                {
+                    Candidate = preview.Before,
+                    Differences = System.Collections.Immutable.ImmutableArray<ChapterContentDifference>.Empty,
+                    Errors = System.Collections.Immutable.ImmutableArray<string>.Empty
+                }
+                : preview;
+            return ExpressionPreview;
+        }
+
+        public ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames) =>
+            inner.PrepareTemplateNames(autoGenerateNames, useTemplateNames);
+
+        public ChapterContentPreview PrepareContentOptions() => inner.PrepareContentOptions();
+
+        public ChapterContentPreview PrepareFrameShift(int frames) => inner.PrepareFrameShift(frames);
+
+        public ChapterContentPreview PrepareFrameRateConversion(FrameRateValue sourceFps, FrameRateValue targetFps) =>
+            inner.PrepareFrameRateConversion(sourceFps, targetFps);
+
+        public ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default) =>
+            new(completion?.Task ?? Task.FromException<TransactionOutcome>(new InvalidOperationException("No outcome was configured.")));
+
+        public void Cancel(ChapterContentPreview preview) => inner.Cancel(preview);
     }
 
     private sealed class FakeLoadService(ChapterImportResult result) : IChapterLoadService
@@ -274,7 +446,7 @@ public sealed class ToolWindowViewModelTests
 
     private sealed class FakeSaveService : IChapterSaveService
     {
-        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterExportOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
+        public ValueTask<ChapterExportResult> SaveAsync(ChapterSet info, ChapterSerializationOptions options, string? directory, CancellationToken cancellationToken, string? sourcePath = null) =>
             ValueTask.FromResult(new ChapterExportResult(true, string.Empty, ".txt", []));
     }
 
@@ -310,8 +482,9 @@ public sealed class ToolWindowViewModelTests
 
     private sealed class FakeChapterEditPort : IChapterEditPort
     {
-        public void ShiftFramesForward(int frames)
+        public ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default)
         {
+            return ValueTask.CompletedTask;
         }
     }
 

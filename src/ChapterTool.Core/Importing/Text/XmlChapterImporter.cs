@@ -142,7 +142,7 @@ public sealed class XmlChapterImporter(IChapterTimeFormatter timeFormatter) : IC
                 $"Edition {editionIndex + 1:D2}",
                 Path.GetFileName(path),
                 ChapterImportFormat.MatroskaXml,
-                0,
+                FrameRateValue.Unknown,
                 chapters.Count == 0 ? TimeSpan.Zero : chapters[^1].StartTime,
                 Renumber(chapters));
             entries.Add(new ChapterImportEntry($"edition-{editionIndex}", info.Title, info));

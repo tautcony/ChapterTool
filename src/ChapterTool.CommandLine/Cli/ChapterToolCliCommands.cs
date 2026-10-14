@@ -1,4 +1,6 @@
 using ChapterTool.Core.Localization;
+using ChapterTool.Core.Models;
+using System.Globalization;
 using DotMake.CommandLine;
 
 namespace ChapterTool.CommandLine.Cli;
@@ -57,6 +59,9 @@ public sealed class ConvertCliCommand
     [CliOption(Description = "Override frame rate for frame-based exports.", Required = false)]
     public double? FrameRate { get; set; }
 
+    [CliOption(Description = "Override frame rate with a positive Int64 ratio N/D. Mutually exclusive with --frame-rate.", Required = false)]
+    public string? FrameRateRatio { get; set; }
+
     [CliOption(Description = "Lua expression used to transform chapter times before export.", Required = false)]
     public string? Expression { get; set; }
 
@@ -79,6 +84,12 @@ public sealed class ConvertCliCommand
     {
         CliLanguage.WarnIfUnrecognized(Language);
         var localizer = new CliLocalizationManager(Language);
+        if (!TryResolveFrameRate(out var rate, out var errorKey))
+        {
+            await Console.Error.WriteLineAsync(localizer.GetString(errorKey));
+            return 1;
+        }
+
         var app = new ChapterToolCliApplication(localizer: localizer);
         return await app.ConvertAsync(
             new CliConvertRequest(
@@ -91,13 +102,64 @@ public sealed class ConvertCliCommand
                 EntryId,
                 XmlLanguage,
                 SourceFileName,
-                FrameRate,
+                rate,
                 Expression,
                 ExpressionPreset,
                 Force,
                 Encoding,
                 Bom),
             CancellationToken.None);
+    }
+
+    private bool TryResolveFrameRate(out FrameRateValue? rate, out string errorKey)
+    {
+        rate = null;
+        errorKey = "Cli.Error.FrameRatePositive";
+        if (FrameRate is not null && FrameRateRatio is not null)
+        {
+            errorKey = "Cli.Error.FrameRateConflict";
+            return false;
+        }
+
+        if (FrameRate is { } numeric)
+        {
+            return TryResolveNumericFrameRate(numeric, out rate);
+        }
+        if (FrameRateRatio is { } text)
+        {
+            errorKey = "Cli.Error.FrameRateRatio";
+            return TryResolveRationalFrameRate(text, out rate);
+        }
+
+        return true;
+    }
+
+    private static bool TryResolveNumericFrameRate(double value, out FrameRateValue? rate)
+    {
+        if (!FrameRateValue.TryFromDouble(value, metadata: false, out var normalized, out _))
+        {
+            rate = null;
+            return false;
+        }
+
+        rate = normalized;
+        return true;
+    }
+
+    private static bool TryResolveRationalFrameRate(string value, out FrameRateValue? rate)
+    {
+        var components = value.Split('/');
+        if (components.Length != 2
+            || !long.TryParse(components[0], NumberStyles.None, CultureInfo.InvariantCulture, out var numerator)
+            || !long.TryParse(components[1], NumberStyles.None, CultureInfo.InvariantCulture, out var denominator)
+            || numerator <= 0 || denominator <= 0)
+        {
+            rate = null;
+            return false;
+        }
+
+        rate = FrameRateValue.Rational(numerator, denominator);
+        return true;
     }
 }
 

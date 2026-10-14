@@ -28,7 +28,6 @@ public sealed class MainWindowInteractionHeadlessTests
         // Bound options are authoritative for save/preview paths.
         host.ViewModel.SaveFormatIndex = ChapterExportFormats.IndexOf(ChapterExportFormat.Txt);
         host.ViewModel.OrderShift = 1;
-        host.ViewModel.ApplyExpression = false;
         host.ViewModel.SourcePath = "movie.txt";
 
         var formatBox = host.RequiredControl<ComboBox>("FormatBox");
@@ -38,6 +37,7 @@ public sealed class MainWindowInteractionHeadlessTests
 
         await host.ViewModel.SaveCommand.ExecuteAsync();
         Assert.Equal(1, host.SaveService.Calls);
+        host.ViewModel.OrderShift = 0;
 
         var grid = host.RequiredControl<DataGrid>("ChapterGrid");
         var tags = grid.Columns
@@ -77,6 +77,38 @@ public sealed class MainWindowInteractionHeadlessTests
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
 
         Assert.Contains(host.ViewModel.Rows, row => row.TimeText.StartsWith("00:00:10", StringComparison.Ordinal));
+    }
+
+    [AvaloniaFact]
+    public async Task Last_chapter_cell_can_be_scrolled_to_and_committed()
+    {
+        var names = Enumerable.Range(1, 80).Select(index => $"Chapter {index:D2}").ToArray();
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", names)));
+        await host.LoadAsync("movie.txt");
+        await host.LayoutAsync(width: 760, height: 520);
+
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var nameColumn = Assert.Single(grid.Columns, column =>
+            string.Equals(column.Tag?.ToString(), ChapterGridColumnIds.Name, StringComparison.Ordinal));
+        var lastRow = host.ViewModel.Rows[^1];
+        grid.SelectedItem = lastRow;
+        grid.CurrentColumn = nameColumn;
+        grid.ScrollIntoView(lastRow, nameColumn);
+        Assert.Same(lastRow, grid.SelectedItem);
+        grid.Focus();
+        host.Window.KeyPress(Key.F2, RawInputModifiers.None, PhysicalKey.F2, string.Empty);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        var editor = grid.GetVisualDescendants()
+            .OfType<TextBox>()
+            .Single(textBox => textBox.Classes.Contains("gridEditor"));
+        editor.Text = "Last row committed";
+        host.Window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, string.Empty);
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+
+        Assert.Equal("Last row committed", lastRow.Name);
     }
 
     [AvaloniaFact]
@@ -141,6 +173,38 @@ public sealed class MainWindowInteractionHeadlessTests
         Assert.Contains("preview", host.WindowService.Opened);
     }
 
+    [AvaloniaFact]
+    public async Task History_tool_entry_preserves_branches_and_shortcuts_respect_editor_focus()
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LoadAsync("movie.txt");
+        Assert.True(host.ViewModel.HasHistory);
+        Assert.True(host.ViewModel.CanOpenHistory);
+        await host.ViewModel.HistoryCommand.ExecuteAsync();
+        Assert.Contains("history", host.WindowService.Opened);
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "First"));
+        var firstNode = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent);
+        await host.ViewModel.UndoCommand.ExecuteAsync();
+        await host.ViewModel.EditNameCommand.ExecuteAsync(new ChapterCellEdit(0, "Alternate"));
+        var alternateNode = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent);
+        Assert.NotEqual(firstNode.Id, alternateNode.Id);
+
+        await host.ViewModel.NavigateHistoryCommand.ExecuteAsync(firstNode.Id);
+        Assert.Equal("First", host.ViewModel.Rows[0].Name);
+        Assert.Contains(host.ViewModel.HistoryEntries, entry => entry.IsCurrent && entry.Id == firstNode.Id);
+
+        await host.FocusAndPressAsync(Key.Z, KeyModifiers.Control);
+        Assert.Equal("Intro", host.ViewModel.Rows[0].Name);
+        var cursor = Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent).Id;
+
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Focus();
+        host.Window.KeyPress(Key.Z, RawInputModifiers.Control, PhysicalKey.Z, "z");
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        Assert.Equal(cursor, Assert.Single(host.ViewModel.HistoryEntries, entry => entry.IsCurrent).Id);
+
+    }
+
     [AvaloniaTheory]
     [InlineData(Key.Delete, PhysicalKey.Delete, "tme")]
     [InlineData(Key.Back, PhysicalKey.Backspace, "ime")]
@@ -165,6 +229,50 @@ public sealed class MainWindowInteractionHeadlessTests
 
         Assert.Equal(expectedText, expressionBox.EditorText);
         Assert.Equal(2, host.ViewModel.Rows.Count);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Expression_tab_focus_supports_backspace_and_text_input(bool selectAll)
+    {
+        using var host = new MainWindowHeadlessTestHost();
+        await host.LayoutAsync();
+        var expressionBox = host.RequiredControl<ExpressionEditor>("ExpressionBox");
+        expressionBox.Text = "t/3.33";
+        host.RequiredControl<DataGrid>("ChapterGrid").Focus();
+        for (var i = 0; i < 40 && !expressionBox.IsKeyboardFocusWithin; i++)
+        {
+            host.Window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, string.Empty);
+            await host.LayoutAsync();
+        }
+        var inner = expressionBox.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single();
+        Assert.Same(inner.TextArea, host.Window.FocusManager!.GetFocusedElement());
+        inner.CaretOffset = inner.Document.TextLength;
+        if (selectAll)
+        {
+            inner.SelectAll();
+        }
+        host.Window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+        await host.LayoutAsync();
+        var expectedAfterDeletion = selectAll ? string.Empty : "t/3.3";
+        Assert.Equal(expectedAfterDeletion, expressionBox.EditorText);
+
+        host.Window.KeyTextInput("2");
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion + "2", expressionBox.EditorText);
+        host.Window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion, expressionBox.EditorText);
+
+        host.RequiredControl<DataGrid>("ChapterGrid").Focus();
+        inner.TextArea.Focus();
+        host.Window.KeyTextInput("4");
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion + "4", expressionBox.EditorText);
+        host.Window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, string.Empty);
+        await host.LayoutAsync();
+        Assert.Equal(expectedAfterDeletion, expressionBox.EditorText);
     }
 
     [AvaloniaFact]
@@ -214,25 +322,91 @@ public sealed class MainWindowInteractionHeadlessTests
     }
 
     [AvaloniaFact]
-    public async Task Expression_edit_delays_invalid_result_but_applies_valid_result_immediately()
+    public async Task Expression_edit_requires_preview_and_apply_and_rejects_invalid_candidate()
     {
         using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
             "movie.txt",
             MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", "Intro")));
         await host.LoadAsync("movie.txt");
-        host.ViewModel.ApplyExpression = true;
         host.ViewModel.Expression = "t + 1";
+        Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        var originalFrames = Assert.Single(host.ViewModel.Rows).FramesInfo;
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("00:00:01.000", host.ViewModel.Rows[0].PreviewTimeText);
+        Assert.Empty(host.ViewModel.ExpressionPreviewText);
+        await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("24", Assert.Single(host.ViewModel.Rows).FramesInfo);
+        await host.ViewModel.UndoCommand.ExecuteAsync();
+        Assert.Equal("00:00:00.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal(originalFrames, Assert.Single(host.ViewModel.Rows).FramesInfo);
+        await host.ViewModel.RedoCommand.ExecuteAsync();
+        Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("24", Assert.Single(host.ViewModel.Rows).FramesInfo);
 
         host.ViewModel.Expression = "t +";
-        host.ViewModel.Expression = "t + (";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.False(host.ViewModel.CanApplyContentPreview);
         Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
 
         host.ViewModel.Expression = "t + 2";
-        Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("00:00:01.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        host.ViewModel.RefreshExpressionPreviewNow();
+        Assert.True(host.ViewModel.CanApplyContentPreview);
+        await host.ViewModel.ApplyContentPreviewCommand.ExecuteAsync();
+        Assert.Equal("00:00:03.000", Assert.Single(host.ViewModel.Rows).TimeText);
 
         await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
-        Assert.Equal("00:00:02.000", Assert.Single(host.ViewModel.Rows).TimeText);
+        Assert.Equal("00:00:03.000", Assert.Single(host.ViewModel.Rows).TimeText);
+    }
+
+    [AvaloniaFact]
+    public async Task Preview_discard_and_apply_keep_the_selected_last_row_and_scroll_position()
+    {
+        var chapterNames = Enumerable.Range(1, 80).Select(index => $"Repeated name {index % 2}").ToArray();
+        using var host = new MainWindowHeadlessTestHost(MainWindowHeadlessTestHost.ImportResult(
+            "movie.txt",
+            MainWindowHeadlessTestHost.Entry(ChapterImportFormat.Ogm, "movie.txt", chapterNames)));
+        await host.LoadAsync("movie.txt");
+        await host.LayoutAsync(width: 760, height: 520);
+
+        var grid = host.RequiredControl<DataGrid>("ChapterGrid");
+        var lastRow = host.ViewModel.Rows[^1];
+        var nameColumn = Assert.Single(grid.Columns, column =>
+            string.Equals(column.Tag?.ToString(), ChapterGridColumnIds.Name, StringComparison.Ordinal));
+        grid.SelectedItem = lastRow;
+        grid.CurrentColumn = nameColumn;
+        grid.ScrollIntoView(lastRow, nameColumn);
+        grid.ApplyTemplate();
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        var scrollViewer = host.Window.GetVisualDescendants().OfType<ScrollViewer>().FirstOrDefault();
+        Assert.NotNull(scrollViewer);
+        var offset = scrollViewer.Offset;
+
+        host.ViewModel.Expression = "t + 1";
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        Assert.Same(lastRow, grid.SelectedItem);
+        Assert.Equal(offset, scrollViewer.Offset);
+        Assert.Equal("Repeated name 0", lastRow.Name);
+        Assert.True(lastRow.HasPreviewTimeChange);
+
+        await host.ViewModel.CancelContentPreviewCommand.ExecuteAsync();
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        Assert.Same(lastRow, grid.SelectedItem);
+        Assert.Equal(offset, scrollViewer.Offset);
+        Assert.False(lastRow.HasPreviewTimeChange);
+
+        host.ViewModel.RefreshExpressionPreviewNow();
+        await host.MainView.ApplyContentPreviewCommand.ExecuteAsync();
+        await MainWindowHeadlessTestHost.ExecuteLayoutAsync(host.Window);
+        Assert.Same(host.ViewModel.Rows[^1], grid.SelectedItem);
+        Assert.Equal(lastRow.ChapterId, Assert.IsType<ChapterRowViewModel>(grid.SelectedItem).ChapterId);
+        Assert.Equal(offset, scrollViewer.Offset);
+        Assert.Equal("00:13:11.000", host.ViewModel.Rows[^1].TimeText);
     }
 
     [AvaloniaFact]

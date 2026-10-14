@@ -6,7 +6,7 @@ namespace ChapterTool.TestSupport;
 public static class TestRepository
 {
     /// <summary>
-    /// Walks up from the testhost output directory until <c>ChapterTool.slnx</c> is found.
+    /// Gets walks up from the testhost output directory until <c>ChapterTool.slnx</c> is found.
     /// </summary>
     public static string Root
     {

@@ -18,7 +18,6 @@
       <Color x:Key="Color.Border1">#FF898989</Color>
       <Color x:Key="Color.Border2">#FFCFCFCF</Color>
       <Color x:Key="Color.FlatButton.Background">#FFF8F8F8</Color>
-      <Color x:Key="Color.FlatButton.BackgroundHovered">White</Color>
       <Color x:Key="Color.FG1">#FF1F1F1F</Color>
       <Color x:Key="Color.FG2">#FF6F6F6F</Color>
       <Color x:Key="Color.Hover">#FFD6E9F8</Color>
@@ -36,7 +35,6 @@
       <Color x:Key="Color.Border1">#FF7C7C7C</Color>
       <Color x:Key="Color.Border2">#FF404040</Color>
       <Color x:Key="Color.FlatButton.Background">#FF303030</Color>
-      <Color x:Key="Color.FlatButton.BackgroundHovered">#FF333333</Color>
       <Color x:Key="Color.FG1">#FFDFDFDF</Color>
       <Color x:Key="Color.FG2">#FF9F9F9F</Color>
       <Color x:Key="Color.Hover">#FF333333</Color>
@@ -48,13 +46,13 @@
   <SolidColorBrush x:Key="Brush.Window" Color="{DynamicResource Color.Window}"/>
   <SolidColorBrush x:Key="Brush.WindowBorder" Color="{DynamicResource Color.WindowBorder}"/>
   <SolidColorBrush x:Key="Brush.ToolBar" Color="{DynamicResource Color.ToolBar}"/>
+  <SolidColorBrush x:Key="Brush.StatusBar" Color="{DynamicResource Color.Contents}"/>
   <SolidColorBrush x:Key="Brush.Popup" Color="{DynamicResource Color.Popup}"/>
   <SolidColorBrush x:Key="Brush.PopupBorder" Color="{DynamicResource Color.PopupBorder}"/>
   <SolidColorBrush x:Key="Brush.Contents" Color="{DynamicResource Color.Contents}"/>
   <SolidColorBrush x:Key="Brush.Border1" Color="{DynamicResource Color.Border1}"/>
   <SolidColorBrush x:Key="Brush.Border2" Color="{DynamicResource Color.Border2}"/>
   <SolidColorBrush x:Key="Brush.FlatButton.Background" Color="{DynamicResource Color.FlatButton.Background}"/>
-  <SolidColorBrush x:Key="Brush.FlatButton.BackgroundHovered" Color="{DynamicResource Color.FlatButton.BackgroundHovered}"/>
   <SolidColorBrush x:Key="Brush.FG1" Color="{DynamicResource Color.FG1}"/>
   <SolidColorBrush x:Key="Brush.FG2" Color="{DynamicResource Color.FG2}"/>
   <SolidColorBrush x:Key="Brush.Accent" Color="{DynamicResource SystemAccentColor}"/>

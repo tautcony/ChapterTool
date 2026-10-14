@@ -27,7 +27,7 @@ public sealed class XplImporterTests
             Assert.Equal(ChapterImportFormat.HdDvdXpl, actual.ImportFormat);
             Assert.Equal(expected.Title, actual.Title);
             Assert.Equal(expected.SourceName, actual.SourceName);
-            Assert.Equal(24, actual.FramesPerSecond);
+            Assert.Equal(FrameRateValue.Unknown, actual.FrameRate);
             AssertTimeNear(expected.Duration, actual.Duration);
             Assert.Equal(expected.ChapterCount, actual.Chapters.Count);
             AssertTimeNear(expected.FirstTime, actual.Chapters[0].StartTime);
@@ -123,7 +123,7 @@ public sealed class XplImporterTests
     }
 
     [Fact]
-    public async Task XplImporterRejectsDtdInput()
+    public async Task XplImporterIgnoresDtdInput()
     {
         const string xml = """
                            <!DOCTYPE Playlist [<!ENTITY injected "untrusted">]>
@@ -137,7 +137,29 @@ public sealed class XplImporterTests
         var result = await importer.ImportAsync(new ChapterImportRequest("untrusted.xpl", stream), TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
-        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
+        Assert.Contains(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplNoChapters);
+        Assert.DoesNotContain(result.Diagnostics, diagnostic => diagnostic.Code == ChapterDiagnosticCode.XplParseFailed);
+    }
+
+    [Fact]
+    public async Task DecimalClocksPreserveTimestampInterpretationWithoutVideoRate()
+    {
+        const string xml = """
+            <Playlist xmlns="http://www.dvdforum.org/2005/HDDVDVideo/Playlist">
+              <TitleSet timeBase="59.94fps" tickBase="23.976fps">
+                <Title titleDuration="00:00:10:00" tickBaseDivisor="2">
+                  <ChapterList><Chapter titleTimeBegin="00:00:01:1.5" /></ChapterList>
+                </Title>
+              </TitleSet>
+            </Playlist>
+            """;
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml));
+        var result = await new XplChapterImporter().ImportAsync(new ChapterImportRequest("clocks.xpl", stream), TestContext.Current.CancellationToken);
+        Assert.True(result.Success, Diagnostics(result));
+        var set = Assert.Single(result.Groups.Single().Entries).ChapterSet;
+        Assert.Equal(FrameRateValue.Unknown, set.FrameRate);
+        Assert.Equal(99_900_000, set.Duration.Ticks);
+        Assert.Equal(11_241_251, set.Chapters[0].StartTime.Ticks);
     }
 
     private static string Diagnostics(ChapterImportResult result) =>

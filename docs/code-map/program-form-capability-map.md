@@ -18,7 +18,7 @@ Use this document to compare the supported functions of every program form.
 
 Keep code identifiers, paths, commands, and user interface strings exact.
 
-Last reviewed: 2026-08-26
+Last reviewed: 2026-10-11
 
 ## 1. Program Forms
 
@@ -76,7 +76,7 @@ packages/chaptertool ------> ChapterTool.Node ------> ChapterTool.Core
 | Standalone CLI | `src/ChapterTool.CommandLine/Program.cs` | `src/ChapterTool.CommandLine/ChapterToolCliHost.cs` | `ChapterToolCliApplication.ImportAsync` | `ChapterToolCliApplication.ConvertAsync` | `tests/ChapterTool.CommandLine.Tests/Cli/ChapterToolCliApplicationTests.cs` |
 | Avalonia desktop | `src/ChapterTool.Avalonia/Program.cs` | `src/ChapterTool.Avalonia/Composition/AppCompositionRoot.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterLoadService.cs` | `src/ChapterTool.Avalonia/Services/RuntimeChapterSaveService.cs` | `tests/ChapterTool.Avalonia.Tests` and `tests/ChapterTool.Avalonia.Headless.Tests` |
 | Blazor WebAssembly browser | `src/ChapterTool.Wasm/Program.cs` | `src/ChapterTool.Wasm/Pages/Home.razor` and `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` | `src/ChapterTool.Wasm/Services/WasmChapterService.cs` | `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` and `wwwroot/js/download.js` | `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` |
-| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeCoreApi.cs` | `packages/chaptertool/test/chaptertool.test.ts` and `core-api.test.ts` |
+| Node.js package | `src/ChapterTool.Node/Program.cs` | `packages/chaptertool/src/index.ts` | `src/ChapterTool.Node/NodeExactApi.cs` | `src/ChapterTool.Node/NodeApi.cs` and `NodeExactApi.cs` | `packages/chaptertool/test/exact-api.test.ts` |
 
 ### 2.1 Host Defaults
 
@@ -146,6 +146,8 @@ They do not describe product priority.
 | Insert and delete rows | Provides edit operations | Does not provide row commands | Provides insert and delete commands | Provides insert and delete actions | Core editing service plus host command layer `[Host variant]` |
 | Delete-rows timing preference | Provides `ChapterEditingOptions.DeleteRowsTiming` (`Preserve` or `Normalize`) | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; reaches Core through `ClipEditingCoordinator.Delete` | Drafts and applies through `Home.razor`; reaches Core through `WasmWorkspace.EditingOptions` | `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs` `[Host variant]` |
 | Frame display preference | Provides `ChapterEditingOptions.FrameDisplay` (`Round` or `DecimalPlaces`) and `EffectiveFrameDecimalPlaces` | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; drives frame-update precision in `MainWindowViewModel.Editing.cs` | Drafts and applies through `Home.razor`; drives `WasmWorkspace.EditingOptions` | `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs` `[Host variant]` |
+| Repeating-decimal preference | Uses `FramePresentationPolicy` to format exact frame ratios | Does not expose an interactive preference | Drafts and applies through `SettingsToolViewModel`; refreshes frame presentation | Applies valid settings drafts live; formats rows with `FrameValueView` | `FramePresentationPolicy`, `FrameValueFormatter`, and each host's settings view `[Shared]` |
+| History inspection and redo branches | Provides retained history and parent-relative field inspection | Does not retain an interactive session | Provides a tree, field details, and deferred redo choices | Provides a responsive tree, root rows, field filters, and deferred redo choices | `SessionState`, `HistoryInspectionViewModel`, `WasmHistoryProjection`, and `HistoryDialog.razor` `[Host variant]` |
 | Select multiple rows | Provides model collections only | Does not provide row selection | Uses DataGrid selection | Uses `WasmWorkspace.SelectRow` | `MainWindowViewModel` and `WasmWorkspace` `[Host variant]` |
 | Combine and restore clips | Provides `ChapterSegmentService` | Does not provide interactive clip state | Uses `ClipSession` | Uses `WasmWorkspace` clip state | `src/ChapterTool.Core/Editing/ChapterSegmentService.cs` `[Host variant]` |
 | Forward frame shift | Provides frame transform services | Provides frame-rate and export options only | Provides `ForwardShiftToolView` | Provides a browser forward-shift action | `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs` `[Host variant]` |
@@ -160,12 +162,12 @@ They do not describe product priority.
 | Chapter name preservation | Provides projection options | Preserves names by default | Provides a source-name option | Provides a source-name option | `ChapterOutputProjectionService` `[Shared]` |
 | Automatic chapter names | Provides projection logic | Uses export projection | Provides an automatic-name option | Provides an automatic-name option | `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` `[Shared]` |
 | Template names | Provides template projection | Does not expose a template file option | Reads a local template file | Reads a browser text file | `ChapterNameTemplateReader` and `WasmWorkspace` `[Host variant]` |
-| Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides expression editing and application | Applies text expressions and Core built-in presets through `WasmWorkspace` | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
-| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Surfaces Core expression diagnostics to status/log; no completion editor | `ExpressionEditor` (desktop) and `WasmWorkspace` diagnostics `[Host variant]` |
+| Lua expressions | Provides Lua execution | Supports `--expression` and `--expression-preset` | Provides inline expression editing, candidate preview, and application | Provides inline expression editing, candidate preview, and application through `WasmWorkspace` | `src/ChapterTool.Core/Transform/Expressions/Lua/` `[Host variant]` |
+| Expression authoring | Provides analysis contracts and authoring services | Does not provide completion UI | Provides completion and diagnostics | Loads Lua files. The main editor has floating diagnostics. The advanced dialog provides highlighting and completion | `Home.razor`, `ExpressionDialog.razor`, and `ExpressionAuthoringService` `[Host variant]` |
 | Export formats | Provides all Core export formats | Lists and writes all CLI formats | Provides all desktop save formats | Provides all browser save formats | `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs` `[Shared]` |
 | XML language | Provides the language catalog | Supports `--xml-language` | Provides a localized language selector | Provides a language selector | `XmlChapterLanguageCatalog` `[Host variant]` |
 | Text encoding | Provides encoding options | Writes UTF-8 output without a BOM | Uses selected encoding and BOM options | Uses selected encoding and browser download bytes | `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs` `[Host variant]` |
-| Preview | Provides export projection and serialization | Does not provide a separate preview command | Provides preview before save | Provides preview before download | `ProjectionFacade` and `WasmWorkspace.Preview` `[Host variant]` |
+| Preview | Provides pure serialization of supplied content | Does not provide a separate preview command | Serializes committed content before save | Serializes committed content before download | `MainWindowViewModel.BuildPreview` and `WasmWorkspace.Preview` `[Host variant]` |
 | Save to a file | Provides export content | Writes a local output path or standard output | Writes a selected or configured local path | Starts a browser download | `ChapterToolCliApplication`, `RuntimeChapterSaveService`, and `download.js` `[Host variant]` |
 | Standard output | Does not own streams | Writes exported content to stdout and diagnostics to stderr | Does not own terminal output | Not applicable | `src/ChapterTool.CommandLine/Cli/ChapterToolCliApplication.cs` `[CLI only]` |
 
@@ -174,18 +176,19 @@ They do not describe product priority.
 | Capability | Core | Standalone CLI | Avalonia desktop | WASM browser | Owner and entry point |
 | --- | --- | --- | --- | --- | --- |
 | Settings model | Provides no host settings store | Reads shared `ChapterToolSettings` for CLI output defaults | Reads and writes shared `ChapterToolSettings` | Uses a browser settings model | `ChapterToolSettings` and `WasmSettings` `[Host variant]` |
+| Keyboard shortcuts | Provides no input layer | Uses terminal key handling | Provides editable shortcut mappings and conflict validation | Drafts shared mappings, validates conflicts, and routes commands outside text controls and dialogs | `ShortcutCatalog`, `ShortcutSettings`, `ShortcutRouter`, `WasmShortcuts`, and `ShortcutSettingsEditor.razor` `[Host variant]` |
 | Settings persistence | Provides no persistence boundary | Uses `settings.json` under the shared ChapterTool settings directory | Uses the same `settings.json` directory | Uses `localStorage` | `ChapterToolRuntimeComposition`, `ChapterToolSettingsStore`, and `Home.razor` `[Host variant]` |
-| Settings close confirmation | Provides no UI boundary | Not applicable | Asks whether to keep the settings tool open when unapplied changes exist through `AvaloniaSettingsCloseConfirmationService` | Not applicable | `src/ChapterTool.Avalonia/Services/AvaloniaSettingsCloseConfirmationService.cs` `[Desktop only]` |
+| Settings close confirmation | Provides no UI boundary | Not applicable | Confirms unapplied changes through `AvaloniaSettingsCloseConfirmationService` | Offers discard or keep editing for changed drafts | `AvaloniaSettingsCloseConfirmationService` and `Home.razor` `[Host variant]` |
 | Save directory | Provides no directory policy | Uses `--output`, settings, or the source directory | Uses a picker, settings, or the source directory | Uses the browser download directory | `ChapterToolCliApplication`, `ChapterSaveDirectory`, and `download.js` `[Host variant]` |
 | External tool configuration | Provides no native tool boundary | Reads configured tool paths and `PATH` search directories | Reads and edits configured tool paths | Does not use native tools | `ChapterToolRuntimeComposition` and `ExternalToolLocator` `[Desktop and CLI]` |
 | Process execution | Provides no process boundary | Runs external import tools through Infrastructure | Runs external import tools through Infrastructure | Cannot start local processes | `src/ChapterTool.Infrastructure/Processes/ProcessRunner.cs` `[Desktop and CLI]` |
 | Theme presets | Provides no UI resource layer | Uses terminal text only | Uses Avalonia theme resources | Uses CSS theme resources | `ThemePresetCatalog`, Avalonia theme service, and WASM styles `[Host variant]` |
 | System fonts | Provides no font enumeration | Uses terminal output only | Enumerates and applies system fonts | Uses CSS font stacks | `AvaloniaFontFamilyCatalog` and WASM CSS `[Desktop only]` |
-| Language selection | Provides no UI localization | Uses CLI-owned `.json` resources | Uses Avalonia-owned `.axaml` resources | Uses Web-only `.json` resources | `CliLocalizationManager`, `AvaloniaLocalizationResourceAdapter`, and `WasmLocalizer` `[Host variant]` |
+| Language selection | Provides no UI localization | Uses CLI-owned `.json` resources | Uses shared `.axaml` resources | Uses `.json` resources generated from the shared locales | `CliLocalizationManager`, `AvaloniaLocalizationResourceAdapter`, `WasmLocalizer`, and `axaml-to-json.py` `[Host variant]` |
 | Shell operations | Provides no shell boundary | Does not open paths | Opens paths through `IShellService` | Uses browser links or browser APIs | `src/ChapterTool.Infrastructure/Platform/ShellService.cs` `[Desktop only]` |
 | Clipboard | Provides no clipboard boundary | Uses standard streams | Uses the desktop clipboard adapter | Uses browser clipboard APIs | `IClipboardService` and browser JavaScript `[Host variant]` |
 | Application telemetry | Provides no telemetry startup | Does not initialize Sentry | Initializes Sentry for GUI startup when configured | Does not use the desktop Sentry startup | `src/ChapterTool.Avalonia/Program.cs` `[Desktop only]` |
-| Logs and diagnostics | Provides structured diagnostics | Writes diagnostics to terminal streams | Uses the application log panel and localized UI messages | Uses in-memory logs and localized UI messages | `ChapterDiagnostic`, `ApplicationLogPanelProvider`, and `WasmWorkspace` `[Host variant]` |
+| Logs and diagnostics | Provides structured diagnostics | Writes diagnostics to terminal streams | Uses the application log panel with JSON and CSV export | Filters bounded activity logs, opens details, and exports filtered JSON or CSV | `ChapterDiagnostic`, `ApplicationLogPanelProvider`, `ApplicationLogFileExporter`, `WasmLogView`, and `LogDialog.razor` `[Host variant]` |
 | Progress | Provides import progress contracts | Does not render interactive progress | Renders import progress in the desktop workflow | Reports browser load and import progress | `ChapterImportProgress` and host workflows `[Host variant]` |
 | Input size limit | Defines the portable 64 MiB byte budget | Uses local file boundaries | Uses local file boundaries | Enforces the shared budget for load, reload, and append | `src/ChapterTool.Core/Boundaries/PortableInputPolicy.cs`, `WasmWorkspace.cs`, `NodeApi.cs`, and `packages/chaptertool/src/utils/input.ts` `[Shared portable boundary]` |
 
@@ -272,6 +275,16 @@ Start with these paths for browser behavior:
 - Application startup: `src/ChapterTool.Wasm/Program.cs`
 - Root components: `src/ChapterTool.Wasm/App.razor` and `src/ChapterTool.Wasm/Layout/MainLayout.razor`
 - Workspace page: `src/ChapterTool.Wasm/Pages/Home.razor`
+- Native dialog lifecycle: `src/ChapterTool.Wasm/Components/WasmDialog.razor` and `src/ChapterTool.Wasm/wwwroot/js/download.js`
+- History tree, field inspection, and deferred redo choices: `src/ChapterTool.Wasm/Components/HistoryDialog.razor`, `Services/WasmWorkspace.History.cs`, and `Services/WasmHistoryProjection.cs`
+- Combined main-window naming, numbering, and expression candidates: `src/ChapterTool.Wasm/Pages/Home.razor` and `Services/WasmWorkspace.MainOptions.cs`
+- Live settings drafts, save, and runtime rollback: `src/ChapterTool.Wasm/Pages/Home.razor`
+- Advanced expression editor: `src/ChapterTool.Wasm/Components/ExpressionDialog.razor`
+- Advanced export draft: `src/ChapterTool.Wasm/Components/ExportOptionsDialog.razor`
+- Reviewed naming, numbering, frame shift, and conversion: `src/ChapterTool.Wasm/Components/ContentOperationDialog.razor` and `Services/WasmWorkspace.Operations.cs`
+- Identity-based cell drafts: `src/ChapterTool.Wasm/Components/ChapterCellEditor.razor`
+- Shared shortcut settings: `src/ChapterTool.Wasm/Components/ShortcutSettingsEditor.razor` and `Services/WasmShortcuts.cs`
+- Filtered log projection and inspector: `src/ChapterTool.Wasm/Services/WasmLogView.cs` and `Components/LogDialog.razor`
 - Workspace state: `src/ChapterTool.Wasm/Services/WasmWorkspace.cs`
 - Core import and export adapter: `src/ChapterTool.Wasm/Services/WasmChapterService.cs`
 - Shared session state: `src/ChapterTool.Core/Session/ChapterWorkspace.cs`
@@ -294,7 +307,7 @@ The Node.js package owns JavaScript input conversion, .NET WebAssembly startup, 
 Start with these paths for Node.js package behavior:
 
 - WebAssembly host: `src/ChapterTool.Node/NodeApi.cs`
-- Core operation exports: `src/ChapterTool.Node/NodeCoreApi.cs`
+- Exact Core operation exports: `src/ChapterTool.Node/NodeExactApi.cs`
 - TypeScript API source and `ChapterTool` class: `packages/chaptertool/src/index.ts`
 - TypeScript type model: `packages/chaptertool/src/types.ts`
 - TypeScript initialization helper: `packages/chaptertool/src/api-loader.ts`

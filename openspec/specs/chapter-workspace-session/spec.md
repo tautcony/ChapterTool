@@ -1,16 +1,14 @@
 # chapter-workspace-session Specification
 
 ## Purpose
-Define the explicit chapter workspace/session boundary that owns GUI chapter state, async revisions, projection state, and export preferences.
-
+Define the explicit chapter workspace/session boundary that owns GUI chapter state, async revisions, content operation drafts, and export preferences.
 ## Requirements
-
 ### Requirement: Explicit chapter workspace owns session lifecycle
 The Avalonia shell SHALL own loaded chapter session state through an explicit workspace/session abstraction rather than an ad-hoc collection of independent fields on the main window ViewModel.
 
 #### Scenario: Workspace exists after construction
 - **WHEN** the main window ViewModel is constructed for normal GUI use
-- **THEN** it SHALL hold or be composed with a single chapter workspace/session object that owns source path metadata, clip session state, the current editable chapter set, projection options, and export preferences used by commands
+- **THEN** it SHALL hold or be composed with a single chapter workspace/session object that owns source path metadata, clip session metadata, one authoritative content session, operation drafts, and export preferences used by commands
 
 #### Scenario: Load replaces workspace session atomically
 - **WHEN** a source load succeeds
@@ -84,21 +82,24 @@ The workspace SHALL represent multi-clip selection and combined-clip mode as an 
 - **THEN** the workspace SHALL write the resulting chapter set back into the active clip session according to mode (selected split entry vs combined entry)
 - **AND** callers SHALL NOT need a separate `belongsToSelectedClip` boolean to decide ownership
 
-### Requirement: Projection state is owned by the workspace
-Naming mode, order shift, expression application, expression text/preset/source metadata, and last-successful expression projection cache SHALL be owned by a projection state surface on the workspace.
+### Requirement: Operation drafts do not project committed content
+Naming, numbering, and expression parameters SHALL remain drafts until the user applies a content operation. Draft values SHALL NOT change the current document, table rows, format preview, or export.
 
-#### Scenario: Projection options feed rows and export identically
-- **WHEN** projection options change or the current chapter set changes
-- **THEN** chapter rows and preview/save projection inputs SHALL be derived from the same workspace projection state
+#### Scenario: Draft options change
+- **WHEN** the user edits template, numbering, or expression parameters
+- **THEN** the workspace SHALL keep those values as operation drafts
+- **AND** the current document, rows, preview, and export SHALL continue to use committed content
 
-#### Scenario: Invalid mid-edit expression keeps last successful projection
-- **WHEN** expression application is enabled and the current expression is temporarily invalid while a previous successful projection exists
-- **THEN** displayed rows MAY continue showing the last successful projected output until a valid projection replaces it
-- **AND** the diagnostic path SHALL still surface the current expression failure
+#### Scenario: Operation candidate is applied
+- **WHEN** the user applies a valid operation candidate
+- **THEN** the workspace SHALL commit the candidate through `ContentSession`
+- **AND** table rows, format preview, and export SHALL read that committed document
+- **AND** undo SHALL restore the preceding committed content
 
-#### Scenario: Expression state mutation does not thrash intermediate refreshes
-- **WHEN** several expression-related fields are updated as one apply operation
-- **THEN** the workspace/ViewModel SHALL avoid intermediate row refreshes that use partially updated expression fields
+#### Scenario: Expression candidate is invalid
+- **WHEN** any chapter expression result is invalid or violates document invariants
+- **THEN** the operation SHALL fail without partially changing the document or history
+- **AND** the current diagnostic SHALL be reported without retaining a prior projected row set
 
 ### Requirement: Export preferences are a workspace snapshot
 Save format, XML language, text encoding, BOM emission, and effective save-directory resolution inputs SHALL be readable as an export-preference snapshot from the workspace for save and preview.
@@ -150,3 +151,35 @@ Clip mode transitions, load/replace, append, restore, projection refresh, and ex
 - **WHEN** unit tests overlap an older load with a newer load, or an in-flight append with a newer load, using deterministic controlled load services
 - **THEN** they SHALL assert that only the current revision's path, rows, and combine state remain after late completions
 - **AND** late progress from superseded operations SHALL NOT change the current progress state
+
+### Requirement: Expression draft previews remain read-only until applied
+Expression drafts SHALL produce candidate previews from one current session snapshot. Preparing or refreshing a preview SHALL NOT change the committed document, table rows, export output, or history. Applying a valid current candidate SHALL create one atomic history transaction.
+
+#### Scenario: Expression draft refreshes its candidate
+- **WHEN** the user changes expression text or selects a preset
+- **THEN** the workspace SHALL compute a candidate from the current committed document snapshot
+- **AND** the preview SHALL report before-and-after values and validation errors
+- **AND** the committed document, rows, exports, and history SHALL remain unchanged
+
+#### Scenario: Invalid expression candidate is shown without partial changes
+- **WHEN** expression evaluation or document validation fails
+- **THEN** the workspace SHALL expose the current diagnostic in the preview
+- **AND** it SHALL NOT change the committed document or history
+- **AND** it SHALL NOT allow the candidate to be applied
+
+#### Scenario: Current valid expression candidate is applied once
+- **WHEN** the user applies a valid candidate whose base snapshot is still current
+- **THEN** the workspace SHALL commit the candidate as one transaction
+- **AND** rows, format preview, and export SHALL use the committed candidate values
+- **AND** undo SHALL restore the values before the expression operation without rerunning Lua
+
+#### Scenario: Stale expression candidate is not committed
+- **WHEN** the document changes after the expression preview was prepared
+- **THEN** applying that preview SHALL NOT overwrite the newer document
+- **AND** the host SHALL prepare a new candidate from the latest snapshot
+
+#### Scenario: Expression preview is canceled
+- **WHEN** the user cancels an expression preview
+- **THEN** the preview SHALL be discarded
+- **AND** the committed document, rows, export output, and history SHALL remain unchanged
+

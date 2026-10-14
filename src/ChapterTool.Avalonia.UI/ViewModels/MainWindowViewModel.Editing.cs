@@ -1,9 +1,10 @@
 using System.Collections.Specialized;
+using ChapterTool.Avalonia.UI.Localization;
 using ChapterTool.Avalonia.UI.Workflows;
-using ChapterTool.Core.Editing;
 using ChapterTool.Core.Models;
 using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
@@ -21,45 +22,66 @@ public sealed partial class MainWindowViewModel
         {
             return;
         }
+        InvalidatePendingContentPreview();
         SelectedClipIndex = Workspace.ClipSession.SelectedIndex;
         if (CurrentInfo is null)
         {
             return;
         }
 
-        configuredFrameRate = (decimal)CurrentInfo.FramesPerSecond;
         if (logSelection)
         {
-            Log("Log.SelectedSourceOption",
-                ("index", index),
-                ("label", ClipOptions[index].DisplayName),
-                ("source", CurrentInfo.SourceName ?? string.Empty),
-                ("sourceType", ChapterImportFormats.DisplayName(CurrentInfo.ImportFormat)),
-                ("chapters", CurrentInfo.Chapters.Count),
-                ("fps", $"{CurrentInfo.FramesPerSecond:0.###}"));
+            var label = ClipOptions[index].DisplayName;
+            var source = CurrentInfo.SourceName ?? string.Empty;
+            var sourceType = ChapterImportFormats.DisplayName(CurrentInfo.ImportFormat);
+            var fps = $"{CurrentInfo.FrameRate.ToDecimal():0.###}";
+            Log($"Selected source option: index={index}, label='{label}', source='{source}', sourceType={sourceType}, chapters={CurrentInfo.Chapters.Count}, fps={fps}",
+                "Edit",
+                ("index", index), ("label", label), ("source", source), ("sourceType", sourceType),
+                ("chapters", CurrentInfo.Chapters.Count), ("fps", fps));
         }
 
-        selectedFrameRateOption = frameRateService.FindByValue((decimal)CurrentInfo.FramesPerSecond);
-        SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+        SelectedFrameRateOption = frameRateService.FindByRate(CurrentInfo.FrameRate);
+        displayOptionCoordinator.SetContentRate(CurrentInfo.FrameRate, FrameRateDisplayOptions);
+        SetSelectedFrameRateIndexSilent(ComboIndexFor(SelectedFrameRateOption));
         ApplyFrameInfo(logSelection);
     }
 
-    private ValueTask EditCell(object? parameter, EditKind kind)
+    private async ValueTask EditCell(object? parameter, EditKind kind)
     {
-        if (CurrentInfo is null || parameter is not ChapterCellEdit edit)
+        if (!CanEditRows || CurrentInfo is null || parameter is not ChapterCellEdit edit)
         {
-            return ValueTask.CompletedTask;
+            return;
         }
 
-        var result = ClipEditingCoordinator.Edit(CurrentInfo, edit, kind switch
+        var previous = OldCellValue(edit, kind);
+        var preview = ClipEditingCoordinator.Edit(edit, kind switch
         {
             EditKind.Time => ChapterEditKind.Time,
             EditKind.Name => ChapterEditKind.Name,
             EditKind.Frame => ChapterEditKind.Frame,
             _ => throw new ArgumentOutOfRangeException(nameof(kind))
-        });
-        ApplyEdit(result, EnglishLogText("Action.EditCell", ("kind", logContentLocalizer.GetString($"EditKind.{kind}")), ("row", edit.Index), ("value", edit.Value)));
-        return ValueTask.CompletedTask;
+        }, ComputationFrameRate);
+        var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview);
+        ApplyContentOutcome(outcome, $"Edit {kind.ToString().ToLowerInvariant()}: row={edit.Index}, value='{edit.Value}', previous='{previous}'");
+    }
+
+    private string OldCellValue(ChapterCellEdit edit, EditKind kind)
+    {
+        var chapters = CurrentInfo?.Chapters ?? [];
+        if (edit.Index < 0 || edit.Index >= chapters.Count)
+        {
+            return string.Empty;
+        }
+
+        var chapter = chapters[edit.Index];
+        return kind switch
+        {
+            EditKind.Time => timeFormatter.Format(chapter.StartTime),
+            EditKind.Name => chapter.Name,
+            EditKind.Frame => chapter.FramesInfo,
+            _ => string.Empty
+        };
     }
 
     private void CombineSegments()
@@ -78,57 +100,302 @@ public sealed partial class MainWindowViewModel
         var transition = ClipEditingCoordinator.ToggleCombine();
         if (!transition.Succeeded || transition.Session is null)
         {
-            ApplyEdit(
-                transition.EditResult,
-                EnglishLogText(
-                    "Action.CombineSegments",
-                    ("entries", originalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat))));
+            SetStatus(null, transition.EditResult.Diagnostics.FirstOrDefault());
             return;
         }
 
         ApplyClipSessionUi(transition.Session, selectIndex: transition.Session.SelectedIndex);
         SetStatus("Status.Updated");
 
+        var afterCount = CurrentInfo?.Chapters.Count ?? 0;
         if (transition.Restored)
         {
-            Log("Log.EditChapters",
-                ("action", EnglishLogText("Action.SplitCombinedSegments",
-                    ("entries", Workspace.ClipSession.OriginalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(Workspace.ClipSession.OriginalGroup.Entries[0].ChapterSet.ImportFormat)))),
-                ("before", beforeCount),
-                ("after", CurrentInfo?.Chapters.Count ?? 0));
+            var action = CombineActionText("Split by boundaries", Workspace.ClipSession.OriginalGroup);
+            Log($"{action}: chapters {beforeCount} -> {afterCount}", "Edit",
+                ("action", action), ("before", beforeCount), ("after", afterCount));
         }
         else
         {
-            Log("Log.EditChapters",
-                ("action", EnglishLogText(
-                    "Action.CombineSegments",
-                    ("entries", originalGroup.Entries.Count),
-                    ("sourceType", ChapterImportFormats.DisplayName(originalGroup.Entries[0].ChapterSet.ImportFormat)))),
-                ("before", beforeCount),
-                ("after", CurrentInfo?.Chapters.Count ?? 0));
+            var action = CombineActionText("Combine segments", originalGroup);
+            Log($"{action}: chapters {beforeCount} -> {afterCount}", "Edit",
+                ("action", action), ("before", beforeCount), ("after", afterCount));
         }
 
         NotifyStateChanged();
     }
 
-    private void ApplyEdit(ChapterEditResult result, string? action = null)
+    private static string CombineActionText(string verb, ChapterImportSource group)
     {
-        var effectiveAction = action ?? EnglishLogText("Action.EditChapters");
-        var before = CurrentInfo?.Chapters.Count ?? 0;
-        CurrentInfo = result.ChapterSet;
-        ApplyFrameInfo(logResult: false);
-        SetStatus(result.Diagnostics.Count == 0 ? "Status.Updated" : null, diagnostic: result.Diagnostics.FirstOrDefault());
-        Log("Log.EditChapters", ("action", effectiveAction), ("before", before), ("after", CurrentInfo.Chapters.Count));
-        LogDiagnostics("Edit", result.Diagnostics);
+        var sourceType = ChapterImportFormats.DisplayName(group.Entries[0].ChapterSet.ImportFormat);
+        return $"{verb}: entries={group.Entries.Count}, sourceType={sourceType}";
+    }
+
+    internal void ApplyContentOutcome(TransactionOutcome outcome, string action)
+    {
+        if (outcome.Kind is not (TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange))
+        {
+            // Cell editors bind directly to the row. Rebuild it after a rejected edit so
+            // invalid draft text cannot remain visible as if it had been committed.
+            RefreshRows();
+            StatusText = outcome.Errors.FirstOrDefault() ?? outcome.Kind.ToString();
+            Log(LogLevel.Warning, $"{action} rejected: {StatusText}", "Edit", ("action", action), ("outcome", outcome.Kind.ToString()));
+            NotifyStateChanged();
+            return;
+        }
+
+        if (CurrentInfo is null)
+        {
+            return;
+        }
+
+        SetStatus("Status.Updated");
+        Log($"{action}: chapters={CurrentInfo.Chapters.Count}, outcome={outcome.Kind}", "Edit",
+            ("action", action), ("chapters", CurrentInfo.Chapters.Count), ("outcome", outcome.Kind));
+        RefreshRows();
         NotifyStateChanged();
     }
 
-    internal void ApplyEditFromPort(ChapterEditResult result, string? action = null) => ApplyEdit(result, action);
+    internal ChapterContentPreview PrepareExpressionOperation(string expression) =>
+        ClipEditingCoordinator.PrepareCandidate("Apply expression", document =>
+            ClipEditingCoordinator.CandidateBuilder.ApplyExpression(
+                document,
+                string.IsNullOrWhiteSpace(expression) ? "t" : expression,
+                SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : null),
+            new HistoryOperationDescriptor("expression.apply",
+            [
+                new HistoryOperationParameter("script", string.IsNullOrWhiteSpace(expression) ? "t" : expression),
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackId", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Id.ToString()),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("displayFps", DisplayFrameRate.ToString(System.Globalization.CultureInfo.InvariantCulture), "decimal")
+            ]));
+
+    internal ChapterContentPreview PrepareTemplateNamesOperation(bool autoGenerateNames, bool useTemplateNames) =>
+        ClipEditingCoordinator.PrepareCandidate("Apply template names", document =>
+            ClipEditingCoordinator.CandidateBuilder.ApplyOutputOptions(
+                document,
+                autoGenerateNames,
+                useTemplateNames,
+                Workspace.OperationDrafts.ChapterNameTemplateText,
+                orderShift: 0,
+                applyExpression: false,
+                expression: "t"),
+            new HistoryOperationDescriptor("template.apply",
+            [
+                new HistoryOperationParameter("autoGenerateNames", autoGenerateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("useTemplateNames", useTemplateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackId", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Id.ToString()),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("template", Workspace.OperationDrafts.ChapterNameTemplateText)
+            ]));
+
+    internal ChapterContentPreview PrepareContentOptionsOperation() =>
+        ClipEditingCoordinator.PrepareCandidate("Apply chapter options", document =>
+            ClipEditingCoordinator.CandidateBuilder.ApplyOutputOptions(
+                document,
+                Workspace.OperationDrafts.AutoGenerateNames,
+                Workspace.OperationDrafts.UseTemplateNames,
+                Workspace.OperationDrafts.ChapterNameTemplateText,
+                Workspace.OperationDrafts.OrderShift,
+                applyExpression: false,
+                Workspace.OperationDrafts.Expression),
+            new HistoryOperationDescriptor("chapter.options-apply",
+            [
+                new HistoryOperationParameter("autoGenerateNames", Workspace.OperationDrafts.AutoGenerateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("useTemplateNames", Workspace.OperationDrafts.UseTemplateNames.ToString(), "boolean"),
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackId", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Id.ToString()),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("template", Workspace.OperationDrafts.ChapterNameTemplateText),
+                new HistoryOperationParameter("orderShift", Workspace.OperationDrafts.OrderShift.ToString(System.Globalization.CultureInfo.InvariantCulture), "integer"),
+                new HistoryOperationParameter("expression", Workspace.OperationDrafts.Expression)
+            ]));
+
+    private void RefreshContentOptionsPreview()
+    {
+        if (CurrentInfo is null)
+        {
+            return;
+        }
+
+        pendingContentPreview = PrepareContentOptionsOperation();
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        StatusText = Localizer.GetString(pendingContentPreview.IsValid
+            ? "Expression.State.Ready"
+            : "Expression.State.Invalid");
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    internal ChapterContentPreview PrepareFrameRateOperation(
+        FrameRateValue sourceFps,
+        FrameRateValue targetFps) =>
+        ClipEditingCoordinator.PrepareCandidate("Change chapter frame rate", document =>
+            ClipEditingCoordinator.CandidateBuilder.ChangeFrameRate(
+                document,
+                sourceFps,
+                targetFps),
+            new HistoryOperationDescriptor("chapter.frame-rate-change",
+            [
+                new HistoryOperationParameter("targetScope", "track"),
+                new HistoryOperationParameter("trackName", Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex)?.Name),
+                new HistoryOperationParameter("targetChapterIds", CaptureCurrentTrackChapterIds()),
+                new HistoryOperationParameter("sourceFps", sourceFps.ToString(), sourceFps.Kind.ToString()),
+                new HistoryOperationParameter("targetFps", targetFps.ToString(), targetFps.Kind.ToString())
+            ]));
+
+    private string CaptureCurrentTrackChapterIds()
+    {
+        var track = Workspace.ContentSession?.Snapshot.Document.Tracks.ElementAtOrDefault(Workspace.CurrentTrackIndex);
+        return track is null ? string.Empty : string.Join(",", track.Chapters.Select(static chapter => chapter.Id.ToString()));
+    }
+
+    internal async ValueTask<TransactionOutcome> ApplyContentPreviewAsync(
+        ChapterContentPreview preview,
+        CancellationToken cancellationToken = default)
+    {
+        var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
+        ApplyContentOutcome(outcome, preview.Operation);
+        if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+            && preview.Operation is "Apply chapter options" or "Apply template names")
+        {
+            Workspace.SetExpressionOperationDrafts(
+                Workspace.OperationDrafts.Expression,
+                applyExpression: false,
+                Workspace.OperationDrafts.ExpressionPresetId,
+                Workspace.OperationDrafts.ExpressionSourceName);
+            Workspace.OperationDrafts.SetAutoGenerateNames(false);
+            Workspace.OperationDrafts.SetUseTemplateNames(false);
+            Workspace.OperationDrafts.SetOrderShift(0);
+            OnPropertyChanged(nameof(AutoGenerateNames));
+            OnPropertyChanged(nameof(UseTemplateNames));
+            OnPropertyChanged(nameof(OrderShift));
+        }
+
+        if (preview.Operation == "Apply expression" && outcome.Kind == TransactionOutcomeKind.Conflict)
+        {
+            RefreshExpressionPreviewNow();
+        }
+
+        if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+            && preview.Operation == "Change chapter frame rate"
+            && CurrentInfo is { } currentInfo)
+        {
+            SelectedFrameRateOption = frameRateService.FindByRate(currentInfo.FrameRate);
+            displayOptionCoordinator.SetContentRate(currentInfo.FrameRate, FrameRateDisplayOptions);
+            SetSelectedFrameRateIndexSilent(ComboIndexFor(SelectedFrameRateOption));
+            ApplyFrameInfo(logResult: false);
+            var sourceFps = preview.Before.FrameRate.ToDouble();
+            var targetFps = preview.Candidate.FrameRate.ToDouble();
+            var optionName = SelectedFrameRateOption.DisplayName;
+            Log($"Convert to current FPS: option='{optionName}', source={sourceFps:0.###}, target={targetFps:0.###}, chapters {preview.Before.Tracks.Sum(static track => track.Chapters.Length)} -> {currentInfo.Chapters.Count}",
+                "Edit",
+                ("option", optionName),
+                ("sourceFps", $"{sourceFps:0.###}"),
+                ("targetFps", $"{targetFps:0.###}"),
+                ("before", preview.Before.Tracks.Sum(static track => track.Chapters.Length)),
+                ("after", currentInfo.Chapters.Count));
+        }
+
+        return outcome;
+    }
+
+    internal void CancelContentPreview(ChapterContentPreview preview)
+    {
+        ArgumentNullException.ThrowIfNull(preview);
+    }
+
+    private void ScheduleExpressionPreview()
+    {
+        InvalidatePendingContentPreview();
+
+        ExpressionPreviewText = Localizer.GetString("Expression.Preview.Pending");
+        if (CurrentInfo is not null && !string.IsNullOrWhiteSpace(Expression))
+        {
+            expressionPreviewTimer.Start();
+        }
+        else
+        {
+            ExpressionPreviewText = string.Empty;
+        }
+
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void InvalidatePendingContentPreview()
+    {
+        expressionPreviewTimer.Stop();
+        if (pendingContentPreview is { } preview)
+        {
+            CancelContentPreview(preview);
+            pendingContentPreview = null;
+        }
+
+        ExpressionPreviewText = string.Empty;
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    private void OnExpressionPreviewTimerTick(object? sender, EventArgs args)
+    {
+        expressionPreviewTimer.Stop();
+        RefreshExpressionPreviewNow();
+    }
+
+    internal void RefreshExpressionPreviewNow()
+    {
+        expressionPreviewTimer.Stop();
+        if (CurrentInfo is null || string.IsNullOrWhiteSpace(Expression))
+        {
+            ExpressionPreviewText = string.Empty;
+            return;
+        }
+
+        pendingContentPreview = PrepareExpressionOperation(Expression);
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        OnPropertyChanged(nameof(CanRefreshContentPreview));
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        ApplyContentPreviewCommand?.RaiseCanExecuteChanged();
+        RefreshContentPreviewCommand?.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand?.RaiseCanExecuteChanged();
+    }
+
+    private static string BuildExpressionPreviewText(ChapterContentPreview preview, IAppLocalizer localizer)
+    {
+        if (!preview.IsValid)
+        {
+            return string.Join(Environment.NewLine, preview.Errors);
+        }
+
+        var projection = ExpressionPreviewProjector.Build(preview);
+        return projection.HasChanges ? string.Empty : localizer.GetString("Expression.Preview.NoChanges");
+    }
 
     private void ApplyFrameInfo(bool logResult = true)
     {
+        Workspace.ExportPreferences.SetComputationRate(SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : null);
         if (CurrentInfo is null)
         {
             RefreshRows();
@@ -137,35 +404,35 @@ public sealed partial class MainWindowViewModel
 
         var outcome = ClipEditingCoordinator.UpdateFrames(
             CurrentInfo,
-            selectedFrameRateOption,
-            RoundFrames
-                ? 0
-                : EditingOptions.FrameDisplay == FrameDisplayMode.DecimalPlaces
-                    ? EditingOptions.EffectiveFrameDecimalPlaces
-                    : -1,
-            FrameAccuracyTolerance,
-            configuredFrameRate);
+            SelectedFrameRateOption,
+            EditingOptions.EffectiveFrameDecimalPlaces,
+            FrameAccuracyTolerance);
         var result = outcome.FrameResult;
         var detection = outcome.Detection;
         var appliedOption = outcome.AppliedOption;
-        CurrentInfo = outcome.CurrentChapterSet;
-
+        appliedFrameRateOption = appliedOption;
         if (detection is not null)
         {
-            selectedFrameRateOption = frameRateService.Options[0];
+            SelectedFrameRateOption = frameRateService.Options[0];
             SetStatus("Status.DetectedFrameRate", ("displayName", detection.Option.DisplayName), ("confidence", detection.Confidence));
         }
-        else
+        else if (SelectedFrameRateOption.Code != "Auto")
         {
-            selectedFrameRateOption = result.SelectedOption;
+            SelectedFrameRateOption = result.SelectedOption;
         }
 
-        SetSelectedFrameRateIndexSilent(ComboIndexFor(selectedFrameRateOption));
+        SetSelectedFrameRateIndexSilent(ComboIndexFor(SelectedFrameRateOption));
         if (logResult)
         {
-            Log("Log.FrameInfoUpdated",
+            var message = $"Frame info updated: option={appliedOption.DisplayName}, fps={result.Rate.ToDecimal():0.###}, round={RoundFrames}, chapters={CurrentInfo.Chapters.Count}";
+            if (detection is not null)
+            {
+                message += $", autoDetected=true, confidence={detection.Confidence}";
+            }
+
+            Log(message, "Edit",
                 ("option", appliedOption.DisplayName),
-                ("fps", $"{result.FramesPerSecond:0.###}"),
+                ("fps", $"{result.Rate.ToDecimal():0.###}"),
                 ("round", RoundFrames),
                 ("chapters", CurrentInfo.Chapters.Count),
                 ("autoDetected", detection is not null),
@@ -177,37 +444,33 @@ public sealed partial class MainWindowViewModel
         NotifyStateChanged();
     }
 
-    private void ChangeFpsToSelectedOption()
+    private async ValueTask ChangeFpsToSelectedOption(CancellationToken cancellationToken = default)
     {
-        if (CurrentInfo is null || !selectedFrameRateOption.IsValid)
+        if (CurrentInfo is null || !SelectedFrameRateOption.IsValid)
         {
             return;
         }
 
-        var sourceFps = configuredFrameRate ?? (decimal)CurrentInfo.FramesPerSecond;
-        var targetOption = selectedFrameRateOption;
-        var targetFps = targetOption.Value;
-        var result = ChapterFpsTransformService.ChangeFps(CurrentInfo, sourceFps, targetFps);
-        if (!result.Success)
-        {
-            SetStatus(null, diagnostic: result.Diagnostics.FirstOrDefault());
-            LogDiagnostics("Change FPS", result.Diagnostics);
-            NotifyStateChanged();
-            return;
-        }
-
-        var beforeCount = CurrentInfo.Chapters.Count;
-        CurrentInfo = result.Info;
-        configuredFrameRate = targetFps;
-        ApplyFrameInfo(logResult: false);
-        SetStatus("Status.Updated");
-        Log("Log.ChangeFps",
-            ("sourceFps", $"{sourceFps:0.###}"),
-            ("targetFps", $"{targetFps:0.###}"),
-            ("before", beforeCount),
-            ("after", result.Info.Chapters.Count));
-        NotifyStateChanged();
+        var sourceFps = ResolveSourceFrameRate();
+        var targetOption = SelectedFrameRateOption;
+        var targetFps = targetOption.Rate;
+        pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
+        OnPropertyChanged(nameof(IsContentPreviewPending));
+        OnPropertyChanged(nameof(CanPreviewContentOptions));
+        OnPropertyChanged(nameof(CanApplyContentPreview));
+        ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
+        StatusText = Localizer.GetString(pendingContentPreview.IsValid
+            ? "Expression.State.Ready"
+            : "Expression.State.Invalid");
+        ApplyContentPreviewCommand.RaiseCanExecuteChanged();
+        CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
+
+    private FrameRateValue ResolveSourceFrameRate() => CurrentInfo?.FrameRate is { IsKnown: true } rate
+        ? rate : SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : FrameRateValue.Unknown;
+
+    internal FrameRateValue ComputationFrameRate => SelectedFrameRateOption.IsValid
+        ? SelectedFrameRateOption.Rate : CurrentInfo?.FrameRate ?? FrameRateValue.Unknown;
 
     /// <summary>
     /// Rebuilds bindable clip options / selection after the workspace session was already updated.
@@ -223,8 +486,7 @@ public sealed partial class MainWindowViewModel
 
         if (ClipOptions.Count == 0)
         {
-            Workspace.SetCurrentChapterSet(null);
-            Workspace.ClearProjectionCache();
+            Workspace.ClearSession();
             return;
         }
 
@@ -274,7 +536,7 @@ public sealed partial class MainWindowViewModel
         => displayOptionCoordinator.SyncClipDisplayOptions(args, ClipOptions, ClipDisplayOptions);
 
     private int ComboIndexFor(FrameRateOption entry)
-        => DisplayOptionCoordinator.ComboIndexFor(entry);
+        => displayOptionCoordinator.ComboIndexFor(entry);
 
     private FrameRateOption? FrameRateOptionForComboIndex(int frameRateIndex)
         => displayOptionCoordinator.FrameRateOptionForComboIndex(frameRateIndex);

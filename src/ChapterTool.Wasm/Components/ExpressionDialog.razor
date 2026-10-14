@@ -1,0 +1,564 @@
+@implements IDisposable
+@inject WasmWorkspace Workspace
+@inject WasmLocalizer L
+@inject IJSRuntime JSRuntime
+@using ChapterTool.Core.Models
+@using ChapterTool.Core.Session
+@using ChapterTool.Core.Transform
+@using System.Text
+
+<WasmDialog Title="@L.T("Modal.ExpressionTitle")" CssClass="expression-modal" OnClose="CloseAsync" DismissEnabled="@(!applying)">
+    <div class="modal-body expression-body">
+        <div class="expression-authoring">
+            @if (Workspace.ExpressionPreviewProjection is { } scope)
+            {
+                <p class="expression-scope">@L.Format("Expression.Preview.Scope", scope.ScopeTrackName, scope.ParticipatingChapterCount)</p>
+                @if (scope.ExcludedSeparatorCount > 0)
+                {
+                    <p class="expression-separators">@L.Format("Expression.Preview.Separators", scope.ExcludedSeparatorCount)</p>
+                }
+            }
+            else if (Workspace.ExpressionPreview is null && !pending && !string.IsNullOrWhiteSpace(expression))
+            {
+                <p role="status">@L.T("Expression.State.Unavailable")</p>
+            }
+
+            <div class="expression-preset-row">
+                <label for="expression-preset">@L.T("Label.ExpressionPreset")</label>
+                <select id="expression-preset" value="@presetId" aria-label="@L.T("Label.ExpressionPreset")"
+                        disabled="@applying" @onchange="OnPresetChanged">
+                    <option value="">@L.T("ExpressionPreset.Custom")</option>
+                    @foreach (var preset in Workspace.ExpressionPresets)
+                    {
+                        <option value="@preset.Id" title="@preset.Description">@preset.DisplayName</option>
+                    }
+                </select>
+            </div>
+
+            <label for="expression-script">@L.T("Tool.Expression.LoadLuaScript")</label>
+            <InputFile id="expression-script" OnChange="LoadScriptAsync" accept=".lua,text/*" disabled="@applying" />
+            @if (!string.IsNullOrEmpty(Workspace.ExpressionSourceName)) { <p role="status">@Workspace.ExpressionSourceName</p> }
+            <div class="lua-editor">
+            <pre class="lua-highlight" aria-hidden="true">@HighlightScript()</pre>
+            <textarea @ref="expressionEditorElement" id="expression-draft" class="expression-input" rows="2" spellcheck="false"
+                      aria-label="@L.T("Label.Expression")" disabled="@applying"
+                      @oninput="OnInput">@expression</textarea>
+            </div>
+            @if (completionOpen && analysis is not null)
+            {
+                <div class="lua-completions" role="listbox" aria-label="@L.T("Parity.Completions")">
+                    @for (var i = 0; i < analysis.Completions.Count; i++)
+                    {
+                        var index = i;
+                        <button type="button" role="option" aria-selected="@(index == completionIndex)" @onclick="() => AcceptCompletionAsync(index)">@analysis.Completions[index].Text</button>
+                    }
+                </div>
+            }
+            @if (!composing && analysis is not null)
+            {
+                <ul class="lua-diagnostics">
+                    @foreach (var diagnostic in analysis.Diagnostics)
+                    {
+                        <li><button type="button" class="secondary" @onclick="() => SelectDiagnosticAsync(diagnostic)">@diagnostic.Diagnostic.Message (@L.T("Parity.Position"): @(diagnostic.Start + 1))</button></li>
+                    }
+                </ul>
+            }
+            @if (scriptError is not null) { <p role="alert">@scriptError</p> }
+
+        </div>
+
+        <section class="expression-preview" aria-label="@L.T("Expression.Preview.Title")" data-testid="expression-preview">
+            @if (composing)
+            {
+                <p role="status" aria-live="polite">@L.T("Expression.State.Composing")</p>
+            }
+            else if (pending)
+            {
+                <p role="status" aria-live="polite" data-testid="expression-preview-pending">@L.T("Expression.Preview.Pending")</p>
+            }
+            else if (string.IsNullOrWhiteSpace(expression))
+            {
+                <p role="status">@L.T("Expression.State.Empty")</p>
+            }
+            else if (Workspace.IsExpressionPreviewStale)
+            {
+                <p role="status" data-testid="expression-preview-stale">@L.T("Expression.State.Stale")</p>
+                <button type="button" class="secondary" @onclick="RefreshPreview">@L.T("Expression.Action.Refresh")</button>
+            }
+            else if (Workspace.ExpressionPreview is { } candidate && !candidate.IsValid)
+            {
+                <p role="alert">@L.T("Expression.State.Invalid")</p>
+                <ul class="expression-preview-errors">
+                    @foreach (var error in candidate.Errors) { <li>@error</li> }
+                </ul>
+            }
+            else if (Workspace.ExpressionPreviewProjection is { HasChanges: false })
+            {
+                <p role="status">@L.T("Expression.State.Unchanged")</p>
+            }
+            else if (Workspace.ExpressionPreviewProjection is { } projection)
+            {
+                <p class="expression-time-summary" role="status" aria-live="polite" data-testid="expression-preview-summary">
+                    @L.Format("Expression.Review.TimeSummary", projection.TimeChangedChapterCount, projection.ParticipatingChapterCount)
+                </p>
+                <p class="expression-other-summary">@L.Format("Expression.Review.OtherSummary",
+                    projection.AffectedChapterCount, projection.FrameInformationChangedChapterCount, projection.Properties.Length)</p>
+
+                <div class="expression-preview-options">
+                    <label><input type="checkbox" @bind="showAll" /> @L.T("Expression.Preview.AllChapters")</label>
+                    <label><input type="checkbox" @bind="showFrames" /> @L.T("Expression.Preview.FrameUnits")</label>
+                </div>
+
+                <div class="expression-comparison" data-testid="expression-preview-comparison">
+                    <div class="expression-comparison-header">
+                        <span>@L.T("Expression.Preview.Chapter")</span>
+                        <span>@L.T("Expression.Preview.Before")</span>
+                        <span>@L.T("Expression.Preview.After")</span>
+                        <span>@L.T("Expression.Preview.Delta")</span>
+                    </div>
+                    @foreach (var row in VisibleChapters(projection))
+                    {
+                        <article class="expression-chapter" data-chapter-id="@row.Id">
+                            <strong class="expression-chapter-name">@ChapterLabel(row)</strong>
+                            <span class="expression-value-label">@L.T("Expression.Preview.Before")</span>
+                            <span class="expression-value">@Value(row.Before, row.BeforeFrames)</span>
+                            <span class="expression-value-label">@L.T("Expression.Preview.After")</span>
+                            <span class="expression-value">@Value(row.Candidate, row.CandidateFrames)</span>
+                            <span class="expression-value-label">@L.T("Expression.Preview.Delta")</span>
+                            <span class="expression-delta">@Delta(row)</span>
+                            <details class="expression-frame-details">
+                                <summary>@L.T("Expression.Preview.FrameDetails")</summary>
+                                <dl>
+                                    <dt>@L.T("Expression.Preview.BeforeFrames")</dt>
+                                    <dd>@FrameDescription(row.BeforeFrames)</dd>
+                                    <dt>@L.T("Expression.Preview.AfterFrames")</dt>
+                                    <dd>@FrameDescription(row.CandidateFrames)</dd>
+                                    <dt>@L.T("Expression.Preview.Accuracy")</dt>
+                                    <dd>@Accuracy(row.BeforeFrames) → @Accuracy(row.CandidateFrames)</dd>
+                                </dl>
+                                <p class="expression-accuracy-policy">@L.T("Expression.FrameAccuracy.Policy")</p>
+                            </details>
+                        </article>
+                    }
+                </div>
+                @if (!projection.Properties.IsEmpty)
+                {
+                    <details class="expression-properties">
+                        <summary>@L.T("Expression.Review.Details")</summary>
+                        <ul>
+                            @foreach (var property in projection.Properties)
+                            {
+                                <li>
+                                    <strong>@OwnerLabel(property.OwnerKind)</strong>
+                                    @if (!string.IsNullOrWhiteSpace(property.OwnerName)) { <span> · @property.OwnerName</span> }
+                                    <span> · @Workspace.FormatExpressionPropertyName(property.Property): </span>
+                                    <span>@PropertyValue(property.Property, property.Before)</span>
+                                    <span aria-hidden="true"> → </span>
+                                    <span>@PropertyValue(property.Property, property.Candidate)</span>
+                                </li>
+                            }
+                        </ul>
+                    </details>
+                }
+
+            }
+            else if (Workspace.ExpressionPreview is { } failed && !failed.Errors.IsEmpty)
+            {
+                <ul class="expression-preview-errors" role="alert">
+                    @foreach (var error in failed.Errors) { <li>@error</li> }
+                </ul>
+            }
+            @if (applyFailed)
+            {
+                <p class="expression-preview-errors" role="alert">@applyError</p>
+            }
+        </section>
+    </div>
+    <footer class="modal-footer expression-footer">
+        @if (applying)
+        {
+            <span class="expression-status" role="status" aria-live="polite">@L.T("Expression.State.Applying")</span>
+        }
+        <button type="button" class="secondary" disabled="@applying" @onclick="CloseAsync">@L.T("Common.Cancel")</button>
+        <button type="button" class="primary" disabled="@(!CanApply)" @onclick="ApplyAsync">@L.T("Expression.Action.Apply")</button>
+    </footer>
+</WasmDialog>
+
+@code {
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    private string expression = string.Empty;
+    private string presetId = string.Empty;
+    private string originalExpression = string.Empty;
+    private string originalPresetId = string.Empty;
+    private string originalSourceName = string.Empty;
+    private string? scriptError;
+    private ExpressionAnalysisResult? analysis;
+    private bool completionOpen;
+    private int completionIndex;
+    private CancellationTokenSource? cancellation;
+    private bool pending;
+    private bool applied;
+    private bool applying;
+    private bool disposed;
+    private bool composing;
+    private bool applyFailed;
+    private string applyError = string.Empty;
+    private ElementReference expressionEditorElement;
+    private IJSObjectReference? compositionModule;
+    private DotNetObjectReference<ExpressionDialog>? compositionCallback;
+    private bool showAll;
+    private bool showFrames;
+    private long revision;
+    private long inputRevision;
+    private bool CanApply => !pending && !composing && !applying && !Workspace.IsBusy
+        && !Workspace.IsExpressionPreviewStale
+        && Workspace.ExpressionPreview is { IsValid: true }
+        && Workspace.ExpressionPreviewProjection is { HasChanges: true };
+
+    protected override void OnInitialized()
+    {
+        originalExpression = expression = Workspace.Expression;
+        originalPresetId = presetId = Workspace.ExpressionPresetId;
+        originalSourceName = Workspace.ExpressionSourceName;
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, frameRate: Workspace.ComputationFrameRate);
+        Workspace.PrepareExpressionPreview(expression);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/expression-composition.js");
+        var callback = DotNetObjectReference.Create(this);
+        if (disposed)
+        {
+            callback.Dispose();
+            await DetachCompositionListenersAsync(module, expressionEditorElement);
+            return;
+        }
+
+        try
+        {
+            await module.InvokeVoidAsync("attach", expressionEditorElement, callback);
+        }
+        catch (JSException) when (disposed)
+        {
+            callback.Dispose();
+            await DetachCompositionListenersAsync(module, expressionEditorElement);
+            return;
+        }
+
+        if (disposed)
+        {
+            await DetachCompositionListenersAsync(module, expressionEditorElement);
+            callback.Dispose();
+            return;
+        }
+
+        compositionModule = module;
+        compositionCallback = callback;
+    }
+
+    private async Task OnInput(ChangeEventArgs args)
+    {
+        if (disposed) return;
+        var currentInput = ++inputRevision;
+        pending = true;
+        Workspace.CancelExpressionPreview();
+        completionOpen = false;
+        var value = args.Value?.ToString() ?? string.Empty;
+        if (!composing)
+        {
+            var caret = compositionModule is null
+                ? value.Length
+                : await compositionModule.InvokeAsync<int>("caret", expressionEditorElement);
+            if (disposed || currentInput != inputRevision) return;
+            analysis = Workspace.AuthoringService.Analyze(value, caret, frameRate: Workspace.ComputationFrameRate);
+        }
+        await ScheduleAsync(value, schedule: !composing);
+        if (!disposed) await UpdateCompletionStateAsync();
+    }
+
+    private async Task LoadScriptAsync(InputFileChangeEventArgs args)
+    {
+        scriptError = null;
+        try
+        {
+            await using var stream = args.File.OpenReadStream(2 * 1024 * 1024);
+            using var reader = new StreamReader(stream, new UTF8Encoding(false, true), true);
+            var value = await reader.ReadToEndAsync();
+            if (disposed) return;
+            if (string.IsNullOrWhiteSpace(value)) throw new IOException();
+            var result = Workspace.AuthoringService.Analyze(value, value.Length, frameRate: Workspace.ComputationFrameRate);
+            if (result.Diagnostics.Count > 0) { scriptError = result.Diagnostics[0].Diagnostic.Message; return; }
+            Workspace.ClearExpressionPresetSelection();
+            Workspace.ExpressionSourceName = args.File.Name;
+            analysis = result;
+            await ScheduleAsync(value, true);
+        }
+        catch (Exception exception) when (exception is IOException or DecoderFallbackException)
+        { scriptError = L.T("Parity.ScriptLoadFailed"); }
+    }
+
+    [JSInvokable]
+    public async Task EditorKey(string key, int caret)
+    {
+        if (disposed || composing || applying) return;
+        if (key == "Complete")
+        {
+            analysis = Workspace.AuthoringService.Analyze(expression, caret, frameRate: Workspace.ComputationFrameRate);
+            completionIndex = 0;
+            completionOpen = analysis.Completions.Count > 0;
+        }
+        else if (key == "Escape") completionOpen = false;
+        else if (completionOpen && key is "Enter" or "Tab") { await AcceptCompletionAsync(completionIndex); return; }
+        else if (completionOpen && analysis is not null && key is "ArrowDown" or "ArrowUp")
+            completionIndex = Math.Clamp(completionIndex + (key == "ArrowDown" ? 1 : -1), 0, analysis.Completions.Count - 1);
+        await UpdateCompletionStateAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AcceptCompletionAsync(int index)
+    {
+        if (analysis is null || index < 0 || index >= analysis.Completions.Count) return;
+        var completion = analysis.Completions[index];
+        completionOpen = false;
+        await UpdateCompletionStateAsync();
+        await compositionModule!.InvokeVoidAsync("replace", expressionEditorElement,
+            completion.ReplacementStart, completion.ReplacementLength, completion.InsertText);
+    }
+
+    private Task UpdateCompletionStateAsync() => disposed || compositionModule is null ? Task.CompletedTask
+        : compositionModule.InvokeVoidAsync("completionState", expressionEditorElement, completionOpen).AsTask();
+
+    private Task SelectDiagnosticAsync(ExpressionAuthoringDiagnostic diagnostic) =>
+        compositionModule!.InvokeVoidAsync("select", expressionEditorElement, diagnostic.Start, diagnostic.Length).AsTask();
+
+    private RenderFragment HighlightScript() => builder =>
+    {
+        var position = 0;
+        var sequence = 0;
+        foreach (var span in analysis?.Spans ?? [])
+        {
+            if (span.Start < position || span.Start + span.Length > expression.Length) continue;
+            builder.AddContent(sequence++, expression[position..span.Start]);
+            builder.OpenElement(sequence++, "span");
+            builder.AddAttribute(sequence++, "class", "lua-token-" + span.Kind.ToString().ToLowerInvariant());
+            builder.AddContent(sequence++, expression.Substring(span.Start, span.Length));
+            builder.CloseElement();
+            position = span.Start + span.Length;
+        }
+        builder.AddContent(sequence++, expression[position..] + "\n");
+    };
+
+    private async Task OnPresetChanged(ChangeEventArgs args)
+    {
+        var selected = args.Value?.ToString() ?? string.Empty;
+        if (selected.Length == 0) Workspace.ClearExpressionPresetSelection();
+        else Workspace.ApplyExpressionPreset(selected);
+        presetId = Workspace.ExpressionPresetId;
+        expression = selected.Length == 0 ? expression : Workspace.Expression;
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, frameRate: Workspace.ComputationFrameRate);
+        await ScheduleAsync(expression, schedule: !composing);
+    }
+
+    [JSInvokable]
+    public Task CompositionStarted() => InvokeAsync(() =>
+    {
+        composing = true;
+        completionOpen = false;
+        StateHasChanged();
+    });
+
+    [JSInvokable]
+    public Task CompositionEnded() => InvokeAsync(async () =>
+    {
+        composing = false;
+        analysis = Workspace.AuthoringService.Analyze(expression, expression.Length, frameRate: Workspace.ComputationFrameRate);
+        await ScheduleAsync(expression, schedule: true);
+    });
+
+    private async Task ScheduleAsync(string value, bool schedule)
+    {
+        var previousCancellation = cancellation;
+        var source = cancellation = new CancellationTokenSource();
+        var token = source.Token;
+        applyFailed = false;
+        applyError = string.Empty;
+        var currentRevision = ++revision;
+        pending = schedule;
+        expression = value;
+        Workspace.Expression = value;
+        presetId = Workspace.ExpressionPresetId;
+        Workspace.CancelExpressionPreview();
+        if (previousCancellation is not null)
+        {
+            await previousCancellation.CancelAsync();
+            previousCancellation.Dispose();
+        }
+        if (disposed || currentRevision != revision || !ReferenceEquals(cancellation, source)) return;
+        if (!schedule)
+        {
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        try
+        {
+            await Task.Delay(250, token);
+            if (disposed || currentRevision != revision || composing) return;
+            Workspace.PrepareExpressionPreview(value);
+            pending = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+    }
+
+    private void RefreshPreview()
+    {
+        if (applying || string.IsNullOrWhiteSpace(expression)) return;
+        Workspace.PrepareExpressionPreview(expression);
+        pending = false;
+    }
+
+    private async Task ApplyAsync()
+    {
+        if (!CanApply) return;
+        applying = true;
+        try
+        {
+            if (await Workspace.ApplyExpressionPreviewAsync())
+            {
+                applied = true;
+                Workspace.Expression = expression;
+                await OnClose.InvokeAsync();
+            }
+            else if (Workspace.IsExpressionPreviewStale)
+            {
+                pending = false;
+            }
+            else
+            {
+                applyFailed = true;
+                applyError = Workspace.StatusText;
+            }
+        }
+        catch (Exception exception) when (exception is not StackOverflowException)
+        {
+            applyFailed = true;
+            applyError = exception.Message;
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        if (applying) return;
+        RestoreDraft();
+        await OnClose.InvokeAsync();
+    }
+
+    private void RestoreDraft()
+    {
+        cancellation?.Cancel();
+        revision++;
+        Workspace.CancelExpressionPreview();
+        if (originalPresetId.Length > 0) Workspace.ApplyExpressionPreset(originalPresetId);
+        else Workspace.ClearExpressionPresetSelection();
+        Workspace.Expression = originalExpression;
+        Workspace.ExpressionSourceName = originalSourceName;
+    }
+
+    private IEnumerable<ExpressionChapterComparison> VisibleChapters(ExpressionPreviewProjection projection) =>
+        showAll ? projection.Chapters : projection.Chapters.Where(static row => row.Changes != ExpressionChapterChangeKind.None);
+
+    private string ChapterLabel(ExpressionChapterComparison row)
+    {
+        var chapter = row.Candidate ?? row.Before;
+        return chapter is null ? L.T("Expression.Preview.Chapter") : $"{chapter.DisplayNumber} · {chapter.Name}";
+    }
+
+    private string Value(EditableChapter? chapter, ExpressionFrameValue? frames)
+    {
+        if (chapter is null) return L.T("Expression.Value.Missing");
+        return showFrames ? FrameDescription(frames) : Workspace.FormatExpressionTimeTicks(chapter.StartTicks);
+    }
+
+    private string Delta(ExpressionChapterComparison row)
+    {
+        if (showFrames)
+        {
+            return row.DeltaFrames is { } frames ? $"{frames:+#;-#;0} {L.T("Expression.Unit.FramesShort")}" : L.T("Expression.Value.IncompatibleFrames");
+        }
+
+        if (row.DeltaTicks is not { } ticks) return L.T("Expression.Value.Missing");
+        var sign = ticks > 0 ? "+" : ticks < 0 ? "−" : string.Empty;
+        return sign + Workspace.FormatExpressionTimeTicks(Math.Abs(ticks));
+    }
+
+    private string FrameDescription(ExpressionFrameValue? value)
+    {
+        if (value is null || value.IsMissing) return L.T("Expression.Value.NotCalculated");
+        var rate = value.FrameRate.IsKnown
+            ? $"{value.FrameRate} {L.T("Expression.Unit.FramesPerSecond")}"
+            : L.T("Expression.Value.NotSet");
+        return $"{value.Text} {L.T("Expression.Unit.FramesShort")} · {rate}";
+    }
+
+    private string Accuracy(ExpressionFrameValue? value) => value?.Accuracy switch
+    {
+        FrameAccuracy.Accurate => L.T("Expression.FrameAccuracy.Accurate"),
+        FrameAccuracy.Inexact => L.T("Expression.FrameAccuracy.Inexact"),
+        _ => L.T("Expression.FrameAccuracy.NotCalculated")
+    };
+
+    private string OwnerLabel(ExpressionPropertyOwnerKind owner) => owner switch
+    {
+        ExpressionPropertyOwnerKind.Document => L.T("Expression.PropertyOwner.Document"),
+        ExpressionPropertyOwnerKind.Track => L.T("Expression.PropertyOwner.Track"),
+        ExpressionPropertyOwnerKind.Segment => L.T("Expression.PropertyOwner.Segment"),
+        _ => L.T("Expression.PropertyOwner.Chapter")
+    };
+
+    private string PropertyValue(string property, object? value)
+    {
+        if (value is null) return L.T("Expression.Value.NotSet");
+        if (value is ChapterFrameRate rate) return $"{rate.Numerator}/{rate.Denominator} {L.T("Expression.Unit.FramesPerSecond")}";
+        if (value is ChapterDuration duration)
+        {
+            return duration.IsKnown ? Workspace.FormatExpressionTimeTicks(duration.Ticks) : L.T("Expression.Value.NotSet");
+        }
+        return property switch
+        {
+            "Title" or "SourceName" or "Name" when value is string text => text,
+            _ => L.T("Expression.Property.ValueChanged")
+        };
+    }
+
+    public void Dispose()
+    {
+        disposed = true;
+        if (!applied) RestoreDraft();
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+        compositionCallback?.Dispose();
+        if (compositionModule is not null)
+        {
+            _ = DetachCompositionListenersAsync(compositionModule, expressionEditorElement);
+        }
+    }
+
+    private static async Task DetachCompositionListenersAsync(IJSObjectReference module, ElementReference element)
+    {
+        try
+        {
+            await module.InvokeVoidAsync("detach", element);
+            await module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

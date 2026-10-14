@@ -17,14 +17,14 @@ public sealed class RuntimeChapterSaveServiceTests
             "audio",
             "audio.flac",
             ChapterImportFormat.Cue,
-            75,
+            FrameRateValue.Approximate(75m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Intro")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
 
         try
         {
-            var result = await service.SaveAsync(info, new ChapterExportOptions(ChapterExportFormat.Cue), directory, TestContext.Current.CancellationToken);
+            var result = await service.SaveAsync(info, new ChapterSerializationOptions(ChapterExportFormat.Cue), directory, TestContext.Current.CancellationToken);
 
             Assert.True(result.Success);
             var path = Path.Combine(directory, "audio.cue");
@@ -46,7 +46,7 @@ public sealed class RuntimeChapterSaveServiceTests
             "test",
             "test.xml",
             ChapterImportFormat.MatroskaXml,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [
                 new Chapter(1, TimeSpan.Zero, "Chapter 01"),
@@ -58,13 +58,12 @@ public sealed class RuntimeChapterSaveServiceTests
         {
             var result = await service.SaveAsync(
                 info,
-                new ChapterExportOptions(ChapterExportFormat.Xml, ProjectOutput: true, OrderShift: -5),
+                new ChapterSerializationOptions(ChapterExportFormat.Xml),
                 directory,
                 TestContext.Current.CancellationToken);
 
             Assert.True(result.Success);
-            Assert.True(result.Diagnostics.Count >= 2, $"Expected at least 2 diagnostics but got {result.Diagnostics.Count}");
-            Assert.Contains(result.Diagnostics, d => d.Code == ChapterDiagnosticCode.OrderShiftNormalized);
+            Assert.Single(result.Diagnostics);
             Assert.Contains(result.Diagnostics, d => d.Code == ChapterDiagnosticCode.Saved);
             var savedDiagnostic = result.Diagnostics.Single(d => d.Code == ChapterDiagnosticCode.Saved);
             Assert.Equal(DiagnosticSeverity.Info, savedDiagnostic.Severity);
@@ -85,7 +84,7 @@ public sealed class RuntimeChapterSaveServiceTests
             "test",
             "test.txt",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
@@ -94,14 +93,14 @@ public sealed class RuntimeChapterSaveServiceTests
         {
             await service.SaveAsync(
                 info,
-                new ChapterExportOptions(ChapterExportFormat.Txt, EmitBom: true),
+                new ChapterSerializationOptions(ChapterExportFormat.Txt, EmitBom: true),
                 directory,
                 TestContext.Current.CancellationToken);
             var withBom = await File.ReadAllBytesAsync(Path.Combine(directory, "test.txt"), TestContext.Current.CancellationToken);
 
             await service.SaveAsync(
                 info,
-                new ChapterExportOptions(ChapterExportFormat.Txt, EmitBom: false),
+                new ChapterSerializationOptions(ChapterExportFormat.Txt, EmitBom: false),
                 directory,
                 TestContext.Current.CancellationToken);
             var withoutBom = await File.ReadAllBytesAsync(Path.Combine(directory, "test_1.txt"), TestContext.Current.CancellationToken);
@@ -134,7 +133,7 @@ public sealed class RuntimeChapterSaveServiceTests
             "test",
             "test.txt",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "章节")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
@@ -143,7 +142,7 @@ public sealed class RuntimeChapterSaveServiceTests
         {
             await service.SaveAsync(
                 info,
-                new ChapterExportOptions(ChapterExportFormat.Txt, TextEncoding: outputEncoding, EmitBom: emitBom),
+                new ChapterSerializationOptions(ChapterExportFormat.Txt, TextEncoding: outputEncoding, EmitBom: emitBom),
                 directory,
                 TestContext.Current.CancellationToken);
 
@@ -169,14 +168,14 @@ public sealed class RuntimeChapterSaveServiceTests
             "test",
             "test.xml",
             ChapterImportFormat.MatroskaXml,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
 
         var result = await service.SaveAsync(
             info,
-            new ChapterExportOptions(ChapterExportFormat.Txt),
+            new ChapterSerializationOptions(ChapterExportFormat.Txt),
             "bad\0path",
             TestContext.Current.CancellationToken);
 
@@ -192,14 +191,14 @@ public sealed class RuntimeChapterSaveServiceTests
             "test",
             "test.txt",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
 
         var result = await service.SaveAsync(
             info,
-            new ChapterExportOptions(ChapterExportFormat.Txt),
+            new ChapterSerializationOptions(ChapterExportFormat.Txt),
             directory: null,
             TestContext.Current.CancellationToken);
 
@@ -216,7 +215,7 @@ public sealed class RuntimeChapterSaveServiceTests
             "test",
             "movie.txt",
             ChapterImportFormat.Ogm,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
@@ -226,7 +225,7 @@ public sealed class RuntimeChapterSaveServiceTests
             await File.WriteAllTextAsync(Path.Combine(directory, "movie.txt"), "existing", TestContext.Current.CancellationToken);
             var result = await service.SaveAsync(
                 info,
-                new ChapterExportOptions(ChapterExportFormat.Txt),
+                new ChapterSerializationOptions(ChapterExportFormat.Txt),
                 directory,
                 TestContext.Current.CancellationToken);
 
@@ -249,7 +248,7 @@ public sealed class RuntimeChapterSaveServiceTests
             "title",
             "00001",
             ChapterImportFormat.Mpls,
-            24,
+            FrameRateValue.Approximate(24m),
             TimeSpan.FromMinutes(1),
             [new Chapter(1, TimeSpan.Zero, "Chapter 01")]);
         var service = new RuntimeChapterSaveService(new ChapterExportService(new ChapterTimeFormatter()));
@@ -258,7 +257,7 @@ public sealed class RuntimeChapterSaveServiceTests
         {
             var result = await service.SaveAsync(
                 info,
-                new ChapterExportOptions(ChapterExportFormat.Txt),
+                new ChapterSerializationOptions(ChapterExportFormat.Txt),
                 directory,
                 TestContext.Current.CancellationToken,
                 sourcePath: Path.Combine(directory, "00005.mpls"));

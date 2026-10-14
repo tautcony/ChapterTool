@@ -12,6 +12,8 @@ Use ASD-STE100 principles in this document. Keep each sentence short and direct.
 
 Canonical data contracts shared across the pipeline:
 
+- `src/ChapterTool.Core/Models/EditableChapterDocument.cs`: immutable document, track, chapter, identity, duration, and frame-rate values
+- `src/ChapterTool.Core/Models/EditableChapterDocumentAdapter.cs`: `ChapterSet` adapters and document validation
 - `src/ChapterTool.Core/Models/Chapter.cs`
 - `src/ChapterTool.Core/Models/ChapterSet.cs`
 - `src/ChapterTool.Core/Models/ChapterImportFormat.cs`
@@ -20,7 +22,24 @@ Canonical data contracts shared across the pipeline:
 - `src/ChapterTool.Core/Models/ChapterImportEntry.cs`
 - `src/ChapterTool.Core/Models/ReferencedMediaFile.cs`
 
-`ChapterSet` is the main unit passed between import, edit, transform, and export flows.
+`EditableChapterTrack.Segments` stores current boundaries and media placement. `ClipSession` stores selector metadata and does not keep editable chapter backups.
+
+`ChapterSet` is the import and conversion model for stateless workflows.
+`ChapterSet.DurationIsKnown` distinguishes unknown duration from known zero duration.
+Legacy zero durations default to unknown. Exact inputs set the flag explicitly.
+Document, track, and clip metadata adapters must preserve the flag.
+Combine and append operations must reject unknown durations before calculating offsets.
+Interactive edits use `EditableChapterDocument` snapshots owned by `SessionState`.
+`ChapterWorkspace.CurrentChapterSet` is a transient selected-track view. It is not editable workspace storage.
+
+Internal editing, conversion, transform, and expression call chains use `FrameRateValue` directly.
+Public content and transform APIs use `FrameRateValue` for frame-rate authority.
+Catalog selectors pass their canonical rational through `FrameRateOption.Rate`.
+Hosts may format that value as a decimal for display.
+
+`EditableChapterDocumentAdapter.TrackDuration` covers every segment in a selected track. `ReplacedTrackDuration` updates document bounds after a reviewed track conversion. `WithFallbackFrameRate` supplies detected FPS to expression preparation when source FPS is absent. `ChapterFpsTransformService` uses one frame quantization rule for chapter times, document duration, and absolute segment boundaries. Source FPS metadata remains unchanged.
+
+MPLS frame-rate codes provide an authoritative rational rate. `MplsFrameRateCatalog` stores that rate on the imported `ChapterSet`; the editable document and selected-track projection preserve the provenance for exact frame presentation.
 
 ### Diagnostics
 
@@ -56,6 +75,12 @@ Important format entry points:
 - CUE sheet parsing: `src/ChapterTool.Core/Importing/Cue/CueChapterImporter.cs`
 - Embedded FLAC/TAK CUE: `src/ChapterTool.Core/Importing/Cue/FlacCueImporter.cs`, `src/ChapterTool.Core/Importing/Cue/TakCueImporter.cs`
 - DVD/Blu-ray playlist parsing uses `IfoChapterImporter.cs`, `MplsChapterImporter.cs`, `MplsPlaylistProjection.cs`, split `Mpls*.cs` playlist types, and `XplChapterImporter.cs` under `src/ChapterTool.Core/Importing/Disc/`.
+- `IfoChapterImporter` reads DVD VTS PTT references and resolves them through PGC program maps. It validates bounded PGC and PTT tables. It maps VMG `VIDEO_TS.IFO` titles to sibling VTS IFO files. It can recover chapters from PGC program starts when the VMG chapter count matches the PGC and the first PTT program is 1 or is missing. When PTT references are invalid, ordinal PGC recovery requires the PTT title count to equal the PGC count and the selected PGC program count to match the VMG chapter count. The importer accepts a `VIDEO_TS` directory or a disc root that contains `VIDEO_TS`. It adds VTS video, audio, and subtitle attributes to each title entry and reports whole-disc metadata. VMG imports need filesystem access to sibling VTS IFO files.
+- `DvdIfoMetadataReader` parses VTS video, audio, and subtitle attributes. It adds track summaries to import entries and structured disc metadata to import diagnostics.
+- `DvdNavTimingReader` reads 90 kHz presentation times from VOB navigation packs. It follows the DSI VOBU links within each IFO cell sector range. It validates PCI and DSI headers, sector addresses, and cell identity. It supports contiguous numbered VOB files and 32-bit timestamp wrap. It handles clock resets between cells. It caches cell durations and limits navigation reads to 200,000 packs per reader. Cancellation stops the traversal.
+- `IfoChapterImporter` uses NAV timing only when all referenced PGCs in a title have complete navigation data. Missing files, invalid packs, interleaved angles, or discontinuities within a cell retain the complete IFO timeline. Stream imports use the same IFO calculation. IFO timecodes preserve the legacy interpretation of 30 nominal frames for NTSC and 25 for PAL. NTSC playback uses the exact rate `30000/1001`. Cell, program, and title calculations accumulate integer frame counts or integer NAV ticks. Each final time converts once to the nearest `TimeSpan` tick. This conversion has at most 50 ns of numeric error. This bound excludes errors in the source metadata. The importer reports the timing source through `Ifo.Captured` or `Ifo.Fallback`. It never applies a frame-alignment adjustment. NAV times between frame boundaries remain unchanged.
+- `ChapterImportEntry.DiscTitleNumber` identifies a DVD disc title for localized host labels. The host uses `ChapterImportDisplay.FormatDvdOption` to format the label. A language change preserves chapter names and stored title data.
+- Each VTS PTT record contains a PGC number and a program number. Each record uses four bytes. The importer derives the chapter count from the bounded title region. VMG recovery uses the same title boundaries.
 - `MplsPlaylistProjection` supplies shared chapter, clip-name, frame-rate, duration, and media-reference values to direct MPLS and BDMV import.
 - BDMV navigation uses typed INDEX references under `Disc/Index/`, bounded MovieObject parsing and HDMV resolution under `Disc/MovieObject/`, and BDJO accessible-playlist parsing under `Disc/Bdjo/`.
 - `HdmvNavigationResolver.ResolveProfileVariants` creates bounded player profiles only for Player Status Registers (PSRs) that MovieObject commands read. It merges playlist events in stable profile order.
@@ -72,7 +97,7 @@ Important format entry points:
 
 ### libbluray compatibility map
 
-`libbluray/` is a vendored C reference snapshot at commit `ea3e318b` (the `hdmv: fix INSN_BC instruction` change). ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
+This map uses libbluray 1.5.1 commit `a24f4fad` as a C reference. A local `libbluray/` checkout is optional. It is not part of ChapterTool commits or distribution. ChapterTool does not link to it at runtime. The managed parsers and resolver reproduce the bounded BDMV behavior that the importer needs.
 
 | libbluray reference | ChapterTool implementation | Boundary or difference |
 | --- | --- | --- |
@@ -96,6 +121,8 @@ In-memory chapter mutations:
 - `src/ChapterTool.Core/Editing/ChapterEditingOptions.cs`
 - `src/ChapterTool.Core/Editing/ChapterSegmentService.cs`
 - `src/ChapterTool.Core/Editing/ChapterEditResult.cs`
+- `src/ChapterTool.Core/Editing/ChapterContentCandidateBuilder.cs` — identity-scoped content candidates for cell edits, structure, metadata, naming, offsets, frame operations, and expressions
+- `src/ChapterTool.Core/Editing/ChapterClipCandidateBuilder.cs` — merge, boundary split, and append candidates over current document tracks
 
 `ChapterEditingOptions` controls delete-rows timing (`Preserve` or `Normalize`) and frame display (`Round` or `DecimalPlaces` with one to six places). `IChapterEditingService.Delete` applies the delete-rows timing mode.
 
@@ -104,12 +131,17 @@ In-memory chapter mutations:
 Host-agnostic interactive session state shared by Avalonia and WASM:
 
 - `src/ChapterTool.Core/Session/ClipSession.cs` — split/combined clip sessions and pure transitions
-- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — host-neutral session state, edit buffer, revision and session-token commit rules for Avalonia and WASM
-- `src/ChapterTool.Core/Session/ProjectionState.cs` — naming, order shift, expression fields, projection cache
+- `src/ChapterTool.Core/Session/ChapterWorkspace.cs` — one multi-track content session, transient selected-track views, staged replacement checks, and export baselines
+- `src/ChapterTool.Core/Session/ChapterExportBaseline.cs` — snapshot-only export state and canonical content and format fingerprints
+- `src/ChapterTool.Core/Session/SessionState.cs` — immutable document snapshots, serialized atomic transactions, session-end cancellation, request idempotency, and history navigation
+- `src/ChapterTool.Core/Session/SessionEditHistory.cs` — retained history tree and reversible document, track, and chapter deltas
+- `src/ChapterTool.Core/Session/ChapterContentOperationSession.cs` — typed preview diffs and stale-safe apply for content candidates
+- `src/ChapterTool.Core/Session/ContentOperationDraftState.cs` — naming, numbering, and expression parameters for explicit operations
+- `src/ChapterTool.Core/Session/ExpressionPreviewProjection.cs` — host-neutral before/candidate comparison rows, change categories, property ownership, and frame-unit projection
 - `src/ChapterTool.Core/Session/ExportPreferences.cs` — export format, language, encoding, BOM, save directory
 - `src/ChapterTool.Core/Session/ChapterSourceDocument.cs` — host-neutral chapter source identity (`LocalPathChapterSource`, `BufferedChapterSource`)
 
-Primary tests: `tests/ChapterTool.Core.Tests/Session/`
+Primary tests: `tests/ChapterTool.Core.Tests/Session/` and `tests/ChapterTool.Core.Tests/Editing/ChapterContentCandidateBuilderTests.cs`. The editing tests verify candidate commit, undo, redo, stale-preview rejection, and all-or-nothing batch failure.
 
 ### Boundaries and localization
 
@@ -130,6 +162,9 @@ Frame/time and expression logic:
 
 - `src/ChapterTool.Core/Transform/IFrameRateService.cs`
 - `src/ChapterTool.Core/Transform/FrameRateService.cs`
+- `src/ChapterTool.Core/Transform/ExactFrameMath.cs`: exact tick and frame-rate arithmetic
+- `src/ChapterTool.Core/Transform/FrameValueFormatter.cs`: structured formatting for exact frame values
+- `src/ChapterTool.Core/Transform/FramePresentationInput.cs`: tick, rate provenance, and numeric fallback
 - `src/ChapterTool.Core/Transform/ChapterFpsTransformService.cs`
 - `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
 - `src/ChapterTool.Core/Transform/Expressions/ChapterExpressionEngine.cs`
@@ -138,19 +173,23 @@ Frame/time and expression logic:
 - `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 - `src/ChapterTool.Core/Transform/ChapterRounding.cs`
 
+`FrameRateService` keeps supported frame rates as canonical rationals. `FrameRateValue` retains Rational, Approximate, or Unknown authority. `ExactFrameMath` calculates frames from timestamp ticks and integer rate coefficients. `FrameValueFormatter` formats committed and candidate values. Approximate display uses plain decimals. Unknown display may use a detection suggestion without changing computation authority.
+
 `ChapterExpressionService` evaluates only non-separator chapters. Each expression context contains the ordered non-separator chapter snapshot. The Lua engine exposes this snapshot as the one-based `chapters` array. The `chapter` value equals `chapters[index]`.
 
 ### Exporting
 
-Output projection and format serialization:
+Content projection and pure format serialization:
 
 - `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
+- `ChapterOutputProjectionService` applies explicit one-shot CLI output projection options.
+- `ChapterExportService.Serialize` writes prepared content without transforms. Interactive hosts call it with committed document content.
 - `src/ChapterTool.Core/Exporting/SaveFormatOption.cs`: host-facing export format metadata
-- `src/ChapterTool.Core/Exporting/ChapterExportOptions.cs`
+- `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormat.cs`
 - `src/ChapterTool.Core/Exporting/ChapterExportFormats.cs`
 - `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
-- `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
+- `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs` — one-shot content projection used by CLI conversion
 - `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`
 - `src/ChapterTool.Core/Exporting/XmlChapterLanguageCatalog.cs`
 - `src/ChapterTool.Core/Exporting/ChapterSavePath.cs` — deterministic output file names and non-colliding path allocation
@@ -169,13 +208,17 @@ Browser host:
 
 - `src/ChapterTool.Wasm` is the Blazor WebAssembly browser app. It uses `Microsoft.NET.Sdk.BlazorWebAssembly`.
 - `src/ChapterTool.Wasm/Pages/Home.razor` is the browser workspace page.
-- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, projection, export orchestration, diagnostics, activity logs, and localized status strings.
+- `src/ChapterTool.Wasm/Services/WasmWorkspace.cs` owns buffered load, reload, append, selection, candidate commits, export orchestration, history commands, diagnostics, activity logs, and localized status strings. It navigates the shared Core `ChapterWorkspace.ContentSession`.
+- `Services/WasmWorkspace.MainOptions.cs` prepares one Core candidate for main-window naming, numbering, and Lua drafts. `Home.razor` renders its before and candidate values in the chapter grid.
+- Main-window options derive applied expression state from typed operations on the current history branch and track. Naming and numbering do not replay an applied expression.
+- `Services/WasmWorkspace.History.cs` owns deferred redo choices. `Services/WasmHistoryProjection.cs` formats history operations and field details. `Components/HistoryDialog.razor` owns read-only inspection and explicit restoration.
 - `src/ChapterTool.Wasm/Services/WasmBrowserShortcutGuard.cs` blocks browser shortcut keys during text editing.
-- `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, projection, and export services.
+- `WasmWorkspace` uses Core session and service types such as `ChapterWorkspace`, editing, segment, and export services. `WasmWorkspaceProjection` maps content and diagnostics to browser view models.
 - Browser localization uses embedded JSON resources under `src/ChapterTool.Wasm/Resources/Locales/` through `WasmLocalizer`.
-- The JSON resources are generated from the Avalonia AXAML locales by `scripts/axaml-to-json.py`. Use its `--check` mode to detect drift.
+- The JSON resources are generated from the Avalonia AXAML locales by `scripts/localization/axaml-to-json.py`. Use its `--check` mode to detect drift.
 - Browser settings use the `WasmSettings` document with `schemaVersion`/`application`/`theme`/`font` fields. `WasmApplicationSettings` mirrors the Contracts `AppSettings` fields, including the delete-rows timing and frame display preferences. The host stores settings in browser storage through the workspace path.
-- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, and export behavior. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.
+- `Home.razor` applies valid settings drafts to runtime preferences. Save persists one aggregate. Discard restores the runtime snapshot captured when the dialog opened. Saved output defaults do not replace active session output choices.
+- `tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs` covers workspace load, clip session, template, export, independent tab sessions, and history navigation. `tests/ChapterTool.Wasm.Tests/WasmBrowserShortcutGuardTests.cs` covers the shortcut guard.
 - GitHub Pages deploys the app through `.github/workflows/github-pages.yml` (`https://tautcony.github.io/ChapterTool/`).
 
 ## Feature Lookup
@@ -213,13 +256,16 @@ Start with:
 - expression-driven rewrites: `src/ChapterTool.Core/Transform/ChapterExpressionService.cs`
 - expression engine contract: `src/ChapterTool.Core/Transform/Expressions/ChapterExpressionEngine.cs`
 - Lua expression engine: `src/ChapterTool.Core/Transform/Expressions/Lua/LuaExpressionScriptService.cs`
+- deterministic document frame conversion: `src/ChapterTool.Core/Transform/ChapterFrameTimeConverter.cs`
 - time parse/format bugs: `src/ChapterTool.Core/Transform/ChapterTimeFormatter.cs`
 
 ### Export behavior
 
 Start with:
 
-- projection before serialization: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
+- explicit one-shot projection: `src/ChapterTool.Core/Exporting/ChapterOutputProjectionService.cs`
 - format-specific serialization: `src/ChapterTool.Core/Exporting/ChapterExportService.cs`
+- snapshot serialization options: `src/ChapterTool.Core/Exporting/ChapterSerializationOptions.cs`
+- immutable snapshot entry point: `ChapterExportService.Serialize(EditableChapterDocument, ChapterSerializationOptions)`
 - supported file encodings, display names, BOM-aware encoders, and XML encoding names: `src/ChapterTool.Core/Exporting/OutputTextEncoding.cs`
 - text-to-QP/celltimes conversion: `src/ChapterTool.Core/Exporting/ChapterConversionService.cs`

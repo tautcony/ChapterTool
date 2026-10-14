@@ -19,7 +19,7 @@ public static class ChapterExportFormats
             [ChapterExportFormat.Celltimes] = ("celltimes", ".txt", "Celltimes", "Celltimes frame list")
         };
     /// <summary>
-    /// Supported export formats in UI and CLI presentation order.
+    /// Gets supported export formats in UI and CLI presentation order.
     /// </summary>
     public static IReadOnlyList<ChapterExportFormat> All { get; } =
     [

@@ -6,6 +6,6 @@ try
 }
 catch (Exception exception)
 {
-    Console.Error.WriteLine($"Unhandled CLI exception: {exception.Message}");
+    await Console.Error.WriteLineAsync($"Unhandled CLI exception: {exception.Message}");
     return 2;
 }

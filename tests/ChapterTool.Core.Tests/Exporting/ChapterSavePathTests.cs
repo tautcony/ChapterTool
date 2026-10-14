@@ -8,7 +8,7 @@ public sealed class ChapterSavePathTests
     [Fact]
     public void BuildBaseFileNameUsesSourcePathThenSourceName()
     {
-        var info = new ChapterSet("title", "clip", ChapterImportFormat.Ogm, 24, TimeSpan.FromSeconds(1), []);
+        var info = new ChapterSet("title", "clip", ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.FromSeconds(1), []);
 
         Assert.Equal("movie", ChapterSavePath.BuildBaseFileName(info, Path.Combine("dir", "movie.txt")));
         Assert.Equal("clip", ChapterSavePath.BuildBaseFileName(info, sourcePath: null));
@@ -18,7 +18,7 @@ public sealed class ChapterSavePathTests
     [Fact]
     public void BuildBaseFileNameAppendsClipNameForDiscFormats()
     {
-        var info = new ChapterSet("title", "00001", ChapterImportFormat.Mpls, 24, TimeSpan.FromSeconds(1), []);
+        var info = new ChapterSet("title", "00001", ChapterImportFormat.Mpls, FrameRateValue.Approximate(24m), TimeSpan.FromSeconds(1), []);
 
         Assert.Equal("00005__00001", ChapterSavePath.BuildBaseFileName(info, Path.Combine("STREAM", "00005.mpls")));
         Assert.Equal("00001", ChapterSavePath.BuildBaseFileName(info, sourcePath: null));

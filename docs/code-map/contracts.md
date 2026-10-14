@@ -17,6 +17,8 @@ Use this project when a desktop, browser, or command-line host needs the same pe
 
 `DeleteRowsTimingModes` and `FrameDisplayModes` parse and serialize the persisted editing-preference ids in `AppSettings`. `DeleteRowsTimingMode` selects whether deleted-row timing stays unchanged or shifts to restart at zero. `FrameDisplayMode` selects integer rounding or fixed decimal places for frame values.
 
+Content operation parameters are runtime drafts in Core `ContentOperationDraftState`. They are not persisted in `Contracts` and do not transform exported content.
+
 - settings store contract:
   - `src/ChapterTool.Contracts/PlatformPorts/ISettingsStore.cs`
 - shared platform contracts:
@@ -25,5 +27,11 @@ Use this project when a desktop, browser, or command-line host needs the same pe
   - `src/ChapterTool.Contracts/PlatformPorts/IExternalToolLocator.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/IShellService.cs`
   - `src/ChapterTool.Contracts/PlatformPorts/ExternalToolLocation.cs`
+
+### Application log boundary
+
+`IApplicationLogService` exposes the current bounded `Entries` snapshot, the `EntryAdded` notification, and the `Cleared` notification. `ApplicationLogEntry` carries the timestamp, level, message identity, operation, category, event identity, exception text, technical detail, arguments, and structured state. The contract has no grouping, timestamp-query, or history-cursor API.
+
+`LogExportFormat`, `ApplicationLogExportRequest`, and `ApplicationLogExportResult` define the optional manual-export boundary. `IApplicationLogExporter` receives the entries selected by the caller and returns a path or a recoverable error. Hosts may omit this service. The contract does not require Avalonia or filesystem access.
 
 The project has no Avalonia dependency. Infrastructure implements the shared runtime boundaries. Avalonia UI consumes the contracts through its own adapters.

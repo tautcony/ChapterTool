@@ -39,6 +39,7 @@ public sealed class MplsChapterImporter : IChapterImporter
             var parsed = MplsPlaylistFile.Read(stream);
             var clpiByClip = DiscoverClpiFromPath(request.Path, parsed, diagnostics);
             var projection = MplsPlaylistProjection.Create(parsed, BdmvPathHelper.FindBdmvRoot(request.Path));
+            diagnostics.AddRange(projection.Diagnostics);
             var entries = parsed.PlayList.PlayItems.Select((_, index) => ToOption(request.Path, projection, index, clpiByClip)).ToList();
             return new ChapterImportResult(true, [new ChapterImportSource(request.Path, entries)], diagnostics);
         }
@@ -48,7 +49,10 @@ public sealed class MplsChapterImporter : IChapterImporter
         }
         finally
         {
-            ownedStream?.Dispose();
+            if (ownedStream is not null)
+            {
+                await ownedStream.DisposeAsync();
+            }
         }
     }
 
@@ -112,7 +116,7 @@ public sealed class MplsChapterImporter : IChapterImporter
             string.Empty,
             playItem.FullName,
             ChapterImportFormat.Mpls,
-            MplsFrameRateCatalog.FromCode(playItem.STNTable.PrimaryVideoStreamEntries.FirstOrDefault()?.StreamAttributes.FrameRate),
+            projection.Segments[playItemIndex].FrameRate,
             PtsToTime(playItem.OUTTime >= playItem.INTime ? playItem.OUTTime - playItem.INTime : 0),
             chapters);
         var refs = projection.ReferencesForPlayItem(playItemIndex);

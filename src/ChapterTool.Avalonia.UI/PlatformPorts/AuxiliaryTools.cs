@@ -8,6 +8,7 @@ using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
 using ChapterTool.Core.Transform;
 using ChapterTool.Core.Transform.Expressions;
+using Microsoft.Extensions.Logging;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts;
 
@@ -49,6 +50,7 @@ public static class ToolIds
     public static readonly ToolId TemplateNames = new("template-names");
     public static readonly ToolId Zones = new("zones");
     public static readonly ToolId ForwardShift = new("forward-shift");
+    public static readonly ToolId History = new("history");
 }
 
 public enum ToolRefreshPolicy
@@ -76,9 +78,10 @@ public sealed record AuxiliaryToolRequest(
     IWorkspaceToolSession Session,
     IAppLocalizer Localizer,
     IRuntimeCapabilities Capabilities,
-    Window? HostWindow = null,
     IFilePickerService? FilePicker = null,
-    IClipboardService? Clipboard = null);
+    IClipboardService? Clipboard = null,
+    Action? CloseTool = null,
+    Window? HostWindow = null);
 
 public interface IAuxiliaryToolHost : IDisposable
 {
@@ -144,7 +147,8 @@ public sealed record ToolCreationContext(
     IClipboardService Clipboard,
     Window? HostWindow = null,
     IFilePickerService? FilePicker = null,
-    IRuntimeCapabilities? Capabilities = null);
+    IRuntimeCapabilities? Capabilities = null,
+    Action? CloseTool = null);
 
 public sealed record ToolDescriptor(
     ToolId Id,
@@ -153,7 +157,8 @@ public sealed record ToolDescriptor(
     ToolRefreshPolicy RefreshPolicy,
     Func<ToolCreationContext, Control> CreateContent,
     bool RequiresCloseConfirmation = false,
-    IReadOnlySet<string>? RequiredPorts = null);
+    IReadOnlySet<string>? RequiredPorts = null,
+    bool IsModal = false);
 
 public interface IToolCatalog
 {
@@ -220,7 +225,7 @@ public sealed record WorkspaceHostServices(
 
 public sealed record HostEffectServices(
     IApplicationLogService LogService,
-    Microsoft.Extensions.Logging.ILogger<MainWindowViewModel> Logger,
+    ILogger<MainWindowViewModel> Logger,
     IShellService ShellService);
 
 public sealed record SettingsAppearanceServices(

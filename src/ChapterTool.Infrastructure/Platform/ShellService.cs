@@ -34,7 +34,7 @@ public sealed class ShellService : IShellService
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Unable to open '{Target}'.", target);
+            logger.LogWarning(exception, "Unable to open '{Target}'", target);
         }
 
         return ValueTask.CompletedTask;
@@ -63,7 +63,7 @@ public sealed class ShellService : IShellService
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Unable to reveal '{FilePath}' in the platform file manager.", filePath);
+            logger.LogWarning(exception, "Unable to reveal '{FilePath}' in the platform file manager", filePath);
         }
 
         return ValueTask.CompletedTask;
@@ -93,13 +93,13 @@ public sealed class ShellService : IShellService
                 // Try common terminal emulators
                 if (!TryRun("x-terminal-emulator", out var exception, "--working-directory", directoryPath))
                 {
-                    logger.LogWarning(exception, "Unable to open a terminal in '{DirectoryPath}'.", directoryPath);
+                    logger.LogWarning(exception, "Unable to open a terminal in '{DirectoryPath}'", directoryPath);
                 }
             }
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Unable to open a terminal in '{DirectoryPath}'.", directoryPath);
+            logger.LogWarning(exception, "Unable to open a terminal in '{DirectoryPath}'", directoryPath);
         }
 
         return ValueTask.CompletedTask;

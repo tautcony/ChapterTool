@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using ChapterTool.Core.Diagnostics;
+using ChapterTool.Core.Models;
 using Lua;
 using Lua.Standard;
 
@@ -8,7 +10,7 @@ namespace ChapterTool.Core.Transform.Expressions.Lua;
 /// <summary>
 /// Evaluates Lua scripts against chapter expression contexts.
 /// </summary>
-public sealed partial class LuaExpressionScriptService : IChapterExpressionEngine
+public sealed partial class LuaExpressionScriptService : IChapterExpressionEngine, ICanonicalChapterExpressionEngine
 {
     private static readonly Regex ReturnOrTransformPattern = ReturnOrTransformRegex();
     private static readonly TimeSpan DefaultExecutionTimeout = TimeSpan.FromMilliseconds(500);
@@ -78,6 +80,26 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
     /// <returns>The expression evaluation result.</returns>
     public ChapterExpressionEvaluationResult Evaluate(string sourceText, ChapterExpressionContext context)
     {
+        if (!FrameRateValue.TryFromDecimal(context.FramesPerSecond, metadata: true, out var rate, out var diagnostic))
+        {
+            return new ChapterExpressionEvaluationResult(false, context.TimeSeconds, [diagnostic!]);
+        }
+
+        try
+        {
+            var ticks = ChapterRounding.RoundToInt64(context.TimeSeconds * TimeSpan.TicksPerSecond);
+            return Evaluate(sourceText, new CanonicalChapterExpressionContext(context.Chapter, context.Index,
+                context.Count, ticks, rate, context.Chapters));
+        }
+        catch (OverflowException exception)
+        {
+            return Failure(context.TimeSeconds, ChapterDiagnosticCode.InvalidExpressionTime, exception.Message);
+        }
+    }
+
+    /// <summary>Evaluates Lua using canonical ticks and explicit rate uncertainty.</summary>
+    public ChapterExpressionEvaluationResult Evaluate(string sourceText, CanonicalChapterExpressionContext context)
+    {
         var fallback = context.TimeSeconds;
         try
         {
@@ -134,14 +156,26 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         return ReturnOrTransformPattern.IsMatch(source) ? source : $"return ({source})";
     }
 
-    private static void ConfigureState(LuaState state, ChapterExpressionContext context)
+    private static void ConfigureState(LuaState state, CanonicalChapterExpressionContext context)
     {
         state.OpenMathLibrary();
         state.OpenStringLibrary();
         state.OpenTableLibrary();
 
         state.Environment["t"] = (double)context.TimeSeconds;
-        state.Environment["fps"] = (double)context.FramesPerSecond;
+        state.Environment["fps"] = context.FrameRate.IsKnown ? context.FrameRate.ToDouble() : LuaValue.Nil;
+        state.Environment["fpsRateKind"] = context.FrameRate.Kind.ToString();
+        if (context.FrameRate.RationalRate is { } ratio)
+        {
+            state.Environment["fpsNumeratorText"] = ratio.Numerator.ToString(CultureInfo.InvariantCulture);
+            state.Environment["fpsDenominatorText"] = ratio.Denominator.ToString(CultureInfo.InvariantCulture);
+            const long maximumSafeInteger = 9_007_199_254_740_991;
+            if (ratio.Numerator <= maximumSafeInteger && ratio.Denominator <= maximumSafeInteger)
+            {
+                state.Environment["fpsNumerator"] = (double)ratio.Numerator;
+                state.Environment["fpsDenominator"] = (double)ratio.Denominator;
+            }
+        }
         state.Environment["index"] = context.Index;
         state.Environment["count"] = context.Count;
 
@@ -152,7 +186,7 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
                 context.Chapters[index],
                 index + 1,
                 context.Count,
-                context.FramesPerSecond);
+                context.FrameRate);
         }
 
         state.Environment["chapters"] = chapters;
@@ -181,16 +215,16 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
         });
     }
 
-    private static LuaTable CreateChapterTable(Models.Chapter chapter, int index, int count, decimal framesPerSecond) =>
+    private static LuaTable CreateChapterTable(Chapter chapter, int index, int count, FrameRateValue framesPerSecond) =>
         new()
         {
             ["number"] = chapter.DisplayNumber,
-            ["time"] = chapter.StartTime.TotalSeconds,
+            ["time"] = (double)(chapter.StartTime.Ticks / (decimal)TimeSpan.TicksPerSecond),
             ["name"] = chapter.Name,
             ["frames"] = chapter.FramesInfo,
             ["index"] = index,
             ["count"] = count,
-            ["fps"] = (double)framesPerSecond
+            ["fps"] = framesPerSecond.IsKnown ? framesPerSecond.ToDouble() : LuaValue.Nil
         };
 
     private static ChapterExpressionEvaluationResult NumericResult(LuaValue value, decimal fallback)
@@ -202,7 +236,16 @@ public sealed partial class LuaExpressionScriptService : IChapterExpressionEngin
 
         try
         {
-            return new ChapterExpressionEvaluationResult(true, (decimal)number, []);
+            var exactRoundTrip = number.ToString("R", CultureInfo.InvariantCulture);
+            var unchangedValue = (double)fallback;
+            return new ChapterExpressionEvaluationResult(
+                true,
+                decimal.Parse(exactRoundTrip, NumberStyles.Float, CultureInfo.InvariantCulture),
+                [])
+            {
+                TimeUnchanged = number >= Math.BitDecrement(unchangedValue)
+                    && number <= Math.BitIncrement(unchangedValue)
+            };
         }
         catch (OverflowException exception)
         {

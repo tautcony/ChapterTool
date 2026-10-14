@@ -1,6 +1,5 @@
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Models;
-using ChapterTool.Core.Transform.Expressions;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
 
@@ -9,20 +8,12 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// </summary>
 internal static class ChapterExpressionValidation
 {
-    public static ChapterExpressionContext CreateContext(ChapterSet? info)
+    public static ChapterSet CreateInput(ChapterSet? info)
     {
         var chapters = info?.Chapters.Where(static chapter => !chapter.IsSeparator).ToList() ?? [];
         var chapter = chapters.FirstOrDefault() ?? new Chapter(1, TimeSpan.Zero, "Chapter 01");
-        var fps = info is { FramesPerSecond: > 0 }
-            ? (decimal)info.FramesPerSecond
-            : 24m;
-        return new ChapterExpressionContext(
-            chapter,
-            1,
-            Math.Max(1, chapters.Count),
-            (decimal)chapter.StartTime.TotalSeconds,
-            fps,
-            chapters.Count > 0 ? chapters : [chapter]);
+        return new ChapterSet(info?.Title ?? string.Empty, info?.SourceName, info?.ImportFormat ?? ChapterImportFormat.Unknown,
+            info?.FrameRate ?? FrameRateValue.Unknown, info?.Duration ?? TimeSpan.Zero, chapters.Count > 0 ? chapters : [chapter]);
     }
 
     public static bool IsLuaExpressionDiagnostic(ChapterDiagnostic diagnostic) =>

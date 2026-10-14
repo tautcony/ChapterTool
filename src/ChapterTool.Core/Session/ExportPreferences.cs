@@ -1,4 +1,5 @@
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
 
 namespace ChapterTool.Core.Session;
 
@@ -20,8 +21,14 @@ public sealed class ExportPreferences
     /// <summary>Gets a value indicating whether a UTF BOM is emitted for text exports.</summary>
     public bool EmitBom { get; private set; }
 
-    /// <summary>Configured save directory from settings (null means unresolved / source-relative).</summary>
+    /// <summary>Gets configured save directory from settings (null means unresolved / source-relative).</summary>
     public string? SaveDirectory { get; private set; }
+
+    /// <summary>Gets the explicit output computation rate. Null uses uniform content metadata.</summary>
+    public FrameRateValue? ComputationRate { get; private set; }
+
+    /// <summary>Captures an explicit output rate without changing document content or history.</summary>
+    public void SetComputationRate(FrameRateValue? rate) => ComputationRate = rate;
 
     /// <summary>Sets the export format. Returns whether the value changed.</summary>
     /// <param name="value">The new format.</param>

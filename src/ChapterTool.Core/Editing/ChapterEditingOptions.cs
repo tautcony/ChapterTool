@@ -15,7 +15,9 @@ public enum FrameDisplayMode
     /// <summary>Round frame values to integers.</summary>
     Round,
     /// <summary>Format frame values with a fixed number of decimal places.</summary>
-    DecimalPlaces
+    DecimalPlaces,
+    /// <summary>Format frame values without a fixed decimal-place limit.</summary>
+    FullPrecision
 }
 
 /// <summary>Controls chapter editing behavior.</summary>
@@ -28,7 +30,11 @@ public sealed record ChapterEditingOptions(
     public static ChapterEditingOptions Default { get; } = new();
 
     /// <summary>Gets the number of decimal places that the frame formatter uses.</summary>
-    public int EffectiveFrameDecimalPlaces => FrameDisplay == FrameDisplayMode.Round
-        ? 0
-        : Math.Clamp(FrameDecimalPlaces, 1, 6);
+    public int EffectiveFrameDecimalPlaces => FrameDisplay switch
+    {
+        FrameDisplayMode.Round => 0,
+        FrameDisplayMode.DecimalPlaces => Math.Clamp(FrameDecimalPlaces, 1, 6),
+        FrameDisplayMode.FullPrecision => -1,
+        _ => 0
+    };
 }

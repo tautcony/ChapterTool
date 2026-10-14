@@ -92,7 +92,7 @@ public static class ThemePresetCatalog
         return new(
             id,
             name,
-            $"Settings.Appearance.Preset.{id}",
+            $"Settings.Appearance.Preset.{ToLocalizationKeySegment(id)}",
             baseVariant,
             new ThemePalette(
                 windowBackground,
@@ -110,4 +110,7 @@ public static class ThemePresetCatalog
                 FrameInexact: dark ? "#FF8A80" : "#B42318",
                 DiagnosticError: dark ? "#FF8A80" : "#B42318"));
     }
+
+    private static string ToLocalizationKeySegment(string id) =>
+        string.Concat(id.Split('-').Select(static part => char.ToUpperInvariant(part[0]) + part[1..]));
 }

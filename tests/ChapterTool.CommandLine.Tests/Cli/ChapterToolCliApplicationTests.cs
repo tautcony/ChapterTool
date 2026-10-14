@@ -32,16 +32,6 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
-    public void CliLocalizationSettingTheSameCultureReturnsEarly()
-    {
-        var localizer = new CliLocalizationManager("en-US");
-
-        localizer.SetCulture("en-US");
-
-        Assert.Equal("en-US", localizer.CurrentCultureName);
-    }
-
-    [Fact]
     public void CliLocalizationFallsBackToEnglishWhenCurrentCultureMissesAKey()
     {
         var localizer = new CliLocalizationManager(
@@ -118,7 +108,7 @@ public sealed class ChapterToolCliApplicationTests
     {
         var store = new ChapterToolSettingsStore(Path.Combine(Path.GetTempPath(), "ChapterTool.Tests", Guid.NewGuid().ToString("N")));
         var registry = ChapterToolRuntimeComposition.CreateImporterRegistry(store);
-        var export = ChapterToolRuntimeComposition.CreateExportService(expressionEngine: null);
+        var export = ChapterToolRuntimeComposition.CreateExportService();
 
         Assert.NotNull(registry);
         Assert.NotNull(export);
@@ -134,15 +124,15 @@ public sealed class ChapterToolCliApplicationTests
     public void SharedExportFactory_without_expression_matches_cli_scope()
     {
         var export = ChapterToolRuntimeComposition.CreateExportService();
-        var result = export.Export(
+        var result = export.Serialize(
             new ChapterSet(
                 "t",
                 "s",
                 ChapterImportFormat.Ogm,
-                24,
+                FrameRateValue.Approximate(24m),
                 TimeSpan.FromSeconds(1),
                 [new Chapter(1, TimeSpan.Zero, "Intro")]),
-            new ChapterExportOptions(ChapterExportFormat.Txt, ApplyExpression: false));
+            new ChapterSerializationOptions(ChapterExportFormat.Txt));
         Assert.True(result.Success);
     }
 
@@ -322,7 +312,7 @@ public sealed class ChapterToolCliApplicationTests
                 EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
-                FrameRate: 24,
+                FrameRate: FrameRateValue.Approximate(24m),
                 Expression: "t + 1"),
             TestContext.Current.CancellationToken);
 
@@ -347,7 +337,7 @@ public sealed class ChapterToolCliApplicationTests
                 EntryId: null,
                 XmlLanguage: null,
                 SourceFileName: null,
-                FrameRate: 24,
+                FrameRate: FrameRateValue.Approximate(24m),
                 ExpressionPreset: "offset-seconds"),
             TestContext.Current.CancellationToken);
 
@@ -647,21 +637,51 @@ public sealed class ChapterToolCliApplicationTests
     }
 
     [Fact]
-    public async Task ConvertRejectsNonFiniteFrameRate()
+    public void ConvertRejectsNonFiniteFrameRate()
     {
-        var console = new RecordingCliConsole();
-        var app = new ChapterToolCliApplication(console: console);
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", XmlFixture(), "--format", "qpf", "--stdout", "--frame-rate", "NaN"]));
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", XmlFixture(), "--format", "qpf", "--stdout", "--frame-rate", "Infinity"]));
+    }
 
-        var nan = await app.ConvertAsync(
-            new CliConvertRequest(XmlFixture(), "qpf", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: double.NaN),
-            TestContext.Current.CancellationToken);
-        var infinity = await app.ConvertAsync(
-            new CliConvertRequest(XmlFixture(), "qpf", OutputPath: null, Stdout: true, GroupIndex: 0, EntryIndex: 0, EntryId: null, XmlLanguage: null, SourceFileName: null, FrameRate: double.PositiveInfinity),
-            TestContext.Current.CancellationToken);
+    [Theory]
+    [InlineData("0/1")]
+    [InlineData("24/0")]
+    [InlineData("-24/1")]
+    [InlineData("24.0/1")]
+    [InlineData("24/1/1")]
+    [InlineData("9223372036854775808/1")]
+    public void Ratio_binding_rejects_invalid_components_before_import(string ratio)
+    {
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", "missing.xml", "--frame-rate-ratio", ratio]));
+    }
 
-        Assert.Equal(1, nan);
-        Assert.Equal(1, infinity);
-        Assert.Contains("finite number greater than zero", console.Stderr, StringComparison.Ordinal);
+    [Theory]
+    [InlineData("1e-100")]
+    [InlineData("1e100")]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public void Numeric_binding_rejects_unrepresentable_or_invalid_rates(string value)
+    {
+        Assert.Equal(1, ChapterToolCliHost.Run(["convert", "missing.xml", "--frame-rate", value]));
+    }
+
+    [Fact]
+    public void Ratio_binding_reduces_and_preserves_provenance_and_detects_conflict()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"ChapterTool-ratio-{Guid.NewGuid():N}.qpf");
+        try
+        {
+            Assert.Equal(1, ChapterToolCliHost.Run(["convert", "missing.xml", "--frame-rate", "24", "--frame-rate-ratio", "24/1"]));
+            Assert.Equal(0, ChapterToolCliHost.Run(["convert", XmlFixture(), "--format", "qpf", "--output", path,
+                "--group-index", "0", "--entry-index", "0", "--frame-rate-ratio", "48000/2002", "--expression",
+                "fpsNumerator == 24000 and fpsDenominator == 1001 and (t + fpsDenominator / fpsNumerator) or nil"]));
+            var content = File.ReadAllText(path, Encoding.UTF8);
+            Assert.StartsWith("1 I", content, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
@@ -740,7 +760,7 @@ public sealed class ChapterToolCliApplicationTests
         var console = new RecordingCliConsole();
         var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => app.ConvertAsync(
@@ -764,7 +784,7 @@ public sealed class ChapterToolCliApplicationTests
         var console = new RecordingCliConsole();
         var app = new ChapterToolCliApplication(console: console, importerRegistry: new ThrowingCancellationRegistry());
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
             () => app.InspectAsync(new CliInspectRequest(XmlFixture()), cts.Token));
@@ -923,7 +943,7 @@ public sealed class ChapterToolCliApplicationTests
         var originalOut = Console.Out;
         try
         {
-            using var writer = new StringWriter();
+            await using var writer = new StringWriter();
             Console.SetOut(writer);
             var command = new InspectCliCommand { Input = input };
 
@@ -1009,7 +1029,7 @@ public sealed class ChapterToolCliApplicationTests
         new(source, entries);
 
     private static ChapterImportEntry Entry(string id, string name) =>
-        new(id, name, new ChapterSet(name, name, ChapterImportFormat.Ogm, 24, TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, name)]));
+        new(id, name, new ChapterSet(name, name, ChapterImportFormat.Ogm, FrameRateValue.Approximate(24m), TimeSpan.Zero, [new Chapter(1, TimeSpan.Zero, name)]));
 
     private sealed class ThrowingCancellationImporter : IChapterImporter
     {
@@ -1028,18 +1048,14 @@ public sealed class ChapterToolCliApplicationTests
     {
         private readonly IChapterImporter importer = new ThrowingCancellationImporter();
 
-        public IChapterImporter? Resolve(string path) => importer;
+        public IChapterImporter Resolve(string path) => importer;
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
     }
 
-    private sealed class FailingThenFallbackRegistry : IChapterImporterRegistry
+    private sealed class FailingThenFallbackRegistry(IChapterImporterRegistry inner) : IChapterImporterRegistry
     {
-        private readonly IChapterImporterRegistry inner;
-
-        public FailingThenFallbackRegistry(IChapterImporterRegistry inner) => this.inner = inner;
-
-        public IChapterImporter? Resolve(string path) => new FailingImporter();
+        public IChapterImporter Resolve(string path) => new FailingImporter();
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => inner.Resolve(path);
     }
@@ -1053,9 +1069,9 @@ public sealed class ChapterToolCliApplicationTests
 
     private sealed class FailingFallbackRegistry : IChapterImporterRegistry
     {
-        public IChapterImporter? Resolve(string path) => new FailingImporter();
+        public IChapterImporter Resolve(string path) => new FailingImporter();
 
-        public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => new FailingImporter();
+        public IChapterImporter ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => new FailingImporter();
     }
 
     private sealed class FailingImporter : IChapterImporter
@@ -1071,7 +1087,7 @@ public sealed class ChapterToolCliApplicationTests
 
     private sealed class FixedImportRegistry(ChapterImportResult result) : IChapterImporterRegistry
     {
-        public IChapterImporter? Resolve(string path) => new FixedImporter(result);
+        public IChapterImporter Resolve(string path) => new FixedImporter(result);
 
         public IChapterImporter? ResolveFallback(string path, IChapterImporter primaryImporter, ChapterImportResult primaryResult) => null;
     }

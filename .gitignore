@@ -165,12 +165,17 @@ ClientBin/
 *.pfx
 *.publishsettings
 node_modules/
+# DocFX API Markdown is generated before VitePress builds.
+/docs-site/api/ChapterTool.Core.*.md
+/docs-site/api/toc.yml
+/docs-site/.vitepress/cache/
 bower_components/
 
 # Python bytecode
 __pycache__/
 *.py[cod]
 .venv/
+*.egg-info/
 
 # RIA/Silverlight projects
 Generated_Code/
@@ -215,6 +220,10 @@ dist/windows/en-US/
 dist/windows/LICENSE
 artifacts/
 .idea/
+
+# Original font sources are kept locally and are not checked in.
+src/ChapterTool.Avalonia.UI/Assets/Fonts/source/*
+!src/ChapterTool.Avalonia.UI/Assets/Fonts/source/.gitkeep
 
 # macOS Finder metadata
 .DS_Store

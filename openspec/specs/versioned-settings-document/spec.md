@@ -1,20 +1,20 @@
 # versioned-settings-document Specification
 
 ## Purpose
-Define the unified, versioned settings document used for current application, theme, and font persistence.
+Define the unified, versioned settings document used for current application, theme, font, and shortcut persistence.
 
 ## Requirements
 
 ### Requirement: Settings use one sectioned document
-The system SHALL persist current user configuration in one `settings.json` document containing a top-level schema version and typed application, theme, and font sections.
+The system SHALL persist current user configuration in one `settings.json` document containing a top-level schema version and typed application, theme, font, and shortcut sections.
 
 #### Scenario: Saving the aggregate creates the unified shape
 - **WHEN** aggregate settings are saved and no active configuration exists
 - **THEN** `settings.json` SHALL be written with the current `schemaVersion`
-- **AND** it SHALL contain `application`, `theme`, and `font` child content
+- **AND** it SHALL contain `application`, `theme`, `font`, and `shortcuts` child content
 
 #### Scenario: Settings workflow loads and saves once
-- **WHEN** a settings workflow loads application, theme, and font values and then saves changes across one or more child sections
+- **WHEN** a settings workflow loads application, theme, font, and shortcut values and then saves changes across one or more child sections
 - **THEN** it SHALL call the aggregate store load exactly once
 - **AND** it SHALL commit the updated aggregate exactly once
 - **AND** the store SHALL replace `settings.json` exactly once for that commit
@@ -32,7 +32,7 @@ The system SHALL persist current user configuration in one `settings.json` docum
 #### Scenario: No section persistence stores exist
 - **WHEN** application services, ViewModels, CLI workflows, and tool discovery access persisted settings
 - **THEN** they SHALL depend on `ISettingsStore<ChapterToolSettings>`
-- **AND** the system SHALL NOT expose separate application, theme, or font persistence stores
+- **AND** the system SHALL NOT expose separate application, theme, font, or shortcut persistence stores
 
 ### Requirement: Known settings versions upgrade explicitly
 The system SHALL identify the settings document structure with an integer `schemaVersion` and SHALL apply contiguous, ordered upgrade steps for supported older versions.

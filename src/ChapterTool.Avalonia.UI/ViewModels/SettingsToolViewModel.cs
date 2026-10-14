@@ -8,6 +8,7 @@ using ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
 using ChapterTool.Avalonia.UI.ViewModels.Tools;
 using ChapterTool.Contracts.Configuration;
 using ChapterTool.Contracts.PlatformPorts;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Core.Exporting;
 
 namespace ChapterTool.Avalonia.UI.ViewModels;
@@ -15,6 +16,8 @@ namespace ChapterTool.Avalonia.UI.ViewModels;
 /// <summary>Provides settings state and commands for the settings tool.</summary>
 public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
 {
+    public static event Action<ShortcutSettings>? ShortcutsSaved;
+
     private static IReadOnlyList<ChapterExportFormat> SaveFormats => ChapterExportFormats.All;
 
     private static IReadOnlyList<OutputTextEncoding> OutputEncodings => OutputTextEncodings.All;
@@ -22,6 +25,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private readonly IPreferenceSink preferenceSink;
     private readonly IAppLocalizer localizer;
     private readonly ObservableCollection<LanguageOptionViewModel> languages = [];
+    private readonly ObservableCollection<ShortcutRowViewModel> shortcutRows = [];
     private readonly ISettingsPickerService? picker;
     private readonly IShellService? shellService;
     private readonly Func<Exception, ValueTask>? unexpectedErrorHandler;
@@ -38,6 +42,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private int deleteRowsTimingModeIndex;
     private int frameDisplayModeIndex;
     private int frameDecimalPlaces;
+    private bool showRepeatingFrameDecimals;
     private double frameAccuracyToleranceSliderValue;
     private bool isRefreshingLanguages;
 
@@ -87,17 +92,27 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         outputTextEncodingIndex = Math.Max(0, IndexOf(OutputEncodings, preferenceSink.OutputTextEncoding));
         frameAccuracyTolerance = MainWindowViewModel.NormalizeFrameAccuracyTolerance(preferenceSink.FrameAccuracyTolerance);
         deleteRowsTimingModeIndex = preferenceSink.EditingOptions.DeleteRowsTiming == Core.Editing.DeleteRowsTimingMode.Preserve ? 0 : 1;
-        frameDisplayModeIndex = preferenceSink.EditingOptions.FrameDisplay == Core.Editing.FrameDisplayMode.Round ? 0 : 1;
-        frameDecimalPlaces = preferenceSink.EditingOptions.EffectiveFrameDecimalPlaces;
+        frameDisplayModeIndex = (int)preferenceSink.EditingOptions.FrameDisplay;
+        frameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(preferenceSink.EditingOptions.FrameDecimalPlaces);
+        showRepeatingFrameDecimals = preferenceSink.ShowRepeatingFrameDecimals;
         frameAccuracyToleranceSliderValue = (double)frameAccuracyTolerance;
         ReplaceLanguages(BuildLanguageOptions());
         RefreshXmlLanguageDisplayOptions(notify: false);
+        LoadShortcutRows(ChapterToolSettings.Default.Shortcuts);
         UpdateDraftSnapshot();
         snapshotCoordinator.Commit(snapshotCoordinator.Draft);
 
+        InitializeCommands(settingsStore, shellService);
+        cultureChangedHandler = CreateCultureChangedHandler();
+        this.localizer.CultureChanged += cultureChangedHandler;
+        InitializationTask = autoLoad ? InitializeAsync() : Task.CompletedTask;
+    }
+
+    private void InitializeCommands(ISettingsStore<ChapterToolSettings>? settingsStore, IShellService? shellService)
+    {
         SaveCommand = new UiCommand(
             async (_, token) => await SaveAsync(token),
-            _ => settingsStore is not null);
+            _ => settingsStore is not null && IsShortcutConfigurationValid);
         ResetCommand = new UiCommand((_, _) =>
         {
             ApplyDefaults();
@@ -114,21 +129,24 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         OpenSettingsFolderCommand = new UiCommand(
             async (_, token) => await OpenSettingsFolderAsync(token),
             _ => IsSettingsFolderVisible && shellService is not null && !string.IsNullOrWhiteSpace(settingsDirectory));
-        cultureChangedHandler = (_, _) =>
+    }
+
+    private EventHandler CreateCultureChangedHandler() => (_, _) =>
         {
             RefreshLanguages();
             Appearance.RefreshLocalizedOptions();
             RefreshXmlLanguageDisplayOptions(notify: true);
             OnPropertyChanged(nameof(DeleteRowsTimingOptions));
+            foreach (var row in shortcutRows)
+            {
+                row.RefreshLocalizedName();
+            }
             RefreshToolStatuses();
             if (!string.IsNullOrWhiteSpace(StatusText))
             {
                 StatusText = StatusTextForCurrentLoadState();
             }
         };
-        this.localizer.CultureChanged += cultureChangedHandler;
-        InitializationTask = autoLoad ? InitializeAsync() : Task.CompletedTask;
-    }
 
     internal Task InitializationTask { get; }
 
@@ -323,7 +341,8 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     public IReadOnlyList<string> FrameDisplayOptions =>
     [
         localizer.GetString("Settings.FrameDisplayRound"),
-        localizer.GetString("Settings.FrameDisplayDecimalPlaces")
+        localizer.GetString("Settings.FrameDisplayDecimalPlaces"),
+        localizer.GetString("Settings.FrameDisplayFullPrecision")
     ];
 
     public int FrameDisplayModeIndex
@@ -331,15 +350,33 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         get => frameDisplayModeIndex;
         set
         {
-            if (SetProperty(ref frameDisplayModeIndex, Math.Clamp(value, 0, 1)))
+            if (SetProperty(ref frameDisplayModeIndex, Math.Clamp(value, 0, 2)))
             {
                 OnPropertyChanged(nameof(IsDecimalFrameDisplayMode));
+                OnPropertyChanged(nameof(IsIntegerFrameDisplayMode));
+                OnPropertyChanged(nameof(IsRepeatingFrameDecimalsEnabled));
                 ApplyLiveSettings();
             }
         }
     }
 
     public bool IsDecimalFrameDisplayMode => FrameDisplayModeIndex == 1;
+
+    public bool IsIntegerFrameDisplayMode => FrameDisplayModeIndex == 0;
+
+    public bool IsRepeatingFrameDecimalsEnabled => FrameDisplayModeIndex == (int)FrameDisplayMode.FullPrecision;
+
+    public bool ShowRepeatingFrameDecimals
+    {
+        get => showRepeatingFrameDecimals;
+        set
+        {
+            if (SetProperty(ref showRepeatingFrameDecimals, value))
+            {
+                ApplyLiveSettings();
+            }
+        }
+    }
 
     public int FrameDecimalPlaces
     {
@@ -415,27 +452,27 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         private set => SetProperty(ref field, value);
     } = string.Empty;
 
-    public UiCommand SaveCommand { get; }
+    public UiCommand SaveCommand { get; private set; } = null!;
 
-    public UiCommand ResetCommand { get; }
+    public UiCommand ResetCommand { get; private set; } = null!;
 
-    public UiCommand ValidateToolsCommand { get; }
+    public UiCommand ValidateToolsCommand { get; private set; } = null!;
 
-    public UiCommand BrowseSaveDirectoryCommand { get; }
+    public UiCommand BrowseSaveDirectoryCommand { get; private set; } = null!;
 
-    public UiCommand BrowseMkvToolnixCommand { get; }
+    public UiCommand BrowseMkvToolnixCommand { get; private set; } = null!;
 
-    public UiCommand BrowseFfprobeCommand { get; }
+    public UiCommand BrowseFfprobeCommand { get; private set; } = null!;
 
-    public UiCommand ClearSaveDirectoryCommand { get; }
+    public UiCommand ClearSaveDirectoryCommand { get; private set; } = null!;
 
-    public UiCommand ClearMkvToolnixCommand { get; }
+    public UiCommand ClearMkvToolnixCommand { get; private set; } = null!;
 
-    public UiCommand ClearFfprobeCommand { get; }
+    public UiCommand ClearFfprobeCommand { get; private set; } = null!;
 
-    public UiCommand OpenRepositoryCommand { get; }
+    public UiCommand OpenRepositoryCommand { get; private set; } = null!;
 
-    public UiCommand OpenSettingsFolderCommand { get; }
+    public UiCommand OpenSettingsFolderCommand { get; private set; } = null!;
 
     public async ValueTask LoadAsync(CancellationToken cancellationToken)
     {
@@ -454,6 +491,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
                     Appearance.ApplyThemeSettings(snapshotCoordinator.Saved.Theme);
                     Appearance.ApplyFontSettings(snapshotCoordinator.Saved.Font);
                     Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
+                    LoadShortcutRows(snapshotCoordinator.Saved.Shortcuts);
 
                     // Capture the post-apply UI snapshot so resolved fonts/paths are not marked dirty.
                     UpdateDraftSnapshot();
@@ -528,6 +566,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             var settings = CurrentSettings();
             await SettingsStoreForTesting.SaveAsync(settings, cancellationToken);
             snapshotCoordinator.Commit(settings);
+            ShortcutsSaved?.Invoke(settings.Shortcuts);
             Appearance.ApplyThemeSettings(settings.Theme);
             Appearance.ApplyFontSettings(settings.Font);
             Appearance.ApplyToServices(settings.Theme, settings.Font);
@@ -566,6 +605,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ApplyCurrentAppSettingsToOwner();
         Appearance.ApplyToServices(snapshotCoordinator.Saved.Theme, snapshotCoordinator.Saved.Font);
         snapshotCoordinator.DiscardDraft();
+        LoadShortcutRows(snapshotCoordinator.Saved.Shortcuts);
         RefreshToolStatuses();
         NotifyUnsavedChanges();
     }
@@ -577,6 +617,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         ApplyAppSettingsToFields(defaults.Application);
         Appearance.ApplyThemeSettings(defaults.Theme);
         Appearance.ApplyFontSettings(defaults.Font);
+        LoadShortcutRows(defaults.Shortcuts);
         Appearance.ApplyToServices(defaults.Theme, defaults.Font);
         ApplyLiveSettings();
         RefreshToolStatuses();
@@ -773,6 +814,7 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             Application = CurrentAppSettings(),
             Theme = Appearance.CurrentThemeSettings(),
             Font = Appearance.CurrentFontSettings(),
+            Shortcuts = BuildShortcutSettings(),
         });
 
         snapshotCoordinator.UpdateDraft(settings);
@@ -791,8 +833,9 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
             EmitBom: EmitBom,
             FrameAccuracyTolerance: FrameAccuracyTolerance,
             DeleteRowsTimingMode: DeleteRowsTimingModes.Id(DeleteRowsTimingModeIndex == 0 ? DeleteRowsTimingMode.Preserve : DeleteRowsTimingMode.Normalize),
-            FrameDisplayMode: FrameDisplayModes.Id(FrameDisplayModeIndex == 0 ? FrameDisplayMode.Round : FrameDisplayMode.DecimalPlaces),
-            FrameDecimalPlaces: FrameDecimalPlaces);
+            FrameDisplayMode: FrameDisplayModes.Id((FrameDisplayMode)FrameDisplayModeIndex),
+            FrameDecimalPlaces: FrameDecimalPlaces,
+            ShowRepeatingFrameDecimals: ShowRepeatingFrameDecimals);
 
     private void ApplyAppSettingsToFields(AppSettings settings)
     {
@@ -806,8 +849,53 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
         EmitBom = settings.EmitBom;
         FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
         DeleteRowsTimingModeIndex = DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve ? 0 : 1;
-        FrameDisplayModeIndex = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == FrameDisplayMode.Round ? 0 : 1;
+        FrameDisplayModeIndex = (int)FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode);
         FrameDecimalPlaces = FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces);
+        ShowRepeatingFrameDecimals = settings.ShowRepeatingFrameDecimals;
+    }
+
+    public IReadOnlyList<ShortcutRowViewModel> ShortcutRows => shortcutRows;
+
+    public bool IsShortcutConfigurationValid
+    {
+        get
+        {
+            if (shortcutRows.Any(static row => !row.IsValid))
+            {
+                return false;
+            }
+
+            var rows = BuildShortcutSettings();
+            return ShortcutConflictValidator.FindConflicts(rows).Count == 0;
+        }
+    }
+
+    private ShortcutSettings BuildShortcutSettings() =>
+        new(shortcutRows.ToDictionary(row => row.ActionId, row => row.Gesture, StringComparer.OrdinalIgnoreCase));
+
+    private void RefreshShortcutValidation()
+    {
+        var conflicts = ShortcutConflictValidator.FindConflicts(BuildShortcutSettings());
+        foreach (var row in shortcutRows)
+        {
+            row.SetConflict(conflicts.Contains(row.ActionId));
+        }
+    }
+
+    private void LoadShortcutRows(ShortcutSettings settings)
+    {
+        shortcutRows.Clear();
+        foreach (var action in ShortcutCatalog.All)
+        {
+            var gesture = action.IsEditable && settings.TryGetValue(action.Id, out var value)
+                ? value
+                : action.DefaultGesture;
+            shortcutRows.Add(new ShortcutRowViewModel(action, gesture, NotifyUnsavedChanges, localizer.GetString));
+        }
+        OnPropertyChanged(nameof(ShortcutRows));
+        RefreshShortcutValidation();
+        OnPropertyChanged(nameof(IsShortcutConfigurationValid));
+        SaveCommand?.RaiseCanExecuteChanged();
     }
 
     private void ApplyLiveSettings()
@@ -826,7 +914,10 @@ public sealed class SettingsToolViewModel : ObservableViewModel, IDisposable
     private void NotifyUnsavedChanges()
     {
         UpdateDraftSnapshot();
+        RefreshShortcutValidation();
         OnPropertyChanged(nameof(HasUnsavedChanges));
+        OnPropertyChanged(nameof(IsShortcutConfigurationValid));
+        SaveCommand.RaiseCanExecuteChanged();
     }
 
     private void UpdateDraftSnapshot() => _ = CurrentSettings();

@@ -6,12 +6,12 @@ internal sealed record MplsMultiAngle(
     IReadOnlyList<MplsClipNameWithRef> Angles)
 {
     /// <summary>
-    /// Gets the IsDifferentAudios value.
+    /// Gets a value indicating whether gets the IsDifferentAudios value.
     /// </summary>
     public bool IsDifferentAudios => ((FlagField >> 1) & 1) == 1;
 
     /// <summary>
-    /// Gets the IsSeamlessAngleChange value.
+    /// Gets a value indicating whether gets the IsSeamlessAngleChange value.
     /// </summary>
     public bool IsSeamlessAngleChange => (FlagField & 1) == 1;
 

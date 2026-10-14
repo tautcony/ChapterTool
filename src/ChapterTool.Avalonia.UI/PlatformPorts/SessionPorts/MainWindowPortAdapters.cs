@@ -4,7 +4,10 @@ using ChapterTool.Contracts.Configuration;
 using ChapterTool.Core.Diagnostics;
 using ChapterTool.Core.Editing;
 using ChapterTool.Core.Exporting;
+using ChapterTool.Core.Models;
+using ChapterTool.Core.Session;
 using ChapterTool.Core.Transform.Expressions;
+using Microsoft.Extensions.Logging;
 using DeleteRowsTimingMode = ChapterTool.Contracts.Configuration.DeleteRowsTimingMode;
 
 namespace ChapterTool.Avalonia.UI.PlatformPorts.SessionPorts;
@@ -20,6 +23,7 @@ public sealed class MainWindowPortAdapters
         ExportPreferences = new ExportPreferencePortAdapter(owner);
         NamingPreferences = new NamingPreferencePortAdapter(owner);
         ChapterEdit = new ChapterEditPortAdapter(owner);
+        ContentOperations = new ChapterContentOperationPortAdapter(owner);
     }
 
     public ExpressionSessionPortAdapter Expression { get; }
@@ -33,6 +37,8 @@ public sealed class MainWindowPortAdapters
     public NamingPreferencePortAdapter NamingPreferences { get; }
 
     public ChapterEditPortAdapter ChapterEdit { get; }
+
+    public ChapterContentOperationPortAdapter ContentOperations { get; }
 }
 
 public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMainShellNotificationPort? notifications = null) : IExpressionSessionPort
@@ -43,13 +49,13 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
 
     public IReadOnlyList<ChapterExpressionPreset> ExpressionPresets => owner.ExpressionEngine.Presets;
 
-    public string Expression => owner.Workspace.Projection.Expression;
+    public string Expression => owner.Workspace.OperationDrafts.Expression;
 
-    public bool ApplyExpression => owner.Workspace.Projection.ApplyExpression;
+    public string ExpressionPresetId => owner.Workspace.OperationDrafts.ExpressionPresetId;
 
-    public string ExpressionPresetId => owner.Workspace.Projection.ExpressionPresetId;
+    public string ExpressionSourceName => owner.Workspace.OperationDrafts.ExpressionSourceName;
 
-    public string ExpressionSourceName => owner.Workspace.Projection.ExpressionSourceName;
+    public FrameRateValue ComputationFrameRate => owner.ComputationFrameRate;
 
     public async ValueTask<ChapterDiagnostic?> LoadScriptAsync(string path, CancellationToken cancellationToken)
     {
@@ -59,57 +65,45 @@ public sealed class ExpressionSessionPortAdapter(MainWindowViewModel owner, IMai
         }
 
         var text = await File.ReadAllTextAsync(path, cancellationToken);
-        var diagnostic = ApplyLuaExpressionSettings(
-            string.IsNullOrWhiteSpace(text) ? "t" : text,
-            applyExpression: true,
-            expressionPresetId: string.Empty,
-            expressionSourceName: Path.GetFileName(path));
+        var script = string.IsNullOrWhiteSpace(text) ? "t" : text;
+        owner.Expression = script;
+        owner.ExpressionPresetId = string.Empty;
+        owner.ExpressionSourceName = Path.GetFileName(path);
+        notifications.RefreshExpressionFields();
+        var diagnostic = ValidateLuaExpressionScript(script, logDiagnostics: true);
 
         if (diagnostic is null)
         {
             owner.SetStatus("Status.LuaExpressionScriptLoaded", ("path", ExpressionSourceName));
-            owner.LogStatus();
+            owner.Log(LogLevel.Information, $"Lua expression script loaded: path='{ExpressionSourceName}'", "Edit",
+                ("path", ExpressionSourceName));
         }
 
         return diagnostic;
     }
 
-    public ChapterDiagnostic? ApplyLuaExpressionSettings(
+    public void SaveAppliedExpressionPreview(
         string expression,
-        bool applyExpression,
         string expressionPresetId,
-        string expressionSourceName)
+        string expressionSourceName,
+        ExpressionPreviewProjection projection)
     {
-        owner.Workspace.ApplyExpressionFields(expression, applyExpression, expressionPresetId, expressionSourceName);
+        ArgumentNullException.ThrowIfNull(projection);
+        owner.Workspace.SetExpressionOperationDrafts(expression, applyExpression: false, expressionPresetId, expressionSourceName);
         notifications.RefreshExpressionFields();
-        notifications.RefreshRows();
-
-        if (!ApplyExpression)
-        {
-            owner.SetStatus("Status.Updated");
-            notifications.RefreshStatus();
-            return null;
-        }
-
-        var diagnostic = ValidateLuaExpressionScript(Expression, logDiagnostics: true);
-        if (diagnostic is null)
-        {
-            owner.SetStatus("Status.Updated");
-        }
-        else
-        {
-            owner.SetStatus(null, diagnostic);
-        }
-
+        owner.SetStatus("Expression.Preview.Applied",
+            ("affected", projection.AffectedChapterCount),
+            ("times", projection.TimeChangedChapterCount),
+            ("frames", projection.FrameInformationChangedChapterCount));
         notifications.RefreshStatus();
-        return diagnostic;
     }
 
     public ChapterDiagnostic? ValidateLuaExpressionScript(string scriptText, bool logDiagnostics)
     {
-        var result = owner.ExpressionEngine.Evaluate(
+        var result = new Core.Transform.ChapterExpressionService(owner.ExpressionEngine).Apply(
+            ChapterExpressionValidation.CreateInput(owner.CurrentChapterSet), true,
             string.IsNullOrWhiteSpace(scriptText) ? "t" : scriptText,
-            ChapterExpressionValidation.CreateContext(owner.CurrentChapterSet));
+            owner.ComputationFrameRate.IsKnown ? owner.ComputationFrameRate : null);
         if (logDiagnostics)
         {
             owner.LogDiagnostics("Lua expression script", result.Diagnostics);
@@ -135,6 +129,8 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
 
     public decimal FrameAccuracyTolerance => owner.FrameAccuracyTolerance;
 
+    public bool ShowRepeatingFrameDecimals => owner.ShowRepeatingFrameDecimals;
+
     public ChapterEditingOptions EditingOptions => owner.EditingOptions;
 
     public void ApplyLoadedSettings(AppSettings settings) => ApplyPreferences(settings, applyDefaultSaveFormat: true);
@@ -153,7 +149,8 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
         await owner.SettingsStore.UpdateAsync(
             current => current with { Application = current.Application with { Language = owner.UiLanguage } },
             cancellationToken);
-        owner.Log("Log.LanguageSet", ("language", owner.UiLanguage));
+        owner.Log(LogLevel.Information, $"Language set to {owner.UiLanguage}", "Settings",
+            ("language", owner.UiLanguage));
         owner.NotifyStateChanged();
     }
 
@@ -169,15 +166,15 @@ public sealed class PreferenceSinkAdapter(MainWindowViewModel owner) : IPreferen
         }
 
         owner.FrameAccuracyTolerance = settings.FrameAccuracyTolerance;
+        owner.ShowRepeatingFrameDecimals = settings.ShowRepeatingFrameDecimals;
+        var frameDisplayMode = (Core.Editing.FrameDisplayMode)FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode);
         owner.ApplyEditingOptions(new ChapterEditingOptions(
             DeleteRowsTimingModes.ParseOrDefault(settings.DeleteRowsTimingMode) == DeleteRowsTimingMode.Preserve
                 ? ChapterTool.Core.Editing.DeleteRowsTimingMode.Preserve
                 : ChapterTool.Core.Editing.DeleteRowsTimingMode.Normalize,
-            FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round
-                ? Core.Editing.FrameDisplayMode.Round
-                : Core.Editing.FrameDisplayMode.DecimalPlaces,
+            frameDisplayMode,
             FrameDisplayModes.NormalizeDecimalPlaces(settings.FrameDecimalPlaces)));
-        owner.RoundFrames = FrameDisplayModes.ParseOrDefault(settings.FrameDisplayMode) == Contracts.Configuration.FrameDisplayMode.Round;
+        owner.RoundFrames = frameDisplayMode == Core.Editing.FrameDisplayMode.Round;
         owner.XmlLanguage = string.IsNullOrWhiteSpace(settings.DefaultXmlLanguage) ? "und" : settings.DefaultXmlLanguage;
         owner.EmitBom = settings.EmitBom;
         owner.OutputTextEncoding = OutputTextEncodings.ParseOrDefault(settings.OutputTextEncoding);
@@ -205,7 +202,7 @@ public sealed class ExportPreferencePortAdapter(MainWindowViewModel owner) : IEx
 }
 
 /// <summary>
-/// Naming mode port backed by workspace projection state through ViewModel setters.
+/// Naming mode port backed by explicit workspace operation drafts through ViewModel setters.
 /// </summary>
 public sealed class NamingPreferencePortAdapter(MainWindowViewModel owner) : INamingPreferencePort
 {
@@ -227,17 +224,42 @@ public sealed class NamingPreferencePortAdapter(MainWindowViewModel owner) : INa
 /// </summary>
 public sealed class ChapterEditPortAdapter(MainWindowViewModel owner) : IChapterEditPort
 {
-    public void ShiftFramesForward(int frames)
+    public async ValueTask ShiftFramesForwardAsync(int frames, CancellationToken cancellationToken = default)
     {
         if (owner.CurrentChapterSet is null)
         {
             return;
         }
 
-        owner.ApplyEditFromPort(
-            owner.ClipEditingCoordinator.ShiftFramesForward(owner.CurrentChapterSet, frames),
-            owner.Localizer.Format(LocalizedMessage.Create("Action.ShiftFramesForward", ("frames", frames))));
+        var preview = owner.ClipEditingCoordinator.ShiftFramesForward(frames, owner.ComputationFrameRate);
+        var outcome = await owner.ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
+        owner.ApplyContentOutcome(outcome, $"Shift frames forward: frames={frames}");
     }
+}
+
+public sealed class ChapterContentOperationPortAdapter(MainWindowViewModel owner) : IChapterContentOperationPort
+{
+    public bool CanPrepareExpression => owner.CurrentChapterSet is not null;
+
+    public ChapterContentPreview PrepareExpression(string expression) => owner.PrepareExpressionOperation(expression);
+
+    public ChapterContentPreview PrepareTemplateNames(bool autoGenerateNames, bool useTemplateNames) =>
+        owner.PrepareTemplateNamesOperation(autoGenerateNames, useTemplateNames);
+
+    public ChapterContentPreview PrepareContentOptions() => owner.PrepareContentOptionsOperation();
+
+    public ChapterContentPreview PrepareFrameShift(int frames) => owner.ClipEditingCoordinator.ShiftFramesForward(frames,
+        owner.ComputationFrameRate);
+
+    public ChapterContentPreview PrepareFrameRateConversion(FrameRateValue sourceFps, FrameRateValue targetFps) => owner.PrepareFrameRateOperation(sourceFps, targetFps);
+
+    public async ValueTask<TransactionOutcome> ApplyAsync(ChapterContentPreview preview, CancellationToken cancellationToken = default)
+    {
+        var outcome = await owner.ApplyContentPreviewAsync(preview, cancellationToken);
+        return outcome;
+    }
+
+    public void Cancel(ChapterContentPreview preview) => owner.CancelContentPreview(preview);
 }
 
 public sealed class MainShellNotificationPort(MainWindowViewModel owner) : IMainShellNotificationPort
@@ -245,7 +267,6 @@ public sealed class MainShellNotificationPort(MainWindowViewModel owner) : IMain
     public void RefreshExpressionFields()
     {
         owner.NotifyPropertyChanged(nameof(MainWindowViewModel.Expression));
-        owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ApplyExpression));
         owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionPresetId));
         owner.NotifyPropertyChanged(nameof(MainWindowViewModel.ExpressionSourceName));
     }

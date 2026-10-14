@@ -21,7 +21,8 @@ public sealed class MediaChapterImporterTests
         Assert.True(result.Success, Diagnostics(result));
         var info = result.Groups.Single().Entries.Single().ChapterSet;
         Assert.Equal(ChapterImportFormat.Media, info.ImportFormat);
-        Assert.Equal(0, info.FramesPerSecond);
+        Assert.Equal(0, info.FrameRate.ToDouble());
+        Assert.Equal(FrameRateValue.Unknown, info.FrameRate);
         Assert.Equal(TimeSpan.FromSeconds(30), info.Duration);
         Assert.Equal(["Chapter 01", "Chapter 02", "章节 03", "Chapter 04"], info.Chapters.Select(static chapter => chapter.Name));
         Assert.Equal([TimeSpan.Zero, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(12), TimeSpan.FromSeconds(20)], info.Chapters.Select(static chapter => chapter.StartTime));

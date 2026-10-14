@@ -57,7 +57,7 @@ public sealed partial class ChapterToolCliApplication
         IChapterExpressionEngine expressionEngine) =>
         (
             importerRegistry ?? ChapterToolRuntimeComposition.CreateImporterRegistry(settingsStore),
-            exporter ?? ChapterToolRuntimeComposition.CreateExportService(expressionEngine));
+            exporter ?? ChapterToolRuntimeComposition.CreateExportService());
 
     public int ShowFormats()
     {

@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
@@ -90,10 +91,15 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             new FrameRateService(),
             Localizer,
             expressionEngine,
-            new ChapterExportService(formatter, expressionEngine),
+            new ChapterExportService(formatter),
             ShellService,
             SettingsStore);
         MainView = new MainView(ViewModel, _ => FilePickerService);
+
+        // Headless tests cannot interact with the native confirmation dialog. Keep
+        // replacement workflows moving and test cancellation through the injected
+        // ViewModel callback in the non-Headless suite.
+        ViewModel.SessionLossConfirmation = _ => ValueTask.FromResult(true);
         Window = new MainWindow(MainView, "ChapterTool Test");
     }
 
@@ -139,7 +145,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
                 .Select((name, index) => new Chapter(index + 1, TimeSpan.FromSeconds(index * 10), name))
                 .ToArray();
         var duration = chapters.Length == 0 ? TimeSpan.Zero : chapters[^1].StartTime;
-        var info = new ChapterSet(sourceName, sourceName, sourceType, 24, duration, chapters);
+        var info = new ChapterSet(sourceName, sourceName, sourceType, FrameRateValue.Rational(24, 1), duration, chapters);
         return new ChapterImportEntry(sourceName, sourceName, info);
     }
 
@@ -256,7 +262,10 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
         scope
             .GetVisualDescendants()
             .OfType<TextBlock>()
-            .Select(static block => block.Text)
+            .Where(static block => block is { IsVisible: true, Bounds: { Width: > 0, Height: > 0 } })
+            .Select(static block => !string.IsNullOrEmpty(block.Text)
+                ? block.Text
+                : string.Concat(block.Inlines?.OfType<Run>().Select(static run => run.Text) ?? Enumerable.Empty<string>()))
             .Where(static text => !string.IsNullOrWhiteSpace(text))
             .ToArray()!;
 
@@ -337,6 +346,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     public void Dispose()
     {
         localizationAdapter.Dispose();
+        ViewModel.EndDocumentSession();
         Window.Close();
         Window.Content = null;
         Dispatcher.UIThread.RunJobs();
@@ -365,7 +375,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
     {
         public ChapterSet? LastInfo { get; private set; }
 
-        public ChapterExportOptions? LastOptions { get; private set; }
+        public ChapterSerializationOptions? LastOptions { get; private set; }
 
         public string? LastDirectory { get; private set; }
 
@@ -373,7 +383,7 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
         public ValueTask<ChapterExportResult> SaveAsync(
             ChapterSet info,
-            ChapterExportOptions options,
+            ChapterSerializationOptions options,
             string? directory,
             CancellationToken cancellationToken,
             string? sourcePath = null)

@@ -2,8 +2,6 @@ using System.Text;
 
 namespace ChapterTool.Core.Importing.Disc.Bdjo;
 
-#pragma warning disable SA1503, SA1516
-
 internal sealed record BdjoFile(
     string TypeIndicator,
     string VersionNumber,
@@ -17,13 +15,17 @@ internal sealed record BdjoFile(
     internal static BdjoFile Read(Stream stream)
     {
         if (!stream.CanSeek || stream.Length > BdjoParseLimits.MaximumFileLength)
+        {
             throw new InvalidDataException("BDJO file is outside the supported bounds.");
+        }
 
         stream.Position = 0;
         var type = stream.ReadAscii(4);
         var version = stream.ReadAscii(4);
         if (type != "BDJO" || version is not ("0100" or "0200" or "0240" or "0300"))
+        {
             throw new InvalidDataException("Invalid BDJO header.");
+        }
 
         return new BdjoFile(
             type,
@@ -90,7 +92,11 @@ internal sealed record BdjoFile(
         {
             var name = section.ReadAscii(5);
             section.SkipBytes(1);
-            if (name.Any(static c => c is < '0' or > '9')) throw new InvalidDataException($"BDJO playlist name '{name}' is invalid.");
+            if (name.Any(static c => c is < '0' or > '9'))
+            {
+                throw new InvalidDataException($"BDJO playlist name '{name}' is invalid.");
+            }
+
             names.Add(name);
         }
 
@@ -104,7 +110,11 @@ internal sealed record BdjoFile(
         var count = section.ReadByteChecked();
         section.SkipBytes(1);
         var applications = new List<BdjoApplication>(count);
-        for (var i = 0; i < count; i++) applications.Add(ReadApplication(section));
+        for (var i = 0; i < count; i++)
+        {
+            applications.Add(ReadApplication(section));
+        }
+
         section.Complete("BDJO application management table");
         return new BdjoApplicationManagementTable(applications);
     }
@@ -117,7 +127,11 @@ internal sealed record BdjoFile(
         var applicationId = stream.ReadUInt16BigEndian();
         stream.SkipBytes(10);
         var profileCount = (byte)(stream.ReadUInt16BigEndian() >> 12);
-        if (profileCount > BdjoParseLimits.MaximumProfiles) throw new InvalidDataException("BDJO application profile count exceeds the supported bounds.");
+        if (profileCount > BdjoParseLimits.MaximumProfiles)
+        {
+            throw new InvalidDataException("BDJO application profile count exceeds the supported bounds.");
+        }
+
         var profiles = new List<BdjoApplicationProfile>(profileCount);
         for (var i = 0; i < profileCount; i++)
         {
@@ -147,14 +161,26 @@ internal sealed record BdjoFile(
         var names = new List<BdjoApplicationName>();
         while (stream.Position < end)
         {
-            if (names.Count >= BdjoParseLimits.MaximumNames || end - stream.Position < 4) throw new InvalidDataException("BDJO application name data is malformed.");
+            if (names.Count >= BdjoParseLimits.MaximumNames || end - stream.Position < 4)
+            {
+                throw new InvalidDataException("BDJO application name data is malformed.");
+            }
+
             var language = stream.ReadAscii(3);
             var nameLength = stream.ReadByteChecked();
-            if (nameLength > end - stream.Position) throw new InvalidDataException("BDJO application name is truncated.");
+            if (nameLength > end - stream.Position)
+            {
+                throw new InvalidDataException("BDJO application name is truncated.");
+            }
+
             names.Add(new BdjoApplicationName(language, ReadUtf8(stream, nameLength)));
         }
 
-        if ((length & 1) != 0) stream.SkipBytes(1);
+        if ((length & 1) != 0)
+        {
+            stream.SkipBytes(1);
+        }
+
         return names;
     }
 
@@ -166,13 +192,25 @@ internal sealed record BdjoFile(
         var parameters = new List<string>();
         while (stream.Position < end)
         {
-            if (parameters.Count >= BdjoParseLimits.MaximumParameters) throw new InvalidDataException("BDJO application parameter count exceeds the supported bounds.");
+            if (parameters.Count >= BdjoParseLimits.MaximumParameters)
+            {
+                throw new InvalidDataException("BDJO application parameter count exceeds the supported bounds.");
+            }
+
             var itemLength = stream.ReadByteChecked();
-            if (itemLength > end - stream.Position) throw new InvalidDataException("BDJO application parameter is truncated.");
+            if (itemLength > end - stream.Position)
+            {
+                throw new InvalidDataException("BDJO application parameter is truncated.");
+            }
+
             parameters.Add(ReadUtf8(stream, itemLength));
         }
 
-        if ((length & 1) == 0) stream.SkipBytes(1);
+        if ((length & 1) == 0)
+        {
+            stream.SkipBytes(1);
+        }
+
         return parameters;
     }
 
@@ -180,9 +218,16 @@ internal sealed record BdjoFile(
     {
         var length = stream.ReadByteChecked();
         if (length > stream.Length - stream.Position)
+        {
             throw new InvalidDataException("BDJO application string exceeds the supported bounds.");
+        }
+
         var value = ReadUtf8(stream, length);
-        if ((length & 1) == 0) stream.SkipBytes(1);
+        if ((length & 1) == 0)
+        {
+            stream.SkipBytes(1);
+        }
+
         return value;
     }
 
@@ -214,21 +259,32 @@ internal sealed record BdjoFile(
     private static void ValidateStringData(Stream stream, int length, string name)
     {
         if (length > BdjoParseLimits.MaximumStringDataLength || length > stream.Length - stream.Position)
+        {
             throw new InvalidDataException($"BDJO {name} exceed the supported bounds.");
+        }
     }
 
     private static void ValidateCount(int count, int maximum, long remaining, int itemSize, string name)
     {
-        if (count > maximum || count > remaining / itemSize) throw new InvalidDataException($"BDJO {name} count exceeds the supported bounds.");
+        if (count > maximum || count > remaining / itemSize)
+        {
+            throw new InvalidDataException($"BDJO {name} count exceeds the supported bounds.");
+        }
     }
 }
 
 internal sealed record BdjoTerminalInfo(string DefaultFont, byte InitialHaviConfigId, bool MenuCallMask, bool TitleSearchMask);
+
 internal sealed record BdjoApplicationCacheItem(byte Type, string ReferenceName, string LanguageCode);
+
 internal sealed record BdjoApplicationCacheInfo(IReadOnlyList<BdjoApplicationCacheItem> Items);
+
 internal sealed record BdjoAccessiblePlaylists(ushort Count, bool AccessToAll, bool AutostartFirstPlaylist, IReadOnlyList<string> Names);
+
 internal sealed record BdjoApplicationProfile(ushort ProfileNumber, byte MajorVersion, byte MinorVersion, byte MicroVersion);
+
 internal sealed record BdjoApplicationName(string LanguageCode, string Name);
+
 internal sealed record BdjoApplication(
     byte ControlCode,
     byte Type,
@@ -245,6 +301,9 @@ internal sealed record BdjoApplication(
     string ClasspathExtension,
     string InitialClass,
     IReadOnlyList<string> Parameters);
+
 internal sealed record BdjoApplicationManagementTable(IReadOnlyList<BdjoApplication> Applications);
+
 internal sealed record BdjoKeyInterestTable(bool Play, bool Stop, bool FastForward, bool Rewind, bool TrackNext, bool TrackPrevious, bool Pause, bool StillOff, bool SecondaryAudio, bool SecondaryVideo, bool PgTextSubtitle);
+
 internal sealed record BdjoFileAccessInfo(string Path);

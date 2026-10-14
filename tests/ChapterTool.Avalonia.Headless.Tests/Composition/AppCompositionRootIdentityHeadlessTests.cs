@@ -30,9 +30,9 @@ public sealed class AppCompositionRootIdentityHeadlessTests
         Assert.NotNull(hostComposition.Workspace.LoadService);
         Assert.NotNull(hostComposition.AuxiliaryTools.Host);
         Assert.NotNull(hostComposition.AuxiliaryTools.Presenter);
-        Assert.Equal(8, catalog.Descriptors.Count);
+        Assert.Equal(9, catalog.Descriptors.Count);
         Assert.All(
-            [ToolIds.Preview, ToolIds.Log, ToolIds.Settings, ToolIds.Language, ToolIds.Expression, ToolIds.TemplateNames, ToolIds.Zones, ToolIds.ForwardShift],
+            [ToolIds.Preview, ToolIds.Log, ToolIds.Settings, ToolIds.Language, ToolIds.Expression, ToolIds.TemplateNames, ToolIds.Zones, ToolIds.ForwardShift, ToolIds.History],
             id => Assert.True(catalog.TryGet(id, out _)));
     }
 
@@ -162,7 +162,7 @@ public sealed class AppCompositionRootIdentityHeadlessTests
         public IReadOnlyList<ExpressionSymbol> Symbols { get; } =
             [new("sentinel", ExpressionTokenKind.Function, "Sentinel", 0, "sentinel()")];
 
-        public ExpressionAnalysisResult Analyze(string expression, int caretIndex, decimal timeSeconds = 0, decimal framesPerSecond = 24)
+        public ExpressionAnalysisResult Analyze(string expression, int caretIndex, long startTicks = 0, Core.Models.FrameRateValue frameRate = default)
         {
             AnalyzeCalls++;
             Expressions.Add(expression);

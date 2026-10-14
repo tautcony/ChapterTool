@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace ChapterTool.Core.Models;
 
 /// <summary>
@@ -10,6 +12,9 @@ namespace ChapterTool.Core.Models;
 /// <param name="ReferencedMediaFiles">The media files referenced by this chapter entry, when known.</param>
 /// <param name="MediaTracks">The media track summaries associated with this chapter entry, when known.</param>
 /// <param name="ImportDisplayName">The complete name used when presenting this entry in an import summary.</param>
+/// <param name="DiscTitleNumber">The DVD disc title number used for a localized selection label, when known.</param>
+/// <param name="ChapterCount">The current chapter count for metadata-only selector entries, when known.</param>
+/// <param name="SourceChapterCount">The chapter count reported by the imported source, when known.</param>
 public sealed record ChapterImportEntry(
     string Id,
     string DisplayName,
@@ -17,8 +22,23 @@ public sealed record ChapterImportEntry(
     bool CanCombine = false,
     IReadOnlyList<ReferencedMediaFile>? ReferencedMediaFiles = null,
     IReadOnlyList<ChapterImportMediaTrack>? MediaTracks = null,
-    string? ImportDisplayName = null)
+    string? ImportDisplayName = null,
+    int? DiscTitleNumber = null,
+    int? ChapterCount = null,
+    int? SourceChapterCount = null)
 {
+    /// <summary>Gets immutable per-item placement and rate metadata for an aggregate import.</summary>
+    public ImmutableArray<ImportedChapterSegment> Segments { get; init; } = [];
+
     /// <inheritdoc />
     public override string ToString() => DisplayName;
 }
+
+/// <summary>Preserves source timing and video-rate authority for one aggregate play item.</summary>
+public sealed record ImportedChapterSegment(
+    string Id,
+    string Name,
+    long StartTicks,
+    ChapterDuration Duration,
+    FrameRateValue FrameRate,
+    ImmutableArray<ReferencedMediaFile> ReferencedMediaFiles);

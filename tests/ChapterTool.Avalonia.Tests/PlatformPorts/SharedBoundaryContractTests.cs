@@ -130,7 +130,21 @@ public sealed class SharedBoundaryContractTests
         Assert.DoesNotContain("desktop-only", json, StringComparison.Ordinal);
         Assert.True(BrowserSettingsCodec.TryDeserialize(json, out var loaded));
         Assert.Equal("zh-CN", loaded.Application.Language);
+        Assert.True(loaded.Application.ShowRepeatingFrameDecimals);
         Assert.Equal("solarized-dark", loaded.Theme.PresetId);
+    }
+
+    [Fact]
+    public void BrowserSettingsCodecPreservesExplicitlyDisabledRepeatingFramePreference()
+    {
+        var json = BrowserSettingsCodec.Serialize(new ChapterToolSettings
+        {
+            Application = new AppSettings(ShowRepeatingFrameDecimals: false),
+        });
+
+        Assert.Contains("\"showRepeatingFrameDecimals\":false", json, StringComparison.Ordinal);
+        Assert.True(BrowserSettingsCodec.TryDeserialize(json, out var loaded));
+        Assert.False(loaded.Application.ShowRepeatingFrameDecimals);
     }
 
     private sealed class FakeBrowserFileAccess : IBrowserFileAccess
