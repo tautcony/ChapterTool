@@ -1,0 +1,44 @@
+docs/code-review/pr-33-release-23.31.0-review.md
+  s_69437837aad6a8::t_a87b2b36029e4e 11,20,31-32,41-42,46
+  s_69437837aad6a8::t_30cbdfd9e6e608 18-19,24,26-30,34-40,43
+  s_69437837aad6a8::t_aad2968faf13bb 1-10,12-17,21-23,25,33,44-45
+  s_69437837aad6a8::t_02ce5411ff2114 47-49
+docs/code-map/testing.md
+  s_50cb4c8298bd8f::t_dcf8657af0562b 42-46,49-50,89-91
+scripts/ci/tests/test_fluent_resource_references.py
+  s_50cb4c8298bd8f::t_f8c799f407dd81 1-49
+scripts/diagnostics/update-avalonia-fluent-resource-references.py
+  s_50cb4c8298bd8f::t_9dbdafbf0991ca 22,71-76
+src/ChapterTool.Core/Exporting/ChapterExportService.cs
+  s_50cb4c8298bd8f::t_2edb6c418c7e4c 105-106,114-115,119,132,265,267-281,284,287
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_50cb4c8298bd8f::t_89189c19f3adcd 965,990,1582,1589,1698
+tests/ChapterTool.Core.Tests/Exporting/ChapterExportServiceTests.cs
+  s_50cb4c8298bd8f::t_4cd29b6cc6f2cb 149-166
+tests/ChapterTool.Wasm.E2E/specs/portable-tools-parity.spec.ts
+  s_50cb4c8298bd8f::t_c2301ec9318764 52-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3daf0ea13b8bf964096650b159620c9c9249b801",
+  "prompts": {},
+  "sessions": {
+    "s_50cb4c8298bd8f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13872-fe45-7bb0-82c1-a15ae55ad704",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_69437837aad6a8": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "4f4d3200-a0bd-403e-8029-962c2efed025",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
