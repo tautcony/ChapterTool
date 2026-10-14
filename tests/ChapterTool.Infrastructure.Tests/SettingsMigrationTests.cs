@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ChapterTool.Contracts.Configuration;
+using ChapterTool.Contracts.Shortcuts;
 using ChapterTool.Infrastructure.Configuration;
 
 namespace ChapterTool.Infrastructure.Tests;
@@ -338,6 +339,28 @@ public sealed class SettingsMigrationTests
         Assert.Equal(ThemeSettings.Default, settings);
         Assert.True(File.Exists(legacyPath));
         Assert.False(File.Exists(SettingsPath(root)));
+    }
+
+    [Fact]
+    public async Task Null_shortcut_value_loads_catalog_default_without_throwing()
+    {
+        var root = CreateTempDirectory();
+        await File.WriteAllTextAsync(SettingsPath(root),
+            $$"""
+              {
+                "schemaVersion": {{ChapterToolSettings.CurrentSchemaVersion}},
+                "shortcuts": {
+                  "{{ShortcutCatalog.SaveId}}": null,
+                  "unknown-action": null
+                }
+              }
+              """);
+
+        var settings = await new ChapterToolSettingsStore(root).LoadAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(ShortcutCatalog.Save.DefaultGesture, settings.Shortcuts[ShortcutCatalog.SaveId]);
+        Assert.DoesNotContain("unknown-action", settings.Shortcuts.Keys);
+        Assert.False(File.Exists(SettingsPath(root) + ".corrupt"));
     }
 
     private static string SettingsPath(string root) => Path.Combine(root, ChapterToolSettingsStore.FileName);

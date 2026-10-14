@@ -28,12 +28,13 @@ public sealed class ShortcutSettings : Dictionary<string, string>, IEquatable<Sh
     public static ShortcutSettings Default { get; } = Normalize(null);
 
     /// <summary>Returns whether the row gesture for an action is explicitly cleared.</summary>
-    public bool IsCleared(string actionId) => TryGetValue(actionId, out var gesture) && gesture.Length == 0;
+    public bool IsCleared(string actionId) => TryGetValue(actionId, out var gesture) && gesture is { Length: 0 };
 
     /// <summary>
     /// Normalizes persisted overrides into a canonical full mapping for the current catalog.
-    /// Unknown action ids are dropped, malformed gestures fall back to the catalog default, an
-    /// empty value is preserved as a cleared row, and missing editable actions are backfilled.
+    /// Unknown action ids are dropped, malformed or absent gestures fall back to the catalog
+    /// default, an empty value is preserved as a cleared row, and missing editable actions are
+    /// backfilled.
     /// </summary>
     public static ShortcutSettings Normalize(ShortcutSettings? settings)
     {
@@ -43,6 +44,13 @@ public sealed class ShortcutSettings : Dictionary<string, string>, IEquatable<Sh
             foreach (var (actionId, rawGesture) in settings)
             {
                 if (!ShortcutCatalog.TryGet(actionId, out var action) || !action.IsEditable)
+                {
+                    continue;
+                }
+
+                // JSON null deserializes into this dictionary as a null value. Treat it as an
+                // invalid gesture and keep the catalog default instead of failing the load.
+                if (rawGesture is null)
                 {
                     continue;
                 }
