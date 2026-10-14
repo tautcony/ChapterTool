@@ -1,0 +1,34 @@
+CHANGELOG.md
+  s_50cb4c8298bd8f::t_164b8646c0fcfd 3
+CHANGELOG.zh-CN.md
+  s_50cb4c8298bd8f::t_e531668da9259a 3
+Directory.Build.props
+  s_50cb4c8298bd8f::t_3f99b71e4154e3 10
+packages/chaptertool/package-lock.json
+  s_50cb4c8298bd8f::t_7658a0bd006a43 3,9
+packages/chaptertool/package.json
+  s_50cb4c8298bd8f::t_423ea3231bc45a 3
+src/ChapterTool.Avalonia/Assets/MacOS/Info.plist
+  s_50cb4c8298bd8f::t_660621d8a1ff14 12,14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "26d5c832b8187ec9cde2fd46aa58de603b1011d2",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_50cb4c8298bd8f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13872-fe45-7bb0-82c1-a15ae55ad704",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
