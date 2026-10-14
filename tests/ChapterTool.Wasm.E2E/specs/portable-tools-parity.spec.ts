@@ -49,6 +49,12 @@ test('portable export options validate drafts, cancel cleanly, and retain a fail
   await expect(reopened.locator('#xmlLang')).toHaveValue(alternateLanguage ?? '');
   await expect(reopened.locator('#export-encoding')).toHaveValue('1');
   await expect(reopened.locator('#export-bom')).toHaveJSProperty('checked', !original.bom);
+
+  await reopened.getByRole('button', { name: 'Cancel', exact: true }).click();
+  const afterFailure = await open();
+  await expect(afterFailure.locator('#xmlLang')).toHaveValue(original.language);
+  await expect(afterFailure.locator('#export-encoding')).toHaveValue(original.encoding);
+  await expect(afterFailure.locator('#export-bom')).toHaveJSProperty('checked', original.bom);
 });
 
 test('content operation review shows typed candidate values and cancel preserves content', async ({ readyPage: page }) => {

@@ -102,9 +102,8 @@ public sealed partial class ChapterExportService
     {
         var language = XmlChapterLanguageCatalog.NormalizeOrDefault(options.XmlLanguage);
 
-        // Seed the UID generator from the exported content so one document always exports the
-        // same UIDs, and a shorter chapter list never reuses a later chapter UID.
-        var seed = StableHashCode(
+        // UIDs are stable document identifiers. Derive them from the content with SHA-256.
+        var seed = CreateUidSeed(
             info.Title,
             info.SourceName,
             info.ImportFormat.ToString(),
@@ -112,12 +111,12 @@ public sealed partial class ChapterExportService
             info.Duration.Ticks.ToString(CultureInfo.InvariantCulture),
             string.Join('\u001e', info.Chapters.Select(static chapter =>
                 $"{chapter.DisplayNumber}|{chapter.StartTime.Ticks}|{chapter.Name}|{chapter.FramesInfo}|{chapter.IsSeparator}")));
-        var random = new Random(seed);
-        var atoms = info.Chapters.Where(NotSeparator).Select(chapter =>
+        var usedUids = new HashSet<int>();
+        var atoms = info.Chapters.Where(NotSeparator).Select((chapter, index) =>
             new XElement(
                 "ChapterAtom",
                 new XElement("ChapterDisplay", new XElement("ChapterString", chapter.Name), new XElement("ChapterLanguage", language)),
-                new XElement("ChapterUID", NextUid(random)),
+                new XElement("ChapterUID", NextUid(seed, index + 1, usedUids)),
                 new XElement("ChapterTimeStart", FormatTime(chapter) + "000"),
                 new XElement("ChapterFlagHidden", "0"),
                 new XElement("ChapterFlagEnabled", "1")));
@@ -130,7 +129,7 @@ public sealed partial class ChapterExportService
                     "EditionEntry",
                     new XElement("EditionFlagHidden", "0"),
                     new XElement("EditionFlagDefault", "0"),
-                    new XElement("EditionUID", NextUid(random)),
+                    new XElement("EditionUID", NextUid(seed, 0, usedUids)),
                     atoms)));
         return Success(document.Declaration + Environment.NewLine + document.ToString(SaveOptions.None), ".xml");
     }
@@ -263,17 +262,29 @@ public sealed partial class ChapterExportService
 
     private string FormatTime(Chapter chapter) => timeFormatter.Format(chapter.StartTime);
 
-    private static int NextUid(Random random)
+    private static int NextUid(ReadOnlySpan<byte> seed, int ordinal, HashSet<int> usedUids)
     {
-        // Matroska requires a non-zero UID. Keep the value inside the positive Int32 range.
-        return 1 + random.Next(0, int.MaxValue - 1);
+        Span<byte> input = stackalloc byte[SHA256.HashSizeInBytes + 2 * sizeof(int)];
+        seed.CopyTo(input);
+        BinaryPrimitives.WriteInt32LittleEndian(input[SHA256.HashSizeInBytes..], ordinal);
+        Span<byte> hash = stackalloc byte[SHA256.HashSizeInBytes];
+        var attempt = 0;
+        int uid;
+        do
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(input[(SHA256.HashSizeInBytes + sizeof(int))..], attempt++);
+            SHA256.HashData(input, hash);
+            uid = BinaryPrimitives.ReadInt32LittleEndian(hash) & int.MaxValue;
+        }
+        while (uid == 0 || !usedUids.Add(uid));
+
+        return uid;
     }
 
-    private static int StableHashCode(params string?[] values)
+    private static byte[] CreateUidSeed(params string?[] values)
     {
         var payload = string.Join('\u001f', values.Select(static value => value ?? string.Empty));
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
-        return BinaryPrimitives.ReadInt32LittleEndian(hash);
+        return SHA256.HashData(Encoding.UTF8.GetBytes(payload));
     }
 
     private static ChapterExportResult Success(string content, string extension) =>

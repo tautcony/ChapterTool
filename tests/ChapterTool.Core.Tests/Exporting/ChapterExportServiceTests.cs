@@ -147,6 +147,24 @@ public sealed class ChapterExportServiceTests
     }
 
     [Fact]
+    public void Xml_export_assigns_distinct_positive_uids_to_repeated_chapters()
+    {
+        var sample = Sample();
+        var source = sample with { Chapters = Enumerable.Repeat(sample.Chapters[0], 1000).ToArray() };
+
+        var result = service.Serialize(source, new ChapterSerializationOptions(ChapterExportFormat.Xml));
+        var document = XDocument.Parse(result.Content);
+        var uids = document.Descendants()
+            .Where(static element => element.Name.LocalName is "EditionUID" or "ChapterUID")
+            .Select(static element => int.Parse(element.Value, CultureInfo.InvariantCulture)).ToArray();
+
+        Assert.Equal(1001, uids.Length);
+        Assert.All(uids, static uid => Assert.True(uid > 0));
+        Assert.Equal(uids.Length, uids.Distinct().Count());
+        Assert.Equal(UidOrder(result.Content), UidOrder(service.Serialize(source, new ChapterSerializationOptions(ChapterExportFormat.Xml)).Content));
+    }
+
+    [Fact]
     public void Cue_export_numbers_tracks_by_output_order()
     {
         var result = service.Serialize(

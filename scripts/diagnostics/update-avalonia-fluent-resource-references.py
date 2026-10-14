@@ -19,7 +19,7 @@ SOURCE_DIRECTORY = "src/Avalonia.Themes.Fluent/"
 PACKAGE_REFERENCE = "https://api.nuget.org/v3-flatcontainer/avalonia.themes.fluent/{version}/avalonia.themes.fluent.{version}.nupkg"
 SOURCE_TREE_API = "https://api.github.com/repos/AvaloniaUI/Avalonia/git/trees/{commit}?recursive=1"
 RAW_SOURCE = "https://raw.githubusercontent.com/AvaloniaUI/Avalonia/{commit}/{path}"
-MARKUP_RESOURCE = re.compile(r"\{(?:DynamicResource|StaticResource)\s+([^{}]+)\}")
+MARKUP_RESOURCE = re.compile(r"\{(?:DynamicResource|StaticResource)([^{}]*)\}")
 RESOURCE_KEY_ARGUMENT = re.compile(r"(?:^|,)\s*ResourceKey\s*=\s*([^,\s]+)")
 USER_AGENT = "ChapterTool-UI-resource-audit/1.0"
 
@@ -68,7 +68,12 @@ def package_source_commit(version: str) -> tuple[str, str]:
 def resource_key_references(text: str) -> set[str]:
     references = set()
     for match in MARKUP_RESOURCE.finditer(text):
-        arguments = match.group(1).strip()
+        arguments = match.group(1)
+        if not arguments or not arguments[0].isspace():
+            continue
+        arguments = arguments.strip()
+        if not arguments:
+            continue
         named_key = RESOURCE_KEY_ARGUMENT.search(arguments)
         key = named_key.group(1) if named_key else arguments.split(",", 1)[0].strip().split()[0]
         if key:

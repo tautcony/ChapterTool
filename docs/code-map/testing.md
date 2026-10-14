@@ -39,7 +39,14 @@ Desktop composition coverage:
 - `tests/ChapterTool.Avalonia.Headless.Tests/Composition/AppCompositionRootIdentityHeadlessTests.cs` validates shared service identity and shell resolution.
 - `tests/ChapterTool.Avalonia.Headless.Tests` references Autofac only to test the desktop composition boundary.
 
+## Script Test Map
+
+`scripts/ci/tests/test_fluent_resource_references.py` verifies Fluent resource extraction and long malformed input.
+Run the script suite with `python3 -m unittest discover -s scripts/ci/tests`.
+
 ## Core Test Map
+
+`ChapterExportServiceTests` verifies XML UID stability, positive values, and uniqueness.
 
 `Editing/ExactFrameRateWorkflowTests.cs` covers real MPLS and IFO imports through fractional frame editing, candidate review, history, conversion, and QPFile export. It checks 500 arithmetic and conversion cycles for each Rational/Approximate rate pair. Integer comparisons must keep the loss below one source frame. The timelines include ticks above the JavaScript safe-integer limit.
 
@@ -79,6 +86,9 @@ Expression dialog drafts must keep the background grid values and geometry uncha
 Cancellation must preserve content, history, and the candidate.
 The status must use the expression failure message.
 `functional-parity.spec.ts` verifies main preferences, editing, and downloads when browser storage writes fail.
+`portable-tools-parity.spec.ts` verifies failed export preference saves.
+Failure must preserve the dialog draft and restore the active export options.
+Canceling after failure must retain the original options when the dialog reopens.
 
 `specs/layout-behavior.spec.ts` verifies page and dialog bounds at default, wide, narrow, short, and landscape sizes. It verifies visible actions, downloads, expression diagnostics, and long-content footer access. These assertions run in the browser behavior suite. Browser E2E and Avalonia Headless tests own layout verification. Screenshots support diagnosis and manual review. There is no pixel baseline gate.
 

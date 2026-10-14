@@ -962,7 +962,7 @@
     {
         PushExportOptions();
         StateHasChanged();
-        await PersistSettingsAsync();
+        await PersistSettingsAsync(ignoreErrors: true);
     }
 
     private async Task OnProjectionOptionsChanged()
@@ -987,7 +987,7 @@
             _selectedFrameRateIndex = index;
             Workspace.PreferredFrameRateIndex = index;
             Workspace.SelectedFrameRateIndex = index;
-            await PersistSettingsAsync();
+            await PersistSettingsAsync(ignoreErrors: true);
         }
     }
 
@@ -1579,14 +1579,14 @@
         Workspace.ApplyOptionsAndRefresh();
     }
 
-    private async Task PersistSettingsAsync()
+    private async Task PersistSettingsAsync(bool ignoreErrors = false)
     {
         var settings = CreateSettingsDocument();
         try
         {
             await Js.InvokeVoidAsync("chapterToolWasm.setLocalStorage", SettingsStorageKey, JsonSerializer.Serialize(settings, SettingsJsonOptions));
         }
-        catch (JSException)
+        catch (JSException) when (ignoreErrors)
         {
             // Automatic preference persistence must not interrupt the active document.
         }
@@ -1695,7 +1695,7 @@
         {
             _xmlLanguage = code;
             PushExportOptions();
-            await PersistSettingsAsync();
+            await PersistSettingsAsync(ignoreErrors: true);
             StateHasChanged();
         }
     }
