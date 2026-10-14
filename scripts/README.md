@@ -146,12 +146,17 @@ The shared entry point checks resources and workflows before a push. Platform CI
 | Script | Runtime and platform | Main dependencies | Use |
 | --- | --- | --- | --- |
 | `localization/axaml-to-json.py` | Python 3; cross-platform | Python standard library | Generate Wasm locale JSON files from Avalonia AXAML files. Use `--check` to detect drift without writing files. |
-| `diagnostics/audit-ui-resources.py` | Python 3; cross-platform | Python standard library | Audit Avalonia resource definitions and references. |
+| `diagnostics/audit-ui-resources.py` | Python 3; cross-platform | Python standard library | Audit Avalonia resource definitions against repository references and the pinned Fluent source inventory. |
+| `diagnostics/update-avalonia-fluent-resource-references.py` | Python 3; cross-platform | Python standard library and network access | Read NuGet metadata and scan its matching Avalonia source commit. Update the full Fluent resource-reference manifest. |
 | `maintenance/normalize-changed-text-files.py` | Python 3; cross-platform | Python standard library, Git | Normalize line endings and UTF-8 BOMs in changed text files. Use `--what-if` for a read-only check. |
 | `maintenance/generate-app-icons-macos.sh` | Bash; macOS only | ImageMagick, `iconutil` | Generate ICNS and ICO files from the SVG icon source. |
 | `maintenance/subset-shortcut-font.py` | Python 3; cross-platform | FontTools (`pyftsubset`) | Keep only the ASCII gesture text and platform-neutral shortcut symbols in the bundled Avalonia font. |
 
 Maintenance scripts are manual entry points. They do not run as hidden build steps.
+
+The audit stops if the Avalonia Fluent package version differs from the manifest.
+
+Run `python3 scripts/diagnostics/update-avalonia-fluent-resource-references.py` after changing the pinned package version. Use `--check` to compare the generated inventory with the committed file.
 
 ### Subset the Avalonia shortcut font
 

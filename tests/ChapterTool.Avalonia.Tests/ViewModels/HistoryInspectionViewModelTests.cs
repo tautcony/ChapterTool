@@ -304,7 +304,7 @@ public sealed class HistoryInspectionViewModelTests
         viewModel.SelectedEntry = viewModel.Entries.Single(entry => entry.Id == tree.Left);
         await history.LastInspection;
         var displayRate = Assert.Single(viewModel.Parameters);
-        Assert.Equal(localizer.GetString("History.Parameter.displayFps"), displayRate.Name);
+        Assert.Equal(localizer.GetString("History.Parameter.DisplayFps"), displayRate.Name);
         Assert.Equal("30 fps", displayRate.Value);
 
         var capturedDetails = viewModel.Details;

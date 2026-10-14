@@ -91,12 +91,12 @@ public sealed class WasmHistoryParityTests
         Assert.Collection(projection.Parameters,
             row =>
             {
-                Assert.Equal("Order shift", row.Name);
+                Assert.Equal("Order Shift", row.Name);
                 Assert.Equal("2", row.Value);
             },
             row =>
             {
-                Assert.Equal("Generate names", row.Name);
+                Assert.Equal("Generate Names", row.Name);
                 Assert.Equal("Yes", row.Value);
             });
     }

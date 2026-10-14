@@ -270,14 +270,14 @@
   <x:String x:Key="Settings.Appearance.MonospaceFont" xml:space="preserve">Monospace font</x:String>
   <x:String x:Key="Settings.Appearance.MonospaceFontPreviewFor" xml:space="preserve">Monospace font preview for {name}</x:String>
   <x:String x:Key="Settings.Appearance.Preset" xml:space="preserve">Theme preset</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.avalonia-default" xml:space="preserve">Avalonia Default</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-dark" xml:space="preserve">Ayu Dark</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-light" xml:space="preserve">Ayu Light</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve">Ayu Mirage</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve">Gruvbox Dark</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve">Gruvbox Light</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-dark" xml:space="preserve">Solarized Dark</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-light" xml:space="preserve">Solarized Light</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AvaloniaDefault" xml:space="preserve">Avalonia Default</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuDark" xml:space="preserve">Ayu Dark</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuLight" xml:space="preserve">Ayu Light</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuMirage" xml:space="preserve">Ayu Mirage</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxDark" xml:space="preserve">Gruvbox Dark</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxLight" xml:space="preserve">Gruvbox Light</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedDark" xml:space="preserve">Solarized Dark</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedLight" xml:space="preserve">Solarized Light</x:String>
   <x:String x:Key="Settings.Appearance.Preview" xml:space="preserve">Palette preview</x:String>
   <x:String x:Key="Settings.Appearance.PreviewFor" xml:space="preserve">Palette preview for {name}</x:String>
   <x:String x:Key="Settings.Appearance.SystemMonospaceFont" xml:space="preserve">System monospace default</x:String>
@@ -611,22 +611,22 @@
   <x:String x:Key="History.Presence.Absent" xml:space="preserve">Not present</x:String>
   <x:String x:Key="History.Presence.Null" xml:space="preserve">Null</x:String>
   <x:String x:Key="History.Presence.Empty" xml:space="preserve">Empty</x:String>
-  <x:String x:Key="History.Parameter.field" xml:space="preserve">Field</x:String>
-  <x:String x:Key="History.Parameter.chapterId" xml:space="preserve">Chapter</x:String>
-  <x:String x:Key="History.Parameter.chapterIds" xml:space="preserve">Chapters</x:String>
-  <x:String x:Key="History.Parameter.value" xml:space="preserve">Value</x:String>
-  <x:String x:Key="History.Parameter.displayFps" xml:space="preserve">Display frame rate</x:String>
-  <x:String x:Key="History.Parameter.frames" xml:space="preserve">Frames</x:String>
-  <x:String x:Key="History.Parameter.beforeChapterId" xml:space="preserve">Before chapter</x:String>
-  <x:String x:Key="History.Parameter.sourcePath" xml:space="preserve">Source</x:String>
-  <x:String x:Key="History.Parameter.script" xml:space="preserve">Expression</x:String>
-  <x:String x:Key="History.Parameter.expression" xml:space="preserve">Expression</x:String>
-  <x:String x:Key="History.Parameter.autoGenerateNames" xml:space="preserve">Generate names</x:String>
-  <x:String x:Key="History.Parameter.useTemplateNames" xml:space="preserve">Use template names</x:String>
-  <x:String x:Key="History.Parameter.template" xml:space="preserve">Template</x:String>
-  <x:String x:Key="History.Parameter.orderShift" xml:space="preserve">Order shift</x:String>
-  <x:String x:Key="History.Parameter.sourceFps" xml:space="preserve">Source frame rate</x:String>
-  <x:String x:Key="History.Parameter.targetFps" xml:space="preserve">Target frame rate</x:String>
+  <x:String x:Key="History.Parameter.Field" xml:space="preserve">Field</x:String>
+  <x:String x:Key="History.Parameter.ChapterId" xml:space="preserve">Chapter</x:String>
+  <x:String x:Key="History.Parameter.ChapterIds" xml:space="preserve">Chapters</x:String>
+  <x:String x:Key="History.Parameter.Value" xml:space="preserve">Value</x:String>
+  <x:String x:Key="History.Parameter.DisplayFps" xml:space="preserve">Display Frame Rate</x:String>
+  <x:String x:Key="History.Parameter.Frames" xml:space="preserve">Frames</x:String>
+  <x:String x:Key="History.Parameter.BeforeChapterId" xml:space="preserve">Before Chapter</x:String>
+  <x:String x:Key="History.Parameter.SourcePath" xml:space="preserve">Source</x:String>
+  <x:String x:Key="History.Parameter.Script" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="History.Parameter.Expression" xml:space="preserve">Expression</x:String>
+  <x:String x:Key="History.Parameter.AutoGenerateNames" xml:space="preserve">Generate Names</x:String>
+  <x:String x:Key="History.Parameter.UseTemplateNames" xml:space="preserve">Use Template Names</x:String>
+  <x:String x:Key="History.Parameter.Template" xml:space="preserve">Template</x:String>
+  <x:String x:Key="History.Parameter.OrderShift" xml:space="preserve">Order Shift</x:String>
+  <x:String x:Key="History.Parameter.SourceFps" xml:space="preserve">Source Frame Rate</x:String>
+  <x:String x:Key="History.Parameter.TargetFps" xml:space="preserve">Target Frame Rate</x:String>
   <x:String x:Key="History.Field.Title" xml:space="preserve">Title</x:String>
   <x:String x:Key="History.Field.SourceName" xml:space="preserve">Source name</x:String>
   <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">Import format</x:String>
@@ -654,13 +654,13 @@
   <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">Disc title</x:String>
   <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">Source frame rate</x:String>
   <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">Source chapter count</x:String>
-  <x:String x:Key="History.Parameter.targetScope" xml:space="preserve">Scope</x:String>
-  <x:String x:Key="History.Parameter.trackId" xml:space="preserve">Track</x:String>
-  <x:String x:Key="History.Parameter.trackIds" xml:space="preserve">Tracks</x:String>
-  <x:String x:Key="History.Parameter.trackCount" xml:space="preserve">Track count</x:String>
-  <x:String x:Key="History.Parameter.deleteTiming" xml:space="preserve">Delete timing</x:String>
-  <x:String x:Key="History.Parameter.frameDisplay" xml:space="preserve">Frame display</x:String>
-  <x:String x:Key="History.Parameter.frameDecimalPlaces" xml:space="preserve">Frame decimals</x:String>
+  <x:String x:Key="History.Parameter.TargetScope" xml:space="preserve">Scope</x:String>
+  <x:String x:Key="History.Parameter.TrackId" xml:space="preserve">Track</x:String>
+  <x:String x:Key="History.Parameter.TrackIds" xml:space="preserve">Tracks</x:String>
+  <x:String x:Key="History.Parameter.TrackCount" xml:space="preserve">Track Count</x:String>
+  <x:String x:Key="History.Parameter.DeleteTiming" xml:space="preserve">Delete Timing</x:String>
+  <x:String x:Key="History.Parameter.FrameDisplay" xml:space="preserve">Frame Display</x:String>
+  <x:String x:Key="History.Parameter.FrameDecimalPlaces" xml:space="preserve">Frame Decimals</x:String>
   <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">Name</x:String>
   <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">Start time</x:String>
   <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">Frame</x:String>
@@ -688,17 +688,17 @@
   <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">Neutral</x:String>
   <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">Early</x:String>
   <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">Late</x:String>
-  <x:String x:Key="History.Parameter.trackName" xml:space="preserve">Track name</x:String>
+  <x:String x:Key="History.Parameter.TrackName" xml:space="preserve">Track Name</x:String>
   <x:String x:Key="History.ChangedTracks" xml:space="preserve">Changed tracks</x:String>
   <x:String x:Key="History.ChangedSegments" xml:space="preserve">Changed segments</x:String>
   <x:String x:Key="History.ComparisonNotice" xml:space="preserve">Changes below compare this node with its parent.</x:String>
   <x:String x:Key="History.CurrentStateNote" xml:space="preserve">Inspecting history does not move the current saved state.</x:String>
   <x:String x:Key="History.Boolean.True" xml:space="preserve">Yes</x:String>
   <x:String x:Key="History.Boolean.False" xml:space="preserve">No</x:String>
-  <x:String x:Key="History.Enum.deleteTiming.Preserve" xml:space="preserve">Preserve timestamps</x:String>
-  <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">Normalize remaining times</x:String>
-  <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">Whole frames</x:String>
-  <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">Decimal frames</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Preserve" xml:space="preserve">Preserve timestamps</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Normalize" xml:space="preserve">Normalize remaining times</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.Round" xml:space="preserve">Whole frames</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.DecimalPlaces" xml:space="preserve">Decimal frames</x:String>
   <x:String x:Key="History.ToggleBranch" xml:space="preserve">Toggle history branch</x:String>
   <x:String x:Key="History.Empty" xml:space="preserve">No history entry is available.</x:String>
   <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">Choose valid export options.</x:String>

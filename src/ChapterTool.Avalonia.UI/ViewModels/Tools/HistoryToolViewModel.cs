@@ -258,7 +258,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         .Select(group => new HistoryChangeGroup(
             group.Key.Group,
             group.Key.ObjectId,
-            group.FirstOrDefault(row => row.ObjectLabel.Contains(localizer.GetString("History.Parameter.displayFps"), StringComparison.Ordinal))?.ObjectLabel
+            group.FirstOrDefault(row => row.ObjectLabel.Contains(localizer.GetString("History.Parameter.DisplayFps"), StringComparison.Ordinal))?.ObjectLabel
                 ?? group.First().ObjectLabel,
             string.Join(Environment.NewLine, group.Select(static row => row.Field)),
             string.Join(Environment.NewLine, group.Select(static row => row.BeforeText)),
@@ -700,7 +700,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
     }
 
     private HistoryParameterRow CreateParameterRow(HistoryOperationParameter parameter) => new(
-        localizer.GetString($"History.Parameter.{parameter.Name}"),
+        localizer.GetString($"History.Parameter.{CapitalizeKeySegment(parameter.Name)}"),
         FormatParameter(parameter),
         parameter.ValueKind);
 
@@ -716,7 +716,7 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
 
         if (TryGetCapturedDisplayRate(out var displayRate))
         {
-            return $"{context} · {localizer.GetString("History.Parameter.displayFps")}: {FormatFrameRate(displayRate)}";
+            return $"{context} · {localizer.GetString("History.Parameter.DisplayFps")}: {FormatFrameRate(displayRate)}";
         }
 
         if (!change.BeforeFrameRate.IsKnown && !change.AfterFrameRate.IsKnown)
@@ -916,10 +916,13 @@ public sealed class HistoryToolViewModel : ObservableViewModel, IDisposable
         }
         if (parameter.Name is "deleteTiming" or "frameDisplay")
         {
-            return localizer.GetString($"History.Enum.{parameter.Name}.{parameter.Value}");
+            return localizer.GetString($"History.Enum.{CapitalizeKeySegment(parameter.Name)}.{parameter.Value}");
         }
         return parameter.Value;
     }
+
+    private static string CapitalizeKeySegment(string value) =>
+        string.IsNullOrEmpty(value) ? value : char.ToUpperInvariant(value[0]) + value[1..];
 
     private void ExpandCurrentPath(SessionHistorySnapshot snapshot)
     {

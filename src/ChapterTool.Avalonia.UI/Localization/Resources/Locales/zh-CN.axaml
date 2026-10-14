@@ -270,14 +270,14 @@
   <x:String x:Key="Settings.Appearance.MonospaceFont" xml:space="preserve">等宽字体</x:String>
   <x:String x:Key="Settings.Appearance.MonospaceFontPreviewFor" xml:space="preserve">{name} 的等宽字体预览</x:String>
   <x:String x:Key="Settings.Appearance.Preset" xml:space="preserve">主题预设</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.avalonia-default" xml:space="preserve">Avalonia 默认</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-dark" xml:space="preserve">Ayu 深色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-light" xml:space="preserve">Ayu 浅色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve">Ayu 幻景</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve">Gruvbox 深色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve">Gruvbox 浅色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-dark" xml:space="preserve">Solarized 深色</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-light" xml:space="preserve">Solarized 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AvaloniaDefault" xml:space="preserve">Avalonia 默认</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuDark" xml:space="preserve">Ayu 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuLight" xml:space="preserve">Ayu 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuMirage" xml:space="preserve">Ayu 幻景</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxDark" xml:space="preserve">Gruvbox 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxLight" xml:space="preserve">Gruvbox 浅色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedDark" xml:space="preserve">Solarized 深色</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedLight" xml:space="preserve">Solarized 浅色</x:String>
   <x:String x:Key="Settings.Appearance.Preview" xml:space="preserve">配色预览</x:String>
   <x:String x:Key="Settings.Appearance.PreviewFor" xml:space="preserve">{name} 的配色预览</x:String>
   <x:String x:Key="Settings.Appearance.SystemMonospaceFont" xml:space="preserve">系统等宽默认</x:String>
@@ -611,22 +611,22 @@
   <x:String x:Key="History.Presence.Absent" xml:space="preserve">不存在</x:String>
   <x:String x:Key="History.Presence.Null" xml:space="preserve">空值</x:String>
   <x:String x:Key="History.Presence.Empty" xml:space="preserve">空文本</x:String>
-  <x:String x:Key="History.Parameter.field" xml:space="preserve">字段</x:String>
-  <x:String x:Key="History.Parameter.chapterId" xml:space="preserve">章节</x:String>
-  <x:String x:Key="History.Parameter.chapterIds" xml:space="preserve">章节</x:String>
-  <x:String x:Key="History.Parameter.value" xml:space="preserve">值</x:String>
-  <x:String x:Key="History.Parameter.displayFps" xml:space="preserve">显示帧率</x:String>
-  <x:String x:Key="History.Parameter.frames" xml:space="preserve">帧数</x:String>
-  <x:String x:Key="History.Parameter.beforeChapterId" xml:space="preserve">前置章节</x:String>
-  <x:String x:Key="History.Parameter.sourcePath" xml:space="preserve">来源</x:String>
-  <x:String x:Key="History.Parameter.script" xml:space="preserve">表达式</x:String>
-  <x:String x:Key="History.Parameter.expression" xml:space="preserve">表达式</x:String>
-  <x:String x:Key="History.Parameter.autoGenerateNames" xml:space="preserve">生成名称</x:String>
-  <x:String x:Key="History.Parameter.useTemplateNames" xml:space="preserve">使用模板名称</x:String>
-  <x:String x:Key="History.Parameter.template" xml:space="preserve">模板</x:String>
-  <x:String x:Key="History.Parameter.orderShift" xml:space="preserve">顺序偏移</x:String>
-  <x:String x:Key="History.Parameter.sourceFps" xml:space="preserve">源帧率</x:String>
-  <x:String x:Key="History.Parameter.targetFps" xml:space="preserve">目标帧率</x:String>
+  <x:String x:Key="History.Parameter.Field" xml:space="preserve">字段</x:String>
+  <x:String x:Key="History.Parameter.ChapterId" xml:space="preserve">章节</x:String>
+  <x:String x:Key="History.Parameter.ChapterIds" xml:space="preserve">章节</x:String>
+  <x:String x:Key="History.Parameter.Value" xml:space="preserve">值</x:String>
+  <x:String x:Key="History.Parameter.DisplayFps" xml:space="preserve">显示帧率</x:String>
+  <x:String x:Key="History.Parameter.Frames" xml:space="preserve">帧数</x:String>
+  <x:String x:Key="History.Parameter.BeforeChapterId" xml:space="preserve">前置章节</x:String>
+  <x:String x:Key="History.Parameter.SourcePath" xml:space="preserve">来源</x:String>
+  <x:String x:Key="History.Parameter.Script" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="History.Parameter.Expression" xml:space="preserve">表达式</x:String>
+  <x:String x:Key="History.Parameter.AutoGenerateNames" xml:space="preserve">生成名称</x:String>
+  <x:String x:Key="History.Parameter.UseTemplateNames" xml:space="preserve">使用模板名称</x:String>
+  <x:String x:Key="History.Parameter.Template" xml:space="preserve">模板</x:String>
+  <x:String x:Key="History.Parameter.OrderShift" xml:space="preserve">顺序偏移</x:String>
+  <x:String x:Key="History.Parameter.SourceFps" xml:space="preserve">源帧率</x:String>
+  <x:String x:Key="History.Parameter.TargetFps" xml:space="preserve">目标帧率</x:String>
   <x:String x:Key="History.Field.Title" xml:space="preserve">标题</x:String>
   <x:String x:Key="History.Field.SourceName" xml:space="preserve">来源名称</x:String>
   <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">导入格式</x:String>
@@ -654,13 +654,13 @@
   <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">光盘标题</x:String>
   <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">源帧率</x:String>
   <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">源章节数</x:String>
-  <x:String x:Key="History.Parameter.targetScope" xml:space="preserve">范围</x:String>
-  <x:String x:Key="History.Parameter.trackId" xml:space="preserve">轨道</x:String>
-  <x:String x:Key="History.Parameter.trackIds" xml:space="preserve">轨道</x:String>
-  <x:String x:Key="History.Parameter.trackCount" xml:space="preserve">轨道数</x:String>
-  <x:String x:Key="History.Parameter.deleteTiming" xml:space="preserve">删除时间处理</x:String>
-  <x:String x:Key="History.Parameter.frameDisplay" xml:space="preserve">帧显示</x:String>
-  <x:String x:Key="History.Parameter.frameDecimalPlaces" xml:space="preserve">帧小数位</x:String>
+  <x:String x:Key="History.Parameter.TargetScope" xml:space="preserve">范围</x:String>
+  <x:String x:Key="History.Parameter.TrackId" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Parameter.TrackIds" xml:space="preserve">轨道</x:String>
+  <x:String x:Key="History.Parameter.TrackCount" xml:space="preserve">轨道数</x:String>
+  <x:String x:Key="History.Parameter.DeleteTiming" xml:space="preserve">删除时间处理</x:String>
+  <x:String x:Key="History.Parameter.FrameDisplay" xml:space="preserve">帧显示</x:String>
+  <x:String x:Key="History.Parameter.FrameDecimalPlaces" xml:space="preserve">帧小数位</x:String>
   <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">名称</x:String>
   <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">开始时间</x:String>
   <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">帧</x:String>
@@ -688,17 +688,17 @@
   <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">标准</x:String>
   <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">偏早</x:String>
   <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">偏晚</x:String>
-  <x:String x:Key="History.Parameter.trackName" xml:space="preserve">轨道名称</x:String>
+  <x:String x:Key="History.Parameter.TrackName" xml:space="preserve">轨道名称</x:String>
   <x:String x:Key="History.ChangedTracks" xml:space="preserve">变更轨道</x:String>
   <x:String x:Key="History.ChangedSegments" xml:space="preserve">变更片段</x:String>
   <x:String x:Key="History.ComparisonNotice" xml:space="preserve">以下更改将此节点与其父节点进行比较。</x:String>
   <x:String x:Key="History.CurrentStateNote" xml:space="preserve">查看历史记录不会移动当前保存状态。</x:String>
   <x:String x:Key="History.Boolean.True" xml:space="preserve">是</x:String>
   <x:String x:Key="History.Boolean.False" xml:space="preserve">否</x:String>
-  <x:String x:Key="History.Enum.deleteTiming.Preserve" xml:space="preserve">保留时间戳</x:String>
-  <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">规范剩余时间</x:String>
-  <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">整数帧</x:String>
-  <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">小数帧</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Preserve" xml:space="preserve">保留时间戳</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Normalize" xml:space="preserve">规范剩余时间</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.Round" xml:space="preserve">整数帧</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.DecimalPlaces" xml:space="preserve">小数帧</x:String>
   <x:String x:Key="History.ToggleBranch" xml:space="preserve">展开或折叠历史分支</x:String>
   <x:String x:Key="History.Empty" xml:space="preserve">没有可用的历史记录。</x:String>
   <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">请选择有效的导出选项。</x:String>

@@ -270,14 +270,14 @@
   <x:String x:Key="Settings.Appearance.MonospaceFont" xml:space="preserve">等幅フォント</x:String>
   <x:String x:Key="Settings.Appearance.MonospaceFontPreviewFor" xml:space="preserve">{name} の等幅フォントプレビュー</x:String>
   <x:String x:Key="Settings.Appearance.Preset" xml:space="preserve">テーマプリセット</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.avalonia-default" xml:space="preserve">Avalonia デフォルト</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-dark" xml:space="preserve">Ayu ダーク</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-light" xml:space="preserve">Ayu ライト</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.ayu-mirage" xml:space="preserve">Ayu ミラージュ</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-dark" xml:space="preserve">Gruvbox ダーク</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.gruvbox-light" xml:space="preserve">Gruvbox ライト</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-dark" xml:space="preserve">Solarized ダーク</x:String>
-  <x:String x:Key="Settings.Appearance.Preset.solarized-light" xml:space="preserve">Solarized ライト</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AvaloniaDefault" xml:space="preserve">Avalonia デフォルト</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuDark" xml:space="preserve">Ayu ダーク</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuLight" xml:space="preserve">Ayu ライト</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.AyuMirage" xml:space="preserve">Ayu ミラージュ</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxDark" xml:space="preserve">Gruvbox ダーク</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.GruvboxLight" xml:space="preserve">Gruvbox ライト</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedDark" xml:space="preserve">Solarized ダーク</x:String>
+  <x:String x:Key="Settings.Appearance.Preset.SolarizedLight" xml:space="preserve">Solarized ライト</x:String>
   <x:String x:Key="Settings.Appearance.Preview" xml:space="preserve">パレットプレビュー</x:String>
   <x:String x:Key="Settings.Appearance.PreviewFor" xml:space="preserve">{name} のパレットプレビュー</x:String>
   <x:String x:Key="Settings.Appearance.SystemMonospaceFont" xml:space="preserve">システム既定の等幅フォント</x:String>
@@ -611,22 +611,22 @@
   <x:String x:Key="History.Presence.Absent" xml:space="preserve">存在しない</x:String>
   <x:String x:Key="History.Presence.Null" xml:space="preserve">Null</x:String>
   <x:String x:Key="History.Presence.Empty" xml:space="preserve">空のテキスト</x:String>
-  <x:String x:Key="History.Parameter.field" xml:space="preserve">フィールド</x:String>
-  <x:String x:Key="History.Parameter.chapterId" xml:space="preserve">チャプター</x:String>
-  <x:String x:Key="History.Parameter.chapterIds" xml:space="preserve">チャプター</x:String>
-  <x:String x:Key="History.Parameter.value" xml:space="preserve">値</x:String>
-  <x:String x:Key="History.Parameter.displayFps" xml:space="preserve">表示フレームレート</x:String>
-  <x:String x:Key="History.Parameter.frames" xml:space="preserve">フレーム数</x:String>
-  <x:String x:Key="History.Parameter.beforeChapterId" xml:space="preserve">前のチャプター</x:String>
-  <x:String x:Key="History.Parameter.sourcePath" xml:space="preserve">ソース</x:String>
-  <x:String x:Key="History.Parameter.script" xml:space="preserve">式</x:String>
-  <x:String x:Key="History.Parameter.expression" xml:space="preserve">式</x:String>
-  <x:String x:Key="History.Parameter.autoGenerateNames" xml:space="preserve">名前を生成</x:String>
-  <x:String x:Key="History.Parameter.useTemplateNames" xml:space="preserve">テンプレート名を使用</x:String>
-  <x:String x:Key="History.Parameter.template" xml:space="preserve">テンプレート</x:String>
-  <x:String x:Key="History.Parameter.orderShift" xml:space="preserve">順序の移動</x:String>
-  <x:String x:Key="History.Parameter.sourceFps" xml:space="preserve">ソースフレームレート</x:String>
-  <x:String x:Key="History.Parameter.targetFps" xml:space="preserve">目標フレームレート</x:String>
+  <x:String x:Key="History.Parameter.Field" xml:space="preserve">フィールド</x:String>
+  <x:String x:Key="History.Parameter.ChapterId" xml:space="preserve">チャプター</x:String>
+  <x:String x:Key="History.Parameter.ChapterIds" xml:space="preserve">チャプター</x:String>
+  <x:String x:Key="History.Parameter.Value" xml:space="preserve">値</x:String>
+  <x:String x:Key="History.Parameter.DisplayFps" xml:space="preserve">表示フレームレート</x:String>
+  <x:String x:Key="History.Parameter.Frames" xml:space="preserve">フレーム数</x:String>
+  <x:String x:Key="History.Parameter.BeforeChapterId" xml:space="preserve">前のチャプター</x:String>
+  <x:String x:Key="History.Parameter.SourcePath" xml:space="preserve">ソース</x:String>
+  <x:String x:Key="History.Parameter.Script" xml:space="preserve">式</x:String>
+  <x:String x:Key="History.Parameter.Expression" xml:space="preserve">式</x:String>
+  <x:String x:Key="History.Parameter.AutoGenerateNames" xml:space="preserve">名前を生成</x:String>
+  <x:String x:Key="History.Parameter.UseTemplateNames" xml:space="preserve">テンプレート名を使用</x:String>
+  <x:String x:Key="History.Parameter.Template" xml:space="preserve">テンプレート</x:String>
+  <x:String x:Key="History.Parameter.OrderShift" xml:space="preserve">順序の移動</x:String>
+  <x:String x:Key="History.Parameter.SourceFps" xml:space="preserve">ソースフレームレート</x:String>
+  <x:String x:Key="History.Parameter.TargetFps" xml:space="preserve">目標フレームレート</x:String>
   <x:String x:Key="History.Field.Title" xml:space="preserve">タイトル</x:String>
   <x:String x:Key="History.Field.SourceName" xml:space="preserve">ソース名</x:String>
   <x:String x:Key="History.Field.ImportFormat" xml:space="preserve">インポート形式</x:String>
@@ -654,13 +654,13 @@
   <x:String x:Key="History.Field.DiscTitleNumber" xml:space="preserve">ディスクタイトル</x:String>
   <x:String x:Key="History.Field.SourceFrameRate" xml:space="preserve">ソースフレームレート</x:String>
   <x:String x:Key="History.Field.SourceChapterCount" xml:space="preserve">ソースチャプター数</x:String>
-  <x:String x:Key="History.Parameter.targetScope" xml:space="preserve">範囲</x:String>
-  <x:String x:Key="History.Parameter.trackId" xml:space="preserve">トラック</x:String>
-  <x:String x:Key="History.Parameter.trackIds" xml:space="preserve">トラック</x:String>
-  <x:String x:Key="History.Parameter.trackCount" xml:space="preserve">トラック数</x:String>
-  <x:String x:Key="History.Parameter.deleteTiming" xml:space="preserve">削除タイミング</x:String>
-  <x:String x:Key="History.Parameter.frameDisplay" xml:space="preserve">フレーム表示</x:String>
-  <x:String x:Key="History.Parameter.frameDecimalPlaces" xml:space="preserve">フレーム小数位</x:String>
+  <x:String x:Key="History.Parameter.TargetScope" xml:space="preserve">範囲</x:String>
+  <x:String x:Key="History.Parameter.TrackId" xml:space="preserve">トラック</x:String>
+  <x:String x:Key="History.Parameter.TrackIds" xml:space="preserve">トラック</x:String>
+  <x:String x:Key="History.Parameter.TrackCount" xml:space="preserve">トラック数</x:String>
+  <x:String x:Key="History.Parameter.DeleteTiming" xml:space="preserve">削除タイミング</x:String>
+  <x:String x:Key="History.Parameter.FrameDisplay" xml:space="preserve">フレーム表示</x:String>
+  <x:String x:Key="History.Parameter.FrameDecimalPlaces" xml:space="preserve">フレーム小数位</x:String>
   <x:String x:Key="History.Enum.Field.Name" xml:space="preserve">名前</x:String>
   <x:String x:Key="History.Enum.Field.StartTime" xml:space="preserve">開始時間</x:String>
   <x:String x:Key="History.Enum.Field.Frame" xml:space="preserve">フレーム</x:String>
@@ -688,17 +688,17 @@
   <x:String x:Key="History.Enum.FrameAccuracy.Neutral" xml:space="preserve">標準</x:String>
   <x:String x:Key="History.Enum.FrameAccuracy.Early" xml:space="preserve">早め</x:String>
   <x:String x:Key="History.Enum.FrameAccuracy.Late" xml:space="preserve">遅め</x:String>
-  <x:String x:Key="History.Parameter.trackName" xml:space="preserve">トラック名</x:String>
+  <x:String x:Key="History.Parameter.TrackName" xml:space="preserve">トラック名</x:String>
   <x:String x:Key="History.ChangedTracks" xml:space="preserve">変更されたトラック</x:String>
   <x:String x:Key="History.ChangedSegments" xml:space="preserve">変更されたセグメント</x:String>
   <x:String x:Key="History.ComparisonNotice" xml:space="preserve">以下の変更はこのノードと親ノードを比較します。</x:String>
   <x:String x:Key="History.CurrentStateNote" xml:space="preserve">履歴を確認しても現在の保存状態は移動しません。</x:String>
   <x:String x:Key="History.Boolean.True" xml:space="preserve">はい</x:String>
   <x:String x:Key="History.Boolean.False" xml:space="preserve">いいえ</x:String>
-  <x:String x:Key="History.Enum.deleteTiming.Preserve" xml:space="preserve">タイムスタンプを保持</x:String>
-  <x:String x:Key="History.Enum.deleteTiming.Normalize" xml:space="preserve">残りの時間を正規化</x:String>
-  <x:String x:Key="History.Enum.frameDisplay.Round" xml:space="preserve">整数フレーム</x:String>
-  <x:String x:Key="History.Enum.frameDisplay.DecimalPlaces" xml:space="preserve">小数フレーム</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Preserve" xml:space="preserve">タイムスタンプを保持</x:String>
+  <x:String x:Key="History.Enum.DeleteTiming.Normalize" xml:space="preserve">残りの時間を正規化</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.Round" xml:space="preserve">整数フレーム</x:String>
+  <x:String x:Key="History.Enum.FrameDisplay.DecimalPlaces" xml:space="preserve">小数フレーム</x:String>
   <x:String x:Key="History.ToggleBranch" xml:space="preserve">履歴分岐を展開または折りたたむ</x:String>
   <x:String x:Key="History.Empty" xml:space="preserve">利用できる履歴項目はありません。</x:String>
   <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">有効なエクスポート設定を選択してください。</x:String>

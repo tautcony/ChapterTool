@@ -1,25 +1,48 @@
 #!/usr/bin/env python3
-"""Audit Avalonia resource definitions and references."""
+"""Audit Avalonia resource definitions against repository and verified Fluent references."""
 import argparse
+import json
 import re
 from pathlib import Path
+import xml.etree.ElementTree as ET
 
-SYSTEM_PREFIXES = ("System", "AccentButton", "Theme", "ContentControl", "TextControl", "ComboBox", "CheckBox", "RadioButton", "Slider", "TabView", "ScrollBar", "DataGrid", "Flyout", "MenuFlyout", "ToolTip", "ButtonBackground", "ButtonForeground", "ButtonBorder", "ButtonPadding")
-FRAMEWORK_KEYS = {"MenuInputGestureTextMargin", "OverlayCornerRadius", "TooltipDataValidationErrors"}
-# Fluent template resources use unqualified PascalCase keys. Application
-# resources in this repository use a dotted namespace such as ChapterTool.* or
-# Brush.*. Keep this structural rule broad so new Fluent controls do not need a
-# maintained key list. Results are reported as possible framework keys, not as
-# proof of runtime reachability.
-IMPLICIT_FRAMEWORK_PATTERN = re.compile(r"^[A-Z][A-Za-z0-9]*$")
 KEY = re.compile(r'x:Key\s*=\s*"([^"]+)"')
 REF = re.compile(r"\{(?:DynamicResource|StaticResource)\s+([^}\s,]+)")
 IMPORTED = re.compile(r"ImportedThemeColorKeys\s*\{\s*get;\s*\}\s*=\s*\[(.*?)\];", re.S)
 QUOTED = re.compile(r'"([^"]+)"')
 CONST = re.compile(r'public const string \w+ = "([^"]+)";')
 NONE_LABEL = "  (none)"
+FLUENT_REFERENCE_MANIFEST = Path(__file__).with_name("avalonia-fluent-resource-references.json")
 
-def main():
+
+def fluent_resource_evidence(root: Path) -> tuple[str, str, dict[str, set[str]]]:
+    manifest = json.loads(FLUENT_REFERENCE_MANIFEST.read_text(encoding="utf-8"))
+    package_name = manifest["package"]["id"]
+    expected_version = manifest["package"]["version"]
+    versions = set()
+    for path in (root / "src").rglob("*.csproj"):
+        project = ET.parse(path).getroot()  # nosec B314
+        for reference in project.iter("PackageReference"):
+            if reference.attrib.get("Include", "").casefold() == package_name.casefold():
+                version = reference.attrib.get("Version")
+                if version:
+                    versions.add(version)
+
+    if versions != {expected_version}:
+        found = ", ".join(sorted(versions)) or "no explicit version"
+        raise ValueError(
+            f"{package_name} resource evidence is pinned to {expected_version}, "
+            f"but project references specify {found}. Update the evidence from "
+            "the matching upstream source before running this audit."
+        )
+
+    references: dict[str, set[str]] = {}
+    for key, sources in manifest["references"].items():
+        references[key] = set(sources)
+    return package_name, expected_version, references
+
+
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path)
     root = (parser.parse_args().repo_root or Path(__file__).resolve().parents[2]).resolve()
@@ -29,7 +52,10 @@ def main():
     for path in [*definitions, service]:
         if not path.is_file():
             raise FileNotFoundError(f"file not found: {path}")
-    defined, referenced, local, service_keys = set(), set(), set(), set()
+
+    package_name, package_version, fluent_evidence = fluent_resource_evidence(root)
+    fluent_references = set(fluent_evidence)
+    defined, referenced, service_keys = set(), set(), set()
     definition_sources = {}
     for path in definitions:
         text = path.read_text(encoding="utf-8")
@@ -40,6 +66,7 @@ def main():
                 definition_sources.setdefault(key, path.relative_to(root).as_posix())
         for block in re.findall(r"<Style\.Resources>(.*?)</Style\.Resources>", text, re.S):
             referenced.update(m.group(1) for m in KEY.finditer(block))
+
     text = service.read_text(encoding="utf-8")
     imported = IMPORTED.search(text)
     if imported:
@@ -48,33 +75,38 @@ def main():
     defined.update(service_keys)
     for key in service_keys:
         definition_sources.setdefault(key, service.relative_to(root).as_posix())
+
     for path in src.rglob("*.axaml"):
         text = path.read_text(encoding="utf-8")
-        local.update(m.group(1) for m in KEY.finditer(text))
         referenced.update(m.group(1) for m in REF.finditer(text))
     for path in src.rglob("*.cs"):
         if path.resolve() == service.resolve():
             continue
         referenced.update(m.group(1) for m in QUOTED.finditer(path.read_text(encoding="utf-8")) if m.group(1) in defined)
-    unresolved = sorted(k for k in referenced if k not in defined and k not in local and k not in FRAMEWORK_KEYS and not any(k.startswith(p) for p in SYSTEM_PREFIXES))
+
     unconsumed = sorted(defined - referenced)
-    implicit = sorted(k for k in unconsumed if IMPLICIT_FRAMEWORK_PATTERN.fullmatch(k))
-    explicit_candidates = sorted(set(unconsumed) - set(implicit))
+    externally_consumed = sorted(set(unconsumed) & fluent_references)
+    candidates = sorted(set(unconsumed) - fluent_references)
     print("UI resource audit")
-    print(f"Repo: {root}\nDefined keys: {len(defined)}\nReferenced keys: {len(referenced)}\nService-written keys: {len(service_keys)}\n")
-    print(f"Unresolved references ({len(unresolved)}):\n" + ("  (none)" if not unresolved else "\n".join(f"  {k}" for k in unresolved)))
-    print(f"\nPossible framework-template definitions ({len(implicit)}):")
-    if implicit:
-        print("\n".join(f"  {key} ({definition_sources.get(key, '<unknown source>')})" for key in implicit))
-    else:
-        print(NONE_LABEL)
-    print("These unqualified keys may be resolved by Avalonia Fluent templates or other framework resources. Confirm against the active theme before removal.")
-    print(f"\nApplication definitions without a detected consumer ({len(explicit_candidates)}):")
-    if explicit_candidates:
-        print("\n".join(f"  {key} ({definition_sources.get(key, '<unknown source>')})" for key in explicit_candidates))
-    else:
-        print(NONE_LABEL)
-    print("Review these candidates before removal. Static analysis cannot prove that a resource is unreachable at runtime.")
+    print(f"Repo: {root}\nDefined keys: {len(defined)}\nRepository references: {len(referenced)}\nService-written keys: {len(service_keys)}\n")
+    print(f"Definitions consumed by verified {package_name} {package_version} templates ({len(externally_consumed)}):")
+    print(
+        "\n".join(
+            f"  {key} (defined in {definition_sources.get(key, '<unknown source>')}; "
+            f"referenced by {', '.join(sorted(fluent_evidence[key]))})"
+            for key in externally_consumed
+        )
+        if externally_consumed
+        else NONE_LABEL
+    )
+    print(f"\nApplication definitions with no detected repository or verified Fluent consumer ({len(candidates)}):")
+    print("\n".join(f"  {key} ({definition_sources.get(key, '<unknown source>')})" for key in candidates) if candidates else NONE_LABEL)
+    print("This report lists source-reference evidence. Review dynamic or reflection-based consumers before removal.")
+    return 0
+
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        raise SystemExit(f"UI resource audit failed: {error}") from error

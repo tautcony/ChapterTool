@@ -97,7 +97,7 @@ public static class WasmHistoryProjection
         return operation.Parameters
             .Where(parameter => IsVisibleParameter(parameter, operation.Kind, cellEditField))
             .Select(parameter => new WasmHistoryParameterRow(
-                localizer.T($"History.Parameter.{parameter.Name}"),
+                localizer.T($"History.Parameter.{CapitalizeKeySegment(parameter.Name)}"),
                 FormatParameter(localizer, parameter),
                 parameter.ValueKind))
             .ToArray();
@@ -127,7 +127,7 @@ public static class WasmHistoryProjection
                 .FirstOrDefault(static parameter => parameter.Name == "displayFps")?.Value;
             if (decimal.TryParse(displayRate, NumberStyles.Number, CultureInfo.InvariantCulture, out var rate) && rate > 0)
             {
-                context += $" · {localizer.T("History.Parameter.displayFps")}: {FormatFrameRate(localizer, rate)}";
+                context += $" · {localizer.T("History.Parameter.DisplayFps")}: {FormatFrameRate(localizer, rate)}";
             }
             else if (change.BeforeFrameRate.IsKnown || change.AfterFrameRate.IsKnown)
             {
@@ -267,10 +267,13 @@ public static class WasmHistoryProjection
         }
         if (parameter.Name is "deleteTiming" or "frameDisplay")
         {
-            return localizer.T($"History.Enum.{parameter.Name}.{parameter.Value}");
+            return localizer.T($"History.Enum.{CapitalizeKeySegment(parameter.Name)}.{parameter.Value}");
         }
         return parameter.Value;
     }
+
+    private static string CapitalizeKeySegment(string value) =>
+        string.IsNullOrEmpty(value) ? value : char.ToUpperInvariant(value[0]) + value[1..];
 
     private static string FormatFrameRate(WasmLocalizer localizer, decimal rate)
     {

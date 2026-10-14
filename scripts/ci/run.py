@@ -45,6 +45,7 @@ def resource_steps() -> list[Step]:
     return [
         Step("Sync locked Python tools", ["uv", "sync", "--locked", "--no-build", "--no-install-project", "--project", "scripts"]),
         Step("Verify localization resources", ["uv", "run", "--no-sync", "--project", "scripts", "python", "scripts/localization/axaml-to-json.py", "--check"]),
+        Step("Audit UI resources", ["uv", "run", "--no-sync", "--project", "scripts", "python", "scripts/diagnostics/audit-ui-resources.py"]),
         Step("Lint Python scripts", ["uv", "run", "--no-sync", "--project", "scripts", "ruff", "check", "scripts/"]),
         Step("Test CI runner", [sys.executable, "-m", "unittest", "discover", "-s", "scripts/ci/tests", "-v"]),
         Step("Validate PowerShell publish script", ["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-File", "scripts/ci/validate-publish.ps1"]),

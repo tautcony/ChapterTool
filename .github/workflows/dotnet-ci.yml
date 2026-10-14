@@ -61,6 +61,8 @@ jobs:
         run: python3 scripts/ci/run.py --stage resources --step sync-locked-python-tools
       - name: Verify localization resources
         run: python3 scripts/ci/run.py --stage resources --step verify-localization-resources
+      - name: Audit UI resources
+        run: python3 scripts/ci/run.py --stage resources --step audit-ui-resources
       - name: Lint Python scripts
         run: python3 scripts/ci/run.py --stage resources --step lint-python-scripts
       - name: Test CI runner

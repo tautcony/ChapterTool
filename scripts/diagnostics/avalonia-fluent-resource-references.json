@@ -1,0 +1,3351 @@
+{
+  "package": {
+    "id": "Avalonia.Themes.Fluent",
+    "version": "12.1.4"
+  },
+  "repository": "https://github.com/AvaloniaUI/Avalonia/",
+  "commit": "2d79ba55fae1b1e71c69f93a668080c9029e6a31",
+  "sourceDirectory": "src/Avalonia.Themes.Fluent",
+  "sourceTreeApi": "https://api.github.com/repos/AvaloniaUI/Avalonia/git/trees/2d79ba55fae1b1e71c69f93a668080c9029e6a31?recursive=1",
+  "scannedFiles": [
+    "src/Avalonia.Themes.Fluent/Accents/BaseColorsPalette.xaml",
+    "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+    "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/AdornerLayer.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Calendar.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Carousel.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CarouselPage.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ContentPage.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/DataValidationErrors.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/EmbeddableControlRoot.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Expander.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/FluentControls.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/GridSplitter.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/HeaderedContentControl.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ItemsControl.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Label.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ListBox.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/MenuScrollViewer.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/OverlayPopupHost.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/PathIcon.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/PopupRoot.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/RefreshContainer.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/RefreshVisualizer.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ScrollViewer.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/SelectableTextBlock.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Separator.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Slider.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TabControl.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TabStrip.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TableView.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TableViewCell.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TableViewColumnHeader.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ThemeVariantScope.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TransitioningContentControl.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TreeView.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/Window.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml",
+    "src/Avalonia.Themes.Fluent/Controls/WindowNotificationManager.xaml",
+    "src/Avalonia.Themes.Fluent/DensityStyles/Compact.xaml",
+    "src/Avalonia.Themes.Fluent/FluentTheme.xaml",
+    "src/Avalonia.Themes.Fluent/Strings/InvariantResources.xaml"
+  ],
+  "scannedFileExtensions": [
+    ".xaml",
+    ".axaml"
+  ],
+  "scannedReferenceKinds": [
+    "DynamicResource",
+    "StaticResource"
+  ],
+  "scannedReferenceCount": 1262,
+  "references": {
+    "AccentButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AccentButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml"
+    ],
+    "AutoCompleteBoxSuggestionsListBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml"
+    ],
+    "AutoCompleteBoxSuggestionsListBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml"
+    ],
+    "AutoCompleteListBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml"
+    ],
+    "AutoCompleteListMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml"
+    ],
+    "AutoCompleteListMaxHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml"
+    ],
+    "AutoCompleteListPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml"
+    ],
+    "BorderGapMaskConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "BottomCornerRadiusFilterConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "ButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ButtonPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ButtonSpinnerDecreaseButtonIcon": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml"
+    ],
+    "ButtonSpinnerIncreaseButtonIcon": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml"
+    ],
+    "ButtonSpinnerLeftThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml"
+    ],
+    "ButtonSpinnerRightThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml"
+    ],
+    "CalendarDatePickerBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerCalendarGlyphForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerCalendarGlyphForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerCurrentDayFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDatePickerTextForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "CalendarDayButtonFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/Calendar.xaml"
+    ],
+    "CalendarViewBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Calendar.xaml"
+    ],
+    "CalendarViewBlackoutForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/Calendar.xaml"
+    ],
+    "CalendarViewCalendarItemForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewCalendarItemRevealBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewCalendarItemRevealBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/Calendar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarViewHoverBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewNavigationButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarViewNavigationButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarViewNavigationButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarViewNavigationButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarViewNavigationButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CalendarViewOutOfScopeBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewOutOfScopeForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewPressedBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewSelectedBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewSelectedHoverBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewSelectedPressedBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewTodayFontWeight": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml"
+    ],
+    "CalendarViewTodayForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "CalendarViewWeekDayForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "CaptionButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "CaptionButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "CaptionButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "CaptionButtonHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "CaptionButtonWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "CheckBoxBackgroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundUnchecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundUncheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundUncheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBackgroundUncheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushUnchecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushUncheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushUncheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderBrushUncheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillUnchecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillUncheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillUncheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundFillUncheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeUnchecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeUncheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeUncheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckBackgroundStrokeUncheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundUnchecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundUncheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundUncheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxCheckGlyphForegroundUncheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundUnchecked": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundUncheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundUncheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxForegroundUncheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckBoxMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml"
+    ],
+    "CheckMarkPathData": [
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "ComboBoxBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBackgroundBorderBrushFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBackgroundBorderBrushUnfocused": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBackgroundUnfocused": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxDropDownBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxDropDownBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxDropDownGlyphForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ComboBoxDropDownGlyphForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxDropDownGlyphForegroundFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxDropDownGlyphForegroundFocusedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxDropdownBorderPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxDropdownBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxDropdownContentMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxForegroundFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxForegroundFocusedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxItemBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundSelectedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBackgroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushSelectedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemBorderBrushSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundSelectedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemForegroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxItemThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml"
+    ],
+    "ComboBoxMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxPlaceHolderForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxPlaceHolderForegroundFocusedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ComboBoxThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml"
+    ],
+    "ContentControlThemeFontFamily": [
+      "src/Avalonia.Themes.Fluent/Controls/EmbeddableControlRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/OverlayPopupHost.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/PopupRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Window.xaml"
+    ],
+    "ControlContentThemeFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/EmbeddableControlRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/OverlayPopupHost.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/PopupRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Window.xaml"
+    ],
+    "ControlCornerRadius": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Button.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CheckBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "DatePickerButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterAcceptDismissHostGridHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterHighlightFill": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterHighlightHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterItemHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerFlyoutPresenterItemPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DatePickerFlyoutPresenterMonthPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DatePickerFlyoutPresenterSpacerFill": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerHostMonthPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerHostPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerSpacerFill": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerSpacerFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerSpacerThemeWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerThemeMaxWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DatePickerThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "DateTimeFlyoutBorderPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "DateTimeFlyoutBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "DateTimeFlyoutButtonBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DateTimePickerFlyoutButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml"
+    ],
+    "DefaultTextBoxContextFlyout": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "DrawerPaneButtonIcon": [
+      "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml"
+    ],
+    "DropDownButtonMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/DropDownButton.xaml"
+    ],
+    "ExpanderChevronBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronButtonSize": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderChevronMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentDownBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentLeftBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentRightBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderContentUpBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderHorizontalContentAlignment": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderHeaderVerticalContentAlignment": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "ExpanderMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "FluentButtonSpinnerRepeatButton": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml"
+    ],
+    "FluentCalendarButton": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarItem.xaml"
+    ],
+    "FluentCalendarDatePickerButton": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml"
+    ],
+    "FluentDatePickerFlyoutButton": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "FluentDateTimePickerButton": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "FluentDateTimePickerDownButton": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "FluentDateTimePickerItem": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "FluentDateTimePickerUpButton": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "FluentDrawnCaptionButton": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "FluentExpanderToggleButtonDownTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "FluentExpanderToggleButtonLeftTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "FluentExpanderToggleButtonRightTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "FluentExpanderToggleButtonTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "FluentExpanderToggleButtonUpTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "FluentMenuItemIconTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "FluentMenuScrollViewer": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuScrollViewer.xaml"
+    ],
+    "FluentScrollBarLineButton": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "FluentScrollBarPageButton": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "FluentScrollBarThumb": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "FluentSliderHorizontalRepeatButton": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "FluentSliderThumbTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "FluentSliderVerticalRepeatButton": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "FluentSplitButtonComponent": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "FluentTextBoxButton": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "FluentTextBoxToggleButton": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "FluentTimePickerFlyoutButton": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "FluentTopLevelMenuItem": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "FluentTreeViewExpandCollapseChevron": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "FlyoutBorderThemeBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "FlyoutBorderThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml"
+    ],
+    "FlyoutBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "FlyoutContentThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "FlyoutPresenterBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "FlyoutThemeMaxHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "FlyoutThemeMaxWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "FlyoutThemeMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "FlyoutThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml"
+    ],
+    "GroupBoxBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "GroupBoxBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "GroupBoxBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "GroupBoxHeaderFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "GroupBoxHeaderForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "GroupBoxPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/GroupBox.xaml"
+    ],
+    "HorizontalMenuFlyoutItemMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "HorizontalMenuFlyoutItemThemePaddingNarrow": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "HorizontalMenuFlyoutPresenter": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "HorizontalMenuFlyoutThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml"
+    ],
+    "HorizontalMenuItem": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "HorizontalScrollBarContextFlyout": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "HorizontalSmallScrollThumbScaleTransform": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "HorizontalTextBoxContextFlyout": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "HyperlinkButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForegroundVisited": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForegroundVisitedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkButtonForegroundVisitedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/HyperlinkButton.xaml"
+    ],
+    "HyperlinkVisitedColor": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "IconElementThemeHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/PathIcon.xaml"
+    ],
+    "IconElementThemeWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/PathIcon.xaml"
+    ],
+    "Icons": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "KeyGestureConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "LeftCornerRadiusFilterConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "ListBoxBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ListBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml"
+    ],
+    "ListBoxItemPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml"
+    ],
+    "MenuBarHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml"
+    ],
+    "MenuBarItemPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml"
+    ],
+    "MenuFlyoutItemBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemChevronMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemKeyboardAcceleratorTextForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemKeyboardAcceleratorTextForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemKeyboardAcceleratorTextForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemKeyboardAcceleratorTextForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutItemThemePaddingNarrow": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutPresenterBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutPresenterBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutPresenterBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutPresenterThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutScrollerMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutSeparatorThemeHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Separator.xaml"
+    ],
+    "MenuFlyoutSeparatorThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/Separator.xaml"
+    ],
+    "MenuFlyoutSubItemChevron": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutSubItemChevronDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutSubItemChevronPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutSubItemChevronPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutSubItemChevronSubMenuOpened": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutSubItemPopupHorizontalOffset": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuFlyoutThemeMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuIconPresenterMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuInputGestureTextMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "MenuItemChevronPathData": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml"
+    ],
+    "NavigationBarBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml"
+    ],
+    "NavigationBarForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml"
+    ],
+    "NavigationControlNavBarBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml"
+    ],
+    "NavigationControlNavBarHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml"
+    ],
+    "NavigationPageBackIcon": [
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml"
+    ],
+    "NotificationCardBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "NotificationCardErrorBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "NotificationCardForegroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "NotificationCardInformationBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "NotificationCardProgressBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "NotificationCardSuccessBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "NotificationCardWarningBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/NotificationCard.xaml"
+    ],
+    "OverlayCornerRadius": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBoxItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/FlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Menu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuFlyoutPresenter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/MenuItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "PasswordBoxHideButtonData": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "PasswordBoxRevealButtonData": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "PipsPagerItemTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNavigationButtonTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNextButtonTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNextPageButtonData": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerNextPageButtonVerticalData": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerPreviousButtonTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerPreviousPageButtonData": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerPreviousPageButtonVerticalData": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBackgroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorBorderBrushSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PipsPagerSelectionIndicatorForegroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/PipsPager.xaml"
+    ],
+    "PrimaryButtonBorderMultiplier": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "ProgressBarBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml"
+    ],
+    "ProgressBarThemeMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml"
+    ],
+    "RadioButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphFill": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphFillPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphStroke": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphStrokeDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphStrokePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonCheckGlyphStrokePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedFill": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedFillPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedStroke": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedStrokeDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedStrokePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseCheckedStrokePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseFill": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseFillPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseStroke": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseStrokeDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseStrokePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RadioButtonOuterEllipseStrokePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RadioButton.xaml"
+    ],
+    "RefreshVisualizerBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/RefreshVisualizer.xaml"
+    ],
+    "RefreshVisualizerForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/RefreshVisualizer.xaml"
+    ],
+    "RefreshVisualizerIndicatorSize": [
+      "src/Avalonia.Themes.Fluent/Controls/RefreshVisualizer.xaml"
+    ],
+    "RepeatButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RepeatButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/RepeatButton.xaml"
+    ],
+    "RightCornerRadiusFilterConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "ScrollBarBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonArrowForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuScrollViewer.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonArrowForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonArrowForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuScrollViewer.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonArrowForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonArrowIconFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/MenuScrollViewer.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarPanningThumbBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarPanningThumbBackgroundColor": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "ScrollBarSize": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarThumbBackgroundColor": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarThumbFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarThumbFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarThumbFillPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarTrackBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarTrackFill": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarTrackFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarTrackStroke": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollBarTrackStrokePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "ScrollViewerScrollBarsSeparatorBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollViewer.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml"
+    ],
+    "SecondaryButtonBorderMultiplier": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SelectableTextBlockContextFlyout": [
+      "src/Avalonia.Themes.Fluent/Controls/SelectableTextBlock.xaml"
+    ],
+    "SeparatorBorderMultiplier": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SliderBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderContainerBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderContainerBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderContainerBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderContainerBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderHorizontalHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderHorizontalThumbHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderHorizontalThumbWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderOutsideTickBarThemeHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderPostContentMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderPreContentMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderThumbBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderThumbBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderThumbBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderThumbBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderThumbCornerRadius": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTickBarFill": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTickBarFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackFill": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackFillPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackThemeHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackValueFill": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackValueFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackValueFillPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderTrackValueFillPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderVerticalThumbHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderVerticalThumbWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SliderVerticalWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml"
+    ],
+    "SplitButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonPrimaryButtonSize": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonSecondaryButtonSize": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitButtonSeparatorWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitButton.xaml"
+    ],
+    "SplitViewCompactPaneThemeLength": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SplitViewLightDismissOverlayBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SplitViewOpenPaneThemeLength": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SplitViewPaneAnimationCloseDuration": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SplitViewPaneAnimationEasing": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SplitViewPaneAnimationOpenDuration": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "StringDatePickerDayText": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "StringDatePickerMonthText": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "StringDatePickerYearText": [
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml"
+    ],
+    "StringFormatConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml"
+    ],
+    "StringManagedFileChooserCancelText": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserDateModifiedColumn": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserFileNamePlaceholder": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserNameColumn": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserOkText": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserOverwritePromptCancelText": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserOverwritePromptConfirmText": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserOverwritePromptFileAlreadyExistsText": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserShowHiddenFilesText": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserSizeColumn": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringManagedFileChooserTypeColumn": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "StringScrollBarBottom": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarLeftEdge": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarPageDown": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarPageLeft": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarPageRight": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarPageUp": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarRightEdge": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarScrollDown": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarScrollHere": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarScrollLeft": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarScrollRight": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarScrollUp": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringScrollBarTop": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "StringTextFlyoutCopyText": [
+      "src/Avalonia.Themes.Fluent/Controls/SelectableTextBlock.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "StringTextFlyoutCutText": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "StringTextFlyoutPasteText": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "StringTimePickerHourText": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "StringTimePickerMinuteText": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "StringTimePickerSecondText": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "SystemAccentColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ContextMenu.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/GridSplitter.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "SystemAccentColorDark1": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "SystemAccentColorDark2": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarButton.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDayButton.xaml"
+    ],
+    "SystemAccentColorLight1": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemAltHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemAltMediumColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemAltMediumHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemAltMediumLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/GridSplitter.xaml"
+    ],
+    "SystemBaseHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemBaseLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "SystemBaseMediumColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "SystemBaseMediumHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemBaseMediumLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeAltLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeBlackHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeBlackLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeBlackMediumColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeBlackMediumLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeDisabledHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeDisabledLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemChromeGrayColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeHighColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemChromeMediumColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml"
+    ],
+    "SystemChromeMediumLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemChromeWhiteColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "SystemControlBackgroundAccentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundAltHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/EmbeddableControlRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Window.xaml"
+    ],
+    "SystemControlBackgroundAltMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "SystemControlBackgroundAltMediumHighBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "SystemControlBackgroundAltMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundBaseLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml"
+    ],
+    "SystemControlBackgroundBaseMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundBaseMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundChromeMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml"
+    ],
+    "SystemControlBackgroundChromeMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "SystemControlBackgroundChromeWhiteBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundListLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundListMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlBackgroundTransparentRevealBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlDisabledBaseLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlDisabledBaseMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml"
+    ],
+    "SystemControlDisabledChromeDisabledHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlDisabledChromeDisabledLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlDisabledChromeMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlDisabledTransparentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlErrorTextForegroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DataValidationErrors.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Slider.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "SystemControlFocusVisualMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/AdornerLayer.xaml"
+    ],
+    "SystemControlFocusVisualPrimaryBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/AdornerLayer.xaml"
+    ],
+    "SystemControlFocusVisualPrimaryThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/AdornerLayer.xaml"
+    ],
+    "SystemControlFocusVisualSecondaryBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/AdornerLayer.xaml"
+    ],
+    "SystemControlFocusVisualSecondaryThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/AdornerLayer.xaml"
+    ],
+    "SystemControlForegroundAccentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlForegroundAltHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlForegroundBaseHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ContentPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/EmbeddableControlRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/OverlayPopupHost.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/PopupRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ThemeVariantScope.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Window.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/WindowNotificationManager.xaml"
+    ],
+    "SystemControlForegroundBaseLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlForegroundBaseMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "SystemControlForegroundBaseMediumHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlForegroundBaseMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Separator.xaml"
+    ],
+    "SystemControlForegroundChromeMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlForegroundChromeWhiteBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlForegroundTransparentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SystemControlHighlightAccent2RevealBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAccent3RevealBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAccentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml"
+    ],
+    "SystemControlHighlightAltAccentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAltBaseHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DateTimePickerShared.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml"
+    ],
+    "SystemControlHighlightAltBaseMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAltBaseMediumHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAltBaseMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml"
+    ],
+    "SystemControlHighlightAltChromeWhiteBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAltTransparentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightAltTransparentRevealBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightBaseHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightBaseMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightBaseMediumHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightBaseMediumLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightChromeWhiteBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightListAccentHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml"
+    ],
+    "SystemControlHighlightListAccentLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml"
+    ],
+    "SystemControlHighlightListAccentMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml"
+    ],
+    "SystemControlHighlightListLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml"
+    ],
+    "SystemControlHighlightListLowRevealBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightListMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CommandBar.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ListBoxItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NavigationPage.xaml"
+    ],
+    "SystemControlHighlightListMediumRevealBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHighlightTransparentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ProgressBar.xaml"
+    ],
+    "SystemControlHyperlinkBaseHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlHyperlinkBaseMediumHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlPageBackgroundAltHighBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/CarouselPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ContentPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DrawerPage.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "SystemControlPageBackgroundAltMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlPageBackgroundBaseLowBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlPageBackgroundChromeLowBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/SplitView.xaml"
+    ],
+    "SystemControlPageBackgroundMediumAltMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlPageTextBaseHighBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlPageTextBaseMediumBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlTransientBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlTransientBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlTransparentBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "SystemControlTransparentRevealBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemControlTransparentRevealBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Accents/FluentControlResources.xaml"
+    ],
+    "SystemErrorTextColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml"
+    ],
+    "SystemListLowColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "SystemListMediumColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "SystemRegionBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/EmbeddableControlRoot.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ManagedFileChooser.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/Window.xaml"
+    ],
+    "SystemRegionColor": [
+      "src/Avalonia.Themes.Fluent/Accents/BaseResources.xaml"
+    ],
+    "TabControlBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TabControl.xaml"
+    ],
+    "TabControlTopPlacementItemMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TabControl.xaml"
+    ],
+    "TabItemHeaderBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderBackgroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderBackgroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderBackgroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderBackgroundUnselected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderBackgroundUnselectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderBackgroundUnselectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabItemHeaderForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderForegroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderForegroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderForegroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderForegroundUnselected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderForegroundUnselectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderForegroundUnselectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderSelectedPipeFill": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabItemHeaderThemeFontWeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabItemMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TabControl.xaml"
+    ],
+    "TabItemMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml"
+    ],
+    "TabItemPipeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml"
+    ],
+    "TabItemVerticalPipeHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TabItem.xaml"
+    ],
+    "TabStripItemMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabStripItemPipeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/TabStripItem.xaml"
+    ],
+    "TabbedPageTabControlTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundUnselected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundUnselectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderBackgroundUnselectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderCornerRadius": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderForegroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderForegroundUnselected": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderIconSize": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderIndicatorCornerRadius": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderIndicatorMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderPipeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderSpacing": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemHeaderVerticalPipeHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabItemTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabStripBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabStripBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabStripBorderThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabStripCornerRadius": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabStripMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TabbedPageTabStripPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/TabbedPage.xaml"
+    ],
+    "TableViewCellPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewCell.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableViewColumnHeader.xaml"
+    ],
+    "TableViewColumnHeaderResizerTemplate": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewColumnHeader.xaml"
+    ],
+    "TableViewColumnHeaderSeparatorBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewColumnHeader.xaml"
+    ],
+    "TableViewColumnResizerMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewColumnHeader.xaml"
+    ],
+    "TableViewColumnResizerWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewColumnHeader.xaml"
+    ],
+    "TableViewRowBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowBackgroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowBackgroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowBackgroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowForegroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowForegroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowForegroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewRowPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TableViewRow.xaml"
+    ],
+    "TableViewScrollViewerTheme": [
+      "src/Avalonia.Themes.Fluent/Controls/TableView.xaml"
+    ],
+    "TextBoxClearButtonData": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextCaretHandleDrawing": [
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml"
+    ],
+    "TextCaretHandlePath": [
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml"
+    ],
+    "TextControlBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBackgroundFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBorderBrushFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlBorderThemeThicknessFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlForegroundFocused": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlPlaceholderForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/CalendarDatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/DatePicker.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TextControlPlaceholderOpacity": [
+      "src/Avalonia.Themes.Fluent/Controls/ComboBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlSelectionHighlightColor": [
+      "src/Avalonia.Themes.Fluent/Controls/SelectableTextBlock.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml"
+    ],
+    "TextControlThemeMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/ButtonSpinner.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextControlThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/AutoCompleteBox.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/NumericUpDown.xaml",
+      "src/Avalonia.Themes.Fluent/Controls/TextBox.xaml"
+    ],
+    "TextSelectHandleSize": [
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml"
+    ],
+    "TextSelectionHandleDrawing": [
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml"
+    ],
+    "TextSelectionHandlePath": [
+      "src/Avalonia.Themes.Fluent/Controls/TextSelectionHandle.xaml"
+    ],
+    "TimePickerBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterAcceptDismissHostGridHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterHighlightFill": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterHighlightHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterItemHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerFlyoutPresenterSpacerFill": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerHostPadding": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerSpacerFill": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerSpacerFillDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerSpacerThemeWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerThemeMaxWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TimePickerThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/TimePicker.xaml"
+    ],
+    "TitleBarBackgroundBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/WindowDrawnDecorations.xaml"
+    ],
+    "ToggleButtonBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundChecked": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundCheckedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundCheckedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundCheckedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundIndeterminate": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundIndeterminateDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundIndeterminatePointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundIndeterminatePressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleButtonForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleButton.xaml"
+    ],
+    "ToggleSwitchContainerBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchContainerBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchContainerBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchContentForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOff": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOffDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOffPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOffPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOn": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOnDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOnPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchFillOnPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchHeaderForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOff": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOffDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOffPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOffPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOn": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOnDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOnPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchKnobFillOnPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchOnStrokeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchOuterBorderStrokeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchPostContentMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchPreContentMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOff": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOffDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOffPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOffPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOn": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOnDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOnPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchStrokeOnPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchThemeMinWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToggleSwitchTopHeaderMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/ToggleSwitch.xaml"
+    ],
+    "ToolTipBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "ToolTipBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "ToolTipBorderThemePadding": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "ToolTipBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "ToolTipContentMaxWidth": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "ToolTipContentThemeFontSize": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "ToolTipForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/ToolTip.xaml"
+    ],
+    "TooltipDataValidationErrors": [
+      "src/Avalonia.Themes.Fluent/Controls/DataValidationErrors.xaml"
+    ],
+    "TopCornerRadiusFilterConverter": [
+      "src/Avalonia.Themes.Fluent/Controls/Expander.xaml"
+    ],
+    "TreeViewItemBackground": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundSelectedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBackgroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrush": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushSelectedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderBrushSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemBorderThemeThickness": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemCollapsedChevronPathData": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemExpandCollapseChevronMargin": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemExpandCollapseChevronSize": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemExpandedChevronPathData": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForeground": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundSelected": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundSelectedDisabled": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundSelectedPointerOver": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemForegroundSelectedPressed": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemIndent": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "TreeViewItemMinHeight": [
+      "src/Avalonia.Themes.Fluent/Controls/TreeViewItem.xaml"
+    ],
+    "VerticalScrollBarContextFlyout": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "VerticalSmallScrollThumbScaleTransform": [
+      "src/Avalonia.Themes.Fluent/Controls/ScrollBar.xaml"
+    ],
+    "settings_regular": [
+      "src/Avalonia.Themes.Fluent/Controls/PathIcon.xaml"
+    ]
+  }
+}
