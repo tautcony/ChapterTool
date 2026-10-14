@@ -1,0 +1,47 @@
+docs/code-map/core.md
+  s_50cb4c8298bd8f::t_ff5e61ccf4f45f 28-31
+docs/code-map/testing.md
+  s_50cb4c8298bd8f::t_145e7ba70df88e 56-60,77-82
+src/ChapterTool.Core/Editing/ChapterSegmentService.cs
+  s_50cb4c8298bd8f::t_d4b00c6da0c47e 68
+src/ChapterTool.Core/Models/ChapterSet.cs
+  s_50cb4c8298bd8f::t_05ddcb349684f5 21-22,24
+src/ChapterTool.Core/Models/EditableChapterDocumentAdapter.cs
+  s_50cb4c8298bd8f::t_dc3a22f8466897 37,41,66,84-87,112,193
+src/ChapterTool.Core/Session/ClipSession.cs
+  s_50cb4c8298bd8f::t_f8e357fbb07da8 272-273,290
+src/ChapterTool.Wasm/Components/WasmDialog.razor
+  s_50cb4c8298bd8f::t_3bdc7e4efdcf0f 40-43
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_50cb4c8298bd8f::t_cfa67f279673cf 1585-1592
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_50cb4c8298bd8f::t_f3e82db12d6440 1315
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowStateHeadlessTests.cs
+  s_50cb4c8298bd8f::t_312ae1899dfc9f 172-175
+tests/ChapterTool.Core.Tests/Editing/ChapterSegmentServiceTests.cs
+  s_50cb4c8298bd8f::t_dcba79b3e1306b 134-157
+tests/ChapterTool.Core.Tests/Models/EditableChapterDocumentTests.cs
+  s_50cb4c8298bd8f::t_251d4005877ee3 3,47-86
+tests/ChapterTool.Wasm.E2E/specs/functional-parity.spec.ts
+  s_50cb4c8298bd8f::t_a8c3419dc9a2cc 311-328
+tests/ChapterTool.Wasm.Tests/WasmDialogTests.cs
+  s_50cb4c8298bd8f::t_84efcc33ffc80c 1-36
+tests/ChapterTool.Wasm.Tests/WasmWorkspaceTests.cs
+  s_50cb4c8298bd8f::t_5ad6552a36de93 12-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "649e3139261212b779f697788c3b20957428b061",
+  "prompts": {},
+  "sessions": {
+    "s_50cb4c8298bd8f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13872-fe45-7bb0-82c1-a15ae55ad704",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
