@@ -1,0 +1,26 @@
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  h_3705811fa4502c 1,362
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  h_3705811fa4502c 1,362
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  h_3705811fa4502c 1,362
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  h_3705811fa4502c 361
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  h_3705811fa4502c 361
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  h_3705811fa4502c 361
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  h_3705811fa4502c 959-960,965-968
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "53df7d1230c18079faa1da18c259a3d8335e7ca7",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
