@@ -1,0 +1,33 @@
+openspec/changes/clarify-editing-workflow-ux/tasks.md
+  s_6fe85cb3d6b29e::t_5ac6c55aecbef7 12
+openspec/changes/clarify-editing-workflow-ux/specs/avalonia-ui-shell/spec.md
+  s_6fe85cb3d6b29e::t_5ac6c55aecbef7 47-50
+openspec/changes/clarify-editing-workflow-ux/verification.md
+  s_6fe85cb3d6b29e::t_5ac6c55aecbef7 28-29
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_0392a5d070fd1f 7
+  s_6fe85cb3d6b29e::t_56e6ab33102026 144-148
+src/ChapterTool.Avalonia.UI/Resources/SharedStyles.axaml
+  s_6fe85cb3d6b29e::t_56e6ab33102026 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "449f9aaea56c7de3b5bb9caceeaf6b6c95cade99",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_6fe85cb3d6b29e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18d50-f076-7990-baa7-701769acf563",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
