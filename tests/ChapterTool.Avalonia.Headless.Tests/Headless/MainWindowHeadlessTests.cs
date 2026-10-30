@@ -1369,7 +1369,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(2, options.ColumnDefinitions.Count);
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
         Assert.True(expressionEditor.Bounds.Width >= 400);
-        Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
+        Assert.True(HorizontalGap(expressionEditor, loadExpressionButton, host.Window) >= 0);
         Assert.Null(host.Window.FindControl<CheckBox>("ApplyExpressionBox"));
         Assert.True(chapterNameMode.Bounds.Width >= 128);
         Assert.True(formatBox.Bounds.Right <= options.Bounds.Right);
@@ -1383,7 +1383,7 @@ public sealed class MainWindowHeadlessTests
         Assert.Equal(3, options.ColumnDefinitions.Count);
         Assert.Equal(2, Grid.GetColumnSpan(expressionGroup));
         Assert.True(expressionEditor.Bounds.Width >= 500);
-        Assert.True(expressionEditor.Bounds.Right <= loadExpressionButton.Bounds.Left);
+        Assert.True(HorizontalGap(expressionEditor, loadExpressionButton, host.Window) >= 0);
         Assert.True(chapterNameMode.Bounds.Right <= options.Bounds.Right);
         Assert.True(orderShiftBox.Bounds.Right <= options.Bounds.Right);
     }
