@@ -1,0 +1,30 @@
+openspec/specs/avalonia-ui-shell/spec.md
+  s_6fe85cb3d6b29e::t_c17b5f02113202 1452-1506
+openspec/specs/document-session-lifecycle/spec.md
+  s_6fe85cb3d6b29e::t_053bb800d004db 43-63
+  s_6fe85cb3d6b29e::t_14034df4300d76 33
+  s_6fe85cb3d6b29e::t_d204acb40b0f6b 64
+openspec/specs/keyboard-shortcut-customization/spec.md
+  s_6fe85cb3d6b29e::t_c17b5f02113202 68-88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "32863281518a93d3d13a698b90c52376dbf9dd0e",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_6fe85cb3d6b29e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18d50-f076-7990-baa7-701769acf563",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
