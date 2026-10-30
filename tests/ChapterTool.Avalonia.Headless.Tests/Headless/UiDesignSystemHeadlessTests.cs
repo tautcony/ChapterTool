@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using ChapterTool.Avalonia.Services;
@@ -140,7 +141,11 @@ public sealed class UiDesignSystemHeadlessTests
         var expected = ResourceBrushColor("Brush.Border1");
         var headers = grid.GetVisualDescendants().OfType<DataGridColumnHeader>().ToArray();
         Assert.NotEmpty(headers);
-        Assert.All(headers, header => Assert.Equal(expected, BrushColor(header.SeparatorBrush)));
+        Assert.All(headers, header =>
+        {
+            Assert.Equal(expected, BrushColor(header.SeparatorBrush));
+            Assert.Equal(HorizontalAlignment.Center, header.HorizontalContentAlignment);
+        });
 
         var verticalSeparators = grid.GetVisualDescendants()
             .OfType<Rectangle>()

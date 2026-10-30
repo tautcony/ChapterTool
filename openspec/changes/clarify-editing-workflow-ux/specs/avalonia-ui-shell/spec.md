@@ -44,6 +44,10 @@ Desktop and Web chapter tables MUST allocate useful width to chapter names in na
 - **THEN** the actions MUST form a compact group aligned with the editor
 - **AND** hidden actions MUST NOT leave trailing gaps that shift the visible buttons
 
+#### Scenario: Align chapter table headers
+- **WHEN** the desktop chapter table is visible
+- **THEN** each column header MUST align its text horizontally to the center of its column
+
 ### Requirement: Workflow names identify their effects
 Desktop and Web controls MUST use distinct localized terms for source reload, frame-display recalculation, candidate refresh, and export-text preview. The terms MUST remain consistent in visible labels, tooltips, accessible names, and shortcut settings.
 

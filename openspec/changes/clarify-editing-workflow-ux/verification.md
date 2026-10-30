@@ -25,6 +25,8 @@ Follow-up checks passed: 17 frame-rate and UI design Headless tests, 96 ViewMode
 
 The expression action height correction sets the visible text actions to the editor's 32 px height. The conversion preview Headless workflow passes with explicit height equality assertions for Apply and Discard.
 
+All desktop chapter headers now use centered horizontal content alignment. The UI design system Headless tests verify the alignment on rendered column headers.
+
 ## Primary commands
 
 Run these commands from the repository root. Browser commands use Node.js 22.

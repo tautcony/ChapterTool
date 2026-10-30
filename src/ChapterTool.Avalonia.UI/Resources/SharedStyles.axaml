@@ -28,6 +28,7 @@
   <Style Selector="DataGridColumnHeader">
     <Setter Property="Background" Value="{DynamicResource Brush.Contents}" />
     <Setter Property="Foreground" Value="{DynamicResource Brush.FG1}" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border1}" />
     <Setter Property="SeparatorBrush" Value="{DynamicResource Brush.Border1}" />
   </Style>

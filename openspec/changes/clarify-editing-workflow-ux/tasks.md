@@ -9,6 +9,7 @@
 - [x] 2.2 Adapt desktop and Web column widths for names, timestamps, and frame decimals. Verify normal, editor, and preview cells at default, wide, and narrow sizes. Preserve desktop user widths.
 - [x] 2.3 Remove the standalone frame accuracy icon and persistent guidance. Show concise guidance on hover over the integer-frame control and conversion review on the desktop action tooltip. Align the bottom expression action group and verify it has no trailing gaps.
 - [x] 2.4 Remove the visible frame-rate conversion button label in Desktop and Web. Preserve its tooltip, accessible name, and action behavior.
+- [x] 2.5 Center all desktop chapter table headers and verify the rendered header alignment.
 
 ## 3. Workflow terms and shortcuts
 
