@@ -151,9 +151,14 @@ public sealed partial class MainWindowViewModel
 
     private async ValueTask SaveAsync(string? directoryOverride, CancellationToken cancellationToken)
     {
+        await SaveWithResultAsync(directoryOverride, cancellationToken);
+    }
+
+    private async ValueTask<ChapterExportResult?> SaveWithResultAsync(string? directoryOverride, CancellationToken cancellationToken)
+    {
         if (CurrentInfo is null)
         {
-            return;
+            return null;
         }
 
         var directory = ResolveSaveDirectory(directoryOverride);
@@ -182,6 +187,7 @@ public sealed partial class MainWindowViewModel
         ApplySaveStatus(result);
         LogDiagnostics("Save", result.Diagnostics);
         NotifyStateChanged();
+        return result;
     }
 
     private void ApplySaveStatus(ChapterExportResult result)

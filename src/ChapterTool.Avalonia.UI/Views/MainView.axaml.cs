@@ -689,9 +689,6 @@ public sealed partial class MainView : UserControl
         var layoutWidth = Bounds.Width > 0 ? Bounds.Width : Width;
         var narrow = IsNarrowAdvancedOptions(layoutWidth);
         viewModel.SetNarrowPreviewLayout(narrow);
-        var timeColumn = ChapterGrid.Columns.FirstOrDefault(column =>
-            string.Equals(column.Tag?.ToString(), ChapterGridColumnIds.Time, StringComparison.Ordinal));
-        timeColumn?.Width = new DataGridLength(narrow ? 300 : 400);
 
         if (advancedOptionsNarrow == narrow)
         {

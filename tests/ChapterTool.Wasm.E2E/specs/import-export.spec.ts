@@ -49,8 +49,8 @@ test('B07 malformed XML reports an error and retains the current document', asyn
 
 test('B04 preview content and Save download contain the same chapter data', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Preview', exact: true });
+  await page.getByRole('button', { name: 'View export text', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'View export text', exact: true });
   const preview = await dialog.locator('[data-testid="preview-content"]').textContent();
   await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
   const downloaded = await downloadText(page, testInfo);

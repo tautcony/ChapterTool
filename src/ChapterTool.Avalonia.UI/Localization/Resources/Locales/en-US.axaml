@@ -10,9 +10,9 @@
   <x:String x:Key="Action.Load" xml:space="preserve">Load</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">Load OGM sample</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">Log</x:String>
-  <x:String x:Key="Action.Preview" xml:space="preserve">Preview</x:String>
-  <x:String x:Key="Action.Refresh" xml:space="preserve">Refresh rows</x:String>
-  <x:String x:Key="Action.Reload" xml:space="preserve">Reload</x:String>
+  <x:String x:Key="Action.Preview" xml:space="preserve">View export text</x:String>
+  <x:String x:Key="Action.Refresh" xml:space="preserve">Recalculate frame display</x:String>
+  <x:String x:Key="Action.Reload" xml:space="preserve">Reload source file</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">Restore defaults</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">Settings</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
@@ -202,7 +202,7 @@
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">Preset</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">Frame rate used for Frames column</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">Order +</x:String>
-  <x:String x:Key="Label.RoundFrames" xml:space="preserve">Round frames</x:String>
+  <x:String x:Key="Label.RoundFrames" xml:space="preserve">Show integer frames</x:String>
   <x:String x:Key="Label.Format" xml:space="preserve">Format</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">Use</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML lang</x:String>
@@ -213,7 +213,7 @@
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">Auto</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} chapters</x:String>
   <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} chapter</x:String>
-  <x:String x:Key="Main.ChangeFps" xml:space="preserve">Convert to current FPS</x:String>
+  <x:String x:Key="Main.ChangeFps" xml:space="preserve">Convert chapter FPS</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">Combine</x:String>
   <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">Split by boundaries</x:String>
   <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">Split by boundaries</x:String>
@@ -221,16 +221,16 @@
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">Forward Translation</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">Insert</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">Keep original</x:String>
-  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">Load (Ctrl+O)</x:String>
+  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">Load source file</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">Open Related Media</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">Order shift</x:String>
-  <x:String x:Key="Main.Reload" xml:space="preserve">Reload</x:String>
+  <x:String x:Key="Main.Reload" xml:space="preserve">Reload source file</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">Save format</x:String>
-  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
+  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Save chapter file</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">Standard template</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">Template file</x:String>
   <x:String x:Key="Main.XmlLanguage" xml:space="preserve">XML language</x:String>
-  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">Change FPS</x:String>
+  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">Convert chapter FPS</x:String>
   <x:String x:Key="Menu.Combine" xml:space="preserve">Combine clips</x:String>
   <x:String x:Key="Menu.CopyName" xml:space="preserve">Copy name</x:String>
   <x:String x:Key="Menu.CopyRow" xml:space="preserve">Copy row</x:String>
@@ -248,7 +248,7 @@
   <x:String x:Key="Modal.Frames" xml:space="preserve">Frames to shift</x:String>
   <x:String x:Key="Modal.LogEmpty" xml:space="preserve">No activity yet.</x:String>
   <x:String x:Key="Modal.LogTitle" xml:space="preserve">Activity log</x:String>
-  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">Preview</x:String>
+  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">View export text</x:String>
   <x:String x:Key="Modal.RelatedTitle" xml:space="preserve">Related media</x:String>
   <x:String x:Key="Modal.SettingsTitle" xml:space="preserve">Settings</x:String>
   <x:String x:Key="NameMode.AsIs" xml:space="preserve">As is</x:String>
@@ -452,8 +452,8 @@
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones generated</x:String>
   <x:String x:Key="Title.Expression" xml:space="preserve">Lua expression over chapter time, e.g. t + 1 or t * 25 / 24</x:String>
   <x:String x:Key="Title.Load" xml:space="preserve">Load chapter file</x:String>
-  <x:String x:Key="Title.Preview" xml:space="preserve">Preview projected export text</x:String>
-  <x:String x:Key="Title.Refresh" xml:space="preserve">Refresh grid from current options</x:String>
+  <x:String x:Key="Title.Preview" xml:space="preserve">View committed export text</x:String>
+  <x:String x:Key="Title.Refresh" xml:space="preserve">Recalculate frame display</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">Export with current options and download</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">Apply expression</x:String>
   <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">Time changes: {times}/{count}</x:String>
@@ -464,7 +464,7 @@
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">Expression preview canceled.</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">Updating expression preview…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">Preview options</x:String>
-  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">Update preview</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">Update change preview</x:String>
   <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">Discard</x:String>
   <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">Preview is out of date. Update it before applying.</x:String>
   <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">The muted value is committed. The arrow points to the preview value.</x:String>
@@ -500,7 +500,7 @@
   <x:String x:Key="Expression.State.Invalid" xml:space="preserve">This expression cannot be applied.</x:String>
   <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">The complete result has no changes to apply.</x:String>
   <x:String x:Key="Expression.State.Applying" xml:space="preserve">Applying reviewed changes…</x:String>
-  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">Update preview</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">Update change preview</x:String>
   <x:String x:Key="Expression.Action.Apply" xml:space="preserve">Apply changes</x:String>
   <x:String x:Key="Expression.Value.Missing" xml:space="preserve">Not available</x:String>
   <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">Not calculated</x:String>
@@ -547,9 +547,9 @@
   <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">This shortcut is fixed by the application.</x:String>
   <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">Save</x:String>
   <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">Reload</x:String>
-  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">Refresh</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">Reload source file</x:String>
   <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">Log</x:String>
-  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">Preview</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">View export text</x:String>
   <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">Select clip</x:String>
   <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">Insert row</x:String>
   <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">Delete row</x:String>
@@ -704,4 +704,20 @@
   <x:String x:Key="History.Empty" xml:space="preserve">No history entry is available.</x:String>
   <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">Choose valid export options.</x:String>
   <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">Could not apply these settings. The draft is still available.</x:String>
+  <x:String x:Key="CloseGuard.Title" xml:space="preserve">Unexported chapter changes</x:String>
+  <x:String x:Key="CloseGuard.Message" xml:space="preserve">Some chapter content has not been exported. Export committed content and close, discard changes and close, or cancel to keep this window open.</x:String>
+  <x:String x:Key="CloseGuard.PendingCandidateNote" xml:space="preserve">A pending preview will be discarded. Export includes only applied content.</x:String>
+  <x:String x:Key="CloseGuard.ExportAndClose" xml:space="preserve">Export and close</x:String>
+  <x:String x:Key="CloseGuard.DiscardAndClose" xml:space="preserve">Discard and close</x:String>
+  <x:String x:Key="CloseGuard.Cancel" xml:space="preserve">Cancel</x:String>
+  <x:String x:Key="CloseGuard.OtherTracksRemain" xml:space="preserve">Some tracks still have unexported content. Export each remaining track before closing.</x:String>
+  <x:String x:Key="Main.ShortcutHintFormat" xml:space="preserve">Shortcut: {0}</x:String>
+  <x:String x:Key="Main.IntegerFrameDisplay" xml:space="preserve">Show integer frames</x:String>
+  <x:String x:Key="Main.FrameRateReview" xml:space="preserve">Convert chapter frame rate from {0} to {1}. {2}</x:String>
+  <x:String x:Key="Main.FrameRateReviewTimesChanged" xml:space="preserve">Chapter times will change to preserve frame positions.</x:String>
+  <x:String x:Key="Main.FrameRateReviewTimesUnchanged" xml:space="preserve">Chapter times will remain unchanged.</x:String>
+  <x:String x:Key="Main.FrameAccuracyLegend" xml:space="preserve">Shows whether times align with the selected frame rate.</x:String>
+  <x:String x:Key="CloseGuard.PendingOnlyMessage" xml:space="preserve">A preview has not been applied. Export includes only applied content.</x:String>
+  <x:String x:Key="Main.FrameRateReviewUnknownSource" xml:space="preserve">The source rate is unknown. Conversion cannot be applied.</x:String>
+  <x:String x:Key="CloseGuard.StateChanged" xml:space="preserve">The document or preview changed while the close decision was open. Review it before closing.</x:String>
 </ResourceDictionary>

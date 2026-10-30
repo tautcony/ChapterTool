@@ -32,8 +32,12 @@
         @if (Operation == "fps" && Workspace.ContentPreview is { } conversion)
         {
             <dl class="fps-review">
-                <dt>@L.T("Parity.SourceFps")</dt><dd data-testid="fps-source">@FrameRateValue(ScopeFrameRate(conversion.Before))</dd>
-                <dt>@L.T("Parity.TargetFps")</dt><dd data-testid="fps-target">@FrameRateValue(ScopeFrameRate(conversion.Candidate))</dd>
+                <dt>@L.T("Parity.SourceFps")</dt><dd data-testid="fps-source">@FormatFrameRateValue(ScopeFrameRate(conversion.Before))</dd>
+                <dt>@L.T("Parity.TargetFps")</dt><dd data-testid="fps-target">@FormatFrameRateValue(ScopeTargetFrameRate(conversion))</dd>
+                <dt>@L.T("Grid.Time")</dt>
+                <dd data-testid="fps-time-effect">
+                    @L.T(TimeEffectKey(conversion))
+                </dd>
             </dl>
         }
         @if (error is not null) { <p role="alert">@error</p> }
@@ -255,9 +259,54 @@
         document.Tracks.FirstOrDefault(track => track.Id == Workspace.ContentPreviewProjection?.ScopeTrackId)
             ?.FrameRate ?? document.FrameRate;
 
-    private string FrameRateValue(FrameRateValue rate) => rate.IsKnown
-        ? $"{rate} {L.T("Expression.Unit.FramesPerSecond")}"
-        : L.T("Expression.Value.NotSet");
+    private FrameRateValue ScopeTargetFrameRate(ChapterContentPreview preview)
+    {
+        var parameter = preview.OperationDescriptor?.Parameters.FirstOrDefault(item => item.Name == "targetFps");
+        if (parameter is null || parameter.Value is null)
+        {
+            return ScopeFrameRate(preview.Candidate);
+        }
+
+        if (parameter.ValueKind == nameof(FrameRateKind.Rational))
+        {
+            var parts = parameter.Value.Split('/');
+            return parts.Length == 2
+                && long.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var numerator)
+                && long.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var denominator)
+                && FrameRateValue.TryRational(new ChapterFrameRate(numerator, denominator), out var rational, out _)
+                    ? rational
+                    : FrameRateValue.Unknown;
+        }
+
+        return parameter.ValueKind == nameof(FrameRateKind.Approximate)
+            && decimal.TryParse(parameter.Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var approximate)
+                ? FrameRateValue.Approximate(approximate)
+                : FrameRateValue.Unknown;
+    }
+
+    private static bool ConversionChangesChapterTimes(ChapterContentPreview preview) =>
+        preview.Before.Tracks.Zip(preview.Candidate.Tracks)
+            .Any(pair => pair.First.Chapters.Zip(pair.Second.Chapters)
+                .Any(chapters => chapters.First.StartTicks != chapters.Second.StartTicks));
+
+    private string TimeEffectKey(ChapterContentPreview preview)
+    {
+        if (!ScopeFrameRate(preview.Before).IsKnown)
+        {
+            return "Main.FrameRateReviewUnknownSource";
+        }
+
+        return ConversionChangesChapterTimes(preview)
+            ? "Main.FrameRateReviewTimesChanged"
+            : "Main.FrameRateReviewTimesUnchanged";
+    }
+
+    private string FormatFrameRateValue(FrameRateValue rate) => rate.Kind switch
+    {
+        FrameRateKind.Rational => $"{rate} {L.T("Expression.Unit.FramesPerSecond")}",
+        FrameRateKind.Approximate => $"≈{rate} {L.T("Expression.Unit.FramesPerSecond")}",
+        _ => L.T("Expression.Value.NotSet")
+    };
 
     private string PropertyValue(string property, object? value)
     {

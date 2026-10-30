@@ -11,11 +11,12 @@ test('exact MPLS frame edits, display-only refresh, preview, keyboard history an
   const bytes = await readFile(resolve(process.cwd(), '../ChapterTool.Core.Tests/Fixtures/Importing/Disc/Mpls/00001_fch.mpls'));
   await loadBytes(page, '00001_fch.mpls', bytes);
   await expect(chapters(page).locator('tbody tr')).toHaveCount(9);
+  await expect(page.getByRole('button', { name: 'View export text', exact: true })).toBeVisible();
   const frame = chapters(page).getByRole('textbox', { name: 'Frames 2', exact: true, includeHidden: true });
   const time = chapters(page).getByRole('textbox', { name: 'Time 2', exact: true, includeHidden: true });
   const originalTime = await time.inputValue();
   const originalExport = await downloadText(page, testInfo);
-  const round = page.getByLabel('Round frames', { exact: true });
+  const round = page.getByLabel('Show integer frames', { exact: true });
   await round.check();
   await frame.focus();
   await frame.press('Tab');
@@ -54,6 +55,7 @@ test('exact MPLS frame edits, display-only refresh, preview, keyboard history an
   await expect(apply).toBeEnabled();
   for (const [name, viewport] of [
     ['default', { width: 1280, height: 800 }],
+    ['medium', { width: 900, height: 600 }],
     ['wide', { width: 1920, height: 1080 }],
     ['narrow', { width: 390, height: 844 }],
   ] as const) {
@@ -114,6 +116,46 @@ test('Auto suggestions do not authorize Unknown frame edits', async ({ readyPage
   await expect(time).toHaveValue('00:00:00.063');
 });
 
+test('frame guidance uses control hover and conversion shows exact source, target and time effect before apply', async ({ readyPage: page }) => {
+  const bytes = await readFile(resolve(process.cwd(), '../ChapterTool.Core.Tests/Fixtures/Importing/Disc/Mpls/00001_fch.mpls'));
+  await loadBytes(page, '00001_fch.mpls', bytes);
+  const roundFrames = page.locator('input[type="checkbox"][title="Shows whether times align with the selected frame rate."]');
+  await expect(roundFrames).toBeVisible();
+  await expect(page.locator('.frame-accuracy-info')).toHaveCount(0);
+  const rate = page.locator('select.fps-box');
+  const targetValue = await rate.locator('option').evaluateAll(options =>
+    options.find(option => /(?:^|\s)25(?:\.0+)?(?:\s|$)|25000\s*\/\s*1000/.test(option.textContent ?? ''))?.getAttribute('value'));
+  expect(targetValue).toBeTruthy();
+  await rate.selectOption(targetValue!);
+  const convertButton = page.getByRole('button', { name: 'Convert chapter FPS', exact: true });
+  await expect(convertButton).toHaveAttribute('title', 'Convert chapter FPS');
+  await expect(convertButton).toHaveText('');
+  await convertButton.click();
+  const review = page.locator('.fps-review');
+  await expect(review).toBeVisible();
+  await expect(page.getByTestId('fps-source')).toContainText('24000/1001');
+  await expect(page.getByTestId('fps-target')).toContainText('25/1');
+  await expect(page.getByTestId('fps-time-effect')).toContainText('Chapter times will change');
+  await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await expect(page.locator('.fps-review')).toHaveCount(0);
+});
+
+test('frame-rate conversion keeps unknown source visible and cannot apply', async ({ readyPage: page }) => {
+  await loadBytes(page, 'unknown.txt', Buffer.from('CHAPTER01=00:00:00.000\nCHAPTER01NAME=A\nCHAPTER02=00:00:12.500\nCHAPTER02NAME=B\n'));
+  const rate = page.locator('select.fps-box');
+  const targetValue = await rate.locator('option').evaluateAll(options =>
+    options.find(option => /(?:^|\s)25(?:\.0+)?(?:\s|$)|25000\s*\/\s*1000/.test(option.textContent ?? ''))?.getAttribute('value'));
+  expect(targetValue).toBeTruthy();
+  await rate.selectOption(targetValue!);
+  await page.getByRole('button', { name: /Convert chapter FPS/ }).click();
+  await expect(page.getByTestId('fps-time-effect')).toContainText('source rate is unknown');
+  await expect(page.getByRole('button', { name: 'Apply', exact: true })).toBeDisabled();
+  await expect(page.getByTestId('fps-source')).toContainText('Not set');
+  await expect(page.getByTestId('fps-target')).toContainText('25/1');
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+});
+
 test('exact candidate pending, stale and localized states retain content and selector', async ({ readyPage: page }) => {
   const bytes = await readFile(resolve(process.cwd(), '../ChapterTool.Core.Tests/Fixtures/Importing/Disc/Mpls/00001_fch.mpls'));
   await loadBytes(page, '00001_fch.mpls', bytes);
@@ -137,7 +179,7 @@ test('exact candidate pending, stale and localized states retain content and sel
   await expression.locator('#expression-draft').fill('t * 2');
   await expression.locator('.expression-footer button.primary').click();
   await expect(expression).toBeHidden();
-  await expect(page.locator('.inline-expression-actions button').first()).toHaveText('Update preview');
+  await expect(page.locator('.inline-expression-actions button').first()).toHaveText('Update change preview');
   await expect(page.getByRole('button', { name: 'Apply changes', exact: true })).toHaveCount(0);
   await page.screenshot({ path: resolve(evidence, 'web-stale.png') });
   await page.locator('.inline-expression-actions button').nth(1).click();

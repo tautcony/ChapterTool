@@ -122,21 +122,32 @@ public sealed class PortableUiParityTests
         await web.RedoAsync();
         AssertRows(desktop, web);
 
-        var conversionBefore = web.PrepareNamingPreview()!.Before;
         var sourceRate = desktop.ToolSession.ContentOperations.PrepareContentOptions().Before.FrameRate;
-        var baseline = sourceRate.IsKnown ? sourceRate : FrameRateValue.Rational(25, 1);
-        var desktopConversion = desktop.ToolSession.ContentOperations.PrepareFrameRateConversion(baseline, FrameRateValue.Rational(25, 1));
+        var desktopConversion = desktop.ToolSession.ContentOperations.PrepareFrameRateConversion(sourceRate, FrameRateValue.Rational(25, 1));
         web.SelectedFrameRateIndex = 3;
         var webConversion = web.PrepareFrameRatePreview()!;
-        Assert.True(desktopConversion.IsValid, string.Join("; ", desktopConversion.Errors));
-        Assert.True(webConversion.IsValid, string.Join("; ", webConversion.Errors));
-        Assert.Equal(TransactionOutcomeKind.Committed, (await desktop.ToolSession.ContentOperations.ApplyAsync(desktopConversion)).Kind);
-        Assert.True(await web.ApplyContentPreviewAsync());
-        AssertRows(desktop, web);
-        var conversionAfter = web.PrepareNamingPreview()!.Before;
-        if (conversionBefore.Tracks.Length > 1)
+        if (sourceRate.IsKnown)
         {
-            Assert.Same(conversionBefore.Tracks[0], conversionAfter.Tracks[0]);
+            Assert.True(desktopConversion.IsValid, string.Join("; ", desktopConversion.Errors));
+            Assert.True(webConversion.IsValid, string.Join("; ", webConversion.Errors));
+            Assert.Equal(TransactionOutcomeKind.Committed, (await desktop.ToolSession.ContentOperations.ApplyAsync(desktopConversion)).Kind);
+            Assert.True(await web.ApplyContentPreviewAsync());
+            AssertRows(desktop, web);
+        }
+        else
+        {
+            var beforeUnknownRateConversion = web.PrepareNamingPreview()!.Before;
+            var historyBeforeConversion = web.HistoryEntries.Count;
+            Assert.False(desktopConversion.IsValid);
+            Assert.False(webConversion.IsValid);
+            Assert.Equal(TransactionOutcomeKind.Invalid, (await desktop.ToolSession.ContentOperations.ApplyAsync(desktopConversion)).Kind);
+            Assert.False(await web.ApplyContentPreviewAsync());
+            AssertRows(desktop, web);
+            var afterUnknownRateConversion = web.PrepareNamingPreview()!.Before;
+            Assert.Equal(FrameRateValue.Unknown, afterUnknownRateConversion.FrameRate);
+            Assert.Equal(beforeUnknownRateConversion.Tracks[0].Chapters.Select(chapter => chapter.StartTicks),
+                afterUnknownRateConversion.Tracks[0].Chapters.Select(chapter => chapter.StartTicks));
+            Assert.Equal(historyBeforeConversion, web.HistoryEntries.Count);
         }
         Assert.Equal(Encoding.UTF8.GetBytes(desktop.BuildPreview()), Encoding.UTF8.GetBytes(web.Preview().Content));
         Assert.Equal(desktop.HistoryEntries.Count, web.HistoryEntries.Count);

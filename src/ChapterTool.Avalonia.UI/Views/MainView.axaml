@@ -71,6 +71,7 @@
                 VerticalAlignment="Center"
                 AutomationProperties.AutomationId="LogWindow"
                 Content="{DynamicResource Action.Log}"
+                ToolTip.Tip="{Binding LogButtonTooltip}"
                 Command="{Binding LogCommand}" />
       </Grid>
     </Border>
@@ -85,12 +86,13 @@
                        AutomationProperties.AutomationId="LoadButton"
                        Content="{DynamicResource Action.Load}"
                        Command="{Binding #RootView.BrowseAndLoadCommand}"
-                       ToolTip.Tip="{DynamicResource Main.LoadTooltip}">
+                       ToolTip.Tip="{Binding LoadButtonTooltip}">
             <SplitButton.Flyout>
               <MenuFlyout>
                 <MenuItem x:Name="ReloadMenuItem"
                           Header="{DynamicResource Main.Reload}"
                           InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadShortcutKeyGesture}"
+                          ToolTip.Tip="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadButtonTooltip}"
                           Command="{Binding #RootView.((vm:MainWindowViewModel)DataContext).ReloadCommand}" />
                 <MenuItem x:Name="AppendLoadMenuItem"
                           Header="{DynamicResource Main.AppendMpls}"
@@ -151,8 +153,9 @@
               MinWidth="208">
           <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <CheckBox x:Name="RoundFramesBox"
-                      Content="{DynamicResource Label.RoundFrames}"
-                      IsChecked="{Binding RoundFrames}" />
+                      Content="{DynamicResource Main.IntegerFrameDisplay}"
+                      IsChecked="{Binding RoundFrames}"
+                      ToolTip.Tip="{DynamicResource Main.FrameAccuracyLegend}" />
             <Button x:Name="HistoryButton"
                     Classes="icon_button"
                     Width="32"
@@ -171,7 +174,7 @@
                     AutomationProperties.AutomationId="PreviewWindow"
                     AutomationProperties.Name="{DynamicResource Action.Preview}"
                     Command="{Binding PreviewCommand}"
-                    ToolTip.Tip="{DynamicResource Action.Preview}">
+                    ToolTip.Tip="{Binding PreviewButtonTooltip}">
               <i:Icon Value="fa-solid fa-eye" FontSize="14" />
             </Button>
             <Button x:Name="RefreshButton"
@@ -179,10 +182,10 @@
                     Width="32"
                     Height="32"
                     AutomationProperties.AutomationId="RefreshRows"
-                    AutomationProperties.Name="{DynamicResource Common.Refresh}"
+                    AutomationProperties.Name="{DynamicResource Action.Refresh}"
                     IsEnabled="{Binding CanRefreshRows}"
                     Command="{Binding RefreshCommand}"
-                    ToolTip.Tip="{DynamicResource Common.Refresh}">
+                    ToolTip.Tip="{DynamicResource Title.Refresh}">
               <i:Icon Value="fa-solid fa-rotate" FontSize="14" />
             </Button>
             <Button x:Name="SettingsButton"
@@ -223,9 +226,10 @@
                     Classes="icon_button"
                     Width="32"
                     Height="32"
+                    MinWidth="32"
                     Command="{Binding ChangeFpsCommand}"
                     AutomationProperties.Name="{DynamicResource Main.ChangeFps}"
-                    ToolTip.Tip="{DynamicResource Main.ChangeFps}">
+                    ToolTip.Tip="{Binding FrameRateReviewTooltip}">
               <i:Icon Value="fa-solid fa-gauge-high" FontSize="14" />
             </Button>
           </Grid>
@@ -271,7 +275,7 @@
               <MenuItem x:Name="ForwardShiftMenuItem" Header="{DynamicResource Main.ForwardTranslation}" Command="{Binding #RootView.OpenForwardShiftCommand}">
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-arrow-up" /></MenuItem.Icon>
               </MenuItem>
-              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Menu.Preview}" InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).PreviewShortcutKeyGesture}" Command="{Binding PreviewCommand}">
+              <MenuItem x:Name="PreviewMenuItem" Header="{DynamicResource Action.Preview}" ToolTip.Tip="{Binding #RootView.((vm:MainWindowViewModel)DataContext).PreviewButtonTooltip}" InputGesture="{Binding #RootView.((vm:MainWindowViewModel)DataContext).PreviewShortcutKeyGesture}" Command="{Binding PreviewCommand}">
                 <MenuItem.Icon><i:Icon Width="16" Height="16" Value="fa-solid fa-circle-play" /></MenuItem.Icon>
               </MenuItem>
             </ContextMenu>
@@ -313,8 +317,8 @@
             </DataGridTemplateColumn>
             <DataGridTemplateColumn Header="{DynamicResource Grid.Time}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Time}"
-                                    Width="300"
-                                    MinWidth="220">
+                                    Width="1.2*"
+                                    MinWidth="180">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <Grid>
@@ -354,21 +358,23 @@
             </DataGridTemplateColumn>
             <DataGridTemplateColumn Header="{DynamicResource Grid.Name}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Name}"
-                                    Width="*"
-                                    MinWidth="144">
+                                    Width="2.4*"
+                                    MinWidth="128">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <Grid>
-                    <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Center"
-                               IsVisible="{Binding ShowNormalName}" Text="{Binding Name}" />
-                    <StackPanel ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
-                                AutomationProperties.Name="{Binding PreviewNameAccessibleName}"
-                                Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4"
-                                IsVisible="{Binding ShowWideNamePreview}">
-                      <TextBlock Text="{Binding Name}" Opacity="0.65" TextTrimming="CharacterEllipsis" />
-                      <i:Icon Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" />
-                      <TextBlock Classes="previewTarget" Text="{Binding PreviewName}" TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
+                    <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" TextAlignment="Left"
+                               IsVisible="{Binding ShowNormalName}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                    <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
+                          AutomationProperties.Name="{Binding PreviewNameAccessibleName}"
+                          ColumnDefinitions="*,Auto,*" ColumnSpacing="4"
+                          VerticalAlignment="Center" IsVisible="{Binding ShowWideNamePreview}">
+                      <TextBlock Grid.Column="0" Text="{Binding Name}" Opacity="0.65"
+                                 TextTrimming="CharacterEllipsis" HorizontalAlignment="Stretch" />
+                      <i:Icon Grid.Column="1" Value="fa-solid fa-arrow-right" Width="14" Height="14" Foreground="{DynamicResource Brush.Accent}" />
+                      <TextBlock Grid.Column="2" Classes="previewTarget" Text="{Binding PreviewName}"
+                                 TextTrimming="CharacterEllipsis" HorizontalAlignment="Stretch" />
+                    </Grid>
                     <Grid ToolTip.Tip="{DynamicResource Expression.Preview.ComparisonTooltip}"
                           AutomationProperties.Name="{Binding PreviewNameAccessibleName}"
                           ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="4" RowSpacing="1"
@@ -390,8 +396,8 @@
             </DataGridTemplateColumn>
             <DataGridTemplateColumn Header="{DynamicResource Grid.Frames}"
                                     Tag="{x:Static vm:ChapterGridColumnIds.Frames}"
-                                     Width="260"
-                                     MinWidth="220">
+                                     Width="1.4*"
+                                     MinWidth="200">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate x:DataType="vm:ChapterRowViewModel">
                   <Grid>
@@ -607,10 +613,6 @@
             <ColumnDefinition Width="Auto" SharedSizeGroup="BottomOptionLabel" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="Auto" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Classes="optionLabel" HorizontalAlignment="Left" Text="{DynamicResource Tool.Expression.Title}" />
           <controls:ExpressionEditor x:Name="ExpressionBox"
@@ -625,35 +627,37 @@
                                      FrameRate="{Binding ExpressionFrameRate}"
                                      ToolTip.Tip="{Binding ExpressionPreviewText}"
                                      AutomationProperties.AutomationId="ExpressionText" />
-          <Button x:Name="LoadExpressionButton"
-                  Grid.Column="2"
-                  Classes="icon_button"
-                  Width="32"
-                  Height="32"
-                  AutomationProperties.Name="{DynamicResource Tool.Expression.LoadLuaScript}"
-                  ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"
-                  Command="{Binding #RootView.LoadLuaExpressionScriptCommand}">
-            <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
-          </Button>
-          <Button x:Name="PreviewContentOptionsButton"
-                  Grid.Column="3"
-                  Classes="flat"
-                  MinWidth="76"
-                  Content="{DynamicResource Expression.Preview.Options}"
-                  IsVisible="{Binding CanPreviewContentOptions}"
-                  Command="{Binding PreviewContentOptionsCommand}"
-                  AutomationProperties.AutomationId="PreviewContentOptions" />
-          <Button x:Name="ApplyContentPreviewButton" Grid.Column="4" Classes="flat primary" MinWidth="64"
-                  Content="{DynamicResource Common.Apply}" IsVisible="{Binding IsContentPreviewPending}"
-                  IsEnabled="{Binding CanApplyContentPreview}" Command="{Binding #RootView.ApplyContentPreviewCommand}"
-                  ToolTip.Tip="{Binding ContentPreviewMetadataTooltip}"
-                  AutomationProperties.AutomationId="ApplyContentPreview" />
-          <Button x:Name="CancelContentPreviewButton" Grid.Column="5" Classes="flat" MinWidth="64"
-                  Content="{DynamicResource Expression.Preview.Discard}" IsVisible="{Binding IsContentPreviewPending}"
-                  Command="{Binding CancelContentPreviewCommand}" AutomationProperties.AutomationId="CancelContentPreview" />
-          <Button x:Name="RefreshContentPreviewButton" Grid.Column="6" Classes="flat" MinWidth="64"
-                  Content="{DynamicResource Expression.Preview.Update}" IsVisible="{Binding CanRefreshContentPreview}"
-                  Command="{Binding RefreshContentPreviewCommand}" AutomationProperties.AutomationId="RefreshContentPreview" />
+          <StackPanel x:Name="ExpressionActions" Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <Button x:Name="LoadExpressionButton"
+                    Classes="icon_button"
+                    Width="32"
+                    Height="32"
+                    AutomationProperties.Name="{DynamicResource Tool.Expression.LoadLuaScript}"
+                    ToolTip.Tip="{DynamicResource Tool.Expression.LoadLuaScript}"
+                    Command="{Binding #RootView.LoadLuaExpressionScriptCommand}">
+              <i:Icon Value="fa-solid fa-file-code" FontSize="14" />
+            </Button>
+            <Button x:Name="PreviewContentOptionsButton"
+                    Classes="flat"
+                    MinWidth="76"
+                    Height="32"
+                    VerticalAlignment="Center"
+                    Content="{DynamicResource Expression.Preview.Options}"
+                    IsVisible="{Binding CanPreviewContentOptions}"
+                    Command="{Binding PreviewContentOptionsCommand}"
+                    AutomationProperties.AutomationId="PreviewContentOptions" />
+            <Button x:Name="ApplyContentPreviewButton" Classes="flat primary" MinWidth="64" Height="32" VerticalAlignment="Center"
+                    Content="{DynamicResource Common.Apply}" IsVisible="{Binding IsContentPreviewPending}"
+                    IsEnabled="{Binding CanApplyContentPreview}" Command="{Binding #RootView.ApplyContentPreviewCommand}"
+                    ToolTip.Tip="{Binding ContentPreviewMetadataTooltip}"
+                    AutomationProperties.AutomationId="ApplyContentPreview" />
+            <Button x:Name="CancelContentPreviewButton" Classes="flat" MinWidth="64" Height="32" VerticalAlignment="Center"
+                    Content="{DynamicResource Expression.Preview.Discard}" IsVisible="{Binding IsContentPreviewPending}"
+                    Command="{Binding CancelContentPreviewCommand}" AutomationProperties.AutomationId="CancelContentPreview" />
+            <Button x:Name="RefreshContentPreviewButton" Classes="flat" MinWidth="64" Height="32" VerticalAlignment="Center"
+                    Content="{DynamicResource Expression.Preview.Update}" IsVisible="{Binding CanRefreshContentPreview}"
+                    Command="{Binding RefreshContentPreviewCommand}" AutomationProperties.AutomationId="RefreshContentPreview" />
+          </StackPanel>
         </Grid>
       </Grid>
       </Grid>

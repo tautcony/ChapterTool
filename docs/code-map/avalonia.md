@@ -48,6 +48,7 @@ Role split:
   - `.Expression.cs`: Lua expression apply/validate and committed chapter row refresh
   - `.Editing.cs`: clip selection, row edits, combine/split, frame-rate transforms
   - `.StatusLog.cs`: status text, diagnostics localization, logging, localized option refresh
+  - `.ShortcutHints.cs`: localized action tooltips from active gestures and fixed aliases
 
 ### Session (clip / workspace)
 
@@ -63,7 +64,7 @@ Avalonia owns only host ports:
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/ShellPorts.cs` — narrow tool ports (`IExpressionSessionPort`, `IPreferenceSink`, …)
 - `src/ChapterTool.Avalonia.UI/PlatformPorts/SessionPorts/MainWindowPortAdapters.cs` — concrete main-window adapters
 
-`MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Operation parameters remain drafts until an explicit candidate is applied. Row materialization reads committed workspace content. It derives frame text and accuracy from the current display preferences. Display refresh must not create content history. Frame edits and signed shifts use the displayed FPS. Expression preparation can supply detected FPS to the selected track when source FPS is absent. Preview and save serialize committed content. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load and append commits use workspace revision rules. Replacement confirms session loss before ending the old session. Closing the desktop window ends its session and cancels its work.
+`MainWindowViewModel` is the bindable shell and holds one Core `ChapterWorkspace`. Operation parameters remain drafts until an explicit candidate is applied. Row materialization reads committed workspace content. It derives frame text and accuracy from the current display preferences. Display refresh must not create content history. Frame edits and signed shifts use the displayed FPS. Expression preparation can supply detected FPS to the selected track when source FPS is absent. Preview and save serialize committed content. Command handlers delegate workflow orchestration to the `Workflows/` collaborators. Load and append commits use workspace revision rules. Replacement confirms session loss before ending the old session. `MainWindow.Close.cs` checks unexported tracks and pending candidates before desktop close. The dialog offers export, discard, and cancel. `MainWindowViewModel.Close.cs` checks the export result and the captured session state. Failed exports and newer changes keep the window open. History alone does not require close confirmation. An approved close ends the session and cancels its work.
 
 `MainWindowViewModel` exposes the Core history tree through `IHistorySessionPort`. `UndoCommand`, `RedoCommand`, and `NavigateHistoryCommand` navigate the same `ContentSession`. `HistoryToolView` renders the hierarchy with the native Avalonia `TreeView` in a modal dialog.
 
@@ -79,7 +80,7 @@ Content edits use `ChapterWorkspace.ContentSession` through `ClipEditingCoordina
 
 `MainView.axaml` bounds the numbering offset to 0..1000. `ContentOperationDialog.razor` provides the browser draft and review surface. `WasmWorkspace.Operations.cs` owns preparation, freshness checks, exact application, and cell identity capture. Preferences refresh display and output without replaying content edits.
 
-`ChapterRowViewModel` keeps committed values and projects typed before/candidate comparisons by track and chapter ID. It captures visible frame text, accuracy, and display rate when preview starts. Candidate frame accuracy comes from the typed candidate. `FrameValueFormatter` formats timestamp ticks with each value's canonical rate. `MainView.axaml` aligns integer and fractional parts and marks repetends with an overline. `MainView.ApplyContentPreviewPreservingGridStateAsync` applies the captured candidate and restores selection and scroll state. Bottom option labels share measured widths across responsive columns.
+`ChapterRowViewModel` keeps committed values and projects typed before/candidate comparisons by track and chapter ID. It captures visible frame text, accuracy, and display rate when preview starts. Candidate frame accuracy comes from the typed candidate. `FrameValueFormatter` formats timestamp ticks with each value's canonical rate. `MainView.axaml` aligns integer and fractional parts and marks repetends with an overline. `MainView.ApplyContentPreviewPreservingGridStateAsync` applies the captured candidate and restores selection and scroll state. Bottom option labels share measured widths across responsive columns. `MainWindowViewModel.FrameReview.cs` formats source and target rates for conversion review. Approximate rates keep the approximation marker. Unknown source rates cannot authorize conversion. The frame accuracy button opens an accessible explanation. The chapter columns use star sizing. Responsive layout does not reset user column widths.
 
 `tests/ChapterTool.Avalonia.Tests/ViewModels/` verifies tool and command behavior. `tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs` verifies visible frame snapshots, inline values, preview lifecycle, localized layouts, control alignment, and viewport bounds. `MainWindowInteractionHeadlessTests.cs` verifies selection and scroll retention through apply and discard.
 
@@ -162,7 +163,7 @@ Primary entry points are `src/ChapterTool.Avalonia.UI/Views/Tools/LogToolView.ax
 
 The Load control is a `SplitButton`. Reload and Append MPLS live in its flyout. Change FPS is a visible `icon_button` next to the frame-rate selector.
 
-Shortcut ownership is shared. `src/ChapterTool.Contracts/Shortcuts/` defines stable action IDs, gesture normalization, conflict checks, and active mappings. `ShortcutRouter` routes undo and redo through the session commands. Windows and Linux use Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z. macOS uses Cmd+Z and Cmd+Shift+Z. Text controls keep their draft undo scope. `SettingsToolViewModel` owns draft rows and saves them through `ISettingsStore<ChapterToolSettings>`. `SettingsToolView.axaml` exposes the Shortcuts tab.
+Shortcut ownership is shared. `src/ChapterTool.Contracts/Shortcuts/` defines stable action IDs. It normalizes gestures, checks conflicts, and resolves active mappings. `ShortcutMapping.GesturesForAction` returns the active row gesture and fixed aliases. `MainWindowViewModel.ShortcutHints.cs` builds localized action tooltips from the active mapping. Mapping and language changes refresh those tooltips. `Meta+O` and `Meta+S` are fixed macOS aliases. Conflict checks include fixed aliases. `ShortcutRouter` routes undo and redo through the session commands. Windows and Linux use Ctrl+Z and Ctrl+Y or Ctrl+Shift+Z. macOS uses Cmd+Z and Cmd+Shift+Z. Text controls keep their draft undo scope. `SettingsToolViewModel` owns draft rows. It saves them through `ISettingsStore<ChapterToolSettings>`. `SettingsToolView.axaml` exposes the Shortcuts tab.
 
 ### ViewModels
 

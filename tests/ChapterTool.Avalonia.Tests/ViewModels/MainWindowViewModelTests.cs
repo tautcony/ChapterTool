@@ -1235,24 +1235,30 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task ChangeFpsCommandUsesSelectedRateWhenSourceRateIsMissing()
+    public async Task ChangeFpsCommandKeepsUnknownSourceRateAndDisablesConversion()
     {
         var info = Info(ChapterImportFormat.Ogm, "movie.txt",
             new Chapter(1, TimeSpan.FromSeconds(10), "A")) with { FrameRate = FrameRateValue.Unknown };
-        var save = new FakeSaveService();
-        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)), saveService: save);
+        var vm = CreateViewModel(new FakeLoadService(ImportResult("movie.txt", info)));
 
         await vm.LoadCommand.ExecuteAsync("movie.txt");
         var targetIndex = new FrameRateService().Options.Single(option => option.Rate.ToDecimal() == 25).MplsFrameRateCode;
         vm.SetFrameOptions(targetIndex, roundFrames: true);
+        var ticks = vm.Workspace.ContentSession!.Snapshot.Document.Tracks[0].Chapters[0].StartTicks;
+        var historyCursor = vm.ToolSession.History.Snapshot!.CursorId;
         await vm.ChangeFpsCommand.ExecuteAsync();
 
         Assert.True(vm.IsContentPreviewPending);
-        Assert.True(vm.CanApplyContentPreview, vm.ExpressionPreviewText);
+        Assert.False(vm.CanApplyContentPreview, vm.ExpressionPreviewText);
+        Assert.Contains(vm.Localizer.GetString("Expression.Value.NotSet"), vm.FrameRateReviewTooltip, StringComparison.Ordinal);
+        Assert.Contains("25/1", vm.FrameRateReviewTooltip, StringComparison.Ordinal);
+        Assert.Contains("unknown", vm.FrameRateReviewTooltip, StringComparison.OrdinalIgnoreCase);
         await vm.ApplyContentPreviewCommand.ExecuteAsync();
-        await vm.SaveCommand.ExecuteAsync("out");
 
-        Assert.Equal(FrameRateValue.Rational(25, 1), save.LastInfo!.FrameRate);
+        Assert.Equal(FrameRateValue.Unknown, vm.Workspace.ContentSession.Snapshot.Document.FrameRate);
+        Assert.Equal(ticks, vm.Workspace.ContentSession.Snapshot.Document.Tracks[0].Chapters[0].StartTicks);
+        Assert.Equal(historyCursor, vm.ToolSession.History.Snapshot!.CursorId);
+        Assert.True(vm.IsContentPreviewPending);
         Assert.Equal("00:00:10.000", vm.Rows[0].TimeText);
     }
 
@@ -1805,6 +1811,27 @@ public sealed class MainWindowViewModelTests
         await router.RouteAsync("Ctrl+S");
 
         Assert.Equal(0, vm.SelectedClipIndex);
+        Assert.NotNull(save.LastOptions);
+    }
+
+    [Fact]
+    public async Task MacOpenAndSaveAliasesRouteThroughTheActiveShortcutMapping()
+    {
+        var load = new FakeLoadService(ImportResult("movie.txt", Info(ChapterImportFormat.Ogm, "movie.txt", new Chapter(1, TimeSpan.Zero, "A"))));
+        var save = new FakeSaveService();
+        var vm = CreateViewModel(load, save);
+        var loadedPath = string.Empty;
+        var router = new ShortcutRouter(vm, load: () =>
+        {
+            loadedPath = "opened.txt";
+            return ValueTask.CompletedTask;
+        });
+
+        await router.RouteAsync("Meta+O");
+        await vm.LoadCommand.ExecuteAsync("movie.txt");
+        await router.RouteAsync("Meta+S");
+
+        Assert.Equal("opened.txt", loadedPath);
         Assert.NotNull(save.LastOptions);
     }
 

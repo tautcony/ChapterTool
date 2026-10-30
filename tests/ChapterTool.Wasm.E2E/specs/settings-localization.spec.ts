@@ -100,8 +100,8 @@ test('B05 exports representative formats through the visible controls', async ({
         await fps.selectOption('2');
         await expect(fps).toHaveValue('2');
         await fps.dispatchEvent('contextmenu', { button: 2 });
-        await page.locator('.context-menu').getByRole('button', { name: 'Change FPS', exact: true }).click();
-        await page.getByRole('dialog', { name: 'Change FPS', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
+        await page.locator('.context-menu').getByRole('button', { name: 'Convert chapter FPS', exact: true }).click();
+        await page.getByRole('dialog', { name: 'Convert chapter FPS', exact: true }).getByRole('button', { name: 'Apply', exact: true }).click();
       }
       const output = await downloadText(page, testInfo);
       expect(output.filename.toLowerCase()).toContain(extension.toLowerCase());

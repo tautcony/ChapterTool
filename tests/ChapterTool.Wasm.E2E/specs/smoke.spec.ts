@@ -29,8 +29,8 @@ test('B02–B04 @smoke imports, edits, undoes, redoes, previews, and downloads a
   await page.keyboard.press('Control+y');
   await expect(name).toHaveValue('Revised opening');
 
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Preview', exact: true });
+  await page.getByRole('button', { name: 'View export text', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'View export text', exact: true });
   await expect(dialog.getByText('Revised opening')).toBeVisible();
   await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
 

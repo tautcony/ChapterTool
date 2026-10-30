@@ -10,6 +10,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Closing += OnClosing;
     }
 
     public MainWindow(MainView mainView, string title)

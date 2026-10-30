@@ -17,6 +17,55 @@ test('changing naming after applying the main expression does not run the expres
   expect((await downloadText(page, testInfo)).content.toString('utf8')).toContain('00:00:06.250');
 });
 
+test('chapter names and changed-name previews stay on one line at supported widths', async ({ readyPage: page }, testInfo) => {
+  await loadFixture(page, 'minimal-ogm.txt');
+  await page.locator('#nameMode').selectOption('1');
+  const apply = page.getByRole('button', { name: 'Apply changes', exact: true });
+  await expect(apply).toBeEnabled();
+
+  for (const viewport of [
+    { name: 'default', width: 1280, height: 800 },
+    { name: 'medium', width: 900, height: 600 },
+    { name: 'wide', width: 1920, height: 1080 },
+    { name: 'narrow', width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    const nameCell = chapters(page).locator('tbody tr').nth(1).locator('.col-name');
+    const preview = nameCell.locator('.name-expression-preview');
+    await expect(preview).toBeVisible();
+    expect(await nameCell.evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(160);
+    const layout = await preview.evaluate(element => {
+      const cell = element.closest('td')!;
+      const cellRect = cell.getBoundingClientRect();
+      const values = [element.children[0], element.children[2]] as HTMLElement[];
+      return {
+        valuesInsideCell: values.every(value => {
+          const rect = value.getBoundingClientRect();
+          return rect.left >= cellRect.left && rect.right <= cellRect.right;
+        }),
+        valuesStayOnOneLine: values.every(value => getComputedStyle(value).whiteSpace === 'nowrap'),
+      };
+    });
+    expect(layout.valuesInsideCell).toBe(true);
+    expect(layout.valuesStayOnOneLine).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`chapter-names-${viewport.name}.png`), fullPage: true });
+  }
+
+  await apply.click();
+  const nameEditor = chapters(page).locator('tbody tr').nth(1).getByRole('textbox', { name: 'Name 2', exact: true });
+  await expect(nameEditor).toHaveValue('Chapter 02');
+  const nameCell = chapters(page).locator('tbody tr').nth(1).locator('.col-name');
+  const originalCellHeight = await nameCell.evaluate(element => element.getBoundingClientRect().height);
+  const longName = 'A deliberately long chapter name that remains one editable line';
+  await nameEditor.fill(longName);
+  await nameEditor.press('Enter');
+  await expect(nameEditor).toHaveValue(longName);
+  const editedCellHeight = await nameCell.evaluate(element => element.getBoundingClientRect().height);
+  expect(editedCellHeight).toBeLessThanOrEqual(originalCellHeight + 1);
+  expect((await downloadText(page, testInfo)).content.toString('utf8')).toContain(longName);
+});
+
 test('main candidate actions remain reachable at supported sizes and capture review images', async ({ readyPage: page }, testInfo) => {
   await loadFixture(page, 'minimal-ogm.txt');
   await page.locator('#main-order-shift').fill('1');
@@ -74,10 +123,10 @@ test('main load menu exposes reload and append without a context click', async (
   await menuToggle.click();
   const menu = page.locator('#load-menu');
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem', { name: 'Reload', exact: true })).toBeEnabled();
+  await expect(menu.getByRole('menuitem', { name: 'Reload source file', exact: true })).toBeEnabled();
   await expect(menu.getByRole('menuitem', { name: /^Append MPLS/ })).toBeEnabled();
 
-  await menu.getByRole('menuitem', { name: 'Reload', exact: true }).click();
+  await menu.getByRole('menuitem', { name: 'Reload source file', exact: true }).click();
   await expect(grid.locator('tbody tr')).toHaveCount(initialCount);
   await menuToggle.click();
   const appendChooser = page.waitForEvent('filechooser');
@@ -223,7 +272,7 @@ test('settings drafts apply live, cancel rolls them back, and saved defaults kee
   const storageKey = 'chaptertool.wasm.settings';
   const storageBefore = await page.evaluate(key => localStorage.getItem(key), storageKey);
   await loadFixture(page, 'minimal-ogm.txt');
-  const roundFrames = page.getByRole('checkbox', { name: 'Round frames', exact: true });
+  const roundFrames = page.getByRole('checkbox', { name: 'Show integer frames', exact: true });
   await roundFrames.setChecked(false);
   await expect(roundFrames).not.toBeChecked();
   await page.getByTestId('settings-open').click();

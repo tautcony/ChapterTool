@@ -10,9 +10,9 @@
   <x:String x:Key="Action.Load" xml:space="preserve">加载</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">加载 OGM 示例</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">日志</x:String>
-  <x:String x:Key="Action.Preview" xml:space="preserve">预览</x:String>
-  <x:String x:Key="Action.Refresh" xml:space="preserve">刷新行</x:String>
-  <x:String x:Key="Action.Reload" xml:space="preserve">重新加载</x:String>
+  <x:String x:Key="Action.Preview" xml:space="preserve">查看导出文本</x:String>
+  <x:String x:Key="Action.Refresh" xml:space="preserve">重新计算帧显示</x:String>
+  <x:String x:Key="Action.Reload" xml:space="preserve">重新载入源文件</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">恢复默认</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">设置</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
@@ -202,7 +202,7 @@
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">预设</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">用于帧列的帧率</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">序号 +</x:String>
-  <x:String x:Key="Label.RoundFrames" xml:space="preserve">帧取整</x:String>
+  <x:String x:Key="Label.RoundFrames" xml:space="preserve">显示整数帧</x:String>
   <x:String x:Key="Label.Format" xml:space="preserve">格式</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">启用</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML 语言</x:String>
@@ -213,7 +213,7 @@
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自动</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 个章节</x:String>
   <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 个章节</x:String>
-  <x:String x:Key="Main.ChangeFps" xml:space="preserve">转换至当前帧率</x:String>
+  <x:String x:Key="Main.ChangeFps" xml:space="preserve">转换章节帧率</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">合并</x:String>
   <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">按边界拆分</x:String>
   <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">按边界拆分</x:String>
@@ -221,16 +221,16 @@
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">前移帧</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">插入</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">保留原名</x:String>
-  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">载入 (Ctrl+O)</x:String>
+  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">载入源文件</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">打开相关媒体</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">平移章节号</x:String>
-  <x:String x:Key="Main.Reload" xml:space="preserve">重新载入</x:String>
+  <x:String x:Key="Main.Reload" xml:space="preserve">重新载入源文件</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存格式</x:String>
-  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
+  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">保存章节文件</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">统一模板</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">模板文件</x:String>
   <x:String x:Key="Main.XmlLanguage" xml:space="preserve">XML语言</x:String>
-  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">更改帧率</x:String>
+  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">转换章节帧率</x:String>
   <x:String x:Key="Menu.Combine" xml:space="preserve">合并片段</x:String>
   <x:String x:Key="Menu.CopyName" xml:space="preserve">复制名称</x:String>
   <x:String x:Key="Menu.CopyRow" xml:space="preserve">复制行内容</x:String>
@@ -248,7 +248,7 @@
   <x:String x:Key="Modal.Frames" xml:space="preserve">前移帧数</x:String>
   <x:String x:Key="Modal.LogEmpty" xml:space="preserve">暂无活动。</x:String>
   <x:String x:Key="Modal.LogTitle" xml:space="preserve">活动日志</x:String>
-  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">查看导出文本</x:String>
   <x:String x:Key="Modal.RelatedTitle" xml:space="preserve">关联媒体</x:String>
   <x:String x:Key="Modal.SettingsTitle" xml:space="preserve">设置</x:String>
   <x:String x:Key="NameMode.AsIs" xml:space="preserve">保持原名</x:String>
@@ -452,8 +452,8 @@
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones 已生成</x:String>
   <x:String x:Key="Title.Expression" xml:space="preserve">基于章节时间的 Lua 表达式，例如 t + 1 或 t * 25 / 24</x:String>
   <x:String x:Key="Title.Load" xml:space="preserve">加载章节文件</x:String>
-  <x:String x:Key="Title.Preview" xml:space="preserve">预览投影后的导出文本</x:String>
-  <x:String x:Key="Title.Refresh" xml:space="preserve">按当前选项刷新表格</x:String>
+  <x:String x:Key="Title.Preview" xml:space="preserve">查看已应用内容的导出文本</x:String>
+  <x:String x:Key="Title.Refresh" xml:space="preserve">重新计算帧显示</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">按当前选项导出并下载</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">应用表达式</x:String>
   <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">时间修改 {times}/{count} 个章节</x:String>
@@ -464,7 +464,7 @@
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">已取消表达式预览。</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">正在更新表达式预览…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">预览其他选项</x:String>
-  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">更新预览</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">更新修改预览</x:String>
   <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">放弃</x:String>
   <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">预览已过期。请更新后再应用。</x:String>
   <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">浅色值为已提交内容；箭头指向预览值。</x:String>
@@ -500,7 +500,7 @@
   <x:String x:Key="Expression.State.Invalid" xml:space="preserve">此表达式无法应用。</x:String>
   <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">结果没有可应用的变化。</x:String>
   <x:String x:Key="Expression.State.Applying" xml:space="preserve">正在应用已检查的更改…</x:String>
-  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">更新预览</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">更新修改预览</x:String>
   <x:String x:Key="Expression.Action.Apply" xml:space="preserve">应用更改</x:String>
   <x:String x:Key="Expression.Value.Missing" xml:space="preserve">不可用</x:String>
   <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">未计算</x:String>
@@ -547,9 +547,9 @@
   <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">此快捷键由应用程序固定。</x:String>
   <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">重新加载</x:String>
-  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">刷新</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">重新载入源文件</x:String>
   <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">日志</x:String>
-  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">预览</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">查看导出文本</x:String>
   <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">选择片段</x:String>
   <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">插入行</x:String>
   <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">删除行</x:String>
@@ -704,4 +704,20 @@
   <x:String x:Key="History.Empty" xml:space="preserve">没有可用的历史记录。</x:String>
   <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">请选择有效的导出选项。</x:String>
   <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">无法应用这些设置。草稿仍可继续编辑。</x:String>
+  <x:String x:Key="CloseGuard.Title" xml:space="preserve">章节修改尚未导出</x:String>
+  <x:String x:Key="CloseGuard.Message" xml:space="preserve">部分章节内容尚未导出。你可以导出已应用内容后关闭、放弃修改并关闭，或取消以保留当前窗口。</x:String>
+  <x:String x:Key="CloseGuard.PendingCandidateNote" xml:space="preserve">待应用的预览将被放弃。导出仅包含已应用的内容。</x:String>
+  <x:String x:Key="CloseGuard.ExportAndClose" xml:space="preserve">导出并关闭</x:String>
+  <x:String x:Key="CloseGuard.DiscardAndClose" xml:space="preserve">放弃并关闭</x:String>
+  <x:String x:Key="CloseGuard.Cancel" xml:space="preserve">取消</x:String>
+  <x:String x:Key="CloseGuard.OtherTracksRemain" xml:space="preserve">其他轨道仍有未导出的内容。请逐一导出后再关闭。</x:String>
+  <x:String x:Key="Main.ShortcutHintFormat" xml:space="preserve">快捷键：{0}</x:String>
+  <x:String x:Key="Main.IntegerFrameDisplay" xml:space="preserve">显示整数帧</x:String>
+  <x:String x:Key="Main.FrameRateReview" xml:space="preserve">章节帧率：{0} → {1}。{2}</x:String>
+  <x:String x:Key="Main.FrameRateReviewTimesChanged" xml:space="preserve">章节时间将变化，以保持帧位置。</x:String>
+  <x:String x:Key="Main.FrameRateReviewTimesUnchanged" xml:space="preserve">章节时间保持不变。</x:String>
+  <x:String x:Key="Main.FrameAccuracyLegend" xml:space="preserve">说明时间是否对齐所选帧率。</x:String>
+  <x:String x:Key="CloseGuard.PendingOnlyMessage" xml:space="preserve">预览尚未应用。导出仅包含已应用的内容。</x:String>
+  <x:String x:Key="Main.FrameRateReviewUnknownSource" xml:space="preserve">源帧率未知，无法应用帧率转换。</x:String>
+  <x:String x:Key="CloseGuard.StateChanged" xml:space="preserve">关闭确认期间文档或预览发生了变化。请检查后再关闭。</x:String>
 </ResourceDictionary>

@@ -52,10 +52,10 @@ test(`P10 FPS review is read-only and applies one exact conversion with Undo (${
   await page.locator('select.fps-box').selectOption('3');
   const open = async () => {
     await page.locator('select.fps-box').dispatchEvent('contextmenu', { button: 2 });
-    await page.locator('.context-menu').getByRole('button', { name: 'Change FPS', exact: true }).click();
+    await page.locator('.context-menu').getByRole('button', { name: 'Convert chapter FPS', exact: true }).click();
   };
   await open();
-  const dialog = page.getByRole('dialog', { name: 'Change FPS', exact: true });
+  const dialog = page.getByRole('dialog', { name: 'Convert chapter FPS', exact: true });
   await expect(dialog).toContainText('Source FPS');
   await expect(dialog).toContainText('Target FPS');
   const sourceRate = (await dialog.getByTestId('fps-source').innerText()).match(/^(\d+)\/(\d+) fps$/);

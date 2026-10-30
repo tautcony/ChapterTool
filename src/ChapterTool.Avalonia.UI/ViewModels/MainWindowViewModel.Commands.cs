@@ -210,6 +210,10 @@ public sealed partial class MainWindowViewModel
                     SelectedFrameRateOption.Rate),
                 _ => PrepareContentOptionsOperation()
             };
+            if (pendingContentPreview.Operation == "Change chapter frame rate")
+            {
+                SetFrameRateReview(pendingContentPreview, ResolveSourceFrameRate(), SelectedFrameRateOption.Rate);
+            }
             ExpressionPreviewText = BuildExpressionPreviewText(pendingContentPreview, Localizer);
             StatusText = Localizer.GetString(pendingContentPreview.IsValid
                 ? "Expression.State.Ready"

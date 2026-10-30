@@ -373,6 +373,8 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
 
     internal sealed class FakeSaveService : IChapterSaveService
     {
+        public Func<ChapterSet, ChapterSerializationOptions, string?, CancellationToken, ValueTask<ChapterExportResult>>? Handler { get; set; }
+
         public ChapterSet? LastInfo { get; private set; }
 
         public ChapterSerializationOptions? LastOptions { get; private set; }
@@ -392,6 +394,11 @@ internal sealed class MainWindowHeadlessTestHost : IDisposable
             LastInfo = info;
             LastOptions = options;
             LastDirectory = directory;
+            if (Handler is not null)
+            {
+                return Handler(info, options, directory, cancellationToken);
+            }
+
             return ValueTask.FromResult(new ChapterExportResult(true, "ok", ".txt", []));
         }
     }

@@ -32,8 +32,10 @@ public sealed partial class MainWindowViewModel
 
     private void RefreshLocalizedState()
     {
+        RefreshFrameRateReview();
         OnPropertyChanged(nameof(ChapterCountDisplay));
         OnPropertyChanged(nameof(SelectedRowCountDisplay));
+        NotifyShortcutHintProperties();
         RefreshChapterNameModeOptions();
         RefreshFrameRateDisplayOptions();
         RefreshXmlLanguageDisplayOptions(notify: true);

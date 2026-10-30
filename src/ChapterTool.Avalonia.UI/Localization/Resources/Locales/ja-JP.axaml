@@ -10,9 +10,9 @@
   <x:String x:Key="Action.Load" xml:space="preserve">読み込み</x:String>
   <x:String x:Key="Action.LoadSample" xml:space="preserve">OGM サンプルを読み込む</x:String>
   <x:String x:Key="Action.Log" xml:space="preserve">ログ</x:String>
-  <x:String x:Key="Action.Preview" xml:space="preserve">プレビュー</x:String>
-  <x:String x:Key="Action.Refresh" xml:space="preserve">行を更新</x:String>
-  <x:String x:Key="Action.Reload" xml:space="preserve">再読み込み</x:String>
+  <x:String x:Key="Action.Preview" xml:space="preserve">エクスポートテキストを表示</x:String>
+  <x:String x:Key="Action.Refresh" xml:space="preserve">フレーム表示を再計算</x:String>
+  <x:String x:Key="Action.Reload" xml:space="preserve">ソースを再読み込み</x:String>
   <x:String x:Key="Action.RestoreDefaults" xml:space="preserve">既定に戻す</x:String>
   <x:String x:Key="Action.Settings" xml:space="preserve">設定</x:String>
   <x:String x:Key="App.Title" xml:space="preserve">[VCB-Studio] ChapterTool</x:String>
@@ -202,7 +202,7 @@
   <x:String x:Key="Label.ExpressionPreset" xml:space="preserve">プリセット</x:String>
   <x:String x:Key="Label.FrameRate" xml:space="preserve">フレーム列で使用するフレームレート</x:String>
   <x:String x:Key="Label.OrderShift" xml:space="preserve">番号 +</x:String>
-  <x:String x:Key="Label.RoundFrames" xml:space="preserve">フレームを丸める</x:String>
+  <x:String x:Key="Label.RoundFrames" xml:space="preserve">整数フレーム表示</x:String>
   <x:String x:Key="Label.Format" xml:space="preserve">形式</x:String>
   <x:String x:Key="Label.UseExpression" xml:space="preserve">有効にする</x:String>
   <x:String x:Key="Label.XmlLang" xml:space="preserve">XML 言語</x:String>
@@ -213,7 +213,7 @@
   <x:String x:Key="Main.AutoFrameRate" xml:space="preserve">自動</x:String>
   <x:String x:Key="Main.ChapterCount" xml:space="preserve">{count} 個のチャプター</x:String>
   <x:String x:Key="Main.ChapterCountSingular" xml:space="preserve">{count} 個のチャプター</x:String>
-  <x:String x:Key="Main.ChangeFps" xml:space="preserve">現在の FPS に変換</x:String>
+  <x:String x:Key="Main.ChangeFps" xml:space="preserve">章の FPS を変換</x:String>
   <x:String x:Key="Main.Combine" xml:space="preserve">結合</x:String>
   <x:String x:Key="Main.SplitByBoundaries" xml:space="preserve">境界で分割</x:String>
   <x:String x:Key="Menu.SplitByBoundaries" xml:space="preserve">境界で分割</x:String>
@@ -221,16 +221,16 @@
   <x:String x:Key="Main.ForwardTranslation" xml:space="preserve">フレームを前へ移動</x:String>
   <x:String x:Key="Main.Insert" xml:space="preserve">挿入</x:String>
   <x:String x:Key="Main.KeepOriginalName" xml:space="preserve">元の名前を保持</x:String>
-  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">読み込み (Ctrl+O)</x:String>
+  <x:String x:Key="Main.LoadTooltip" xml:space="preserve">ソースファイルを読み込む</x:String>
   <x:String x:Key="Main.OpenRelatedMedia" xml:space="preserve">関連メディアを開く</x:String>
   <x:String x:Key="Main.OrderShift" xml:space="preserve">番号シフト</x:String>
-  <x:String x:Key="Main.Reload" xml:space="preserve">再読み込み</x:String>
+  <x:String x:Key="Main.Reload" xml:space="preserve">ソースを再読み込み</x:String>
   <x:String x:Key="Main.SaveFormat" xml:space="preserve">保存形式</x:String>
-  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">Ctrl+S</x:String>
+  <x:String x:Key="Main.SaveShortcutHint" xml:space="preserve">章ファイルを保存</x:String>
   <x:String x:Key="Main.StandardTemplate" xml:space="preserve">標準テンプレート</x:String>
   <x:String x:Key="Main.TemplateFile" xml:space="preserve">テンプレートファイル</x:String>
   <x:String x:Key="Main.XmlLanguage" xml:space="preserve">XML 言語</x:String>
-  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">FPS を変更</x:String>
+  <x:String x:Key="Menu.ChangeFps" xml:space="preserve">章の FPS を変換</x:String>
   <x:String x:Key="Menu.Combine" xml:space="preserve">クリップを結合</x:String>
   <x:String x:Key="Menu.CopyName" xml:space="preserve">名前をコピー</x:String>
   <x:String x:Key="Menu.CopyRow" xml:space="preserve">行をコピー</x:String>
@@ -248,7 +248,7 @@
   <x:String x:Key="Modal.Frames" xml:space="preserve">前へ移動するフレーム数</x:String>
   <x:String x:Key="Modal.LogEmpty" xml:space="preserve">操作履歴はまだありません。</x:String>
   <x:String x:Key="Modal.LogTitle" xml:space="preserve">アクティビティログ</x:String>
-  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">プレビュー</x:String>
+  <x:String x:Key="Modal.PreviewTitle" xml:space="preserve">エクスポートテキストを表示</x:String>
   <x:String x:Key="Modal.RelatedTitle" xml:space="preserve">関連メディア</x:String>
   <x:String x:Key="Modal.SettingsTitle" xml:space="preserve">設定</x:String>
   <x:String x:Key="NameMode.AsIs" xml:space="preserve">元の名前を保持</x:String>
@@ -452,8 +452,8 @@
   <x:String x:Key="Status.ZonesGenerated" xml:space="preserve">Zones を生成しました</x:String>
   <x:String x:Key="Title.Expression" xml:space="preserve">チャプター時刻に適用するユーザー定義の Lua 式。例: t + 1、t * 25 / 24</x:String>
   <x:String x:Key="Title.Load" xml:space="preserve">チャプターファイルを読み込む</x:String>
-  <x:String x:Key="Title.Preview" xml:space="preserve">投影後の書き出しテキストをプレビュー</x:String>
-  <x:String x:Key="Title.Refresh" xml:space="preserve">現在のオプションでグリッドを更新</x:String>
+  <x:String x:Key="Title.Preview" xml:space="preserve">適用済みのエクスポートテキストを表示</x:String>
+  <x:String x:Key="Title.Refresh" xml:space="preserve">フレーム表示を再計算</x:String>
   <x:String x:Key="Title.Save" xml:space="preserve">現在のオプションで書き出してダウンロード</x:String>
   <x:String x:Key="Tool.Expression.Apply" xml:space="preserve">式を適用</x:String>
   <x:String x:Key="Expression.Review.TimeSummary" xml:space="preserve">時刻変更 {times}/{count} 件</x:String>
@@ -464,7 +464,7 @@
   <x:String x:Key="Expression.Preview.Cancelled" xml:space="preserve">式のプレビューをキャンセルしました。</x:String>
   <x:String x:Key="Expression.Preview.Pending" xml:space="preserve">式のプレビューを更新しています…</x:String>
   <x:String x:Key="Expression.Preview.Options" xml:space="preserve">オプションをプレビュー</x:String>
-  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">プレビューを更新</x:String>
+  <x:String x:Key="Expression.Preview.Update" xml:space="preserve">変更プレビューを更新</x:String>
   <x:String x:Key="Expression.Preview.Discard" xml:space="preserve">破棄</x:String>
   <x:String x:Key="Expression.Preview.Stale" xml:space="preserve">プレビューが古くなっています。更新してから適用してください。</x:String>
   <x:String x:Key="Expression.Preview.ComparisonTooltip" xml:space="preserve">薄い値は確定済みです。矢印はプレビュー値を示します。</x:String>
@@ -500,7 +500,7 @@
   <x:String x:Key="Expression.State.Invalid" xml:space="preserve">この式は適用できません。</x:String>
   <x:String x:Key="Expression.State.Unchanged" xml:space="preserve">適用できる変更はありません。</x:String>
   <x:String x:Key="Expression.State.Applying" xml:space="preserve">確認済みの変更を適用しています…</x:String>
-  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">プレビューを更新</x:String>
+  <x:String x:Key="Expression.Action.Refresh" xml:space="preserve">変更プレビューを更新</x:String>
   <x:String x:Key="Expression.Action.Apply" xml:space="preserve">変更を適用</x:String>
   <x:String x:Key="Expression.Value.Missing" xml:space="preserve">利用できません</x:String>
   <x:String x:Key="Expression.Value.NotCalculated" xml:space="preserve">未計算</x:String>
@@ -547,9 +547,9 @@
   <x:String x:Key="Settings.Shortcuts.FixedHint" xml:space="preserve">このショートカットはアプリケーションで固定されています。</x:String>
   <x:String x:Key="Shortcuts.Action.Save" xml:space="preserve">保存</x:String>
   <x:String x:Key="Shortcuts.Action.Reload" xml:space="preserve">再読み込み</x:String>
-  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">更新</x:String>
+  <x:String x:Key="Shortcuts.Action.Refresh" xml:space="preserve">ソースを再読み込み</x:String>
   <x:String x:Key="Shortcuts.Action.Log" xml:space="preserve">ログ</x:String>
-  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">プレビュー</x:String>
+  <x:String x:Key="Shortcuts.Action.Preview" xml:space="preserve">エクスポートテキストを表示</x:String>
   <x:String x:Key="Shortcuts.Action.ClipSelection" xml:space="preserve">クリップを選択</x:String>
   <x:String x:Key="Shortcuts.Action.Insert" xml:space="preserve">行を挿入</x:String>
   <x:String x:Key="Shortcuts.Action.Delete" xml:space="preserve">行を削除</x:String>
@@ -704,4 +704,20 @@
   <x:String x:Key="History.Empty" xml:space="preserve">利用できる履歴項目はありません。</x:String>
   <x:String x:Key="Parity.ExportOptionsInvalid" xml:space="preserve">有効なエクスポート設定を選択してください。</x:String>
   <x:String x:Key="Parity.SettingsApplyFailed" xml:space="preserve">設定を適用できませんでした。下書きは引き続き編集できます。</x:String>
+  <x:String x:Key="CloseGuard.Title" xml:space="preserve">章の変更が未エクスポートです</x:String>
+  <x:String x:Key="CloseGuard.Message" xml:space="preserve">未エクスポートの章があります。適用済みの内容をエクスポートして閉じるか、変更を破棄して閉じるか、キャンセルしてウィンドウを保持できます。</x:String>
+  <x:String x:Key="CloseGuard.PendingCandidateNote" xml:space="preserve">未適用のプレビューは破棄されます。エクスポートには適用済みの内容のみが含まれます。</x:String>
+  <x:String x:Key="CloseGuard.ExportAndClose" xml:space="preserve">エクスポートして閉じる</x:String>
+  <x:String x:Key="CloseGuard.DiscardAndClose" xml:space="preserve">破棄して閉じる</x:String>
+  <x:String x:Key="CloseGuard.Cancel" xml:space="preserve">キャンセル</x:String>
+  <x:String x:Key="CloseGuard.OtherTracksRemain" xml:space="preserve">未エクスポートのトラックが残っています。各トラックをエクスポートしてから閉じてください。</x:String>
+  <x:String x:Key="Main.ShortcutHintFormat" xml:space="preserve">ショートカット: {0}</x:String>
+  <x:String x:Key="Main.IntegerFrameDisplay" xml:space="preserve">整数フレーム表示</x:String>
+  <x:String x:Key="Main.FrameRateReview" xml:space="preserve">章の FPS：{0} → {1}。{2}</x:String>
+  <x:String x:Key="Main.FrameRateReviewTimesChanged" xml:space="preserve">フレーム位置を保持するため章の時刻が変わります。</x:String>
+  <x:String x:Key="Main.FrameRateReviewTimesUnchanged" xml:space="preserve">章の時刻は変わりません。</x:String>
+  <x:String x:Key="Main.FrameAccuracyLegend" xml:space="preserve">時刻が選択した FPS に合うかを示します。</x:String>
+  <x:String x:Key="CloseGuard.PendingOnlyMessage" xml:space="preserve">プレビューは未適用です。エクスポートには適用済みの内容のみが含まれます。</x:String>
+  <x:String x:Key="Main.FrameRateReviewUnknownSource" xml:space="preserve">元の FPS が不明のため、変換を適用できません。</x:String>
+  <x:String x:Key="CloseGuard.StateChanged" xml:space="preserve">終了確認中にドキュメントまたはプレビューが変更されました。内容を確認してから閉じてください。</x:String>
 </ResourceDictionary>

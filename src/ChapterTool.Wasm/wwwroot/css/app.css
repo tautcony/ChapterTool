@@ -361,9 +361,23 @@ button.secondary {
 }
 
 .col-num { width: 3.5rem; }
-.col-time { width: 21rem; min-width: 21rem; white-space: nowrap; }
-.col-frames { width: 16rem; }
-.col-name { width: auto; }
+.col-time { width: clamp(15rem, 27vw, 21rem); min-width: 15rem; white-space: nowrap; }
+.col-frames { width: clamp(12rem, 21vw, 16rem); min-width: 12rem; white-space: nowrap; }
+.col-name { width: auto; min-width: 14rem; }
+.col-name .cell-edit { text-align: left; }
+
+.fps-convert-button {
+  display: inline-flex;
+  flex: 0 0 2.25rem;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  min-height: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+
+.fps-convert-button svg { width: 1.1rem; height: 1.1rem; }
 
 .cell-edit {
   width: 100%;
@@ -607,6 +621,24 @@ tr.separator {
 .expression-cell-preview strong {
   color: var(--accent);
 }
+
+.frame-expression-preview { white-space: nowrap; }
+.name-expression-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  width: 100%;
+  align-items: center;
+  overflow: hidden;
+}
+.name-expression-preview > span:first-child,
+.name-expression-preview > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name-expression-preview > span[aria-hidden="true"] { white-space: nowrap; }
 
 .option-cell {
   display: grid;

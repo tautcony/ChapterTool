@@ -209,6 +209,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(PreviewShortcutGesture));
         OnPropertyChanged(nameof(ReloadShortcutKeyGesture));
         OnPropertyChanged(nameof(PreviewShortcutKeyGesture));
+        NotifyShortcutHintProperties();
     }
 
     private static KeyGesture? ParseGesture(string gesture) =>
@@ -797,16 +798,6 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
 
     public bool IsOperationRunning => Progress is > 0 and < 1;
 
-    public string SaveButtonTooltip
-    {
-        get
-        {
-            var directory = EffectiveSaveDirectoryDisplay;
-            var shortcut = Localizer.GetString("Main.SaveShortcutHint");
-            return string.IsNullOrWhiteSpace(directory) ? shortcut : $"{directory} ({shortcut})";
-        }
-    }
-
     public IReadOnlyList<ReferencedMediaFile> RelatedMediaReferences =>
         Workspace.ClipSession?.RelatedMedia ?? [];
 
@@ -924,6 +915,8 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         private set
         {
             SetProperty(ref expressionPreviewText, value);
+            OnPropertyChanged(nameof(HasFrameRateReview));
+            OnPropertyChanged(nameof(FrameRateReviewTooltip));
             OnPropertyChanged(nameof(ContentPreviewMetadataTooltip));
             OnPropertyChanged(nameof(IsChapterGridReadOnly));
             OnPropertyChanged(nameof(CanEditRows));
@@ -1137,7 +1130,7 @@ public sealed partial class MainWindowViewModel : ObservableViewModel, IDisposab
         OnPropertyChanged(nameof(SelectedRowCountDisplay));
         OnPropertyChanged(nameof(ChapterCount));
         OnPropertyChanged(nameof(SelectedRowCount));
-        OnPropertyChanged(nameof(SaveButtonTooltip));
+        NotifyShortcutHintProperties();
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
         OnPropertyChanged(nameof(UndoDescription));

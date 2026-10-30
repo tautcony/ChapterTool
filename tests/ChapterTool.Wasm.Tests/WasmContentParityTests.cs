@@ -1,5 +1,6 @@
 using System.Runtime.Versioning;
 using ChapterTool.Core.Editing;
+using ChapterTool.Core.Models;
 using ChapterTool.Wasm.Services;
 
 namespace ChapterTool.Wasm.Tests;
@@ -142,6 +143,41 @@ public sealed class WasmContentParityTests
         Assert.Equal(before, workspace.Preview().Content);
         await workspace.RedoAsync();
         Assert.Equal(2, workspace.HistoryEntries.Count);
+    }
+
+    [Fact]
+    public async Task Unknown_source_rate_can_open_conversion_review_but_cannot_apply_or_commit()
+    {
+        using var workspace = new WasmWorkspace(new WasmChapterService());
+        var bytes = System.Text.Encoding.UTF8.GetBytes(
+            "CHAPTER01=00:00:00.000\nCHAPTER01NAME=Opening\nCHAPTER02=00:00:12.500\nCHAPTER02NAME=Scene\n");
+        await workspace.LoadAsync("unknown.txt", bytes);
+        var beforeDocument = workspace.PrepareNamingPreview()!.Before;
+        Assert.False(beforeDocument.FrameRate.IsKnown);
+        var beforeTicks = beforeDocument.Tracks[0].Chapters.Select(chapter => chapter.StartTicks).ToArray();
+        var before = workspace.Preview().Content;
+        var historyCount = workspace.HistoryEntries.Count;
+        var target = workspace.FrameRateChoices.Single(choice => choice.Option.Code == "Fps25");
+        workspace.SelectedFrameRateIndex = target.Index;
+
+        Assert.True(workspace.CanReviewSelectedFrameRate);
+        Assert.False(workspace.CanChangeSelectedFrameRate);
+        var preview = workspace.PrepareFrameRatePreview();
+        Assert.NotNull(preview);
+        Assert.False(preview.IsValid);
+        Assert.Equal("25/1", preview.OperationDescriptor!.Parameters.Single(parameter => parameter.Name == "targetFps").Value);
+        Assert.False(await workspace.ApplyContentPreviewAsync());
+        Assert.Equal(before, workspace.Preview().Content);
+        var afterRejectedReview = workspace.PrepareNamingPreview()!.Before;
+        Assert.Equal(FrameRateValue.Unknown, afterRejectedReview.FrameRate);
+        Assert.Equal(beforeTicks, afterRejectedReview.Tracks[0].Chapters.Select(chapter => chapter.StartTicks));
+        Assert.Equal(historyCount, workspace.HistoryEntries.Count);
+
+        workspace.ChangeSelectedFrameRate();
+        Assert.Equal(before, workspace.Preview().Content);
+        var afterLegacyAttempt = workspace.PrepareNamingPreview()!.Before;
+        Assert.Equal(FrameRateValue.Unknown, afterLegacyAttempt.FrameRate);
+        Assert.Equal(beforeTicks, afterLegacyAttempt.Tracks[0].Chapters.Select(chapter => chapter.StartTicks));
     }
 
     [Fact]

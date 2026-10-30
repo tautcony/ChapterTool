@@ -109,9 +109,10 @@
                     <label class="check">
                         <input type="checkbox"
                                checked="@_roundFrames"
+                               title="@L.T("Main.FrameAccuracyLegend")"
                                disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty)"
                                @onchange="OnRoundFramesChanged" />
-                        @L.T("Label.RoundFrames")
+                        @L.T("Main.IntegerFrameDisplay")
                     </label>
                     <button type="button"
                             class="icon-button tool-icon-button"
@@ -170,11 +171,11 @@
                         }
                     </select>
                     <button type="button"
-                            class="icon-button tool-icon-button"
-                            disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty || !Workspace.CanChangeSelectedFrameRate)"
+                            class="fps-convert-button"
+                            disabled="@(Workspace.IsBusy || Workspace.IsChapterGridEmpty || !Workspace.CanReviewSelectedFrameRate)"
                             @onclick="ChangeFrameRateContext"
-                            title="@L.T("Menu.ChangeFps")"
-                            aria-label="@L.T("Menu.ChangeFps")">
+                            title="@L.T("Main.ChangeFps")"
+                            aria-label="@L.T("Main.ChangeFps")">
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path d="M3 12h3l2-7 4 14 2-7h7" />
                         </svg>
@@ -254,7 +255,7 @@
                                 <td class="col-name">
                                     @if (showOptionsCandidate && optionsComparison is { Before: not null, Candidate: not null } nameChange
                                         && nameChange.Before.Name != nameChange.Candidate.Name)
-                                    { <span class="expression-cell-preview"><span>@nameChange.Before.Name</span><span aria-hidden="true"> → </span><strong>@nameChange.Candidate.Name</strong></span> }
+                                    { <span class="expression-cell-preview name-expression-preview"><span>@nameChange.Before.Name</span><span aria-hidden="true"> → </span><strong>@nameChange.Candidate.Name</strong></span> }
                                     else { <ChapterCellEditor Index="@index" Field="ChapterCellField.Name" Value="@row.Name" Label="@($"{L.T("Grid.Name")} {index + 1}")" Disabled="@(Workspace.IsBusy || showOptionsCandidate)" /> }
                                 </td>
                                 <td class="col-frames">
@@ -412,7 +413,7 @@
         <button type="button" @onclick="CopyContextRow">@L.T("Menu.CopyRow")</button>
         <button type="button" @onclick="CopyContextName">@L.T("Menu.CopyName")</button>
         <button type="button" @onclick="CopyContextZones" disabled="@(Workspace.FramesPerSecond <= 0 || !Workspace.HasRowSelection)">@L.T("Menu.CopyZones")</button>
-        <button type="button" @onclick="PreviewFromMenu" disabled="@(!Workspace.CanPreview)">@L.T("Menu.Preview")</button>
+        <button type="button" @onclick="PreviewFromMenu" disabled="@(!Workspace.CanPreview)">@L.T("Action.Preview")</button>
         <button type="button" @onclick="ZonesFromMenu" disabled="@(Workspace.FramesPerSecond <= 0 || !Workspace.HasRowSelection)">@L.T("Menu.Zones")</button>
         <button type="button" @onclick="OpenForwardModal" disabled="@(!Workspace.CanRefreshRows)">@L.T("Menu.ForwardTranslation")</button>
         <button type="button" @onclick="OpenRelatedMedia" disabled="@(!Workspace.CanOpenRelatedMedia)">@L.T("Menu.RelatedMedia")</button>
@@ -436,7 +437,7 @@
     <div class="context-menu" style="left:@_contextMenuXpx; top:@_contextMenuYpx" @onclick:stopPropagation>
         <button type="button"
                 @onclick="ChangeFrameRateContext"
-                disabled="@(!Workspace.CanChangeSelectedFrameRate)">@L.T("Menu.ChangeFps")</button>
+                disabled="@(!Workspace.CanReviewSelectedFrameRate)">@L.T("Menu.ChangeFps")</button>
     </div>
 }
 
@@ -1497,7 +1498,9 @@
         try
         {
             await Js.InvokeVoidAsync("chapterToolWasm.applyAppearance", _draftThemePresetId, _draftUiLanguage, _draftUiFontFamily.Trim(), _draftMonospaceFontFamily.Trim());
-            await Js.InvokeVoidAsync("chapterToolWasm.setShortcutBindings", WasmShortcuts.Bindings(_draftShortcuts).Keys.ToArray<object?>());
+            await Js.InvokeVoidAsync(
+                "chapterToolWasm.setShortcutBindings",
+                (object)WasmShortcuts.Bindings(_draftShortcuts).Keys.ToArray());
             ApplySettingsToWorkspace(settings, preserveSessionOutput: true);
             if (!frameDisplayChanged)
             {
@@ -1889,6 +1892,15 @@
     private Task SyncShortcutGuardAsync() => Js.InvokeVoidAsync("chapterToolWasm.setShortcutBindings",
         (object)WasmShortcuts.Bindings(_shortcuts).Keys.ToArray()).AsTask();
 
-    private string ShortcutHint(string id, string label) =>
-        _shortcuts.TryGetValue(id, out var gesture) && gesture.Length > 0 ? $"{label} ({gesture})" : label;
+    private string ShortcutHint(string id, string label)
+    {
+        var gestures = ShortcutMapping.Resolve(_shortcuts).GesturesForAction(id);
+        if (gestures.Count == 0)
+        {
+            return label;
+        }
+
+        var display = string.Join(", ", gestures.Select(ShortcutGestureText.FormatForDisplay));
+        return $"{label} ({L.Format("Main.ShortcutHintFormat", display)})";
+    }
 }

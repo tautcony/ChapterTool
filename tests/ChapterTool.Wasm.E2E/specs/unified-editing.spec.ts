@@ -46,8 +46,8 @@ test('B20 expression preview is read-only until applied, then export and undo us
 
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:12.500');
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  const previewDialog = page.getByRole('dialog', { name: 'Preview', exact: true });
+  await page.getByRole('button', { name: 'View export text', exact: true }).click();
+  const previewDialog = page.getByRole('dialog', { name: 'View export text', exact: true });
   const uncommittedPreview = await previewDialog.locator('[data-testid="preview-content"]').textContent();
   expect(uncommittedPreview).toContain('00:00:12.500');
   expect(uncommittedPreview).not.toContain('00:00:06.250');
@@ -60,22 +60,22 @@ test('B20 expression preview is read-only until applied, then export and undo us
   await expect(livePreview).toContainText('00:00:06.250');
   await page.getByRole('dialog', { name: 'Expression', exact: true }).getByRole('button', { name: 'Apply changes', exact: true }).click();
   await expect(secondTime).toHaveValue('00:00:06.250');
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  const committedPreview = await page.getByRole('dialog', { name: 'Preview', exact: true })
+  await page.getByRole('button', { name: 'View export text', exact: true }).click();
+  const committedPreview = await page.getByRole('dialog', { name: 'View export text', exact: true })
     .locator('[data-testid="preview-content"]').textContent();
   expect(committedPreview).toContain('00:00:06.250');
-  await page.getByRole('dialog', { name: 'Preview', exact: true }).getByRole('button', { name: 'Close', exact: true }).first().click();
+  await page.getByRole('dialog', { name: 'View export text', exact: true }).getByRole('button', { name: 'Close', exact: true }).first().click();
   const committedDownload = await downloadText(page, testInfo);
   expect(committedDownload.content.toString('utf8')).toBe(committedPreview);
 
   await page.locator('#chaptertool-shell').focus();
   await page.keyboard.press('Control+z');
   await expect(secondTime).toHaveValue('00:00:12.500');
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  const undonePreview = await page.getByRole('dialog', { name: 'Preview', exact: true })
+  await page.getByRole('button', { name: 'View export text', exact: true }).click();
+  const undonePreview = await page.getByRole('dialog', { name: 'View export text', exact: true })
     .locator('[data-testid="preview-content"]').textContent();
   expect(undonePreview).toContain('00:00:12.500');
-  await page.getByRole('dialog', { name: 'Preview', exact: true }).getByRole('button', { name: 'Close', exact: true }).first().click();
+  await page.getByRole('dialog', { name: 'View export text', exact: true }).getByRole('button', { name: 'Close', exact: true }).first().click();
   const undoneDownload = await downloadText(page, testInfo);
   expect(undoneDownload.content.toString('utf8')).toBe(undonePreview);
 });

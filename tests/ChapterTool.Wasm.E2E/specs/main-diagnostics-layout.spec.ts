@@ -87,7 +87,7 @@ test('pending and stale main previews retain the workflow geometry', async ({ re
   await dialog.locator('.expression-footer button.primary').click();
   await expect(dialog).toBeHidden();
   const refresh = page.locator('.inline-expression-actions button').first();
-  await expect(refresh).toHaveText('Update preview');
+  await expect(refresh).toHaveText('Update change preview');
   expect((await options.boundingBox())?.height).toBeCloseTo(before!.height, 0);
   await expect(secondTime.getByRole('textbox')).toHaveValue('00:00:25.000');
   await refresh.click();

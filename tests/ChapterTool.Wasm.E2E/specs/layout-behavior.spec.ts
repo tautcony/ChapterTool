@@ -31,8 +31,8 @@ async function verifyLayoutStates(page: Page, testInfo: TestInfo, viewport: View
   expect(settingsBounds!.y + settingsBounds!.height).toBeLessThanOrEqual(viewportSize!.height);
   await expect(settings.getByTestId('settings-cancel')).toBeInViewport();
   await settings.getByTestId('settings-cancel').click();
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  const preview = page.getByRole('dialog', { name: 'Preview' });
+  await page.getByRole('button', { name: 'View export text', exact: true }).click();
+  const preview = page.getByRole('dialog', { name: 'View export text' });
   await expect(preview).toBeVisible();
   const previewBounds = await preview.boundingBox();
   expect(previewBounds).not.toBeNull();

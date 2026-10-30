@@ -48,6 +48,34 @@ public sealed class ShortcutMappingTests
     }
 
     [Fact]
+    public void MacOpenAndSaveAliasesAreFixedAndConflictWithOtherRows()
+    {
+        var mapping = ShortcutMapping.Default;
+        var rows = ShortcutConflictValidator.DefaultRowGestures().ToDictionary(static pair => pair.Key, static pair => pair.Value);
+        rows[ShortcutCatalog.SaveId] = "Meta+O";
+
+        Assert.Equal(ShortcutCatalog.LoadId, mapping.ActionForGesture("Meta+O"));
+        Assert.Equal(ShortcutCatalog.SaveId, mapping.ActionForGesture("Meta+S"));
+        Assert.Contains(ShortcutCatalog.LoadId, ShortcutConflictValidator.FindConflicts(rows));
+        Assert.Contains(ShortcutCatalog.SaveId, ShortcutConflictValidator.FindConflicts(rows));
+    }
+
+    [Fact]
+    public void ClearingOpenOrSaveRowKeepsItsFixedMacAlias()
+    {
+        var mapping = ShortcutMapping.Resolve(new ShortcutSettings
+        {
+            [ShortcutCatalog.LoadId] = string.Empty,
+            [ShortcutCatalog.SaveId] = string.Empty
+        });
+
+        Assert.Equal(["Meta+O"], mapping.GesturesForAction(ShortcutCatalog.LoadId));
+        Assert.Equal(["Meta+S"], mapping.GesturesForAction(ShortcutCatalog.SaveId));
+        Assert.Null(mapping.ActionForGesture("Ctrl+O"));
+        Assert.Null(mapping.ActionForGesture("Ctrl+S"));
+    }
+
+    [Fact]
     public void CustomMappingReplacesDefaultGesture()
     {
         var settings = new ShortcutSettings

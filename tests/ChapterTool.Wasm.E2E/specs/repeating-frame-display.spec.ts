@@ -16,7 +16,7 @@ test('Web frame cells render exact repetends while retaining numeric editors', a
   await settings.getByTestId('settings-apply').click();
 
   const rate = page.locator('select.fps-box');
-  const roundFrames = page.getByLabel('Round frames', { exact: true });
+  const roundFrames = page.getByLabel('Show integer frames', { exact: true });
   await expect(roundFrames).not.toBeChecked();
   const frameCell = chapters(page).locator('tbody tr').nth(1).locator('.col-frames');
   await expect(frameCell.locator('.frame-repetend')).toHaveText('006993');

@@ -63,6 +63,31 @@ public sealed class ShortcutMapping
     public string? RowGesture(string actionId) =>
         gesturesByActionId.GetValueOrDefault(actionId);
 
+    /// <summary>Returns the active row gesture and fixed aliases for an action.</summary>
+    public IReadOnlyList<string> GesturesForAction(string actionId)
+    {
+        if (!ShortcutCatalog.TryGet(actionId, out var action))
+        {
+            return [];
+        }
+
+        var gestures = new List<string>(action.FixedGestures.Count + 1);
+        if (RowGesture(action.Id) is { Length: > 0 } rowGesture)
+        {
+            gestures.Add(rowGesture);
+        }
+
+        foreach (var fixedGesture in action.FixedGestures)
+        {
+            if (!gestures.Contains(fixedGesture, StringComparer.OrdinalIgnoreCase))
+            {
+                gestures.Add(fixedGesture);
+            }
+        }
+
+        return gestures;
+    }
+
     /// <summary>Returns the action id assigned to a canonical gesture, or null when unassigned.</summary>
     public string? ActionForGesture(string gesture)
     {

@@ -1165,11 +1165,14 @@ public sealed partial class WasmWorkspace : IDisposable
         RefreshDisplay(updateStatus: true, statusKey: "Status.ChangedFpsTo", statusArgs: [target.DisplayName]);
     }
 
-    public bool CanChangeSelectedFrameRate =>
+    public bool CanReviewSelectedFrameRate =>
         BaseChapterSet is not null
-        && BaseChapterSet.FrameRate.IsKnown
         && selectedFrameRateIndex > 0
         && ResolveSelectedFrameRateOption().IsValid;
+
+    public bool CanChangeSelectedFrameRate =>
+        CanReviewSelectedFrameRate
+        && BaseChapterSet?.FrameRate.IsKnown == true;
 
     /// <summary>
     /// Refreshes derived display without applying content drafts.

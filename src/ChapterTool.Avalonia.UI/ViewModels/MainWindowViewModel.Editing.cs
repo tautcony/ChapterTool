@@ -265,6 +265,11 @@ public sealed partial class MainWindowViewModel
     {
         var outcome = await ClipEditingCoordinator.ApplyCandidateAsync(preview, cancellationToken);
         ApplyContentOutcome(outcome, preview.Operation);
+        if (preview.Operation == "Change chapter frame rate"
+            && outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
+        {
+            ClearFrameRateReview();
+        }
         if ((outcome.Kind is TransactionOutcomeKind.Committed or TransactionOutcomeKind.NoChange)
             && preview.Operation is "Apply chapter options" or "Apply template names")
         {
@@ -312,6 +317,10 @@ public sealed partial class MainWindowViewModel
     internal void CancelContentPreview(ChapterContentPreview preview)
     {
         ArgumentNullException.ThrowIfNull(preview);
+        if (preview.Operation == "Change chapter frame rate")
+        {
+            ClearFrameRateReview();
+        }
     }
 
     private void ScheduleExpressionPreview()
@@ -455,6 +464,7 @@ public sealed partial class MainWindowViewModel
         var targetOption = SelectedFrameRateOption;
         var targetFps = targetOption.Rate;
         pendingContentPreview = PrepareFrameRateOperation(sourceFps, targetFps);
+        SetFrameRateReview(pendingContentPreview, sourceFps, targetFps);
         OnPropertyChanged(nameof(IsContentPreviewPending));
         OnPropertyChanged(nameof(CanPreviewContentOptions));
         OnPropertyChanged(nameof(CanApplyContentPreview));
@@ -466,8 +476,7 @@ public sealed partial class MainWindowViewModel
         CancelContentPreviewCommand.RaiseCanExecuteChanged();
     }
 
-    private FrameRateValue ResolveSourceFrameRate() => CurrentInfo?.FrameRate is { IsKnown: true } rate
-        ? rate : SelectedFrameRateOption.IsValid ? SelectedFrameRateOption.Rate : FrameRateValue.Unknown;
+    private FrameRateValue ResolveSourceFrameRate() => CurrentInfo?.FrameRate ?? FrameRateValue.Unknown;
 
     internal FrameRateValue ComputationFrameRate => SelectedFrameRateOption.IsValid
         ? SelectedFrameRateOption.Rate : CurrentInfo?.FrameRate ?? FrameRateValue.Unknown;

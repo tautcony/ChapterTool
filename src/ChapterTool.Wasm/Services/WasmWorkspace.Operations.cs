@@ -93,8 +93,7 @@ public sealed partial class WasmWorkspace
             new HistoryOperationParameter("targetFps", ResolveSelectedFrameRateOption().Rate.ToString(), ResolveSelectedFrameRateOption().Rate.Kind.ToString())
         ]));
 
-    private FrameRateValue ResolveSourceFrameRate() => BaseChapterSet?.FrameRate is { IsKnown: true } rate
-        ? rate : ResolveSelectedFrameRateOption().IsValid ? ResolveSelectedFrameRateOption().Rate : FrameRateValue.Unknown;
+    private FrameRateValue ResolveSourceFrameRate() => BaseChapterSet?.FrameRate ?? FrameRateValue.Unknown;
 
     /// <summary>Gets a rate from explicit selection or uniform content. Detection is display-only.</summary>
     public FrameRateValue ComputationFrameRate => ResolveSelectedFrameRateOption().IsValid

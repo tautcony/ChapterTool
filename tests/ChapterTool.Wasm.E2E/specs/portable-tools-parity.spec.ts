@@ -68,8 +68,8 @@ test('content operation review shows typed candidate values and cancel preserves
 
   const open = async () => {
     await page.locator('.fps-box').dispatchEvent('contextmenu', { button: 2 });
-    await page.locator('.context-menu').getByRole('button', { name: 'Change FPS', exact: true }).click();
-    return page.getByRole('dialog', { name: 'Change FPS', exact: true });
+    await page.locator('.context-menu').getByRole('button', { name: 'Convert chapter FPS', exact: true }).click();
+    return page.getByRole('dialog', { name: 'Convert chapter FPS', exact: true });
   };
   const dialog = await open();
   const source = (await dialog.getByTestId('fps-source').innerText()).match(/^(\d+)\/(\d+) fps$/);

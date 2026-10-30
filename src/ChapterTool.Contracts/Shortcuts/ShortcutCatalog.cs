@@ -18,8 +18,8 @@ public static class ShortcutCatalog
     /// <summary>Gets all catalog actions in deterministic display and routing order.</summary>
     public static IReadOnlyList<ShortcutAction> All { get; } =
     [
-        new(LoadId, "Shortcuts.Action.Load", IsEditable: true, DefaultGesture: "Ctrl+O", FixedGestures: []),
-        new(SaveId, "Shortcuts.Action.Save", IsEditable: true, DefaultGesture: "Ctrl+S", FixedGestures: []),
+        new(LoadId, "Shortcuts.Action.Load", IsEditable: true, DefaultGesture: "Ctrl+O", FixedGestures: ["Meta+O"]),
+        new(SaveId, "Shortcuts.Action.Save", IsEditable: true, DefaultGesture: "Ctrl+S", FixedGestures: ["Meta+S"]),
         new(ReloadId, "Shortcuts.Action.Refresh", IsEditable: true, DefaultGesture: "Ctrl+R", FixedGestures: ["F5"]),
         new(PreviousClipId, "Shortcuts.Action.PreviousClip", IsEditable: true, DefaultGesture: "PageUp", FixedGestures: []),
         new(NextClipId, "Shortcuts.Action.NextClip", IsEditable: true, DefaultGesture: "PageDown", FixedGestures: []),

@@ -219,7 +219,7 @@ test('M04 output preferences stage bytes and templates use separate content revi
 
 test('M06 existing tools share Escape, focus restoration and draft dismissal behavior', async ({ readyPage: page }) => {
   await loadFixture(page, 'minimal-ogm.txt');
-  for (const [openerName, title] of [['Settings', 'Settings'], ['Preview', 'Preview'], ['Log', 'Activity log']] as const) {
+  for (const [openerName, title] of [['Settings', 'Settings'], ['View export text', 'View export text'], ['Log', 'Activity log']] as const) {
     const opener = page.getByRole('button', { name: openerName, exact: true });
     await opener.click();
     const dialog = page.getByRole('dialog', { name: title, exact: true });
