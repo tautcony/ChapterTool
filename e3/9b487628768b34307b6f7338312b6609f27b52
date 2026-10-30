@@ -1,0 +1,285 @@
+tests/ChapterTool.Wasm.E2E/specs/exact-frame-rate-domain.spec.ts
+  s_6fe85cb3d6b29e::t_e8c76d7ec2d1df 14,19
+  s_6fe85cb3d6b29e::t_14a4f35c1a88f8 155
+  s_6fe85cb3d6b29e::t_a1b4fc260354b6 182
+  s_6fe85cb3d6b29e::t_551a857006a217 58
+  s_6fe85cb3d6b29e::t_4ae81719168a6d 120-121,125-129,134-154,156-158
+  s_6fe85cb3d6b29e::t_1624838bd3412f 130-133
+  s_6fe85cb3d6b29e::t_444fd8236be52b 119,122-124
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/en-US.axaml
+  s_6fe85cb3d6b29e::t_373da09b509ace 251
+  s_6fe85cb3d6b29e::t_4fb754ec0402bc 13-15,205,216,224,227,229,233,455-456,467,503,550,552,714-718
+  s_6fe85cb3d6b29e::t_658aa516f91e42 707-713
+  s_6fe85cb3d6b29e::t_cd957b30dcd453 719
+  s_6fe85cb3d6b29e::t_ed626625808cb1 720
+  s_6fe85cb3d6b29e::t_4fa38768d42ed2 721
+  s_6fe85cb3d6b29e::t_c2f9618882009d 722
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ImportExport.cs
+  s_6fe85cb3d6b29e::t_358cd0441101f6 154-157,161,190
+  s_6fe85cb3d6b29e::t_7b10d1d42d6b6b 153
+openspec/changes/clarify-editing-workflow-ux/proposal.md
+  s_6fe85cb3d6b29e::t_7f5297a2945e91 1-27
+openspec/changes/clarify-editing-workflow-ux/specs/keyboard-shortcut-customization/spec.md
+  s_6fe85cb3d6b29e::t_98842c08dc8666 1-22
+tests/ChapterTool.Avalonia.Tests/ViewModels/ShortcutMappingTests.cs
+  s_6fe85cb3d6b29e::t_51ed1d10d090da 50-77
+tests/ChapterTool.Wasm.E2E/specs/portable-tools-parity.spec.ts
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 71
+  s_6fe85cb3d6b29e::t_fc902777def229 72
+src/ChapterTool.Contracts/Shortcuts/ShortcutCatalog.cs
+  s_6fe85cb3d6b29e::t_ab5ae582eb8241 21-22
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/ShortcutHintsHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_0eb5027d4e6970 2-22,26,58-79
+  s_6fe85cb3d6b29e::t_62ac50694bbef4 1,23-25,27-57
+tests/ChapterTool.Wasm.E2E/specs/shortcut-hints-ux.spec.ts
+  s_6fe85cb3d6b29e::t_463824a6b2bba1 10
+  s_6fe85cb3d6b29e::t_bbb76934dbef40 32,34-36,44-47,52-53,57,59-61,64,67-68,78-79
+  s_6fe85cb3d6b29e::t_d1ad9224e54cb9 1-9,11-22,24,27,29-31,33,37-43,48-51,54-56,58,62-63,65-66,69-77,80
+  s_6fe85cb3d6b29e::t_16c44378128654 23,25-26,28
+tests/ChapterTool.Wasm.E2E/specs/main-diagnostics-layout.spec.ts
+  s_6fe85cb3d6b29e::t_a1b4fc260354b6 90
+tests/ChapterTool.Wasm.E2E/specs/repeating-frame-display.spec.ts
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 19
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/ja-JP.axaml
+  s_6fe85cb3d6b29e::t_4fb754ec0402bc 13-15,205,216,224,227,229,233,455-456,467,503,550,552,714-718
+  s_6fe85cb3d6b29e::t_ed626625808cb1 720
+  s_6fe85cb3d6b29e::t_658aa516f91e42 707-713
+  s_6fe85cb3d6b29e::t_cd957b30dcd453 719
+  s_6fe85cb3d6b29e::t_4fa38768d42ed2 721
+  s_6fe85cb3d6b29e::t_c2f9618882009d 722
+  s_6fe85cb3d6b29e::t_373da09b509ace 251
+tests/ChapterTool.Wasm.Tests/WasmContentParityTests.cs
+  s_6fe85cb3d6b29e::t_b40ff370f3146e 155-157,171-173,178-180
+  s_6fe85cb3d6b29e::t_cc0fd021136045 149-154,158-170,174-177,181-182
+  s_6fe85cb3d6b29e::t_582338bc790d3f 3
+  s_6fe85cb3d6b29e::t_6d98d0d5baf10c 148
+src/ChapterTool.Wasm/Resources/Locales/zh-CN.json
+  s_6fe85cb3d6b29e::t_c2f9618882009d 720-721
+  s_6fe85cb3d6b29e::t_4fa38768d42ed2 719
+  s_6fe85cb3d6b29e::t_373da09b509ace 250
+  s_6fe85cb3d6b29e::t_4321e48fc4bcd4 718
+  s_6fe85cb3d6b29e::t_1298d34484826e 12-14,204,215,223,226,228,232,454-455,466,502,549,551,705-717
+src/ChapterTool.Avalonia.UI/Views/MainView.axaml
+  s_6fe85cb3d6b29e::t_1da17943164bf2 74,89,95,177,278
+  s_6fe85cb3d6b29e::t_71a7f5f2bddb37 156,320-321,361-362,366-367,399-400
+  s_6fe85cb3d6b29e::t_1624838bd3412f 229
+  s_6fe85cb3d6b29e::t_2d0355d3b93615 630
+  s_6fe85cb3d6b29e::t_0e25c31150eeb5 643,649,654,657
+  s_6fe85cb3d6b29e::t_a3e2c83dda8fca 157-158,232,631-642,644-648,650-653,655-656,658-660
+  s_6fe85cb3d6b29e::t_6b132da3e85bb7 368-377
+  s_6fe85cb3d6b29e::t_95658fb9a6445c 185,188
+src/ChapterTool.Wasm/Services/WasmWorkspace.Operations.cs
+  s_6fe85cb3d6b29e::t_1da17943164bf2 96
+src/ChapterTool.Wasm/wwwroot/css/app.css
+  s_6fe85cb3d6b29e::t_13510f84c1a177 364-370,372-373,375,378,625-639
+  s_6fe85cb3d6b29e::t_1624838bd3412f 371,374,376-377,380
+  s_6fe85cb3d6b29e::t_cd68e4801e4c0f 640-641
+  s_6fe85cb3d6b29e::t_c311e39550e260 379
+  s_6fe85cb3d6b29e::t_6544f693b668fd 642
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.FrameReview.cs
+  s_6fe85cb3d6b29e::t_cd957b30dcd453 7,18,32,45,53,56
+  s_6fe85cb3d6b29e::t_9d6ce08a2359bf 3
+  s_6fe85cb3d6b29e::t_0a93e56952a0bc 17,44,52
+  s_6fe85cb3d6b29e::t_0141f14203a974 20,22-23,26-31
+  s_6fe85cb3d6b29e::t_e02995d0c5fc09 24-25,57-63
+  s_6fe85cb3d6b29e::t_fee56b702d2228 4-6,8-9,13,33-40,54-55,64
+  s_6fe85cb3d6b29e::t_182ba44060b07c 14-16
+  s_6fe85cb3d6b29e::t_272ba08871fde8 1-2
+  s_6fe85cb3d6b29e::t_65de705b04045d 10-12,19,21,41-43,46-51
+tests/ChapterTool.Wasm.E2E/specs/main-window-parity.spec.ts
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 126,129,275
+  s_6fe85cb3d6b29e::t_57c7397b7368f4 58-66
+  s_6fe85cb3d6b29e::t_7d150ef1cc6b7d 20-57,67-68
+tests/ChapterTool.Avalonia.Tests/ViewModels/PortableUiParityTests.cs
+  s_6fe85cb3d6b29e::t_3df1eaa5400ed1 126
+  s_6fe85cb3d6b29e::t_aca19fad821811 129-137,139-150
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/UiDesignSystemHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_1624838bd3412f 73-75
+src/ChapterTool.Wasm/Resources/Locales/en-US.json
+  s_6fe85cb3d6b29e::t_c2f9618882009d 720-721
+  s_6fe85cb3d6b29e::t_4321e48fc4bcd4 718
+  s_6fe85cb3d6b29e::t_373da09b509ace 250
+  s_6fe85cb3d6b29e::t_4fa38768d42ed2 719
+  s_6fe85cb3d6b29e::t_a3bd2ef10858da 12-14,204,215,223,226,228,232,454-455,466,502,549,551,705-717
+docs/code-map/testing.md
+  s_6fe85cb3d6b29e::t_d56c8f95e2feb4 74,213
+  s_6fe85cb3d6b29e::t_85841e99b0c98f 266-267
+  s_6fe85cb3d6b29e::t_62002f31968048 274-275
+openspec/changes/clarify-editing-workflow-ux/design.md
+  s_6fe85cb3d6b29e::t_98842c08dc8666 1-13,15-18,20-30
+  s_6fe85cb3d6b29e::t_0b4ac6eac8a219 19
+  s_6fe85cb3d6b29e::t_1624838bd3412f 14
+src/ChapterTool.Wasm/Resources/Locales/ja-JP.json
+  s_6fe85cb3d6b29e::t_373da09b509ace 250
+  s_6fe85cb3d6b29e::t_4321e48fc4bcd4 718
+  s_6fe85cb3d6b29e::t_4fa38768d42ed2 719
+  s_6fe85cb3d6b29e::t_c2f9618882009d 720-721
+  s_6fe85cb3d6b29e::t_48a11fac9f6c78 12-14,204,215,223,226,228,232,454-455,466,502,549,551,705-717
+openspec/changes/clarify-editing-workflow-ux/.openspec.yaml
+  s_6fe85cb3d6b29e::t_b25a424bc92d55 1-2
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Close.cs
+  s_6fe85cb3d6b29e::t_d25b3af3e10f26 20-22,29-31,97-99
+  s_6fe85cb3d6b29e::t_041b228d69293b 1,13,16-19,23-28,32-43,63,65,92-96
+  s_6fe85cb3d6b29e::t_617199a6db2a2b 2
+  s_6fe85cb3d6b29e::t_77924ecda2ba9a 11-12
+  s_6fe85cb3d6b29e::t_ec8ffb35397704 52-56
+  s_6fe85cb3d6b29e::t_e7355528b9d748 89-90
+  s_6fe85cb3d6b29e::t_66a9897f537de7 3-10,14-15,44-51,57-62,64,66-88,91,100-108
+src/ChapterTool.Wasm/Components/ContentOperationDialog.razor
+  s_6fe85cb3d6b29e::t_c9f2dece987dc1 35-36,304
+  s_6fe85cb3d6b29e::t_14a4f35c1a88f8 262-285
+  s_6fe85cb3d6b29e::t_697e37f32ab5f8 39,291-302
+  s_6fe85cb3d6b29e::t_13510f84c1a177 37-38,40
+  s_6fe85cb3d6b29e::t_cd68e4801e4c0f 286-290
+  s_6fe85cb3d6b29e::t_e02995d0c5fc09 305-309
+  s_6fe85cb3d6b29e::t_5f468db300fc4e 303
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/ExactFrameRateHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_e8f0017382b261 167-168
+  s_6fe85cb3d6b29e::t_760ea1719ff4cd 173-187,190-191
+  s_6fe85cb3d6b29e::t_d9a852c8805141 13,103-120,127-136,140-145,147-166,169
+  s_6fe85cb3d6b29e::t_010d2f39a81e25 124
+  s_6fe85cb3d6b29e::t_2023b89f5732c0 1
+  s_6fe85cb3d6b29e::t_2d0355d3b93615 207,211,236-243
+  s_6fe85cb3d6b29e::t_8a4c4a6647595a 214-221,246-249
+  s_6fe85cb3d6b29e::t_551a857006a217 302
+  s_6fe85cb3d6b29e::t_0e25c31150eeb5 209-210,244-245
+  s_6fe85cb3d6b29e::t_a471169ff90122 212-213,223-224,226-235
+  s_6fe85cb3d6b29e::t_506f8fa4e25455 121-123,125-126,137-139,146,188-189,205-206,208,222,225,259
+  s_6fe85cb3d6b29e::t_182ba44060b07c 170-171,192-204,250-258,260-268
+  s_6fe85cb3d6b29e::t_c5802d23c95394 172
+tests/ChapterTool.Wasm.E2E/specs/modal-layout.spec.ts
+  s_6fe85cb3d6b29e::t_fc902777def229 222
+tests/ChapterTool.Wasm.E2E/specs/import-export.spec.ts
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 52
+  s_6fe85cb3d6b29e::t_fc902777def229 53
+src/ChapterTool.Avalonia/Views/MainWindow.axaml.cs
+  s_6fe85cb3d6b29e::t_65e103eb48faec 13
+src/ChapterTool.Wasm/Pages/Home.razor
+  s_6fe85cb3d6b29e::t_444fd8236be52b 112
+  s_6fe85cb3d6b29e::t_13510f84c1a177 115,174,177-178,258
+  s_6fe85cb3d6b29e::t_cc0fd021136045 175,440
+  s_6fe85cb3d6b29e::t_1da17943164bf2 1895-1905
+  s_6fe85cb3d6b29e::t_95658fb9a6445c 416
+  s_6fe85cb3d6b29e::t_1f29fdbef84ea5 1501-1503
+src/ChapterTool.Avalonia/Views/MainWindow.Close.cs
+  s_6fe85cb3d6b29e::t_ab2c80735a13ef 191,194
+  s_6fe85cb3d6b29e::t_0dc53a8ddbd6e6 4
+  s_6fe85cb3d6b29e::t_836028828e9a37 41,44,46,59-66,69,72-73,88-91,95-98,102-103,105-110,117
+  s_6fe85cb3d6b29e::t_5765fb7001a598 164-166
+  s_6fe85cb3d6b29e::t_b55579eeac93c6 1-2,5-24,26-38,40,42-43,45,47-48,54-58,67-68,70-71,74-87,92,119-130,136-139,147-157,159-163,167-189,192-193,195-201,210-214,216-217,219-228
+  s_6fe85cb3d6b29e::t_73e3c144581004 49-53,131-135,142-146
+  s_6fe85cb3d6b29e::t_707055c50bbec5 93-94,99
+  s_6fe85cb3d6b29e::t_6939f30b0aebe2 3,104,158,218
+  s_6fe85cb3d6b29e::t_aaf4e0e4e138ce 25,39,100-101,111-116,118,140-141,190,202-209,215
+src/ChapterTool.Avalonia.UI/Localization/Resources/Locales/zh-CN.axaml
+  s_6fe85cb3d6b29e::t_cd957b30dcd453 719
+  s_6fe85cb3d6b29e::t_ed626625808cb1 720
+  s_6fe85cb3d6b29e::t_658aa516f91e42 707-713
+  s_6fe85cb3d6b29e::t_373da09b509ace 251
+  s_6fe85cb3d6b29e::t_4fb754ec0402bc 13-15,205,216,224,227,229,233,455-456,467,503,550,552,714-718
+  s_6fe85cb3d6b29e::t_4fa38768d42ed2 721
+  s_6fe85cb3d6b29e::t_c2f9618882009d 722
+openspec/changes/clarify-editing-workflow-ux/tasks.md
+  s_6fe85cb3d6b29e::t_fc149a24c8ddb4 11
+  s_6fe85cb3d6b29e::t_85841e99b0c98f 3-4
+  s_6fe85cb3d6b29e::t_6694ea3ad38eea 16,20,22
+  s_6fe85cb3d6b29e::t_270d2da0aee40e 1-2,5-7,12-14,17-19
+  s_6fe85cb3d6b29e::t_0ae311d82f016a 10
+  s_6fe85cb3d6b29e::t_70cb4027250a70 8-9,15,21
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowCloseHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_d39a16dcd8de1b 6,251-272
+  s_6fe85cb3d6b29e::t_5328c1d15195be 3-5,56,73,114,136,157,217,223-238,240-250,273-279
+  s_6fe85cb3d6b29e::t_1a3df5a576dbe7 90-91,95
+  s_6fe85cb3d6b29e::t_1bd77ea2289eee 189-206
+  s_6fe85cb3d6b29e::t_2bf88c63ca2d40 8-9,19,30-31,35-55,57,65,69-72,74-89,92-94,96-106,108-113,115-135,137-139,141-149,152-156,158-188,207-212,216,219-222,280-299,301-310,312-313
+  s_6fe85cb3d6b29e::t_77e9b59bb9af45 10,150-151
+  s_6fe85cb3d6b29e::t_c2b7b1cec94a24 140
+  s_6fe85cb3d6b29e::t_b64190d9a3864a 239
+openspec/changes/clarify-editing-workflow-ux/verification.md
+  s_6fe85cb3d6b29e::t_6694ea3ad38eea 1-21,28-55
+  s_6fe85cb3d6b29e::t_fc149a24c8ddb4 24
+  s_6fe85cb3d6b29e::t_0b4ac6eac8a219 22-23
+  s_6fe85cb3d6b29e::t_0ae311d82f016a 25
+  s_6fe85cb3d6b29e::t_739eb3f0af3f03 26-27
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.ShortcutHints.cs
+  s_6fe85cb3d6b29e::t_a6ac5b956c5f39 1-56
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Commands.cs
+  s_6fe85cb3d6b29e::t_3f70ee08f22e32 213-214,216
+  s_6fe85cb3d6b29e::t_697e37f32ab5f8 215
+docs/code-map/avalonia.md
+  s_6fe85cb3d6b29e::t_62002f31968048 83
+  s_6fe85cb3d6b29e::t_d56c8f95e2feb4 51
+  s_6fe85cb3d6b29e::t_85841e99b0c98f 67
+  s_6fe85cb3d6b29e::t_9c29f4d0fd3208 166
+openspec/changes/clarify-editing-workflow-ux/specs/document-session-lifecycle/spec.md
+  s_6fe85cb3d6b29e::t_98842c08dc8666 1-34
+src/ChapterTool.Contracts/Shortcuts/ShortcutMapping.cs
+  s_6fe85cb3d6b29e::t_ab5ae582eb8241 66-90
+tests/ChapterTool.Avalonia.Tests/ViewModels/MainWindowViewModelTests.cs
+  s_6fe85cb3d6b29e::t_b710cef2de59dd 1238,1242,1247-1248,1252,1258-1261
+  s_6fe85cb3d6b29e::t_010d2f39a81e25 1253-1255
+  s_6fe85cb3d6b29e::t_51ed1d10d090da 1818-1837
+  s_6fe85cb3d6b29e::t_4759bb8d91bb7a 1817
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTestHost.cs
+  s_6fe85cb3d6b29e::t_b14d64b9ae767e 376-377,397-401
+tests/ChapterTool.Wasm.E2E/specs/layout-behavior.spec.ts
+  s_6fe85cb3d6b29e::t_fc902777def229 35
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 34
+src/ChapterTool.Wasm/Services/WasmWorkspace.cs
+  s_6fe85cb3d6b29e::t_cc0fd021136045 1168,1173-1175
+  s_6fe85cb3d6b29e::t_3d4359539f74b8 1176
+openspec/changes/clarify-editing-workflow-ux/specs/avalonia-ui-shell/spec.md
+  s_6fe85cb3d6b29e::t_98842c08dc8666 1-3,5-11,13-14,25-40,46-52
+  s_6fe85cb3d6b29e::t_0b4ac6eac8a219 12,15-18,24,41-45
+  s_6fe85cb3d6b29e::t_1624838bd3412f 4,19-23
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.StatusLog.cs
+  s_6fe85cb3d6b29e::t_ab5ae582eb8241 38
+  s_6fe85cb3d6b29e::t_65de705b04045d 35
+tests/ChapterTool.Wasm.E2E/specs/settings-localization.spec.ts
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 103
+  s_6fe85cb3d6b29e::t_fc902777def229 104
+tests/ChapterTool.Wasm.E2E/specs/functional-parity.spec.ts
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 55
+  s_6fe85cb3d6b29e::t_fc902777def229 58
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/WorkflowUxReviewHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_34ecd1d8fe5b56 76-81
+  s_6fe85cb3d6b29e::t_295b33490e6bb6 4,6,9,86-89
+  s_6fe85cb3d6b29e::t_c23a69268d5e4a 175
+  s_6fe85cb3d6b29e::t_6939ee36a5bea5 1
+  s_6fe85cb3d6b29e::t_caac6e259176b5 113,201-205
+  s_6fe85cb3d6b29e::t_ccbe966bda5541 2-3,5,7-8,10-75,82-85,90-112,114-174,176-200,206-219
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.cs
+  s_6fe85cb3d6b29e::t_cd957b30dcd453 919
+  s_6fe85cb3d6b29e::t_ab5ae582eb8241 212,1133
+  s_6fe85cb3d6b29e::t_182ba44060b07c 918
+src/ChapterTool.Avalonia.UI/ViewModels/MainWindowViewModel.Editing.cs
+  s_6fe85cb3d6b29e::t_272ba08871fde8 268-272,320-323,467
+  s_6fe85cb3d6b29e::t_3f70ee08f22e32 479
+tests/ChapterTool.Wasm.E2E/specs/smoke.spec.ts
+  s_6fe85cb3d6b29e::t_fc902777def229 33
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 32
+tests/ChapterTool.Wasm.E2E/specs/unified-editing.spec.ts
+  s_6fe85cb3d6b29e::t_fc902777def229 50,64,67,75,78
+  s_6fe85cb3d6b29e::t_094d586c8d4c5d 49,63,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e39b487628768b34307b6f7338312b6609f27b52",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_6fe85cb3d6b29e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18d50-f076-7990-baa7-701769acf563",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
