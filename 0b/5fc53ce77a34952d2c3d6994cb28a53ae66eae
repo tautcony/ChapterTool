@@ -1,0 +1,24 @@
+tests/ChapterTool.Avalonia.Headless.Tests/Headless/MainWindowHeadlessTests.cs
+  s_6fe85cb3d6b29e::t_57a777d78e719d 1372,1386
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0b5fc53ce77a34952d2c3d6994cb28a53ae66eae",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_6fe85cb3d6b29e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18d50-f076-7990-baa7-701769acf563",
+        "model": "gpt-6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
